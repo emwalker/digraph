@@ -1,30 +1,34 @@
-import { applyMiddleware, createStore as reduxCreateStore } from 'redux';
-import { createLogger } from 'redux-logger';
-import reducers from './reducers';
+import { applyMiddleware, createStore as reduxCreateStore } from 'redux'
+import { createLogger } from 'redux-logger'
+import reducers from './reducers'
 
-const middlewares = [];
+const middlewares = []
+
+/* eslint no-empty: 0 */
 
 // Add state logger
 if (process.env.NODE_ENV !== 'production') {
   try {
-    middlewares.push(createLogger());
-  } catch (e) {}
+    middlewares.push(createLogger())
+  } catch (e) {
+  }
 }
 
 export function createStore(state) {
   return reduxCreateStore(
     reducers,
     state,
-    applyMiddleware.apply(null, middlewares)
-  );
+    applyMiddleware(...middlewares),
+  )
 }
 
-export let store = null;
-export function getStore() { return store; }
+// eslint-disable-next-line import/no-mutable-exports
+export let store = null
+export function getStore() { return store }
 export function setAsCurrentStore(s) {
-  store = s;
+  store = s
   if (process.env.NODE_ENV !== 'production'
     && typeof window !== 'undefined') {
-    window.store = store;
+    window.store = store
   }
 }

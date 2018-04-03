@@ -1,5 +1,6 @@
-require('normalize.css');
-require('./global');
+/* eslint import/no-unresolved: 0 */
+require('normalize.css')
+require('./global')
 
 /**
  * Components.
@@ -7,7 +8,7 @@ require('./global');
  * to hot reload it. And make sure that you
  * use `webpack.optimize.DedupePlugin`
  */
-require('#app/components/app/styles');
-require('#app/components/homepage/styles');
-require('#app/components/usage/styles');
-require('#app/components/not-found/styles');
+require('components/app/styles')
+require('components/homepage/styles')
+require('components/usage/styles')
+require('components/not-found/styles')

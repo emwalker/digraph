@@ -1,5 +1,5 @@
 module.exports = {
-  px: function(val) {
-    return val + 'px';
-  }
-};
+  px(val) {
+    return `${val}px`
+  },
+}

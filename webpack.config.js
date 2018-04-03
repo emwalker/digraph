@@ -1,22 +1,22 @@
-var path = require('path');
-var webpack = require('webpack');
-var autoprefixer = require('autoprefixer');
-var precss = require('precss');
-var functions = require('postcss-functions');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var path = require('path')
+var webpack = require('webpack')
+var autoprefixer = require('autoprefixer')
+var precss = require('precss')
+var functions = require('postcss-functions')
+var ExtractTextPlugin = require('extract-text-webpack-plugin')
 
 var postCssLoader = [
   'css-loader?modules',
   '&localIdentName=[name]__[local]___[hash:base64:5]',
   '&disableStructuralMinification',
   '!postcss-loader'
-];
+]
 
 var plugins = [
   new webpack.NoErrorsPlugin(),
   new webpack.optimize.DedupePlugin(),
   new ExtractTextPlugin('bundle.css'),
-];
+]
 
 if (process.env.NODE_ENV === 'production') {
   plugins = plugins.concat([
@@ -27,9 +27,9 @@ if (process.env.NODE_ENV === 'production') {
     new webpack.DefinePlugin({
       'process.env': {NODE_ENV: JSON.stringify('production')}
     })
-  ]);
+  ])
 
-  postCssLoader.splice(1, 1); // drop human readable names
+  postCssLoader.splice(1, 1) // drop human readable names
 };
 
 var config  = {
@@ -57,11 +57,9 @@ var config  = {
     ]
   },
   resolve: {
-    extensions: ['', '.js', '.jsx', '.css'],
+    extensions: ['', '.js', '.jsx', '.css', '.scss'],
     alias: {
-      '#app': path.join(__dirname, 'client'),
-      '#c': path.join(__dirname, 'client/components'),
-      '#css': path.join(__dirname, 'client/css')
+      'components': path.join(__dirname, 'client/components')
     }
   },
   svgo1: {
@@ -93,8 +91,8 @@ var config  = {
       functions({
         functions: require('./client/css/funcs')
       })
-    ];
+    ]
   }
-};
+}
 
-module.exports = config;
+module.exports = config
