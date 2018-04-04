@@ -1,10 +1,18 @@
+// @flow
 import React, { Component } from 'react'
 import Helmet from 'react-helmet'
 import { example } from './styles.css'
 
-export default class Homepage extends Component {
+type Props = {
+  store: Object,
+  nextState: Object,
+  replaceState: any,
+  callback: Function,
+}
+
+export default class Homepage extends Component<Props> {
   /*eslint-disable */
-  static onEnter({store, nextState, replaceState, callback}) {
+  static onEnter({store, nextState, replaceState, callback}: Props) {
     // Load here any data.
     callback(); // this call is important, don't forget it
   }
