@@ -31,6 +31,13 @@ func (conn *PostgresConnection) GetUserByID(id string) (*User, error) {
 	}, nil
 }
 
+func (conn *PostgresConnection) GetOrganizationByID(id string) (*Organization, error) {
+	return &Organization{
+		ID:   id,
+		Name: "Tyrell Corporation",
+	}, nil
+}
+
 func (conn *PostgresConnection) GetViewer() (*User, error) {
 	return &User{
 		ID:    "1234",

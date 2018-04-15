@@ -15,6 +15,22 @@ var QueryType = graphql.NewObject(graphql.ObjectConfig{
 			},
 		},
 
+		"organization": &graphql.Field{
+			Type: OrganizationType,
+
+			Args: graphql.FieldConfigArgument{
+				"id": &graphql.ArgumentConfig{
+					Description: "Organization ID",
+					Type:        graphql.NewNonNull(graphql.ID),
+				},
+			},
+
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				id := p.Args["id"].(string)
+				return conn.GetOrganizationByID(id)
+			},
+		},
+
 		"user": &graphql.Field{
 			Type: UserType,
 

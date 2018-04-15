@@ -6,6 +6,7 @@ import (
 )
 
 type Connection interface {
+	GetOrganizationByID(id string) (*Organization, error)
 	GetUserByID(id string) (*User, error)
 	GetViewer() (*User, error)
 	Init()
