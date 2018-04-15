@@ -1,12 +1,10 @@
 import React from 'react'
 import { render } from 'react-dom'
 import { Router, browserHistory } from 'react-router'
-import { Provider } from 'react-redux'
 import { Promise } from 'when'
 
 import toString from './toString'
 import createRoutes from './routes'
-import { createStore, setAsCurrentStore } from '../store'
 import '../css'
 
 /* eslint global-require: 0 */
@@ -18,13 +16,8 @@ export function run() {
   window.self = window
   require('whatwg-fetch')
 
-  const store = createStore(window['--app-initial'])
-  setAsCurrentStore(store)
-
   render(
-    <Provider store={store} >
-      <Router history={browserHistory}>{createRoutes({ store, first: { time: true } })}</Router>
-    </Provider>,
+    <Router history={browserHistory}>{createRoutes({ first: { time: true } })}</Router>,
     document.getElementById('app'),
   )
 }

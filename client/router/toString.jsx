@@ -1,16 +1,14 @@
 import React from 'react'
-import { Provider } from 'react-redux'
 import { renderToString } from 'react-dom/server'
 import { match, RouterContext } from 'react-router'
 import Helmet from 'react-helmet'
 import createRoutes from './routes'
-import { createStore, setAsCurrentStore } from '../store'
 
 /* eslint consistent-return: 0 */
 /* eslint no-param-reassign: 0 */
 
-const rules = (store, options) => ({
-  routes: createRoutes({ store, first: { time: false } }),
+const rules = (options) => ({
+  routes: createRoutes({ first: { time: false } }),
   location: options.url,
 })
 
@@ -32,11 +30,8 @@ export default function (options, cbk) {
     redirect: null,
   }
 
-  const store = createStore()
-  setAsCurrentStore(store)
-
   try {
-    match(rules(store, options), (error, redirectLocation, renderProps) => {
+    match(rules(options), (error, redirectLocation, renderProps) => {
       try {
         if (error) {
           result.error = error
@@ -44,14 +39,12 @@ export default function (options, cbk) {
           result.redirect = redirectLocation.pathname + redirectLocation.search
         } else {
           result.app = renderToString(
-            <Provider store={store}>
-              <RouterContext {...renderProps} />
-            </Provider>,
+            <RouterContext {...renderProps} />,
           )
           const { title, meta } = Helmet.rewind()
           result.title = title.toString()
           result.meta = meta.toString()
-          result.initial = JSON.stringify(store.getState())
+          result.initial = JSON.stringify({})
         }
       } catch (e) {
         result.error = e
