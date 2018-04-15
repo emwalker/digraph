@@ -31,6 +31,14 @@ func (conn *PostgresConnection) GetUserByID(id string) (*User, error) {
 	}, nil
 }
 
+func (conn *PostgresConnection) GetViewer() (*User, error) {
+	return &User{
+		ID:    "1234",
+		Name:  "Gnusto",
+		Email: "gnusto@tyrell.test",
+	}, nil
+}
+
 func (conn *PostgresConnection) InsertUser(user *User) error {
 	var id string
 	err := conn.db.QueryRow(`

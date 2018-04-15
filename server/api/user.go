@@ -6,6 +6,7 @@ import (
 
 type User struct {
 	ID    string
+	Name  string
 	Email string
 }
 
@@ -21,6 +22,17 @@ var UserType = graphql.NewObject(graphql.ObjectConfig{
 				return nil, nil
 			},
 		},
+
+		"name": &graphql.Field{
+			Type: graphql.NewNonNull(graphql.String),
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				if user, ok := p.Source.(*User); ok == true {
+					return user.Name, nil
+				}
+				return nil, nil
+			},
+		},
+
 		"email": &graphql.Field{
 			Type: graphql.NewNonNull(graphql.String),
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {

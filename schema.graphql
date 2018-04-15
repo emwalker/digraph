@@ -5,6 +5,7 @@ type Organization {
 
 type User {
   id: ID
+  name: String!
   email: String!
 }
 
@@ -15,6 +16,7 @@ type Topic {
 }
 
 type Query {
+  viewer: User
   user(id: ID!): User
   topics: [Topic!]!
 }

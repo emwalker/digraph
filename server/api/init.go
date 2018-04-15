@@ -31,7 +31,7 @@ func handler(schema graphql.Schema) http.HandlerFunc {
 var schema graphql.Schema
 var conn Connection
 
-func Handle(endpoint string, c Connection) {
+func Init(c Connection) {
 	var err error
 
 	schema, err = graphql.NewSchema(graphql.SchemaConfig{
@@ -44,6 +44,9 @@ func Handle(endpoint string, c Connection) {
 
 	conn = c
 	conn.Init()
+}
 
+func Handle(endpoint string, c Connection) {
+	Init(c)
 	http.Handle(endpoint, handler(schema))
 }
