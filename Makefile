@@ -79,6 +79,9 @@ test:
 	go test ./...
 
 format:
-	yarn eslint && yarn flow && go fmt ./... && git diff-index --quiet HEAD --
+	yarn eslint
+	yarn flow
+	go fmt ./...
+	git diff-index --quiet HEAD --
 
 check: format test
