@@ -102,6 +102,7 @@
       "node": true,
       "jest/globals": true
     },
+    "parser": "babel-eslint",
     "parserOptions": {
       "ecmaFeatures": {
         "jsx": true,
@@ -111,9 +112,13 @@
     },
     "plugins": [
       "react",
-      "jest"
+      "jest",
+      "flowtype"
     ],
     "settings": {
+      "flowtype": {
+        "onlyFilesWithFlowAnnotation": true
+      },
       "import/resolver": {
         "node": {
           "paths": [

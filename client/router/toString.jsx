@@ -7,7 +7,7 @@ import createRoutes from './routes'
 /* eslint consistent-return: 0 */
 /* eslint no-param-reassign: 0 */
 
-const rules = (options) => ({
+const rules = options => ({
   routes: createRoutes({ first: { time: false } }),
   location: options.url,
 })

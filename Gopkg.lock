@@ -66,7 +66,8 @@
     "language/printer",
     "language/source",
     "language/typeInfo",
-    "language/visitor"
+    "language/visitor",
+    "testutil"
   ]
   revision = "1e23489041ba90a66f317fe0deccb236a2fff3cb"
   version = "v0.7.5"
@@ -208,6 +209,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "723054636e52ff566ed4fc83afc552397bee3ec39866c60ef5175947b3df74fe"
+  inputs-digest = "2e7c7d05135c8f4743221e543650647a48f4b94bca4a0bb670b8e4c43139e62a"
   solver-name = "gps-cdcl"
   solver-version = 1

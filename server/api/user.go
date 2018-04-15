@@ -1,4 +1,4 @@
-package main
+package api
 
 type User struct {
 	ID    string

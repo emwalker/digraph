@@ -77,3 +77,8 @@ migrate-down:
 test:
 	yarn jest
 	go test ./...
+
+format:
+	yarn eslint && yarn flow && go fmt ./... && git diff-index --quiet HEAD --
+
+check: format test
