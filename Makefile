@@ -15,6 +15,8 @@ TARGET        = $(BIN)/$(APP_NAME)
 GIT_HASH      = $(shell git rev-parse HEAD)
 LDFLAGS       = -w -X main.commitHash=$(GIT_HASH)
 GLIDE         := $(shell command -v glide 2> /dev/null)
+TIMESTAMP     = $(shell date -u +%s)
+DATABASES     = digraffe_dev digraffe_test
 
 build: $(ON) $(GO_BINDATA) clean $(TARGET)
 
@@ -58,9 +60,16 @@ lint:
 
 install:
 	@yarn install
+	@dep ensure
 
-ifdef GLIDE
-	@glide install
-else
-	$(warning "Skipping installation of Go dependencies: glide is not installed")
-endif
+migrate-up:
+	$(foreach database,$(DATABASES),\
+		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
+			-source file://migrations up 1 ;\
+	)
+
+migrate-down:
+	$(foreach database,$(DATABASES),\
+		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
+			-source file://migrations down 1 ;\
+	)

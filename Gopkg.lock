@@ -76,6 +76,25 @@
   revision = "f72d3c883f8ea180da8f085dd320804c41332ad1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid"
+  ]
+  revision = "d34b9ff171c21ad295489235aec8b6626023cd04"
+
+[[projects]]
+  name = "github.com/mattes/migrate"
+  packages = [
+    ".",
+    "database",
+    "source"
+  ]
+  revision = "035c07716cd373d88456ec4d701402df52584cb4"
+  version = "v3.0.1"
+
+[[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
   revision = "d228849504861217f796da67fae4f6e347643f15"
@@ -170,6 +189,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a0f6ad102d3c57e936dcd151b93b93346828e77c7d4f3ee7d11da6e944c22547"
+  inputs-digest = "9ba9a6cc4ad97eab2166914bbf5d6030d3a23cae32ead9edc168155114766e0e"
   solver-name = "gps-cdcl"
   solver-version = 1

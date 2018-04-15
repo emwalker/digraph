@@ -1,9 +1,13 @@
 package main
 
 import (
+	"database/sql"
+	"log"
 	"os"
 
 	"github.com/codegangsta/cli"
+	_ "github.com/lib/pq"
+	_ "github.com/mattes/migrate"
 )
 
 func main() {
@@ -28,9 +32,13 @@ func Run(args []string) {
 	app.Run(args)
 }
 
-// RunServer creates, configures and runs
-// main server.App
+var db *sql.DB
+
 func RunServer(c *cli.Context) {
+        _, err := sql.Open("postgres", "postgres://postgres@localhost:5432/digraffe_dev?sslmode=disable")
+        if err != nil {
+                log.Fatal(err)
+        }
 	app := NewApp(AppOptions{
 	// see server/app.go:150
 	})
