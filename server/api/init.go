@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -11,9 +10,6 @@ import (
 	_ "github.com/lib/pq"
 	_ "github.com/mattes/migrate"
 )
-
-var db *sql.DB
-var schema graphql.Schema
 
 func handler(schema graphql.Schema) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +28,10 @@ func handler(schema graphql.Schema) http.HandlerFunc {
 	}
 }
 
-func Init() {
+var schema graphql.Schema
+var conn Connection
+
+func Handle(endpoint string, c Connection) {
 	var err error
 
 	schema, err = graphql.NewSchema(graphql.SchemaConfig{
@@ -43,10 +42,8 @@ func Init() {
 		log.Fatal(err)
 	}
 
-	db, err = sql.Open("postgres", "postgres://postgres@localhost:5432/digraffe_dev?sslmode=disable")
-	if err != nil {
-		log.Fatal(err)
-	}
+	conn = c
+	conn.Init()
 
-	http.Handle("/graphql", handler(schema))
+	http.Handle(endpoint, handler(schema))
 }

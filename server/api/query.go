@@ -17,7 +17,7 @@ var QueryType = graphql.NewObject(graphql.ObjectConfig{
 			},
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 				id := p.Args["id"].(string)
-				return GetUserByID(id)
+				return conn.GetUserByID(id)
 			},
 		},
 	},

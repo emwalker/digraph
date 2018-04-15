@@ -4,6 +4,11 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
+type User struct {
+	ID    string
+	Email string
+}
+
 var UserType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "User",
 	Fields: graphql.Fields{

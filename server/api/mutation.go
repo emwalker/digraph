@@ -20,7 +20,7 @@ var MutationType = graphql.NewObject(graphql.ObjectConfig{
 				user := &User{
 					Email: email,
 				}
-				err := InsertUser(user)
+				err := conn.InsertUser(user)
 				return user, err
 			},
 		},
@@ -34,7 +34,7 @@ var MutationType = graphql.NewObject(graphql.ObjectConfig{
 			},
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 				id := p.Args["id"].(string)
-				err := RemoveUserByID(id)
+				err := conn.RemoveUserByID(id)
 				return (err == nil), err
 			},
 		},

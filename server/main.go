@@ -30,7 +30,11 @@ func RunServer(c *cli.Context) {
 }
 
 func main() {
-	api.Init()
+	conn := api.NewConnection(
+		"postgres",
+		"postgres://postgres@localhost:5432/digraffe_dev?sslmode=disable",
+	)
+	api.Handle("/graphql", conn)
 
 	go func() {
 		log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
