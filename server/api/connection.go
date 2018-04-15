@@ -5,6 +5,19 @@ import (
 	"log"
 )
 
+type Credentials struct {
+	BearerToken string
+}
+
+type Error struct {
+	Message       string
+	OriginalError error
+}
+
+func (e Error) Error() string {
+	return fmt.Sprintf("%v", e.Message)
+}
+
 type Connection interface {
 	GetOrganizationByID(id string) (*Organization, error)
 	GetUserByID(id string) (*User, error)
@@ -14,12 +27,12 @@ type Connection interface {
 	RemoveUserByID(id string) error
 }
 
-func NewConnection(driverName string, url string) Connection {
+func NewConnection(credentials *Credentials, driverName string, url string) Connection {
 	switch driverName {
 	case "postgres":
-		return &PostgresConnection{url: url}
+		return &PostgresConnection{credentials: credentials, url: url}
 	case "test":
-		return &TestConnection{url: url}
+		return &TestConnection{credentials: credentials, url: url}
 	default:
 		log.Fatal(fmt.Sprintf("do not recognize driver: %s", driverName))
 	}

@@ -31,6 +31,7 @@ func RunServer(c *cli.Context) {
 
 func main() {
 	conn := api.NewConnection(
+		&api.Credentials{BearerToken: "1234"},
 		"postgres",
 		"postgres://postgres@localhost:5432/digraffe_dev?sslmode=disable",
 	)

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -8,33 +9,43 @@ import (
 	"github.com/graphql-go/graphql/testutil"
 )
 
+var (
+	Gnusto           User
+	Frotz            User
+	Yomin            User
+	Bozbar           User
+	Rezrov           User
+	Tyrell           Organization
+	UserData         map[string]*User
+	OrganizationData map[string]*Organization
+)
+
 type TestConnection struct {
-	url string
+	credentials *Credentials
+	url         string
 }
 
 func (conn *TestConnection) Init() {
 }
 
 func (conn *TestConnection) GetOrganizationByID(id string) (*Organization, error) {
-	return &Organization{
-		ID:   id,
-		Name: "Tyrell Corporation",
-	}, nil
+	organization := OrganizationData[id]
+	if organization == nil {
+		return nil, Error{Message: fmt.Sprintf("organization not found: %s", id)}
+	}
+	return organization, nil
 }
 
 func (conn *TestConnection) GetUserByID(id string) (*User, error) {
-	return &User{
-		ID:    id,
-		Email: "some@email.test",
-	}, nil
+	user := UserData[id]
+	if user == nil {
+		return nil, Error{Message: fmt.Sprintf("user not found: %s", id)}
+	}
+	return user, nil
 }
 
 func (conn *TestConnection) GetViewer() (*User, error) {
-	return &User{
-		ID:    "1234",
-		Name:  "Gnusto",
-		Email: "gnusto@tyrell.test",
-	}, nil
+	return &Gnusto, nil
 }
 
 func (conn *TestConnection) InsertUser(user *User) error {
@@ -64,5 +75,47 @@ func testGraphql(test T, p graphql.Params, t *testing.T) {
 			test.Query,
 			testutil.Diff(test.Expected, result),
 		)
+	}
+}
+
+func init() {
+	Gnusto = User{
+		ID:    "10",
+		Name:  "Gnusto",
+		Email: "gnusto@tyrell.test",
+	}
+	Frotz = User{
+		ID:    "11",
+		Name:  "Frotz",
+		Email: "frotz@tyrell.test",
+	}
+	Yomin = User{
+		ID:    "12",
+		Name:  "Yomin",
+		Email: "yomin@tyrell.test",
+	}
+	Bozbar = User{
+		ID:    "13",
+		Name:  "Bozbar",
+		Email: "bozbar@tyrell.test",
+	}
+	Rezrov = User{
+		ID:    "14",
+		Name:  "Rezrov",
+		Email: "rezrov@tyrell.test",
+	}
+	Tyrell = Organization{
+		ID:   "10",
+		Name: "Tyrell Corporation",
+	}
+	UserData = map[string]*User{
+		"10": &Gnusto,
+		"11": &Frotz,
+		"12": &Yomin,
+		"13": &Bozbar,
+		"14": &Rezrov,
+	}
+	OrganizationData = map[string]*Organization{
+		"10": &Tyrell,
 	}
 }

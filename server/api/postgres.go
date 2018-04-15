@@ -2,12 +2,14 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 )
 
 type PostgresConnection struct {
-	db  *sql.DB
-	url string
+	credentials *Credentials
+	db          *sql.DB
+	url         string
 }
 
 func (conn *PostgresConnection) Init() {
@@ -21,9 +23,12 @@ func (conn *PostgresConnection) Init() {
 
 func (conn *PostgresConnection) GetUserByID(id string) (*User, error) {
 	var email string
-	err := conn.db.QueryRow("select email from users where id=$1", id).Scan(&email)
+	err := conn.db.QueryRow("select email from users where id = $1", id).Scan(&email)
 	if err != nil {
-		return nil, err
+		return nil, Error{
+			Message:       fmt.Sprintf("user not found: %s", id),
+			OriginalError: err,
+		}
 	}
 	return &User{
 		ID:    id,
@@ -32,18 +37,22 @@ func (conn *PostgresConnection) GetUserByID(id string) (*User, error) {
 }
 
 func (conn *PostgresConnection) GetOrganizationByID(id string) (*Organization, error) {
+	var name string
+	err := conn.db.QueryRow("select name from organizations where id = $1", id).Scan(&name)
+	if err != nil {
+		return nil, Error{
+			Message:       fmt.Sprintf("organization not found: %s", id),
+			OriginalError: err,
+		}
+	}
 	return &Organization{
 		ID:   id,
-		Name: "Tyrell Corporation",
+		Name: name,
 	}, nil
 }
 
 func (conn *PostgresConnection) GetViewer() (*User, error) {
-	return &User{
-		ID:    "1234",
-		Name:  "Gnusto",
-		Email: "gnusto@tyrell.test",
-	}, nil
+	return &Gnusto, nil
 }
 
 func (conn *PostgresConnection) InsertUser(user *User) error {

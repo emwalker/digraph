@@ -7,7 +7,12 @@ import (
 )
 
 func init() {
-	Init(NewConnection("test", "some://url"))
+	connection := NewConnection(
+		&Credentials{BearerToken: "1234"},
+		"test",
+		"some://url",
+	)
+	Init(connection)
 
 	Tests = []T{
 		{
@@ -22,8 +27,8 @@ func init() {
 			Expected: &graphql.Result{
 				Data: map[string]interface{}{
 					"viewer": map[string]interface{}{
-						"name":  "Gnusto",
-						"email": "gnusto@tyrell.test",
+						"name":  Gnusto.Name,
+						"email": Gnusto.Email,
 					},
 				},
 			},
@@ -31,7 +36,7 @@ func init() {
 		{
 			Query: `
 				query {
-					organization(id: "1234") {
+					organization(id: "10") {
 						name
 					}
 				}
@@ -39,7 +44,7 @@ func init() {
 			Expected: &graphql.Result{
 				Data: map[string]interface{}{
 					"organization": map[string]interface{}{
-						"name": "Tyrell Corporation",
+						"name": Tyrell.Name,
 					},
 				},
 			},
