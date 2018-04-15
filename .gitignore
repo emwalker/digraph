@@ -4,6 +4,7 @@
 /src
 /server/bindata.go
 /server/data/static/build
+/vendor
 
 .pid
 .DS_Store

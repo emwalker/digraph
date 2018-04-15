@@ -4,7 +4,8 @@
 [[projects]]
   name = "github.com/codegangsta/cli"
   packages = ["."]
-  revision = "347a9884a87374d000eec7e6445a34487c1f4a2b"
+  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
+  version = "v1.20.0"
 
 [[projects]]
   name = "github.com/dgrijalva/jwt-go"
@@ -51,6 +52,24 @@
   packages = ["."]
   revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
   version = "v1.0"
+
+[[projects]]
+  name = "github.com/graphql-go/graphql"
+  packages = [
+    ".",
+    "gqlerrors",
+    "language/ast",
+    "language/kinds",
+    "language/lexer",
+    "language/location",
+    "language/parser",
+    "language/printer",
+    "language/source",
+    "language/typeInfo",
+    "language/visitor"
+  ]
+  revision = "1e23489041ba90a66f317fe0deccb236a2fff3cb"
+  version = "v0.7.5"
 
 [[projects]]
   name = "github.com/itsjamie/go-bindata-templates"
@@ -189,6 +208,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9ba9a6cc4ad97eab2166914bbf5d6030d3a23cae32ead9edc168155114766e0e"
+  inputs-digest = "723054636e52ff566ed4fc83afc552397bee3ec39866c60ef5175947b3df74fe"
   solver-name = "gps-cdcl"
   solver-version = 1

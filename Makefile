@@ -73,3 +73,7 @@ migrate-down:
 		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
 			-source file://migrations down 1 ;\
 	)
+
+test:
+	yarn jest
+	go test ./...

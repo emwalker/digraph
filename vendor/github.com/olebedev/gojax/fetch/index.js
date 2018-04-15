@@ -1,1 +1,0 @@
-require('expose?fetch!./fetch');
