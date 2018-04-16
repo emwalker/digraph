@@ -1,60 +1,58 @@
 package api
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"log"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type PostgresConnection struct {
 	credentials *Credentials
-	db          *sql.DB
+	db          *sqlx.DB
 	url         string
 }
 
 func (conn *PostgresConnection) Init() {
 	var err error
-	db, err := sql.Open("postgres", conn.url)
+	db, err := sqlx.Connect("postgres", conn.url)
 	if err != nil {
 		log.Fatal(err)
 	}
 	conn.db = db
 }
 
-func (conn *PostgresConnection) FindUser(databaseId string) (*User, error) {
-	var email string
-	err := conn.db.QueryRow("select email from users where id = $1", databaseId).Scan(&email)
+func (conn *PostgresConnection) GetUser(databaseId string) (*User, error) {
+	var user = User{}
+	err := conn.db.Get(&user, "select *, id as databaseId from users where id = $1", databaseId)
 	if err != nil {
-		return nil, Error{
-			Message:       fmt.Sprintf("user not found: %s", databaseId),
-			OriginalError: err,
-		}
+		return nil, errors.New(fmt.Sprintf("user not found: %s", databaseId))
 	}
-	return &User{
-		ID:         databaseId,
-		DatabaseId: databaseId,
-		Email:      email,
-	}, nil
+	return &user, nil
 }
 
-func (conn *PostgresConnection) FindOrganization(databaseId string) (*Organization, error) {
-	var name string
-	err := conn.db.QueryRow("select name from organizations where id = $1", databaseId).Scan(&name)
+func (conn *PostgresConnection) GetOrganization(databaseId string) (*Organization, error) {
+	var organization = Organization{}
+	err := conn.db.Get(
+		&organization,
+		"select *, id as databaseId from organizations where id = $1",
+		databaseId,
+	)
 	if err != nil {
-		return nil, Error{
-			Message:       fmt.Sprintf("organization not found: %s", databaseId),
-			OriginalError: err,
-		}
+		return nil, errors.New(fmt.Sprintf("organization not found: %s", databaseId))
 	}
-	return &Organization{
-		ID:         databaseId,
-		DatabaseId: databaseId,
-		Name:       name,
-	}, nil
+	return &organization, nil
 }
 
-func (conn *PostgresConnection) GetViewer() (*User, error) {
-	return &Gnusto, nil
+func (conn *PostgresConnection) Viewer() (*User, error) {
+	var user = User{}
+	err := conn.db.Get(&user, "select *, id as databaseId from users where email like $1", Gnusto.Email)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("user not found: %s", Gnusto.Email))
+	}
+	return &user, nil
 }
 
 func (conn *PostgresConnection) InsertUser(user *User) error {

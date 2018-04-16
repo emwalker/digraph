@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/graphql-go/graphql"
-	_ "github.com/lib/pq"
 	_ "github.com/mattes/migrate"
 )
 

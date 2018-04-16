@@ -34,9 +34,9 @@ func findById(id string, info graphql.ResolveInfo, ctx context.Context) (interfa
 
 	switch resolvedID.Type {
 	case "Organization":
-		return connection.FindOrganization(resolvedID.ID)
+		return connection.GetOrganization(resolvedID.ID)
 	case "User":
-		return connection.FindUser(resolvedID.ID)
+		return connection.GetUser(resolvedID.ID)
 	default:
 		return nil, errors.New(fmt.Sprintf("unknown node type: %s", resolvedID.Type))
 	}
@@ -106,7 +106,7 @@ func init() {
 				Type: UserType,
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return connection.GetViewer()
+					return connection.Viewer()
 				},
 			},
 
@@ -121,7 +121,7 @@ func init() {
 				},
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return connection.FindOrganization(p.Args["databaseId"].(string))
+					return connection.GetOrganization(p.Args["databaseId"].(string))
 				},
 			},
 
@@ -136,7 +136,7 @@ func init() {
 				},
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return connection.FindUser(p.Args["databaseId"].(string))
+					return connection.GetUser(p.Args["databaseId"].(string))
 				},
 			},
 

@@ -28,7 +28,7 @@ type TestConnection struct {
 func (conn *TestConnection) Init() {
 }
 
-func (conn *TestConnection) FindOrganization(databaseId string) (*Organization, error) {
+func (conn *TestConnection) GetOrganization(databaseId string) (*Organization, error) {
 	organization := OrganizationData[databaseId]
 	if organization == nil {
 		return nil, Error{Message: fmt.Sprintf("organization not found: %s", databaseId)}
@@ -36,7 +36,7 @@ func (conn *TestConnection) FindOrganization(databaseId string) (*Organization, 
 	return organization, nil
 }
 
-func (conn *TestConnection) FindUser(databaseId string) (*User, error) {
+func (conn *TestConnection) GetUser(databaseId string) (*User, error) {
 	user := UserData[databaseId]
 	if user == nil {
 		return nil, Error{Message: fmt.Sprintf("user not found: %s", databaseId)}
@@ -44,7 +44,7 @@ func (conn *TestConnection) FindUser(databaseId string) (*User, error) {
 	return user, nil
 }
 
-func (conn *TestConnection) GetViewer() (*User, error) {
+func (conn *TestConnection) Viewer() (*User, error) {
 	return &Gnusto, nil
 }
 

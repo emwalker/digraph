@@ -84,6 +84,15 @@
   revision = "65d795d0c74021e19b2ebadf3c83c01a8290a405"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/jmoiron/sqlx"
+  packages = [
+    ".",
+    "reflectx"
+  ]
+  revision = "2aeb6a910c2b94f2d5eb53d9895d80e27264ec41"
+
+[[projects]]
   name = "github.com/labstack/echo"
   packages = [
     ".",
@@ -100,15 +109,6 @@
     "random"
   ]
   revision = "f72d3c883f8ea180da8f085dd320804c41332ad1"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/lib/pq"
-  packages = [
-    ".",
-    "oid"
-  ]
-  revision = "d34b9ff171c21ad295489235aec8b6626023cd04"
 
 [[projects]]
   name = "github.com/mattes/migrate"
@@ -215,6 +215,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "abe537cfb5ccc988f12aa9ae891f112c7ba5c354dc956c567de4d22154e2610d"
+  inputs-digest = "10efbcbd561abbf98300dca290737f340b7c94b8d2a9f0933118647f7782fae5"
   solver-name = "gps-cdcl"
   solver-version = 1
