@@ -39,6 +39,14 @@ func init() {
 				query {
 					organization(databaseId: "10") {
 						name
+
+						topics(first: 100) {
+							edges {
+								node {
+									description
+								}
+							}
+						}
 					}
 				}
 			`,
@@ -46,6 +54,41 @@ func init() {
 				Data: map[string]interface{}{
 					"organization": map[string]interface{}{
 						"name": Tyrell.Name,
+						"topics": map[string]interface{}{
+							"edges": []interface{}{
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"description": "Biology",
+									},
+								},
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"description": "Chemistry",
+									},
+								},
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"description": "Science",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Query: `
+				query {
+					topic(databaseId: "10") {
+						description
+					}
+				}
+			`,
+			Expected: &graphql.Result{
+				Data: map[string]interface{}{
+					"topic": map[string]interface{}{
+						"description": Science.Description,
 					},
 				},
 			},

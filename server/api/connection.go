@@ -19,12 +19,14 @@ func (e Error) Error() string {
 }
 
 type Connection interface {
-	GetOrganization(id string) (*Organization, error)
-	GetUser(id string) (*User, error)
-	Viewer() (*User, error)
+	GetOrganization(string) (interface{}, error)
+	GetTopic(string) (interface{}, error)
+	GetUser(string) (interface{}, error)
+	Viewer() (interface{}, error)
 	Init()
-	InsertUser(user *User) error
-	RemoveUserByID(id string) error
+	InsertUser(*User) error
+	RemoveUserByID(string) error
+	SelectOrganizationTopics(*[]interface{}, *Organization) error
 }
 
 func NewConnection(credentials *Credentials, driverName string, url string) Connection {

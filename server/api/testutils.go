@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -16,8 +17,12 @@ var (
 	Bozbar           User
 	Rezrov           User
 	Tyrell           Organization
-	UserData         map[string]*User
-	OrganizationData map[string]*Organization
+	Science          Topic
+	Biology          Topic
+	Chemistry        Topic
+	UserData         map[string]interface{}
+	OrganizationData map[string]interface{}
+	TopicData        map[string]interface{}
 )
 
 type TestConnection struct {
@@ -28,23 +33,27 @@ type TestConnection struct {
 func (conn *TestConnection) Init() {
 }
 
-func (conn *TestConnection) GetOrganization(databaseId string) (*Organization, error) {
-	organization := OrganizationData[databaseId]
-	if organization == nil {
-		return nil, Error{Message: fmt.Sprintf("organization not found: %s", databaseId)}
+func getOrError(databaseId string, data map[string]interface{}, collection string) (interface{}, error) {
+	object := data[databaseId]
+	if object == nil {
+		return nil, errors.New(fmt.Sprintf("%s not found: %s", collection, databaseId))
 	}
-	return organization, nil
+	return object, nil
 }
 
-func (conn *TestConnection) GetUser(databaseId string) (*User, error) {
-	user := UserData[databaseId]
-	if user == nil {
-		return nil, Error{Message: fmt.Sprintf("user not found: %s", databaseId)}
-	}
-	return user, nil
+func (conn *TestConnection) GetOrganization(databaseId string) (interface{}, error) {
+	return getOrError(databaseId, OrganizationData, "organization")
 }
 
-func (conn *TestConnection) Viewer() (*User, error) {
+func (conn *TestConnection) GetUser(databaseId string) (interface{}, error) {
+	return getOrError(databaseId, UserData, "user")
+}
+
+func (conn *TestConnection) GetTopic(databaseId string) (interface{}, error) {
+	return getOrError(databaseId, TopicData, "topic")
+}
+
+func (conn *TestConnection) Viewer() (interface{}, error) {
 	return &Gnusto, nil
 }
 
@@ -53,6 +62,14 @@ func (conn *TestConnection) InsertUser(user *User) error {
 }
 
 func (conn *TestConnection) RemoveUserByID(databaseId string) error {
+	return nil
+}
+
+func (conn *TestConnection) SelectOrganizationTopics(
+	dest *[]interface{},
+	organization *Organization,
+) error {
+	*dest = append(*dest, []interface{}{Biology, Chemistry, Science}...)
 	return nil
 }
 
@@ -108,14 +125,34 @@ func init() {
 		DatabaseId: "10",
 		Name:       "Tyrell Corporation",
 	}
-	UserData = map[string]*User{
+	Science = Topic{
+		OrganizationId: Tyrell.DatabaseId,
+		DatabaseId:     "10",
+		Description:    "Science",
+	}
+	Biology = Topic{
+		OrganizationId: Tyrell.DatabaseId,
+		DatabaseId:     "11",
+		Description:    "Biology",
+	}
+	Chemistry = Topic{
+		OrganizationId: Tyrell.DatabaseId,
+		DatabaseId:     "12",
+		Description:    "Chemistry",
+	}
+	UserData = map[string]interface{}{
 		"10": &Gnusto,
 		"11": &Frotz,
 		"12": &Yomin,
 		"13": &Bozbar,
 		"14": &Rezrov,
 	}
-	OrganizationData = map[string]*Organization{
+	OrganizationData = map[string]interface{}{
 		"10": &Tyrell,
+	}
+	TopicData = map[string]interface{}{
+		"10": &Science,
+		"11": &Biology,
+		"12": &Chemistry,
 	}
 }

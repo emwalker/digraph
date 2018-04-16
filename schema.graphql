@@ -1,6 +1,8 @@
-type Organization {
-  id: ID
-  name: String!
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
 }
 
 type User {
@@ -15,10 +17,26 @@ type Topic {
   description: String!
 }
 
+type TopicEdge {
+  cursor: String!
+  node: Topic
+}
+
+type TopicConnection {
+  edges: [TopicEdge]
+  pageInfo: PageInfo!
+}
+
 type Query {
   viewer: User
   user(id: ID!): User
   topics: [Topic!]!
+}
+
+type Organization {
+  id: ID
+  name: String!
+  topics: TopicConnection
 }
 
 type Mutation {
