@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/graphql-go/graphql"
@@ -28,25 +27,14 @@ func handler(schema graphql.Schema) http.HandlerFunc {
 	}
 }
 
-var schema graphql.Schema
-var conn Connection
+var connection Connection
 
-func Init(c Connection) {
-	var err error
-
-	schema, err = graphql.NewSchema(graphql.SchemaConfig{
-		Query:    QueryType,
-		Mutation: MutationType,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	conn = c
-	conn.Init()
+func Init(conn Connection) {
+	connection = conn
+	connection.Init()
 }
 
-func Handle(endpoint string, c Connection) {
-	Init(c)
-	http.Handle(endpoint, handler(schema))
+func Handle(endpoint string, conn Connection) {
+	Init(conn)
+	http.Handle(endpoint, handler(Schema))
 }

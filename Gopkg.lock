@@ -73,6 +73,12 @@
   version = "v0.7.5"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/graphql-go/relay"
+  packages = ["."]
+  revision = "54350098cfe5942bc76186efa1f29ca286f6d54d"
+
+[[projects]]
   name = "github.com/itsjamie/go-bindata-templates"
   packages = ["."]
   revision = "65d795d0c74021e19b2ebadf3c83c01a8290a405"
@@ -209,6 +215,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2e7c7d05135c8f4743221e543650647a48f4b94bca4a0bb670b8e4c43139e62a"
+  inputs-digest = "abe537cfb5ccc988f12aa9ae891f112c7ba5c354dc956c567de4d22154e2610d"
   solver-name = "gps-cdcl"
   solver-version = 1

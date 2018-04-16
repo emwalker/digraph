@@ -28,18 +28,18 @@ type TestConnection struct {
 func (conn *TestConnection) Init() {
 }
 
-func (conn *TestConnection) GetOrganizationByID(id string) (*Organization, error) {
-	organization := OrganizationData[id]
+func (conn *TestConnection) FindOrganization(databaseId string) (*Organization, error) {
+	organization := OrganizationData[databaseId]
 	if organization == nil {
-		return nil, Error{Message: fmt.Sprintf("organization not found: %s", id)}
+		return nil, Error{Message: fmt.Sprintf("organization not found: %s", databaseId)}
 	}
 	return organization, nil
 }
 
-func (conn *TestConnection) GetUserByID(id string) (*User, error) {
-	user := UserData[id]
+func (conn *TestConnection) FindUser(databaseId string) (*User, error) {
+	user := UserData[databaseId]
 	if user == nil {
-		return nil, Error{Message: fmt.Sprintf("user not found: %s", id)}
+		return nil, Error{Message: fmt.Sprintf("user not found: %s", databaseId)}
 	}
 	return user, nil
 }
@@ -52,7 +52,7 @@ func (conn *TestConnection) InsertUser(user *User) error {
 	return nil
 }
 
-func (conn *TestConnection) RemoveUserByID(id string) error {
+func (conn *TestConnection) RemoveUserByID(databaseId string) error {
 	return nil
 }
 
@@ -80,33 +80,33 @@ func testGraphql(test T, p graphql.Params, t *testing.T) {
 
 func init() {
 	Gnusto = User{
-		ID:    "10",
-		Name:  "Gnusto",
-		Email: "gnusto@tyrell.test",
+		DatabaseId: "10",
+		Name:       "Gnusto",
+		Email:      "gnusto@tyrell.test",
 	}
 	Frotz = User{
-		ID:    "11",
-		Name:  "Frotz",
-		Email: "frotz@tyrell.test",
+		DatabaseId: "11",
+		Name:       "Frotz",
+		Email:      "frotz@tyrell.test",
 	}
 	Yomin = User{
-		ID:    "12",
-		Name:  "Yomin",
-		Email: "yomin@tyrell.test",
+		DatabaseId: "12",
+		Name:       "Yomin",
+		Email:      "yomin@tyrell.test",
 	}
 	Bozbar = User{
-		ID:    "13",
-		Name:  "Bozbar",
-		Email: "bozbar@tyrell.test",
+		DatabaseId: "13",
+		Name:       "Bozbar",
+		Email:      "bozbar@tyrell.test",
 	}
 	Rezrov = User{
-		ID:    "14",
-		Name:  "Rezrov",
-		Email: "rezrov@tyrell.test",
+		DatabaseId: "14",
+		Name:       "Rezrov",
+		Email:      "rezrov@tyrell.test",
 	}
 	Tyrell = Organization{
-		ID:   "10",
-		Name: "Tyrell Corporation",
+		DatabaseId: "10",
+		Name:       "Tyrell Corporation",
 	}
 	UserData = map[string]*User{
 		"10": &Gnusto,

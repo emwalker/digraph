@@ -19,8 +19,8 @@ func (e Error) Error() string {
 }
 
 type Connection interface {
-	GetOrganizationByID(id string) (*Organization, error)
-	GetUserByID(id string) (*User, error)
+	FindOrganization(id string) (*Organization, error)
+	FindUser(id string) (*User, error)
 	GetViewer() (*User, error)
 	Init()
 	InsertUser(user *User) error

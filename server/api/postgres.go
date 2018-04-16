@@ -21,33 +21,35 @@ func (conn *PostgresConnection) Init() {
 	conn.db = db
 }
 
-func (conn *PostgresConnection) GetUserByID(id string) (*User, error) {
+func (conn *PostgresConnection) FindUser(databaseId string) (*User, error) {
 	var email string
-	err := conn.db.QueryRow("select email from users where id = $1", id).Scan(&email)
+	err := conn.db.QueryRow("select email from users where id = $1", databaseId).Scan(&email)
 	if err != nil {
 		return nil, Error{
-			Message:       fmt.Sprintf("user not found: %s", id),
+			Message:       fmt.Sprintf("user not found: %s", databaseId),
 			OriginalError: err,
 		}
 	}
 	return &User{
-		ID:    id,
-		Email: email,
+		ID:         databaseId,
+		DatabaseId: databaseId,
+		Email:      email,
 	}, nil
 }
 
-func (conn *PostgresConnection) GetOrganizationByID(id string) (*Organization, error) {
+func (conn *PostgresConnection) FindOrganization(databaseId string) (*Organization, error) {
 	var name string
-	err := conn.db.QueryRow("select name from organizations where id = $1", id).Scan(&name)
+	err := conn.db.QueryRow("select name from organizations where id = $1", databaseId).Scan(&name)
 	if err != nil {
 		return nil, Error{
-			Message:       fmt.Sprintf("organization not found: %s", id),
+			Message:       fmt.Sprintf("organization not found: %s", databaseId),
 			OriginalError: err,
 		}
 	}
 	return &Organization{
-		ID:   id,
-		Name: name,
+		ID:         databaseId,
+		DatabaseId: databaseId,
+		Name:       name,
 	}, nil
 }
 
@@ -56,20 +58,20 @@ func (conn *PostgresConnection) GetViewer() (*User, error) {
 }
 
 func (conn *PostgresConnection) InsertUser(user *User) error {
-	var id string
+	var databaseId string
 	err := conn.db.QueryRow(`
     INSERT INTO users(email)
     VALUES ($1)
     RETURNING id
-  `, user.Email).Scan(&id)
+  `, user.Email).Scan(&databaseId)
 	if err != nil {
 		return err
 	}
-	user.ID = id
+	user.DatabaseId = databaseId
 	return nil
 }
 
-func (conn *PostgresConnection) RemoveUserByID(id string) error {
-	_, err := conn.db.Exec("DELETE FROM users WHERE id=$1", id)
+func (conn *PostgresConnection) RemoveUserByID(databaseId string) error {
+	_, err := conn.db.Exec("DELETE FROM users WHERE id = $1", databaseId)
 	return err
 }

@@ -7,12 +7,13 @@ import (
 )
 
 func init() {
-	connection := NewConnection(
-		&Credentials{BearerToken: "1234"},
-		"test",
-		"some://url",
+	Init(
+		NewConnection(
+			&Credentials{BearerToken: "1234"},
+			"test",
+			"some://url",
+		),
 	)
-	Init(connection)
 
 	Tests = []T{
 		{
@@ -36,7 +37,7 @@ func init() {
 		{
 			Query: `
 				query {
-					organization(id: "10") {
+					organization(databaseId: "10") {
 						name
 					}
 				}
@@ -55,7 +56,7 @@ func init() {
 func TestQuery(t *testing.T) {
 	for _, test := range Tests {
 		params := graphql.Params{
-			Schema:        schema,
+			Schema:        Schema,
 			RequestString: test.Query,
 		}
 		testGraphql(test, params, t)
