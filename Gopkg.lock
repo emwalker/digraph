@@ -54,6 +54,12 @@
   version = "v1.0"
 
 [[projects]]
+  name = "github.com/gorilla/handlers"
+  packages = ["."]
+  revision = "90663712d74cb411cbef281bc1e08c19d1a76145"
+  version = "v1.3.0"
+
+[[projects]]
   name = "github.com/graphql-go/graphql"
   packages = [
     ".",
@@ -109,6 +115,15 @@
     "random"
   ]
   revision = "f72d3c883f8ea180da8f085dd320804c41332ad1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid"
+  ]
+  revision = "d34b9ff171c21ad295489235aec8b6626023cd04"
 
 [[projects]]
   name = "github.com/mattes/migrate"
@@ -215,6 +230,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "10efbcbd561abbf98300dca290737f340b7c94b8d2a9f0933118647f7782fae5"
+  inputs-digest = "17c4ee02e6a61b0a4e16eec1950e310be9ec1eb8641bf80c1a3c5baad39af45b"
   solver-name = "gps-cdcl"
   solver-version = 1
