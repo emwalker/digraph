@@ -3,7 +3,13 @@ import React from 'react'
 import Helmet from 'react-helmet'
 import { example } from './styles.css'
 
-export default () => (
+type Props = {
+  viewer: {
+    name: string,
+  }
+}
+
+export default ({ viewer: { name } }: Props) => (
   <div>
     <Helmet
       title="Home page"
@@ -15,6 +21,7 @@ export default () => (
       ]}
     />
     <h1 className={example}>
+      Hello {name}<br />
       Hot Reloadable <br />
       Golang + React + Redux + Css-Modules
       <br />Isomorphic Starter Kit

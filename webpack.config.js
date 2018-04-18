@@ -36,6 +36,16 @@ var config  = {
   entry: {
     bundle: path.join(__dirname, 'client/index.js')
   },
+  externals: [
+    {
+      'isomorphic-fetch': {
+        root: 'isomorphic-fetch',
+        commonjs2: 'isomorphic-fetch',
+        commonjs: 'isomorphic-fetch',
+        amd: 'isomorphic-fetch'
+      }
+    }
+  ],
   output: {
     path: path.join(__dirname, 'server/data/static/build'),
     publicPath: '/static/build/',

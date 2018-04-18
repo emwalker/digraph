@@ -21,6 +21,8 @@ func handler(schema graphql.Schema) http.HandlerFunc {
 			RequestString: string(query),
 		})
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5001")
+		w.Header().Set("Access-Control-Allow-Headers", "content-type")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(result)
 	}

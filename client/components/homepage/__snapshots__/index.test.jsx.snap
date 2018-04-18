@@ -4,7 +4,13 @@ exports[`<Homepage /> renders 1`] = `
 ShallowWrapper {
   "length": 1,
   Symbol(enzyme.__root__): [Circular],
-  Symbol(enzyme.__unrendered__): <Unknown />,
+  Symbol(enzyme.__unrendered__): <Unknown
+    viewer={
+      Object {
+        "name": "Gnusto",
+      }
+    }
+  />,
   Symbol(enzyme.__renderer__): Object {
     "batchedUpdates": [Function],
     "getNode": [Function],
@@ -34,6 +40,9 @@ ShallowWrapper {
         <h1
           className="example"
         >
+          Hello 
+          Gnusto
+          <br />
           Hot Reloadable 
           <br />
           Golang + React + Redux + Css-Modules
@@ -70,6 +79,9 @@ ShallowWrapper {
         "nodeType": "host",
         "props": Object {
           "children": Array [
+            "Hello ",
+            "Gnusto",
+            <br />,
             "Hot Reloadable ",
             <br />,
             "Golang + React + Redux + Css-Modules",
@@ -80,6 +92,17 @@ ShallowWrapper {
         },
         "ref": null,
         "rendered": Array [
+          "Hello ",
+          "Gnusto",
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {},
+            "ref": null,
+            "rendered": null,
+            "type": "br",
+          },
           "Hot Reloadable ",
           Object {
             "instance": null,
@@ -139,6 +162,9 @@ ShallowWrapper {
           <h1
             className="example"
           >
+            Hello 
+            Gnusto
+            <br />
             Hot Reloadable 
             <br />
             Golang + React + Redux + Css-Modules
@@ -175,6 +201,9 @@ ShallowWrapper {
           "nodeType": "host",
           "props": Object {
             "children": Array [
+              "Hello ",
+              "Gnusto",
+              <br />,
               "Hot Reloadable ",
               <br />,
               "Golang + React + Redux + Css-Modules",
@@ -185,6 +214,17 @@ ShallowWrapper {
           },
           "ref": null,
           "rendered": Array [
+            "Hello ",
+            "Gnusto",
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {},
+              "ref": null,
+              "rendered": null,
+              "type": "br",
+            },
             "Hot Reloadable ",
             Object {
               "instance": null,

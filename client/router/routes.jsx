@@ -1,20 +1,25 @@
 import React from 'react'
+import { graphql } from 'react-relay'
 
 import Homepage from 'components/homepage'
 
+const query = graphql`
+query routesQuery {
+  viewer {
+    name
+  }
+}
+`
+
 const route = {
   path: '/',
-  async action() {
-    // const data = await api.fetchQuery(graphql`
-    //   viewer {
-    //     name
-    //   }
-    // `)
+  async action({ api }) {
+    const data = await api.fetchQuery(query)
 
     return {
       title: 'Home Page',
       component: (
-        <Homepage />
+        <Homepage viewer={data.viewer} />
       ),
     }
   },

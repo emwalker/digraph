@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "eslint": "eslint --ext .js --ext .jsx client",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "relay": "relay-compiler --src ./client --schema ./schema.graphql  --extensions js jsx"
   },
   "author": "olebedev",
   "license": "MIT",
@@ -39,7 +40,9 @@
     "react": "^15.6.2",
     "react-dom": "^15.5.4",
     "react-helmet": "^5.2.0",
+    "react-relay": "^1.5.0",
     "redux-logger": "^3.0.1",
+    "relay-runtime": "^1.5.0",
     "style-loader": "^0.16.1",
     "svgo-loader": "^1.2.1",
     "universal-router": "^6.0.0",
@@ -47,7 +50,6 @@
     "webpack": "^1.12.13",
     "webpack-dev-middleware": "^1.10.1",
     "webpack-hot-middleware": "^2.18.0",
-    "whatwg-fetch": "^2.0.3",
     "when": "^3.7.8"
   },
   "babel": {
@@ -56,6 +58,9 @@
       "react",
       "stage-0",
       "flow"
+    ],
+    "plugins": [
+      ["relay", {"schema": "./schema.graphql"}]
     ],
     "env": {
       "dev": {
@@ -143,6 +148,7 @@
     "babel-cli": "^6.26.0",
     "babel-jest": "^22.4.3",
     "babel-plugin-module-resolver": "^3.1.1",
+    "babel-plugin-relay": "^1.5.0",
     "babel-preset-flow": "^6.23.0",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-import-resolver-babel-module": "^4.0.0",
@@ -150,9 +156,11 @@
     "eslint-plugin-jest": "^21.15.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "flow-bin": "^0.69.0",
+    "graphql": "^0.13.2",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^22.4.3",
     "react-test-renderer": "^15.5.0",
+    "relay-compiler": "^1.5.0",
     "svgo": "^1.0.5"
   },
   "jest": {

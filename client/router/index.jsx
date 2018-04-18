@@ -1,3 +1,7 @@
+require('isomorphic-fetch')
+
+/* eslint import/first: 0 */
+
 import ReactDOM from 'react-dom'
 import { Promise } from 'when'
 import Router from 'universal-router'
@@ -5,12 +9,19 @@ import createHistory from 'history/createBrowserHistory'
 
 import toString from './toString'
 import routes from './routes'
+import Api from './Api'
 import '../css'
 
 const router = new Router(routes)
 
 function render(location) {
-  router.resolve(location).then((result) => {
+  const context = {
+    api: Api.create({
+      baseUrl: 'http://localhost:8080',
+    }),
+  }
+
+  router.resolve({ ...location, ...context }).then((result) => {
     ReactDOM.render(
       result.component,
       document.getElementById('app'),
@@ -22,8 +33,6 @@ function render(location) {
 export function run() {
   window.Promise = window.Promise || Promise
   window.self = window
-  // eslint-disable-next-line global-require
-  require('isomorphic-fetch')
 
   const history = createHistory()
   history.listen(render)

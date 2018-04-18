@@ -8,3 +8,5 @@
 
 .pid
 .DS_Store
+
+*__generated__*
