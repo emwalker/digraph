@@ -1,9 +1,9 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-import NotFound from './index'
+import Homepage from './index'
 
-describe('<NotFound />', () => {
-  const wrapper = shallow(<NotFound />)
+describe('<Homepage />', () => {
+  const wrapper = shallow(<Homepage />)
 
   it('renders', () => {
     expect(wrapper).toMatchSnapshot()

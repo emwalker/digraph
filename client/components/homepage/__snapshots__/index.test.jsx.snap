@@ -1,0 +1,233 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Homepage /> renders 1`] = `
+ShallowWrapper {
+  "length": 1,
+  Symbol(enzyme.__root__): [Circular],
+  Symbol(enzyme.__unrendered__): <Unknown />,
+  Symbol(enzyme.__renderer__): Object {
+    "batchedUpdates": [Function],
+    "getNode": [Function],
+    "render": [Function],
+    "simulateEvent": [Function],
+    "unmount": [Function],
+  },
+  Symbol(enzyme.__node__): Object {
+    "instance": null,
+    "key": undefined,
+    "nodeType": "host",
+    "props": Object {
+      "children": Array [
+        <HelmetWrapper
+          defer={true}
+          encodeSpecialCharacters={true}
+          meta={
+            Array [
+              Object {
+                "content": "Golang Isomorphic React/Hot Reloadable/Redux/Css-Modules Starter Kit",
+                "property": "og:title",
+              },
+            ]
+          }
+          title="Home page"
+        />,
+        <h1
+          className="example"
+        >
+          Hot Reloadable 
+          <br />
+          Golang + React + Redux + Css-Modules
+          <br />
+          Isomorphic Starter Kit
+        </h1>,
+        <br />,
+      ],
+    },
+    "ref": null,
+    "rendered": Array [
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "class",
+        "props": Object {
+          "defer": true,
+          "encodeSpecialCharacters": true,
+          "meta": Array [
+            Object {
+              "content": "Golang Isomorphic React/Hot Reloadable/Redux/Css-Modules Starter Kit",
+              "property": "og:title",
+            },
+          ],
+          "title": "Home page",
+        },
+        "ref": null,
+        "rendered": null,
+        "type": [Function],
+      },
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "host",
+        "props": Object {
+          "children": Array [
+            "Hot Reloadable ",
+            <br />,
+            "Golang + React + Redux + Css-Modules",
+            <br />,
+            "Isomorphic Starter Kit",
+          ],
+          "className": "example",
+        },
+        "ref": null,
+        "rendered": Array [
+          "Hot Reloadable ",
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {},
+            "ref": null,
+            "rendered": null,
+            "type": "br",
+          },
+          "Golang + React + Redux + Css-Modules",
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {},
+            "ref": null,
+            "rendered": null,
+            "type": "br",
+          },
+          "Isomorphic Starter Kit",
+        ],
+        "type": "h1",
+      },
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "host",
+        "props": Object {},
+        "ref": null,
+        "rendered": null,
+        "type": "br",
+      },
+    ],
+    "type": "div",
+  },
+  Symbol(enzyme.__nodes__): Array [
+    Object {
+      "instance": null,
+      "key": undefined,
+      "nodeType": "host",
+      "props": Object {
+        "children": Array [
+          <HelmetWrapper
+            defer={true}
+            encodeSpecialCharacters={true}
+            meta={
+              Array [
+                Object {
+                  "content": "Golang Isomorphic React/Hot Reloadable/Redux/Css-Modules Starter Kit",
+                  "property": "og:title",
+                },
+              ]
+            }
+            title="Home page"
+          />,
+          <h1
+            className="example"
+          >
+            Hot Reloadable 
+            <br />
+            Golang + React + Redux + Css-Modules
+            <br />
+            Isomorphic Starter Kit
+          </h1>,
+          <br />,
+        ],
+      },
+      "ref": null,
+      "rendered": Array [
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "class",
+          "props": Object {
+            "defer": true,
+            "encodeSpecialCharacters": true,
+            "meta": Array [
+              Object {
+                "content": "Golang Isomorphic React/Hot Reloadable/Redux/Css-Modules Starter Kit",
+                "property": "og:title",
+              },
+            ],
+            "title": "Home page",
+          },
+          "ref": null,
+          "rendered": null,
+          "type": [Function],
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": Array [
+              "Hot Reloadable ",
+              <br />,
+              "Golang + React + Redux + Css-Modules",
+              <br />,
+              "Isomorphic Starter Kit",
+            ],
+            "className": "example",
+          },
+          "ref": null,
+          "rendered": Array [
+            "Hot Reloadable ",
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {},
+              "ref": null,
+              "rendered": null,
+              "type": "br",
+            },
+            "Golang + React + Redux + Css-Modules",
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {},
+              "ref": null,
+              "rendered": null,
+              "type": "br",
+            },
+            "Isomorphic Starter Kit",
+          ],
+          "type": "h1",
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {},
+          "ref": null,
+          "rendered": null,
+          "type": "br",
+        },
+      ],
+      "type": "div",
+    },
+  ],
+  Symbol(enzyme.__options__): Object {
+    "adapter": ReactFifteenAdapter {
+      "options": Object {
+        "supportPrevContextArgumentOfComponentDidUpdate": true,
+      },
+    },
+  },
+}
+`;

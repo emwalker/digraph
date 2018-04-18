@@ -1,3 +1,5 @@
+require('babel-polyfill')
+
 const router = require('./router')
 
 // export main function for server side rendering

@@ -10,5 +10,3 @@ require('./global')
  */
 require('components/app/styles')
 require('components/homepage/styles')
-require('components/usage/styles')
-require('components/not-found/styles')

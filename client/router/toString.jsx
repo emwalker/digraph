@@ -1,26 +1,17 @@
-import React from 'react'
 import { renderToString } from 'react-dom/server'
-import { match, RouterContext } from 'react-router'
-import Helmet from 'react-helmet'
-import createRoutes from './routes'
+import Router from 'universal-router'
 
-/* eslint consistent-return: 0 */
+import routes from './routes'
+
 /* eslint no-param-reassign: 0 */
+/* eslint consistent-return: 0 */
 
-const rules = options => ({
-  routes: createRoutes({ first: { time: false } }),
-  location: options.url,
-})
+const router = new Router(routes)
 
-/**
- * Handle HTTP request at Golang server
- *
- * @param   {Object}   options  request options
- * @param   {Function} cbk      response callback
- */
-export default function (options, cbk) {
-  cbk = global[cbk]
-  const result = {
+export default function (options, callback) {
+  callback = global[callback]
+
+  const payload = {
     uuid: options.uuid,
     app: null,
     title: null,
@@ -31,28 +22,14 @@ export default function (options, cbk) {
   }
 
   try {
-    match(rules(options), (error, redirectLocation, renderProps) => {
-      try {
-        if (error) {
-          result.error = error
-        } else if (redirectLocation) {
-          result.redirect = redirectLocation.pathname + redirectLocation.search
-        } else {
-          result.app = renderToString(
-            <RouterContext {...renderProps} />,
-          )
-          const { title, meta } = Helmet.rewind()
-          result.title = title.toString()
-          result.meta = meta.toString()
-          result.initial = JSON.stringify({})
-        }
-      } catch (e) {
-        result.error = e
-      }
-      return cbk(result)
+    router.resolve({ path: options.url }).then((result) => {
+      payload.app = renderToString(result.component)
+      payload.title = result.title
+      payload.initial = JSON.stringify({})
+      return callback(payload)
     })
   } catch (e) {
-    result.error = e
-    return cbk(result)
+    payload.error = e
+    return callback(payload)
   }
 }
