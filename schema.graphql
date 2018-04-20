@@ -29,14 +29,21 @@ type TopicConnection {
 
 type Query {
   viewer: User
-  user(id: ID!): User
-  topics: [Topic!]!
+  organization(
+    id: ID,
+    databaseId: String,
+  ): Organization
 }
 
 type Organization {
   id: ID
   name: String!
-  topics: TopicConnection
+  topics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
 }
 
 type Mutation {

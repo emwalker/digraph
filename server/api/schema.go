@@ -164,7 +164,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 				Args: graphql.FieldConfigArgument{
 					"databaseId": &graphql.ArgumentConfig{
 						Description: "Organization ID",
-						Type:        graphql.NewNonNull(graphql.ID),
+						Type:        graphql.NewNonNull(graphql.String),
 					},
 				},
 
@@ -179,7 +179,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 				Args: graphql.FieldConfigArgument{
 					"databaseId": &graphql.ArgumentConfig{
 						Description: "User ID",
-						Type:        graphql.NewNonNull(graphql.ID),
+						Type:        graphql.NewNonNull(graphql.String),
 					},
 				},
 
@@ -194,7 +194,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 				Args: graphql.FieldConfigArgument{
 					"databaseId": &graphql.ArgumentConfig{
 						Description: "Topic ID",
-						Type:        graphql.NewNonNull(graphql.ID),
+						Type:        graphql.NewNonNull(graphql.String),
 					},
 				},
 

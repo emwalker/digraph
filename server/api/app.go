@@ -24,7 +24,8 @@ type App struct {
 }
 
 type GraphqlRequest struct {
-	Query string `json:"query"`
+	Query     string                 `json:"query"`
+	Variables map[string]interface{} `json:"variables"`
 }
 
 func (app *App) HandleGraphqlQuery(c echo.Context) (err error) {
@@ -37,8 +38,9 @@ func (app *App) HandleGraphqlQuery(c echo.Context) (err error) {
 
 	log.Printf(`querying GraphQL: "%s"`, req.Query)
 	result := graphql.Do(graphql.Params{
-		Schema:        *app.Schema,
-		RequestString: req.Query,
+		Schema:         *app.Schema,
+		RequestString:  req.Query,
+		VariableValues: req.Variables,
 	})
 
 	log.Println("query finished, sending response")

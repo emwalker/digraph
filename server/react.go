@@ -195,8 +195,8 @@ func newJSVM(filePath string, proxy http.Handler) *JSVM {
 		_vm.SetRandSource(goja.RandSource(rand.New(rand.NewSource(seed)).Float64))
 
 		_, err := _vm.RunScript("bundle.js", string(bundle))
-		if err != nil {
-			panic(err)
+		if ex, ok := err.(*goja.Exception); ok {
+			panic(ex.String())
 		}
 
 		if fn, ok := goja.AssertFunction(_vm.Get("main")); ok {

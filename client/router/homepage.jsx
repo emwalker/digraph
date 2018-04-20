@@ -4,7 +4,7 @@ import { graphql } from 'react-relay'
 import Homepage from 'components/homepage'
 
 const query = graphql`
-query routesQuery {
+query homepageQuery {
   viewer {
     name
   }
@@ -25,4 +25,4 @@ const route = {
   },
 }
 
-export default [route]
+export default route
