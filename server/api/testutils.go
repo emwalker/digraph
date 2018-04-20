@@ -26,11 +26,11 @@ var (
 )
 
 type TestConnection struct {
-	credentials *Credentials
-	url         string
+	url string
 }
 
-func (conn *TestConnection) Init() {
+func (conn *TestConnection) Init() error {
+	return nil
 }
 
 func getOrError(databaseId string, data map[string]interface{}, collection string) (interface{}, error) {

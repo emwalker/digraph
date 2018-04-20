@@ -35,23 +35,6 @@ var UserType *graphql.Object
 var QueryType *graphql.Object
 var TopicType *graphql.Object
 
-var Schema graphql.Schema
-
-func findById(id string, info graphql.ResolveInfo, ctx context.Context) (interface{}, error) {
-	resolvedID := relay.FromGlobalID(id)
-
-	switch resolvedID.Type {
-	case "Organization":
-		return connection.GetOrganization(resolvedID.ID)
-	case "User":
-		return connection.GetUser(resolvedID.ID)
-	case "Topic":
-		return connection.GetTopic(resolvedID.ID)
-	default:
-		return nil, errors.New(fmt.Sprintf("unknown node type: %s", resolvedID.Type))
-	}
-}
-
 func resolveType(p graphql.ResolveTypeParams) *graphql.Object {
 	switch p.Value.(type) {
 	case *Organization:
@@ -63,9 +46,26 @@ func resolveType(p graphql.ResolveTypeParams) *graphql.Object {
 	}
 }
 
-func init() {
+func fetcher(conn Connection) relay.IDFetcherFn {
+	return func(id string, info graphql.ResolveInfo, ctx context.Context) (interface{}, error) {
+		resolvedID := relay.FromGlobalID(id)
+
+		switch resolvedID.Type {
+		case "Organization":
+			return conn.GetOrganization(resolvedID.ID)
+		case "User":
+			return conn.GetUser(resolvedID.ID)
+		case "Topic":
+			return conn.GetTopic(resolvedID.ID)
+		default:
+			return nil, errors.New(fmt.Sprintf("unknown node type: %s", resolvedID.Type))
+		}
+	}
+}
+
+func newSchema(conn Connection) (*graphql.Schema, error) {
 	nodeDefinitions = relay.NewNodeDefinitions(relay.NodeDefinitionsConfig{
-		IDFetcher:   findById,
+		IDFetcher:   fetcher(conn),
 		TypeResolve: resolveType,
 	})
 
@@ -133,7 +133,7 @@ func init() {
 					args := relay.NewConnectionArguments(p.Args)
 					dest := []interface{}{}
 					if organization, ok := p.Source.(*Organization); ok {
-						err := connection.SelectOrganizationTopics(&dest, organization)
+						err := conn.SelectOrganizationTopics(&dest, organization)
 						if err != nil {
 							return nil, err
 						}
@@ -154,7 +154,7 @@ func init() {
 				Type: UserType,
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return connection.Viewer()
+					return conn.Viewer()
 				},
 			},
 
@@ -169,7 +169,7 @@ func init() {
 				},
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return connection.GetOrganization(p.Args["databaseId"].(string))
+					return conn.GetOrganization(p.Args["databaseId"].(string))
 				},
 			},
 
@@ -184,7 +184,7 @@ func init() {
 				},
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return connection.GetUser(p.Args["databaseId"].(string))
+					return conn.GetUser(p.Args["databaseId"].(string))
 				},
 			},
 
@@ -199,7 +199,7 @@ func init() {
 				},
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return connection.GetTopic(p.Args["databaseId"].(string))
+					return conn.GetTopic(p.Args["databaseId"].(string))
 				},
 			},
 
@@ -207,18 +207,9 @@ func init() {
 		},
 	})
 
-	// mutationType := graphql.NewObject(graphql.ObjectConfig{
-	// 	Name: "Mutation",
-	// 	Fields: graphql.Fields{
-	// 	},
-	// })
-
-	var err error
-	Schema, err = graphql.NewSchema(graphql.SchemaConfig{
+	schema, err := graphql.NewSchema(graphql.SchemaConfig{
 		Query: QueryType,
 	})
 
-	if err != nil {
-		panic(err)
-	}
+	return &schema, err
 }

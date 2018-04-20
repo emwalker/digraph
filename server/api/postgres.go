@@ -3,25 +3,24 @@ package api
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 type PostgresConnection struct {
-	credentials *Credentials
-	db          *sqlx.DB
-	url         string
+	db  *sqlx.DB
+	url string
 }
 
-func (conn *PostgresConnection) Init() {
+func (conn *PostgresConnection) Init() error {
 	var err error
 	db, err := sqlx.Connect("postgres", conn.url)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	conn.db = db
+	return nil
 }
 
 func (conn *PostgresConnection) getOrError(

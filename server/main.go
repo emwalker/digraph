@@ -1,48 +1,24 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"os"
-
-	"github.com/codegangsta/cli"
 	"github.com/emwalker/digraffe/server/api"
-	"github.com/gorilla/handlers"
 )
-
-var stdoutLogger = handlers.LoggingHandler(os.Stdout, http.DefaultServeMux)
 
 func main() {
 	conn := api.NewConnection(
-		&api.Credentials{BearerToken: "1234"},
 		"postgres",
 		"postgres://postgres@localhost:5432/digraffe_dev?sslmode=disable",
 	)
-	api.Handle("/graphql", conn)
+
+	apiApp, err := api.New(conn)
+	if err != nil {
+		panic(err)
+	}
 
 	go func() {
-		log.Fatal(http.ListenAndServe("0.0.0.0:8080", stdoutLogger))
+		apiApp.Run()
 	}()
 
-	Run(os.Args)
-}
-
-func Run(args []string) {
-	app := cli.NewApp()
-	app.Name = "app"
-	app.Usage = "React server application"
-
-	app.Commands = []cli.Command{
-		{
-			Name:   "run",
-			Usage:  "Runs server",
-			Action: RunServer,
-		},
-	}
-	app.Run(args)
-}
-
-func RunServer(c *cli.Context) {
-	app := NewApp(AppOptions{})
-	app.Run()
+	webApp := NewApp(AppOptions{})
+	webApp.Run()
 }

@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/codegangsta/cli"
-  packages = ["."]
-  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
-  version = "v1.20.0"
-
-[[projects]]
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
   revision = "2268707a8f0843315e2004ee4f1d021dc08baedf"
@@ -52,12 +46,6 @@
   packages = ["."]
   revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
   version = "v1.0"
-
-[[projects]]
-  name = "github.com/gorilla/handlers"
-  packages = ["."]
-  revision = "90663712d74cb411cbef281bc1e08c19d1a76145"
-  version = "v1.3.0"
 
 [[projects]]
   name = "github.com/graphql-go/graphql"
@@ -230,6 +218,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "17c4ee02e6a61b0a4e16eec1950e310be9ec1eb8641bf80c1a3c5baad39af45b"
+  inputs-digest = "a3437e74f6e34ab28ce064ddd3ac77470637d2fa95c2bb2e2ec1e394d145bb28"
   solver-name = "gps-cdcl"
   solver-version = 1

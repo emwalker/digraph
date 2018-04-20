@@ -33,16 +33,15 @@ function create({ baseUrl, headers = {} }) {
   const environment = new Environment({
     handlerProvider: null,
     network: Network.create(
-      /* , variables, cacheConfig, uploadables */
-      operation => (
+      /* cacheConfig, uploadables */
+      (operation, variables) => (
         fetch(`${baseUrl}/graphql`, {
           ...defaults,
           method: 'POST',
-          // body: JSON.stringify({
-          //   query: operation.text,
-          //   variables,
-          // }),
-          body: operation.text,
+          body: JSON.stringify({
+            query: operation.text,
+            variables,
+          }),
         }).then(response => response.json())
       ),
     ),

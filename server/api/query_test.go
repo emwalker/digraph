@@ -6,14 +6,11 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
+var app *App
+
 func init() {
-	Init(
-		NewConnection(
-			&Credentials{BearerToken: "1234"},
-			"test",
-			"some://url",
-		),
-	)
+	conn := NewConnection("test", "some://url")
+	app, _ = New(conn)
 
 	Tests = []T{
 		{
@@ -99,7 +96,7 @@ func init() {
 func TestQuery(t *testing.T) {
 	for _, test := range Tests {
 		params := graphql.Params{
-			Schema:        Schema,
+			Schema:        *app.Schema,
 			RequestString: test.Query,
 		}
 		testGraphql(test, params, t)

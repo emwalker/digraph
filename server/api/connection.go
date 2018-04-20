@@ -23,18 +23,18 @@ type Connection interface {
 	GetTopic(string) (interface{}, error)
 	GetUser(string) (interface{}, error)
 	Viewer() (interface{}, error)
-	Init()
+	Init() error
 	InsertUser(*User) error
 	RemoveUserByID(string) error
 	SelectOrganizationTopics(*[]interface{}, *Organization) error
 }
 
-func NewConnection(credentials *Credentials, driverName string, url string) Connection {
+func NewConnection(driverName string, url string) Connection {
 	switch driverName {
 	case "postgres":
-		return &PostgresConnection{credentials: credentials, url: url}
+		return &PostgresConnection{url: url}
 	case "test":
-		return &TestConnection{credentials: credentials, url: url}
+		return &TestConnection{url: url}
 	default:
 		log.Fatal(fmt.Sprintf("do not recognize driver: %s", driverName))
 	}
