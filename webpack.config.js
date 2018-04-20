@@ -16,6 +16,10 @@ var plugins = [
   new webpack.NoErrorsPlugin(),
   new webpack.optimize.DedupePlugin(),
   new ExtractTextPlugin('bundle.css'),
+  new webpack.ProvidePlugin({
+    $: "jquery",
+    jQuery: "jquery"
+  }),
 ]
 
 if (process.env.NODE_ENV === 'production') {

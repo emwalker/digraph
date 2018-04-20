@@ -33,7 +33,6 @@ function create({ baseUrl, headers = {} }) {
   const environment = new Environment({
     handlerProvider: null,
     network: Network.create(
-      /* cacheConfig, uploadables */
       (operation, variables) => (
         fetch(`${baseUrl}/graphql`, {
           ...defaults,

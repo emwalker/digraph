@@ -1,5 +1,4 @@
 /* eslint import/no-unresolved: 0 */
-require('normalize.css')
 require('./global')
 
 /**

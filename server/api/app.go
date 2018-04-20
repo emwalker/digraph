@@ -36,16 +36,15 @@ func (app *App) HandleGraphqlQuery(c echo.Context) (err error) {
 	}
 
 	log.Printf(`querying GraphQL: "%s"`, req.Query)
-
 	result := graphql.Do(graphql.Params{
 		Schema:        *app.Schema,
 		RequestString: req.Query,
 	})
-	log.Println("query finished, sending response")
 
-	response := c.Response()
-	response.Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-	response.WriteHeader(http.StatusOK)
+	log.Println("query finished, sending response")
+	r := c.Response()
+	r.Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+	r.WriteHeader(http.StatusOK)
 	return json.NewEncoder(c.Response()).Encode(result)
 }
 

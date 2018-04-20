@@ -30,26 +30,50 @@ ShallowWrapper {
           meta={
             Array [
               Object {
-                "content": "Golang Isomorphic React/Hot Reloadable/Redux/Css-Modules Starter Kit",
+                "content": "Digraffe link tracker",
                 "property": "og:title",
               },
             ]
           }
-          title="Home page"
+          title="Digraffe link tracker"
         />,
-        <h1
-          className="example"
+        <nav
+          className="navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar"
         >
-          Hello 
-          Gnusto
-          <br />
-          Hot Reloadable 
-          <br />
-          Golang + React + Redux + Css-Modules
-          <br />
-          Isomorphic Starter Kit
-        </h1>,
-        <br />,
+          <a
+            className="navbar-brand mb-0 h1"
+            href="/"
+          >
+            Digraffe
+          </a>
+          <ul
+            className="navbar-nav mr-auto"
+          >
+            <li
+              className="nav-item"
+            >
+              <a
+                className="nav-link"
+                href="/topics"
+              >
+                Topics
+              </a>
+            </li>
+          </ul>
+        </nav>,
+        <div
+          className="container"
+        >
+          <h1>
+            Hello 
+            Gnusto
+          </h1>
+          <p
+            className="lead"
+          >
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales mollis ex eu ultricies. Donec vestibulum augue in erat tristique, eu viverra orci mattis. Praesent ac euismod ligula. Nunc commodo nec justo nec lacinia. Phasellus metus dolor, varius sit amet turpis et, semper elementum massa. Nam venenatis tempor ante id aliquet. Curabitur cursus est a fringilla semper. Aliquam eget urna erat. Nullam eget vehicula neque.
+          </p>
+        </div>,
       ],
     },
     "ref": null,
@@ -63,11 +87,11 @@ ShallowWrapper {
           "encodeSpecialCharacters": true,
           "meta": Array [
             Object {
-              "content": "Golang Isomorphic React/Hot Reloadable/Redux/Css-Modules Starter Kit",
+              "content": "Digraffe link tracker",
               "property": "og:title",
             },
           ],
-          "title": "Home page",
+          "title": "Digraffe link tracker",
         },
         "ref": null,
         "rendered": null,
@@ -79,62 +103,147 @@ ShallowWrapper {
         "nodeType": "host",
         "props": Object {
           "children": Array [
-            "Hello ",
-            "Gnusto",
-            <br />,
-            "Hot Reloadable ",
-            <br />,
-            "Golang + React + Redux + Css-Modules",
-            <br />,
-            "Isomorphic Starter Kit",
+            <a
+              className="navbar-brand mb-0 h1"
+              href="/"
+            >
+              Digraffe
+            </a>,
+            <ul
+              className="navbar-nav mr-auto"
+            >
+              <li
+                className="nav-item"
+              >
+                <a
+                  className="nav-link"
+                  href="/topics"
+                >
+                  Topics
+                </a>
+              </li>
+            </ul>,
           ],
-          "className": "example",
+          "className": "navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar",
         },
         "ref": null,
         "rendered": Array [
-          "Hello ",
-          "Gnusto",
           Object {
             "instance": null,
             "key": undefined,
             "nodeType": "host",
-            "props": Object {},
+            "props": Object {
+              "children": "Digraffe",
+              "className": "navbar-brand mb-0 h1",
+              "href": "/",
+            },
             "ref": null,
-            "rendered": null,
-            "type": "br",
+            "rendered": "Digraffe",
+            "type": "a",
           },
-          "Hot Reloadable ",
           Object {
             "instance": null,
             "key": undefined,
             "nodeType": "host",
-            "props": Object {},
+            "props": Object {
+              "children": <li
+                className="nav-item"
+              >
+                <a
+                  className="nav-link"
+                  href="/topics"
+                >
+                  Topics
+                </a>
+              </li>,
+              "className": "navbar-nav mr-auto",
+            },
             "ref": null,
-            "rendered": null,
-            "type": "br",
+            "rendered": Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": <a
+                  className="nav-link"
+                  href="/topics"
+                >
+                  Topics
+                </a>,
+                "className": "nav-item",
+              },
+              "ref": null,
+              "rendered": Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": "Topics",
+                  "className": "nav-link",
+                  "href": "/topics",
+                },
+                "ref": null,
+                "rendered": "Topics",
+                "type": "a",
+              },
+              "type": "li",
+            },
+            "type": "ul",
           },
-          "Golang + React + Redux + Css-Modules",
-          Object {
-            "instance": null,
-            "key": undefined,
-            "nodeType": "host",
-            "props": Object {},
-            "ref": null,
-            "rendered": null,
-            "type": "br",
-          },
-          "Isomorphic Starter Kit",
         ],
-        "type": "h1",
+        "type": "nav",
       },
       Object {
         "instance": null,
         "key": undefined,
         "nodeType": "host",
-        "props": Object {},
+        "props": Object {
+          "children": Array [
+            <h1>
+              Hello 
+              Gnusto
+            </h1>,
+            <p
+              className="lead"
+            >
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales mollis ex eu ultricies. Donec vestibulum augue in erat tristique, eu viverra orci mattis. Praesent ac euismod ligula. Nunc commodo nec justo nec lacinia. Phasellus metus dolor, varius sit amet turpis et, semper elementum massa. Nam venenatis tempor ante id aliquet. Curabitur cursus est a fringilla semper. Aliquam eget urna erat. Nullam eget vehicula neque.
+            </p>,
+          ],
+          "className": "container",
+        },
         "ref": null,
-        "rendered": null,
-        "type": "br",
+        "rendered": Array [
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": Array [
+                "Hello ",
+                "Gnusto",
+              ],
+            },
+            "ref": null,
+            "rendered": Array [
+              "Hello ",
+              "Gnusto",
+            ],
+            "type": "h1",
+          },
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales mollis ex eu ultricies. Donec vestibulum augue in erat tristique, eu viverra orci mattis. Praesent ac euismod ligula. Nunc commodo nec justo nec lacinia. Phasellus metus dolor, varius sit amet turpis et, semper elementum massa. Nam venenatis tempor ante id aliquet. Curabitur cursus est a fringilla semper. Aliquam eget urna erat. Nullam eget vehicula neque.",
+              "className": "lead",
+            },
+            "ref": null,
+            "rendered": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales mollis ex eu ultricies. Donec vestibulum augue in erat tristique, eu viverra orci mattis. Praesent ac euismod ligula. Nunc commodo nec justo nec lacinia. Phasellus metus dolor, varius sit amet turpis et, semper elementum massa. Nam venenatis tempor ante id aliquet. Curabitur cursus est a fringilla semper. Aliquam eget urna erat. Nullam eget vehicula neque.",
+            "type": "p",
+          },
+        ],
+        "type": "div",
       },
     ],
     "type": "div",
@@ -152,26 +261,50 @@ ShallowWrapper {
             meta={
               Array [
                 Object {
-                  "content": "Golang Isomorphic React/Hot Reloadable/Redux/Css-Modules Starter Kit",
+                  "content": "Digraffe link tracker",
                   "property": "og:title",
                 },
               ]
             }
-            title="Home page"
+            title="Digraffe link tracker"
           />,
-          <h1
-            className="example"
+          <nav
+            className="navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar"
           >
-            Hello 
-            Gnusto
-            <br />
-            Hot Reloadable 
-            <br />
-            Golang + React + Redux + Css-Modules
-            <br />
-            Isomorphic Starter Kit
-          </h1>,
-          <br />,
+            <a
+              className="navbar-brand mb-0 h1"
+              href="/"
+            >
+              Digraffe
+            </a>
+            <ul
+              className="navbar-nav mr-auto"
+            >
+              <li
+                className="nav-item"
+              >
+                <a
+                  className="nav-link"
+                  href="/topics"
+                >
+                  Topics
+                </a>
+              </li>
+            </ul>
+          </nav>,
+          <div
+            className="container"
+          >
+            <h1>
+              Hello 
+              Gnusto
+            </h1>
+            <p
+              className="lead"
+            >
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales mollis ex eu ultricies. Donec vestibulum augue in erat tristique, eu viverra orci mattis. Praesent ac euismod ligula. Nunc commodo nec justo nec lacinia. Phasellus metus dolor, varius sit amet turpis et, semper elementum massa. Nam venenatis tempor ante id aliquet. Curabitur cursus est a fringilla semper. Aliquam eget urna erat. Nullam eget vehicula neque.
+            </p>
+          </div>,
         ],
       },
       "ref": null,
@@ -185,11 +318,11 @@ ShallowWrapper {
             "encodeSpecialCharacters": true,
             "meta": Array [
               Object {
-                "content": "Golang Isomorphic React/Hot Reloadable/Redux/Css-Modules Starter Kit",
+                "content": "Digraffe link tracker",
                 "property": "og:title",
               },
             ],
-            "title": "Home page",
+            "title": "Digraffe link tracker",
           },
           "ref": null,
           "rendered": null,
@@ -201,62 +334,147 @@ ShallowWrapper {
           "nodeType": "host",
           "props": Object {
             "children": Array [
-              "Hello ",
-              "Gnusto",
-              <br />,
-              "Hot Reloadable ",
-              <br />,
-              "Golang + React + Redux + Css-Modules",
-              <br />,
-              "Isomorphic Starter Kit",
+              <a
+                className="navbar-brand mb-0 h1"
+                href="/"
+              >
+                Digraffe
+              </a>,
+              <ul
+                className="navbar-nav mr-auto"
+              >
+                <li
+                  className="nav-item"
+                >
+                  <a
+                    className="nav-link"
+                    href="/topics"
+                  >
+                    Topics
+                  </a>
+                </li>
+              </ul>,
             ],
-            "className": "example",
+            "className": "navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar",
           },
           "ref": null,
           "rendered": Array [
-            "Hello ",
-            "Gnusto",
             Object {
               "instance": null,
               "key": undefined,
               "nodeType": "host",
-              "props": Object {},
+              "props": Object {
+                "children": "Digraffe",
+                "className": "navbar-brand mb-0 h1",
+                "href": "/",
+              },
               "ref": null,
-              "rendered": null,
-              "type": "br",
+              "rendered": "Digraffe",
+              "type": "a",
             },
-            "Hot Reloadable ",
             Object {
               "instance": null,
               "key": undefined,
               "nodeType": "host",
-              "props": Object {},
+              "props": Object {
+                "children": <li
+                  className="nav-item"
+                >
+                  <a
+                    className="nav-link"
+                    href="/topics"
+                  >
+                    Topics
+                  </a>
+                </li>,
+                "className": "navbar-nav mr-auto",
+              },
               "ref": null,
-              "rendered": null,
-              "type": "br",
+              "rendered": Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": <a
+                    className="nav-link"
+                    href="/topics"
+                  >
+                    Topics
+                  </a>,
+                  "className": "nav-item",
+                },
+                "ref": null,
+                "rendered": Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "host",
+                  "props": Object {
+                    "children": "Topics",
+                    "className": "nav-link",
+                    "href": "/topics",
+                  },
+                  "ref": null,
+                  "rendered": "Topics",
+                  "type": "a",
+                },
+                "type": "li",
+              },
+              "type": "ul",
             },
-            "Golang + React + Redux + Css-Modules",
-            Object {
-              "instance": null,
-              "key": undefined,
-              "nodeType": "host",
-              "props": Object {},
-              "ref": null,
-              "rendered": null,
-              "type": "br",
-            },
-            "Isomorphic Starter Kit",
           ],
-          "type": "h1",
+          "type": "nav",
         },
         Object {
           "instance": null,
           "key": undefined,
           "nodeType": "host",
-          "props": Object {},
+          "props": Object {
+            "children": Array [
+              <h1>
+                Hello 
+                Gnusto
+              </h1>,
+              <p
+                className="lead"
+              >
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales mollis ex eu ultricies. Donec vestibulum augue in erat tristique, eu viverra orci mattis. Praesent ac euismod ligula. Nunc commodo nec justo nec lacinia. Phasellus metus dolor, varius sit amet turpis et, semper elementum massa. Nam venenatis tempor ante id aliquet. Curabitur cursus est a fringilla semper. Aliquam eget urna erat. Nullam eget vehicula neque.
+              </p>,
+            ],
+            "className": "container",
+          },
           "ref": null,
-          "rendered": null,
-          "type": "br",
+          "rendered": Array [
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": Array [
+                  "Hello ",
+                  "Gnusto",
+                ],
+              },
+              "ref": null,
+              "rendered": Array [
+                "Hello ",
+                "Gnusto",
+              ],
+              "type": "h1",
+            },
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales mollis ex eu ultricies. Donec vestibulum augue in erat tristique, eu viverra orci mattis. Praesent ac euismod ligula. Nunc commodo nec justo nec lacinia. Phasellus metus dolor, varius sit amet turpis et, semper elementum massa. Nam venenatis tempor ante id aliquet. Curabitur cursus est a fringilla semper. Aliquam eget urna erat. Nullam eget vehicula neque.",
+                "className": "lead",
+              },
+              "ref": null,
+              "rendered": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales mollis ex eu ultricies. Donec vestibulum augue in erat tristique, eu viverra orci mattis. Praesent ac euismod ligula. Nunc commodo nec justo nec lacinia. Phasellus metus dolor, varius sit amet turpis et, semper elementum massa. Nam venenatis tempor ante id aliquet. Curabitur cursus est a fringilla semper. Aliquam eget urna erat. Nullam eget vehicula neque.",
+              "type": "p",
+            },
+          ],
+          "type": "div",
         },
       ],
       "type": "div",

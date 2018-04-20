@@ -60,7 +60,12 @@
       "flow"
     ],
     "plugins": [
-      ["relay", {"schema": "./schema.graphql"}]
+      [
+        "relay",
+        {
+          "schema": "./schema.graphql"
+        }
+      ]
     ],
     "env": {
       "dev": {
