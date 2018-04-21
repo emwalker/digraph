@@ -24,8 +24,6 @@ type Connection interface {
 	GetUser(string) (interface{}, error)
 	Viewer() (interface{}, error)
 	Init() error
-	InsertUser(*User) error
-	RemoveUserByID(string) error
 	SelectOrganizationTopics(*[]interface{}, *Organization) error
 }
 

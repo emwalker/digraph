@@ -7,14 +7,17 @@ type PageInfo {
 
 type User {
   id: ID
+  resourcePath: String!
   name: String!
   email: String!
 }
 
 type Topic {
   id: ID
+  name: String!
+  description: String
+  resourcePath: String!
   organization: Organization!
-  description: String!
 }
 
 type TopicEdge {
@@ -27,16 +30,9 @@ type TopicConnection {
   pageInfo: PageInfo!
 }
 
-type Query {
-  viewer: User
-  organization(
-    id: ID,
-    databaseId: String,
-  ): Organization
-}
-
 type Organization {
   id: ID
+  resourcePath: String!
   name: String!
   topics(
     first: Int,
@@ -44,6 +40,11 @@ type Organization {
     last: Int,
     before: String
   ): TopicConnection
+}
+
+type Query {
+  viewer: User
+  organization(id: ID!): Organization
 }
 
 type Mutation {

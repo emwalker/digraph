@@ -34,13 +34,13 @@ func init() {
 		{
 			Query: `
 				query {
-					organization(databaseId: "10") {
+					organization(id: "T3JnYW5pemF0aW9uOjEw") {
 						name
 
 						topics(first: 100) {
 							edges {
 								node {
-									description
+									name
 								}
 							}
 						}
@@ -55,17 +55,17 @@ func init() {
 							"edges": []interface{}{
 								map[string]interface{}{
 									"node": map[string]interface{}{
-										"description": "Biology",
+										"name": "Biology",
 									},
 								},
 								map[string]interface{}{
 									"node": map[string]interface{}{
-										"description": "Chemistry",
+										"name": "Chemistry",
 									},
 								},
 								map[string]interface{}{
 									"node": map[string]interface{}{
-										"description": "Science",
+										"name": "Science",
 									},
 								},
 							},
@@ -77,15 +77,19 @@ func init() {
 		{
 			Query: `
 				query {
-					topic(databaseId: "10") {
+					topic(id: "VG9waWM6MTA=") {
+						name
 						description
+						resourcePath
 					}
 				}
 			`,
 			Expected: &graphql.Result{
 				Data: map[string]interface{}{
 					"topic": map[string]interface{}{
-						"description": Science.Description,
+						"name":         Science.Name,
+						"description":  *Science.Description,
+						"resourcePath": Science.ResourcePath,
 					},
 				},
 			},

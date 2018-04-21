@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/graphql-go/relay"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -23,8 +24,8 @@ func (conn *PostgresConnection) Init() error {
 	return nil
 }
 
-func (conn *PostgresConnection) getOrError(
-	object interface{},
+func (conn *PostgresConnection) GetByKey(
+	object Resource,
 	collection string,
 	sql string,
 	key string,
@@ -33,62 +34,61 @@ func (conn *PostgresConnection) getOrError(
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("%s not found: %s", collection, key))
 	}
+	object.Init()
 	return object, nil
 }
 
-func (conn *PostgresConnection) GetUser(databaseId string) (interface{}, error) {
-	return conn.getOrError(
+func (conn *PostgresConnection) Get(
+	object Resource,
+	collection string,
+	sql string,
+	id string,
+) (interface{}, error) {
+	databaseId := relay.FromGlobalID(id)
+	return conn.GetByKey(object, collection, sql, databaseId.ID)
+}
+
+func (conn *PostgresConnection) GetUser(id string) (interface{}, error) {
+	return conn.Get(
 		&User{},
-		"user",
+		"User",
 		"select *, id as databaseId from users where id = $1",
-		databaseId,
+		id,
 	)
 }
 
-func (conn *PostgresConnection) GetOrganization(databaseId string) (interface{}, error) {
-	return conn.getOrError(
+func (conn *PostgresConnection) GetOrganization(id string) (interface{}, error) {
+	return conn.Get(
 		&Organization{},
-		"organization",
+		"Organization",
 		"select *, id as databaseId from organizations where id = $1",
-		databaseId,
+		id,
 	)
 }
 
-func (conn *PostgresConnection) GetTopic(databaseId string) (interface{}, error) {
-	return conn.getOrError(
+func (conn *PostgresConnection) GetTopic(id string) (interface{}, error) {
+	return conn.Get(
 		&Topic{},
-		"topic",
+		"Topic",
 		"select *, id as databaseId from topics where id = $1",
-		databaseId,
+		id,
 	)
 }
 
 func (conn *PostgresConnection) Viewer() (interface{}, error) {
-	return conn.getOrError(
+	object, err := conn.GetByKey(
 		&User{},
-		"user",
+		"User",
 		"select *, id as databaseId from users where email like $1",
 		Gnusto.Email,
 	)
-}
 
-func (conn *PostgresConnection) InsertUser(user *User) error {
-	var databaseId string
-	err := conn.db.QueryRow(`
-    INSERT INTO users(email)
-    VALUES ($1)
-    RETURNING id
-  `, user.Email).Scan(&databaseId)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	user.DatabaseId = databaseId
-	return nil
-}
 
-func (conn *PostgresConnection) RemoveUserByID(databaseId string) error {
-	_, err := conn.db.Exec("DELETE FROM users WHERE id = $1", databaseId)
-	return err
+	object.(Resource).Init()
+	return object, nil
 }
 
 func (conn *PostgresConnection) SelectOrganizationTopics(
@@ -99,7 +99,7 @@ func (conn *PostgresConnection) SelectOrganizationTopics(
 	err := conn.db.Select(
 		&topics,
 		"select *, id as databaseId from topics where organization_id = $1",
-		organization.DatabaseId,
+		organization.DatabaseID,
 	)
 
 	if err != nil {
@@ -107,6 +107,7 @@ func (conn *PostgresConnection) SelectOrganizationTopics(
 	}
 
 	for _, topic := range topics {
+		topic.Init()
 		*dest = append(*dest, topic)
 	}
 	return nil

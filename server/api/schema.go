@@ -10,23 +10,31 @@ import (
 )
 
 type Organization struct {
-	ID         string `json:"id"`
-	DatabaseId string `json:"databaseId"`
-	Name       string `json:"name"`
+	ID           string `json:"id"`
+	DatabaseID   string `json:"databaseId"`
+	Name         string `json:"name"`
+	ResourcePath string `json:"resourcePath"`
 }
 
 type User struct {
-	ID         string `json:"id"`
-	DatabaseId string `json:"databaseId"`
-	Name       string `json:"name"`
-	Email      string `json:"email"`
+	ID           string `json:"id"`
+	DatabaseID   string `json:"databaseId"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	ResourcePath string `json:"resourcePath"`
 }
 
 type Topic struct {
-	ID             string `json:"id"`
-	OrganizationId string `db:"organization_id"`
-	DatabaseId     string `json:"databaseId"`
-	Description    string `json:"description"`
+	ID                     string  `json:"id"`
+	DatabaseID             string  `json:"databaseId"`
+	OrganizationDatabaseID string  `db:"organization_id"`
+	Name                   string  `json:"name"`
+	Description            *string `json:"description"`
+	ResourcePath           string  `json:"resourcePath"`
+}
+
+type Resource interface {
+	Init()
 }
 
 var nodeDefinitions *relay.NodeDefinitions
@@ -34,6 +42,21 @@ var OrganizationType *graphql.Object
 var UserType *graphql.Object
 var QueryType *graphql.Object
 var TopicType *graphql.Object
+
+func (o *User) Init() {
+	id := relay.ToGlobalID("User", o.DatabaseID)
+	o.ResourcePath = fmt.Sprintf("/users/%s", id)
+}
+
+func (o *Organization) Init() {
+	id := relay.ToGlobalID("Organization", o.DatabaseID)
+	o.ResourcePath = fmt.Sprintf("/organizations/%s", id)
+}
+
+func (o *Topic) Init() {
+	id := relay.ToGlobalID("Topic", o.DatabaseID)
+	o.ResourcePath = fmt.Sprintf("/topics/%s", id)
+}
 
 func resolveType(p graphql.ResolveTypeParams) *graphql.Object {
 	switch p.Value.(type) {
@@ -73,10 +96,6 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		Name: "User",
 		Fields: graphql.Fields{
 			"id": relay.GlobalIDField("User", nil),
-			"databaseId": &graphql.Field{
-				Type:        graphql.String,
-				Description: "The id of the organization.",
-			},
 			"name": &graphql.Field{
 				Type:        graphql.String,
 				Description: "The name of the user.",
@@ -84,6 +103,10 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 			"email": &graphql.Field{
 				Type:        graphql.String,
 				Description: "The user's email address.",
+			},
+			"resourcePath": &graphql.Field{
+				Type:        graphql.String,
+				Description: "The resource path for the user.",
 			},
 		},
 		Interfaces: []*graphql.Interface{
@@ -95,13 +118,17 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		Name: "Topic",
 		Fields: graphql.Fields{
 			"id": relay.GlobalIDField("Topic", nil),
-			"databaseId": &graphql.Field{
+			"name": &graphql.Field{
 				Type:        graphql.String,
-				Description: "The id of the topic.",
+				Description: "The name of the topic.",
 			},
 			"description": &graphql.Field{
 				Type:        graphql.String,
 				Description: "The description of the topic.",
+			},
+			"resourcePath": &graphql.Field{
+				Type:        graphql.String,
+				Description: "The resource path for the topic.",
 			},
 		},
 		Interfaces: []*graphql.Interface{
@@ -118,13 +145,13 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		Name: "Organization",
 		Fields: graphql.Fields{
 			"id": relay.GlobalIDField("Organization", nil),
-			"databaseId": &graphql.Field{
-				Type:        graphql.String,
-				Description: "The id of the organization.",
-			},
 			"name": &graphql.Field{
 				Type:        graphql.String,
 				Description: "The name of the organization.",
+			},
+			"resourcePath": &graphql.Field{
+				Type:        graphql.String,
+				Description: "The resource path for the organization.",
 			},
 			"topics": &graphql.Field{
 				Type: topicConnectionDefinition.ConnectionType,
@@ -162,14 +189,14 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 				Type: OrganizationType,
 
 				Args: graphql.FieldConfigArgument{
-					"databaseId": &graphql.ArgumentConfig{
+					"id": &graphql.ArgumentConfig{
 						Description: "Organization ID",
-						Type:        graphql.NewNonNull(graphql.String),
+						Type:        graphql.NewNonNull(graphql.ID),
 					},
 				},
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return conn.GetOrganization(p.Args["databaseId"].(string))
+					return conn.GetOrganization(p.Args["id"].(string))
 				},
 			},
 
@@ -177,14 +204,14 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 				Type: UserType,
 
 				Args: graphql.FieldConfigArgument{
-					"databaseId": &graphql.ArgumentConfig{
+					"id": &graphql.ArgumentConfig{
 						Description: "User ID",
-						Type:        graphql.NewNonNull(graphql.String),
+						Type:        graphql.NewNonNull(graphql.ID),
 					},
 				},
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return conn.GetUser(p.Args["databaseId"].(string))
+					return conn.GetUser(p.Args["id"].(string))
 				},
 			},
 
@@ -192,14 +219,14 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 				Type: TopicType,
 
 				Args: graphql.FieldConfigArgument{
-					"databaseId": &graphql.ArgumentConfig{
+					"id": &graphql.ArgumentConfig{
 						Description: "Topic ID",
-						Type:        graphql.NewNonNull(graphql.String),
+						Type:        graphql.NewNonNull(graphql.ID),
 					},
 				},
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return conn.GetTopic(p.Args["databaseId"].(string))
+					return conn.GetTopic(p.Args["id"].(string))
 				},
 			},
 

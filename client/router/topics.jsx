@@ -4,16 +4,18 @@ import { graphql } from 'react-relay'
 import Topics from 'components/topics'
 
 const query = graphql`
-query topicsQuery($orgDatabaseId: String!) {
+query topicsQuery($organizationId: ID!) {
   viewer {
     name
   }
 
-  organization(databaseId: $orgDatabaseId) {
+  organization(id: $organizationId) {
     topics(first: 100) {
       edges {
         node {
           id
+          name
+          resourcePath
           description
         }
       }
@@ -26,7 +28,7 @@ const route = {
   path: '/topics',
   async action({ api }) {
     const variables = {
-      orgDatabaseId: 'f9caec7e-405f-11e8-8a2d-8395ff0f4d77',
+      organizationId: 'T3JnYW5pemF0aW9uOmY5Y2FlYzdlLTQwNWYtMTFlOC04YTJkLTgzOTVmZjBmNGQ3Nw==',
     }
 
     const data = await api.fetchQuery(query, variables)
@@ -34,7 +36,10 @@ const route = {
     return {
       title: 'Topics',
       component: (
-        <Topics viewer={data.viewer} />
+        <Topics
+          viewer={data.viewer}
+          organization={data.organization}
+        />
       ),
     }
   },

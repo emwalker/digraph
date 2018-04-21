@@ -8,6 +8,7 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/testutil"
+	"github.com/graphql-go/relay"
 )
 
 var (
@@ -33,36 +34,34 @@ func (conn *TestConnection) Init() error {
 	return nil
 }
 
-func getOrError(databaseId string, data map[string]interface{}, collection string) (interface{}, error) {
-	object := data[databaseId]
+func getOrError(
+	id string,
+	data map[string]interface{},
+	collection string,
+) (interface{}, error) {
+	databaseId := relay.FromGlobalID(id)
+	object := data[databaseId.ID].(Resource)
 	if object == nil {
 		return nil, errors.New(fmt.Sprintf("%s not found: %s", collection, databaseId))
 	}
+	object.Init()
 	return object, nil
 }
 
-func (conn *TestConnection) GetOrganization(databaseId string) (interface{}, error) {
-	return getOrError(databaseId, OrganizationData, "organization")
+func (conn *TestConnection) GetOrganization(id string) (interface{}, error) {
+	return getOrError(id, OrganizationData, "Organization")
 }
 
-func (conn *TestConnection) GetUser(databaseId string) (interface{}, error) {
-	return getOrError(databaseId, UserData, "user")
+func (conn *TestConnection) GetUser(id string) (interface{}, error) {
+	return getOrError(id, UserData, "User")
 }
 
-func (conn *TestConnection) GetTopic(databaseId string) (interface{}, error) {
-	return getOrError(databaseId, TopicData, "topic")
+func (conn *TestConnection) GetTopic(id string) (interface{}, error) {
+	return getOrError(id, TopicData, "Topic")
 }
 
 func (conn *TestConnection) Viewer() (interface{}, error) {
 	return &Gnusto, nil
-}
-
-func (conn *TestConnection) InsertUser(user *User) error {
-	return nil
-}
-
-func (conn *TestConnection) RemoveUserByID(databaseId string) error {
-	return nil
 }
 
 func (conn *TestConnection) SelectOrganizationTopics(
@@ -97,48 +96,53 @@ func testGraphql(test T, p graphql.Params, t *testing.T) {
 
 func init() {
 	Gnusto = User{
-		DatabaseId: "10",
+		DatabaseID: "10",
 		Name:       "Gnusto",
 		Email:      "gnusto@tyrell.test",
 	}
 	Frotz = User{
-		DatabaseId: "11",
+		DatabaseID: "11",
 		Name:       "Frotz",
 		Email:      "frotz@tyrell.test",
 	}
 	Yomin = User{
-		DatabaseId: "12",
+		DatabaseID: "12",
 		Name:       "Yomin",
 		Email:      "yomin@tyrell.test",
 	}
 	Bozbar = User{
-		DatabaseId: "13",
+		DatabaseID: "13",
 		Name:       "Bozbar",
 		Email:      "bozbar@tyrell.test",
 	}
 	Rezrov = User{
-		DatabaseId: "14",
+		DatabaseID: "14",
 		Name:       "Rezrov",
 		Email:      "rezrov@tyrell.test",
 	}
 	Tyrell = Organization{
-		DatabaseId: "10",
+		DatabaseID: "10",
 		Name:       "Tyrell Corporation",
 	}
+	var description = "One of the branches of knowledge"
 	Science = Topic{
-		OrganizationId: Tyrell.DatabaseId,
-		DatabaseId:     "10",
-		Description:    "Science",
+		OrganizationDatabaseID: Tyrell.DatabaseID,
+		DatabaseID:             "10",
+		Name:                   "Science",
+		Description:            &description,
+		ResourcePath:           "/topics/VG9waWM6MTA=",
 	}
 	Biology = Topic{
-		OrganizationId: Tyrell.DatabaseId,
-		DatabaseId:     "11",
-		Description:    "Biology",
+		OrganizationDatabaseID: Tyrell.DatabaseID,
+		DatabaseID:             "11",
+		Name:                   "Biology",
+		ResourcePath:           "/topics/VG9waWM6MTE=",
 	}
 	Chemistry = Topic{
-		OrganizationId: Tyrell.DatabaseId,
-		DatabaseId:     "12",
-		Description:    "Chemistry",
+		OrganizationDatabaseID: Tyrell.DatabaseID,
+		DatabaseID:             "12",
+		Name:                   "Chemistry",
+		ResourcePath:           "/topics/VG9waWM6MTI=",
 	}
 	UserData = map[string]interface{}{
 		"10": &Gnusto,
