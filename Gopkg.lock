@@ -2,6 +2,37 @@
 
 
 [[projects]]
+  name = "github.com/cayleygraph/cayley"
+  packages = [
+    ".",
+    "clog",
+    "graph",
+    "graph/iterator",
+    "graph/log",
+    "graph/memstore",
+    "graph/path",
+    "graph/shape",
+    "graph/sql",
+    "graph/sql/postgres",
+    "internal",
+    "internal/decompressor",
+    "internal/lru",
+    "quad",
+    "quad/nquads",
+    "quad/pquads",
+    "quad/pquads/pio",
+    "schema",
+    "voc",
+    "voc/core",
+    "voc/rdf",
+    "voc/rdfs",
+    "voc/schema",
+    "writer"
+  ]
+  revision = "3091e673e8d9a945a71e286ca90f5e478e3ac503"
+  version = "v0.7.2"
+
+[[projects]]
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
   revision = "2268707a8f0843315e2004ee4f1d021dc08baedf"
@@ -48,6 +79,16 @@
   version = "v1.0"
 
 [[projects]]
+  name = "github.com/gogo/protobuf"
+  packages = [
+    "gogoproto",
+    "proto",
+    "protoc-gen-gogo/descriptor"
+  ]
+  revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/graphql-go/graphql"
   packages = [
     ".",
@@ -76,15 +117,6 @@
   name = "github.com/itsjamie/go-bindata-templates"
   packages = ["."]
   revision = "65d795d0c74021e19b2ebadf3c83c01a8290a405"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/jmoiron/sqlx"
-  packages = [
-    ".",
-    "reflectx"
-  ]
-  revision = "2aeb6a910c2b94f2d5eb53d9895d80e27264ec41"
 
 [[projects]]
   name = "github.com/labstack/echo"
@@ -160,6 +192,12 @@
   revision = "248dadf4e9068a0b3e79f02ed0a610d935de5302"
 
 [[projects]]
+  name = "github.com/segmentio/ksuid"
+  packages = ["."]
+  revision = "112f929a3020abfcd06b77c963ec919130796a35"
+  version = "1.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/valyala/bytebufferpool"
   packages = ["."]
@@ -218,6 +256,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a3437e74f6e34ab28ce064ddd3ac77470637d2fa95c2bb2e2ec1e394d145bb28"
+  inputs-digest = "8f4e10aa8b44853f0acb2b06c5a19f9fe5093bab7a9571cd964ef550d5d7cc3b"
   solver-name = "gps-cdcl"
   solver-version = 1

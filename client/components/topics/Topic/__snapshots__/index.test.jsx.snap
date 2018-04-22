@@ -9,7 +9,7 @@ ShallowWrapper {
       Object {
         "id": "1234",
         "name": "Frotz",
-        "resourcePath": "/topics/1234",
+        "resourceIdentifier": "/topics/1234",
       }
     }
   />,

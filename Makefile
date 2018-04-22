@@ -86,3 +86,9 @@ format:
 	git diff-index --quiet HEAD --
 
 check: format test
+
+load:
+	@cayley load --config=./cayley.cfg.json --load=./data/digraffe.nq
+
+dump:
+	@cayley dump --config=./cayley.cfg.json --dump=./data/digraffe.nq

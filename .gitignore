@@ -9,5 +9,8 @@
 .pid
 .DS_Store
 
+/tmp
 *__generated__*
 /scratchpad
+/cayley.cfg.json
+/.cayley_history

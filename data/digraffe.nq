@@ -1,0 +1,17 @@
+<organization:tyrell> <di:name> "Tyrell Corporation" .
+<organization:tyrell> <rdf:type> <foaf:Organization> .
+<topic:science> <di:name> "Science" .
+<topic:science> <rdf:type> <foaf:topic> .
+<topic:chemistry> <di:name> "Chemistry" .
+<topic:chemistry> <rdf:type> <foaf:topic> .
+<topic:biology> <di:name> "Biology" .
+<topic:biology> <rdf:type> <foaf:topic> .
+<user:rezrov> <di:name> "Rezrov" .
+<user:rezrov> <di:email> "rezrov@tyrell.test" .
+<user:rezrov> <rdf:type> <foaf:Person> .
+<user:gnusto> <di:name> "Gnusto" .
+<user:gnusto> <rdf:type> <foaf:Person> .
+<user:gnusto> <di:email> "gnusto@tyrell.test" .
+<user:yomin> <di:name> "Yomin" .
+<user:yomin> <di:email> "yomin@tyrell.test" .
+<user:yomin> <rdf:type> <foaf:Person> .

@@ -3,30 +3,27 @@ package api
 import (
 	"testing"
 
+	"github.com/cayleygraph/cayley/quad"
+	"github.com/cayleygraph/cayley/writer"
 	"github.com/graphql-go/graphql"
 )
 
-var app *App
-
 func init() {
-	conn := NewConnection("test", "some://url")
-	app, _ = New(conn)
-
 	Tests = []T{
 		{
 			Query: `
-        query {
-          viewer {
-            name
-            email
-          }
-        }
-      `,
+		      query {
+		        viewer {
+		          name
+		          email
+		        }
+		      }
+		    `,
 			Expected: &graphql.Result{
 				Data: map[string]interface{}{
 					"viewer": map[string]interface{}{
-						"name":  Gnusto.Name,
-						"email": Gnusto.Email,
+						"name":  "Gnusto",
+						"email": "gnusto@tyrell.test",
 					},
 				},
 			},
@@ -34,7 +31,7 @@ func init() {
 		{
 			Query: `
 				query {
-					organization(id: "T3JnYW5pemF0aW9uOjEw") {
+					organization(resourceIdentifier: "organization:tyrell") {
 						name
 
 						topics(first: 100) {
@@ -50,7 +47,7 @@ func init() {
 			Expected: &graphql.Result{
 				Data: map[string]interface{}{
 					"organization": map[string]interface{}{
-						"name": Tyrell.Name,
+						"name": "Tyrell Corporation",
 						"topics": map[string]interface{}{
 							"edges": []interface{}{
 								map[string]interface{}{
@@ -77,19 +74,17 @@ func init() {
 		{
 			Query: `
 				query {
-					topic(id: "VG9waWM6MTA=") {
+					topic(resourceIdentifier: "topic:science") {
 						name
 						description
-						resourcePath
 					}
 				}
 			`,
 			Expected: &graphql.Result{
 				Data: map[string]interface{}{
 					"topic": map[string]interface{}{
-						"name":         Science.Name,
-						"description":  *Science.Description,
-						"resourcePath": Science.ResourcePath,
+						"name":        "Science",
+						"description": nil,
 					},
 				},
 			},
@@ -97,7 +92,33 @@ func init() {
 	}
 }
 
+var simpleGraph = []quad.Quad{
+	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:name"), "Tyrell Corporation", ""),
+	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("rdf:type"), quad.IRI("foaf:Organization"), ""),
+	quad.Make(quad.IRI("topic:science"), quad.IRI("di:name"), "Science", ""),
+	quad.Make(quad.IRI("topic:science"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
+	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("di:name"), "Chemistry", ""),
+	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
+	quad.Make(quad.IRI("topic:biology"), quad.IRI("di:name"), "Biology", ""),
+	quad.Make(quad.IRI("topic:biology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
+	quad.Make(quad.IRI("user:gnusto"), quad.IRI("di:name"), "Gnusto", ""),
+	quad.Make(quad.IRI("user:gnusto"), quad.IRI("di:email"), "gnusto@tyrell.test", ""),
+	quad.Make(quad.IRI("user:gnusto"), quad.IRI("rdf:type"), quad.IRI("foaf:Person"), ""),
+}
+
+func (conn *CayleyConnection) makeTestStore(data []quad.Quad) {
+	writer, _ := writer.NewSingleReplication(conn.store, nil)
+	for _, t := range data {
+		writer.AddQuad(t)
+	}
+}
+
 func TestQuery(t *testing.T) {
+	conn := NewConnection("memstore", "")
+	app, _ := New(conn)
+	conn.(*CayleyConnection).makeTestStore(simpleGraph)
+	defer checkErr(conn.Close())
+
 	for _, test := range Tests {
 		params := graphql.Params{
 			Schema:        *app.Schema,

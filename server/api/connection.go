@@ -19,6 +19,7 @@ func (e Error) Error() string {
 }
 
 type Connection interface {
+	Close() error
 	GetOrganization(string) (interface{}, error)
 	GetTopic(string) (interface{}, error)
 	GetUser(string) (interface{}, error)
@@ -27,12 +28,12 @@ type Connection interface {
 	SelectOrganizationTopics(*[]interface{}, *Organization) error
 }
 
-func NewConnection(driverName string, url string) Connection {
+func NewConnection(driverName string, address string) Connection {
 	switch driverName {
 	case "postgres":
-		return &PostgresConnection{url: url}
-	case "test":
-		return &TestConnection{url: url}
+		return &CayleyConnection{address: address, driverName: driverName}
+	case "memstore":
+		return &CayleyConnection{address: address, driverName: driverName}
 	default:
 		log.Fatal(fmt.Sprintf("do not recognize driver: %s", driverName))
 	}
