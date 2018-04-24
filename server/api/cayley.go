@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"log"
 	"reflect"
 	"sort"
 	"strings"
@@ -99,41 +98,35 @@ func (conn *CayleyConnection) Viewer() (interface{}, error) {
 }
 
 func (conn *CayleyConnection) SelectOrganizationTopics(
-	out *[]interface{},
+	dest *[]interface{},
 	organization *Organization,
 ) error {
-	p := cayley.StartPath(conn.store, organization.ResourceID).
+	path := cayley.StartPath(conn.store, organization.ResourceID).
 		Out(quad.IRI("di:owns")).
 		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
 
-	it, _ := p.BuildIterator().Optimize()
+	it, _ := path.BuildIterator().Optimize()
 	it, _ = conn.store.OptimizeIterator(it)
 	ctx := context.TODO()
 
-	var topics []*Topic
-
+	var values []quad.Value
 	for it.Next(ctx) {
-		id := conn.store.NameOf(it.Result())
-
-		var topic Topic
-		err := schema.Global().LoadTo(nil, conn.store, &topic, id)
-		if err != nil {
-			return err
-		}
-		topics = append(topics, &topic)
+		values = append(values, conn.store.NameOf(it.Result()))
 	}
 
-	if err := it.Err(); err != nil {
-		log.Fatalln(err)
+	var topics []Topic
+	err := schema.Global().LoadTo(ctx, conn.store, &topics, values...)
+	if err != nil {
+		return err
 	}
 
 	sort.Slice(topics, func(i, j int) bool {
 		return topics[i].Name < topics[j].Name
 	})
 
-	for _, topic := range topics {
+	for _, topic := range PointersOf(topics).([]*Topic) {
 		topic.Init()
-		*out = append(*out, topic)
+		*dest = append(*dest, topic)
 	}
 
 	return nil

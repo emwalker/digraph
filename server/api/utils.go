@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/cayleygraph/cayley/graph"
 )
@@ -34,4 +35,18 @@ func dumpStore(store *graph.Handle) {
 	for it.Next(ctx) {
 		fmt.Println(store.Quad(it.Result()))
 	}
+}
+
+// https://stackoverflow.com/a/34637234/61048
+func PointersOf(v interface{}) interface{} {
+	in := reflect.ValueOf(v)
+	out := reflect.MakeSlice(
+		reflect.SliceOf(reflect.PtrTo(in.Type().Elem())),
+		in.Len(),
+		in.Len(),
+	)
+	for i := 0; i < in.Len(); i++ {
+		out.Index(i).Set(in.Index(i).Addr())
+	}
+	return out.Interface()
 }

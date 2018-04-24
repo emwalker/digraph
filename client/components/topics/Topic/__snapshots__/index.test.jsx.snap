@@ -27,11 +27,7 @@ ShallowWrapper {
     "props": Object {
       "children": Array [
         <div>
-          <a
-            href="/topics/1234"
-          >
-            Frotz
-          </a>
+          Frotz
         </div>,
         <div>
           /topics/1234
@@ -45,25 +41,10 @@ ShallowWrapper {
         "key": undefined,
         "nodeType": "host",
         "props": Object {
-          "children": <a
-            href="/topics/1234"
-          >
-            Frotz
-          </a>,
+          "children": "Frotz",
         },
         "ref": null,
-        "rendered": Object {
-          "instance": null,
-          "key": undefined,
-          "nodeType": "host",
-          "props": Object {
-            "children": "Frotz",
-            "href": "/topics/1234",
-          },
-          "ref": null,
-          "rendered": "Frotz",
-          "type": "a",
-        },
+        "rendered": "Frotz",
         "type": "div",
       },
       Object {
@@ -88,11 +69,7 @@ ShallowWrapper {
       "props": Object {
         "children": Array [
           <div>
-            <a
-              href="/topics/1234"
-            >
-              Frotz
-            </a>
+            Frotz
           </div>,
           <div>
             /topics/1234
@@ -106,25 +83,10 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "host",
           "props": Object {
-            "children": <a
-              href="/topics/1234"
-            >
-              Frotz
-            </a>,
+            "children": "Frotz",
           },
           "ref": null,
-          "rendered": Object {
-            "instance": null,
-            "key": undefined,
-            "nodeType": "host",
-            "props": Object {
-              "children": "Frotz",
-              "href": "/topics/1234",
-            },
-            "ref": null,
-            "rendered": "Frotz",
-            "type": "a",
-          },
+          "rendered": "Frotz",
           "type": "div",
         },
         Object {

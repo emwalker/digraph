@@ -10,7 +10,7 @@ type Props = {
 
 export default ({ topic: { name, resourceId } }: Props) => (
   <li>
-    <div><a href={resourceId}>{name}</a></div>
+    <div>{name}</div>
     <div>{resourceId}</div>
   </li>
 )
