@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"reflect"
 	"sort"
 	"strings"
@@ -19,6 +21,7 @@ import (
 func init() {
 	voc.RegisterPrefix("foaf:", "http://xmlns.com/foaf/spec/")
 	voc.RegisterPrefix("di:", "http://github.com/emwalker/digraffe/")
+	voc.RegisterPrefix("rdf:", "http://www.w3.org/1999/02/22-rdf-syntax-ns")
 	voc.RegisterPrefix("topic:", "/topics/")
 	voc.RegisterPrefix("organization:", "/organizations/")
 	voc.RegisterPrefix("user:", "/users/")
@@ -70,23 +73,23 @@ func (conn *CayleyConnection) Init() error {
 	return nil
 }
 
-func (conn *CayleyConnection) GetOrganization(iri string) (interface{}, error) {
+func (conn *CayleyConnection) GetOrganization(id string) (interface{}, error) {
 	var o Organization
-	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(iri))
+	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
 	o.Init()
 	return handleResult(&o, err)
 }
 
-func (conn *CayleyConnection) GetTopic(iri string) (interface{}, error) {
+func (conn *CayleyConnection) GetTopic(id string) (interface{}, error) {
 	var o Topic
-	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(iri))
+	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
 	o.Init()
 	return handleResult(&o, err)
 }
 
-func (conn *CayleyConnection) GetUser(iri string) (interface{}, error) {
+func (conn *CayleyConnection) GetUser(id string) (interface{}, error) {
 	var o User
-	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(iri))
+	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
 	o.Init()
 	return handleResult(&o, err)
 }
@@ -99,11 +102,29 @@ func (conn *CayleyConnection) SelectOrganizationTopics(
 	out *[]interface{},
 	organization *Organization,
 ) error {
-	var topics []Topic
+	p := cayley.StartPath(conn.store, organization.ResourceID).
+		Out(quad.IRI("di:owns")).
+		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
 
-	err := schema.Global().LoadTo(nil, conn.store, &topics)
-	if err != nil {
-		return err
+	it, _ := p.BuildIterator().Optimize()
+	it, _ = conn.store.OptimizeIterator(it)
+	ctx := context.TODO()
+
+	var topics []*Topic
+
+	for it.Next(ctx) {
+		id := conn.store.NameOf(it.Result())
+
+		var topic Topic
+		err := schema.Global().LoadTo(nil, conn.store, &topic, id)
+		if err != nil {
+			return err
+		}
+		topics = append(topics, &topic)
+	}
+
+	if err := it.Err(); err != nil {
+		log.Fatalln(err)
 	}
 
 	sort.Slice(topics, func(i, j int) bool {

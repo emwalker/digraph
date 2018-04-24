@@ -5,7 +5,7 @@ import Topic from './index'
 describe('<Topic />', () => {
   const topic = {
     name: 'Frotz',
-    resourceIdentifier: '/topics/1234',
+    resourceId: '/topics/1234',
     id: '1234',
   }
 

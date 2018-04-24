@@ -7,14 +7,14 @@ type PageInfo {
 
 type User {
   id: ID
-  resourceIdentifier: String!
+  resourceId: String!
   name: String!
   email: String!
 }
 
 type Topic {
   id: ID
-  resourceIdentifier: String!
+  resourceId: String!
   organization: Organization!
   name: String!
   description: String
@@ -32,7 +32,7 @@ type TopicConnection {
 
 type Organization {
   id: ID
-  resourceIdentifier: String!
+  resourceId: String!
   name: String!
   topics(
     first: Int,
@@ -44,7 +44,7 @@ type Organization {
 
 type Query {
   viewer: User
-  organization(resourceIdentifier: String!): Organization
+  organization(resourceId: String!): Organization
 }
 
 type Mutation {

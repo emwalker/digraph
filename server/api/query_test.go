@@ -31,7 +31,7 @@ func init() {
 		{
 			Query: `
 				query {
-					organization(resourceIdentifier: "organization:tyrell") {
+					organization(resourceId: "organization:tyrell") {
 						name
 
 						topics(first: 100) {
@@ -74,7 +74,7 @@ func init() {
 		{
 			Query: `
 				query {
-					topic(resourceIdentifier: "topic:science") {
+					topic(resourceId: "topic:science") {
 						name
 						description
 					}
@@ -97,10 +97,15 @@ var simpleGraph = []quad.Quad{
 	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("rdf:type"), quad.IRI("foaf:Organization"), ""),
 	quad.Make(quad.IRI("topic:science"), quad.IRI("di:name"), "Science", ""),
 	quad.Make(quad.IRI("topic:science"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
+	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("topic:science"), ""),
 	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("di:name"), "Chemistry", ""),
 	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
+	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("topic:chemistry"), ""),
 	quad.Make(quad.IRI("topic:biology"), quad.IRI("di:name"), "Biology", ""),
 	quad.Make(quad.IRI("topic:biology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
+	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("topic:biology"), ""),
+	quad.Make(quad.IRI("topic:zoology"), quad.IRI("di:name"), "Zoology", ""),
+	quad.Make(quad.IRI("topic:zoology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
 	quad.Make(quad.IRI("user:gnusto"), quad.IRI("di:name"), "Gnusto", ""),
 	quad.Make(quad.IRI("user:gnusto"), quad.IRI("di:email"), "gnusto@tyrell.test", ""),
 	quad.Make(quad.IRI("user:gnusto"), quad.IRI("rdf:type"), quad.IRI("foaf:Person"), ""),

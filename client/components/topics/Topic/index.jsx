@@ -4,13 +4,13 @@ import React from 'react'
 type Props = {
   topic: {
     name: string,
-    resourceIdentifier: string,
+    resourceId: string,
   },
 }
 
-export default ({ topic: { name, resourceIdentifier } }: Props) => (
+export default ({ topic: { name, resourceId } }: Props) => (
   <li>
-    <a href={resourceIdentifier}>{name}</a>
-    <div>{resourceIdentifier}</div>
+    <div><a href={resourceId}>{name}</a></div>
+    <div>{resourceId}</div>
   </li>
 )

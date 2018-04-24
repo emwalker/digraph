@@ -9,7 +9,7 @@ ShallowWrapper {
       Object {
         "id": "1234",
         "name": "Frotz",
-        "resourceIdentifier": "/topics/1234",
+        "resourceId": "/topics/1234",
       }
     }
   />,
@@ -26,11 +26,13 @@ ShallowWrapper {
     "nodeType": "host",
     "props": Object {
       "children": Array [
-        <a
-          href="/topics/1234"
-        >
-          Frotz
-        </a>,
+        <div>
+          <a
+            href="/topics/1234"
+          >
+            Frotz
+          </a>
+        </div>,
         <div>
           /topics/1234
         </div>,
@@ -43,12 +45,26 @@ ShallowWrapper {
         "key": undefined,
         "nodeType": "host",
         "props": Object {
-          "children": "Frotz",
-          "href": "/topics/1234",
+          "children": <a
+            href="/topics/1234"
+          >
+            Frotz
+          </a>,
         },
         "ref": null,
-        "rendered": "Frotz",
-        "type": "a",
+        "rendered": Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": "Frotz",
+            "href": "/topics/1234",
+          },
+          "ref": null,
+          "rendered": "Frotz",
+          "type": "a",
+        },
+        "type": "div",
       },
       Object {
         "instance": null,
@@ -71,11 +87,13 @@ ShallowWrapper {
       "nodeType": "host",
       "props": Object {
         "children": Array [
-          <a
-            href="/topics/1234"
-          >
-            Frotz
-          </a>,
+          <div>
+            <a
+              href="/topics/1234"
+            >
+              Frotz
+            </a>
+          </div>,
           <div>
             /topics/1234
           </div>,
@@ -88,12 +106,26 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "host",
           "props": Object {
-            "children": "Frotz",
-            "href": "/topics/1234",
+            "children": <a
+              href="/topics/1234"
+            >
+              Frotz
+            </a>,
           },
           "ref": null,
-          "rendered": "Frotz",
-          "type": "a",
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": "Frotz",
+              "href": "/topics/1234",
+            },
+            "ref": null,
+            "rendered": "Frotz",
+            "type": "a",
+          },
+          "type": "div",
         },
         Object {
           "instance": null,

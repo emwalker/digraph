@@ -12,24 +12,24 @@ import (
 )
 
 type Organization struct {
-	rdfType  struct{} `quad:"@type > foaf:Organization"`
-	ID       string   `json:"id" quad:",optional"`
-	CayleyID quad.IRI `json:"@id"`
-	Name     string   `json:"name" quad:"di:name"`
+	rdfType    struct{} `quad:"@type > foaf:Organization"`
+	ID         string   `json:"id" quad:",optional"`
+	ResourceID quad.IRI `json:"@id"`
+	Name       string   `json:"name" quad:"di:name"`
 }
 
 type User struct {
-	rdfType  struct{} `quad:"@type > foaf:Person"`
-	ID       string   `json:"id" quad:",optional"`
-	CayleyID quad.IRI `json:"@id"`
-	Name     string   `json:"name" quad:"di:name"`
-	Email    string   `json:"email" quad:"di:email"`
+	rdfType    struct{} `quad:"@type > foaf:Person"`
+	ID         string   `json:"id" quad:",optional"`
+	ResourceID quad.IRI `json:"@id"`
+	Name       string   `json:"name" quad:"di:name"`
+	Email      string   `json:"email" quad:"di:email"`
 }
 
 type Topic struct {
 	rdfType     struct{} `quad:"@type > foaf:topic"`
 	ID          string   `json:"id" quad:",optional"`
-	CayleyID    quad.IRI `json:"@id"`
+	ResourceID  quad.IRI `json:"@id"`
 	Name        string   `json:"name" quad:"di:name"`
 	Description *string  `json:"description" quad:"description,optional"`
 }
@@ -53,27 +53,27 @@ func isomorphicID(id quad.IRI) string {
 }
 
 func (o *User) Init() {
-	o.ID = isomorphicID(o.CayleyID)
+	o.ID = isomorphicID(o.ResourceID)
 }
 
 func (o *User) IRI() quad.IRI {
-	return o.CayleyID
+	return o.ResourceID
 }
 
 func (o *Organization) Init() {
-	o.ID = isomorphicID(o.CayleyID)
+	o.ID = isomorphicID(o.ResourceID)
 }
 
 func (o *Organization) IRI() quad.IRI {
-	return o.CayleyID
+	return o.ResourceID
 }
 
 func (o *Topic) Init() {
-	o.ID = isomorphicID(o.CayleyID)
+	o.ID = isomorphicID(o.ResourceID)
 }
 
 func (o *Topic) IRI() quad.IRI {
-	return o.CayleyID
+	return o.ResourceID
 }
 
 func resolveType(p graphql.ResolveTypeParams) *graphql.Object {
@@ -109,14 +109,14 @@ func organizationField(conn Connection) *graphql.Field {
 		Type: OrganizationType,
 
 		Args: graphql.FieldConfigArgument{
-			"resourceIdentifier": &graphql.ArgumentConfig{
+			"resourceId": &graphql.ArgumentConfig{
 				Description: "Organization ID",
 				Type:        graphql.NewNonNull(graphql.String),
 			},
 		},
 
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			return conn.GetOrganization(p.Args["resourceIdentifier"].(string))
+			return conn.GetOrganization(p.Args["resourceId"].(string))
 		},
 	}
 }
@@ -153,14 +153,14 @@ func topicField(conn Connection) *graphql.Field {
 		Type: TopicType,
 
 		Args: graphql.FieldConfigArgument{
-			"resourceIdentifier": &graphql.ArgumentConfig{
+			"resourceId": &graphql.ArgumentConfig{
 				Description: "Topic ID",
 				Type:        graphql.NewNonNull(graphql.String),
 			},
 		},
 
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			return conn.GetTopic(p.Args["resourceIdentifier"].(string))
+			return conn.GetTopic(p.Args["resourceId"].(string))
 		},
 	}
 }
@@ -212,7 +212,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 	ResourceIdentifiableInterface = graphql.NewInterface(graphql.InterfaceConfig{
 		Name: "ResourceIdentifiable",
 		Fields: graphql.Fields{
-			"resourceIdentifier": &graphql.Field{
+			"resourceId": &graphql.Field{
 				Type: graphql.String,
 			},
 		},
@@ -248,7 +248,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 				Type:        graphql.String,
 				Description: "The description of the topic.",
 			},
-			"resourceIdentifier": resourceIdentifierField(conn),
+			"resourceId": resourceIdentifierField(conn),
 		},
 		Interfaces: []*graphql.Interface{
 			nodeDefinitions.NodeInterface,
@@ -264,10 +264,10 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 	OrganizationType = graphql.NewObject(graphql.ObjectConfig{
 		Name: "Organization",
 		Fields: graphql.Fields{
-			"id":                 relay.GlobalIDField("Organization", nil),
-			"name":               organizationNameField(conn),
-			"topics":             topicsConnection(conn, topicConnectionDefinition.ConnectionType),
-			"resourceIdentifier": resourceIdentifierField(conn),
+			"id":         relay.GlobalIDField("Organization", nil),
+			"name":       organizationNameField(conn),
+			"topics":     topicsConnection(conn, topicConnectionDefinition.ConnectionType),
+			"resourceId": resourceIdentifierField(conn),
 		},
 		Interfaces: []*graphql.Interface{
 			nodeDefinitions.NodeInterface,

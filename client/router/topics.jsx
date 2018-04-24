@@ -9,13 +9,13 @@ query topicsQuery($organizationId: String!) {
     name
   }
 
-  organization(resourceIdentifier: $organizationId) {
+  organization(resourceId: $organizationId) {
     topics(first: 100) {
       edges {
         node {
           id
           name
-          resourceIdentifier
+          resourceId
           description
         }
       }
