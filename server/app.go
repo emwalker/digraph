@@ -116,10 +116,12 @@ func NewApp(opts ...AppOptions) *App {
 				if ok && httpErr.Code == http.StatusNotFound {
 					// check if file exists
 					// omit first `/`
-					if _, err := Asset(c.Request().URL.Path[1:]); err == nil {
+					path := c.Request().URL.Path[1:]
+					if _, err := Asset(path); err == nil {
 						fileServerHandler.ServeHTTP(
 							c.Response().Writer,
-							c.Request())
+							c.Request(),
+						)
 						return nil
 					}
 					// if static file not found handle request via react application

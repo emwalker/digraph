@@ -80,6 +80,14 @@ var config  = {
         test: /\.jsx?$/,
         include: path.join(__dirname, 'client'),
         loaders: ['babel-loader']
+      },
+      {
+        test: /\.scss$/,
+        use: [
+          {loader: 'style-loader'},
+          {loader: 'css-loader'},
+          {loader: 'sass-loader'}
+        ]
       }
     ]
   },

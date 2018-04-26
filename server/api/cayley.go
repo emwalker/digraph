@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
 	"sort"
 	"strings"
@@ -72,6 +73,33 @@ func (conn *CayleyConnection) Init() error {
 	return nil
 }
 
+func (conn *CayleyConnection) CreateTopic(
+	organizationResourceId string,
+	name string,
+	description *string,
+) (*Topic, error) {
+	writer := graph.NewWriter(conn.store)
+
+	topicId := generateIDForType("topic")
+	topic := Topic{
+		ResourceID:  topicId,
+		Name:        name,
+		Description: description,
+	}
+
+	_, err := conn.schema.WriteAsQuads(writer, topic)
+	checkErr(err)
+	log.Println("created topic with id", topicId)
+
+	conn.store.AddQuad(quad.Make(quad.IRI(organizationResourceId), quad.IRI("di:owns"), topicId, nil))
+	checkErr(err)
+
+	topic.Init()
+
+	checkErr(writer.Close())
+	return &topic, nil
+}
+
 func (conn *CayleyConnection) GetOrganization(id string) (interface{}, error) {
 	var o Organization
 	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
@@ -116,9 +144,7 @@ func (conn *CayleyConnection) SelectOrganizationTopics(
 
 	var topics []Topic
 	err := schema.Global().LoadTo(ctx, conn.store, &topics, values...)
-	if err != nil {
-		return err
-	}
+	checkErr(err)
 
 	sort.Slice(topics, func(i, j int) bool {
 		return topics[i].Name < topics[j].Name

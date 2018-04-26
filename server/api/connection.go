@@ -20,6 +20,7 @@ func (e Error) Error() string {
 
 type Connection interface {
 	Close() error
+	CreateTopic(string, string, *string) (*Topic, error)
 	GetOrganization(string) (interface{}, error)
 	GetTopic(string) (interface{}, error)
 	GetUser(string) (interface{}, error)

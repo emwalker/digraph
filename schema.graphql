@@ -47,7 +47,17 @@ type Query {
   organization(resourceId: String!): Organization
 }
 
+input CreateTopicInput {
+  clientMutationId: String!
+  organizationResourceId: String!
+  name: String!
+  description: String
+}
+
+type CreateTopicPayload {
+  topicEdge: TopicEdge!
+}
+
 type Mutation {
-  createUser(email: String!): User
-  removeUser(id: ID!): Boolean
+  createTopic(input: CreateTopicInput!): CreateTopicPayload
 }

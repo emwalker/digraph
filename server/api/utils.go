@@ -50,3 +50,10 @@ func PointersOf(v interface{}) interface{} {
 	}
 	return out.Interface()
 }
+
+func maybeString(str interface{}) *string {
+	if value, ok := str.(string); ok {
+		return &value
+	}
+	return nil
+}

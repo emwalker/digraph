@@ -45,6 +45,7 @@ var UserType *graphql.Object
 var QueryType *graphql.Object
 var TopicType *graphql.Object
 var ResourceIdentifiableInterface *graphql.Interface
+var MutationType *graphql.Object
 
 var replacer = strings.NewReplacer("<", "", ">", "")
 
@@ -203,6 +204,62 @@ func organizationNameField(conn Connection) *graphql.Field {
 	}
 }
 
+func createTopicInput(conn Connection) *graphql.InputObject {
+	return graphql.NewInputObject(graphql.InputObjectConfig{
+		Name:   "CreateTopicInput",
+		Fields: graphql.InputObjectConfigFieldMap{},
+	})
+}
+
+func createTopicMutation(conn Connection, topicEdgeType graphql.Output) *graphql.Field {
+	return relay.MutationWithClientMutationID(relay.MutationConfig{
+		Name: "CreateTopic",
+
+		InputFields: graphql.InputObjectConfigFieldMap{
+			"organizationResourceId": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
+			},
+			"name": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
+			},
+			"description": &graphql.InputObjectFieldConfig{
+				Type:         graphql.String,
+				DefaultValue: nil,
+			},
+		},
+
+		OutputFields: graphql.Fields{
+			"topicEdge": &graphql.Field{
+				Type: topicEdgeType,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if payload, ok := p.Source.(map[string]interface{}); ok {
+						topic, err := conn.GetTopic(payload["topicResourceId"].(string))
+						checkErr(err)
+
+						return &relay.Edge{
+							Node:   topic,
+							Cursor: "YXJyYXljb25uZWN0aW9uOjA=",
+						}, nil
+					}
+					return nil, nil
+				},
+			},
+		},
+
+		MutateAndGetPayload: func(inputMap map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
+			orgIri := inputMap["organizationResourceId"].(string)
+			name := inputMap["name"].(string)
+			description := maybeString(inputMap["description"])
+			topic, err := conn.CreateTopic(orgIri, name, description)
+			checkErr(err)
+
+			return map[string]interface{}{
+				"topicResourceId": topic.ID,
+			}, nil
+		},
+	})
+}
+
 func newSchema(conn Connection) (*graphql.Schema, error) {
 	nodeDefinitions = relay.NewNodeDefinitions(relay.NodeDefinitionsConfig{
 		IDFetcher:   fetcher(conn),
@@ -286,8 +343,16 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		},
 	})
 
+	MutationType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "Mutation",
+		Fields: graphql.Fields{
+			"createTopic": createTopicMutation(conn, topicConnectionDefinition.EdgeType),
+		},
+	})
+
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{
-		Query: QueryType,
+		Query:    QueryType,
+		Mutation: MutationType,
 	})
 
 	return &schema, err

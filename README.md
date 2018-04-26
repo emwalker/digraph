@@ -8,7 +8,9 @@ Eventually this repo will consist of a universal React app that talks to a Graph
 * Relay
 * Flow
 * webpack 4
-* found-relay routing
+* found-relay router
+* babel-preset-env
+* CSS Modules (babel-plugin-react-css-modules)
 * ESLint (Airbnb defaults)
 
 ## License

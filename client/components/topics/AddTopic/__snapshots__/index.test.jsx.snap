@@ -1,0 +1,207 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<AddTopic /> renders 1`] = `
+ShallowWrapper {
+  "length": 1,
+  Symbol(enzyme.__root__): [Circular],
+  Symbol(enzyme.__unrendered__): <AddTopic
+    organization={
+      Object {
+        "resourceId": "organization:tyrell",
+      }
+    }
+  />,
+  Symbol(enzyme.__renderer__): Object {
+    "batchedUpdates": [Function],
+    "getNode": [Function],
+    "render": [Function],
+    "simulateEvent": [Function],
+    "unmount": [Function],
+  },
+  Symbol(enzyme.__node__): Object {
+    "instance": null,
+    "key": undefined,
+    "nodeType": "host",
+    "props": Object {
+      "children": <FormGroup
+        tag="div"
+      >
+        <Input
+          className="topic-name test-topic-name"
+          onChange={[Function]}
+          placeholder="Add a topic"
+          type="text"
+          value=""
+        />
+        <Button
+          color="secondary"
+          onClick={[Function]}
+          size="sm"
+          tag="button"
+        >
+          Submit
+        </Button>
+      </FormGroup>,
+      "stylename": "container",
+    },
+    "ref": null,
+    "rendered": Object {
+      "instance": null,
+      "key": undefined,
+      "nodeType": "function",
+      "props": Object {
+        "children": Array [
+          <Input
+            className="topic-name test-topic-name"
+            onChange={[Function]}
+            placeholder="Add a topic"
+            type="text"
+            value=""
+          />,
+          <Button
+            color="secondary"
+            onClick={[Function]}
+            size="sm"
+            tag="button"
+          >
+            Submit
+          </Button>,
+        ],
+        "tag": "div",
+      },
+      "ref": null,
+      "rendered": Array [
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "class",
+          "props": Object {
+            "className": "topic-name test-topic-name",
+            "onChange": [Function],
+            "placeholder": "Add a topic",
+            "type": "text",
+            "value": "",
+          },
+          "ref": null,
+          "rendered": null,
+          "type": [Function],
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "class",
+          "props": Object {
+            "children": "Submit",
+            "color": "secondary",
+            "onClick": [Function],
+            "size": "sm",
+            "tag": "button",
+          },
+          "ref": null,
+          "rendered": "Submit",
+          "type": [Function],
+        },
+      ],
+      "type": [Function],
+    },
+    "type": "div",
+  },
+  Symbol(enzyme.__nodes__): Array [
+    Object {
+      "instance": null,
+      "key": undefined,
+      "nodeType": "host",
+      "props": Object {
+        "children": <FormGroup
+          tag="div"
+        >
+          <Input
+            className="topic-name test-topic-name"
+            onChange={[Function]}
+            placeholder="Add a topic"
+            type="text"
+            value=""
+          />
+          <Button
+            color="secondary"
+            onClick={[Function]}
+            size="sm"
+            tag="button"
+          >
+            Submit
+          </Button>
+        </FormGroup>,
+        "stylename": "container",
+      },
+      "ref": null,
+      "rendered": Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "function",
+        "props": Object {
+          "children": Array [
+            <Input
+              className="topic-name test-topic-name"
+              onChange={[Function]}
+              placeholder="Add a topic"
+              type="text"
+              value=""
+            />,
+            <Button
+              color="secondary"
+              onClick={[Function]}
+              size="sm"
+              tag="button"
+            >
+              Submit
+            </Button>,
+          ],
+          "tag": "div",
+        },
+        "ref": null,
+        "rendered": Array [
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "class",
+            "props": Object {
+              "className": "topic-name test-topic-name",
+              "onChange": [Function],
+              "placeholder": "Add a topic",
+              "type": "text",
+              "value": "",
+            },
+            "ref": null,
+            "rendered": null,
+            "type": [Function],
+          },
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "class",
+            "props": Object {
+              "children": "Submit",
+              "color": "secondary",
+              "onClick": [Function],
+              "size": "sm",
+              "tag": "button",
+            },
+            "ref": null,
+            "rendered": "Submit",
+            "type": [Function],
+          },
+        ],
+        "type": [Function],
+      },
+      "type": "div",
+    },
+  ],
+  Symbol(enzyme.__options__): Object {
+    "adapter": ReactSixteenAdapter {
+      "options": Object {
+        "enableComponentDidUpdateOnSetState": true,
+      },
+    },
+  },
+}
+`;

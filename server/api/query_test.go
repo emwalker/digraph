@@ -3,8 +3,6 @@ package api
 import (
 	"testing"
 
-	"github.com/cayleygraph/cayley/quad"
-	"github.com/cayleygraph/cayley/writer"
 	"github.com/graphql-go/graphql"
 	"github.com/labstack/echo"
 )
@@ -90,32 +88,6 @@ func init() {
 				},
 			},
 		},
-	}
-}
-
-var simpleGraph = []quad.Quad{
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:name"), "Tyrell Corporation", ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("rdf:type"), quad.IRI("foaf:Organization"), ""),
-	quad.Make(quad.IRI("topic:science"), quad.IRI("di:name"), "Science", ""),
-	quad.Make(quad.IRI("topic:science"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("topic:science"), ""),
-	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("di:name"), "Chemistry", ""),
-	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("topic:chemistry"), ""),
-	quad.Make(quad.IRI("topic:biology"), quad.IRI("di:name"), "Biology", ""),
-	quad.Make(quad.IRI("topic:biology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("topic:biology"), ""),
-	quad.Make(quad.IRI("topic:zoology"), quad.IRI("di:name"), "Zoology", ""),
-	quad.Make(quad.IRI("topic:zoology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
-	quad.Make(quad.IRI("user:gnusto"), quad.IRI("di:name"), "Gnusto", ""),
-	quad.Make(quad.IRI("user:gnusto"), quad.IRI("di:email"), "gnusto@tyrell.test", ""),
-	quad.Make(quad.IRI("user:gnusto"), quad.IRI("rdf:type"), quad.IRI("foaf:Person"), ""),
-}
-
-func (conn *CayleyConnection) makeTestStore(data []quad.Quad) {
-	writer, _ := writer.NewSingleReplication(conn.store, nil)
-	for _, t := range data {
-		writer.AddQuad(t)
 	}
 }
 

@@ -57,14 +57,9 @@ func (app *App) Run() {
 
 func New(conn Connection, engine *echo.Echo) (*App, error) {
 	schema, err := newSchema(conn)
-	if err != nil {
-		return nil, err
-	}
+	checkErr(err)
 
-	err = conn.Init()
-	if err != nil {
-		return nil, err
-	}
+	checkErr(conn.Init())
 
 	app := App{
 		Connection: conn,
