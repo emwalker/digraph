@@ -10,15 +10,12 @@ func main() {
 		"postgres://postgres@localhost:5432/digraffe_dev?sslmode=disable",
 	)
 
-	apiApp, err := api.New(conn)
+	webApp := NewApp(AppOptions{})
+
+	apiApp, err := api.New(conn, webApp.Engine)
 	if err != nil {
 		panic(err)
 	}
 
-	go func() {
-		apiApp.Run()
-	}()
-
-	webApp := NewApp(AppOptions{})
-	webApp.Run()
+	apiApp.Run()
 }

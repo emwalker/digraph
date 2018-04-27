@@ -1,6 +1,7 @@
 MIT License
 
 Copyright (c) 2015-2016 Oleg Lebedev
+Copyright (c) 2016 4Catalyzer
 Copyright (c) 2017 Alexandru Topliceanu
 Copyright (c) 2018 Eric Walker
 

@@ -8,9 +8,7 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	_ "github.com/mattes/migrate"
-	"github.com/nu7hatch/gouuid"
 )
 
 func init() {
@@ -51,13 +49,13 @@ func (app *App) HandleGraphqlQuery(c echo.Context) (err error) {
 }
 
 func (app *App) Run() {
-	err := app.Engine.Start(":8080")
+	err := app.Engine.Start(":5000")
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func New(conn Connection) (*App, error) {
+func New(conn Connection, engine *echo.Echo) (*App, error) {
 	schema, err := newSchema(conn)
 	if err != nil {
 		return nil, err
@@ -68,34 +66,11 @@ func New(conn Connection) (*App, error) {
 		return nil, err
 	}
 
-	engine := echo.New()
-
 	app := App{
 		Connection: conn,
 		Engine:     engine,
 		Schema:     schema,
 	}
-
-	engine.Use(middleware.Recover())
-
-	engine.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:8080", "http://localhost:5001"},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType},
-	}))
-
-	engine.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: `${method} | ${status} | ${uri} -> ${latency_human}` + "\n",
-		Output: os.Stdout,
-	}))
-
-	engine.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			c.Set("app", app)
-			id, _ := uuid.NewV4()
-			c.Set("uuid", id)
-			return next(c)
-		}
-	})
 
 	engine.POST("/graphql", func(c echo.Context) error {
 		return app.HandleGraphqlQuery(c)

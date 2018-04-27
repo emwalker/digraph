@@ -6,6 +6,7 @@ import (
 	"github.com/cayleygraph/cayley/quad"
 	"github.com/cayleygraph/cayley/writer"
 	"github.com/graphql-go/graphql"
+	"github.com/labstack/echo"
 )
 
 func init() {
@@ -120,7 +121,7 @@ func (conn *CayleyConnection) makeTestStore(data []quad.Quad) {
 
 func TestQuery(t *testing.T) {
 	conn := NewConnection("memstore", "")
-	app, _ := New(conn)
+	app, _ := New(conn, echo.New())
 	conn.(*CayleyConnection).makeTestStore(simpleGraph)
 	defer checkErr(conn.Close())
 

@@ -1,42 +1,42 @@
-require('isomorphic-fetch')
-
-/* eslint import/first: 0 */
-
+import React from 'react'
+import BrowserProtocol from 'farce/lib/BrowserProtocol'
+import createInitialFarceRouter from 'found/lib/createInitialFarceRouter'
 import ReactDOM from 'react-dom'
 import { Promise } from 'when'
-import Router from 'universal-router'
-import createHistory from 'history/createBrowserHistory'
 
+import { ClientFetcher } from './fetcher'
 import toString from './toString'
-import routes from './routes'
-import Api from './Api'
+
+import {
+  createResolver,
+  historyMiddlewares,
+  render,
+  routeConfig,
+} from './router'
+
 import '../css'
 
-const router = new Router(routes)
+/* eslint no-underscore-dangle: 0 */
 
-function render(location) {
-  const context = {
-    api: Api.create({
-      baseUrl: 'http://localhost:8080',
-    }),
-  }
-
-  router.resolve({ ...location, ...context }).then((result) => {
-    ReactDOM.render(
-      result.component,
-      document.getElementById('app'),
-      () => { document.title = result.title },
-    )
-  })
-}
-
-export function run() {
+export async function run() {
   window.Promise = window.Promise || Promise
   window.self = window
 
-  const history = createHistory()
-  history.listen(render)
-  render(history.location)
+  const fetcher = new ClientFetcher('/graphql', window.__RELAY_PAYLOADS__)
+  const resolver = createResolver(fetcher)
+
+  const Router = await createInitialFarceRouter({
+    historyProtocol: new BrowserProtocol(),
+    historyMiddlewares,
+    routeConfig,
+    resolver,
+    render,
+  })
+
+  ReactDOM.render(
+    <Router resolver={resolver} />,
+    document.getElementById('app'),
+  )
 }
 
 // Export it to render on the Golang server, keep the name sync with
