@@ -13,7 +13,7 @@
     "autoprefixer": "^6.7.7",
     "babel-core": "^6.24.1",
     "babel-eslint": "^8.2.2",
-    "babel-loader": "^6.4.1",
+    "babel-loader": "^7.1.4",
     "babel-polyfill": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-react": "^6.24.1",
@@ -28,12 +28,13 @@
     "eslint-plugin-react": "^7.7.0",
     "expose-loader": "^0.7.1",
     "express": "^4.15.2",
-    "extract-text-webpack-plugin": "^1.0.1",
+    "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "farce": "^0.2.6",
     "file-loader": "^0.11.1",
     "found": ">=0.3.8",
     "found-relay": "^0.3.0-alpha.12",
     "isomorphic-fetch": "^2.2.1",
+    "isomorphic-style-loader": "^4.0.0",
     "normalize.css": "^6.0.0",
     "postcss-functions": "^2.1.0",
     "postcss-loader": "^1.3.3",
@@ -46,11 +47,9 @@
     "react-relay": "^1.5.0",
     "relay-runtime": "^1.5.0",
     "serialize-javascript": "^1.5.0",
-    "style-loader": "^0.16.1",
-    "svgo-loader": "^1.2.1",
     "url-loader": "^0.5.8",
-    "webpack": "^1.12.13",
-    "webpack-dev-middleware": "^1.10.1",
+    "webpack": "4",
+    "webpack-dev-middleware": "^3.1.3",
     "webpack-hot-middleware": "^2.18.0",
     "when": "^3.7.8"
   },
@@ -168,7 +167,7 @@
     "jest": "^22.4.3",
     "react-test-renderer": "16",
     "relay-compiler": "^1.5.0",
-    "svgo": "^1.0.5"
+    "webpack-cli": "^2.0.15"
   },
   "jest": {
     "moduleNameMapper": {
