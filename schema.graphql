@@ -5,25 +5,29 @@ type PageInfo {
   endCursor: String
 }
 
+interface Namespacable {
+  organization: Organization!
+}
+
 interface ResourceIdentifiable {
   resourceId: String!
   resourcePath: String!
 }
 
 type User {
-  id: ID
-  resourceId: String!
-  name: String!
   email: String!
+  id: ID
+  name: String!
+  resourceId: String!
 }
 
-type Topic implements ResourceIdentifiable {
+type Topic implements ResourceIdentifiable & Namespacable {
+  description: String
   id: ID
+  name: String!
+  organization: Organization!
   resourceId: String!
   resourcePath: String!
-  organization: Organization!
-  name: String!
-  description: String
 }
 
 type TopicEdge {
@@ -36,9 +40,34 @@ type TopicConnection {
   pageInfo: PageInfo!
 }
 
+type Link implements ResourceIdentifiable & Namespacable {
+  id: ID
+  organization: Organization!
+  resourceId: String!
+  resourcePath: String!
+  title: String!
+  url: String!
+}
+
+type LinkEdge {
+  cursor: String!
+  node: Link
+}
+
+type LinkConnection {
+  edges: [LinkEdge]
+  pageInfo: PageInfo!
+}
+
 type Organization implements ResourceIdentifiable {
   id: ID
   name: String!
+  links(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): LinkConnection
   resourceId: String!
   resourcePath: String!
   topic(resourceId: String!): Topic

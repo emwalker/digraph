@@ -81,6 +81,50 @@ func init() {
 				},
 			},
 		},
+		{
+			Query: `
+				query {
+					organization(resourceId: "organization:tyrell") {
+						links(first: 100) {
+							edges {
+								node {
+									title
+									url
+								}
+							}
+						}
+					}
+				}
+			`,
+			Expected: &graphql.Result{
+				Data: map[string]interface{}{
+					"organization": map[string]interface{}{
+						"links": map[string]interface{}{
+							"edges": []interface{}{
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"title": "Github",
+										"url":   "https://github.com",
+									},
+								},
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"title": "New York Times",
+										"url":   "https://www.nytimes.com",
+									},
+								},
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"title": "Wikipedia",
+										"url":   "https://en.wikipedia.com",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

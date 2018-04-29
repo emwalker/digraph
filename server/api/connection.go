@@ -26,6 +26,7 @@ type Connection interface {
 	GetUser(string) (interface{}, error)
 	Viewer() (interface{}, error)
 	Init() error
+	FetchLinks(*[]interface{}, *Organization) error
 	FetchTopics(*[]interface{}, *Organization) error
 }
 

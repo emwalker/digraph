@@ -24,12 +24,20 @@ type Sortable interface {
 }
 
 type topicArray []Topic
+type linkArray []Link
 
 var topicArrayType reflect.Type
+var linkArrayType reflect.Type
 
 func (array topicArray) Sort() {
 	sort.Slice(array, func(i, j int) bool {
 		return array[i].Name < array[j].Name
+	})
+}
+
+func (array linkArray) Sort() {
+	sort.Slice(array, func(i, j int) bool {
+		return array[i].Title < array[j].Title
 	})
 }
 
@@ -38,9 +46,11 @@ func init() {
 	voc.RegisterPrefix("di:", "http://github.com/emwalker/digraffe/")
 	voc.RegisterPrefix("rdf:", "http://www.w3.org/1999/02/22-rdf-syntax-ns")
 	voc.RegisterPrefix("topic:", "/topics/")
+	voc.RegisterPrefix("link:", "/links/")
 	voc.RegisterPrefix("organization:", "/organizations/")
 	voc.RegisterPrefix("user:", "/users/")
 	topicArrayType = reflect.ValueOf(topicArray{}).Type()
+	linkArrayType = reflect.ValueOf(linkArray{}).Type()
 }
 
 func generateIDForType(typ string) quad.IRI {
@@ -173,4 +183,11 @@ func (conn *CayleyConnection) FetchTopics(out *[]interface{}, o *Organization) e
 		Out(quad.IRI("di:owns")).
 		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
 	return conn.loadIteratorTo(out, path, topicArrayType)
+}
+
+func (conn *CayleyConnection) FetchLinks(out *[]interface{}, o *Organization) error {
+	path := cayley.StartPath(conn.store, o.ResourceID).
+		Out(quad.IRI("di:owns")).
+		Has(quad.IRI("rdf:type"), quad.IRI("foaf:Document"))
+	return conn.loadIteratorTo(out, path, linkArrayType)
 }
