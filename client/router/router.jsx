@@ -7,7 +7,7 @@ import React from 'react'
 import { graphql } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
-// import Homepage from '../components/homepage'
+import Homepage from '../components/homepage'
 import Topics from '../components/Topics'
 import Layout from '../components/Layout'
 
@@ -34,9 +34,16 @@ query router_Topics_Query($organizationResourceId: String!) {
 }
 `
 
+const HomepageQuery = graphql`
+query router_Homepage_Query {
+  viewer {
+    ...Homepage_viewer
+  }
+}
+`
+
 export const routeConfig = makeRouteConfig(
   <Route
-    path="/"
     Component={Layout}
     query={
       graphql`
@@ -48,6 +55,12 @@ export const routeConfig = makeRouteConfig(
     `}
   >
     <Route
+      path="/"
+      Component={Homepage}
+      query={HomepageQuery}
+    />
+    <Route
+      path="/topics"
       Component={Topics}
       query={TopicsQuery}
       prepareVariables={params => ({

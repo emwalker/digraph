@@ -2,8 +2,8 @@
 import React from 'react'
 import { compose, isNil, map, prop, propOr, reject } from 'ramda'
 import { graphql, createFragmentContainer } from 'react-relay'
+import { ListGroup, ListGroupItem } from 'reactstrap'
 
-import Topic from './Topic'
 import AddTopic from './AddTopic'
 
 const topicList = compose(reject(isNil), map(prop('node')), propOr([], 'edges'))
@@ -28,8 +28,13 @@ const Topics = ({ viewer: { name }, organization, relay }: Props) => (
         <p className="lead">
           List of topics visible to { name }
         </p>
+        <ListGroup>
+          {topicList(organization.topics).map(({id, name, resourcePath}) => (
+            <ListGroupItem key={id} tag="a" href={resourcePath}>{name}</ListGroupItem>
+          ))}
+        </ListGroup>
       </div>
-      <div className="col-6">
+      <div className="col-5">
         <AddTopic
           className="test-add-topic"
           organization={organization}
@@ -37,11 +42,6 @@ const Topics = ({ viewer: { name }, organization, relay }: Props) => (
         />
       </div>
     </div>
-    <ul>
-      {topicList(organization.topics).map(topic => (
-        <Topic key={topic.id} topic={topic} />
-      ))}
-    </ul>
   </div>
 )
 
@@ -59,7 +59,7 @@ export default createFragmentContainer(Topics, graphql`
         node {
           id
           name
-          resourceId
+          resourcePath
           description
         }
       }

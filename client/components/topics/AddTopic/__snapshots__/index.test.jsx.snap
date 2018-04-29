@@ -42,7 +42,7 @@ ShallowWrapper {
           Submit
         </Button>
       </FormGroup>,
-      "stylename": "container",
+      "className": "form-container",
     },
     "ref": null,
     "rendered": Object {
@@ -131,7 +131,7 @@ ShallowWrapper {
             Submit
           </Button>
         </FormGroup>,
-        "stylename": "container",
+        "className": "form-container",
       },
       "ref": null,
       "rendered": Object {

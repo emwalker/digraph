@@ -53,6 +53,10 @@ func isomorphicID(id quad.IRI) string {
 	return replacer.Replace(id.Short().String())
 }
 
+func resourcePath(id quad.IRI) string {
+	return replacer.Replace(id.Full().String())
+}
+
 func (o *User) Init() {
 	o.ID = isomorphicID(o.ResourceID)
 }
@@ -179,6 +183,19 @@ func resourceIdentifierField(conn Connection) *graphql.Field {
 	}
 }
 
+func resourcePathField(conn Connection) *graphql.Field {
+	return &graphql.Field{
+		Type:        graphql.String,
+		Description: "The relative path to the resource.",
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			if res, ok := p.Source.(Resource); ok {
+				return resourcePath(res.IRI()), nil
+			}
+			return nil, errors.New("unable to provide resourcePath")
+		},
+	}
+}
+
 func topicsConnection(conn Connection, typ graphql.Output) *graphql.Field {
 	return &graphql.Field{
 		Type: typ,
@@ -231,15 +248,12 @@ func createTopicMutation(conn Connection, topicEdgeType graphql.Output) *graphql
 		OutputFields: graphql.Fields{
 			"topicEdge": &graphql.Field{
 				Type: topicEdgeType,
+
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					if payload, ok := p.Source.(map[string]interface{}); ok {
 						topic, err := conn.GetTopic(payload["topicResourceId"].(string))
 						checkErr(err)
-
-						return &relay.Edge{
-							Node:   topic,
-							Cursor: "YXJyYXljb25uZWN0aW9uOjA=",
-						}, nil
+						return &relay.Edge{Node: topic}, nil
 					}
 					return nil, nil
 				},
@@ -270,6 +284,9 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		Name: "ResourceIdentifiable",
 		Fields: graphql.Fields{
 			"resourceId": &graphql.Field{
+				Type: graphql.String,
+			},
+			"resourcePath": &graphql.Field{
 				Type: graphql.String,
 			},
 		},
@@ -306,6 +323,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 				Description: "The description of the topic.",
 			},
 			"resourceId": resourceIdentifierField(conn),
+			"resourcePath": resourcePathField(conn),
 		},
 		Interfaces: []*graphql.Interface{
 			nodeDefinitions.NodeInterface,
@@ -325,6 +343,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 			"name":       organizationNameField(conn),
 			"topics":     topicsConnection(conn, topicConnectionDefinition.ConnectionType),
 			"resourceId": resourceIdentifierField(conn),
+			"resourcePath": resourcePathField(conn),
 		},
 		Interfaces: []*graphql.Interface{
 			nodeDefinitions.NodeInterface,

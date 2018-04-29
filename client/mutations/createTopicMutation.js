@@ -11,6 +11,7 @@ const mutation = graphql`
           id
           name
           resourceId
+          resourcePath
         }
       }
     }

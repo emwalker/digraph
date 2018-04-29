@@ -60,9 +60,18 @@ ShallowWrapper {
               List of topics visible to 
               Rezrov
             </p>
+            <ListGroup
+              tag="ul"
+            >
+              <Unknown
+                id="1234"
+                name="Frotz"
+                resourceId="/topics/1234"
+              />
+            </ListGroup>
           </div>
           <div
-            className="col-6"
+            className="col-5"
           >
             <AddTopic
               className="test-add-topic"
@@ -90,17 +99,6 @@ ShallowWrapper {
             />
           </div>
         </div>,
-        <ul>
-          <Unknown
-            topic={
-              Object {
-                "id": "1234",
-                "name": "Frotz",
-                "resourceId": "/topics/1234",
-              }
-            }
-          />
-        </ul>,
       ],
     },
     "ref": null,
@@ -131,9 +129,18 @@ ShallowWrapper {
                 List of topics visible to 
                 Rezrov
               </p>
+              <ListGroup
+                tag="ul"
+              >
+                <Unknown
+                  id="1234"
+                  name="Frotz"
+                  resourceId="/topics/1234"
+                />
+              </ListGroup>
             </div>,
             <div
-              className="col-6"
+              className="col-5"
             >
               <AddTopic
                 className="test-add-topic"
@@ -170,33 +177,78 @@ ShallowWrapper {
             "key": undefined,
             "nodeType": "host",
             "props": Object {
-              "children": <p
-                className="lead"
-              >
-                List of topics visible to 
-                Rezrov
-              </p>,
+              "children": Array [
+                <p
+                  className="lead"
+                >
+                  List of topics visible to 
+                  Rezrov
+                </p>,
+                <ListGroup
+                  tag="ul"
+                >
+                  <Unknown
+                    id="1234"
+                    name="Frotz"
+                    resourceId="/topics/1234"
+                  />
+                </ListGroup>,
+              ],
               "className": "col",
             },
             "ref": null,
-            "rendered": Object {
-              "instance": null,
-              "key": undefined,
-              "nodeType": "host",
-              "props": Object {
-                "children": Array [
+            "rendered": Array [
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": Array [
+                    "List of topics visible to ",
+                    "Rezrov",
+                  ],
+                  "className": "lead",
+                },
+                "ref": null,
+                "rendered": Array [
                   "List of topics visible to ",
                   "Rezrov",
                 ],
-                "className": "lead",
+                "type": "p",
               },
-              "ref": null,
-              "rendered": Array [
-                "List of topics visible to ",
-                "Rezrov",
-              ],
-              "type": "p",
-            },
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "function",
+                "props": Object {
+                  "children": Array [
+                    <Unknown
+                      id="1234"
+                      name="Frotz"
+                      resourceId="/topics/1234"
+                    />,
+                  ],
+                  "tag": "ul",
+                },
+                "ref": null,
+                "rendered": Array [
+                  Object {
+                    "instance": null,
+                    "key": "1234",
+                    "nodeType": "function",
+                    "props": Object {
+                      "id": "1234",
+                      "name": "Frotz",
+                      "resourceId": "/topics/1234",
+                    },
+                    "ref": null,
+                    "rendered": null,
+                    "type": [Function],
+                  },
+                ],
+                "type": [Function],
+              },
+            ],
             "type": "div",
           },
           Object {
@@ -228,7 +280,7 @@ ShallowWrapper {
                   }
                 }
               />,
-              "className": "col-6",
+              "className": "col-5",
             },
             "ref": null,
             "rendered": Object {
@@ -264,43 +316,6 @@ ShallowWrapper {
         ],
         "type": "div",
       },
-      Object {
-        "instance": null,
-        "key": undefined,
-        "nodeType": "host",
-        "props": Object {
-          "children": Array [
-            <Unknown
-              topic={
-                Object {
-                  "id": "1234",
-                  "name": "Frotz",
-                  "resourceId": "/topics/1234",
-                }
-              }
-            />,
-          ],
-        },
-        "ref": null,
-        "rendered": Array [
-          Object {
-            "instance": null,
-            "key": "1234",
-            "nodeType": "function",
-            "props": Object {
-              "topic": Object {
-                "id": "1234",
-                "name": "Frotz",
-                "resourceId": "/topics/1234",
-              },
-            },
-            "ref": null,
-            "rendered": null,
-            "type": [Function],
-          },
-        ],
-        "type": "ul",
-      },
     ],
     "type": "div",
   },
@@ -326,9 +341,18 @@ ShallowWrapper {
                 List of topics visible to 
                 Rezrov
               </p>
+              <ListGroup
+                tag="ul"
+              >
+                <Unknown
+                  id="1234"
+                  name="Frotz"
+                  resourceId="/topics/1234"
+                />
+              </ListGroup>
             </div>
             <div
-              className="col-6"
+              className="col-5"
             >
               <AddTopic
                 className="test-add-topic"
@@ -356,17 +380,6 @@ ShallowWrapper {
               />
             </div>
           </div>,
-          <ul>
-            <Unknown
-              topic={
-                Object {
-                  "id": "1234",
-                  "name": "Frotz",
-                  "resourceId": "/topics/1234",
-                }
-              }
-            />
-          </ul>,
         ],
       },
       "ref": null,
@@ -397,9 +410,18 @@ ShallowWrapper {
                   List of topics visible to 
                   Rezrov
                 </p>
+                <ListGroup
+                  tag="ul"
+                >
+                  <Unknown
+                    id="1234"
+                    name="Frotz"
+                    resourceId="/topics/1234"
+                  />
+                </ListGroup>
               </div>,
               <div
-                className="col-6"
+                className="col-5"
               >
                 <AddTopic
                   className="test-add-topic"
@@ -436,33 +458,78 @@ ShallowWrapper {
               "key": undefined,
               "nodeType": "host",
               "props": Object {
-                "children": <p
-                  className="lead"
-                >
-                  List of topics visible to 
-                  Rezrov
-                </p>,
+                "children": Array [
+                  <p
+                    className="lead"
+                  >
+                    List of topics visible to 
+                    Rezrov
+                  </p>,
+                  <ListGroup
+                    tag="ul"
+                  >
+                    <Unknown
+                      id="1234"
+                      name="Frotz"
+                      resourceId="/topics/1234"
+                    />
+                  </ListGroup>,
+                ],
                 "className": "col",
               },
               "ref": null,
-              "rendered": Object {
-                "instance": null,
-                "key": undefined,
-                "nodeType": "host",
-                "props": Object {
-                  "children": Array [
+              "rendered": Array [
+                Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "host",
+                  "props": Object {
+                    "children": Array [
+                      "List of topics visible to ",
+                      "Rezrov",
+                    ],
+                    "className": "lead",
+                  },
+                  "ref": null,
+                  "rendered": Array [
                     "List of topics visible to ",
                     "Rezrov",
                   ],
-                  "className": "lead",
+                  "type": "p",
                 },
-                "ref": null,
-                "rendered": Array [
-                  "List of topics visible to ",
-                  "Rezrov",
-                ],
-                "type": "p",
-              },
+                Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "function",
+                  "props": Object {
+                    "children": Array [
+                      <Unknown
+                        id="1234"
+                        name="Frotz"
+                        resourceId="/topics/1234"
+                      />,
+                    ],
+                    "tag": "ul",
+                  },
+                  "ref": null,
+                  "rendered": Array [
+                    Object {
+                      "instance": null,
+                      "key": "1234",
+                      "nodeType": "function",
+                      "props": Object {
+                        "id": "1234",
+                        "name": "Frotz",
+                        "resourceId": "/topics/1234",
+                      },
+                      "ref": null,
+                      "rendered": null,
+                      "type": [Function],
+                    },
+                  ],
+                  "type": [Function],
+                },
+              ],
               "type": "div",
             },
             Object {
@@ -494,7 +561,7 @@ ShallowWrapper {
                     }
                   }
                 />,
-                "className": "col-6",
+                "className": "col-5",
               },
               "ref": null,
               "rendered": Object {
@@ -529,43 +596,6 @@ ShallowWrapper {
             },
           ],
           "type": "div",
-        },
-        Object {
-          "instance": null,
-          "key": undefined,
-          "nodeType": "host",
-          "props": Object {
-            "children": Array [
-              <Unknown
-                topic={
-                  Object {
-                    "id": "1234",
-                    "name": "Frotz",
-                    "resourceId": "/topics/1234",
-                  }
-                }
-              />,
-            ],
-          },
-          "ref": null,
-          "rendered": Array [
-            Object {
-              "instance": null,
-              "key": "1234",
-              "nodeType": "function",
-              "props": Object {
-                "topic": Object {
-                  "id": "1234",
-                  "name": "Frotz",
-                  "resourceId": "/topics/1234",
-                },
-              },
-              "ref": null,
-              "rendered": null,
-              "type": [Function],
-            },
-          ],
-          "type": "ul",
         },
       ],
       "type": "div",

@@ -1,10 +1,9 @@
-.container {
-  input, button {
-    display: inline-block;
-  }
+.form-container {
+  text-align: right;
+}
 
-  .topic-name {
-    width: 75%;
-    margin-right: 1em;
-  }
+.topic-name {
+  display: inline-block;
+  width: 75%;
+  margin-right: 1em;
 }

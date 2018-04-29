@@ -5,6 +5,11 @@ type PageInfo {
   endCursor: String
 }
 
+interface ResourceIdentifiable {
+  resourceId: String!
+  resourcePath: String!
+}
+
 type User {
   id: ID
   resourceId: String!
@@ -12,9 +17,10 @@ type User {
   email: String!
 }
 
-type Topic {
+type Topic implements ResourceIdentifiable {
   id: ID
   resourceId: String!
+  resourcePath: String!
   organization: Organization!
   name: String!
   description: String
@@ -30,10 +36,11 @@ type TopicConnection {
   pageInfo: PageInfo!
 }
 
-type Organization {
+type Organization implements ResourceIdentifiable {
   id: ID
-  resourceId: String!
   name: String!
+  resourceId: String!
+  resourcePath: String!
   topics(
     first: Int,
     after: String,

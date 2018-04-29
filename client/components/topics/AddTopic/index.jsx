@@ -45,7 +45,7 @@ class AddTopic extends Component<Props, State> {
   }
 
   render = () => (
-    <div stylename="container">
+    <div className="form-container">
       <FormGroup>
         <Input
           className="topic-name test-topic-name"

@@ -1,5 +1,6 @@
 // @flow
 import React from 'react'
+import { graphql, createFragmentContainer } from 'react-relay'
 
 import Layout from '../Layout'
 
@@ -9,8 +10,8 @@ type Props = {
   }
 }
 
-export default ({ viewer: { name } }: Props) => (
-  <Layout>
+const Homepage = ({ viewer: { name } }: Props) => (
+  <div>
     <h1>Hello {name}</h1>
     <p className="lead">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent
@@ -22,5 +23,11 @@ export default ({ viewer: { name } }: Props) => (
       Curabitur cursus est a fringilla semper. Aliquam eget urna erat.
       Nullam eget vehicula neque.
     </p>
-  </Layout>
+  </div>
 )
+
+export default createFragmentContainer(Homepage, graphql`
+  fragment Homepage_viewer on User {
+    name
+  }
+`)
