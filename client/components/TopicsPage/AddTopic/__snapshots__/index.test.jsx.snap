@@ -29,7 +29,7 @@ ShallowWrapper {
         <Input
           className="topic-name test-topic-name"
           onChange={[Function]}
-          placeholder="Add a topic"
+          placeholder="Topic name"
           type="text"
           value=""
         />
@@ -39,7 +39,7 @@ ShallowWrapper {
           size="sm"
           tag="button"
         >
-          Submit
+          Add
         </Button>
       </FormGroup>,
       "className": "form-container",
@@ -54,7 +54,7 @@ ShallowWrapper {
           <Input
             className="topic-name test-topic-name"
             onChange={[Function]}
-            placeholder="Add a topic"
+            placeholder="Topic name"
             type="text"
             value=""
           />,
@@ -64,7 +64,7 @@ ShallowWrapper {
             size="sm"
             tag="button"
           >
-            Submit
+            Add
           </Button>,
         ],
         "tag": "div",
@@ -78,7 +78,7 @@ ShallowWrapper {
           "props": Object {
             "className": "topic-name test-topic-name",
             "onChange": [Function],
-            "placeholder": "Add a topic",
+            "placeholder": "Topic name",
             "type": "text",
             "value": "",
           },
@@ -91,14 +91,14 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "class",
           "props": Object {
-            "children": "Submit",
+            "children": "Add",
             "color": "secondary",
             "onClick": [Function],
             "size": "sm",
             "tag": "button",
           },
           "ref": null,
-          "rendered": "Submit",
+          "rendered": "Add",
           "type": [Function],
         },
       ],
@@ -118,7 +118,7 @@ ShallowWrapper {
           <Input
             className="topic-name test-topic-name"
             onChange={[Function]}
-            placeholder="Add a topic"
+            placeholder="Topic name"
             type="text"
             value=""
           />
@@ -128,7 +128,7 @@ ShallowWrapper {
             size="sm"
             tag="button"
           >
-            Submit
+            Add
           </Button>
         </FormGroup>,
         "className": "form-container",
@@ -143,7 +143,7 @@ ShallowWrapper {
             <Input
               className="topic-name test-topic-name"
               onChange={[Function]}
-              placeholder="Add a topic"
+              placeholder="Topic name"
               type="text"
               value=""
             />,
@@ -153,7 +153,7 @@ ShallowWrapper {
               size="sm"
               tag="button"
             >
-              Submit
+              Add
             </Button>,
           ],
           "tag": "div",
@@ -167,7 +167,7 @@ ShallowWrapper {
             "props": Object {
               "className": "topic-name test-topic-name",
               "onChange": [Function],
-              "placeholder": "Add a topic",
+              "placeholder": "Topic name",
               "type": "text",
               "value": "",
             },
@@ -180,14 +180,14 @@ ShallowWrapper {
             "key": undefined,
             "nodeType": "class",
             "props": Object {
-              "children": "Submit",
+              "children": "Add",
               "color": "secondary",
               "onClick": [Function],
               "size": "sm",
               "tag": "button",
             },
             "ref": null,
-            "rendered": "Submit",
+            "rendered": "Add",
             "type": [Function],
           },
         ],

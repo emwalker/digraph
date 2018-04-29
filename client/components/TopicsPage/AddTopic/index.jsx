@@ -49,11 +49,11 @@ class AddTopic extends Component<Props, State> {
       <FormGroup>
         <Input
           className="topic-name test-topic-name"
-          placeholder="Add a topic"
+          placeholder="Topic name"
           value={this.state.name}
           onChange={this.updateName}
         />
-        <Button size="sm" onClick={this.onSubmit}>Submit</Button>
+        <Button size="sm" onClick={this.onSubmit}>Add</Button>
       </FormGroup>
     </div>
   )

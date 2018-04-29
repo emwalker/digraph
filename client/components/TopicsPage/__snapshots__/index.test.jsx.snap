@@ -1,10 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`<Topics /> renders 1`] = `
+exports[`<TopicsPage /> renders 1`] = `
 ShallowWrapper {
   "length": 1,
   Symbol(enzyme.__root__): [Circular],
-  Symbol(enzyme.__unrendered__): <Topics
+  Symbol(enzyme.__unrendered__): <TopicsPage
     organization={
       Object {
         "resourceId": "organization:tyrell",
@@ -54,20 +54,15 @@ ShallowWrapper {
           <div
             className="col"
           >
-            <p
-              className="lead"
-            >
-              List of topics visible to 
-              Rezrov
-            </p>
             <ListGroup
               tag="ul"
             >
-              <Unknown
-                id="1234"
-                name="Frotz"
-                resourceId="/topics/1234"
-              />
+              <ListGroupItem
+                href={undefined}
+                tag="a"
+              >
+                Frotz
+              </ListGroupItem>
             </ListGroup>
           </div>
           <div
@@ -123,20 +118,15 @@ ShallowWrapper {
             <div
               className="col"
             >
-              <p
-                className="lead"
-              >
-                List of topics visible to 
-                Rezrov
-              </p>
               <ListGroup
                 tag="ul"
               >
-                <Unknown
-                  id="1234"
-                  name="Frotz"
-                  resourceId="/topics/1234"
-                />
+                <ListGroupItem
+                  href={undefined}
+                  tag="a"
+                >
+                  Frotz
+                </ListGroupItem>
               </ListGroup>
             </div>,
             <div
@@ -177,78 +167,52 @@ ShallowWrapper {
             "key": undefined,
             "nodeType": "host",
             "props": Object {
-              "children": Array [
-                <p
-                  className="lead"
+              "children": <ListGroup
+                tag="ul"
+              >
+                <ListGroupItem
+                  href={undefined}
+                  tag="a"
                 >
-                  List of topics visible to 
-                  Rezrov
-                </p>,
-                <ListGroup
-                  tag="ul"
-                >
-                  <Unknown
-                    id="1234"
-                    name="Frotz"
-                    resourceId="/topics/1234"
-                  />
-                </ListGroup>,
-              ],
+                  Frotz
+                </ListGroupItem>
+              </ListGroup>,
               "className": "col",
             },
             "ref": null,
-            "rendered": Array [
-              Object {
-                "instance": null,
-                "key": undefined,
-                "nodeType": "host",
-                "props": Object {
-                  "children": Array [
-                    "List of topics visible to ",
-                    "Rezrov",
-                  ],
-                  "className": "lead",
-                },
-                "ref": null,
-                "rendered": Array [
-                  "List of topics visible to ",
-                  "Rezrov",
+            "rendered": Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "function",
+              "props": Object {
+                "children": Array [
+                  <ListGroupItem
+                    href={undefined}
+                    tag="a"
+                  >
+                    Frotz
+                  </ListGroupItem>,
                 ],
-                "type": "p",
+                "tag": "ul",
               },
-              Object {
-                "instance": null,
-                "key": undefined,
-                "nodeType": "function",
-                "props": Object {
-                  "children": Array [
-                    <Unknown
-                      id="1234"
-                      name="Frotz"
-                      resourceId="/topics/1234"
-                    />,
-                  ],
-                  "tag": "ul",
-                },
-                "ref": null,
-                "rendered": Array [
-                  Object {
-                    "instance": null,
-                    "key": "1234",
-                    "nodeType": "function",
-                    "props": Object {
-                      "id": "1234",
-                      "name": "Frotz",
-                      "resourceId": "/topics/1234",
-                    },
-                    "ref": null,
-                    "rendered": null,
-                    "type": [Function],
+              "ref": null,
+              "rendered": Array [
+                Object {
+                  "instance": null,
+                  "key": "1234",
+                  "nodeType": "function",
+                  "props": Object {
+                    "children": "Frotz",
+                    "href": undefined,
+                    "tag": "a",
                   },
-                ],
-                "type": [Function],
-              },
-            ],
+                  "ref": null,
+                  "rendered": "Frotz",
+                  "type": [Function],
+                },
+              ],
+              "type": [Function],
+            },
             "type": "div",
           },
           Object {
@@ -335,20 +299,15 @@ ShallowWrapper {
             <div
               className="col"
             >
-              <p
-                className="lead"
-              >
-                List of topics visible to 
-                Rezrov
-              </p>
               <ListGroup
                 tag="ul"
               >
-                <Unknown
-                  id="1234"
-                  name="Frotz"
-                  resourceId="/topics/1234"
-                />
+                <ListGroupItem
+                  href={undefined}
+                  tag="a"
+                >
+                  Frotz
+                </ListGroupItem>
               </ListGroup>
             </div>
             <div
@@ -404,20 +363,15 @@ ShallowWrapper {
               <div
                 className="col"
               >
-                <p
-                  className="lead"
-                >
-                  List of topics visible to 
-                  Rezrov
-                </p>
                 <ListGroup
                   tag="ul"
                 >
-                  <Unknown
-                    id="1234"
-                    name="Frotz"
-                    resourceId="/topics/1234"
-                  />
+                  <ListGroupItem
+                    href={undefined}
+                    tag="a"
+                  >
+                    Frotz
+                  </ListGroupItem>
                 </ListGroup>
               </div>,
               <div
@@ -458,78 +412,52 @@ ShallowWrapper {
               "key": undefined,
               "nodeType": "host",
               "props": Object {
-                "children": Array [
-                  <p
-                    className="lead"
+                "children": <ListGroup
+                  tag="ul"
+                >
+                  <ListGroupItem
+                    href={undefined}
+                    tag="a"
                   >
-                    List of topics visible to 
-                    Rezrov
-                  </p>,
-                  <ListGroup
-                    tag="ul"
-                  >
-                    <Unknown
-                      id="1234"
-                      name="Frotz"
-                      resourceId="/topics/1234"
-                    />
-                  </ListGroup>,
-                ],
+                    Frotz
+                  </ListGroupItem>
+                </ListGroup>,
                 "className": "col",
               },
               "ref": null,
-              "rendered": Array [
-                Object {
-                  "instance": null,
-                  "key": undefined,
-                  "nodeType": "host",
-                  "props": Object {
-                    "children": Array [
-                      "List of topics visible to ",
-                      "Rezrov",
-                    ],
-                    "className": "lead",
-                  },
-                  "ref": null,
-                  "rendered": Array [
-                    "List of topics visible to ",
-                    "Rezrov",
+              "rendered": Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "function",
+                "props": Object {
+                  "children": Array [
+                    <ListGroupItem
+                      href={undefined}
+                      tag="a"
+                    >
+                      Frotz
+                    </ListGroupItem>,
                   ],
-                  "type": "p",
+                  "tag": "ul",
                 },
-                Object {
-                  "instance": null,
-                  "key": undefined,
-                  "nodeType": "function",
-                  "props": Object {
-                    "children": Array [
-                      <Unknown
-                        id="1234"
-                        name="Frotz"
-                        resourceId="/topics/1234"
-                      />,
-                    ],
-                    "tag": "ul",
-                  },
-                  "ref": null,
-                  "rendered": Array [
-                    Object {
-                      "instance": null,
-                      "key": "1234",
-                      "nodeType": "function",
-                      "props": Object {
-                        "id": "1234",
-                        "name": "Frotz",
-                        "resourceId": "/topics/1234",
-                      },
-                      "ref": null,
-                      "rendered": null,
-                      "type": [Function],
+                "ref": null,
+                "rendered": Array [
+                  Object {
+                    "instance": null,
+                    "key": "1234",
+                    "nodeType": "function",
+                    "props": Object {
+                      "children": "Frotz",
+                      "href": undefined,
+                      "tag": "a",
                     },
-                  ],
-                  "type": [Function],
-                },
-              ],
+                    "ref": null,
+                    "rendered": "Frotz",
+                    "type": [Function],
+                  },
+                ],
+                "type": [Function],
+              },
               "type": "div",
             },
             Object {

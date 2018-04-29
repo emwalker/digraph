@@ -341,6 +341,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		Fields: graphql.Fields{
 			"id":         relay.GlobalIDField("Organization", nil),
 			"name":       organizationNameField(conn),
+			"topic":      topicField(conn),
 			"topics":     topicsConnection(conn, topicConnectionDefinition.ConnectionType),
 			"resourceId": resourceIdentifierField(conn),
 			"resourcePath": resourcePathField(conn),
@@ -357,7 +358,6 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 			"viewer":       viewerField(conn),
 			"organization": organizationField(conn),
 			"user":         userField(conn),
-			"topic":        topicField(conn),
 			"node":         nodeDefinitions.NodeField,
 		},
 	})

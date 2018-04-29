@@ -4,7 +4,7 @@ exports[`<Homepage /> renders 1`] = `
 ShallowWrapper {
   "length": 1,
   Symbol(enzyme.__root__): [Circular],
-  Symbol(enzyme.__unrendered__): <Unknown
+  Symbol(enzyme.__unrendered__): <Homepage
     viewer={
       Object {
         "name": "Gnusto",

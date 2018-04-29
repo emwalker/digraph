@@ -11,13 +11,13 @@ func init() {
 	Tests = []T{
 		{
 			Query: `
-		      query {
-		        viewer {
-		          name
-		          email
-		        }
-		      }
-		    `,
+				query {
+					viewer {
+						name
+						email
+					}
+				}
+			`,
 			Expected: &graphql.Result{
 				Data: map[string]interface{}{
 					"viewer": map[string]interface{}{
@@ -39,6 +39,12 @@ func init() {
 									name
 								}
 							}
+						}
+
+						topic(resourceId: "topic:science") {
+							name
+							description
+							resourcePath
 						}
 					}
 				}
@@ -66,26 +72,11 @@ func init() {
 								},
 							},
 						},
-					},
-				},
-			},
-		},
-		{
-			Query: `
-				query {
-					topic(resourceId: "topic:science") {
-						name
-						description
-						resourcePath
-					}
-				}
-			`,
-			Expected: &graphql.Result{
-				Data: map[string]interface{}{
-					"topic": map[string]interface{}{
-						"name":        "Science",
-						"description": nil,
-						"resourcePath": "/topics/science",
+						"topic": map[string]interface{}{
+							"name":        "Science",
+							"description": nil,
+							"resourcePath": "/topics/science",
+						},
 					},
 				},
 			},

@@ -9,9 +9,6 @@ import AddTopic from './AddTopic'
 const topicList = compose(reject(isNil), map(prop('node')), propOr([], 'edges'))
 
 type Props = {
-  viewer: {
-    name: string,
-  },
   organization: {
     topics: Object,
   },
@@ -20,16 +17,13 @@ type Props = {
   }
 }
 
-const Topics = ({ viewer: { name }, organization, relay }: Props) => (
+const TopicsPage = ({ organization, relay }: Props) => (
   <div>
     <h1>Topics</h1>
     <div className="row">
       <div className="col">
-        <p className="lead">
-          List of topics visible to { name }
-        </p>
         <ListGroup>
-          {topicList(organization.topics).map(({id, name, resourcePath}) => (
+          {topicList(organization.topics).map(({ id, name, resourcePath }) => (
             <ListGroupItem key={id} tag="a" href={resourcePath}>{name}</ListGroupItem>
           ))}
         </ListGroup>
@@ -45,12 +39,12 @@ const Topics = ({ viewer: { name }, organization, relay }: Props) => (
   </div>
 )
 
-export default createFragmentContainer(Topics, graphql`
-  fragment Topics_viewer on User {
+export default createFragmentContainer(TopicsPage, graphql`
+  fragment TopicsPage_viewer on User {
     name
   }
 
-  fragment Topics_organization on Organization {
+  fragment TopicsPage_organization on Organization {
     id
     resourceId
 

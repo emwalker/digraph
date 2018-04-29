@@ -6,6 +6,6 @@ const router = require('./router')
 global.main = router.renderToString
 
 // start app if it in the browser
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined')
   router.run()
-}
+

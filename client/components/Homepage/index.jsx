@@ -2,8 +2,6 @@
 import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import Layout from '../Layout'
-
 type Props = {
   viewer: {
     name: string,

@@ -1,6 +1,6 @@
 import React from 'react'
 import BrowserProtocol from 'farce/lib/BrowserProtocol'
-import createInitialFarceRouter from 'found/lib/createInitialFarceRouter'
+import createFarceRouter from 'found/lib/createFarceRouter'
 import ReactDOM from 'react-dom'
 import { Promise } from 'when'
 
@@ -18,14 +18,14 @@ import '../css'
 
 /* eslint no-underscore-dangle: 0 */
 
-export async function run() {
+export function run() {
   window.Promise = window.Promise || Promise
   window.self = window
 
   const fetcher = new ClientFetcher('/graphql', window.__RELAY_PAYLOADS__)
   const resolver = createResolver(fetcher)
 
-  const Router = await createInitialFarceRouter({
+  const Router = createFarceRouter({
     historyProtocol: new BrowserProtocol(),
     historyMiddlewares,
     routeConfig,

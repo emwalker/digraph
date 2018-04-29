@@ -1,10 +1,10 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-import Topics from './index'
+import TopicsPage from './index'
 
 jest.mock('react-relay', () => ({ createFragmentContainer: component => component }))
 
-describe('<Topics />', () => {
+describe('<TopicsPage />', () => {
   const viewer = {
     name: 'Rezrov',
   }
@@ -29,7 +29,7 @@ describe('<Topics />', () => {
   }
 
   const wrapper = shallow(
-    <Topics
+    <TopicsPage
       organization={organization}
       viewer={viewer}
       relay={relay}

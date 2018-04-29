@@ -113,6 +113,11 @@
       "function-paren-newline": [
         "error",
         "consistent"
+      ],
+      "curly": [
+        "error",
+        "multi",
+        "consistent"
       ]
     },
     "env": {

@@ -41,6 +41,7 @@ type Organization implements ResourceIdentifiable {
   name: String!
   resourceId: String!
   resourcePath: String!
+  topic(resourceId: String!): Topic
   topics(
     first: Int,
     after: String,

@@ -7,8 +7,9 @@ import React from 'react'
 import { graphql } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
-import Homepage from '../components/homepage'
-import Topics from '../components/Topics'
+import Homepage from '../components/Homepage'
+import TopicsPage from '../components/TopicsPage'
+import TopicPage from '../components/TopicPage'
 import Layout from '../components/Layout'
 
 export const historyMiddlewares = [queryMiddleware]
@@ -18,57 +19,85 @@ export function createResolver(fetcher) {
     network: Network.create((...args) => fetcher.fetch(...args)),
     store: new Store(new RecordSource()),
   })
-
   return new Resolver(environment)
 }
 
-const TopicsQuery = graphql`
-query router_Topics_Query($organizationResourceId: String!) {
+const renderTopicPage = ({ props, error }: any) => {
+  if (error)
+    return <div>There was a problem.</div>
+  if (!props)
+    return <div>loading ...</div>
+  return <TopicPage topic={props.organization.topic} />
+}
+
+const TopicPageQuery = graphql`
+query router_TopicPage_Query(
+  $orgResourceId: String!,
+  $topicResourceId: String!
+) {
+  organization(resourceId: $orgResourceId) {
+    topic(resourceId: $topicResourceId) {
+      ...TopicPage_topic
+    }
+  }
+}`
+
+const TopicsPageQuery = graphql`
+query router_TopicsPage_Query($orgResourceId: String!) {
   viewer {
-    ...Topics_viewer
+    ...TopicsPage_viewer
   }
 
-  organization(resourceId: $organizationResourceId) {
-    ...Topics_organization
+  organization(resourceId: $orgResourceId) {
+    ...TopicsPage_organization
   }
-}
-`
+}`
 
 const HomepageQuery = graphql`
 query router_Homepage_Query {
   viewer {
     ...Homepage_viewer
   }
-}
-`
+}`
 
 export const routeConfig = makeRouteConfig(
   <Route
     Component={Layout}
+    path="/"
     query={
       graphql`
       query router_Query {
         viewer {
           name
         }
-      }
-    `}
+      }`
+    }
   >
     <Route
-      path="/"
       Component={Homepage}
       query={HomepageQuery}
     />
     <Route
-      path="/topics"
-      Component={Topics}
-      query={TopicsQuery}
+      path="topics"
       prepareVariables={params => ({
         ...params,
-        status: 'any',
-        organizationResourceId: 'organization:tyrell',
+        orgResourceId: 'organization:tyrell',
       })}
-    />
+    >
+      <Route
+        Component={TopicsPage}
+        query={TopicsPageQuery}
+      />
+      <Route
+        path=":uuid"
+        render={renderTopicPage}
+        query={TopicPageQuery}
+        prepareVariables={({ uuid, ...params }) => ({
+          topicResourceId: `topic:${uuid}`,
+          ...params,
+        })}
+      />
+    </Route>
   </Route>,
 )
 

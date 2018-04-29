@@ -49,9 +49,8 @@ export class ClientFetcher extends FetcherBase {
   }
 
   async fetch(...args) {
-    if (this.payloads.length) {
+    if (this.payloads.length)
       return this.payloads.shift()
-    }
 
     return super.fetch(...args)
   }
