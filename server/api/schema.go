@@ -203,8 +203,8 @@ func topicsConnection(conn Connection, typ graphql.Output) *graphql.Field {
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			args := relay.NewConnectionArguments(p.Args)
 			dest := []interface{}{}
-			if organization, ok := p.Source.(*Organization); ok {
-				err := conn.SelectOrganizationTopics(&dest, organization)
+			if org, ok := p.Source.(*Organization); ok {
+				err := conn.FetchTopics(&dest, org)
 				if err != nil {
 					return nil, err
 				}
@@ -322,7 +322,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 				Type:        graphql.String,
 				Description: "The description of the topic.",
 			},
-			"resourceId": resourceIdentifierField(conn),
+			"resourceId":   resourceIdentifierField(conn),
 			"resourcePath": resourcePathField(conn),
 		},
 		Interfaces: []*graphql.Interface{
@@ -339,11 +339,11 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 	OrganizationType = graphql.NewObject(graphql.ObjectConfig{
 		Name: "Organization",
 		Fields: graphql.Fields{
-			"id":         relay.GlobalIDField("Organization", nil),
-			"name":       organizationNameField(conn),
-			"topic":      topicField(conn),
-			"topics":     topicsConnection(conn, topicConnectionDefinition.ConnectionType),
-			"resourceId": resourceIdentifierField(conn),
+			"id":           relay.GlobalIDField("Organization", nil),
+			"name":         organizationNameField(conn),
+			"topic":        topicField(conn),
+			"topics":       topicsConnection(conn, topicConnectionDefinition.ConnectionType),
+			"resourceId":   resourceIdentifierField(conn),
 			"resourcePath": resourcePathField(conn),
 		},
 		Interfaces: []*graphql.Interface{

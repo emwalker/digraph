@@ -73,8 +73,8 @@ func init() {
 							},
 						},
 						"topic": map[string]interface{}{
-							"name":        "Science",
-							"description": nil,
+							"name":         "Science",
+							"description":  nil,
 							"resourcePath": "/topics/science",
 						},
 					},

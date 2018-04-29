@@ -10,6 +10,7 @@ import (
 
 	"github.com/cayleygraph/cayley"
 	"github.com/cayleygraph/cayley/graph"
+	"github.com/cayleygraph/cayley/graph/path"
 	_ "github.com/cayleygraph/cayley/graph/sql/postgres"
 	"github.com/cayleygraph/cayley/quad"
 	"github.com/cayleygraph/cayley/schema"
@@ -18,6 +19,20 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
+type Sortable interface {
+	Sort()
+}
+
+type topicArray []Topic
+
+var topicArrayType reflect.Type
+
+func (array topicArray) Sort() {
+	sort.Slice(array, func(i, j int) bool {
+		return array[i].Name < array[j].Name
+	})
+}
+
 func init() {
 	voc.RegisterPrefix("foaf:", "http://xmlns.com/foaf/spec/")
 	voc.RegisterPrefix("di:", "http://github.com/emwalker/digraffe/")
@@ -25,6 +40,7 @@ func init() {
 	voc.RegisterPrefix("topic:", "/topics/")
 	voc.RegisterPrefix("organization:", "/organizations/")
 	voc.RegisterPrefix("user:", "/users/")
+	topicArrayType = reflect.ValueOf(topicArray{}).Type()
 }
 
 func generateIDForType(typ string) quad.IRI {
@@ -46,6 +62,7 @@ type CayleyConnection struct {
 	driverName string
 	schema     *schema.Config
 	store      *graph.Handle
+	context    context.Context
 }
 
 func (conn *CayleyConnection) Close() error {
@@ -125,35 +142,35 @@ func (conn *CayleyConnection) Viewer() (interface{}, error) {
 	return conn.GetUser("user:gnusto")
 }
 
-func (conn *CayleyConnection) SelectOrganizationTopics(
-	dest *[]interface{},
-	organization *Organization,
+func (conn *CayleyConnection) loadIteratorTo(
+	out *[]interface{},
+	path *path.Path,
+	valueType reflect.Type,
 ) error {
-	path := cayley.StartPath(conn.store, organization.ResourceID).
-		Out(quad.IRI("di:owns")).
-		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
-
 	it, _ := path.BuildIterator().Optimize()
 	it, _ = conn.store.OptimizeIterator(it)
-	ctx := context.TODO()
 
-	var values []quad.Value
-	for it.Next(ctx) {
-		values = append(values, conn.store.NameOf(it.Result()))
-	}
-
-	var topics []Topic
-	err := schema.Global().LoadTo(ctx, conn.store, &topics, values...)
+	in := reflect.New(valueType)
+	err := schema.Global().LoadIteratorTo(conn.context, conn.store, in, it)
 	checkErr(err)
 
-	sort.Slice(topics, func(i, j int) bool {
-		return topics[i].Name < topics[j].Name
-	})
+	slice := in.Elem()
+	if sortable, ok := slice.Interface().(Sortable); ok {
+		sortable.Sort()
+	}
 
-	for _, topic := range PointersOf(topics).([]*Topic) {
-		topic.Init()
-		*dest = append(*dest, topic)
+	for i := 0; i < slice.Len(); i++ {
+		ptr := slice.Index(i).Addr().Interface()
+		ptr.(Resource).Init()
+		*out = append(*out, ptr)
 	}
 
 	return nil
+}
+
+func (conn *CayleyConnection) FetchTopics(out *[]interface{}, o *Organization) error {
+	path := cayley.StartPath(conn.store, o.ResourceID).
+		Out(quad.IRI("di:owns")).
+		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
+	return conn.loadIteratorTo(out, path, topicArrayType)
 }

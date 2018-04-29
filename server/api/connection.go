@@ -26,7 +26,7 @@ type Connection interface {
 	GetUser(string) (interface{}, error)
 	Viewer() (interface{}, error)
 	Init() error
-	SelectOrganizationTopics(*[]interface{}, *Organization) error
+	FetchTopics(*[]interface{}, *Organization) error
 }
 
 func NewConnection(driverName string, address string) Connection {
