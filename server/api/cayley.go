@@ -188,6 +188,6 @@ func (conn *CayleyConnection) FetchTopics(out *[]interface{}, o *Organization) e
 func (conn *CayleyConnection) FetchLinks(out *[]interface{}, o *Organization) error {
 	path := cayley.StartPath(conn.store, o.ResourceID).
 		Out(quad.IRI("di:owns")).
-		Has(quad.IRI("rdf:type"), quad.IRI("foaf:Document"))
+		Has(quad.IRI("rdf:type"), quad.IRI("di:link"))
 	return conn.loadIteratorTo(out, path, linkArrayType)
 }

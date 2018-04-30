@@ -35,7 +35,7 @@ type Topic struct {
 }
 
 type Link struct {
-	_          struct{} `quad:"@type > foaf:Document"`
+	_          struct{} `quad:"@type > di:link"`
 	ID         string   `json:"id" quad:",optional"`
 	ResourceID quad.IRI `json:"@id"`
 	Title      string   `json:"title" quad:"di:title"`
