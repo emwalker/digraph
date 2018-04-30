@@ -15,9 +15,14 @@ func init() {
 	log.SetOutput(os.Stdout)
 }
 
-type App struct {
+type TitleFetcher func(string) (string, error)
+
+type Config struct {
+	Address    string
 	Connection Connection
+	DriverName string
 	Engine     *echo.Echo
+	FetchTitle TitleFetcher
 	Schema     *graphql.Schema
 }
 
@@ -26,7 +31,7 @@ type GraphqlRequest struct {
 	Variables map[string]interface{} `json:"variables"`
 }
 
-func (app *App) HandleGraphqlQuery(c echo.Context) (err error) {
+func (config *Config) HandleGraphqlQuery(c echo.Context) (err error) {
 	log.Println("attempting to read request")
 	req := new(GraphqlRequest)
 	if err = c.Bind(req); err != nil {
@@ -36,7 +41,7 @@ func (app *App) HandleGraphqlQuery(c echo.Context) (err error) {
 
 	log.Printf(`querying GraphQL: "%s"`, req.Query)
 	result := graphql.Do(graphql.Params{
-		Schema:         *app.Schema,
+		Schema:         *config.Schema,
 		RequestString:  req.Query,
 		VariableValues: req.Variables,
 	})
@@ -48,28 +53,23 @@ func (app *App) HandleGraphqlQuery(c echo.Context) (err error) {
 	return json.NewEncoder(c.Response()).Encode(result)
 }
 
-func (app *App) Run() {
-	err := app.Engine.Start(":5000")
-	if err != nil {
-		log.Fatal(err)
-	}
+func (config *Config) Run() {
+	checkErr(config.Engine.Start(":5000"))
 }
 
-func New(conn Connection, engine *echo.Echo) (*App, error) {
-	schema, err := newSchema(conn)
+func New(config *Config) (*Config, error) {
+	config.Connection = config.newConnection()
+	schema, err := config.newSchema()
 	checkErr(err)
 
-	checkErr(conn.Init())
+	checkErr(config.Connection.Init())
+	config.Schema = schema
 
-	app := App{
-		Connection: conn,
-		Engine:     engine,
-		Schema:     schema,
+	if config.Engine != nil {
+		config.Engine.POST("/graphql", func(c echo.Context) error {
+			return config.HandleGraphqlQuery(c)
+		})
 	}
 
-	engine.POST("/graphql", func(c echo.Context) error {
-		return app.HandleGraphqlQuery(c)
-	})
-
-	return &app, nil
+	return config, nil
 }

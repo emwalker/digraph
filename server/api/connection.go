@@ -25,6 +25,7 @@ type Connection interface {
 	FetchLink(string) (interface{}, error)
 	FetchLinks(*[]interface{}, *Organization) error
 	FetchOrganization(string) (interface{}, error)
+	FetchTitle(string) (string, error)
 	FetchTopic(string) (interface{}, error)
 	FetchTopics(*[]interface{}, *Organization) error
 	FetchUser(string) (interface{}, error)
@@ -32,14 +33,16 @@ type Connection interface {
 	Viewer() (interface{}, error)
 }
 
-func NewConnection(driverName string, address string) Connection {
-	switch driverName {
-	case "postgres":
-		return &CayleyConnection{address: address, driverName: driverName}
-	case "memstore":
-		return &CayleyConnection{address: address, driverName: driverName}
+func (config *Config) newConnection() Connection {
+	switch config.DriverName {
+	case "postgres", "memstore":
+		return &CayleyConnection{
+			address:     config.Address,
+			driverName:  config.DriverName,
+			titleForUrl: config.FetchTitle,
+		}
 	default:
-		log.Fatal(fmt.Sprintf("do not recognize driver: %s", driverName))
+		log.Fatal(fmt.Sprintf("do not recognize driver: %s", config.DriverName))
 	}
 	return nil
 }

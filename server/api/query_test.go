@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/graphql-go/graphql"
-	"github.com/labstack/echo"
 )
 
 func init() {
@@ -129,10 +128,11 @@ func init() {
 }
 
 func TestQuery(t *testing.T) {
-	conn := NewConnection("memstore", "")
-	app, _ := New(conn, echo.New())
-	conn.(*CayleyConnection).makeTestStore(simpleGraph)
-	defer checkErr(conn.Close())
+	app, _ := New(&Config{
+		DriverName: "memstore",
+		FetchTitle: testTitleFetcher,
+	})
+	app.Connection.(*CayleyConnection).makeTestStore(simpleGraph)
 
 	for _, test := range Tests {
 		params := graphql.Params{

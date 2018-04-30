@@ -16,7 +16,17 @@ type T struct {
 	Expected interface{}
 }
 
-var Tests = []T{}
+var (
+	Tests = []T{}
+
+	urlTitles = map[string]string{
+		"https://gnusto.test": "Gnusto's Homepage",
+	}
+)
+
+func testTitleFetcher(url string) (string, error) {
+	return urlTitles[url], nil
+}
 
 func testGraphql(test T, p graphql.Params, t *testing.T) {
 	result := graphql.Do(p)

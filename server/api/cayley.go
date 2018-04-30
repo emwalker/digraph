@@ -68,11 +68,12 @@ func makeKSUID() string {
 }
 
 type CayleyConnection struct {
-	address    string
-	driverName string
-	schema     *schema.Config
-	store      *graph.Handle
-	context    context.Context
+	address     string
+	context     context.Context
+	driverName  string
+	titleForUrl TitleFetcher
+	schema      *schema.Config
+	store       *graph.Handle
 }
 
 func (conn *CayleyConnection) Close() error {
@@ -114,10 +115,22 @@ func (conn *CayleyConnection) saveNode(orgId string, resourceId quad.IRI, node i
 }
 
 func (conn *CayleyConnection) CreateLink(orgId string, url string, title string) (*Link, error) {
+	var useTitle string
+
+	if title == "" {
+		var err error
+		useTitle, err = conn.FetchTitle(url)
+		if err != nil {
+			useTitle = url
+		}
+	} else {
+		useTitle = title
+	}
+
 	resourceId := generateIDForType("link")
 	node := Link{
 		ResourceID: resourceId,
-		Title:      title,
+		Title:      useTitle,
 		URL:        url,
 	}
 	node.Init()
@@ -149,6 +162,10 @@ func (conn *CayleyConnection) FetchOrganization(id string) (interface{}, error) 
 	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
 	o.Init()
 	return handleResult(&o, err)
+}
+
+func (conn *CayleyConnection) FetchTitle(url string) (string, error) {
+	return conn.titleForUrl(url)
 }
 
 func (conn *CayleyConnection) FetchTopic(id string) (interface{}, error) {

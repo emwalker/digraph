@@ -112,26 +112,26 @@ func resolveType(p graphql.ResolveTypeParams) *graphql.Object {
 	}
 }
 
-func fetcher(conn Connection) relay.IDFetcherFn {
+func (config *Config) fetcher() relay.IDFetcherFn {
 	return func(id string, info graphql.ResolveInfo, ctx context.Context) (interface{}, error) {
 		resolvedID := relay.FromGlobalID(id)
 
 		switch resolvedID.Type {
 		case "Link":
-			return conn.FetchLink(resolvedID.ID)
+			return config.Connection.FetchLink(resolvedID.ID)
 		case "Organization":
-			return conn.FetchOrganization(resolvedID.ID)
+			return config.Connection.FetchOrganization(resolvedID.ID)
 		case "Topic":
-			return conn.FetchTopic(resolvedID.ID)
+			return config.Connection.FetchTopic(resolvedID.ID)
 		case "User":
-			return conn.FetchUser(resolvedID.ID)
+			return config.Connection.FetchUser(resolvedID.ID)
 		default:
 			return nil, errors.New(fmt.Sprintf("unknown node type: %s", resolvedID.Type))
 		}
 	}
 }
 
-func createTopicMutation(conn Connection, edgeType graphql.Output) *graphql.Field {
+func (config *Config) createTopicMutation(edgeType graphql.Output) *graphql.Field {
 	return relay.MutationWithClientMutationID(relay.MutationConfig{
 		Name: "CreateTopic",
 
@@ -154,7 +154,7 @@ func createTopicMutation(conn Connection, edgeType graphql.Output) *graphql.Fiel
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					if payload, ok := p.Source.(map[string]interface{}); ok {
-						node, err := conn.FetchTopic(payload["topicResourceId"].(string))
+						node, err := config.Connection.FetchTopic(payload["topicResourceId"].(string))
 						checkErr(err)
 						return &relay.Edge{Node: node}, nil
 					}
@@ -167,7 +167,7 @@ func createTopicMutation(conn Connection, edgeType graphql.Output) *graphql.Fiel
 			orgIri := input["organizationResourceId"].(string)
 			name := input["name"].(string)
 			description := maybeString(input["description"])
-			node, err := conn.CreateTopic(orgIri, name, description)
+			node, err := config.Connection.CreateTopic(orgIri, name, description)
 			checkErr(err)
 
 			return map[string]interface{}{
@@ -177,7 +177,7 @@ func createTopicMutation(conn Connection, edgeType graphql.Output) *graphql.Fiel
 	})
 }
 
-func createLinkMutation(conn Connection, edgeType graphql.Output) *graphql.Field {
+func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field {
 	return relay.MutationWithClientMutationID(relay.MutationConfig{
 		Name: "CreateLink",
 
@@ -200,7 +200,7 @@ func createLinkMutation(conn Connection, edgeType graphql.Output) *graphql.Field
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					if payload, ok := p.Source.(map[string]interface{}); ok {
-						node, err := conn.FetchLink(payload["linkResourceId"].(string))
+						node, err := config.Connection.FetchLink(payload["linkResourceId"].(string))
 						checkErr(err)
 						return &relay.Edge{Node: node}, nil
 					}
@@ -216,11 +216,9 @@ func createLinkMutation(conn Connection, edgeType graphql.Output) *graphql.Field
 			var useTitle string
 			if title, ok := input["title"].(string); ok {
 				useTitle = title
-			} else {
-				useTitle = url
 			}
 
-			node, err := conn.CreateLink(orgIri, url, useTitle)
+			node, err := config.Connection.CreateLink(orgIri, url, useTitle)
 			checkErr(err)
 
 			return map[string]interface{}{
@@ -230,9 +228,9 @@ func createLinkMutation(conn Connection, edgeType graphql.Output) *graphql.Field
 	})
 }
 
-func newSchema(conn Connection) (*graphql.Schema, error) {
+func (config *Config) newSchema() (*graphql.Schema, error) {
 	nodeDefinitions = relay.NewNodeDefinitions(relay.NodeDefinitionsConfig{
-		IDFetcher:   fetcher(conn),
+		IDFetcher:   config.fetcher(),
 		TypeResolve: resolveType,
 	})
 
@@ -257,11 +255,11 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		Name: "Topic",
 
 		FetchNode: func(resourceId string) (interface{}, error) {
-			return conn.FetchTopic(resourceId)
+			return config.Connection.FetchTopic(resourceId)
 		},
 
 		FetchConnection: func(out *[]interface{}, org *Organization) {
-			checkErr(conn.FetchTopics(out, org))
+			checkErr(config.Connection.FetchTopics(out, org))
 		},
 
 		NodeFields: graphql.Fields{
@@ -282,11 +280,11 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		Name: "Link",
 
 		FetchNode: func(resourceId string) (interface{}, error) {
-			return conn.FetchLink(resourceId)
+			return config.Connection.FetchLink(resourceId)
 		},
 
 		FetchConnection: func(out *[]interface{}, org *Organization) {
-			checkErr(conn.FetchLinks(out, org))
+			checkErr(config.Connection.FetchLinks(out, org))
 		},
 
 		NodeFields: graphql.Fields{
@@ -307,7 +305,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		Name: "Organization",
 
 		FetchNode: func(resourceId string) (interface{}, error) {
-			return conn.FetchOrganization(resourceId)
+			return config.Connection.FetchOrganization(resourceId)
 		},
 
 		NodeFields: graphql.Fields{
@@ -329,7 +327,7 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 			"viewer": &graphql.Field{
 				Type: userType.NodeType,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return conn.Viewer()
+					return config.Connection.Viewer()
 				},
 			},
 			"organization": organizationType.NodeField,
@@ -341,8 +339,8 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 	mutationType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Mutation",
 		Fields: graphql.Fields{
-			"createTopic": createTopicMutation(conn, topicType.Definitions.EdgeType),
-			"createLink":  createLinkMutation(conn, linkType.Definitions.EdgeType),
+			"createTopic": config.createTopicMutation(topicType.Definitions.EdgeType),
+			"createLink":  config.createLinkMutation(linkType.Definitions.EdgeType),
 		},
 	})
 

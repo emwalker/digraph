@@ -6,18 +6,9 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/testutil"
-	"github.com/labstack/echo"
 )
 
-var conn Connection
-var app *App
 var testIndex int
-
-func init() {
-	conn := NewConnection("memstore", "")
-	app, _ = New(conn, echo.New())
-	conn.(*CayleyConnection).makeTestStore(simpleGraph)
-}
 
 // map field to `theNumber` so it can be resolve by the default ResolveFn
 type testNumberHolder struct {
@@ -35,6 +26,12 @@ func newTestRoot(originalNumber int) *testRoot {
 }
 
 func testMutations(t *testing.T, doc string, expected *graphql.Result) {
+	app, _ := New(&Config{
+		DriverName: "memstore",
+		FetchTitle: testTitleFetcher,
+	})
+	app.Connection.(*CayleyConnection).makeTestStore(simpleGraph)
+
 	params := graphql.ExecuteParams{
 		Schema: *app.Schema,
 		AST:    testutil.TestParse(t, doc),
@@ -110,7 +107,6 @@ func TestCreateLink(t *testing.T) {
 		first: createLink(
 			input: {
 				organizationResourceId: "organization:tyrell",
-				title: "Gnusto's Homepage",
 				url: "https://gnusto.test",
 			}
 		) {

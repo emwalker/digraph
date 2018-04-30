@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/badoux/goscraper"
+  packages = ["."]
+  revision = "0213ced7087832e81e8892e8d044150cfc153856"
+
+[[projects]]
   name = "github.com/cayleygraph/cayley"
   packages = [
     ".",
@@ -14,11 +20,8 @@
     "graph/shape",
     "graph/sql",
     "graph/sql/postgres",
-    "internal",
-    "internal/decompressor",
     "internal/lru",
     "quad",
-    "quad/nquads",
     "quad/pquads",
     "quad/pquads/pio",
     "schema",
@@ -38,45 +41,9 @@
   revision = "2268707a8f0843315e2004ee4f1d021dc08baedf"
 
 [[projects]]
-  name = "github.com/dlclark/regexp2"
-  packages = [
-    ".",
-    "syntax"
-  ]
-  revision = "3f97b6a39134e6bd88a72d1388d1632e60d83ef6"
-  version = "v1.1.3"
-
-[[projects]]
-  name = "github.com/dop251/goja"
-  packages = [
-    ".",
-    "ast",
-    "file",
-    "parser",
-    "token"
-  ]
-  revision = "09718839f5255969d0dcaef99119b867d187ecea"
-
-[[projects]]
-  name = "github.com/dop251/goja_nodejs"
-  packages = [
-    "console",
-    "eventloop",
-    "require",
-    "util"
-  ]
-  revision = "2fc1e6bbfc494e36dd9a0b3e735a4babc538f51f"
-
-[[projects]]
   name = "github.com/elazarl/go-bindata-assetfs"
   packages = ["."]
   revision = "9a6736ed45b44bf3835afeebb3034b57ed329f3e"
-
-[[projects]]
-  name = "github.com/fatih/structs"
-  packages = ["."]
-  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
-  version = "v1.0"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -178,20 +145,6 @@
   revision = "afea898d27c7d17376ecc60c7c2e73c76b40060e"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/olebedev/gojax"
-  packages = [
-    "fetch",
-    "fetch/internal/data"
-  ]
-  revision = "bb153be84336f26925890502929cc363477df7ad"
-
-[[projects]]
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  revision = "248dadf4e9068a0b3e79f02ed0a610d935de5302"
-
-[[projects]]
   name = "github.com/segmentio/ksuid"
   packages = ["."]
   revision = "112f929a3020abfcd06b77c963ec919130796a35"
@@ -220,7 +173,10 @@
   name = "golang.org/x/net"
   packages = [
     "context",
-    "context/ctxhttp"
+    "context/ctxhttp",
+    "html",
+    "html/atom",
+    "html/charset"
   ]
   revision = "41bba8d80bbfab43231ffdf4c210037baae5f6a3"
 
@@ -232,19 +188,23 @@
 [[projects]]
   name = "golang.org/x/text"
   packages = [
-    "cases",
-    "collate",
-    "collate/build",
-    "internal",
-    "internal/colltab",
+    "encoding",
+    "encoding/charmap",
+    "encoding/htmlindex",
+    "encoding/internal",
+    "encoding/internal/identifier",
+    "encoding/japanese",
+    "encoding/korean",
+    "encoding/simplifiedchinese",
+    "encoding/traditionalchinese",
+    "encoding/unicode",
     "internal/gen",
     "internal/tag",
-    "internal/triegen",
-    "internal/ucd",
+    "internal/utf8internal",
     "language",
+    "runes",
     "transform",
-    "unicode/cldr",
-    "unicode/norm"
+    "unicode/cldr"
   ]
   revision = "44f4f658a783b0cee41fe0a23b8fc91d9c120558"
 
@@ -256,6 +216,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8f4e10aa8b44853f0acb2b06c5a19f9fe5093bab7a9571cd964ef550d5d7cc3b"
+  inputs-digest = "11cd4183dfd61d509a580d2f41f41060d10d8f45d7294ffcc36b68fbeca499ef"
   solver-name = "gps-cdcl"
   solver-version = 1
