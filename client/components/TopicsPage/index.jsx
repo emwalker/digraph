@@ -39,6 +39,17 @@ const TopicsPage = ({ organization, relay }: Props) => (
   </div>
 )
 
+export const query = graphql`
+query TopicsPage_query_Query($orgResourceId: String!) {
+  viewer {
+    ...TopicsPage_viewer
+  }
+
+  organization(resourceId: $orgResourceId) {
+    ...TopicsPage_organization
+  }
+}`
+
 export default createFragmentContainer(TopicsPage, graphql`
   fragment TopicsPage_viewer on User {
     name

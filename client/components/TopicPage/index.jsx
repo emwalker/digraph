@@ -13,6 +13,18 @@ const TopicPage = ({ topic }: Props) => (
   </div>
 )
 
+export const query = graphql`
+query TopicPage_query_Query(
+  $orgResourceId: String!,
+  $topicResourceId: String!
+) {
+  organization(resourceId: $orgResourceId) {
+    topic(resourceId: $topicResourceId) {
+      ...TopicPage_topic
+    }
+  }
+}`
+
 export default createFragmentContainer(TopicPage, graphql`
   fragment TopicPage_topic on Topic {
     name

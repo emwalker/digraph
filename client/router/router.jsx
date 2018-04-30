@@ -7,9 +7,9 @@ import React from 'react'
 import { graphql } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
-import Homepage from '../components/Homepage'
-import TopicsPage from '../components/TopicsPage'
-import TopicPage from '../components/TopicPage'
+import Homepage, { query as homepageQuery } from '../components/Homepage'
+import TopicsPage, { query as topicsPageQuery } from '../components/TopicsPage'
+import TopicPage, { query as topicPageQuery } from '../components/TopicPage'
 import Layout from '../components/Layout'
 
 export const historyMiddlewares = [queryMiddleware]
@@ -30,36 +30,6 @@ const renderTopicPage = ({ props, error }: any) => {
   return <TopicPage topic={props.organization.topic} />
 }
 
-const TopicPageQuery = graphql`
-query router_TopicPage_Query(
-  $orgResourceId: String!,
-  $topicResourceId: String!
-) {
-  organization(resourceId: $orgResourceId) {
-    topic(resourceId: $topicResourceId) {
-      ...TopicPage_topic
-    }
-  }
-}`
-
-const TopicsPageQuery = graphql`
-query router_TopicsPage_Query($orgResourceId: String!) {
-  viewer {
-    ...TopicsPage_viewer
-  }
-
-  organization(resourceId: $orgResourceId) {
-    ...TopicsPage_organization
-  }
-}`
-
-const HomepageQuery = graphql`
-query router_Homepage_Query {
-  viewer {
-    ...Homepage_viewer
-  }
-}`
-
 export const routeConfig = makeRouteConfig(
   <Route
     Component={Layout}
@@ -75,7 +45,7 @@ export const routeConfig = makeRouteConfig(
   >
     <Route
       Component={Homepage}
-      query={HomepageQuery}
+      query={homepageQuery}
     />
     <Route
       path="topics"
@@ -86,12 +56,12 @@ export const routeConfig = makeRouteConfig(
     >
       <Route
         Component={TopicsPage}
-        query={TopicsPageQuery}
+        query={topicsPageQuery}
       />
       <Route
         path=":uuid"
         render={renderTopicPage}
-        query={TopicPageQuery}
+        query={topicPageQuery}
         prepareVariables={({ uuid, ...params }) => ({
           topicResourceId: `topic:${uuid}`,
           ...params,

@@ -24,6 +24,13 @@ const Homepage = ({ viewer: { name } }: Props) => (
   </div>
 )
 
+export const query = graphql`
+query Homepage_homepage_Query {
+  viewer {
+    ...Homepage_viewer
+  }
+}`
+
 export default createFragmentContainer(Homepage, graphql`
   fragment Homepage_viewer on User {
     name
