@@ -2,7 +2,7 @@
 import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-// import AddTopic from './AddTopic'
+import AddLink from './AddLink'
 import ListView from '../ui/ListView'
 import { liftNodes } from '../../utils'
 
@@ -10,14 +10,21 @@ type Props = {
   organization: {
     links: Object,
   },
+  relay: {
+    environment: Object,
+  }
 }
 
-const LinksPage = ({ organization }: Props) => (
+const LinksPage = ({ organization, relay }: Props) => (
   <ListView
     title="Links"
     items={liftNodes(organization.links)}
   >
-    <div>Add link</div>
+    <AddLink
+      className="test-add-link"
+      organization={organization}
+      relay={relay}
+    />
   </ListView>
 )
 

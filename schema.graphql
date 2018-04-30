@@ -86,15 +86,27 @@ type Query {
 
 input CreateTopicInput {
   clientMutationId: String!
-  organizationResourceId: String!
-  name: String!
   description: String
+  name: String!
+  organizationResourceId: String!
 }
 
 type CreateTopicPayload {
   topicEdge: TopicEdge!
 }
 
+input CreateLinkInput {
+  clientMutationId: String!
+  organizationResourceId: String!
+  title: String
+  url: String!
+}
+
+type CreateLinkPayload {
+  linkEdge: LinkEdge!
+}
+
 type Mutation {
+  createLink(input: CreateLinkInput!): CreateLinkPayload
   createTopic(input: CreateTopicInput!): CreateTopicPayload
 }
