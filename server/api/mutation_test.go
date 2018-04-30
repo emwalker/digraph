@@ -9,6 +9,16 @@ import (
 	"github.com/labstack/echo"
 )
 
+var conn Connection
+var app *App
+var testIndex int
+
+func init() {
+	conn := NewConnection("memstore", "")
+	app, _ = New(conn, echo.New())
+	conn.(*CayleyConnection).makeTestStore(simpleGraph)
+}
+
 // map field to `theNumber` so it can be resolve by the default ResolveFn
 type testNumberHolder struct {
 	TheNumber int `json:"theNumber"`
@@ -24,12 +34,21 @@ func newTestRoot(originalNumber int) *testRoot {
 	}
 }
 
-func TestMutations_CreateTopic(t *testing.T) {
-	conn := NewConnection("memstore", "")
-	app, _ := New(conn, echo.New())
-	conn.(*CayleyConnection).makeTestStore(simpleGraph)
-	defer checkErr(conn.Close())
+func testMutations(t *testing.T, doc string, expected *graphql.Result) {
+	params := graphql.ExecuteParams{
+		Schema: *app.Schema,
+		AST:    testutil.TestParse(t, doc),
+		Root:   newTestRoot(testIndex),
+	}
+	testIndex += 1
 
+	result := testutil.TestExecute(t, params)
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatalf("Unexpected result, Diff: %v", testutil.Diff(expected, result))
+	}
+}
+
+func TestCreateTopic(t *testing.T) {
 	doc := `
 	mutation M {
 		first: createTopic(
@@ -82,14 +101,40 @@ func TestMutations_CreateTopic(t *testing.T) {
 		},
 	}
 
-	params := graphql.ExecuteParams{
-		Schema: *app.Schema,
-		AST:    testutil.TestParse(t, doc),
-		Root:   newTestRoot(1),
+	testMutations(t, doc, expected)
+}
+
+func TestCreateLink(t *testing.T) {
+	doc := `
+	mutation M {
+		first: createLink(
+			input: {
+				organizationResourceId: "organization:tyrell",
+				title: "Gnusto's Homepage",
+				url: "https://gnusto.test",
+			}
+		) {
+			linkEdge {
+				node {
+					title
+					url
+				}
+			}
+		}
+	}`
+
+	expected := &graphql.Result{
+		Data: map[string]interface{}{
+			"first": map[string]interface{}{
+				"linkEdge": map[string]interface{}{
+					"node": map[string]interface{}{
+						"title": "Gnusto's Homepage",
+						"url":   "https://gnusto.test",
+					},
+				},
+			},
+		},
 	}
 
-	result := testutil.TestExecute(t, params)
-	if !reflect.DeepEqual(expected, result) {
-		t.Fatalf("Unexpected result, Diff: %v", testutil.Diff(expected, result))
-	}
+	testMutations(t, doc, expected)
 }

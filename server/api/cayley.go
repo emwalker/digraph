@@ -100,48 +100,65 @@ func (conn *CayleyConnection) Init() error {
 	return nil
 }
 
-func (conn *CayleyConnection) CreateTopic(
-	organizationResourceId string,
-	name string,
-	description *string,
-) (*Topic, error) {
+func (conn *CayleyConnection) saveNode(orgId string, resourceId quad.IRI, node interface{}) {
 	writer := graph.NewWriter(conn.store)
 
-	topicId := generateIDForType("topic")
-	topic := Topic{
-		ResourceID:  topicId,
-		Name:        name,
-		Description: description,
-	}
-
-	_, err := conn.schema.WriteAsQuads(writer, topic)
+	_, err := conn.schema.WriteAsQuads(writer, node)
 	checkErr(err)
-	log.Println("created topic with id", topicId)
+	log.Println("created resource with id", resourceId)
 
-	conn.store.AddQuad(quad.Make(quad.IRI(organizationResourceId), quad.IRI("di:owns"), topicId, nil))
+	conn.store.AddQuad(quad.Make(quad.IRI(orgId), quad.IRI("di:owns"), resourceId, nil))
 	checkErr(err)
-
-	topic.Init()
 
 	checkErr(writer.Close())
-	return &topic, nil
 }
 
-func (conn *CayleyConnection) GetOrganization(id string) (interface{}, error) {
+func (conn *CayleyConnection) CreateLink(orgId string, url string, title string) (*Link, error) {
+	resourceId := generateIDForType("link")
+	node := Link{
+		ResourceID: resourceId,
+		Title:      title,
+		URL:        url,
+	}
+	node.Init()
+	conn.saveNode(orgId, resourceId, node)
+	return &node, nil
+}
+
+func (conn *CayleyConnection) CreateTopic(orgId string, name string, description *string) (*Topic, error) {
+	resourceId := generateIDForType("topic")
+	node := Topic{
+		Description: description,
+		Name:        name,
+		ResourceID:  resourceId,
+	}
+	node.Init()
+	conn.saveNode(orgId, resourceId, node)
+	return &node, nil
+}
+
+func (conn *CayleyConnection) FetchLink(id string) (interface{}, error) {
+	var o Link
+	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
+	o.Init()
+	return handleResult(&o, err)
+}
+
+func (conn *CayleyConnection) FetchOrganization(id string) (interface{}, error) {
 	var o Organization
 	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
 	o.Init()
 	return handleResult(&o, err)
 }
 
-func (conn *CayleyConnection) GetTopic(id string) (interface{}, error) {
+func (conn *CayleyConnection) FetchTopic(id string) (interface{}, error) {
 	var o Topic
 	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
 	o.Init()
 	return handleResult(&o, err)
 }
 
-func (conn *CayleyConnection) GetUser(id string) (interface{}, error) {
+func (conn *CayleyConnection) FetchUser(id string) (interface{}, error) {
 	var o User
 	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
 	o.Init()
@@ -149,7 +166,7 @@ func (conn *CayleyConnection) GetUser(id string) (interface{}, error) {
 }
 
 func (conn *CayleyConnection) Viewer() (interface{}, error) {
-	return conn.GetUser("user:gnusto")
+	return conn.FetchUser("user:gnusto")
 }
 
 func (conn *CayleyConnection) loadIteratorTo(

@@ -47,14 +47,13 @@ type Resource interface {
 	IRI() quad.IRI
 }
 
-var nodeDefinitions *relay.NodeDefinitions
-var OrganizationType *graphql.Object
-var UserType *graphql.Object
-var QueryType *graphql.Object
-var TopicType *graphql.Object
-var LinkType *graphql.Object
-var ResourceIdentifiableInterface *graphql.Interface
-var MutationType *graphql.Object
+var (
+	linkType         *Type
+	nodeDefinitions  *relay.NodeDefinitions
+	organizationType *Type
+	topicType        *Type
+	userType         *Type
+)
 
 var replacer = strings.NewReplacer("<", "", ">", "")
 
@@ -100,10 +99,14 @@ func (o *Link) IRI() quad.IRI {
 
 func resolveType(p graphql.ResolveTypeParams) *graphql.Object {
 	switch p.Value.(type) {
+	case *Link:
+		return linkType.NodeType
 	case *Organization:
-		return OrganizationType
+		return organizationType.NodeType
+	case *Topic:
+		return topicType.NodeType
 	case *User:
-		return UserType
+		return userType.NodeType
 	default:
 		panic("unknown type")
 	}
@@ -114,139 +117,21 @@ func fetcher(conn Connection) relay.IDFetcherFn {
 		resolvedID := relay.FromGlobalID(id)
 
 		switch resolvedID.Type {
+		case "Link":
+			return conn.FetchLink(resolvedID.ID)
 		case "Organization":
-			return conn.GetOrganization(resolvedID.ID)
-		case "User":
-			return conn.GetUser(resolvedID.ID)
+			return conn.FetchOrganization(resolvedID.ID)
 		case "Topic":
-			return conn.GetTopic(resolvedID.ID)
+			return conn.FetchTopic(resolvedID.ID)
+		case "User":
+			return conn.FetchUser(resolvedID.ID)
 		default:
 			return nil, errors.New(fmt.Sprintf("unknown node type: %s", resolvedID.Type))
 		}
 	}
 }
 
-func organizationField(conn Connection) *graphql.Field {
-	return &graphql.Field{
-		Type: OrganizationType,
-
-		Args: graphql.FieldConfigArgument{
-			"resourceId": &graphql.ArgumentConfig{
-				Description: "Organization ID",
-				Type:        graphql.NewNonNull(graphql.String),
-			},
-		},
-
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			return conn.GetOrganization(p.Args["resourceId"].(string))
-		},
-	}
-}
-
-func userField(conn Connection) *graphql.Field {
-	return &graphql.Field{
-		Type: UserType,
-
-		Args: graphql.FieldConfigArgument{
-			"id": &graphql.ArgumentConfig{
-				Description: "User ID",
-				Type:        graphql.NewNonNull(graphql.ID),
-			},
-		},
-
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			return conn.GetUser(p.Args["id"].(string))
-		},
-	}
-}
-
-func viewerField(conn Connection) *graphql.Field {
-	return &graphql.Field{
-		Type: UserType,
-
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			return conn.Viewer()
-		},
-	}
-}
-
-func topicField(conn Connection) *graphql.Field {
-	return &graphql.Field{
-		Type: TopicType,
-
-		Args: graphql.FieldConfigArgument{
-			"resourceId": &graphql.ArgumentConfig{
-				Description: "Topic ID",
-				Type:        graphql.NewNonNull(graphql.String),
-			},
-		},
-
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			return conn.GetTopic(p.Args["resourceId"].(string))
-		},
-	}
-}
-
-func resourceIdentifierField(conn Connection) *graphql.Field {
-	return &graphql.Field{
-		Type:        graphql.String,
-		Description: "The international resource identifier (IRI).",
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			if res, ok := p.Source.(Resource); ok {
-				return isomorphicID(res.IRI()), nil
-			}
-			return nil, errors.New("unable to provide IRI")
-		},
-	}
-}
-
-func resourcePathField(conn Connection) *graphql.Field {
-	return &graphql.Field{
-		Type:        graphql.String,
-		Description: "The relative path to the resource.",
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			if res, ok := p.Source.(Resource); ok {
-				return resourcePath(res.IRI()), nil
-			}
-			return nil, errors.New("unable to provide resourcePath")
-		},
-	}
-}
-
-func connectionType(
-	conn Connection,
-	typ graphql.Output,
-	resolve func(*[]interface{}, *Organization),
-) *graphql.Field {
-	return &graphql.Field{
-		Type: typ,
-		Args: relay.ConnectionArgs,
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			args := relay.NewConnectionArguments(p.Args)
-			dest := []interface{}{}
-			if org, ok := p.Source.(*Organization); ok {
-				resolve(&dest, org)
-			}
-			return relay.ConnectionFromArray(dest, args), nil
-		},
-	}
-}
-
-func organizationNameField(conn Connection) *graphql.Field {
-	return &graphql.Field{
-		Type:        graphql.String,
-		Description: "The name of the organization.",
-	}
-}
-
-func createTopicInput(conn Connection) *graphql.InputObject {
-	return graphql.NewInputObject(graphql.InputObjectConfig{
-		Name:   "CreateTopicInput",
-		Fields: graphql.InputObjectConfigFieldMap{},
-	})
-}
-
-func createTopicMutation(conn Connection, topicEdgeType graphql.Output) *graphql.Field {
+func createTopicMutation(conn Connection, edgeType graphql.Output) *graphql.Field {
 	return relay.MutationWithClientMutationID(relay.MutationConfig{
 		Name: "CreateTopic",
 
@@ -265,47 +150,82 @@ func createTopicMutation(conn Connection, topicEdgeType graphql.Output) *graphql
 
 		OutputFields: graphql.Fields{
 			"topicEdge": &graphql.Field{
-				Type: topicEdgeType,
+				Type: edgeType,
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					if payload, ok := p.Source.(map[string]interface{}); ok {
-						topic, err := conn.GetTopic(payload["topicResourceId"].(string))
+						node, err := conn.FetchTopic(payload["topicResourceId"].(string))
 						checkErr(err)
-						return &relay.Edge{Node: topic}, nil
+						return &relay.Edge{Node: node}, nil
 					}
 					return nil, nil
 				},
 			},
 		},
 
-		MutateAndGetPayload: func(inputMap map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
-			orgIri := inputMap["organizationResourceId"].(string)
-			name := inputMap["name"].(string)
-			description := maybeString(inputMap["description"])
-			topic, err := conn.CreateTopic(orgIri, name, description)
+		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
+			orgIri := input["organizationResourceId"].(string)
+			name := input["name"].(string)
+			description := maybeString(input["description"])
+			node, err := conn.CreateTopic(orgIri, name, description)
 			checkErr(err)
 
 			return map[string]interface{}{
-				"topicResourceId": topic.ID,
+				"topicResourceId": node.ID,
 			}, nil
 		},
 	})
 }
 
-func resourceType(conn Connection, fieldName string, addFields func(graphql.Fields)) *graphql.Object {
-	fields := graphql.Fields{
-		"id":           relay.GlobalIDField(fieldName, nil),
-		"resourceId":   resourceIdentifierField(conn),
-		"resourcePath": resourcePathField(conn),
-	}
-	addFields(fields)
+func createLinkMutation(conn Connection, edgeType graphql.Output) *graphql.Field {
+	return relay.MutationWithClientMutationID(relay.MutationConfig{
+		Name: "CreateLink",
 
-	return graphql.NewObject(graphql.ObjectConfig{
-		Name:   fieldName,
-		Fields: fields,
-		Interfaces: []*graphql.Interface{
-			nodeDefinitions.NodeInterface,
-			ResourceIdentifiableInterface,
+		InputFields: graphql.InputObjectConfigFieldMap{
+			"organizationResourceId": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
+			},
+			"title": &graphql.InputObjectFieldConfig{
+				Type:         graphql.String,
+				DefaultValue: nil,
+			},
+			"url": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
+			},
+		},
+
+		OutputFields: graphql.Fields{
+			"linkEdge": &graphql.Field{
+				Type: edgeType,
+
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if payload, ok := p.Source.(map[string]interface{}); ok {
+						node, err := conn.FetchLink(payload["linkResourceId"].(string))
+						checkErr(err)
+						return &relay.Edge{Node: node}, nil
+					}
+					return nil, nil
+				},
+			},
+		},
+
+		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
+			orgIri := input["organizationResourceId"].(string)
+			url := input["url"].(string)
+
+			var useTitle string
+			if title, ok := input["title"].(string); ok {
+				useTitle = title
+			} else {
+				useTitle = url
+			}
+
+			node, err := conn.CreateLink(orgIri, url, useTitle)
+			checkErr(err)
+
+			return map[string]interface{}{
+				"linkResourceId": node.ID,
+			}, nil
 		},
 	})
 }
@@ -316,123 +236,119 @@ func newSchema(conn Connection) (*graphql.Schema, error) {
 		TypeResolve: resolveType,
 	})
 
-	ResourceIdentifiableInterface = graphql.NewInterface(graphql.InterfaceConfig{
-		Name: "ResourceIdentifiable",
-		Fields: graphql.Fields{
-			"resourceId": &graphql.Field{
-				Type: graphql.String,
-			},
-			"resourcePath": &graphql.Field{
-				Type: graphql.String,
-			},
-		},
-	})
-
-	UserType = graphql.NewObject(graphql.ObjectConfig{
+	userType = NewType(&TypeConfig{
 		Name: "User",
-		Fields: graphql.Fields{
-			"id": relay.GlobalIDField("User", nil),
+
+		NodeFields: graphql.Fields{
 			"name": &graphql.Field{
 				Type:        graphql.String,
-				Description: "The name of the user.",
+				Description: "Name of the user",
 			},
 			"email": &graphql.Field{
 				Type:        graphql.String,
-				Description: "The user's email address.",
+				Description: "Email address of the user",
 			},
 		},
-		Interfaces: []*graphql.Interface{
-			nodeDefinitions.NodeInterface,
+
+		NodeDefinitions: nodeDefinitions,
+	})
+
+	topicType = NewType(&TypeConfig{
+		Name: "Topic",
+
+		FetchNode: func(resourceId string) (interface{}, error) {
+			return conn.FetchTopic(resourceId)
 		},
-	})
 
-	TopicType = resourceType(conn, "Topic", func(fields graphql.Fields) {
-		fields["name"] = &graphql.Field{
-			Type:        graphql.String,
-			Description: "The name of the topic.",
-		}
-
-		fields["description"] = &graphql.Field{
-			Type:        graphql.String,
-			Description: "The description of the topic.",
-		}
-	})
-
-	LinkType = resourceType(conn, "Link", func(fields graphql.Fields) {
-		fields["title"] = &graphql.Field{
-			Type:        graphql.String,
-			Description: "The title of the page the link points to.",
-		}
-
-		fields["url"] = &graphql.Field{
-			Type:        graphql.String,
-			Description: "The url.",
-		}
-	})
-
-	topicConnectionDefinition := relay.ConnectionDefinitions(relay.ConnectionConfig{
-		Name:     "Topic",
-		NodeType: TopicType,
-	})
-
-	linkConnectionDefinition := relay.ConnectionDefinitions(relay.ConnectionConfig{
-		Name:     "Link",
-		NodeType: LinkType,
-	})
-
-	topicsField := connectionType(
-		conn,
-		topicConnectionDefinition.ConnectionType,
-		func(dest *[]interface{}, org *Organization) {
-			checkErr(conn.FetchTopics(dest, org))
+		FetchConnection: func(out *[]interface{}, org *Organization) {
+			checkErr(conn.FetchTopics(out, org))
 		},
-	)
 
-	linksField := connectionType(
-		conn,
-		linkConnectionDefinition.ConnectionType,
-		func(dest *[]interface{}, org *Organization) {
-			checkErr(conn.FetchLinks(dest, org))
+		NodeFields: graphql.Fields{
+			"name": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Name of the topic",
+			},
+			"description": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Description of the topic",
+			},
 		},
-	)
 
-	OrganizationType = graphql.NewObject(graphql.ObjectConfig{
+		NodeDefinitions: nodeDefinitions,
+	})
+
+	linkType = NewType(&TypeConfig{
+		Name: "Link",
+
+		FetchNode: func(resourceId string) (interface{}, error) {
+			return conn.FetchLink(resourceId)
+		},
+
+		FetchConnection: func(out *[]interface{}, org *Organization) {
+			checkErr(conn.FetchLinks(out, org))
+		},
+
+		NodeFields: graphql.Fields{
+			"title": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Title of the page",
+			},
+			"url": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Url of the page",
+			},
+		},
+
+		NodeDefinitions: nodeDefinitions,
+	})
+
+	organizationType = NewType(&TypeConfig{
 		Name: "Organization",
-		Fields: graphql.Fields{
-			"id":           relay.GlobalIDField("Organization", nil),
-			"name":         organizationNameField(conn),
-			"resourceId":   resourceIdentifierField(conn),
-			"resourcePath": resourcePathField(conn),
-			"topic":        topicField(conn),
-			"topics":       topicsField,
-			"links":        linksField,
+
+		FetchNode: func(resourceId string) (interface{}, error) {
+			return conn.FetchOrganization(resourceId)
 		},
-		Interfaces: []*graphql.Interface{
-			nodeDefinitions.NodeInterface,
-			ResourceIdentifiableInterface,
+
+		NodeFields: graphql.Fields{
+			"name": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Name of the organization",
+			},
+			"topic":  topicType.NodeField,
+			"topics": topicType.ConnectionField,
+			"links":  linkType.ConnectionField,
 		},
+
+		NodeDefinitions: nodeDefinitions,
 	})
 
-	QueryType = graphql.NewObject(graphql.ObjectConfig{
+	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
-			"viewer":       viewerField(conn),
-			"organization": organizationField(conn),
-			"user":         userField(conn),
+			"viewer": &graphql.Field{
+				Type: userType.NodeType,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					return conn.Viewer()
+				},
+			},
+			"organization": organizationType.NodeField,
+			"user":         userType.NodeField,
 			"node":         nodeDefinitions.NodeField,
 		},
 	})
 
-	MutationType = graphql.NewObject(graphql.ObjectConfig{
+	mutationType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Mutation",
 		Fields: graphql.Fields{
-			"createTopic": createTopicMutation(conn, topicConnectionDefinition.EdgeType),
+			"createTopic": createTopicMutation(conn, topicType.Definitions.EdgeType),
+			"createLink":  createLinkMutation(conn, linkType.Definitions.EdgeType),
 		},
 	})
 
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{
-		Query:    QueryType,
-		Mutation: MutationType,
+		Query:    queryType,
+		Mutation: mutationType,
 	})
 
 	return &schema, err
