@@ -1,12 +1,10 @@
 // @flow
 import React from 'react'
-import { compose, isNil, map, prop, propOr, reject } from 'ramda'
 import { graphql, createFragmentContainer } from 'react-relay'
-import { ListGroup, ListGroupItem } from 'reactstrap'
 
 import AddTopic from './AddTopic'
-
-const topicList = compose(reject(isNil), map(prop('node')), propOr([], 'edges'))
+import ListView from '../ui/ListView'
+import { liftNodes } from '../../utils'
 
 type Props = {
   organization: {
@@ -18,25 +16,16 @@ type Props = {
 }
 
 const TopicsPage = ({ organization, relay }: Props) => (
-  <div>
-    <h1>Topics</h1>
-    <div className="row">
-      <div className="col">
-        <ListGroup>
-          {topicList(organization.topics).map(({ id, name, resourcePath }) => (
-            <ListGroupItem key={id} tag="a" href={resourcePath}>{name}</ListGroupItem>
-          ))}
-        </ListGroup>
-      </div>
-      <div className="col-5">
-        <AddTopic
-          className="test-add-topic"
-          organization={organization}
-          relay={relay}
-        />
-      </div>
-    </div>
-  </div>
+  <ListView
+    title="Topics"
+    items={liftNodes(organization.topics)}
+  >
+    <AddTopic
+      className="test-add-topic"
+      organization={organization}
+      relay={relay}
+    />
+  </ListView>
 )
 
 export const query = graphql`
@@ -63,9 +52,8 @@ export default createFragmentContainer(TopicsPage, graphql`
       edges {
         node {
           id
-          name
+          display: name
           resourcePath
-          description
         }
       }
     }

@@ -10,6 +10,7 @@ import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 import Homepage, { query as homepageQuery } from '../components/Homepage'
 import TopicsPage, { query as topicsPageQuery } from '../components/TopicsPage'
 import TopicPage, { query as topicPageQuery } from '../components/TopicPage'
+import LinksPage, { query as linksPageQuery } from '../components/LinksPage'
 import Layout from '../components/Layout'
 
 export const historyMiddlewares = [queryMiddleware]
@@ -42,18 +43,16 @@ export const routeConfig = makeRouteConfig(
         }
       }`
     }
+    prepareVariables={params => ({
+      ...params,
+      orgResourceId: 'organization:tyrell',
+    })}
   >
     <Route
       Component={Homepage}
       query={homepageQuery}
     />
-    <Route
-      path="topics"
-      prepareVariables={params => ({
-        ...params,
-        orgResourceId: 'organization:tyrell',
-      })}
-    >
+    <Route path="topics">
       <Route
         Component={TopicsPage}
         query={topicsPageQuery}
@@ -66,6 +65,12 @@ export const routeConfig = makeRouteConfig(
           topicResourceId: `topic:${uuid}`,
           ...params,
         })}
+      />
+    </Route>
+    <Route path="links">
+      <Route
+        Component={LinksPage}
+        query={linksPageQuery}
       />
     </Route>
   </Route>,

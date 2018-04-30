@@ -7,9 +7,9 @@ type Props = {
   }
 }
 
-const TopicPage = ({ topic }: Props) => (
+const TopicPage = ({ topic: { name } }: Props) => (
   <div>
-    <h1>Topic: {topic ? topic.name : 'Nemo'}</h1>
+    <h1>Topic: {name}</h1>
   </div>
 )
 

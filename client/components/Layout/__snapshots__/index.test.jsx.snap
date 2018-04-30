@@ -1,0 +1,483 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Layout /> renders 1`] = `
+ShallowWrapper {
+  "length": 1,
+  Symbol(enzyme.__root__): [Circular],
+  Symbol(enzyme.__unrendered__): <Layout>
+    <div>
+      some view
+    </div>
+  </Layout>,
+  Symbol(enzyme.__renderer__): Object {
+    "batchedUpdates": [Function],
+    "getNode": [Function],
+    "render": [Function],
+    "simulateEvent": [Function],
+    "unmount": [Function],
+  },
+  Symbol(enzyme.__node__): Object {
+    "instance": null,
+    "key": undefined,
+    "nodeType": "host",
+    "props": Object {
+      "children": Array [
+        <nav
+          className="navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar"
+        >
+          <a
+            className="navbar-brand mb-0 h1"
+            href="/"
+          >
+            Digraffe
+          </a>
+          <ul
+            className="navbar-nav ml-auto"
+          >
+            <li
+              className="nav-item"
+            >
+              <a
+                className="nav-link test-topics-page"
+                href="/topics"
+              >
+                Topics
+              </a>
+            </li>
+            <li
+              className="nav-item"
+            >
+              <a
+                className="nav-link test-links-page"
+                href="/links"
+              >
+                Links
+              </a>
+            </li>
+          </ul>
+        </nav>,
+        <div
+          className="container"
+        >
+          <div>
+            some view
+          </div>
+        </div>,
+      ],
+    },
+    "ref": null,
+    "rendered": Array [
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "host",
+        "props": Object {
+          "children": Array [
+            <a
+              className="navbar-brand mb-0 h1"
+              href="/"
+            >
+              Digraffe
+            </a>,
+            <ul
+              className="navbar-nav ml-auto"
+            >
+              <li
+                className="nav-item"
+              >
+                <a
+                  className="nav-link test-topics-page"
+                  href="/topics"
+                >
+                  Topics
+                </a>
+              </li>
+              <li
+                className="nav-item"
+              >
+                <a
+                  className="nav-link test-links-page"
+                  href="/links"
+                >
+                  Links
+                </a>
+              </li>
+            </ul>,
+          ],
+          "className": "navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar",
+        },
+        "ref": null,
+        "rendered": Array [
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": "Digraffe",
+              "className": "navbar-brand mb-0 h1",
+              "href": "/",
+            },
+            "ref": null,
+            "rendered": "Digraffe",
+            "type": "a",
+          },
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": Array [
+                <li
+                  className="nav-item"
+                >
+                  <a
+                    className="nav-link test-topics-page"
+                    href="/topics"
+                  >
+                    Topics
+                  </a>
+                </li>,
+                <li
+                  className="nav-item"
+                >
+                  <a
+                    className="nav-link test-links-page"
+                    href="/links"
+                  >
+                    Links
+                  </a>
+                </li>,
+              ],
+              "className": "navbar-nav ml-auto",
+            },
+            "ref": null,
+            "rendered": Array [
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": <a
+                    className="nav-link test-topics-page"
+                    href="/topics"
+                  >
+                    Topics
+                  </a>,
+                  "className": "nav-item",
+                },
+                "ref": null,
+                "rendered": Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "host",
+                  "props": Object {
+                    "children": "Topics",
+                    "className": "nav-link test-topics-page",
+                    "href": "/topics",
+                  },
+                  "ref": null,
+                  "rendered": "Topics",
+                  "type": "a",
+                },
+                "type": "li",
+              },
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": <a
+                    className="nav-link test-links-page"
+                    href="/links"
+                  >
+                    Links
+                  </a>,
+                  "className": "nav-item",
+                },
+                "ref": null,
+                "rendered": Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "host",
+                  "props": Object {
+                    "children": "Links",
+                    "className": "nav-link test-links-page",
+                    "href": "/links",
+                  },
+                  "ref": null,
+                  "rendered": "Links",
+                  "type": "a",
+                },
+                "type": "li",
+              },
+            ],
+            "type": "ul",
+          },
+        ],
+        "type": "nav",
+      },
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "host",
+        "props": Object {
+          "children": <div>
+            some view
+          </div>,
+          "className": "container",
+        },
+        "ref": null,
+        "rendered": Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": "some view",
+          },
+          "ref": null,
+          "rendered": "some view",
+          "type": "div",
+        },
+        "type": "div",
+      },
+    ],
+    "type": "div",
+  },
+  Symbol(enzyme.__nodes__): Array [
+    Object {
+      "instance": null,
+      "key": undefined,
+      "nodeType": "host",
+      "props": Object {
+        "children": Array [
+          <nav
+            className="navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar"
+          >
+            <a
+              className="navbar-brand mb-0 h1"
+              href="/"
+            >
+              Digraffe
+            </a>
+            <ul
+              className="navbar-nav ml-auto"
+            >
+              <li
+                className="nav-item"
+              >
+                <a
+                  className="nav-link test-topics-page"
+                  href="/topics"
+                >
+                  Topics
+                </a>
+              </li>
+              <li
+                className="nav-item"
+              >
+                <a
+                  className="nav-link test-links-page"
+                  href="/links"
+                >
+                  Links
+                </a>
+              </li>
+            </ul>
+          </nav>,
+          <div
+            className="container"
+          >
+            <div>
+              some view
+            </div>
+          </div>,
+        ],
+      },
+      "ref": null,
+      "rendered": Array [
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": Array [
+              <a
+                className="navbar-brand mb-0 h1"
+                href="/"
+              >
+                Digraffe
+              </a>,
+              <ul
+                className="navbar-nav ml-auto"
+              >
+                <li
+                  className="nav-item"
+                >
+                  <a
+                    className="nav-link test-topics-page"
+                    href="/topics"
+                  >
+                    Topics
+                  </a>
+                </li>
+                <li
+                  className="nav-item"
+                >
+                  <a
+                    className="nav-link test-links-page"
+                    href="/links"
+                  >
+                    Links
+                  </a>
+                </li>
+              </ul>,
+            ],
+            "className": "navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar",
+          },
+          "ref": null,
+          "rendered": Array [
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": "Digraffe",
+                "className": "navbar-brand mb-0 h1",
+                "href": "/",
+              },
+              "ref": null,
+              "rendered": "Digraffe",
+              "type": "a",
+            },
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": Array [
+                  <li
+                    className="nav-item"
+                  >
+                    <a
+                      className="nav-link test-topics-page"
+                      href="/topics"
+                    >
+                      Topics
+                    </a>
+                  </li>,
+                  <li
+                    className="nav-item"
+                  >
+                    <a
+                      className="nav-link test-links-page"
+                      href="/links"
+                    >
+                      Links
+                    </a>
+                  </li>,
+                ],
+                "className": "navbar-nav ml-auto",
+              },
+              "ref": null,
+              "rendered": Array [
+                Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "host",
+                  "props": Object {
+                    "children": <a
+                      className="nav-link test-topics-page"
+                      href="/topics"
+                    >
+                      Topics
+                    </a>,
+                    "className": "nav-item",
+                  },
+                  "ref": null,
+                  "rendered": Object {
+                    "instance": null,
+                    "key": undefined,
+                    "nodeType": "host",
+                    "props": Object {
+                      "children": "Topics",
+                      "className": "nav-link test-topics-page",
+                      "href": "/topics",
+                    },
+                    "ref": null,
+                    "rendered": "Topics",
+                    "type": "a",
+                  },
+                  "type": "li",
+                },
+                Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "host",
+                  "props": Object {
+                    "children": <a
+                      className="nav-link test-links-page"
+                      href="/links"
+                    >
+                      Links
+                    </a>,
+                    "className": "nav-item",
+                  },
+                  "ref": null,
+                  "rendered": Object {
+                    "instance": null,
+                    "key": undefined,
+                    "nodeType": "host",
+                    "props": Object {
+                      "children": "Links",
+                      "className": "nav-link test-links-page",
+                      "href": "/links",
+                    },
+                    "ref": null,
+                    "rendered": "Links",
+                    "type": "a",
+                  },
+                  "type": "li",
+                },
+              ],
+              "type": "ul",
+            },
+          ],
+          "type": "nav",
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": <div>
+              some view
+            </div>,
+            "className": "container",
+          },
+          "ref": null,
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": "some view",
+            },
+            "ref": null,
+            "rendered": "some view",
+            "type": "div",
+          },
+          "type": "div",
+        },
+      ],
+      "type": "div",
+    },
+  ],
+  Symbol(enzyme.__options__): Object {
+    "adapter": ReactSixteenAdapter {
+      "options": Object {
+        "enableComponentDidUpdateOnSetState": true,
+      },
+    },
+  },
+}
+`;
