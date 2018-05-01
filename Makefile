@@ -19,8 +19,8 @@ clean:
 	@rm -rf src/static/build/*
 
 kill:
-	@killall node || true
-	@killall digraffe || true
+	@killall node 2>/dev/null || true
+	@killall digraffe 2>/dev/null || true
 
 serve: clean kill
 	@yarn relay --watch &
