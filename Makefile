@@ -7,36 +7,25 @@ BUNDLE        = src/static/build/bundle.js
 APP           = $(shell find src -type f)
 IMPORT_PATH   = $(shell pwd | sed "s|^$(GOPATH)/src/||g")
 APP_NAME      = $(shell pwd | sed 's:.*/::')
-TARGET        = $(BIN)/$(APP_NAME)
 GIT_HASH      = $(shell git rev-parse HEAD)
 LDFLAGS       = -w -X main.commitHash=$(GIT_HASH)
 GLIDE         := $(shell command -v glide 2> /dev/null)
 TIMESTAMP     = $(shell date -u +%s)
 DATABASES     = digraffe_dev digraffe_test
 
-build: $(ON) clean $(TARGET)
+build: clean
 
 clean:
 	@rm -rf src/static/build/*
 
-$(ON):
-	go install $(IMPORT_PATH)/vendor/github.com/olebedev/on
-
-$(TARGET):
-	@go build -ldflags '$(LDFLAGS)' -o $@ $(IMPORT_PATH)/server
-
 kill:
-	@kill `cat $(PID)` || true
+	@killall node || true
+	@killall digraffe || true
 
-serve: $(ON) clean $(TARGET) restart
+serve: clean kill
 	@yarn relay --watch &
 	@yarn start &
-	@$(ON) -m 2 $(GO_FILES) | xargs -n1 -I{} make restart || make kill
-
-restart: LDFLAGS += -X main.debug=true
-restart: kill $(TARGET)
-	@echo restart the app...
-	@$(TARGET) run & echo $$! > $(PID)
+	@go run server/main.go
 
 lint:
 	@yarn run eslint || true

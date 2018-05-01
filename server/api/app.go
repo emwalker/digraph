@@ -8,6 +8,7 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	_ "github.com/mattes/migrate"
 )
 
@@ -69,6 +70,16 @@ func New(config *Config) (*Config, error) {
 		config.Engine.POST("/graphql", func(c echo.Context) error {
 			return config.HandleGraphqlQuery(c)
 		})
+
+		config.Engine.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+			AllowOrigins: []string{"http://localhost:8080", "http://localhost:5000"},
+			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType},
+		}))
+
+		config.Engine.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+			Format: `${method} | ${status} | ${uri} -> ${latency_human}` + "\n",
+			Output: os.Stdout,
+		}))
 	}
 
 	return config, nil
