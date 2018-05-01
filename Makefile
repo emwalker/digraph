@@ -3,8 +3,8 @@ ON            = $(BIN)/on
 NODE_BIN      = $(shell npm bin)
 PID           = .pid
 GO_FILES      = $(shell find ./server -type f -name "*.go")
-BUNDLE        = client/static/build/bundle.js
-APP           = $(shell find client -type f)
+BUNDLE        = src/static/build/bundle.js
+APP           = $(shell find src -type f)
 IMPORT_PATH   = $(shell pwd | sed "s|^$(GOPATH)/src/||g")
 APP_NAME      = $(shell pwd | sed 's:.*/::')
 TARGET        = $(BIN)/$(APP_NAME)
@@ -17,7 +17,7 @@ DATABASES     = digraffe_dev digraffe_test
 build: $(ON) clean $(TARGET)
 
 clean:
-	@rm -rf client/static/build/*
+	@rm -rf src/static/build/*
 
 $(ON):
 	go install $(IMPORT_PATH)/vendor/github.com/olebedev/on

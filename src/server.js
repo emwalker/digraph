@@ -18,7 +18,7 @@ import {
   routeConfig,
 } from './router'
 
-const typeDefs = importSchema('./client/schema.graphql')
+const typeDefs = importSchema('./src/schema.graphql')
 
 const resolvers = {}
 const schema = makeExecutableSchema({

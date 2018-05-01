@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "description": "",
   "scripts": {
-    "start": "babel-node client/server",
-    "eslint": "eslint --ext .js --ext .jsx client",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "relay": "relay-compiler --src ./client --schema ./client/schema.graphql  --extensions js jsx"
+    "start": "babel-node src/server",
+    "eslint": "eslint --ext .js --ext .jsx src",
+    "relay": "relay-compiler --src ./src --schema ./src/schema.graphql  --extensions js jsx"
   },
   "author": "olebedev",
   "license": "MIT",
@@ -73,7 +72,7 @@
       [
         "relay",
         {
-          "schema": "./client/schema.graphql"
+          "schema": "./src/schema.graphql"
         }
       ]
     ],
@@ -185,9 +184,9 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/client/__mocks__/fileMock.js",
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/src/__mocks__/fileMock.js",
       "\\.(css|scss|less)$": "identity-obj-proxy"
     },
-    "setupTestFrameworkScriptFile": "<rootDir>/client/setupTests.js"
+    "setupTestFrameworkScriptFile": "<rootDir>/src/setupTests.js"
   }
 }

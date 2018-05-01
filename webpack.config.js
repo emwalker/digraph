@@ -36,7 +36,7 @@ var config  = {
 
   entry: [
     'babel-polyfill',
-    path.join(__dirname, 'client/client'),
+    path.join(__dirname, 'src/client'),
   ],
 
   externals: [
@@ -51,7 +51,7 @@ var config  = {
   ],
 
   output: {
-    path: path.join(__dirname, 'client/static/build'),
+    path: path.join(__dirname, 'src/static/build'),
     publicPath: '/',
     filename: 'bundle.js'
   },
@@ -66,7 +66,7 @@ var config  = {
       {test: /\.json$/, loader: 'json-loader'},
       {
         test: /\.jsx?$/,
-        include: path.join(__dirname, 'client'),
+        include: path.join(__dirname, 'src'),
         loaders: ['babel-loader']
       },
       {
@@ -89,7 +89,7 @@ var config  = {
   resolve: {
     extensions: ['.js', '.jsx', '.css', '.scss'],
     alias: {
-      'components': path.join(__dirname, 'client/components')
+      'components': path.join(__dirname, 'src/components')
     }
   }
 }

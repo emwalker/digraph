@@ -7,7 +7,7 @@
 app/javascript
 
 [libs]
-client/flow-typed
+src/flow-typed
 
 [lints]
 
