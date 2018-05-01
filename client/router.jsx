@@ -7,11 +7,11 @@ import React from 'react'
 import { graphql } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
-import Homepage, { query as homepageQuery } from '../components/Homepage'
-import TopicsPage, { query as topicsPageQuery } from '../components/TopicsPage'
-import TopicPage, { query as topicPageQuery } from '../components/TopicPage'
-import LinksPage, { query as linksPageQuery } from '../components/LinksPage'
-import Layout from '../components/Layout'
+import Homepage, { query as homepageQuery } from './components/Homepage'
+import TopicsPage, { query as topicsPageQuery } from './components/TopicsPage'
+import TopicPage, { query as topicPageQuery } from './components/TopicPage'
+import LinksPage, { query as linksPageQuery } from './components/LinksPage'
+import Layout from './components/Layout'
 
 export const historyMiddlewares = [queryMiddleware]
 

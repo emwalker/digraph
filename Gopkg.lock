@@ -36,16 +36,6 @@
   version = "v0.7.2"
 
 [[projects]]
-  name = "github.com/dgrijalva/jwt-go"
-  packages = ["."]
-  revision = "2268707a8f0843315e2004ee4f1d021dc08baedf"
-
-[[projects]]
-  name = "github.com/elazarl/go-bindata-assetfs"
-  packages = ["."]
-  revision = "9a6736ed45b44bf3835afeebb3034b57ed329f3e"
-
-[[projects]]
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -81,25 +71,15 @@
   revision = "54350098cfe5942bc76186efa1f29ca286f6d54d"
 
 [[projects]]
-  name = "github.com/itsjamie/go-bindata-templates"
-  packages = ["."]
-  revision = "65d795d0c74021e19b2ebadf3c83c01a8290a405"
-
-[[projects]]
   name = "github.com/labstack/echo"
-  packages = [
-    ".",
-    "middleware"
-  ]
+  packages = ["."]
   revision = "a8b6864be328fcb5c2d96d32c75b750f84e0e4be"
 
 [[projects]]
   name = "github.com/labstack/gommon"
   packages = [
-    "bytes",
     "color",
-    "log",
-    "random"
+    "log"
   ]
   revision = "f72d3c883f8ea180da8f085dd320804c41332ad1"
 
@@ -132,17 +112,6 @@
   name = "github.com/mattn/go-isatty"
   packages = ["."]
   revision = "30a891c33c7cde7b02a981314b4228ec99380cca"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/nu7hatch/gouuid"
-  packages = ["."]
-  revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
-
-[[projects]]
-  name = "github.com/olebedev/config"
-  packages = ["."]
-  revision = "afea898d27c7d17376ecc60c7c2e73c76b40060e"
 
 [[projects]]
   name = "github.com/segmentio/ksuid"
@@ -208,14 +177,9 @@
   ]
   revision = "44f4f658a783b0cee41fe0a23b8fc91d9c120558"
 
-[[projects]]
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  revision = "4c78c975fe7c825c6d1466c42be594d1d6f3aba6"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "11cd4183dfd61d509a580d2f41f41060d10d8f45d7294ffcc36b68fbeca499ef"
+  inputs-digest = "4ee0153d24877fa6fbdbb69757cd1f87d1b27d1a422a770c2ebed76669fe411a"
   solver-name = "gps-cdcl"
   solver-version = 1

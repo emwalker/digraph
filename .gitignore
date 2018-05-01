@@ -2,8 +2,7 @@
 /bin
 /pkg
 /src
-/server/bindata.go
-/server/data/static/build
+/clint/static/build
 /vendor
 
 .pid

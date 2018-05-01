@@ -5,15 +5,9 @@ var precss = require('precss')
 var functions = require('postcss-functions')
 var ExtractTextPlugin = require('extract-text-webpack-plugin')
 
-var postCssLoader = [
-  'css-loader?modules',
-  '&localIdentName=[name]__[local]___[hash:base64:5]',
-  '&disableStructuralMinification',
-]
-
 var plugins = [
   new webpack.NoEmitOnErrorsPlugin(),
-  new ExtractTextPlugin('bundle.css'),
+  new ExtractTextPlugin({filename: 'style.css', allChunks: true}),
   new webpack.ProvidePlugin({
     $: "jquery",
     jQuery: "jquery"
@@ -28,16 +22,22 @@ if (process.env.NODE_ENV === 'production') {
     }),
     new webpack.DefinePlugin({
       'process.env': {NODE_ENV: JSON.stringify('production')}
-    })
+    }),
   ])
-};
+}
+
+const scssLoader = [
+  { loader: 'css-loader' },
+  { loader: 'sass-loader' },
+]
 
 var config  = {
   mode: 'development',
 
-  entry: {
-    bundle: path.join(__dirname, 'client/index.js')
-  },
+  entry: [
+    'babel-polyfill',
+    path.join(__dirname, 'client/client'),
+  ],
 
   externals: [
     {
@@ -51,27 +51,15 @@ var config  = {
   ],
 
   output: {
-    path: path.join(__dirname, 'server/data/static/build'),
-    publicPath: '/static/build/',
-    filename: '[name].js'
+    path: path.join(__dirname, 'client/static/build'),
+    publicPath: '/',
+    filename: 'bundle.js'
   },
 
   plugins: plugins,
 
   module: {
     rules: [
-      {
-        test: /\.css$/,
-        use: [
-          'isomorphic-style-loader',
-          {
-            loader: 'css-loader',
-            options: {
-              importLoaders: 1
-            }
-          }
-        ]
-      },
       {test: /\.(png|gif)$/, loader: 'url-loader?name=[name]@[hash].[ext]&limit=5000'},
       {test: /\.svg$/, loader: 'url-loader?name=[name]@[hash].[ext]&limit=5000!svgo-loader?useConfig=svgo1'},
       {test: /\.(pdf|ico|jpg|eot|otf|woff|ttf|mp4|webm)$/, loader: 'file-loader?name=[name]@[hash].[ext]'},
@@ -82,13 +70,19 @@ var config  = {
         loaders: ['babel-loader']
       },
       {
-        test: /\.scss$/,
-        use: [
-          {loader: 'style-loader'},
-          {loader: 'css-loader'},
-          {loader: 'sass-loader'}
-        ]
-      }
+        loader: ExtractTextPlugin.extract({
+          use: 'css-loader',
+          fallback: 'style-loader',
+        }),
+        test: /\.css$/,
+      },
+      {
+        test: /\.(scss|sass)$/,
+        loader: ExtractTextPlugin.extract({
+          use: ['css-loader', 'sass-loader'],
+          fallback: 'style-loader',
+        })
+      },
     ]
   },
 

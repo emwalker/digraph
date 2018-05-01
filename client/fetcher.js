@@ -1,9 +1,5 @@
 import 'isomorphic-fetch'
 
-// TODO: Update this when someone releases a real, production-quality solution
-// for handling universal rendering with Relay Modern. For now, this is just
-// enough to get things working.
-
 class FetcherBase {
   constructor(url) {
     this.url = url

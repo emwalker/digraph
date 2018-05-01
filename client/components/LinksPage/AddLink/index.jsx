@@ -3,7 +3,6 @@ import React, { Component } from 'react'
 import { Button, FormGroup, Input } from 'reactstrap'
 
 import createLinkMutation from '../../../mutations/createLinkMutation'
-import './index.scss'
 
 type Props = {
   organization: {
