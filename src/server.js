@@ -1,12 +1,9 @@
 import express from 'express'
-import graphQLHTTP from 'express-graphql'
 import { getFarceResult } from 'found/lib/server'
 import ReactDOMServer from 'react-dom/server'
 import serialize from 'serialize-javascript'
 import webpack from 'webpack'
 import webpackMiddleware from 'webpack-dev-middleware'
-import { importSchema } from 'graphql-import'
-import { makeExecutableSchema } from 'graphql-tools'
 import path from 'path'
 
 import webpackConfig from '../webpack.config'
@@ -18,22 +15,9 @@ import {
   routeConfig,
 } from './router'
 
-const typeDefs = importSchema('./src/schema.graphql')
-
-const resolvers = {}
-const schema = makeExecutableSchema({
-  typeDefs,
-  resolvers,
-  resolverValidationOptions: {
-    requireResolversForResolveType: false,
-  },
-})
-
 const PORT = 8080
 
 const app = express()
-
-app.use('/graphql', graphQLHTTP({ schema }))
 
 app.use('/static', express.static(path.join(__dirname, 'static')))
 
@@ -75,6 +59,7 @@ app.use(async (req, res) => {
     integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4"
     crossorigin="anonymous"
   />
+  <link rel="stylesheet" href="https://unpkg.com/react-select@1.2.1/dist/react-select.css">
 </head>
 
 <body>
