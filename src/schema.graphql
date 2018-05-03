@@ -19,6 +19,7 @@ type User {
   id: ID
   name: String!
   resourceId: String!
+  selectedTopic: Topic
 }
 
 type Topic implements ResourceIdentifiable & Namespacable {
@@ -106,7 +107,16 @@ type CreateLinkPayload {
   linkEdge: LinkEdge!
 }
 
+input SelectTopicInput {
+  topicId: String!
+}
+
+type SelectTopicPayload {
+  topic: Topic
+}
+
 type Mutation {
   createLink(input: CreateLinkInput!): CreateLinkPayload
   createTopic(input: CreateTopicInput!): CreateTopicPayload
+  selectTopic(input: SelectTopicInput!): SelectTopicPayload
 }

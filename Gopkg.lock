@@ -96,6 +96,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/laurent22/go-sqlkv"
+  packages = ["."]
+  revision = "db1022af2c66c36268b346d203ceaa78579673d2"
+
+[[projects]]
+  branch = "master"
   name = "github.com/lib/pq"
   packages = [
     ".",
@@ -191,6 +197,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1d283a59d46214504c9d986cfa56e02a170816e013c7bfb375321e05ebba3e0e"
+  inputs-digest = "8675bc9bca11a115bd4d7ee7c4dedb2a2ab11976bdd2ef6b832c588c9acd68c7"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -3,9 +3,13 @@ import React, { Component } from 'react'
 import { FormGroup, Input } from 'reactstrap'
 import { graphql, createFragmentContainer } from 'react-relay'
 import Select from 'react-select'
+import { pathOr } from 'ramda'
 
 import createLinkMutation from '../../../mutations/createLinkMutation'
+import selectTopicMutation from '../../../mutations/selectTopicMutation'
 import { liftNodes } from '../../../utils'
+
+const selectedTopic = pathOr('', ['selectedTopic'])
 
 type Props = {
   organization: {
@@ -15,6 +19,12 @@ type Props = {
       label: string,
       value: string,
     }>,
+  },
+  viewer: {
+    selectedTopic: {
+      label: string,
+      value: string,
+    },
   },
   relay: {
     environment: Object,
@@ -30,11 +40,10 @@ class AddLink extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.options = liftNodes(props.organization.availableTopics)
-  }
-
-  state = {
-    selectedOption: '',
-    url: '',
+    this.state = {
+      selectedOption: selectedTopic(props.viewer),
+      url: '',
+    }
   }
 
   onInputChange = (event: Object) => {
@@ -50,7 +59,12 @@ class AddLink extends Component<Props, State> {
   }
 
   onSelect = (selectedOption) => {
-    this.setState({ selectedOption })
+    this.setState({ selectedOption }, () => {
+      selectTopicMutation(
+        this.props.relay.environment,
+        { topicId: selectedOption ? selectedOption.value : '' },
+      )
+    })
   }
 
   addUrl = (url) => {
@@ -93,6 +107,13 @@ class AddLink extends Component<Props, State> {
 }
 
 export default createFragmentContainer(AddLink, graphql`
+  fragment AddLink_viewer on User {
+    selectedTopic {
+      label: name
+      value: resourceId
+    }
+  }
+
   fragment AddLink_organization on Organization {
     id
     resourceId
@@ -101,7 +122,7 @@ export default createFragmentContainer(AddLink, graphql`
       edges {
         node {
           label: name
-          value: resourcePath
+          value: resourceId
         }
       }
     }

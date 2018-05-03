@@ -101,6 +101,45 @@ func TestCreateTopic(t *testing.T) {
 	testMutations(t, doc, expected)
 }
 
+func TestSelectTopic(t *testing.T) {
+	doc := `
+	mutation M {
+		first: selectTopic(
+			input: {
+				topicId: "topic:science",
+			}
+		) {
+			topic {
+				name
+			}
+		},
+		second: selectTopic(
+			input: {
+				topicId: "does-not-exist",
+			}
+		) {
+			topic {
+				name
+			}
+		}
+	}`
+
+	expected := &graphql.Result{
+		Data: map[string]interface{}{
+			"first": map[string]interface{}{
+				"topic": map[string]interface{}{
+					"name": "Science",
+				},
+			},
+			"second": map[string]interface{}{
+				"topic": nil,
+			},
+		},
+	}
+
+	testMutations(t, doc, expected)
+}
+
 func TestCreateLink(t *testing.T) {
 	doc := `
 	mutation M {

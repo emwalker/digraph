@@ -18,6 +18,11 @@ func (e Error) Error() string {
 	return fmt.Sprintf("%v", e.Message)
 }
 
+type SessionStore interface {
+	Set(string, string, string) error
+	Get(string, string) (string, error)
+}
+
 type Connection interface {
 	Close() error
 	CreateLink(string, string, string) (*Link, error)
@@ -30,7 +35,40 @@ type Connection interface {
 	FetchTopics(*[]interface{}, *Organization) error
 	FetchUser(string) (interface{}, error)
 	Init() error
+	SelectTopic(string, string) (*Topic, error)
+	SelectedTopic(string) (*Topic, error)
 	Viewer() (interface{}, error)
+}
+
+type memstoreSessionStore struct {
+	data map[string]string
+}
+
+func newMemstoreSessionStore() *memstoreSessionStore {
+	return &memstoreSessionStore{
+		data: map[string]string{},
+	}
+}
+
+func (s *memstoreSessionStore) Set(userId string, key string, value string) error {
+	s.data[key] = value
+	return nil
+}
+
+func (s *memstoreSessionStore) Get(userId string, key string) (string, error) {
+	return s.data[key], nil
+}
+
+func (config *Config) sessionStore() SessionStore {
+	switch config.DriverName {
+	case "postgres":
+		return newPgSessionStore(config.DriverName, config.Address)
+	case "memstore":
+		return newMemstoreSessionStore()
+	default:
+		log.Fatal(fmt.Sprintf("do not recognize driver: %s", config.DriverName))
+	}
+	return nil
 }
 
 func (config *Config) newConnection() Connection {
@@ -40,6 +78,7 @@ func (config *Config) newConnection() Connection {
 			address:     config.Address,
 			driverName:  config.DriverName,
 			titleForUrl: config.FetchTitle,
+			session:     config.sessionStore(),
 		}
 	default:
 		log.Fatal(fmt.Sprintf("do not recognize driver: %s", config.DriverName))

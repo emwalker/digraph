@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/cayleygraph/cayley/quad"
@@ -228,27 +229,67 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 	})
 }
 
+func (config *Config) selectTopicMutation(topicType *Type) *graphql.Field {
+	return relay.MutationWithClientMutationID(relay.MutationConfig{
+		Name: "SelectTopic",
+
+		InputFields: graphql.InputObjectConfigFieldMap{
+			"topicId": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
+			},
+		},
+
+		OutputFields: graphql.Fields{
+			"topic": &graphql.Field{
+				Type: topicType.NodeType,
+
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if payload, ok := p.Source.(map[string]interface{}); ok {
+						if topicId, ok := payload["topicId"]; ok {
+							node, err := config.Connection.FetchTopic(topicId.(string))
+							if err != nil {
+								return nil, err
+							}
+							return node, nil
+						}
+					}
+					return nil, nil
+				},
+			},
+		},
+
+		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
+			viewer, err := config.Connection.Viewer()
+			checkErr(err)
+			topicId := input["topicId"].(string)
+
+			node, err := config.Connection.SelectTopic(viewer.(*User).ID, topicId)
+			if err != nil {
+				log.Println("there was a problem:", err)
+				return map[string]interface{}{}, nil
+			}
+
+			return map[string]interface{}{
+				"topicId": node.ID,
+			}, nil
+		},
+	})
+}
+
+func (config *Config) viewerField(userType *Type) *graphql.Field {
+	return &graphql.Field{
+		Type: userType.NodeType,
+
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			return config.Connection.Viewer()
+		},
+	}
+}
+
 func (config *Config) newSchema() (*graphql.Schema, error) {
 	nodeDefinitions = relay.NewNodeDefinitions(relay.NodeDefinitionsConfig{
 		IDFetcher:   config.fetcher(),
 		TypeResolve: resolveType,
-	})
-
-	userType = NewType(&TypeConfig{
-		Name: "User",
-
-		NodeFields: graphql.Fields{
-			"name": &graphql.Field{
-				Type:        graphql.String,
-				Description: "Name of the user",
-			},
-			"email": &graphql.Field{
-				Type:        graphql.String,
-				Description: "Email address of the user",
-			},
-		},
-
-		NodeDefinitions: nodeDefinitions,
 	})
 
 	topicType = NewType(&TypeConfig{
@@ -270,6 +311,39 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 			"description": &graphql.Field{
 				Type:        graphql.String,
 				Description: "Description of the topic",
+			},
+		},
+
+		NodeDefinitions: nodeDefinitions,
+	})
+
+	userType = NewType(&TypeConfig{
+		Name: "User",
+
+		NodeFields: graphql.Fields{
+			"name": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Name of the user",
+			},
+
+			"email": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Email address of the user",
+			},
+
+			"selectedTopic": &graphql.Field{
+				Type:        topicType.NodeType,
+				Description: "Topic selected by the user",
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if res, ok := p.Source.(*User); ok {
+						node, err := config.Connection.SelectedTopic(res.ID)
+						if err != nil {
+							return nil, err
+						}
+						return node, nil
+					}
+					return nil, errors.New("unable to provide IRI")
+				},
 			},
 		},
 
@@ -324,12 +398,7 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
-			"viewer": &graphql.Field{
-				Type: userType.NodeType,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return config.Connection.Viewer()
-				},
-			},
+			"viewer":       config.viewerField(userType),
 			"organization": organizationType.NodeField,
 			"user":         userType.NodeField,
 			"node":         nodeDefinitions.NodeField,
@@ -341,6 +410,7 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 		Fields: graphql.Fields{
 			"createTopic": config.createTopicMutation(topicType.Definitions.EdgeType),
 			"createLink":  config.createLinkMutation(linkType.Definitions.EdgeType),
+			"selectTopic": config.selectTopicMutation(topicType),
 		},
 	})
 

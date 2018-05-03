@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -71,9 +72,10 @@ type CayleyConnection struct {
 	address     string
 	context     context.Context
 	driverName  string
-	titleForUrl TitleFetcher
 	schema      *schema.Config
+	session     SessionStore
 	store       *graph.Handle
+	titleForUrl TitleFetcher
 }
 
 func (conn *CayleyConnection) Close() error {
@@ -180,6 +182,36 @@ func (conn *CayleyConnection) FetchUser(id string) (interface{}, error) {
 	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
 	o.Init()
 	return handleResult(&o, err)
+}
+
+func (conn *CayleyConnection) SelectTopic(userId string, topicId string) (*Topic, error) {
+	checkErr(conn.session.Set(userId, "selectedTopicId", topicId))
+
+	if topicId != "" {
+		node, err := conn.FetchTopic(topicId)
+		checkErr(err)
+		if node != nil {
+			return node.(*Topic), nil
+		}
+		return nil, errors.New("topic not found")
+	}
+
+	return nil, nil
+}
+
+func (conn *CayleyConnection) SelectedTopic(userId string) (*Topic, error) {
+	topicId, err := conn.session.Get(userId, "selectedTopicId")
+	checkErr(err)
+
+	if topicId != "" {
+		node, err := conn.FetchTopic(topicId)
+		if err != nil {
+			return nil, err
+		}
+		return node.(*Topic), nil
+	}
+
+	return nil, nil
 }
 
 func (conn *CayleyConnection) Viewer() (interface{}, error) {

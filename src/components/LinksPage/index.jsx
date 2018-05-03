@@ -15,7 +15,7 @@ type Props = {
   }
 }
 
-const LinksPage = ({ organization, relay }: Props) => (
+const LinksPage = ({ organization, relay, viewer }: Props) => (
   <ListView
     title="Links"
     items={liftNodes(organization.links)}
@@ -24,24 +24,27 @@ const LinksPage = ({ organization, relay }: Props) => (
       className="test-add-link"
       organization={organization}
       relay={relay}
+      viewer={viewer}
     />
   </ListView>
 )
 
 export const query = graphql`
-query LinksPage_query_Query($orgResourceId: String!) {
-  viewer {
-    ...LinksPage_viewer
-  }
+  query LinksPage_query_Query($orgResourceId: String!) {
+    viewer {
+      ...LinksPage_viewer
+    }
 
-  organization(resourceId: $orgResourceId) {
-    ...LinksPage_organization
+    organization(resourceId: $orgResourceId) {
+      ...LinksPage_organization
+    }
   }
-}`
+`
 
 export default createFragmentContainer(LinksPage, graphql`
   fragment LinksPage_viewer on User {
     name
+    ...AddLink_viewer
   }
 
   fragment LinksPage_organization on Organization {
