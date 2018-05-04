@@ -89,6 +89,15 @@ func init() {
 								node {
 									title
 									url
+
+									topics(first: 100) {
+										edges {
+											node {
+												name
+												resourceId
+											}
+										}
+									}
 								}
 							}
 						}
@@ -104,18 +113,40 @@ func init() {
 									"node": map[string]interface{}{
 										"title": "Github",
 										"url":   "https://github.com",
+										"topics": map[string]interface{}{
+											"edges": []interface{}{
+												map[string]interface{}{
+													"node": map[string]interface{}{
+														"name":       "Biology",
+														"resourceId": "topic:biology",
+													},
+												},
+												map[string]interface{}{
+													"node": map[string]interface{}{
+														"name":       "Chemistry",
+														"resourceId": "topic:chemistry",
+													},
+												},
+											},
+										},
 									},
 								},
 								map[string]interface{}{
 									"node": map[string]interface{}{
 										"title": "New York Times",
 										"url":   "https://www.nytimes.com",
+										"topics": map[string]interface{}{
+											"edges": []interface{}{},
+										},
 									},
 								},
 								map[string]interface{}{
 									"node": map[string]interface{}{
 										"title": "Wikipedia",
 										"url":   "https://en.wikipedia.com",
+										"topics": map[string]interface{}{
+											"edges": []interface{}{},
+										},
 									},
 								},
 							},

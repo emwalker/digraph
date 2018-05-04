@@ -29,12 +29,12 @@ const TopicsPage = ({ organization, relay }: Props) => (
 )
 
 export const query = graphql`
-query TopicsPage_query_Query($orgResourceId: String!) {
+query TopicsPage_query_Query($organizationId: String!) {
   viewer {
     ...TopicsPage_viewer
   }
 
-  organization(resourceId: $orgResourceId) {
+  organization(resourceId: $organizationId) {
     ...TopicsPage_organization
   }
 }`

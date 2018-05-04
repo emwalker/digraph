@@ -26,13 +26,13 @@ class AddTopic extends Component<Props, State> {
   onSubmit = () => {
     const {
       id: orgId,
-      resourceId: organizationResourceId,
+      resourceId: organizationId,
     } = this.props.organization
     createTopicMutation(
       this.props.relay.environment,
       orgId,
       {
-        organizationResourceId,
+        organizationId,
         name: this.state.name,
       },
     )

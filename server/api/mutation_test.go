@@ -50,7 +50,7 @@ func TestCreateTopic(t *testing.T) {
 	mutation M {
 		first: createTopic(
 			input: {
-				organizationResourceId: "organization:tyrell",
+				organizationId: "organization:tyrell",
 				name: "Gnusto",
 				description: "Things about Gnusto",
 			}
@@ -64,7 +64,7 @@ func TestCreateTopic(t *testing.T) {
 		},
 		second: createTopic(
 			input: {
-				organizationResourceId: "organization:tyrell",
+				organizationId: "organization:tyrell",
 				name: "Yomin",
 			}
 		) {
@@ -145,8 +145,12 @@ func TestCreateLink(t *testing.T) {
 	mutation M {
 		first: createLink(
 			input: {
-				organizationResourceId: "organization:tyrell",
+				organizationId: "organization:tyrell",
 				url: "https://gnusto.test",
+				topicIds: [
+					"topic:biology",
+					"topic:chemistry",
+				],
 			}
 		) {
 			linkEdge {

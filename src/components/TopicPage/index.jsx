@@ -15,11 +15,11 @@ const TopicPage = ({ topic: { name } }: Props) => (
 
 export const query = graphql`
 query TopicPage_query_Query(
-  $orgResourceId: String!,
-  $topicResourceId: String!
+  $organizationId: String!,
+  $topicId: String!
 ) {
-  organization(resourceId: $orgResourceId) {
-    topic(resourceId: $topicResourceId) {
+  organization(resourceId: $organizationId) {
+    topic(resourceId: $topicId) {
       ...TopicPage_topic
     }
   }

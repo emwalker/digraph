@@ -114,9 +114,8 @@ func (config *TypeConfig) connectionField(connectionType graphql.Output) *graphq
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			args := relay.NewConnectionArguments(p.Args)
 			dest := []interface{}{}
-			if org, ok := p.Source.(*Organization); ok {
-				config.FetchConnection(&dest, org)
-			}
+			org := p.Source.(*Organization)
+			config.FetchConnection(&dest, org)
 			return relay.ConnectionFromArray(dest, args), nil
 		},
 	}

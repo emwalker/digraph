@@ -67,6 +67,11 @@ ShallowWrapper {
             "environment": Object {},
           }
         }
+        viewer={
+          Object {
+            "name": "Rezrov",
+          }
+        }
       />,
       "items": Array [],
       "title": "Links",
@@ -94,6 +99,9 @@ ShallowWrapper {
         },
         "relay": Object {
           "environment": Object {},
+        },
+        "viewer": Object {
+          "name": "Rezrov",
         },
       },
       "ref": null,
@@ -131,6 +139,11 @@ ShallowWrapper {
               "environment": Object {},
             }
           }
+          viewer={
+            Object {
+              "name": "Rezrov",
+            }
+          }
         />,
         "items": Array [],
         "title": "Links",
@@ -158,6 +171,9 @@ ShallowWrapper {
           },
           "relay": Object {
             "environment": Object {},
+          },
+          "viewer": Object {
+            "name": "Rezrov",
           },
         },
         "ref": null,

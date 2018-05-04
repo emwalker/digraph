@@ -45,7 +45,7 @@ export const routeConfig = makeRouteConfig(
     }
     prepareVariables={params => ({
       ...params,
-      orgResourceId: 'organization:tyrell',
+      organizationId: 'organization:tyrell',
     })}
   >
     <Route
@@ -62,7 +62,7 @@ export const routeConfig = makeRouteConfig(
         render={renderTopicPage}
         query={topicPageQuery}
         prepareVariables={({ uuid, ...params }) => ({
-          topicResourceId: `topic:${uuid}`,
+          topicId: `topic:${uuid}`,
           ...params,
         })}
       />

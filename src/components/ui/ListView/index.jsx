@@ -1,7 +1,9 @@
 // @flow
 import React from 'react'
 import type { Node } from 'react'
-import { ListGroup, ListGroupItem } from 'reactstrap'
+import { ListGroup } from 'reactstrap'
+
+import Item from './Item'
 
 type Props = {
   children: Node,
@@ -14,20 +16,13 @@ type Props = {
 }
 
 export default ({ children, items, title }: Props) => (
-  <div>
+  <div className="listview">
     <h1>{title}</h1>
     <div className="row">
       <div className="col">
         <ListGroup>
-          {items.map(({ id, display, resourcePath }) => (
-            <ListGroupItem
-              key={id}
-              tag="a"
-              href={resourcePath}
-            >
-              { display }
-            </ListGroupItem>
-          ))}
+          {items.map(({ resourcePath, ...props }) =>
+            <Item key={resourcePath} {...props} />)}
         </ListGroup>
       </div>
       <div className="col-5">

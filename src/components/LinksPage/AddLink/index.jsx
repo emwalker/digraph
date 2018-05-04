@@ -53,7 +53,7 @@ class AddLink extends Component<Props, State> {
   onKeyPress = (event: Object) => {
     if (event.key === 'Enter')
       this.setState(({ url }) => {
-        this.addUrl(url)
+        this.addLink(url)
         return { url: '' }
       })
   }
@@ -67,15 +67,22 @@ class AddLink extends Component<Props, State> {
     })
   }
 
-  addUrl = (url) => {
+  addLink = (url) => {
     const {
       id: orgId,
-      resourceId: organizationResourceId,
+      resourceId: organizationId,
     } = this.props.organization
+    const topic = this.state.selectedOption
+    const topicIds = topic ? [topic.value] : []
+
     createLinkMutation(
       this.props.relay.environment,
       orgId,
-      { organizationResourceId, url },
+      {
+        organizationId,
+        url,
+        topicIds,
+      },
     )
   }
 

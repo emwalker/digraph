@@ -48,6 +48,12 @@ type Link implements ResourceIdentifiable & Namespacable {
   resourcePath: String!
   title: String!
   url: String!
+  topics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
 }
 
 type LinkEdge {
@@ -89,7 +95,7 @@ input CreateTopicInput {
   clientMutationId: String!
   description: String
   name: String!
-  organizationResourceId: String!
+  organizationId: String!
 }
 
 type CreateTopicPayload {
@@ -98,7 +104,8 @@ type CreateTopicPayload {
 
 input CreateLinkInput {
   clientMutationId: String!
-  organizationResourceId: String!
+  organizationId: String!
+  topicIds: [String!]
   title: String
   url: String!
 }

@@ -103,20 +103,35 @@ func (conn *CayleyConnection) Init() error {
 	return nil
 }
 
-func (conn *CayleyConnection) saveNode(orgId string, resourceId quad.IRI, node interface{}) {
+func (conn *CayleyConnection) saveNode(
+	orgId string,
+	resourceId quad.IRI,
+	node interface{},
+	callback func(*graph.Transaction),
+) {
 	writer := graph.NewWriter(conn.store)
 
 	_, err := conn.schema.WriteAsQuads(writer, node)
 	checkErr(err)
 	log.Println("created resource with id", resourceId)
 
-	conn.store.AddQuad(quad.Make(quad.IRI(orgId), quad.IRI("di:owns"), resourceId, nil))
-	checkErr(err)
+	tx := cayley.NewTransaction()
+	tx.AddQuad(quad.Make(quad.IRI(orgId), quad.IRI("di:owns"), resourceId, nil))
+
+	if callback != nil {
+		callback(tx)
+	}
+	checkErr(conn.store.ApplyTransaction(tx))
 
 	checkErr(writer.Close())
 }
 
-func (conn *CayleyConnection) CreateLink(orgId string, url string, title string) (*Link, error) {
+func (conn *CayleyConnection) CreateLink(
+	orgId string,
+	url string,
+	title string,
+	topicIds []interface{},
+) (*Link, error) {
 	var useTitle string
 
 	if title == "" {
@@ -136,7 +151,17 @@ func (conn *CayleyConnection) CreateLink(orgId string, url string, title string)
 		URL:        url,
 	}
 	node.Init()
-	conn.saveNode(orgId, resourceId, node)
+
+	saveTopics := func(tx *graph.Transaction) {
+		for _, topicId := range topicIds {
+			tx.AddQuad(
+				quad.Make(quad.IRI(topicId.(string)), quad.IRI("di:includes"), resourceId, nil),
+			)
+		}
+	}
+
+	conn.saveNode(orgId, resourceId, node, saveTopics)
+
 	return &node, nil
 }
 
@@ -148,7 +173,7 @@ func (conn *CayleyConnection) CreateTopic(orgId string, name string, description
 		ResourceID:  resourceId,
 	}
 	node.Init()
-	conn.saveNode(orgId, resourceId, node)
+	conn.saveNode(orgId, resourceId, node, nil)
 	return &node, nil
 }
 
@@ -247,6 +272,13 @@ func (conn *CayleyConnection) loadIteratorTo(
 func (conn *CayleyConnection) FetchTopics(out *[]interface{}, o *Organization) error {
 	path := cayley.StartPath(conn.store, o.ResourceID).
 		Out(quad.IRI("di:owns")).
+		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
+	return conn.loadIteratorTo(out, path, topicArrayType)
+}
+
+func (conn *CayleyConnection) FetchTopicsForLink(out *[]interface{}, o *Link) error {
+	path := cayley.StartPath(conn.store, o.ResourceID).
+		In(quad.IRI("di:includes")).
 		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
 	return conn.loadIteratorTo(out, path, topicArrayType)
 }

@@ -137,7 +137,7 @@ func (config *Config) createTopicMutation(edgeType graphql.Output) *graphql.Fiel
 		Name: "CreateTopic",
 
 		InputFields: graphql.InputObjectConfigFieldMap{
-			"organizationResourceId": &graphql.InputObjectFieldConfig{
+			"organizationId": &graphql.InputObjectFieldConfig{
 				Type: graphql.String,
 			},
 			"name": &graphql.InputObjectFieldConfig{
@@ -155,7 +155,7 @@ func (config *Config) createTopicMutation(edgeType graphql.Output) *graphql.Fiel
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					if payload, ok := p.Source.(map[string]interface{}); ok {
-						node, err := config.Connection.FetchTopic(payload["topicResourceId"].(string))
+						node, err := config.Connection.FetchTopic(payload["topicId"].(string))
 						checkErr(err)
 						return &relay.Edge{Node: node}, nil
 					}
@@ -165,14 +165,14 @@ func (config *Config) createTopicMutation(edgeType graphql.Output) *graphql.Fiel
 		},
 
 		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
-			orgIri := input["organizationResourceId"].(string)
+			orgIri := input["organizationId"].(string)
 			name := input["name"].(string)
 			description := maybeString(input["description"])
 			node, err := config.Connection.CreateTopic(orgIri, name, description)
 			checkErr(err)
 
 			return map[string]interface{}{
-				"topicResourceId": node.ID,
+				"topicId": node.ID,
 			}, nil
 		},
 	})
@@ -183,7 +183,7 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 		Name: "CreateLink",
 
 		InputFields: graphql.InputObjectConfigFieldMap{
-			"organizationResourceId": &graphql.InputObjectFieldConfig{
+			"organizationId": &graphql.InputObjectFieldConfig{
 				Type: graphql.String,
 			},
 			"title": &graphql.InputObjectFieldConfig{
@@ -193,6 +193,10 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 			"url": &graphql.InputObjectFieldConfig{
 				Type: graphql.String,
 			},
+			"topicIds": &graphql.InputObjectFieldConfig{
+				Type:         graphql.NewList(graphql.String),
+				DefaultValue: []interface{}{},
+			},
 		},
 
 		OutputFields: graphql.Fields{
@@ -200,30 +204,29 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 				Type: edgeType,
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					if payload, ok := p.Source.(map[string]interface{}); ok {
-						node, err := config.Connection.FetchLink(payload["linkResourceId"].(string))
-						checkErr(err)
-						return &relay.Edge{Node: node}, nil
-					}
-					return nil, nil
+					payload := p.Source.(map[string]interface{})
+					node, err := config.Connection.FetchLink(payload["linkId"].(string))
+					checkErr(err)
+					return &relay.Edge{Node: node}, nil
 				},
 			},
 		},
 
 		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
-			orgIri := input["organizationResourceId"].(string)
+			orgId := input["organizationId"].(string)
 			url := input["url"].(string)
+			topicIds := input["topicIds"].([]interface{})
 
 			var useTitle string
 			if title, ok := input["title"].(string); ok {
 				useTitle = title
 			}
 
-			node, err := config.Connection.CreateLink(orgIri, url, useTitle)
+			node, err := config.Connection.CreateLink(orgId, url, useTitle, topicIds)
 			checkErr(err)
 
 			return map[string]interface{}{
-				"linkResourceId": node.ID,
+				"linkId": node.ID,
 			}, nil
 		},
 	})
@@ -334,6 +337,7 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 			"selectedTopic": &graphql.Field{
 				Type:        topicType.NodeType,
 				Description: "Topic selected by the user",
+
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					if res, ok := p.Source.(*User); ok {
 						node, err := config.Connection.SelectedTopic(res.ID)
@@ -366,9 +370,24 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 				Type:        graphql.String,
 				Description: "Title of the page",
 			},
+
 			"url": &graphql.Field{
 				Type:        graphql.String,
 				Description: "Url of the page",
+			},
+
+			"topics": &graphql.Field{
+				Type: topicType.Definitions.ConnectionType,
+
+				Args: relay.ConnectionArgs,
+
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					args := relay.NewConnectionArguments(p.Args)
+					dest := []interface{}{}
+					link := p.Source.(*Link)
+					config.Connection.FetchTopicsForLink(&dest, link)
+					return relay.ConnectionFromArray(dest, args), nil
+				},
 			},
 		},
 

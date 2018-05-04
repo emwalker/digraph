@@ -12,7 +12,8 @@ type Props = {
   },
   relay: {
     environment: Object,
-  }
+  },
+  viewer: Object,
 }
 
 const LinksPage = ({ organization, relay, viewer }: Props) => (
@@ -30,12 +31,12 @@ const LinksPage = ({ organization, relay, viewer }: Props) => (
 )
 
 export const query = graphql`
-  query LinksPage_query_Query($orgResourceId: String!) {
+  query LinksPage_query_Query($organizationId: String!) {
     viewer {
       ...LinksPage_viewer
     }
 
-    organization(resourceId: $orgResourceId) {
+    organization(resourceId: $organizationId) {
       ...LinksPage_organization
     }
   }
@@ -59,6 +60,16 @@ export default createFragmentContainer(LinksPage, graphql`
           id
           display: title
           resourcePath
+
+          topics(first: 5) {
+            edges {
+              node {
+                name
+                resourceId
+                resourcePath
+              }
+            }
+          }
         }
       }
     }

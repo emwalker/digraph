@@ -13,6 +13,16 @@ const mutation = graphql`
           resourcePath
           title
           url
+
+          topics(first: 5) {
+            edges {
+              node {
+                name
+                resourceId
+                resourcePath
+              }
+            }
+          }
         }
       }
     }

@@ -25,10 +25,14 @@
 <link:github> <di:url> "https://github.com" .
 <link:github> <rdf:type> <di:link> .
 <organization:tyrell> <di:owns> <link:github> .
+<topic:chemistry> <di:includes> <link:github> .
+<topic:biology> <di:includes> <link:github> .
+
 <link:nytimes> <di:title> "New York Times" .
 <link:nytimes> <di:url> "https://nytimes.com" .
 <link:nytimes> <rdf:type> <di:link> .
 <organization:tyrell> <di:owns> <link:nytimes> .
+
 <link:wikipedia> <di:title> "Wikipedia" .
 <link:wikipedia> <di:url> "https://en.wikipedia.com" .
 <link:wikipedia> <rdf:type> <di:link> .

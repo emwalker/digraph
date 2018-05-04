@@ -66,6 +66,9 @@ var simpleGraph = []quad.Quad{
 	quad.Make(quad.IRI("link:github"), quad.IRI("di:url"), "https://github.com", ""),
 	quad.Make(quad.IRI("link:github"), quad.IRI("rdf:type"), quad.IRI("di:link"), ""),
 	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("link:github"), ""),
+	quad.Make(quad.IRI("topic:biology"), quad.IRI("di:includes"), quad.IRI("link:github"), ""),
+	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("di:includes"), quad.IRI("link:github"), ""),
+
 	quad.Make(quad.IRI("link:wikipedia"), quad.IRI("di:title"), "Wikipedia", ""),
 	quad.Make(quad.IRI("link:wikipedia"), quad.IRI("di:url"), "https://en.wikipedia.com", ""),
 	quad.Make(quad.IRI("link:wikipedia"), quad.IRI("rdf:type"), quad.IRI("di:link"), ""),

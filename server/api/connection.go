@@ -25,7 +25,7 @@ type SessionStore interface {
 
 type Connection interface {
 	Close() error
-	CreateLink(string, string, string) (*Link, error)
+	CreateLink(string, string, string, []interface{}) (*Link, error)
 	CreateTopic(string, string, *string) (*Topic, error)
 	FetchLink(string) (interface{}, error)
 	FetchLinks(*[]interface{}, *Organization) error
@@ -33,6 +33,7 @@ type Connection interface {
 	FetchTitle(string) (string, error)
 	FetchTopic(string) (interface{}, error)
 	FetchTopics(*[]interface{}, *Organization) error
+	FetchTopicsForLink(*[]interface{}, *Link) error
 	FetchUser(string) (interface{}, error)
 	Init() error
 	SelectTopic(string, string) (*Topic, error)
