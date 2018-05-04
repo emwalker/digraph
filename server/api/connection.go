@@ -29,6 +29,7 @@ type Connection interface {
 	CreateTopic(string, string, *string) (*Topic, error)
 	FetchLink(string) (interface{}, error)
 	FetchLinks(*[]interface{}, *Organization) error
+	FetchLinksForTopic(*[]interface{}, *Topic) error
 	FetchOrganization(string) (interface{}, error)
 	FetchTitle(string) (string, error)
 	FetchTopic(string) (interface{}, error)

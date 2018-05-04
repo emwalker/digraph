@@ -17,12 +17,16 @@ type Props = {
 
 export default ({ children, items, title }: Props) => (
   <div className="listview">
-    <h1>{title}</h1>
+    <h2>{title}</h2>
     <div className="row">
       <div className="col">
         <ListGroup>
           {items.map(({ resourcePath, ...props }) =>
-            <Item key={resourcePath} {...props} />)}
+            (<Item
+              key={resourcePath}
+              resourcePath={resourcePath}
+              {...props}
+            />))}
         </ListGroup>
       </div>
       <div className="col-5">

@@ -40,10 +40,18 @@ func init() {
 							}
 						}
 
-						topic(resourceId: "topic:science") {
+						topic(resourceId: "topic:biology") {
 							name
 							description
 							resourcePath
+
+							links(first: 500) {
+								edges {
+									node {
+										title
+									}
+								}
+							}
 						}
 					}
 				}
@@ -72,9 +80,18 @@ func init() {
 							},
 						},
 						"topic": map[string]interface{}{
-							"name":         "Science",
+							"name":         "Biology",
 							"description":  nil,
-							"resourcePath": "/topics/science",
+							"resourcePath": "/topics/biology",
+							"links": map[string]interface{}{
+								"edges": []interface{}{
+									map[string]interface{}{
+										"node": map[string]interface{}{
+											"title": "Github",
+										},
+									},
+								},
+							},
 						},
 					},
 				},

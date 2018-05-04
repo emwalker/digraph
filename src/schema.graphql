@@ -29,6 +29,12 @@ type Topic implements ResourceIdentifiable & Namespacable {
   organization: Organization!
   resourceId: String!
   resourcePath: String!
+  links(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): LinkConnection
 }
 
 type TopicEdge {

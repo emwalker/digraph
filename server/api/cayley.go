@@ -289,3 +289,10 @@ func (conn *CayleyConnection) FetchLinks(out *[]interface{}, o *Organization) er
 		Has(quad.IRI("rdf:type"), quad.IRI("di:link"))
 	return conn.loadIteratorTo(out, path, linkArrayType)
 }
+
+func (conn *CayleyConnection) FetchLinksForTopic(out *[]interface{}, o *Topic) error {
+	path := cayley.StartPath(conn.store, o.ResourceID).
+		Out(quad.IRI("di:includes")).
+		Has(quad.IRI("rdf:type"), quad.IRI("di:link"))
+	return conn.loadIteratorTo(out, path, linkArrayType)
+}

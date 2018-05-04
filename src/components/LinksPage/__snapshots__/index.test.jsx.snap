@@ -44,45 +44,40 @@ ShallowWrapper {
     "key": undefined,
     "nodeType": "function",
     "props": Object {
-      "children": <AddLink
-        className="test-add-link"
-        organization={
-          Object {
-            "resourceId": "organization:tyrell",
-            "topics": Object {
-              "edges": Array [
-                Object {
-                  "node": Object {
-                    "id": "1234",
-                    "name": "Frotz",
-                    "resourceId": "/topics/1234",
-                  },
-                },
-              ],
+      "links": undefined,
+      "organization": Object {
+        "resourceId": "organization:tyrell",
+        "topics": Object {
+          "edges": Array [
+            Object {
+              "node": Object {
+                "id": "1234",
+                "name": "Frotz",
+                "resourceId": "/topics/1234",
+              },
             },
-          }
-        }
-        relay={
-          Object {
-            "environment": Object {},
-          }
-        }
-        viewer={
-          Object {
-            "name": "Rezrov",
-          }
-        }
-      />,
-      "items": Array [],
+          ],
+        },
+      },
+      "relay": Object {
+        "environment": Object {},
+      },
       "title": "Links",
+      "viewer": Object {
+        "name": "Rezrov",
+      },
     },
     "ref": null,
-    "rendered": Object {
+    "rendered": null,
+    "type": [Function],
+  },
+  Symbol(enzyme.__nodes__): Array [
+    Object {
       "instance": null,
       "key": undefined,
-      "nodeType": "class",
+      "nodeType": "function",
       "props": Object {
-        "className": "test-add-link",
+        "links": undefined,
         "organization": Object {
           "resourceId": "organization:tyrell",
           "topics": Object {
@@ -100,86 +95,13 @@ ShallowWrapper {
         "relay": Object {
           "environment": Object {},
         },
+        "title": "Links",
         "viewer": Object {
           "name": "Rezrov",
         },
       },
       "ref": null,
       "rendered": null,
-      "type": [Function],
-    },
-    "type": [Function],
-  },
-  Symbol(enzyme.__nodes__): Array [
-    Object {
-      "instance": null,
-      "key": undefined,
-      "nodeType": "function",
-      "props": Object {
-        "children": <AddLink
-          className="test-add-link"
-          organization={
-            Object {
-              "resourceId": "organization:tyrell",
-              "topics": Object {
-                "edges": Array [
-                  Object {
-                    "node": Object {
-                      "id": "1234",
-                      "name": "Frotz",
-                      "resourceId": "/topics/1234",
-                    },
-                  },
-                ],
-              },
-            }
-          }
-          relay={
-            Object {
-              "environment": Object {},
-            }
-          }
-          viewer={
-            Object {
-              "name": "Rezrov",
-            }
-          }
-        />,
-        "items": Array [],
-        "title": "Links",
-      },
-      "ref": null,
-      "rendered": Object {
-        "instance": null,
-        "key": undefined,
-        "nodeType": "class",
-        "props": Object {
-          "className": "test-add-link",
-          "organization": Object {
-            "resourceId": "organization:tyrell",
-            "topics": Object {
-              "edges": Array [
-                Object {
-                  "node": Object {
-                    "id": "1234",
-                    "name": "Frotz",
-                    "resourceId": "/topics/1234",
-                  },
-                },
-              ],
-            },
-          },
-          "relay": Object {
-            "environment": Object {},
-          },
-          "viewer": Object {
-            "name": "Rezrov",
-          },
-        },
-        "ref": null,
-        "rendered": null,
-        "type": [Function],
-      },
       "type": [Function],
     },
   ],

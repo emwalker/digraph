@@ -394,6 +394,20 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 		NodeDefinitions: nodeDefinitions,
 	})
 
+	topicType.NodeType.AddFieldConfig("links", &graphql.Field{
+		Type: linkType.Definitions.ConnectionType,
+
+		Args: relay.ConnectionArgs,
+
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			args := relay.NewConnectionArguments(p.Args)
+			dest := []interface{}{}
+			topic := p.Source.(*Topic)
+			config.Connection.FetchLinksForTopic(&dest, topic)
+			return relay.ConnectionFromArray(dest, args), nil
+		},
+	})
+
 	organizationType = NewType(&TypeConfig{
 		Name: "Organization",
 

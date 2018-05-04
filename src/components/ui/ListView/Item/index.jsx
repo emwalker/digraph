@@ -13,7 +13,7 @@ type BadgeProps = {
 }
 
 const renderTopic = ({ node: { name, resourcePath } }: BadgeProps) => (
-  <a href={resourcePath}>
+  <a href={resourcePath} key={resourcePath}>
     <Badge
       color="success"
       pill

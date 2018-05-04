@@ -1,16 +1,20 @@
 import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
+import LinkList from '../LinkList'
+
 type Props = {
   topic: {
     name: string,
   }
 }
 
-const TopicPage = ({ topic: { name } }: Props) => (
-  <div>
-    <h1>Topic: {name}</h1>
-  </div>
+const TopicPage = ({ topic: { name, links }, ...props }: Props) => (
+  <LinkList
+    title={name}
+    links={links}
+    {...props}
+  />
 )
 
 export const query = graphql`
@@ -19,6 +23,8 @@ query TopicPage_query_Query(
   $topicId: String!
 ) {
   organization(resourceId: $organizationId) {
+    ...TopicPage_organization
+
     topic(resourceId: $topicId) {
       ...TopicPage_topic
     }
@@ -26,7 +32,19 @@ query TopicPage_query_Query(
 }`
 
 export default createFragmentContainer(TopicPage, graphql`
+  fragment TopicPage_viewer on User {
+    ...LinkList_viewer
+  }
+
+  fragment TopicPage_organization on Organization {
+    ...LinkList_organization
+  }
+
   fragment TopicPage_topic on Topic {
     name
+
+    links(first: 100) {
+      ...LinkList_links
+    }
   }
 `)

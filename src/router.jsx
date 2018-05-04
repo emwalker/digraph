@@ -28,7 +28,12 @@ const renderTopicPage = ({ props, error }: any) => {
     return <div>There was a problem.</div>
   if (!props)
     return <div>loading ...</div>
-  return <TopicPage topic={props.organization.topic} />
+  return (
+    <TopicPage
+      topic={props.organization.topic}
+      {...props}
+    />
+  )
 }
 
 export const routeConfig = makeRouteConfig(

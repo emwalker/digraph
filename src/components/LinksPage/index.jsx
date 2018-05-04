@@ -2,9 +2,7 @@
 import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import AddLink from './AddLink'
-import ListView from '../ui/ListView'
-import { liftNodes } from '../../utils'
+import LinkList from '../LinkList'
 
 type Props = {
   organization: {
@@ -16,18 +14,13 @@ type Props = {
   viewer: Object,
 }
 
-const LinksPage = ({ organization, relay, viewer }: Props) => (
-  <ListView
+const LinksPage = ({ organization, ...props }: Props) => (
+  <LinkList
     title="Links"
-    items={liftNodes(organization.links)}
-  >
-    <AddLink
-      className="test-add-link"
-      organization={organization}
-      relay={relay}
-      viewer={viewer}
-    />
-  </ListView>
+    links={organization.links}
+    organization={organization}
+    {...props}
+  />
 )
 
 export const query = graphql`
@@ -45,33 +38,22 @@ export const query = graphql`
 export default createFragmentContainer(LinksPage, graphql`
   fragment LinksPage_viewer on User {
     name
-    ...AddLink_viewer
+    ...LinkList_viewer
   }
 
   fragment LinksPage_organization on Organization {
     id
     resourceId
 
-    ...AddLink_organization
+    ...LinkList_organization
 
     links(first: 100) @connection(key: "Organization_links") {
       edges {
         node {
           id
-          display: title
-          resourcePath
-
-          topics(first: 5) {
-            edges {
-              node {
-                name
-                resourceId
-                resourcePath
-              }
-            }
-          }
         }
       }
+      ...LinkList_links
     }
   }
 `)
