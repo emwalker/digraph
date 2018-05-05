@@ -49,8 +49,8 @@ class Item extends Component<Props> {
         <div>
           <a className="Box-row-link" href={this.props.resourcePath}>
             { this.props.display }
-            { edges(this.props.topics).map(renderTopic) }
           </a>
+          { edges(this.props.topics).map(renderTopic) }
         </div>
         <div className="branch-name">{this.props.resourcePath}</div>
       </li>

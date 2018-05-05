@@ -2,6 +2,8 @@ import React from 'react'
 import { shallow } from 'enzyme'
 import AddTopic from './index'
 
+jest.mock('react-relay', () => ({ createFragmentContainer: component => component }))
+
 describe('<AddTopic />', () => {
   const organization = {
     resourceId: 'organization:tyrell',

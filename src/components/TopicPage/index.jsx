@@ -3,6 +3,7 @@ import { graphql, createFragmentContainer } from 'react-relay'
 
 import ListView from '../ui/ListView'
 import SidebarList from '../ui/SidebarList'
+import AddTopic from './AddTopic'
 import { liftNodes } from '../../utils'
 
 type Props = {
@@ -13,9 +14,13 @@ type Props = {
 
 const TopicPage = ({ topic, ...props }: Props) => {
   const {
-    childTopics, name, links, parentTopics,
+    childTopics,
+    links,
+    name,
+    parentTopics,
   } = topic
   const items = liftNodes(childTopics).concat(liftNodes(links))
+
   return (
     <ListView
       title={name}
@@ -26,6 +31,10 @@ const TopicPage = ({ topic, ...props }: Props) => {
         title="Parent topics"
         items={liftNodes(parentTopics)}
       />
+      <AddTopic
+        topic={topic}
+        {...props}
+      />
     </ListView>
   )
 }
@@ -35,10 +44,6 @@ query TopicPage_query_Query(
   $organizationId: String!,
   $topicId: String!
 ) {
-  viewer {
-    ...TopicPage_viewer
-  }
-
   organization(resourceId: $organizationId) {
     ...TopicPage_organization
 
@@ -49,16 +54,13 @@ query TopicPage_query_Query(
 }`
 
 export default createFragmentContainer(TopicPage, graphql`
-  fragment TopicPage_viewer on User {
-    ...LinkList_viewer
-  }
-
   fragment TopicPage_organization on Organization {
-    ...LinkList_organization
+    ...AddTopic_organization
   }
 
   fragment TopicPage_topic on Topic {
     name
+    ...AddTopic_topic
 
     parentTopics(first: 100) {
       edges {
@@ -69,7 +71,7 @@ export default createFragmentContainer(TopicPage, graphql`
       }
     }
 
-    childTopics(first: 100) {
+    childTopics(first: 100) @connection(key: "Topic_childTopics") {
       edges {
         node {
           __typename

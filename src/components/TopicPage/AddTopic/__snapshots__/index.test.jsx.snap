@@ -26,21 +26,23 @@ ShallowWrapper {
       "children": <dl
         className="form-group"
       >
+        <dt>
+          <label
+            htmlFor="create-topic-name"
+          >
+            Add subtopic
+          </label>
+        </dt>
         <dd>
           <input
-            className="form-control test-topic-name"
+            className="form-control test-topic-name input-sm"
+            id="create-topic-name"
             onChange={[Function]}
-            placeholder="Topic"
+            onKeyPress={[Function]}
+            placeholder="Name or description"
             value=""
           />
         </dd>
-        <button
-          className="d-inline-block btn btn-secondary mt-2"
-          onClick={[Function]}
-          size="sm"
-        >
-          Add
-        </button>
       </dl>,
     },
     "ref": null,
@@ -50,21 +52,23 @@ ShallowWrapper {
       "nodeType": "host",
       "props": Object {
         "children": Array [
+          <dt>
+            <label
+              htmlFor="create-topic-name"
+            >
+              Add subtopic
+            </label>
+          </dt>,
           <dd>
             <input
-              className="form-control test-topic-name"
+              className="form-control test-topic-name input-sm"
+              id="create-topic-name"
               onChange={[Function]}
-              placeholder="Topic"
+              onKeyPress={[Function]}
+              placeholder="Name or description"
               value=""
             />
           </dd>,
-          <button
-            className="d-inline-block btn btn-secondary mt-2"
-            onClick={[Function]}
-            size="sm"
-          >
-            Add
-          </button>,
         ],
         "className": "form-group",
       },
@@ -75,10 +79,38 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "host",
           "props": Object {
+            "children": <label
+              htmlFor="create-topic-name"
+            >
+              Add subtopic
+            </label>,
+          },
+          "ref": null,
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": "Add subtopic",
+              "htmlFor": "create-topic-name",
+            },
+            "ref": null,
+            "rendered": "Add subtopic",
+            "type": "label",
+          },
+          "type": "dt",
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
             "children": <input
-              className="form-control test-topic-name"
+              className="form-control test-topic-name input-sm"
+              id="create-topic-name"
               onChange={[Function]}
-              placeholder="Topic"
+              onKeyPress={[Function]}
+              placeholder="Name or description"
               value=""
             />,
           },
@@ -88,9 +120,11 @@ ShallowWrapper {
             "key": undefined,
             "nodeType": "host",
             "props": Object {
-              "className": "form-control test-topic-name",
+              "className": "form-control test-topic-name input-sm",
+              "id": "create-topic-name",
               "onChange": [Function],
-              "placeholder": "Topic",
+              "onKeyPress": [Function],
+              "placeholder": "Name or description",
               "value": "",
             },
             "ref": null,
@@ -98,20 +132,6 @@ ShallowWrapper {
             "type": "input",
           },
           "type": "dd",
-        },
-        Object {
-          "instance": null,
-          "key": undefined,
-          "nodeType": "host",
-          "props": Object {
-            "children": "Add",
-            "className": "d-inline-block btn btn-secondary mt-2",
-            "onClick": [Function],
-            "size": "sm",
-          },
-          "ref": null,
-          "rendered": "Add",
-          "type": "button",
         },
       ],
       "type": "dl",
@@ -127,21 +147,23 @@ ShallowWrapper {
         "children": <dl
           className="form-group"
         >
+          <dt>
+            <label
+              htmlFor="create-topic-name"
+            >
+              Add subtopic
+            </label>
+          </dt>
           <dd>
             <input
-              className="form-control test-topic-name"
+              className="form-control test-topic-name input-sm"
+              id="create-topic-name"
               onChange={[Function]}
-              placeholder="Topic"
+              onKeyPress={[Function]}
+              placeholder="Name or description"
               value=""
             />
           </dd>
-          <button
-            className="d-inline-block btn btn-secondary mt-2"
-            onClick={[Function]}
-            size="sm"
-          >
-            Add
-          </button>
         </dl>,
       },
       "ref": null,
@@ -151,21 +173,23 @@ ShallowWrapper {
         "nodeType": "host",
         "props": Object {
           "children": Array [
+            <dt>
+              <label
+                htmlFor="create-topic-name"
+              >
+                Add subtopic
+              </label>
+            </dt>,
             <dd>
               <input
-                className="form-control test-topic-name"
+                className="form-control test-topic-name input-sm"
+                id="create-topic-name"
                 onChange={[Function]}
-                placeholder="Topic"
+                onKeyPress={[Function]}
+                placeholder="Name or description"
                 value=""
               />
             </dd>,
-            <button
-              className="d-inline-block btn btn-secondary mt-2"
-              onClick={[Function]}
-              size="sm"
-            >
-              Add
-            </button>,
           ],
           "className": "form-group",
         },
@@ -176,10 +200,38 @@ ShallowWrapper {
             "key": undefined,
             "nodeType": "host",
             "props": Object {
+              "children": <label
+                htmlFor="create-topic-name"
+              >
+                Add subtopic
+              </label>,
+            },
+            "ref": null,
+            "rendered": Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": "Add subtopic",
+                "htmlFor": "create-topic-name",
+              },
+              "ref": null,
+              "rendered": "Add subtopic",
+              "type": "label",
+            },
+            "type": "dt",
+          },
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
               "children": <input
-                className="form-control test-topic-name"
+                className="form-control test-topic-name input-sm"
+                id="create-topic-name"
                 onChange={[Function]}
-                placeholder="Topic"
+                onKeyPress={[Function]}
+                placeholder="Name or description"
                 value=""
               />,
             },
@@ -189,9 +241,11 @@ ShallowWrapper {
               "key": undefined,
               "nodeType": "host",
               "props": Object {
-                "className": "form-control test-topic-name",
+                "className": "form-control test-topic-name input-sm",
+                "id": "create-topic-name",
                 "onChange": [Function],
-                "placeholder": "Topic",
+                "onKeyPress": [Function],
+                "placeholder": "Name or description",
                 "value": "",
               },
               "ref": null,
@@ -199,20 +253,6 @@ ShallowWrapper {
               "type": "input",
             },
             "type": "dd",
-          },
-          Object {
-            "instance": null,
-            "key": undefined,
-            "nodeType": "host",
-            "props": Object {
-              "children": "Add",
-              "className": "d-inline-block btn btn-secondary mt-2",
-              "onClick": [Function],
-              "size": "sm",
-            },
-            "ref": null,
-            "rendered": "Add",
-            "type": "button",
           },
         ],
         "type": "dl",

@@ -1,7 +1,10 @@
 // @flow
 import React, { Component } from 'react'
+import { graphql, createFragmentContainer } from 'react-relay'
 
 import createTopicMutation from '../../../mutations/createTopicMutation'
+
+/* eslint jsx-a11y/label-has-for: 0 */
 
 type Props = {
   organization: {
@@ -10,6 +13,10 @@ type Props = {
   },
   relay: {
     environment: Object,
+  },
+  topic: {
+    id: string,
+    resourceId: string,
   },
 }
 
@@ -22,48 +29,70 @@ class AddTopic extends Component<Props, State> {
     name: '',
   }
 
-  onSubmit = () => {
-    const {
-      id: orgId,
-      resourceId: organizationId,
-    } = this.props.organization
-    createTopicMutation(
-      this.props.relay.environment,
-      orgId,
-      {
-        organizationId,
-        name: this.state.name,
-        topicIds: [],
-      },
-    )
-    this.setState({ name: '' })
+  onKeyPress = (event: Object) => {
+    if (event.key === 'Enter')
+      this.createTopic()
+  }
+
+  get relayConfigs() {
+    return [{
+      type: 'RANGE_ADD',
+      parentID: this.props.topic.id,
+      connectionInfo: [{
+        key: 'Topic_childTopics',
+        rangeBehavior: 'append',
+      }],
+      edgeName: 'topicEdge',
+    }]
   }
 
   updateName = (event: Object) => {
     this.setState({ name: event.currentTarget.value })
   }
 
+  createTopic() {
+    const { resourceId: organizationId } = this.props.organization
+
+    createTopicMutation(
+      this.props.relay.environment,
+      this.relayConfigs,
+      {
+        organizationId,
+        name: this.state.name,
+        topicIds: [this.props.topic.resourceId],
+      },
+    )
+    this.setState({ name: '' })
+  }
+
   render = () => (
     <div>
       <dl className="form-group">
+        <dt>
+          <label htmlFor="create-topic-name">Add subtopic</label>
+        </dt>
         <dd>
           <input
-            className="form-control test-topic-name"
-            placeholder="Topic"
-            value={this.state.name}
+            className="form-control test-topic-name input-sm"
+            id="create-topic-name"
             onChange={this.updateName}
+            onKeyPress={this.onKeyPress}
+            placeholder="Name or description"
+            value={this.state.name}
           />
         </dd>
-        <button
-          size="sm"
-          className="d-inline-block btn btn-secondary mt-2"
-          onClick={this.onSubmit}
-        >
-          Add
-        </button>
       </dl>
     </div>
   )
 }
 
-export default AddTopic
+export default createFragmentContainer(AddTopic, graphql`
+  fragment AddTopic_organization on Organization {
+    resourceId
+  }
+
+  fragment AddTopic_topic on Topic {
+    id
+    resourceId
+  }
+`)
