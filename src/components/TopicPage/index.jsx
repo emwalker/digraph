@@ -66,6 +66,15 @@ export default createFragmentContainer(TopicPage, graphql`
       }
     }
 
+    childTopics(first: 100) {
+      edges {
+        node {
+          display: name
+          resourcePath
+        }
+      }
+    }
+
     links(first: 100) {
       edges {
         node {

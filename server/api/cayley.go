@@ -234,6 +234,14 @@ func (conn *CayleyConnection) loadIteratorTo(
 	return nil
 }
 
+func (conn *CayleyConnection) FetchChildTopicsForTopic(orgId quad.IRI, topicId quad.IRI, out *[]interface{}) error {
+	path := cayley.StartPath(conn.store, topicId).
+		LabelContext(orgId).
+		Out(quad.IRI("di:includes")).
+		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
+	return conn.loadIteratorTo(out, path, topicArrayType)
+}
+
 func (conn *CayleyConnection) FetchLinks(orgId quad.IRI, out *[]interface{}) error {
 	path := cayley.StartPath(conn.store).
 		LabelContext(orgId).
@@ -241,7 +249,7 @@ func (conn *CayleyConnection) FetchLinks(orgId quad.IRI, out *[]interface{}) err
 	return conn.loadIteratorTo(out, path, linkArrayType)
 }
 
-func (conn *CayleyConnection) FetchParentTopicsForTopic(orgId quad.IRI, out *[]interface{}, topicId quad.IRI) error {
+func (conn *CayleyConnection) FetchParentTopicsForTopic(orgId quad.IRI, topicId quad.IRI, out *[]interface{}) error {
 	path := cayley.StartPath(conn.store, topicId).
 		LabelContext(orgId).
 		In(quad.IRI("di:includes")).
@@ -256,7 +264,7 @@ func (conn *CayleyConnection) FetchTopics(orgId quad.IRI, out *[]interface{}) er
 	return conn.loadIteratorTo(out, path, topicArrayType)
 }
 
-func (conn *CayleyConnection) FetchTopicsForLink(orgId quad.IRI, out *[]interface{}, linkId quad.IRI) error {
+func (conn *CayleyConnection) FetchTopicsForLink(orgId quad.IRI, linkId quad.IRI, out *[]interface{}) error {
 	path := cayley.StartPath(conn.store, linkId).
 		LabelContext(orgId).
 		In(quad.IRI("di:includes")).
@@ -264,7 +272,7 @@ func (conn *CayleyConnection) FetchTopicsForLink(orgId quad.IRI, out *[]interfac
 	return conn.loadIteratorTo(out, path, topicArrayType)
 }
 
-func (conn *CayleyConnection) FetchLinksForTopic(orgId quad.IRI, out *[]interface{}, topicId quad.IRI) error {
+func (conn *CayleyConnection) FetchLinksForTopic(orgId quad.IRI, topicId quad.IRI, out *[]interface{}) error {
 	path := cayley.StartPath(conn.store, topicId).
 		LabelContext(orgId).
 		Out(quad.IRI("di:includes")).

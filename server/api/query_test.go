@@ -45,7 +45,7 @@ func init() {
 							description
 							resourcePath
 
-							parentTopics(first: 100) {
+							parentTopics {
 								edges {
 									node {
 										name
@@ -53,7 +53,15 @@ func init() {
 								}
 							}
 
-							links(first: 500) {
+							childTopics {
+								edges {
+									node {
+										name
+									}
+								}
+							}
+
+							links {
 								edges {
 									node {
 										title
@@ -104,6 +112,9 @@ func init() {
 										},
 									},
 								},
+							},
+							"childTopics": map[string]interface{}{
+								"edges": []interface{}{},
 							},
 							"links": map[string]interface{}{
 								"edges": []interface{}{

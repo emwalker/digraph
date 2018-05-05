@@ -15,6 +15,7 @@ type Type struct {
 
 type ConnectionFetcher func(quad.IRI, *[]interface{})
 type NodeFetcher func(quad.IRI, string) (interface{}, error)
+type ConnectionResolver func(quad.IRI, Resource, *[]interface{})
 
 type TypeConfig struct {
 	FetchNode       NodeFetcher
@@ -58,6 +59,22 @@ func init() {
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			node := p.Source.(Resource)
 			return resourcePath(node.IRI()), nil
+		},
+	}
+}
+
+func makeConnection(typ *Type, loadConnection ConnectionResolver) *graphql.Field {
+	return &graphql.Field{
+		Type: typ.Definitions.ConnectionType,
+
+		Args: relay.ConnectionArgs,
+
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			args := relay.NewConnectionArguments(p.Args)
+			out := []interface{}{}
+			orgId := quad.IRI("organization:tyrell")
+			loadConnection(orgId, p.Source.(Resource), &out)
+			return relay.ConnectionFromArray(out, args), nil
 		},
 	}
 }

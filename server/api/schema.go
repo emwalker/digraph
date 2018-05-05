@@ -428,55 +428,34 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 				Type:        graphql.String,
 				Description: "Url of the page",
 			},
-
-			"topics": &graphql.Field{
-				Type: topicType.Definitions.ConnectionType,
-
-				Args: relay.ConnectionArgs,
-
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					args := relay.NewConnectionArguments(p.Args)
-					dest := []interface{}{}
-					link := p.Source.(*Link)
-					orgId := quad.IRI("organization:tyrell")
-					config.Connection.FetchTopicsForLink(orgId, &dest, link.ResourceID)
-					return relay.ConnectionFromArray(dest, args), nil
-				},
-			},
 		},
 
 		NodeDefinitions: nodeDefinitions,
 	})
 
-	topicType.NodeType.AddFieldConfig("links", &graphql.Field{
-		Type: linkType.Definitions.ConnectionType,
+	linkType.NodeType.AddFieldConfig("topics",
+		makeConnection(topicType, func(orgId quad.IRI, parent Resource, out *[]interface{}) {
+			config.Connection.FetchTopicsForLink(orgId, parent.IRI(), out)
+		}),
+	)
 
-		Args: relay.ConnectionArgs,
+	topicType.NodeType.AddFieldConfig("links",
+		makeConnection(linkType, func(orgId quad.IRI, parent Resource, out *[]interface{}) {
+			config.Connection.FetchLinksForTopic(orgId, parent.IRI(), out)
+		}),
+	)
 
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			args := relay.NewConnectionArguments(p.Args)
-			dest := []interface{}{}
-			parent := p.Source.(Resource)
-			orgId := quad.IRI("organization:tyrell")
-			config.Connection.FetchLinksForTopic(orgId, &dest, parent.IRI())
-			return relay.ConnectionFromArray(dest, args), nil
-		},
-	})
+	topicType.NodeType.AddFieldConfig("parentTopics",
+		makeConnection(topicType, func(orgId quad.IRI, parent Resource, out *[]interface{}) {
+			config.Connection.FetchParentTopicsForTopic(orgId, parent.IRI(), out)
+		}),
+	)
 
-	topicType.NodeType.AddFieldConfig("parentTopics", &graphql.Field{
-		Type: topicType.Definitions.ConnectionType,
-
-		Args: relay.ConnectionArgs,
-
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			args := relay.NewConnectionArguments(p.Args)
-			dest := []interface{}{}
-			parent := p.Source.(Resource)
-			orgId := quad.IRI("organization:tyrell")
-			config.Connection.FetchParentTopicsForTopic(orgId, &dest, parent.IRI())
-			return relay.ConnectionFromArray(dest, args), nil
-		},
-	})
+	topicType.NodeType.AddFieldConfig("childTopics",
+		makeConnection(topicType, func(orgId quad.IRI, parent Resource, out *[]interface{}) {
+			config.Connection.FetchChildTopicsForTopic(orgId, parent.IRI(), out)
+		}),
+	)
 
 	organizationType = NewType(&TypeConfig{
 		Name: "Organization",

@@ -29,15 +29,16 @@ type Connection interface {
 	Close() error
 	CreateLink(quad.IRI, *Link) error
 	CreateTopic(quad.IRI, *Topic) error
+	FetchChildTopicsForTopic(quad.IRI, quad.IRI, *[]interface{}) error
 	FetchLink(quad.IRI, string) (interface{}, error)
 	FetchLinks(quad.IRI, *[]interface{}) error
-	FetchLinksForTopic(quad.IRI, *[]interface{}, quad.IRI) error
+	FetchLinksForTopic(quad.IRI, quad.IRI, *[]interface{}) error
 	FetchOrganization(string) (interface{}, error)
-	FetchParentTopicsForTopic(quad.IRI, *[]interface{}, quad.IRI) error
+	FetchParentTopicsForTopic(quad.IRI, quad.IRI, *[]interface{}) error
 	FetchTitle(string) (string, error)
 	FetchTopic(quad.IRI, string) (interface{}, error)
 	FetchTopics(quad.IRI, *[]interface{}) error
-	FetchTopicsForLink(quad.IRI, *[]interface{}, quad.IRI) error
+	FetchTopicsForLink(quad.IRI, quad.IRI, *[]interface{}) error
 	FetchUser(string) (interface{}, error)
 	Init() error
 	SelectTopic(quad.IRI, string, string) (*Topic, error)
