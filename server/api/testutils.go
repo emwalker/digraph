@@ -48,12 +48,20 @@ var simpleGraph = []quad.Quad{
 	quad.Make(org, quad.IRI("di:name"), "Tyrell Corporation", ""),
 	quad.Make(org, quad.IRI("rdf:type"), quad.IRI("foaf:Organization"), ""),
 
+	quad.Make(quad.IRI("topic:root"), quad.IRI("di:name"), "Root", org),
+	quad.Make(quad.IRI("topic:root"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), org),
 	quad.Make(quad.IRI("topic:science"), quad.IRI("di:name"), "Science", org),
 	quad.Make(quad.IRI("topic:science"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), org),
+	quad.Make(quad.IRI("topic:root"), quad.IRI("di:includes"), quad.IRI("topic:science"), org),
+
 	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("di:name"), "Chemistry", org),
 	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), org),
+	quad.Make(quad.IRI("topic:science"), quad.IRI("di:includes"), quad.IRI("topic:chemistry"), org),
+
 	quad.Make(quad.IRI("topic:biology"), quad.IRI("di:name"), "Biology", org),
 	quad.Make(quad.IRI("topic:biology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), org),
+	quad.Make(quad.IRI("topic:science"), quad.IRI("di:includes"), quad.IRI("topic:biology"), org),
+
 	quad.Make(quad.IRI("topic:zoology"), quad.IRI("di:name"), "Zoology", ""),
 	quad.Make(quad.IRI("topic:zoology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
 

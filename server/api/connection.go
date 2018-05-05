@@ -31,12 +31,13 @@ type Connection interface {
 	CreateTopic(quad.IRI, *Topic) error
 	FetchLink(quad.IRI, string) (interface{}, error)
 	FetchLinks(quad.IRI, *[]interface{}) error
-	FetchLinksForTopic(quad.IRI, *[]interface{}, *Topic) error
+	FetchLinksForTopic(quad.IRI, *[]interface{}, quad.IRI) error
 	FetchOrganization(string) (interface{}, error)
+	FetchParentTopicsForTopic(quad.IRI, *[]interface{}, quad.IRI) error
 	FetchTitle(string) (string, error)
 	FetchTopic(quad.IRI, string) (interface{}, error)
 	FetchTopics(quad.IRI, *[]interface{}) error
-	FetchTopicsForLink(quad.IRI, *[]interface{}, *Link) error
+	FetchTopicsForLink(quad.IRI, *[]interface{}, quad.IRI) error
 	FetchUser(string) (interface{}, error)
 	Init() error
 	SelectTopic(quad.IRI, string, string) (*Topic, error)

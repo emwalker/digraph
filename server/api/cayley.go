@@ -107,18 +107,27 @@ func (conn *CayleyConnection) Do(callback func(*graph.Transaction)) error {
 	return conn.store.ApplyTransaction(tx)
 }
 
+func addParentTopics(tx *graph.Transaction, orgId quad.IRI, node Resource) {
+	topicIds := node.ParentTopicIDs()
+	if len(node.ParentTopicIDs()) == 0 {
+		tx.AddQuad(
+			quad.Make(quad.IRI("topic:root"), quad.IRI("di:includes"), node.IRI(), orgId),
+		)
+	} else {
+		for _, topicId := range topicIds {
+			tx.AddQuad(
+				quad.Make(topicId, quad.IRI("di:includes"), node.IRI(), orgId),
+			)
+		}
+	}
+}
+
 func (conn *CayleyConnection) CreateLink(orgId quad.IRI, node *Link) error {
 	return conn.Do(func(tx *graph.Transaction) {
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("rdf:type"), quad.IRI("di:link"), orgId))
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:url"), node.URL, orgId))
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:title"), node.Title, orgId))
-
-		for _, topicId := range node.TopicIDs {
-			topicId := quad.IRI(topicId)
-			tx.AddQuad(
-				quad.Make(topicId, quad.IRI("di:includes"), node.ResourceID, orgId),
-			)
-		}
+		addParentTopics(tx, orgId, node)
 	})
 }
 
@@ -129,6 +138,7 @@ func (conn *CayleyConnection) CreateTopic(orgId quad.IRI, node *Topic) error {
 		if node.Description != nil {
 			tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:description"), *node.Description, orgId))
 		}
+		addParentTopics(tx, orgId, node)
 	})
 }
 
@@ -224,21 +234,6 @@ func (conn *CayleyConnection) loadIteratorTo(
 	return nil
 }
 
-func (conn *CayleyConnection) FetchTopics(orgId quad.IRI, out *[]interface{}) error {
-	path := cayley.StartPath(conn.store).
-		LabelContext(orgId).
-		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
-	return conn.loadIteratorTo(out, path, topicArrayType)
-}
-
-func (conn *CayleyConnection) FetchTopicsForLink(orgId quad.IRI, out *[]interface{}, o *Link) error {
-	path := cayley.StartPath(conn.store, o.ResourceID).
-		LabelContext(orgId).
-		In(quad.IRI("di:includes")).
-		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
-	return conn.loadIteratorTo(out, path, topicArrayType)
-}
-
 func (conn *CayleyConnection) FetchLinks(orgId quad.IRI, out *[]interface{}) error {
 	path := cayley.StartPath(conn.store).
 		LabelContext(orgId).
@@ -246,8 +241,31 @@ func (conn *CayleyConnection) FetchLinks(orgId quad.IRI, out *[]interface{}) err
 	return conn.loadIteratorTo(out, path, linkArrayType)
 }
 
-func (conn *CayleyConnection) FetchLinksForTopic(orgId quad.IRI, out *[]interface{}, o *Topic) error {
-	path := cayley.StartPath(conn.store, o.ResourceID).
+func (conn *CayleyConnection) FetchParentTopicsForTopic(orgId quad.IRI, out *[]interface{}, topicId quad.IRI) error {
+	path := cayley.StartPath(conn.store, topicId).
+		LabelContext(orgId).
+		In(quad.IRI("di:includes")).
+		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
+	return conn.loadIteratorTo(out, path, topicArrayType)
+}
+
+func (conn *CayleyConnection) FetchTopics(orgId quad.IRI, out *[]interface{}) error {
+	path := cayley.StartPath(conn.store).
+		LabelContext(orgId).
+		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
+	return conn.loadIteratorTo(out, path, topicArrayType)
+}
+
+func (conn *CayleyConnection) FetchTopicsForLink(orgId quad.IRI, out *[]interface{}, linkId quad.IRI) error {
+	path := cayley.StartPath(conn.store, linkId).
+		LabelContext(orgId).
+		In(quad.IRI("di:includes")).
+		Has(quad.IRI("rdf:type"), quad.IRI("foaf:topic"))
+	return conn.loadIteratorTo(out, path, topicArrayType)
+}
+
+func (conn *CayleyConnection) FetchLinksForTopic(orgId quad.IRI, out *[]interface{}, topicId quad.IRI) error {
+	path := cayley.StartPath(conn.store, topicId).
 		LabelContext(orgId).
 		Out(quad.IRI("di:includes")).
 		Has(quad.IRI("rdf:type"), quad.IRI("di:link"))

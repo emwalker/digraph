@@ -33,6 +33,7 @@ class AddTopic extends Component<Props, State> {
       {
         organizationId,
         name: this.state.name,
+        topicIds: [],
       },
     )
     this.setState({ name: '' })

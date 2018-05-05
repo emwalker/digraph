@@ -23,12 +23,26 @@ ShallowWrapper {
     "key": undefined,
     "nodeType": "function",
     "props": Object {
-      "children": "Sidebar TDB",
+      "children": <Unknown
+        items={Array []}
+        title="Parent topics"
+      />,
       "items": Array [],
       "title": "Frotz",
     },
     "ref": null,
-    "rendered": "Sidebar TDB",
+    "rendered": Object {
+      "instance": null,
+      "key": undefined,
+      "nodeType": "function",
+      "props": Object {
+        "items": Array [],
+        "title": "Parent topics",
+      },
+      "ref": null,
+      "rendered": null,
+      "type": [Function],
+    },
     "type": [Function],
   },
   Symbol(enzyme.__nodes__): Array [
@@ -37,12 +51,26 @@ ShallowWrapper {
       "key": undefined,
       "nodeType": "function",
       "props": Object {
-        "children": "Sidebar TDB",
+        "children": <Unknown
+          items={Array []}
+          title="Parent topics"
+        />,
         "items": Array [],
         "title": "Frotz",
       },
       "ref": null,
-      "rendered": "Sidebar TDB",
+      "rendered": Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "function",
+        "props": Object {
+          "items": Array [],
+          "title": "Parent topics",
+        },
+        "ref": null,
+        "rendered": null,
+        "type": [Function],
+      },
       "type": [Function],
     },
   ],

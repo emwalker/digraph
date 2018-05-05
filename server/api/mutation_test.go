@@ -53,12 +53,21 @@ func TestCreateTopic(t *testing.T) {
 				organizationId: "organization:tyrell",
 				name: "Gnusto",
 				description: "Things about Gnusto",
+				topicIds: ["topic:science"],
 			}
 		) {
 			topicEdge {
 				node {
 					name
 					description
+
+					parentTopics {
+						edges {
+							node {
+								name
+							}
+						}
+					}
 				}
 			}
 		},
@@ -72,6 +81,14 @@ func TestCreateTopic(t *testing.T) {
 				node {
 					name
 					description
+
+					parentTopics {
+						edges {
+							node {
+								name
+							}
+						}
+					}
 				}
 			}
 		}
@@ -84,6 +101,15 @@ func TestCreateTopic(t *testing.T) {
 					"node": map[string]interface{}{
 						"name":        "Gnusto",
 						"description": "Things about Gnusto",
+						"parentTopics": map[string]interface{}{
+							"edges": []interface{}{
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"name": "Science",
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -92,6 +118,15 @@ func TestCreateTopic(t *testing.T) {
 					"node": map[string]interface{}{
 						"name":        "Yomin",
 						"description": nil,
+						"parentTopics": map[string]interface{}{
+							"edges": []interface{}{
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"name": "Root",
+									},
+								},
+							},
+						},
 					},
 				},
 			},

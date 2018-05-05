@@ -2,6 +2,7 @@ import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
 import ListView from '../ui/ListView'
+import SidebarList from '../ui/SidebarList'
 import { liftNodes } from '../../utils'
 
 type Props = {
@@ -11,14 +12,17 @@ type Props = {
 }
 
 const TopicPage = ({ topic, ...props }: Props) => {
-  const { name, links } = topic
+  const { name, links, parentTopics } = topic
   return (
     <ListView
       title={name}
       items={liftNodes(links)}
       {...props}
     >
-      Sidebar TDB
+      <SidebarList
+        title="Parent topics"
+        items={liftNodes(parentTopics)}
+      />
     </ListView>
   )
 }
@@ -52,6 +56,15 @@ export default createFragmentContainer(TopicPage, graphql`
 
   fragment TopicPage_topic on Topic {
     name
+
+    parentTopics(first: 100) {
+      edges {
+        node {
+          display: name
+          resourcePath
+        }
+      }
+    }
 
     links(first: 100) {
       edges {

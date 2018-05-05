@@ -64,3 +64,6 @@ load:
 
 dump:
 	@cayley dump --config=./cayley.cfg.json --dump=./data/digraffe.nq
+
+repl:
+	@cayley repl --config=./cayley.cfg.json

@@ -1,8 +1,6 @@
 package api
 
 import (
-	"errors"
-
 	"github.com/cayleygraph/cayley/quad"
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/relay"
@@ -49,10 +47,8 @@ func init() {
 		Type:        graphql.String,
 		Description: "The international resource identifier (IRI).",
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			if res, ok := p.Source.(Resource); ok {
-				return isomorphicID(res.IRI()), nil
-			}
-			return nil, errors.New("unable to provide IRI")
+			node := p.Source.(Resource)
+			return isomorphicID(node.IRI()), nil
 		},
 	}
 
@@ -60,10 +56,8 @@ func init() {
 		Type:        graphql.String,
 		Description: "The relative path to the resource.",
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			if res, ok := p.Source.(Resource); ok {
-				return resourcePath(res.IRI()), nil
-			}
-			return nil, errors.New("unable to provide resourcePath")
+			node := p.Source.(Resource)
+			return resourcePath(node.IRI()), nil
 		},
 	}
 }

@@ -33,6 +33,7 @@ type Topic struct {
 	ResourceID  quad.IRI `json:"@id"`
 	Name        string   `json:"name" quad:"di:name"`
 	Description *string  `json:"description" quad:"di:description,optional"`
+	TopicIDs    []string `quad:",optional"`
 }
 
 type Link struct {
@@ -47,6 +48,7 @@ type Link struct {
 type Resource interface {
 	Init()
 	IRI() quad.IRI
+	ParentTopicIDs() []quad.IRI
 }
 
 var (
@@ -83,6 +85,10 @@ func (o *Organization) IRI() quad.IRI {
 	return o.ResourceID
 }
 
+func (o *Organization) ParentTopicIDs() []quad.IRI {
+	return []quad.IRI{}
+}
+
 func (o *Topic) Init() {
 	o.ID = isomorphicID(o.ResourceID)
 }
@@ -91,8 +97,24 @@ func (o *Topic) IRI() quad.IRI {
 	return o.ResourceID
 }
 
+func (o *Topic) ParentTopicIDs() []quad.IRI {
+	var ids []quad.IRI
+	for _, topicId := range o.TopicIDs {
+		ids = append(ids, quad.IRI(topicId))
+	}
+	return ids
+}
+
 func (o *Link) Init() {
 	o.ID = isomorphicID(o.ResourceID)
+}
+
+func (o *Link) ParentTopicIDs() []quad.IRI {
+	var ids []quad.IRI
+	for _, topicId := range o.TopicIDs {
+		ids = append(ids, quad.IRI(topicId))
+	}
+	return ids
 }
 
 func (o *Link) IRI() quad.IRI {
@@ -165,6 +187,10 @@ func (config *Config) createTopicMutation(edgeType graphql.Output) *graphql.Fiel
 			"organizationId": &graphql.InputObjectFieldConfig{
 				Type: graphql.String,
 			},
+			"topicIds": &graphql.InputObjectFieldConfig{
+				Type:         graphql.NewList(graphql.String),
+				DefaultValue: []interface{}{},
+			},
 			"name": &graphql.InputObjectFieldConfig{
 				Type: graphql.String,
 			},
@@ -189,10 +215,12 @@ func (config *Config) createTopicMutation(edgeType graphql.Output) *graphql.Fiel
 		},
 
 		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
+			topicIds := stringList(input["topicIds"])
 			orgId := quad.IRI(input["organizationId"].(string))
 			node := NewTopic(&Topic{
 				Name:        input["name"].(string),
 				Description: maybeString(input["description"]),
+				TopicIDs:    *topicIds,
 			})
 			checkErr(config.Connection.CreateTopic(orgId, node))
 
@@ -212,16 +240,16 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 			"organizationId": &graphql.InputObjectFieldConfig{
 				Type: graphql.String,
 			},
+			"topicIds": &graphql.InputObjectFieldConfig{
+				Type:         graphql.NewList(graphql.String),
+				DefaultValue: []interface{}{},
+			},
 			"title": &graphql.InputObjectFieldConfig{
 				Type:         graphql.String,
 				DefaultValue: nil,
 			},
 			"url": &graphql.InputObjectFieldConfig{
 				Type: graphql.String,
-			},
-			"topicIds": &graphql.InputObjectFieldConfig{
-				Type:         graphql.NewList(graphql.String),
-				DefaultValue: []interface{}{},
 			},
 		},
 
@@ -240,18 +268,12 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 		},
 
 		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
-			var topicIds []string
-			if ids, ok := input["topicIds"].([]interface{}); ok {
-				for _, topicId := range ids {
-					topicIds = append(topicIds, topicId.(string))
-				}
-			}
-
+			topicIds := stringList(input["topicIds"])
 			orgId := quad.IRI(input["organizationId"].(string))
 			node := NewLink(&Link{
 				URL:      input["url"].(string),
 				Title:    stringOr("", input["title"]),
-				TopicIDs: topicIds,
+				TopicIDs: *topicIds,
 			}, config.Connection)
 			checkErr(config.Connection.CreateLink(orgId, node))
 
@@ -417,7 +439,7 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 					dest := []interface{}{}
 					link := p.Source.(*Link)
 					orgId := quad.IRI("organization:tyrell")
-					config.Connection.FetchTopicsForLink(orgId, &dest, link)
+					config.Connection.FetchTopicsForLink(orgId, &dest, link.ResourceID)
 					return relay.ConnectionFromArray(dest, args), nil
 				},
 			},
@@ -434,9 +456,24 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			args := relay.NewConnectionArguments(p.Args)
 			dest := []interface{}{}
-			topic := p.Source.(*Topic)
+			parent := p.Source.(Resource)
 			orgId := quad.IRI("organization:tyrell")
-			config.Connection.FetchLinksForTopic(orgId, &dest, topic)
+			config.Connection.FetchLinksForTopic(orgId, &dest, parent.IRI())
+			return relay.ConnectionFromArray(dest, args), nil
+		},
+	})
+
+	topicType.NodeType.AddFieldConfig("parentTopics", &graphql.Field{
+		Type: topicType.Definitions.ConnectionType,
+
+		Args: relay.ConnectionArgs,
+
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			args := relay.NewConnectionArguments(p.Args)
+			dest := []interface{}{}
+			parent := p.Source.(Resource)
+			orgId := quad.IRI("organization:tyrell")
+			config.Connection.FetchParentTopicsForTopic(orgId, &dest, parent.IRI())
 			return relay.ConnectionFromArray(dest, args), nil
 		},
 	})

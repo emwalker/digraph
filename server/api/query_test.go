@@ -45,6 +45,14 @@ func init() {
 							description
 							resourcePath
 
+							parentTopics(first: 100) {
+								edges {
+									node {
+										name
+									}
+								}
+							}
+
 							links(first: 500) {
 								edges {
 									node {
@@ -74,6 +82,11 @@ func init() {
 								},
 								map[string]interface{}{
 									"node": map[string]interface{}{
+										"name": "Root",
+									},
+								},
+								map[string]interface{}{
+									"node": map[string]interface{}{
 										"name": "Science",
 									},
 								},
@@ -83,6 +96,15 @@ func init() {
 							"name":         "Biology",
 							"description":  nil,
 							"resourcePath": "/topics/biology",
+							"parentTopics": map[string]interface{}{
+								"edges": []interface{}{
+									map[string]interface{}{
+										"node": map[string]interface{}{
+											"name": "Science",
+										},
+									},
+								},
+							},
 							"links": map[string]interface{}{
 								"edges": []interface{}{
 									map[string]interface{}{

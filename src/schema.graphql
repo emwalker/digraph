@@ -25,16 +25,22 @@ type User {
 type Topic implements ResourceIdentifiable & Namespacable {
   description: String
   id: ID
-  name: String!
-  organization: Organization!
-  resourceId: String!
-  resourcePath: String!
   links(
     first: Int,
     after: String,
     last: Int,
     before: String
   ): LinkConnection
+  name: String!
+  organization: Organization!
+  parentTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
+  resourceId: String!
+  resourcePath: String!
 }
 
 type TopicEdge {
@@ -102,6 +108,7 @@ input CreateTopicInput {
   description: String
   name: String!
   organizationId: String!
+  topicIds: [String!]
 }
 
 type CreateTopicPayload {
@@ -111,8 +118,8 @@ type CreateTopicPayload {
 input CreateLinkInput {
   clientMutationId: String!
   organizationId: String!
-  topicIds: [String!]
   title: String
+  topicIds: [String!]
   url: String!
 }
 
