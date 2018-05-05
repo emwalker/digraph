@@ -11,50 +11,14 @@
 <topic:biology> <di:name> "Biology" <organization:tyrell> .
 <topic:biology> <rdf:type> <foaf:topic> <organization:tyrell> .
 <topic:science> <di:includes> <topic:biology> <organization:tyrell> .
-<topic:zoology> <di:name> "Zoology" .
-<topic:zoology> <rdf:type> <foaf:topic> .
-<user:rezrov> <di:name> "Rezrov" .
-<user:rezrov> <di:email> "rezrov@tyrell.test" .
-<user:rezrov> <rdf:type> <foaf:Person> .
 <user:gnusto> <di:name> "Gnusto" .
 <user:gnusto> <rdf:type> <foaf:Person> .
-<user:gnusto> <di:email> "gnusto@tyrell.test" .
-<user:yomin> <di:name> "Yomin" .
-<user:yomin> <di:email> "yomin@tyrell.test" .
-<user:yomin> <rdf:type> <foaf:Person> .
 <link:github> <di:title> "Github" <organization:tyrell> .
 <link:github> <di:url> "https://github.com" <organization:tyrell> .
 <link:github> <rdf:type> <di:link> <organization:tyrell> .
-<topic:chemistry> <di:includes> <link:github> <organization:tyrell> .
-<topic:biology> <di:includes> <link:github> <organization:tyrell> .
 <link:nytimes> <di:title> "New York Times" <organization:tyrell> .
 <link:nytimes> <di:url> "https://nytimes.com" <organization:tyrell> .
 <link:nytimes> <rdf:type> <di:link> <organization:tyrell> .
 <link:wikipedia> <di:title> "Wikipedia" <organization:tyrell> .
 <link:wikipedia> <di:url> "https://en.wikipedia.com" <organization:tyrell> .
 <link:wikipedia> <rdf:type> <di:link> <organization:tyrell> .
-<link:14Apet8bfkToP3yqqKVHmRpUUfX> <rdf:type> <di:link> <organization:tyrell> .
-<link:14Apet8bfkToP3yqqKVHmRpUUfX> <di:url> "https://primer.github.io/archive/#form-groups" <organization:tyrell> .
-<link:14Apet8bfkToP3yqqKVHmRpUUfX> <di:title> "\n      Home · Primer\n    " <organization:tyrell> .
-<topic:chemistry> <di:includes> <link:14Apet8bfkToP3yqqKVHmRpUUfX> <organization:tyrell> .
-<topic:14AuzvsNyvvXiAj7N7O2VyERD92> <rdf:type> <foaf:topic> <organization:tyrell> .
-<topic:14AuzvsNyvvXiAj7N7O2VyERD92> <di:name> "Software" <organization:tyrell> .
-<topic:root> <di:includes> <topic:14AuzvsNyvvXiAj7N7O2VyERD92> <organization:tyrell> .
-<link:14Av0d7wuGAgSCoaRz4FzHugHku> <rdf:type> <di:link> <organization:tyrell> .
-<link:14Av0d7wuGAgSCoaRz4FzHugHku> <di:url> "https://primer.github.io/archive/guidelines/" <organization:tyrell> .
-<link:14Av0d7wuGAgSCoaRz4FzHugHku> <di:title> "\n      Guidelines · Primer\n    " <organization:tyrell> .
-<topic:14AuzvsNyvvXiAj7N7O2VyERD92> <di:includes> <link:14Av0d7wuGAgSCoaRz4FzHugHku> <organization:tyrell> .
-<link:14AhVh5JHRpIEgGS1LBktB116fR> <rdf:type> <di:link> <organization:tyrell> .
-<link:14AhVh5JHRpIEgGS1LBktB116fR> <di:url> "https://discourse.cayley.io/t/schema-api-and-quad-labels/1166" <organization:tyrell> .
-<link:14AhVh5JHRpIEgGS1LBktB116fR> <di:title> "Schema API and quad labels" <organization:tyrell> .
-<topic:chemistry> <di:includes> <link:14AhVh5JHRpIEgGS1LBktB116fR> <organization:tyrell> .
-<topic:14AqMKcGKdohUNWcdkFeXqLdVav> <rdf:type> <foaf:topic> <organization:tyrell> .
-<topic:14AqMKcGKdohUNWcdkFeXqLdVav> <di:name> "Zoology" <organization:tyrell> .
-<link:14ApBYoI0kgcEppe7T6UphtyspX> <rdf:type> <di:link> <organization:tyrell> .
-<link:14ApBYoI0kgcEppe7T6UphtyspX> <di:url> "https://primer.github.io/storybook/?selectedKind=Button&selectedStory=btn-secondary&full=0&down=0&left=1&panelRight=0" <organization:tyrell> .
-<link:14ApBYoI0kgcEppe7T6UphtyspX> <di:title> "Storybook" <organization:tyrell> .
-<topic:biology> <di:includes> <link:14ApBYoI0kgcEppe7T6UphtyspX> <organization:tyrell> .
-<link:14AqOVDP154w6H4z1xs5Vs9DJlt> <rdf:type> <di:link> <organization:tyrell> .
-<link:14AqOVDP154w6H4z1xs5Vs9DJlt> <di:url> "https://primer.github.io/archive/utilities/" <organization:tyrell> .
-<link:14AqOVDP154w6H4z1xs5Vs9DJlt> <di:title> "\n      Utilities · Primer\n    " <organization:tyrell> .
-<topic:14AqMKcGKdohUNWcdkFeXqLdVav> <di:includes> <link:14AqOVDP154w6H4z1xs5Vs9DJlt> <organization:tyrell> .
