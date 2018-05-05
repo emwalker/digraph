@@ -28,6 +28,8 @@ const renderTopicPage = ({ props, error }: any) => {
     return <div>There was a problem.</div>
   if (!props)
     return <div>loading ...</div>
+  if (!props.organization)
+    return <div>You must log in and select an organization first.</div>
   return (
     <TopicPage
       topic={props.organization.topic}

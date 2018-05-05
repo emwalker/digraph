@@ -27,7 +27,7 @@ class AddTopic extends Component<RelayProps, State> {
       parentID: this.props.topic.id,
       connectionInfo: [{
         key: 'Topic_childTopics',
-        rangeBehavior: 'append',
+        rangeBehavior: 'prepend',
       }],
       edgeName: 'topicEdge',
     }]

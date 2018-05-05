@@ -170,7 +170,7 @@ func (config *Config) fetcher() relay.IDFetcherFn {
 		case "User":
 			return config.Connection.FetchUser(resolvedID.ID)
 		case "Link":
-			return config.Connection.FetchLink(orgId, resolvedID.ID)
+			return config.Connection.FetchLink(orgId, quad.IRI(resolvedID.ID))
 		case "Topic":
 			return config.Connection.FetchTopic(orgId, resolvedID.ID)
 		default:
@@ -259,7 +259,8 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					payload := p.Source.(map[string]interface{})
 					orgId := payload["organizationId"].(quad.IRI)
-					node, err := config.Connection.FetchLink(orgId, payload["linkId"].(string))
+					linkId := quad.IRI(payload["linkId"].(string))
+					node, err := config.Connection.FetchLink(orgId, linkId)
 					checkErr(err)
 					return &relay.Edge{Node: node}, nil
 				},
@@ -269,15 +270,29 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
 			topicIds := stringList(input["topicIds"])
 			orgId := quad.IRI(input["organizationId"].(string))
-			node := NewLink(&Link{
-				URL:      input["url"].(string),
-				Title:    stringOr("", input["title"]),
-				TopicIDs: *topicIds,
-			}, config.Connection)
-			checkErr(config.Connection.CreateLink(orgId, node))
+			url := input["url"].(string)
+
+			log.Println("Determining whether url is already present:", url)
+			node, err := config.Connection.FetchLinkByURL(orgId, url)
+			checkErr(err)
+
+			if node == nil {
+				log.Println("Link is new:", url)
+				node = NewLink(&Link{
+					URL:      url,
+					Title:    stringOr("", input["title"]),
+					TopicIDs: *topicIds,
+				}, config.Connection)
+				checkErr(config.Connection.CreateLink(orgId, node.(*Link)))
+			} else {
+				log.Println("Link is already in datastore:", url)
+				link := node.(*Link)
+				link.TopicIDs = *topicIds
+				checkErr(config.Connection.UpdateLink(orgId, link))
+			}
 
 			return map[string]interface{}{
-				"linkId":         node.ID,
+				"linkId":         node.(*Link).ID,
 				"organizationId": orgId,
 			}, nil
 		},
@@ -410,7 +425,7 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 		Name: "Link",
 
 		FetchNode: func(orgId quad.IRI, resourceId string) (interface{}, error) {
-			return config.Connection.FetchLink(orgId, resourceId)
+			return config.Connection.FetchLink(orgId, quad.IRI(resourceId))
 		},
 
 		FetchConnection: func(orgId quad.IRI, out *[]interface{}) {

@@ -52,7 +52,7 @@ class Item extends Component<Props> {
           </a>
           { edges(this.props.topics).map(renderTopic) }
         </div>
-        <div className="branch-name">{this.props.resourcePath}</div>
+        <div className="mt-1 link-url branch-name css-truncate css-truncate-target">{this.props.resourcePath}</div>
       </li>
     )
   }

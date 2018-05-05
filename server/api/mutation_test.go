@@ -194,9 +194,39 @@ func TestCreateLink(t *testing.T) {
 				node {
 					title
 					url
+					topics {
+						edges {
+							node {
+								name
+							}
+						}
+					}
 				}
 			}
-		}
+		},
+		second: createLink(
+			input: {
+				organizationId: "organization:tyrell",
+				url: "https://gnusto.test",
+				topicIds: [
+					"topic:science",
+				],
+			}
+		) {
+			linkEdge {
+				node {
+					title
+					url
+					topics {
+						edges {
+							node {
+								name
+							}
+						}
+					}
+				}
+			}
+		},
 	}`
 
 	expected := &graphql.Result{
@@ -206,6 +236,48 @@ func TestCreateLink(t *testing.T) {
 					"node": map[string]interface{}{
 						"title": "Gnusto's Homepage",
 						"url":   "https://gnusto.test",
+						"topics": map[string]interface{}{
+							"edges": []interface{}{
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"name": "Biology",
+									},
+								},
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"name": "Chemistry",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			// It makes use of an existing link if one is already present.
+			"second": map[string]interface{}{
+				"linkEdge": map[string]interface{}{
+					"node": map[string]interface{}{
+						"title": "Gnusto's Homepage",
+						"url":   "https://gnusto.test",
+						"topics": map[string]interface{}{
+							"edges": []interface{}{
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"name": "Biology",
+									},
+								},
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"name": "Chemistry",
+									},
+								},
+								map[string]interface{}{
+									"node": map[string]interface{}{
+										"name": "Science",
+									},
+								},
+							},
+						},
 					},
 				},
 			},

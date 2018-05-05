@@ -30,7 +30,8 @@ type Connection interface {
 	CreateLink(quad.IRI, *Link) error
 	CreateTopic(quad.IRI, *Topic) error
 	FetchChildTopicsForTopic(quad.IRI, quad.IRI, *[]interface{}) error
-	FetchLink(quad.IRI, string) (interface{}, error)
+	FetchLink(quad.IRI, quad.IRI) (interface{}, error)
+	FetchLinkByURL(quad.IRI, string) (interface{}, error)
 	FetchLinks(quad.IRI, *[]interface{}) error
 	FetchLinksForTopic(quad.IRI, quad.IRI, *[]interface{}) error
 	FetchOrganization(string) (interface{}, error)
@@ -43,6 +44,7 @@ type Connection interface {
 	Init() error
 	SelectTopic(quad.IRI, string, string) (*Topic, error)
 	SelectedTopic(quad.IRI, string) (*Topic, error)
+	UpdateLink(quad.IRI, *Link) error
 	Viewer() (interface{}, error)
 }
 

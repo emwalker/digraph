@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"sort"
 	"strings"
@@ -145,11 +146,26 @@ func (conn *CayleyConnection) CreateTopic(orgId quad.IRI, node *Topic) error {
 	})
 }
 
-func (conn *CayleyConnection) FetchLink(orgId quad.IRI, id string) (interface{}, error) {
+func (conn *CayleyConnection) FetchLink(orgId quad.IRI, linkId quad.IRI) (interface{}, error) {
 	var o Link
-	err := conn.schema.LoadTo(nil, conn.store, &o, quad.IRI(id))
+	err := conn.schema.LoadTo(nil, conn.store, &o, linkId)
 	o.Init()
 	return handleResult(&o, err)
+}
+
+func (conn *CayleyConnection) FetchLinkByURL(orgId quad.IRI, url string) (interface{}, error) {
+	path := cayley.StartPath(conn.store).
+		LabelContext(orgId).
+		Has(quad.IRI("rdf:type"), quad.IRI("di:link")).
+		Has(quad.IRI("di:url"), quad.String(url))
+
+	if value, err := path.Iterate(nil).First(); err == nil && value != nil {
+		linkId := conn.store.NameOf(value)
+		log.Println("Link already exists: ", linkId)
+		return conn.FetchLink(orgId, linkId.(quad.IRI))
+	}
+
+	return nil, nil
 }
 
 func (conn *CayleyConnection) FetchOrganization(id string) (interface{}, error) {
@@ -281,4 +297,10 @@ func (conn *CayleyConnection) FetchLinksForTopic(orgId quad.IRI, topicId quad.IR
 		Out(quad.IRI("di:includes")).
 		Has(quad.IRI("rdf:type"), quad.IRI("di:link"))
 	return conn.loadIteratorTo(out, path, linkArrayType)
+}
+
+func (conn *CayleyConnection) UpdateLink(orgId quad.IRI, node *Link) error {
+	return conn.Do(func(tx *graph.Transaction) {
+		addParentTopics(tx, orgId, node)
+	})
 }
