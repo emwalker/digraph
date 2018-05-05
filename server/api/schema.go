@@ -32,7 +32,7 @@ type Topic struct {
 	ID          string   `json:"id" quad:",optional"`
 	ResourceID  quad.IRI `json:"@id"`
 	Name        string   `json:"name" quad:"di:name"`
-	Description *string  `json:"description" quad:"description,optional"`
+	Description *string  `json:"description" quad:"di:description,optional"`
 }
 
 type Link struct {
@@ -41,6 +41,7 @@ type Link struct {
 	ResourceID quad.IRI `json:"@id"`
 	Title      string   `json:"title" quad:"di:title"`
 	URL        string   `json:"url" quad:"di:url"`
+	TopicIDs   []string `quad:",optional"`
 }
 
 type Resource interface {
@@ -98,6 +99,29 @@ func (o *Link) IRI() quad.IRI {
 	return o.ResourceID
 }
 
+func NewLink(node *Link, conn Connection) *Link {
+	var useTitle string
+
+	if node.Title == "" {
+		var err error
+		useTitle, err = conn.FetchTitle(node.URL)
+		if err != nil {
+			useTitle = node.URL
+		}
+		node.Title = useTitle
+	}
+
+	node.ResourceID = generateIDForType("link")
+	node.Init()
+	return node
+}
+
+func NewTopic(node *Topic) *Topic {
+	node.ResourceID = generateIDForType("topic")
+	node.Init()
+	return node
+}
+
 func resolveType(p graphql.ResolveTypeParams) *graphql.Object {
 	switch p.Value.(type) {
 	case *Link:
@@ -116,16 +140,17 @@ func resolveType(p graphql.ResolveTypeParams) *graphql.Object {
 func (config *Config) fetcher() relay.IDFetcherFn {
 	return func(id string, info graphql.ResolveInfo, ctx context.Context) (interface{}, error) {
 		resolvedID := relay.FromGlobalID(id)
+		orgId := quad.IRI("organization:tyrell")
 
 		switch resolvedID.Type {
-		case "Link":
-			return config.Connection.FetchLink(resolvedID.ID)
 		case "Organization":
 			return config.Connection.FetchOrganization(resolvedID.ID)
-		case "Topic":
-			return config.Connection.FetchTopic(resolvedID.ID)
 		case "User":
 			return config.Connection.FetchUser(resolvedID.ID)
+		case "Link":
+			return config.Connection.FetchLink(orgId, resolvedID.ID)
+		case "Topic":
+			return config.Connection.FetchTopic(orgId, resolvedID.ID)
 		default:
 			return nil, errors.New(fmt.Sprintf("unknown node type: %s", resolvedID.Type))
 		}
@@ -154,25 +179,26 @@ func (config *Config) createTopicMutation(edgeType graphql.Output) *graphql.Fiel
 				Type: edgeType,
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					if payload, ok := p.Source.(map[string]interface{}); ok {
-						node, err := config.Connection.FetchTopic(payload["topicId"].(string))
-						checkErr(err)
-						return &relay.Edge{Node: node}, nil
-					}
-					return nil, nil
+					payload := p.Source.(map[string]interface{})
+					orgId := payload["organizationId"].(quad.IRI)
+					node, err := config.Connection.FetchTopic(orgId, payload["topicId"].(string))
+					checkErr(err)
+					return &relay.Edge{Node: node}, nil
 				},
 			},
 		},
 
 		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
-			orgIri := input["organizationId"].(string)
-			name := input["name"].(string)
-			description := maybeString(input["description"])
-			node, err := config.Connection.CreateTopic(orgIri, name, description)
-			checkErr(err)
+			orgId := quad.IRI(input["organizationId"].(string))
+			node := NewTopic(&Topic{
+				Name:        input["name"].(string),
+				Description: maybeString(input["description"]),
+			})
+			checkErr(config.Connection.CreateTopic(orgId, node))
 
 			return map[string]interface{}{
-				"topicId": node.ID,
+				"topicId":        node.ID,
+				"organizationId": orgId,
 			}, nil
 		},
 	})
@@ -205,7 +231,8 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					payload := p.Source.(map[string]interface{})
-					node, err := config.Connection.FetchLink(payload["linkId"].(string))
+					orgId := payload["organizationId"].(quad.IRI)
+					node, err := config.Connection.FetchLink(orgId, payload["linkId"].(string))
 					checkErr(err)
 					return &relay.Edge{Node: node}, nil
 				},
@@ -213,20 +240,24 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 		},
 
 		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
-			orgId := input["organizationId"].(string)
-			url := input["url"].(string)
-			topicIds := input["topicIds"].([]interface{})
-
-			var useTitle string
-			if title, ok := input["title"].(string); ok {
-				useTitle = title
+			var topicIds []string
+			if ids, ok := input["topicIds"].([]interface{}); ok {
+				for _, topicId := range ids {
+					topicIds = append(topicIds, topicId.(string))
+				}
 			}
 
-			node, err := config.Connection.CreateLink(orgId, url, useTitle, topicIds)
-			checkErr(err)
+			orgId := quad.IRI(input["organizationId"].(string))
+			node := NewLink(&Link{
+				URL:      input["url"].(string),
+				Title:    stringOr("", input["title"]),
+				TopicIDs: topicIds,
+			}, config.Connection)
+			checkErr(config.Connection.CreateLink(orgId, node))
 
 			return map[string]interface{}{
-				"linkId": node.ID,
+				"linkId":         node.ID,
+				"organizationId": orgId,
 			}, nil
 		},
 	})
@@ -237,6 +268,9 @@ func (config *Config) selectTopicMutation(topicType *Type) *graphql.Field {
 		Name: "SelectTopic",
 
 		InputFields: graphql.InputObjectConfigFieldMap{
+			"organizationId": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
+			},
 			"topicId": &graphql.InputObjectFieldConfig{
 				Type: graphql.String,
 			},
@@ -247,33 +281,35 @@ func (config *Config) selectTopicMutation(topicType *Type) *graphql.Field {
 				Type: topicType.NodeType,
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					if payload, ok := p.Source.(map[string]interface{}); ok {
-						if topicId, ok := payload["topicId"]; ok {
-							node, err := config.Connection.FetchTopic(topicId.(string))
-							if err != nil {
-								return nil, err
-							}
-							return node, nil
-						}
+					payload := p.Source.(map[string]interface{})
+					if topicId, ok := payload["topicId"].(string); ok {
+						orgId := payload["organizationId"].(quad.IRI)
+						return config.Connection.FetchTopic(orgId, topicId)
 					}
 					return nil, nil
 				},
 			},
 		},
 
-		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
+		MutateAndGetPayload: func(
+			input map[string]interface{},
+			info graphql.ResolveInfo,
+			ctx context.Context,
+		) (map[string]interface{}, error) {
 			viewer, err := config.Connection.Viewer()
 			checkErr(err)
+			orgId := quad.IRI(input["organizationId"].(string))
 			topicId := input["topicId"].(string)
 
-			node, err := config.Connection.SelectTopic(viewer.(*User).ID, topicId)
+			node, err := config.Connection.SelectTopic(orgId, viewer.(*User).ID, topicId)
 			if err != nil {
 				log.Println("there was a problem:", err)
 				return map[string]interface{}{}, nil
 			}
 
 			return map[string]interface{}{
-				"topicId": node.ID,
+				"topicId":        node.ID,
+				"organizationId": orgId,
 			}, nil
 		},
 	})
@@ -298,12 +334,12 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 	topicType = NewType(&TypeConfig{
 		Name: "Topic",
 
-		FetchNode: func(resourceId string) (interface{}, error) {
-			return config.Connection.FetchTopic(resourceId)
+		FetchNode: func(orgId quad.IRI, resourceId string) (interface{}, error) {
+			return config.Connection.FetchTopic(orgId, resourceId)
 		},
 
-		FetchConnection: func(out *[]interface{}, org *Organization) {
-			checkErr(config.Connection.FetchTopics(out, org))
+		FetchConnection: func(orgId quad.IRI, out *[]interface{}) {
+			checkErr(config.Connection.FetchTopics(orgId, out))
 		},
 
 		NodeFields: graphql.Fields{
@@ -339,14 +375,9 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 				Description: "Topic selected by the user",
 
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					if res, ok := p.Source.(*User); ok {
-						node, err := config.Connection.SelectedTopic(res.ID)
-						if err != nil {
-							return nil, err
-						}
-						return node, nil
-					}
-					return nil, errors.New("unable to provide IRI")
+					user := p.Source.(*User)
+					orgId := quad.IRI("organization:tyrell")
+					return config.Connection.SelectedTopic(orgId, user.ID)
 				},
 			},
 		},
@@ -357,12 +388,12 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 	linkType = NewType(&TypeConfig{
 		Name: "Link",
 
-		FetchNode: func(resourceId string) (interface{}, error) {
-			return config.Connection.FetchLink(resourceId)
+		FetchNode: func(orgId quad.IRI, resourceId string) (interface{}, error) {
+			return config.Connection.FetchLink(orgId, resourceId)
 		},
 
-		FetchConnection: func(out *[]interface{}, org *Organization) {
-			checkErr(config.Connection.FetchLinks(out, org))
+		FetchConnection: func(orgId quad.IRI, out *[]interface{}) {
+			checkErr(config.Connection.FetchLinks(orgId, out))
 		},
 
 		NodeFields: graphql.Fields{
@@ -385,7 +416,8 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 					args := relay.NewConnectionArguments(p.Args)
 					dest := []interface{}{}
 					link := p.Source.(*Link)
-					config.Connection.FetchTopicsForLink(&dest, link)
+					orgId := quad.IRI("organization:tyrell")
+					config.Connection.FetchTopicsForLink(orgId, &dest, link)
 					return relay.ConnectionFromArray(dest, args), nil
 				},
 			},
@@ -403,7 +435,8 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 			args := relay.NewConnectionArguments(p.Args)
 			dest := []interface{}{}
 			topic := p.Source.(*Topic)
-			config.Connection.FetchLinksForTopic(&dest, topic)
+			orgId := quad.IRI("organization:tyrell")
+			config.Connection.FetchLinksForTopic(orgId, &dest, topic)
 			return relay.ConnectionFromArray(dest, args), nil
 		},
 	})
@@ -411,7 +444,7 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 	organizationType = NewType(&TypeConfig{
 		Name: "Organization",
 
-		FetchNode: func(resourceId string) (interface{}, error) {
+		FetchNode: func(orgId quad.IRI, resourceId string) (interface{}, error) {
 			return config.Connection.FetchOrganization(resourceId)
 		},
 

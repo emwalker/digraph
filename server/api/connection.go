@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 	"log"
+
+	"github.com/cayleygraph/cayley/quad"
 )
 
 type Credentials struct {
@@ -25,20 +27,20 @@ type SessionStore interface {
 
 type Connection interface {
 	Close() error
-	CreateLink(string, string, string, []interface{}) (*Link, error)
-	CreateTopic(string, string, *string) (*Topic, error)
-	FetchLink(string) (interface{}, error)
-	FetchLinks(*[]interface{}, *Organization) error
-	FetchLinksForTopic(*[]interface{}, *Topic) error
+	CreateLink(quad.IRI, *Link) error
+	CreateTopic(quad.IRI, *Topic) error
+	FetchLink(quad.IRI, string) (interface{}, error)
+	FetchLinks(quad.IRI, *[]interface{}) error
+	FetchLinksForTopic(quad.IRI, *[]interface{}, *Topic) error
 	FetchOrganization(string) (interface{}, error)
 	FetchTitle(string) (string, error)
-	FetchTopic(string) (interface{}, error)
-	FetchTopics(*[]interface{}, *Organization) error
-	FetchTopicsForLink(*[]interface{}, *Link) error
+	FetchTopic(quad.IRI, string) (interface{}, error)
+	FetchTopics(quad.IRI, *[]interface{}) error
+	FetchTopicsForLink(quad.IRI, *[]interface{}, *Link) error
 	FetchUser(string) (interface{}, error)
 	Init() error
-	SelectTopic(string, string) (*Topic, error)
-	SelectedTopic(string) (*Topic, error)
+	SelectTopic(quad.IRI, string, string) (*Topic, error)
+	SelectedTopic(quad.IRI, string) (*Topic, error)
 	Viewer() (interface{}, error)
 }
 

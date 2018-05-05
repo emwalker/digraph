@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 
+	"github.com/cayleygraph/cayley/quad"
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/relay"
 )
@@ -14,8 +15,8 @@ type Type struct {
 	NodeType        *graphql.Object
 }
 
-type ConnectionFetcher func(dest *[]interface{}, org *Organization)
-type NodeFetcher func(resourceId string) (interface{}, error)
+type ConnectionFetcher func(quad.IRI, *[]interface{})
+type NodeFetcher func(quad.IRI, string) (interface{}, error)
 
 type TypeConfig struct {
 	FetchNode       NodeFetcher
@@ -100,7 +101,7 @@ func (config *TypeConfig) nodeField(nodeType graphql.Output) *graphql.Field {
 		},
 
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			return config.FetchNode(p.Args["resourceId"].(string))
+			return config.FetchNode(quad.IRI("organization:tyrell"), p.Args["resourceId"].(string))
 		},
 	}
 }
@@ -114,8 +115,7 @@ func (config *TypeConfig) connectionField(connectionType graphql.Output) *graphq
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			args := relay.NewConnectionArguments(p.Args)
 			dest := []interface{}{}
-			org := p.Source.(*Organization)
-			config.FetchConnection(&dest, org)
+			config.FetchConnection(quad.IRI("organization:tyrell"), &dest)
 			return relay.ConnectionFromArray(dest, args), nil
 		},
 	}

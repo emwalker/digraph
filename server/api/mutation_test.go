@@ -106,6 +106,7 @@ func TestSelectTopic(t *testing.T) {
 	mutation M {
 		first: selectTopic(
 			input: {
+				organizationId: "organization:tyrell",
 				topicId: "topic:science",
 			}
 		) {
@@ -115,6 +116,7 @@ func TestSelectTopic(t *testing.T) {
 		},
 		second: selectTopic(
 			input: {
+				organizationId: "organization:tyrell",
 				topicId: "does-not-exist",
 			}
 		) {

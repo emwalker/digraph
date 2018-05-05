@@ -22,6 +22,10 @@ query TopicPage_query_Query(
   $organizationId: String!,
   $topicId: String!
 ) {
+  viewer {
+    ...TopicPage_viewer
+  }
+
   organization(resourceId: $organizationId) {
     ...TopicPage_organization
 

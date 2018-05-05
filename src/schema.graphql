@@ -121,6 +121,7 @@ type CreateLinkPayload {
 }
 
 input SelectTopicInput {
+  organizationId: String!
   topicId: String!
 }
 

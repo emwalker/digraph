@@ -42,19 +42,18 @@ func testGraphql(test T, p graphql.Params, t *testing.T) {
 	}
 }
 
-var simpleGraph = []quad.Quad{
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:name"), "Tyrell Corporation", ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("rdf:type"), quad.IRI("foaf:Organization"), ""),
+var org = quad.IRI("organization:tyrell")
 
-	quad.Make(quad.IRI("topic:science"), quad.IRI("di:name"), "Science", ""),
-	quad.Make(quad.IRI("topic:science"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("topic:science"), ""),
-	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("di:name"), "Chemistry", ""),
-	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("topic:chemistry"), ""),
-	quad.Make(quad.IRI("topic:biology"), quad.IRI("di:name"), "Biology", ""),
-	quad.Make(quad.IRI("topic:biology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("topic:biology"), ""),
+var simpleGraph = []quad.Quad{
+	quad.Make(org, quad.IRI("di:name"), "Tyrell Corporation", ""),
+	quad.Make(org, quad.IRI("rdf:type"), quad.IRI("foaf:Organization"), ""),
+
+	quad.Make(quad.IRI("topic:science"), quad.IRI("di:name"), "Science", org),
+	quad.Make(quad.IRI("topic:science"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), org),
+	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("di:name"), "Chemistry", org),
+	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), org),
+	quad.Make(quad.IRI("topic:biology"), quad.IRI("di:name"), "Biology", org),
+	quad.Make(quad.IRI("topic:biology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), org),
 	quad.Make(quad.IRI("topic:zoology"), quad.IRI("di:name"), "Zoology", ""),
 	quad.Make(quad.IRI("topic:zoology"), quad.IRI("rdf:type"), quad.IRI("foaf:topic"), ""),
 
@@ -62,21 +61,18 @@ var simpleGraph = []quad.Quad{
 	quad.Make(quad.IRI("user:gnusto"), quad.IRI("di:email"), "gnusto@tyrell.test", ""),
 	quad.Make(quad.IRI("user:gnusto"), quad.IRI("rdf:type"), quad.IRI("foaf:Person"), ""),
 
-	quad.Make(quad.IRI("link:github"), quad.IRI("di:title"), "Github", ""),
-	quad.Make(quad.IRI("link:github"), quad.IRI("di:url"), "https://github.com", ""),
-	quad.Make(quad.IRI("link:github"), quad.IRI("rdf:type"), quad.IRI("di:link"), ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("link:github"), ""),
-	quad.Make(quad.IRI("topic:biology"), quad.IRI("di:includes"), quad.IRI("link:github"), ""),
-	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("di:includes"), quad.IRI("link:github"), ""),
+	quad.Make(quad.IRI("link:github"), quad.IRI("di:title"), "Github", org),
+	quad.Make(quad.IRI("link:github"), quad.IRI("di:url"), "https://github.com", org),
+	quad.Make(quad.IRI("link:github"), quad.IRI("rdf:type"), quad.IRI("di:link"), org),
+	quad.Make(quad.IRI("topic:biology"), quad.IRI("di:includes"), quad.IRI("link:github"), org),
+	quad.Make(quad.IRI("topic:chemistry"), quad.IRI("di:includes"), quad.IRI("link:github"), org),
 
-	quad.Make(quad.IRI("link:wikipedia"), quad.IRI("di:title"), "Wikipedia", ""),
-	quad.Make(quad.IRI("link:wikipedia"), quad.IRI("di:url"), "https://en.wikipedia.com", ""),
-	quad.Make(quad.IRI("link:wikipedia"), quad.IRI("rdf:type"), quad.IRI("di:link"), ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("link:wikipedia"), ""),
-	quad.Make(quad.IRI("link:nytimes"), quad.IRI("di:title"), "New York Times", ""),
-	quad.Make(quad.IRI("link:nytimes"), quad.IRI("di:url"), "https://www.nytimes.com", ""),
-	quad.Make(quad.IRI("link:nytimes"), quad.IRI("rdf:type"), quad.IRI("di:link"), ""),
-	quad.Make(quad.IRI("organization:tyrell"), quad.IRI("di:owns"), quad.IRI("link:nytimes"), ""),
+	quad.Make(quad.IRI("link:wikipedia"), quad.IRI("di:title"), "Wikipedia", org),
+	quad.Make(quad.IRI("link:wikipedia"), quad.IRI("di:url"), "https://en.wikipedia.com", org),
+	quad.Make(quad.IRI("link:wikipedia"), quad.IRI("rdf:type"), quad.IRI("di:link"), org),
+	quad.Make(quad.IRI("link:nytimes"), quad.IRI("di:title"), "New York Times", org),
+	quad.Make(quad.IRI("link:nytimes"), quad.IRI("di:url"), "https://www.nytimes.com", org),
+	quad.Make(quad.IRI("link:nytimes"), quad.IRI("rdf:type"), quad.IRI("di:link"), org),
 }
 
 func (conn *CayleyConnection) makeTestStore(data []quad.Quad) {

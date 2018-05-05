@@ -62,7 +62,10 @@ class AddLink extends Component<Props, State> {
     this.setState({ selectedOption }, () => {
       selectTopicMutation(
         this.props.relay.environment,
-        { topicId: selectedOption ? selectedOption.value : '' },
+        {
+          organizationId: this.props.organization.id,
+          topicId: selectedOption ? selectedOption.value : '',
+        },
       )
     })
   }

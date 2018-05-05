@@ -57,3 +57,10 @@ func maybeString(str interface{}) *string {
 	}
 	return nil
 }
+
+func stringOr(defaultValue string, maybeString interface{}) string {
+	if value, ok := maybeString.(string); ok {
+		return value
+	}
+	return defaultValue
+}
