@@ -1,8 +1,13 @@
 MIT License
 
 Copyright (c) 2015-2016 Oleg Lebedev
+
 Copyright (c) 2016 4Catalyzer
+
 Copyright (c) 2017 Alexandru Topliceanu
+
+Copyright (c) 2018 Github
+
 Copyright (c) 2018 Eric Walker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
