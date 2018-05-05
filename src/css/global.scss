@@ -1,18 +1,5 @@
-.container {
-  padding-top: 1em;
-}
+@import 'primer/index.scss';
 
-.form-container {
-  .topic-name {
-    display: inline-block;
-    width: 75%;
-    margin-right: 1em;
-  }
-}
-
-.listview {
-  .badge {
-    float: right;
-    margin-left: 0.5rem;
-  }
+.Label {
+  margin-left: 0.5rem;
 }

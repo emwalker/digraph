@@ -1,15 +1,14 @@
 // @flow
 import React, { Component } from 'react'
-import { FormGroup, Input } from 'reactstrap'
 import { graphql, createFragmentContainer } from 'react-relay'
 import Select from 'react-select'
-import { pathOr } from 'ramda'
+import { path } from 'ramda'
 
 import createLinkMutation from '../../../mutations/createLinkMutation'
 import selectTopicMutation from '../../../mutations/selectTopicMutation'
 import { liftNodes } from '../../../utils'
 
-const selectedTopic = pathOr('', ['selectedTopic'])
+const selectedTopic = path(['selectedTopic', 'value'])
 
 type Props = {
   organization: {
@@ -32,7 +31,7 @@ type Props = {
 }
 
 type State = {
-  selectedOption: string,
+  selectedValue: string,
   url: string,
 }
 
@@ -41,7 +40,7 @@ class AddLink extends Component<Props, State> {
     super(props)
     this.options = liftNodes(props.organization.availableTopics)
     this.state = {
-      selectedOption: selectedTopic(props.viewer),
+      selectedValue: selectedTopic(props.viewer),
       url: '',
     }
   }
@@ -58,13 +57,14 @@ class AddLink extends Component<Props, State> {
       })
   }
 
-  onSelect = (selectedOption) => {
-    this.setState({ selectedOption }, () => {
+  onSelect = (option) => {
+    const selectedValue = option ? option.value : null
+    this.setState({ selectedValue }, () => {
       selectTopicMutation(
         this.props.relay.environment,
         {
           organizationId: this.props.organization.id,
-          topicId: selectedOption ? selectedOption.value : '',
+          topicId: selectedValue || '',
         },
       )
     })
@@ -75,8 +75,8 @@ class AddLink extends Component<Props, State> {
       id: orgId,
       resourceId: organizationId,
     } = this.props.organization
-    const topic = this.state.selectedOption
-    const topicIds = topic ? [topic.value] : []
+    const value = this.state.selectedValue
+    const topicIds = value ? [value] : []
 
     createLinkMutation(
       this.props.relay.environment,
@@ -92,26 +92,26 @@ class AddLink extends Component<Props, State> {
   options: Object[]
 
   render = () => (
-    <div className="form-container">
-      <FormGroup>
+    <div>
+      <dl className="form-group">
         <Select
           id="link-topic-id"
           name="link-topic"
           onChange={this.onSelect}
           options={this.options}
           placeholder="Select a topic"
-          value={this.state.selectedOption}
+          value={this.state.selectedValue}
         />
-      </FormGroup>
-      <FormGroup>
-        <Input
-          className="link-url test-link-url"
+      </dl>
+      <dl className="form-group">
+        <input
+          className="form-control test-link-url"
           onChange={this.onInputChange}
           onKeyPress={this.onKeyPress}
           placeholder="Link URL"
           value={this.state.url}
         />
-      </FormGroup>
+      </dl>
     </div>
   )
 }

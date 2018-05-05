@@ -1,6 +1,7 @@
 // @flow
 import React from 'react'
 import type { Node } from 'react'
+import { Link } from 'found'
 
 type Props = {
   children?: Node,
@@ -8,17 +9,31 @@ type Props = {
 
 const Layout = ({ children }: Props) => (
   <div>
-    <nav className="navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar">
-      <a className="navbar-brand mb-0 h1" href="/">Digraffe</a>
-      <ul className="navbar-nav ml-auto">
-        <li className="nav-item">
-          <a className="nav-link test-topics-page" href="/topics">Topics</a>
-        </li>
-        <li className="nav-item">
-          <a className="nav-link test-links-page" href="/links">Links</a>
-        </li>
-      </ul>
-    </nav>
+    <header className="masthead">
+      <div className="container">
+        <a className="masthead-logo" href="/">
+          Digraffe
+        </a>
+        <nav className="masthead-nav">
+          <Link
+            className="test-topics-page"
+            activeClassName="active"
+            href="/topics"
+            to="/topics"
+          >
+            Topics
+          </Link>
+          <Link
+            className="test-links-page"
+            activeClassName="active"
+            href="/links"
+            to="/links"
+          >
+            Links
+          </Link>
+        </nav>
+      </div>
+    </header>
     <div className="container">
       { children }
     </div>

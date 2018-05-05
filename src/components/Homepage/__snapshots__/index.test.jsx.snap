@@ -24,10 +24,16 @@ ShallowWrapper {
     "nodeType": "host",
     "props": Object {
       "children": Array [
-        <h1>
-          Hello 
-          Gnusto
-        </h1>,
+        <div
+          className="Subhead Subhead--spacious"
+        >
+          <div
+            className="Subhead-heading"
+          >
+            Hello 
+            Gnusto
+          </div>
+        </div>,
         <p
           className="lead"
         >
@@ -42,17 +48,34 @@ ShallowWrapper {
         "key": undefined,
         "nodeType": "host",
         "props": Object {
-          "children": Array [
+          "children": <div
+            className="Subhead-heading"
+          >
+            Hello 
+            Gnusto
+          </div>,
+          "className": "Subhead Subhead--spacious",
+        },
+        "ref": null,
+        "rendered": Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": Array [
+              "Hello ",
+              "Gnusto",
+            ],
+            "className": "Subhead-heading",
+          },
+          "ref": null,
+          "rendered": Array [
             "Hello ",
             "Gnusto",
           ],
+          "type": "div",
         },
-        "ref": null,
-        "rendered": Array [
-          "Hello ",
-          "Gnusto",
-        ],
-        "type": "h1",
+        "type": "div",
       },
       Object {
         "instance": null,
@@ -76,10 +99,16 @@ ShallowWrapper {
       "nodeType": "host",
       "props": Object {
         "children": Array [
-          <h1>
-            Hello 
-            Gnusto
-          </h1>,
+          <div
+            className="Subhead Subhead--spacious"
+          >
+            <div
+              className="Subhead-heading"
+            >
+              Hello 
+              Gnusto
+            </div>
+          </div>,
           <p
             className="lead"
           >
@@ -94,17 +123,34 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "host",
           "props": Object {
-            "children": Array [
+            "children": <div
+              className="Subhead-heading"
+            >
+              Hello 
+              Gnusto
+            </div>,
+            "className": "Subhead Subhead--spacious",
+          },
+          "ref": null,
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": Array [
+                "Hello ",
+                "Gnusto",
+              ],
+              "className": "Subhead-heading",
+            },
+            "ref": null,
+            "rendered": Array [
               "Hello ",
               "Gnusto",
             ],
+            "type": "div",
           },
-          "ref": null,
-          "rendered": Array [
-            "Hello ",
-            "Gnusto",
-          ],
-          "type": "h1",
+          "type": "div",
         },
         Object {
           "instance": null,

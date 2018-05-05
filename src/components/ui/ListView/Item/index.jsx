@@ -1,7 +1,6 @@
 // @flow
 import React from 'react'
 import { pathOr } from 'ramda'
-import { Badge, ListGroupItem } from 'reactstrap'
 
 const edges = pathOr([], ['edges'])
 
@@ -14,12 +13,11 @@ type BadgeProps = {
 
 const renderTopic = ({ node: { name, resourcePath } }: BadgeProps) => (
   <a href={resourcePath} key={resourcePath}>
-    <Badge
-      color="success"
-      pill
+    <span
+      className="Label swatch-green"
     >
       {name}
-    </Badge>
+    </span>
   </a>
 )
 
@@ -30,12 +28,13 @@ type Props = {
 }
 
 export default ({ display, resourcePath, topics }: Props) => (
-  <ListGroupItem
+  <li
+    className="Box-row"
     key={resourcePath}
   >
     <a href={resourcePath}>
       { display }
     </a>
     { edges(topics).map(renderTopic) }
-  </ListGroupItem>
+  </li>
 )

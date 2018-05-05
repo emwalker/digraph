@@ -22,40 +22,40 @@ ShallowWrapper {
     "nodeType": "host",
     "props": Object {
       "children": Array [
-        <nav
-          className="navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar"
+        <header
+          className="masthead"
         >
-          <a
-            className="navbar-brand mb-0 h1"
-            href="/"
+          <div
+            className="container"
           >
-            Digraffe
-          </a>
-          <ul
-            className="navbar-nav ml-auto"
-          >
-            <li
-              className="nav-item"
+            <a
+              className="masthead-logo"
+              href="/"
             >
-              <a
-                className="nav-link test-topics-page"
+              Digraffe
+            </a>
+            <nav
+              className="masthead-nav"
+            >
+              <Connect(BaseLink)
+                activeClassName="active"
+                className="test-topics-page"
                 href="/topics"
+                to="/topics"
               >
                 Topics
-              </a>
-            </li>
-            <li
-              className="nav-item"
-            >
-              <a
-                className="nav-link test-links-page"
+              </Connect(BaseLink)>
+              <Connect(BaseLink)
+                activeClassName="active"
+                className="test-links-page"
                 href="/links"
+                to="/links"
               >
                 Links
-              </a>
-            </li>
-          </ul>
-        </nav>,
+              </Connect(BaseLink)>
+            </nav>
+          </div>
+        </header>,
         <div
           className="container"
         >
@@ -72,149 +72,153 @@ ShallowWrapper {
         "key": undefined,
         "nodeType": "host",
         "props": Object {
-          "children": Array [
+          "children": <div
+            className="container"
+          >
             <a
-              className="navbar-brand mb-0 h1"
+              className="masthead-logo"
               href="/"
             >
               Digraffe
-            </a>,
-            <ul
-              className="navbar-nav ml-auto"
+            </a>
+            <nav
+              className="masthead-nav"
             >
-              <li
-                className="nav-item"
+              <Connect(BaseLink)
+                activeClassName="active"
+                className="test-topics-page"
+                href="/topics"
+                to="/topics"
               >
-                <a
-                  className="nav-link test-topics-page"
-                  href="/topics"
-                >
-                  Topics
-                </a>
-              </li>
-              <li
-                className="nav-item"
+                Topics
+              </Connect(BaseLink)>
+              <Connect(BaseLink)
+                activeClassName="active"
+                className="test-links-page"
+                href="/links"
+                to="/links"
               >
-                <a
-                  className="nav-link test-links-page"
-                  href="/links"
-                >
-                  Links
-                </a>
-              </li>
-            </ul>,
-          ],
-          "className": "navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar",
+                Links
+              </Connect(BaseLink)>
+            </nav>
+          </div>,
+          "className": "masthead",
         },
         "ref": null,
-        "rendered": Array [
-          Object {
-            "instance": null,
-            "key": undefined,
-            "nodeType": "host",
-            "props": Object {
-              "children": "Digraffe",
-              "className": "navbar-brand mb-0 h1",
-              "href": "/",
-            },
-            "ref": null,
-            "rendered": "Digraffe",
-            "type": "a",
-          },
-          Object {
-            "instance": null,
-            "key": undefined,
-            "nodeType": "host",
-            "props": Object {
-              "children": Array [
-                <li
-                  className="nav-item"
+        "rendered": Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": Array [
+              <a
+                className="masthead-logo"
+                href="/"
+              >
+                Digraffe
+              </a>,
+              <nav
+                className="masthead-nav"
+              >
+                <Connect(BaseLink)
+                  activeClassName="active"
+                  className="test-topics-page"
+                  href="/topics"
+                  to="/topics"
                 >
-                  <a
-                    className="nav-link test-topics-page"
+                  Topics
+                </Connect(BaseLink)>
+                <Connect(BaseLink)
+                  activeClassName="active"
+                  className="test-links-page"
+                  href="/links"
+                  to="/links"
+                >
+                  Links
+                </Connect(BaseLink)>
+              </nav>,
+            ],
+            "className": "container",
+          },
+          "ref": null,
+          "rendered": Array [
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": "Digraffe",
+                "className": "masthead-logo",
+                "href": "/",
+              },
+              "ref": null,
+              "rendered": "Digraffe",
+              "type": "a",
+            },
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": Array [
+                  <Connect(BaseLink)
+                    activeClassName="active"
+                    className="test-topics-page"
                     href="/topics"
+                    to="/topics"
                   >
                     Topics
-                  </a>
-                </li>,
-                <li
-                  className="nav-item"
-                >
-                  <a
-                    className="nav-link test-links-page"
+                  </Connect(BaseLink)>,
+                  <Connect(BaseLink)
+                    activeClassName="active"
+                    className="test-links-page"
                     href="/links"
+                    to="/links"
                   >
                     Links
-                  </a>
-                </li>,
-              ],
-              "className": "navbar-nav ml-auto",
-            },
-            "ref": null,
-            "rendered": Array [
-              Object {
-                "instance": null,
-                "key": undefined,
-                "nodeType": "host",
-                "props": Object {
-                  "children": <a
-                    className="nav-link test-topics-page"
-                    href="/topics"
-                  >
-                    Topics
-                  </a>,
-                  "className": "nav-item",
-                },
-                "ref": null,
-                "rendered": Object {
+                  </Connect(BaseLink)>,
+                ],
+                "className": "masthead-nav",
+              },
+              "ref": null,
+              "rendered": Array [
+                Object {
                   "instance": null,
                   "key": undefined,
-                  "nodeType": "host",
+                  "nodeType": "class",
                   "props": Object {
+                    "activeClassName": "active",
                     "children": "Topics",
-                    "className": "nav-link test-topics-page",
+                    "className": "test-topics-page",
                     "href": "/topics",
+                    "to": "/topics",
                   },
                   "ref": null,
                   "rendered": "Topics",
-                  "type": "a",
+                  "type": [Function],
                 },
-                "type": "li",
-              },
-              Object {
-                "instance": null,
-                "key": undefined,
-                "nodeType": "host",
-                "props": Object {
-                  "children": <a
-                    className="nav-link test-links-page"
-                    href="/links"
-                  >
-                    Links
-                  </a>,
-                  "className": "nav-item",
-                },
-                "ref": null,
-                "rendered": Object {
+                Object {
                   "instance": null,
                   "key": undefined,
-                  "nodeType": "host",
+                  "nodeType": "class",
                   "props": Object {
+                    "activeClassName": "active",
                     "children": "Links",
-                    "className": "nav-link test-links-page",
+                    "className": "test-links-page",
                     "href": "/links",
+                    "to": "/links",
                   },
                   "ref": null,
                   "rendered": "Links",
-                  "type": "a",
+                  "type": [Function],
                 },
-                "type": "li",
-              },
-            ],
-            "type": "ul",
-          },
-        ],
-        "type": "nav",
+              ],
+              "type": "nav",
+            },
+          ],
+          "type": "div",
+        },
+        "type": "header",
       },
       Object {
         "instance": null,
@@ -250,40 +254,40 @@ ShallowWrapper {
       "nodeType": "host",
       "props": Object {
         "children": Array [
-          <nav
-            className="navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar"
+          <header
+            className="masthead"
           >
-            <a
-              className="navbar-brand mb-0 h1"
-              href="/"
+            <div
+              className="container"
             >
-              Digraffe
-            </a>
-            <ul
-              className="navbar-nav ml-auto"
-            >
-              <li
-                className="nav-item"
+              <a
+                className="masthead-logo"
+                href="/"
               >
-                <a
-                  className="nav-link test-topics-page"
+                Digraffe
+              </a>
+              <nav
+                className="masthead-nav"
+              >
+                <Connect(BaseLink)
+                  activeClassName="active"
+                  className="test-topics-page"
                   href="/topics"
+                  to="/topics"
                 >
                   Topics
-                </a>
-              </li>
-              <li
-                className="nav-item"
-              >
-                <a
-                  className="nav-link test-links-page"
+                </Connect(BaseLink)>
+                <Connect(BaseLink)
+                  activeClassName="active"
+                  className="test-links-page"
                   href="/links"
+                  to="/links"
                 >
                   Links
-                </a>
-              </li>
-            </ul>
-          </nav>,
+                </Connect(BaseLink)>
+              </nav>
+            </div>
+          </header>,
           <div
             className="container"
           >
@@ -300,149 +304,153 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "host",
           "props": Object {
-            "children": Array [
+            "children": <div
+              className="container"
+            >
               <a
-                className="navbar-brand mb-0 h1"
+                className="masthead-logo"
                 href="/"
               >
                 Digraffe
-              </a>,
-              <ul
-                className="navbar-nav ml-auto"
+              </a>
+              <nav
+                className="masthead-nav"
               >
-                <li
-                  className="nav-item"
+                <Connect(BaseLink)
+                  activeClassName="active"
+                  className="test-topics-page"
+                  href="/topics"
+                  to="/topics"
                 >
-                  <a
-                    className="nav-link test-topics-page"
-                    href="/topics"
-                  >
-                    Topics
-                  </a>
-                </li>
-                <li
-                  className="nav-item"
+                  Topics
+                </Connect(BaseLink)>
+                <Connect(BaseLink)
+                  activeClassName="active"
+                  className="test-links-page"
+                  href="/links"
+                  to="/links"
                 >
-                  <a
-                    className="nav-link test-links-page"
-                    href="/links"
-                  >
-                    Links
-                  </a>
-                </li>
-              </ul>,
-            ],
-            "className": "navbar navbar-expand-lg navbar-light bg-light flex-column flex-md-row bd-navbar",
+                  Links
+                </Connect(BaseLink)>
+              </nav>
+            </div>,
+            "className": "masthead",
           },
           "ref": null,
-          "rendered": Array [
-            Object {
-              "instance": null,
-              "key": undefined,
-              "nodeType": "host",
-              "props": Object {
-                "children": "Digraffe",
-                "className": "navbar-brand mb-0 h1",
-                "href": "/",
-              },
-              "ref": null,
-              "rendered": "Digraffe",
-              "type": "a",
-            },
-            Object {
-              "instance": null,
-              "key": undefined,
-              "nodeType": "host",
-              "props": Object {
-                "children": Array [
-                  <li
-                    className="nav-item"
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": Array [
+                <a
+                  className="masthead-logo"
+                  href="/"
+                >
+                  Digraffe
+                </a>,
+                <nav
+                  className="masthead-nav"
+                >
+                  <Connect(BaseLink)
+                    activeClassName="active"
+                    className="test-topics-page"
+                    href="/topics"
+                    to="/topics"
                   >
-                    <a
-                      className="nav-link test-topics-page"
+                    Topics
+                  </Connect(BaseLink)>
+                  <Connect(BaseLink)
+                    activeClassName="active"
+                    className="test-links-page"
+                    href="/links"
+                    to="/links"
+                  >
+                    Links
+                  </Connect(BaseLink)>
+                </nav>,
+              ],
+              "className": "container",
+            },
+            "ref": null,
+            "rendered": Array [
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": "Digraffe",
+                  "className": "masthead-logo",
+                  "href": "/",
+                },
+                "ref": null,
+                "rendered": "Digraffe",
+                "type": "a",
+              },
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": Array [
+                    <Connect(BaseLink)
+                      activeClassName="active"
+                      className="test-topics-page"
                       href="/topics"
+                      to="/topics"
                     >
                       Topics
-                    </a>
-                  </li>,
-                  <li
-                    className="nav-item"
-                  >
-                    <a
-                      className="nav-link test-links-page"
+                    </Connect(BaseLink)>,
+                    <Connect(BaseLink)
+                      activeClassName="active"
+                      className="test-links-page"
                       href="/links"
+                      to="/links"
                     >
                       Links
-                    </a>
-                  </li>,
-                ],
-                "className": "navbar-nav ml-auto",
-              },
-              "ref": null,
-              "rendered": Array [
-                Object {
-                  "instance": null,
-                  "key": undefined,
-                  "nodeType": "host",
-                  "props": Object {
-                    "children": <a
-                      className="nav-link test-topics-page"
-                      href="/topics"
-                    >
-                      Topics
-                    </a>,
-                    "className": "nav-item",
-                  },
-                  "ref": null,
-                  "rendered": Object {
+                    </Connect(BaseLink)>,
+                  ],
+                  "className": "masthead-nav",
+                },
+                "ref": null,
+                "rendered": Array [
+                  Object {
                     "instance": null,
                     "key": undefined,
-                    "nodeType": "host",
+                    "nodeType": "class",
                     "props": Object {
+                      "activeClassName": "active",
                       "children": "Topics",
-                      "className": "nav-link test-topics-page",
+                      "className": "test-topics-page",
                       "href": "/topics",
+                      "to": "/topics",
                     },
                     "ref": null,
                     "rendered": "Topics",
-                    "type": "a",
+                    "type": [Function],
                   },
-                  "type": "li",
-                },
-                Object {
-                  "instance": null,
-                  "key": undefined,
-                  "nodeType": "host",
-                  "props": Object {
-                    "children": <a
-                      className="nav-link test-links-page"
-                      href="/links"
-                    >
-                      Links
-                    </a>,
-                    "className": "nav-item",
-                  },
-                  "ref": null,
-                  "rendered": Object {
+                  Object {
                     "instance": null,
                     "key": undefined,
-                    "nodeType": "host",
+                    "nodeType": "class",
                     "props": Object {
+                      "activeClassName": "active",
                       "children": "Links",
-                      "className": "nav-link test-links-page",
+                      "className": "test-links-page",
                       "href": "/links",
+                      "to": "/links",
                     },
                     "ref": null,
                     "rendered": "Links",
-                    "type": "a",
+                    "type": [Function],
                   },
-                  "type": "li",
-                },
-              ],
-              "type": "ul",
-            },
-          ],
-          "type": "nav",
+                ],
+                "type": "nav",
+              },
+            ],
+            "type": "div",
+          },
+          "type": "header",
         },
         Object {
           "instance": null,

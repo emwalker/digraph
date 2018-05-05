@@ -10,7 +10,9 @@ type Props = {
 
 const Homepage = ({ viewer: { name } }: Props) => (
   <div>
-    <h1>Hello {name}</h1>
+    <div className="Subhead Subhead--spacious">
+      <div className="Subhead-heading">Hello {name}</div>
+    </div>
     <p className="lead">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent
       vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales

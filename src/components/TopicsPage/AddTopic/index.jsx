@@ -1,6 +1,5 @@
 // @flow
 import React, { Component } from 'react'
-import { Button, FormGroup, Input } from 'reactstrap'
 
 import createTopicMutation from '../../../mutations/createTopicMutation'
 
@@ -44,16 +43,24 @@ class AddTopic extends Component<Props, State> {
   }
 
   render = () => (
-    <div className="form-container">
-      <FormGroup>
-        <Input
-          className="topic-name test-topic-name"
-          placeholder="Topic name"
-          value={this.state.name}
-          onChange={this.updateName}
-        />
-        <Button size="sm" onClick={this.onSubmit}>Add</Button>
-      </FormGroup>
+    <div>
+      <dl className="form-group">
+        <dd>
+          <input
+            className="form-control test-topic-name"
+            placeholder="Topic"
+            value={this.state.name}
+            onChange={this.updateName}
+          />
+        </dd>
+        <button
+          size="sm"
+          className="d-inline-block btn btn-secondary mt-2"
+          onClick={this.onSubmit}
+        >
+          Add
+        </button>
+      </dl>
     </div>
   )
 }

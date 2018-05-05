@@ -23,86 +23,98 @@ ShallowWrapper {
     "key": undefined,
     "nodeType": "host",
     "props": Object {
-      "children": <FormGroup
-        tag="div"
+      "children": <dl
+        className="form-group"
       >
-        <Input
-          className="topic-name test-topic-name"
-          onChange={[Function]}
-          placeholder="Topic name"
-          type="text"
-          value=""
-        />
-        <Button
-          color="secondary"
+        <dd>
+          <input
+            className="form-control test-topic-name"
+            onChange={[Function]}
+            placeholder="Topic"
+            value=""
+          />
+        </dd>
+        <button
+          className="d-inline-block btn btn-secondary mt-2"
           onClick={[Function]}
           size="sm"
-          tag="button"
         >
           Add
-        </Button>
-      </FormGroup>,
-      "className": "form-container",
+        </button>
+      </dl>,
     },
     "ref": null,
     "rendered": Object {
       "instance": null,
       "key": undefined,
-      "nodeType": "function",
+      "nodeType": "host",
       "props": Object {
         "children": Array [
-          <Input
-            className="topic-name test-topic-name"
-            onChange={[Function]}
-            placeholder="Topic name"
-            type="text"
-            value=""
-          />,
-          <Button
-            color="secondary"
+          <dd>
+            <input
+              className="form-control test-topic-name"
+              onChange={[Function]}
+              placeholder="Topic"
+              value=""
+            />
+          </dd>,
+          <button
+            className="d-inline-block btn btn-secondary mt-2"
             onClick={[Function]}
             size="sm"
-            tag="button"
           >
             Add
-          </Button>,
+          </button>,
         ],
-        "tag": "div",
+        "className": "form-group",
       },
       "ref": null,
       "rendered": Array [
         Object {
           "instance": null,
           "key": undefined,
-          "nodeType": "class",
+          "nodeType": "host",
           "props": Object {
-            "className": "topic-name test-topic-name",
-            "onChange": [Function],
-            "placeholder": "Topic name",
-            "type": "text",
-            "value": "",
+            "children": <input
+              className="form-control test-topic-name"
+              onChange={[Function]}
+              placeholder="Topic"
+              value=""
+            />,
           },
           "ref": null,
-          "rendered": null,
-          "type": [Function],
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "className": "form-control test-topic-name",
+              "onChange": [Function],
+              "placeholder": "Topic",
+              "value": "",
+            },
+            "ref": null,
+            "rendered": null,
+            "type": "input",
+          },
+          "type": "dd",
         },
         Object {
           "instance": null,
           "key": undefined,
-          "nodeType": "class",
+          "nodeType": "host",
           "props": Object {
             "children": "Add",
-            "color": "secondary",
+            "className": "d-inline-block btn btn-secondary mt-2",
             "onClick": [Function],
             "size": "sm",
-            "tag": "button",
           },
           "ref": null,
           "rendered": "Add",
-          "type": [Function],
+          "type": "button",
         },
       ],
-      "type": [Function],
+      "type": "dl",
     },
     "type": "div",
   },
@@ -112,86 +124,98 @@ ShallowWrapper {
       "key": undefined,
       "nodeType": "host",
       "props": Object {
-        "children": <FormGroup
-          tag="div"
+        "children": <dl
+          className="form-group"
         >
-          <Input
-            className="topic-name test-topic-name"
-            onChange={[Function]}
-            placeholder="Topic name"
-            type="text"
-            value=""
-          />
-          <Button
-            color="secondary"
+          <dd>
+            <input
+              className="form-control test-topic-name"
+              onChange={[Function]}
+              placeholder="Topic"
+              value=""
+            />
+          </dd>
+          <button
+            className="d-inline-block btn btn-secondary mt-2"
             onClick={[Function]}
             size="sm"
-            tag="button"
           >
             Add
-          </Button>
-        </FormGroup>,
-        "className": "form-container",
+          </button>
+        </dl>,
       },
       "ref": null,
       "rendered": Object {
         "instance": null,
         "key": undefined,
-        "nodeType": "function",
+        "nodeType": "host",
         "props": Object {
           "children": Array [
-            <Input
-              className="topic-name test-topic-name"
-              onChange={[Function]}
-              placeholder="Topic name"
-              type="text"
-              value=""
-            />,
-            <Button
-              color="secondary"
+            <dd>
+              <input
+                className="form-control test-topic-name"
+                onChange={[Function]}
+                placeholder="Topic"
+                value=""
+              />
+            </dd>,
+            <button
+              className="d-inline-block btn btn-secondary mt-2"
               onClick={[Function]}
               size="sm"
-              tag="button"
             >
               Add
-            </Button>,
+            </button>,
           ],
-          "tag": "div",
+          "className": "form-group",
         },
         "ref": null,
         "rendered": Array [
           Object {
             "instance": null,
             "key": undefined,
-            "nodeType": "class",
+            "nodeType": "host",
             "props": Object {
-              "className": "topic-name test-topic-name",
-              "onChange": [Function],
-              "placeholder": "Topic name",
-              "type": "text",
-              "value": "",
+              "children": <input
+                className="form-control test-topic-name"
+                onChange={[Function]}
+                placeholder="Topic"
+                value=""
+              />,
             },
             "ref": null,
-            "rendered": null,
-            "type": [Function],
+            "rendered": Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "className": "form-control test-topic-name",
+                "onChange": [Function],
+                "placeholder": "Topic",
+                "value": "",
+              },
+              "ref": null,
+              "rendered": null,
+              "type": "input",
+            },
+            "type": "dd",
           },
           Object {
             "instance": null,
             "key": undefined,
-            "nodeType": "class",
+            "nodeType": "host",
             "props": Object {
               "children": "Add",
-              "color": "secondary",
+              "className": "d-inline-block btn btn-secondary mt-2",
               "onClick": [Function],
               "size": "sm",
-              "tag": "button",
             },
             "ref": null,
             "rendered": "Add",
-            "type": [Function],
+            "type": "button",
           },
         ],
-        "type": [Function],
+        "type": "dl",
       },
       "type": "div",
     },
