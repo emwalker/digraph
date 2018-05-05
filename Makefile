@@ -60,10 +60,10 @@ format:
 check: format test
 
 load:
-	@cayley load --config=./cayley.cfg.json --load=./data/digraffe.nq
+	@cayley load --config=./cayley.cfg.json --load=./data/personal.nq
 
 dump:
-	@cayley dump --config=./cayley.cfg.json --dump=./data/digraffe.nq
+	@cayley dump --config=./cayley.cfg.json --dump=./data/personal.nq
 
 repl:
 	@cayley repl --config=./cayley.cfg.json
