@@ -2,30 +2,25 @@
 import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import AddTopic from './AddTopic'
-import ListView from '../ui/ListView'
+import ItemList from '../ui/ItemList'
 import { liftNodes } from '../../utils'
 
 type Props = {
   organization: {
     topics: Object,
   },
-  relay: {
-    environment: Object,
-  }
 }
 
-const TopicsPage = ({ organization, relay }: Props) => (
-  <ListView
-    title="Topics"
-    items={liftNodes(organization.topics)}
-  >
-    <AddTopic
-      className="test-add-topic"
-      organization={organization}
-      relay={relay}
+const TopicsPage = ({ organization: { topics } }: Props) => (
+  <div>
+    <div className="Subhead">
+      <div className="Subhead-heading">Topics</div>
+    </div>
+    <ItemList
+      title="Topics"
+      items={liftNodes(topics)}
     />
-  </ListView>
+  </div>
 )
 
 export const query = graphql`

@@ -42,67 +42,165 @@ ShallowWrapper {
   Symbol(enzyme.__node__): Object {
     "instance": null,
     "key": undefined,
-    "nodeType": "function",
+    "nodeType": "host",
     "props": Object {
-      "links": undefined,
-      "organization": Object {
-        "resourceId": "organization:tyrell",
-        "topics": Object {
-          "edges": Array [
+      "children": Array [
+        <div
+          className="Subhead"
+        >
+          <div
+            className="Subhead-heading"
+          >
+            Links
+          </div>
+        </div>,
+        <Unknown
+          items={Array []}
+          relay={
             Object {
-              "node": Object {
-                "id": "1234",
-                "name": "Frotz",
-                "resourceId": "/topics/1234",
-              },
-            },
-          ],
-        },
-      },
-      "relay": Object {
-        "environment": Object {},
-      },
-      "title": "Links",
-      "viewer": Object {
-        "name": "Rezrov",
-      },
+              "environment": Object {},
+            }
+          }
+          title="Links"
+          viewer={
+            Object {
+              "name": "Rezrov",
+            }
+          }
+        />,
+      ],
     },
     "ref": null,
-    "rendered": null,
-    "type": [Function],
+    "rendered": Array [
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "host",
+        "props": Object {
+          "children": <div
+            className="Subhead-heading"
+          >
+            Links
+          </div>,
+          "className": "Subhead",
+        },
+        "ref": null,
+        "rendered": Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": "Links",
+            "className": "Subhead-heading",
+          },
+          "ref": null,
+          "rendered": "Links",
+          "type": "div",
+        },
+        "type": "div",
+      },
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "function",
+        "props": Object {
+          "items": Array [],
+          "relay": Object {
+            "environment": Object {},
+          },
+          "title": "Links",
+          "viewer": Object {
+            "name": "Rezrov",
+          },
+        },
+        "ref": null,
+        "rendered": null,
+        "type": [Function],
+      },
+    ],
+    "type": "div",
   },
   Symbol(enzyme.__nodes__): Array [
     Object {
       "instance": null,
       "key": undefined,
-      "nodeType": "function",
+      "nodeType": "host",
       "props": Object {
-        "links": undefined,
-        "organization": Object {
-          "resourceId": "organization:tyrell",
-          "topics": Object {
-            "edges": Array [
+        "children": Array [
+          <div
+            className="Subhead"
+          >
+            <div
+              className="Subhead-heading"
+            >
+              Links
+            </div>
+          </div>,
+          <Unknown
+            items={Array []}
+            relay={
               Object {
-                "node": Object {
-                  "id": "1234",
-                  "name": "Frotz",
-                  "resourceId": "/topics/1234",
-                },
-              },
-            ],
-          },
-        },
-        "relay": Object {
-          "environment": Object {},
-        },
-        "title": "Links",
-        "viewer": Object {
-          "name": "Rezrov",
-        },
+                "environment": Object {},
+              }
+            }
+            title="Links"
+            viewer={
+              Object {
+                "name": "Rezrov",
+              }
+            }
+          />,
+        ],
       },
       "ref": null,
-      "rendered": null,
-      "type": [Function],
+      "rendered": Array [
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": <div
+              className="Subhead-heading"
+            >
+              Links
+            </div>,
+            "className": "Subhead",
+          },
+          "ref": null,
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": "Links",
+              "className": "Subhead-heading",
+            },
+            "ref": null,
+            "rendered": "Links",
+            "type": "div",
+          },
+          "type": "div",
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "function",
+          "props": Object {
+            "items": Array [],
+            "relay": Object {
+              "environment": Object {},
+            },
+            "title": "Links",
+            "viewer": Object {
+              "name": "Rezrov",
+            },
+          },
+          "ref": null,
+          "rendered": null,
+          "type": [Function],
+        },
+      ],
+      "type": "div",
     },
   ],
   Symbol(enzyme.__options__): Object {

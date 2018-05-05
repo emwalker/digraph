@@ -1,45 +1,12 @@
 // @flow
 import React from 'react'
 import type { Node } from 'react'
-import { isEmpty } from 'ramda'
 
-import Item from './Item'
-import BlankslateUI from '../Blankslate'
-
-const Blankslate = () => (
-  <BlankslateUI>
-    <p>There are no items in this list.</p>
-  </BlankslateUI>
-)
-
-type ItemType = {
-  id: string,
-  display: string,
-  resourcePath: string,
-}
-
-type ItemListProps = {
-  items: Array<ItemType>,
-}
-
-const ItemList = ({ items }: ItemListProps) => (
-  <div className="Box">
-    <ul>
-      { items.map(({ resourcePath, ...props }) => (
-        <Item
-          key={resourcePath}
-          resourcePath={resourcePath}
-          {...props}
-        />
-      ))
-      }
-    </ul>
-  </div>
-)
+import ItemList from '../ItemList'
 
 type Props = {
   children: Node,
-  items: Array<ItemType>,
+  items: Object[],
   title: string,
 }
 
@@ -52,10 +19,10 @@ export default ({ children, items, title }: Props) => (
       { children }
     </div>
     <div className="two-thirds column pr-0">
-      { isEmpty(items)
-        ? <Blankslate />
-        : <ItemList items={items} />
-      }
+      <ItemList
+        items={items}
+        placeholder="There are no items in this list."
+      />
     </div>
   </div>
 )

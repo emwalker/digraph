@@ -23,6 +23,12 @@ type User {
 }
 
 type Topic implements ResourceIdentifiable & Namespacable {
+  childTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
   description: String
   id: ID
   links(

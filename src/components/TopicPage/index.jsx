@@ -12,11 +12,14 @@ type Props = {
 }
 
 const TopicPage = ({ topic, ...props }: Props) => {
-  const { name, links, parentTopics } = topic
+  const {
+    childTopics, name, links, parentTopics,
+  } = topic
+  const items = liftNodes(childTopics).concat(liftNodes(links))
   return (
     <ListView
       title={name}
-      items={liftNodes(links)}
+      items={items}
       {...props}
     >
       <SidebarList
@@ -69,6 +72,7 @@ export default createFragmentContainer(TopicPage, graphql`
     childTopics(first: 100) {
       edges {
         node {
+          __typename
           display: name
           resourcePath
         }
@@ -78,7 +82,7 @@ export default createFragmentContainer(TopicPage, graphql`
     links(first: 100) {
       edges {
         node {
-          id
+          __typename
           display: title
           resourcePath: url
         }

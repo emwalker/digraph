@@ -24,23 +24,14 @@ describe('<TopicsPage />', () => {
     },
   }
 
-  const relay = {
-    environment: {},
-  }
-
   const wrapper = shallow(
     <TopicsPage
       organization={organization}
       viewer={viewer}
-      relay={relay}
     />,
   )
 
   it('renders', () => {
     expect(wrapper).toMatchSnapshot()
-  })
-
-  it('includes a form to add a topic', () => {
-    expect(wrapper.find('.test-add-topic')).toHaveLength(1)
   })
 })

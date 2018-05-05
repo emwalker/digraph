@@ -1,5 +1,11 @@
 @import 'primer/index.scss';
 
+.Box-row--topic {
+  .Box-row-link {
+    font-weight: 500;
+  }
+}
+
 .Label {
   margin-left: 0.5rem;
 }
