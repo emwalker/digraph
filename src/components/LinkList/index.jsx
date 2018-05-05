@@ -46,7 +46,7 @@ export default createFragmentContainer(LinkList, graphql`
       node {
         id
         display: title
-        resourcePath
+        resourcePath: url
 
         topics(first: 5) {
           edges {

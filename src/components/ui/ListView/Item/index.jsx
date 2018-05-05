@@ -12,7 +12,7 @@ type BadgeProps = {
 }
 
 const renderTopic = ({ node: { name, resourcePath } }: BadgeProps) => (
-  <a href={resourcePath} key={resourcePath}>
+  <a className="Box-row-link" href={resourcePath} key={resourcePath}>
     <span
       className="Label swatch-green"
     >
@@ -32,7 +32,7 @@ export default ({ display, resourcePath, topics }: Props) => (
     className="Box-row"
     key={resourcePath}
   >
-    <a href={resourcePath}>
+    <a className="Box-row-link" href={resourcePath}>
       { display }
     </a>
     { edges(topics).map(renderTopic) }

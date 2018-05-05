@@ -19,6 +19,9 @@ export default ({ children, items, title }: Props) => (
     <div className="Subhead">
       <div className="Subhead-heading">{title}</div>
     </div>
+    <div className="one-third column">
+      { children }
+    </div>
     <div className="two-thirds column">
       <div className="Box">
         <ul>
@@ -30,9 +33,6 @@ export default ({ children, items, title }: Props) => (
             />))}
         </ul>
       </div>
-    </div>
-    <div className="one-third column">
-      { children }
     </div>
   </div>
 )

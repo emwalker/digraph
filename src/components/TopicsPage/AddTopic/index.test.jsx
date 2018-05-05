@@ -18,6 +18,6 @@ describe('<AddTopic />', () => {
   })
 
   it('includes an input for the name', () => {
-    expect(wrapper.find('input.test-topic-name')).toHaveLength(1)
+    expect(wrapper.find('input').hasClass('test-topic-name')).toBeTruthy()
   })
 })
