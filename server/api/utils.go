@@ -67,9 +67,9 @@ func stringOr(defaultValue string, maybeString interface{}) string {
 
 func stringList(value interface{}) *[]string {
 	if elements, ok := value.([]interface{}); ok {
-		out := make([]string, len(elements), cap(elements))
-		for _, str := range elements {
-			out = append(out, str.(string))
+		out := make([]string, len(elements))
+		for i, str := range elements {
+			out[i] = str.(string)
 		}
 		return &out
 	}

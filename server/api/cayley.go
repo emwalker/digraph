@@ -109,12 +109,15 @@ func (conn *CayleyConnection) Do(callback func(*graph.Transaction)) error {
 
 func addParentTopics(tx *graph.Transaction, orgId quad.IRI, node Resource) {
 	topicIds := node.ParentTopicIDs()
-	if len(node.ParentTopicIDs()) == 0 {
+	if len(topicIds) == 0 {
 		tx.AddQuad(
 			quad.Make(quad.IRI("topic:root"), quad.IRI("di:includes"), node.IRI(), orgId),
 		)
 	} else {
 		for _, topicId := range topicIds {
+			if topicId == "" {
+				panic("A topic id cannot be empty")
+			}
 			tx.AddQuad(
 				quad.Make(topicId, quad.IRI("di:includes"), node.IRI(), orgId),
 			)

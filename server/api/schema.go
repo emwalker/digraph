@@ -98,9 +98,9 @@ func (o *Topic) IRI() quad.IRI {
 }
 
 func (o *Topic) ParentTopicIDs() []quad.IRI {
-	var ids []quad.IRI
-	for _, topicId := range o.TopicIDs {
-		ids = append(ids, quad.IRI(topicId))
+	ids := make([]quad.IRI, len(o.TopicIDs))
+	for i, topicId := range o.TopicIDs {
+		ids[i] = quad.IRI(topicId)
 	}
 	return ids
 }
@@ -110,9 +110,9 @@ func (o *Link) Init() {
 }
 
 func (o *Link) ParentTopicIDs() []quad.IRI {
-	var ids []quad.IRI
-	for _, topicId := range o.TopicIDs {
-		ids = append(ids, quad.IRI(topicId))
+	ids := make([]quad.IRI, len(o.TopicIDs))
+	for i, topicId := range o.TopicIDs {
+		ids[i] = quad.IRI(topicId)
 	}
 	return ids
 }
@@ -241,8 +241,7 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 				Type: graphql.String,
 			},
 			"topicIds": &graphql.InputObjectFieldConfig{
-				Type:         graphql.NewList(graphql.String),
-				DefaultValue: []interface{}{},
+				Type: graphql.NewList(graphql.String),
 			},
 			"title": &graphql.InputObjectFieldConfig{
 				Type:         graphql.String,
