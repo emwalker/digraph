@@ -2,23 +2,23 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import createTopicMutation from '../../../mutations/createTopicMutation'
+import createLinkMutation from '../../../mutations/createLinkMutation'
 import type { RelayProps } from '../../types'
 
 /* eslint jsx-a11y/label-has-for: 0 */
 
 type State = {
-  name: string,
+  url: string,
 }
 
-class AddTopic extends Component<RelayProps, State> {
+class AddLink extends Component<RelayProps, State> {
   state = {
-    name: '',
+    url: '',
   }
 
   onKeyPress = (event: Object) => {
     if (event.key === 'Enter')
-      this.createTopic()
+      this.createLink()
   }
 
   get relayConfigs() {
@@ -26,46 +26,46 @@ class AddTopic extends Component<RelayProps, State> {
       type: 'RANGE_ADD',
       parentID: this.props.topic.id,
       connectionInfo: [{
-        key: 'Topic_childTopics',
+        key: 'Topic_links',
         rangeBehavior: 'append',
       }],
-      edgeName: 'topicEdge',
+      edgeName: 'linkEdge',
     }]
   }
 
-  updateName = (event: Object) => {
-    this.setState({ name: event.currentTarget.value })
+  updateUrl = (event: Object) => {
+    this.setState({ url: event.currentTarget.value })
   }
 
-  createTopic() {
+  createLink() {
     const { resourceId: organizationId } = this.props.organization
 
-    createTopicMutation(
+    createLinkMutation(
       this.props.relay.environment,
       this.relayConfigs,
       {
         organizationId,
-        name: this.state.name,
+        url: this.state.url,
         topicIds: [this.props.topic.resourceId],
       },
     )
-    this.setState({ name: '' })
+    this.setState({ url: '' })
   }
 
   render = () => (
     <div>
       <dl className="form-group">
         <dt>
-          <label htmlFor="create-topic-name">Add subtopic</label>
+          <label htmlFor="create-link-url">Add link</label>
         </dt>
         <dd>
           <input
-            className="form-control test-topic-name input-sm"
-            id="create-topic-name"
-            onChange={this.updateName}
+            className="form-control test-link-url input-sm"
+            id="create-link-url"
+            onChange={this.updateUrl}
             onKeyPress={this.onKeyPress}
-            placeholder="Name or description"
-            value={this.state.name}
+            placeholder="Url"
+            value={this.state.url}
           />
         </dd>
       </dl>
@@ -73,12 +73,12 @@ class AddTopic extends Component<RelayProps, State> {
   )
 }
 
-export default createFragmentContainer(AddTopic, graphql`
-  fragment AddTopic_organization on Organization {
+export default createFragmentContainer(AddLink, graphql`
+  fragment AddLink_organization on Organization {
     resourceId
   }
 
-  fragment AddTopic_topic on Topic {
+  fragment AddLink_topic on Topic {
     id
     resourceId
   }

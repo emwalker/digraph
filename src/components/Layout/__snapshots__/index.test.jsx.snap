@@ -63,6 +63,32 @@ ShallowWrapper {
             some view
           </div>
         </div>,
+        <div
+          className="container"
+        >
+          <footer
+            className="my-6 pt-4 border-top"
+          >
+            <p
+              className="mb-2"
+            >
+              Available for use under the MIT
+               
+              <a
+                href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+              >
+                license
+              </a>
+              . Copyright Eric Walker 2018. Derived from Github’s 
+              <a
+                href="https://primer.github.io/"
+              >
+                Primer
+              </a>
+              .
+            </p>
+          </footer>
+        </div>,
       ],
     },
     "ref": null,
@@ -244,6 +270,122 @@ ShallowWrapper {
         },
         "type": "div",
       },
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "host",
+        "props": Object {
+          "children": <footer
+            className="my-6 pt-4 border-top"
+          >
+            <p
+              className="mb-2"
+            >
+              Available for use under the MIT
+               
+              <a
+                href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+              >
+                license
+              </a>
+              . Copyright Eric Walker 2018. Derived from Github’s 
+              <a
+                href="https://primer.github.io/"
+              >
+                Primer
+              </a>
+              .
+            </p>
+          </footer>,
+          "className": "container",
+        },
+        "ref": null,
+        "rendered": Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": <p
+              className="mb-2"
+            >
+              Available for use under the MIT
+               
+              <a
+                href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+              >
+                license
+              </a>
+              . Copyright Eric Walker 2018. Derived from Github’s 
+              <a
+                href="https://primer.github.io/"
+              >
+                Primer
+              </a>
+              .
+            </p>,
+            "className": "my-6 pt-4 border-top",
+          },
+          "ref": null,
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": Array [
+                "Available for use under the MIT",
+                " ",
+                <a
+                  href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                >
+                  license
+                </a>,
+                ". Copyright Eric Walker 2018. Derived from Github’s ",
+                <a
+                  href="https://primer.github.io/"
+                >
+                  Primer
+                </a>,
+                ".",
+              ],
+              "className": "mb-2",
+            },
+            "ref": null,
+            "rendered": Array [
+              "Available for use under the MIT",
+              " ",
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": "license",
+                  "href": "https://github.com/emwalker/digraffe/blob/master/LICENSE.md",
+                },
+                "ref": null,
+                "rendered": "license",
+                "type": "a",
+              },
+              ". Copyright Eric Walker 2018. Derived from Github’s ",
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": "Primer",
+                  "href": "https://primer.github.io/",
+                },
+                "ref": null,
+                "rendered": "Primer",
+                "type": "a",
+              },
+              ".",
+            ],
+            "type": "p",
+          },
+          "type": "footer",
+        },
+        "type": "div",
+      },
     ],
     "type": "div",
   },
@@ -294,6 +436,32 @@ ShallowWrapper {
             <div>
               some view
             </div>
+          </div>,
+          <div
+            className="container"
+          >
+            <footer
+              className="my-6 pt-4 border-top"
+            >
+              <p
+                className="mb-2"
+              >
+                Available for use under the MIT
+                 
+                <a
+                  href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                >
+                  license
+                </a>
+                . Copyright Eric Walker 2018. Derived from Github’s 
+                <a
+                  href="https://primer.github.io/"
+                >
+                  Primer
+                </a>
+                .
+              </p>
+            </footer>
           </div>,
         ],
       },
@@ -473,6 +641,122 @@ ShallowWrapper {
             "ref": null,
             "rendered": "some view",
             "type": "div",
+          },
+          "type": "div",
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": <footer
+              className="my-6 pt-4 border-top"
+            >
+              <p
+                className="mb-2"
+              >
+                Available for use under the MIT
+                 
+                <a
+                  href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                >
+                  license
+                </a>
+                . Copyright Eric Walker 2018. Derived from Github’s 
+                <a
+                  href="https://primer.github.io/"
+                >
+                  Primer
+                </a>
+                .
+              </p>
+            </footer>,
+            "className": "container",
+          },
+          "ref": null,
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": <p
+                className="mb-2"
+              >
+                Available for use under the MIT
+                 
+                <a
+                  href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                >
+                  license
+                </a>
+                . Copyright Eric Walker 2018. Derived from Github’s 
+                <a
+                  href="https://primer.github.io/"
+                >
+                  Primer
+                </a>
+                .
+              </p>,
+              "className": "my-6 pt-4 border-top",
+            },
+            "ref": null,
+            "rendered": Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": Array [
+                  "Available for use under the MIT",
+                  " ",
+                  <a
+                    href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                  >
+                    license
+                  </a>,
+                  ". Copyright Eric Walker 2018. Derived from Github’s ",
+                  <a
+                    href="https://primer.github.io/"
+                  >
+                    Primer
+                  </a>,
+                  ".",
+                ],
+                "className": "mb-2",
+              },
+              "ref": null,
+              "rendered": Array [
+                "Available for use under the MIT",
+                " ",
+                Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "host",
+                  "props": Object {
+                    "children": "license",
+                    "href": "https://github.com/emwalker/digraffe/blob/master/LICENSE.md",
+                  },
+                  "ref": null,
+                  "rendered": "license",
+                  "type": "a",
+                },
+                ". Copyright Eric Walker 2018. Derived from Github’s ",
+                Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "host",
+                  "props": Object {
+                    "children": "Primer",
+                    "href": "https://primer.github.io/",
+                  },
+                  "ref": null,
+                  "rendered": "Primer",
+                  "type": "a",
+                },
+                ".",
+              ],
+              "type": "p",
+            },
+            "type": "footer",
           },
           "type": "div",
         },

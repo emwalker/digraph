@@ -4,6 +4,7 @@ import { graphql, createFragmentContainer } from 'react-relay'
 import ListView from '../ui/ListView'
 import SidebarList from '../ui/SidebarList'
 import AddTopic from './AddTopic'
+import AddLink from './AddLink'
 import { liftNodes } from '../../utils'
 
 type Props = {
@@ -35,6 +36,10 @@ const TopicPage = ({ topic, ...props }: Props) => {
         topic={topic}
         {...props}
       />
+      <AddLink
+        topic={topic}
+        {...props}
+      />
     </ListView>
   )
 }
@@ -56,11 +61,13 @@ query TopicPage_query_Query(
 export default createFragmentContainer(TopicPage, graphql`
   fragment TopicPage_organization on Organization {
     ...AddTopic_organization
+    ...AddLink_organization
   }
 
   fragment TopicPage_topic on Topic {
     name
     ...AddTopic_topic
+    ...AddLink_topic
 
     parentTopics(first: 100) {
       edges {
@@ -81,7 +88,7 @@ export default createFragmentContainer(TopicPage, graphql`
       }
     }
 
-    links(first: 100) {
+    links(first: 100)  @connection(key: "Topic_links") {
       edges {
         node {
           __typename

@@ -43,7 +43,6 @@ export const query = graphql`
 export default createFragmentContainer(LinksPage, graphql`
   fragment LinksPage_viewer on User {
     name
-    ...LinkList_viewer
   }
 
   fragment LinksPage_organization on Organization {

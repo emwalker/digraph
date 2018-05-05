@@ -43,7 +43,7 @@ const Layout = ({ children }: Props) => (
           Available for use under the MIT{' '}
           <a href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md">license</a>.
           Copyright Eric Walker 2018.
-          Derived from Github's <a href="https://primer.github.io/">Primer</a>.
+          Derived from Github’s <a href="https://primer.github.io/">Primer</a>.
         </p>
       </footer>
     </div>

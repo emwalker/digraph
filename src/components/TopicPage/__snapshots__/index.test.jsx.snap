@@ -35,6 +35,13 @@ ShallowWrapper {
             }
           }
         />,
+        <AddLink
+          topic={
+            Object {
+              "name": "Frotz",
+            }
+          }
+        />,
       ],
       "items": Array [],
       "title": "Frotz",
@@ -48,6 +55,19 @@ ShallowWrapper {
         "props": Object {
           "items": Array [],
           "title": "Parent topics",
+        },
+        "ref": null,
+        "rendered": null,
+        "type": [Function],
+      },
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "class",
+        "props": Object {
+          "topic": Object {
+            "name": "Frotz",
+          },
         },
         "ref": null,
         "rendered": null,
@@ -87,6 +107,13 @@ ShallowWrapper {
               }
             }
           />,
+          <AddLink
+            topic={
+              Object {
+                "name": "Frotz",
+              }
+            }
+          />,
         ],
         "items": Array [],
         "title": "Frotz",
@@ -100,6 +127,19 @@ ShallowWrapper {
           "props": Object {
             "items": Array [],
             "title": "Parent topics",
+          },
+          "ref": null,
+          "rendered": null,
+          "type": [Function],
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "class",
+          "props": Object {
+            "topic": Object {
+              "name": "Frotz",
+            },
           },
           "ref": null,
           "rendered": null,

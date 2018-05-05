@@ -29,17 +29,7 @@ const mutation = graphql`
   }
 `
 
-export default (environment, organizationId, input) => {
-  const configs = [{
-    type: 'RANGE_ADD',
-    parentID: organizationId,
-    connectionInfo: [{
-      key: 'Organization_links',
-      rangeBehavior: 'append',
-    }],
-    edgeName: 'linkEdge',
-  }]
-
+export default (environment, configs, input) => {
   const clientMutationId = uuidv1()
 
   return commitMutation(
