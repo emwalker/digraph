@@ -49,7 +49,7 @@ export default createFragmentContainer(LinksPage, graphql`
     id
     resourceId
 
-    links(first: 100) @connection(key: "Organization_links") {
+    links(first: 1000) @connection(key: "Organization_links") {
       edges {
         node {
           display: title

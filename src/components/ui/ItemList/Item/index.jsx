@@ -35,7 +35,7 @@ class Item extends Component<Props> {
   get className(): string {
     return classNames(
       'Item-row',
-      'Box-row',
+      'Box-row Box-row--hover-gray',
       { 'Box-row--topic': this.props.__typename === 'Topic' },
     )
   }
