@@ -17,7 +17,7 @@ type BadgeProps = {
 const renderTopic = ({ node: { name, resourcePath } }: BadgeProps) => (
   <a className="Box-row-link" href={resourcePath} key={resourcePath}>
     <span
-      className="Label swatch-green"
+      className="Label Label--outline Label--outline-gray"
     >
       {name}
     </span>
@@ -50,9 +50,15 @@ class Item extends Component<Props> {
           <a className="Box-row-link" href={this.props.resourcePath}>
             { this.props.display || this.props.resourcePath }
           </a>
+        </div>
+        <div
+          className="mt-1 link-url branch-name css-truncate css-truncate-target"
+        >
+          {this.props.resourcePath}
+        </div>
+        <div>
           { edges(this.props.topics).map(renderTopic) }
         </div>
-        <div className="mt-1 link-url branch-name css-truncate css-truncate-target">{this.props.resourcePath}</div>
       </li>
     )
   }
