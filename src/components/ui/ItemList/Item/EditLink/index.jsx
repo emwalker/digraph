@@ -16,6 +16,9 @@ type Props = {
     title: string,
     url: string,
   },
+  organization: {
+    resourceId: string,
+  },
   toggleFn: Function,
 }
 
@@ -39,12 +42,21 @@ class EditLink extends Component<Props, State> {
       this.props.relay.environment,
       configs,
       {
+        organizationId: this.props.organization.resourceId,
         resourceId: this.props.link.resourceId,
         title: this.state.title,
         url: this.state.url,
       },
     )
     this.props.toggleFn()
+  }
+
+  updateTitle = (event: Object) => {
+    this.setState({ title: event.currentTarget.value })
+  }
+
+  updateUrl = (event: Object) => {
+    this.setState({ url: event.currentTarget.value })
   }
 
   render() {
@@ -58,12 +70,14 @@ class EditLink extends Component<Props, State> {
             className="col-6"
             id={`edit-link-title-${this.props.id}`}
             label="Page title"
+            onChange={this.updateTitle}
             value={this.state.title}
           />
           <Input
             className="col-6"
             id={`edit-link-url-${this.props.id}`}
             label="Url"
+            onChange={this.updateUrl}
             value={this.state.url}
           />
         </div>

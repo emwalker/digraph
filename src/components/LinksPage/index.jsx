@@ -15,14 +15,15 @@ type Props = {
   viewer: Object,
 }
 
-const LinksPage = ({ organization: { links }, ...props }: Props) => (
+const LinksPage = ({ organization, ...props }: Props) => (
   <div>
     <div className="Subhead">
       <div className="Subhead-heading">Links</div>
     </div>
     <ItemList
       title="Links"
-      items={liftNodes(links)}
+      items={liftNodes(organization.links)}
+      organization={organization}
       {...props}
     />
   </div>
@@ -53,6 +54,7 @@ export default createFragmentContainer(LinksPage, graphql`
     links(first: 1000) @connection(key: "Organization_links") {
       edges {
         node {
+          resourceId
           display: title
           resourcePath: url
           ...EditLink_link

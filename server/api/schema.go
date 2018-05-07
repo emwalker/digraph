@@ -241,7 +241,7 @@ func (config *Config) upsertLinkMutation(edgeType graphql.Output) *graphql.Field
 				Type: graphql.String,
 			},
 			"resourceId": &graphql.InputObjectFieldConfig{
-				Type: graphql.String,
+				Type:         graphql.String,
 				DefaultValue: nil,
 			},
 			"addTopicIds": &graphql.InputObjectFieldConfig{

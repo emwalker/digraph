@@ -24,7 +24,7 @@ const Blankslate = ({ message }: BlankslateProps) => (
 
 const renderItem = (
   {
-    __typename, resourceId, ...itemProps
+    __typename, resourceId, ...link
   }: ItemType,
   props: Object,
 ) => {
@@ -38,8 +38,9 @@ const renderItem = (
       key={resourceId}
       FormComponent={Form}
       resourceId={resourceId}
+      link={{ resourceId, ...link }}
       {...props}
-      {...itemProps}
+      {...link}
     />
   )
 }

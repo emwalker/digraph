@@ -291,7 +291,15 @@ func (conn *CayleyConnection) FetchLinksForTopic(orgId quad.IRI, topicId quad.IR
 }
 
 func (conn *CayleyConnection) UpsertLink(orgId quad.IRI, node *Link) error {
+	path := cayley.StartPath(conn.store, node.ResourceID).
+		Out(quad.IRI("di:url"), quad.IRI("di:title"))
+
 	return conn.Do(func(tx *graph.Transaction) {
+		path.Iterate(conn.context).EachValue(nil, func(value quad.Value) {
+			err := conn.store.RemoveNode(value)
+			checkErr(err)
+		})
+
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("rdf:type"), quad.IRI("di:link"), orgId))
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:url"), node.URL, orgId))
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:title"), node.Title, orgId))

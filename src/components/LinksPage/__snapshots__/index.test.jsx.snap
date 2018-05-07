@@ -56,6 +56,22 @@ ShallowWrapper {
         </div>,
         <Unknown
           items={Array []}
+          organization={
+            Object {
+              "resourceId": "organization:tyrell",
+              "topics": Object {
+                "edges": Array [
+                  Object {
+                    "node": Object {
+                      "id": "1234",
+                      "name": "Frotz",
+                      "resourceId": "/topics/1234",
+                    },
+                  },
+                ],
+              },
+            }
+          }
           relay={
             Object {
               "environment": Object {},
@@ -105,6 +121,20 @@ ShallowWrapper {
         "nodeType": "function",
         "props": Object {
           "items": Array [],
+          "organization": Object {
+            "resourceId": "organization:tyrell",
+            "topics": Object {
+              "edges": Array [
+                Object {
+                  "node": Object {
+                    "id": "1234",
+                    "name": "Frotz",
+                    "resourceId": "/topics/1234",
+                  },
+                },
+              ],
+            },
+          },
           "relay": Object {
             "environment": Object {},
           },
@@ -138,6 +168,22 @@ ShallowWrapper {
           </div>,
           <Unknown
             items={Array []}
+            organization={
+              Object {
+                "resourceId": "organization:tyrell",
+                "topics": Object {
+                  "edges": Array [
+                    Object {
+                      "node": Object {
+                        "id": "1234",
+                        "name": "Frotz",
+                        "resourceId": "/topics/1234",
+                      },
+                    },
+                  ],
+                },
+              }
+            }
             relay={
               Object {
                 "environment": Object {},
@@ -187,6 +233,20 @@ ShallowWrapper {
           "nodeType": "function",
           "props": Object {
             "items": Array [],
+            "organization": Object {
+              "resourceId": "organization:tyrell",
+              "topics": Object {
+                "edges": Array [
+                  Object {
+                    "node": Object {
+                      "id": "1234",
+                      "name": "Frotz",
+                      "resourceId": "/topics/1234",
+                    },
+                  },
+                ],
+              },
+            },
             "relay": Object {
               "environment": Object {},
             },
