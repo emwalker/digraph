@@ -27,7 +27,6 @@ type SessionStore interface {
 
 type Connection interface {
 	Close() error
-	CreateLink(quad.IRI, *Link) error
 	CreateTopic(quad.IRI, *Topic) error
 	FetchChildTopicsForTopic(quad.IRI, quad.IRI, *[]interface{}) error
 	FetchLink(quad.IRI, quad.IRI) (interface{}, error)
@@ -44,7 +43,7 @@ type Connection interface {
 	Init() error
 	SelectTopic(quad.IRI, string, string) (*Topic, error)
 	SelectedTopic(quad.IRI, string) (*Topic, error)
-	UpdateLink(quad.IRI, *Link) error
+	UpsertLink(quad.IRI, *Link) error
 	Viewer() (interface{}, error)
 }
 

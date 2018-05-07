@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import createLinkMutation from '../../../mutations/createLinkMutation'
+import upsertLinkMutation from '../../../mutations/upsertLinkMutation'
 import type { RelayProps } from '../../types'
 
 /* eslint jsx-a11y/label-has-for: 0 */
@@ -40,13 +40,13 @@ class AddLink extends Component<RelayProps, State> {
   createLink() {
     const { resourceId: organizationId } = this.props.organization
 
-    createLinkMutation(
+    upsertLinkMutation(
       this.props.relay.environment,
       this.relayConfigs,
       {
         organizationId,
         url: this.state.url,
-        topicIds: [this.props.topic.resourceId],
+        addTopicIds: [this.props.topic.resourceId],
       },
     )
     this.setState({ url: '' })

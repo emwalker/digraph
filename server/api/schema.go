@@ -232,15 +232,19 @@ func (config *Config) createTopicMutation(edgeType graphql.Output) *graphql.Fiel
 	})
 }
 
-func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field {
+func (config *Config) upsertLinkMutation(edgeType graphql.Output) *graphql.Field {
 	return relay.MutationWithClientMutationID(relay.MutationConfig{
-		Name: "CreateLink",
+		Name: "UpsertLink",
 
 		InputFields: graphql.InputObjectConfigFieldMap{
 			"organizationId": &graphql.InputObjectFieldConfig{
 				Type: graphql.String,
 			},
-			"topicIds": &graphql.InputObjectFieldConfig{
+			"resourceId": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
+				DefaultValue: nil,
+			},
+			"addTopicIds": &graphql.InputObjectFieldConfig{
 				Type: graphql.NewList(graphql.String),
 			},
 			"title": &graphql.InputObjectFieldConfig{
@@ -268,27 +272,40 @@ func (config *Config) createLinkMutation(edgeType graphql.Output) *graphql.Field
 		},
 
 		MutateAndGetPayload: func(input map[string]interface{}, info graphql.ResolveInfo, ctx context.Context) (map[string]interface{}, error) {
-			topicIds := stringList(input["topicIds"])
+			resourceId := input["resourceId"]
+			title := input["title"]
+			topicIds := stringList(input["addTopicIds"])
 			orgId := quad.IRI(input["organizationId"].(string))
 			url := input["url"].(string)
 
-			log.Println("Determining whether url is already present:", url)
-			node, err := config.Connection.FetchLinkByURL(orgId, url)
-			checkErr(err)
+			var node interface{}
+			var err error
+
+			if resourceId, ok := resourceId.(string); ok {
+				node, err = config.Connection.FetchLink(orgId, quad.IRI(resourceId))
+			} else {
+				log.Println("Determining whether url is already present:", url)
+				node, err = config.Connection.FetchLinkByURL(orgId, url)
+				checkErr(err)
+			}
 
 			if node == nil {
 				log.Println("Link is new:", url)
 				node = NewLink(&Link{
 					URL:      url,
-					Title:    stringOr("", input["title"]),
+					Title:    stringOr("", title),
 					TopicIDs: *topicIds,
 				}, config.Connection)
-				checkErr(config.Connection.CreateLink(orgId, node.(*Link)))
+				checkErr(config.Connection.UpsertLink(orgId, node.(*Link)))
 			} else {
 				log.Println("Link is already in datastore:", url)
 				link := node.(*Link)
 				link.TopicIDs = *topicIds
-				checkErr(config.Connection.UpdateLink(orgId, link))
+				link.URL = url
+				if title != nil {
+					link.Title = title.(string)
+				}
+				checkErr(config.Connection.UpsertLink(orgId, link))
 			}
 
 			return map[string]interface{}{
@@ -505,7 +522,7 @@ func (config *Config) newSchema() (*graphql.Schema, error) {
 		Name: "Mutation",
 		Fields: graphql.Fields{
 			"createTopic": config.createTopicMutation(topicType.Definitions.EdgeType),
-			"createLink":  config.createLinkMutation(linkType.Definitions.EdgeType),
+			"upsertLink":  config.upsertLinkMutation(linkType.Definitions.EdgeType),
 			"selectTopic": config.selectTopicMutation(topicType),
 		},
 	})

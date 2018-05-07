@@ -12,7 +12,7 @@ type BlankslateProps = {
 type ItemType = {
   __typename: string,
   display: string,
-  id: string,
+  resourceId: string,
   resourcePath: string,
 }
 
@@ -22,20 +22,24 @@ const Blankslate = ({ message }: BlankslateProps) => (
   </BlankslateUI>
 )
 
-const renderItem = ({
-  __typename, id, resourcePath, ...props
-}: ItemType) => {
+const renderItem = (
+  {
+    __typename, resourceId, ...itemProps
+  }: ItemType,
+  props: Object,
+) => {
   const Form = __typename === 'Topic'
     ? () => <div>Edit topic</div>
     : EditLink
 
   return (
     <Item
-      id={id}
-      key={resourcePath}
-      resourcePath={resourcePath}
+      id={resourceId}
+      key={resourceId}
       FormComponent={Form}
+      resourceId={resourceId}
       {...props}
+      {...itemProps}
     />
   )
 }
@@ -46,14 +50,14 @@ type Props = {
   placeholder: string,
 }
 
-const List = ({ items }: Props) => (
+const List = ({ items, ...props }: Props) => (
   <div className="Box">
     <ul>
-      { items.map(renderItem) }
+      { items.map(item => renderItem(item, props)) }
     </ul>
   </div>
 )
 
-export default ({ items, placeholder }: Props) => (isEmpty(items)
+export default ({ items, placeholder, ...props }: Props) => (isEmpty(items)
   ? <Blankslate message={placeholder} />
-  : <List items={items} />)
+  : <List items={items} {...props} />)

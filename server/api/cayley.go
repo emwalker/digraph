@@ -126,15 +126,6 @@ func addParentTopics(tx *graph.Transaction, orgId quad.IRI, node Resource) {
 	}
 }
 
-func (conn *CayleyConnection) CreateLink(orgId quad.IRI, node *Link) error {
-	return conn.Do(func(tx *graph.Transaction) {
-		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("rdf:type"), quad.IRI("di:link"), orgId))
-		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:url"), node.URL, orgId))
-		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:title"), node.Title, orgId))
-		addParentTopics(tx, orgId, node)
-	})
-}
-
 func (conn *CayleyConnection) CreateTopic(orgId quad.IRI, node *Topic) error {
 	return conn.Do(func(tx *graph.Transaction) {
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("rdf:type"), quad.IRI("foaf:topic"), orgId))
@@ -299,8 +290,11 @@ func (conn *CayleyConnection) FetchLinksForTopic(orgId quad.IRI, topicId quad.IR
 	return conn.loadIteratorTo(out, path, linkArrayType)
 }
 
-func (conn *CayleyConnection) UpdateLink(orgId quad.IRI, node *Link) error {
+func (conn *CayleyConnection) UpsertLink(orgId quad.IRI, node *Link) error {
 	return conn.Do(func(tx *graph.Transaction) {
+		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("rdf:type"), quad.IRI("di:link"), orgId))
+		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:url"), node.URL, orgId))
+		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:title"), node.Title, orgId))
 		addParentTopics(tx, orgId, node)
 	})
 }

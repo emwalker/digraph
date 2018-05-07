@@ -121,15 +121,16 @@ type CreateTopicPayload {
   topicEdge: TopicEdge!
 }
 
-input CreateLinkInput {
+input UpsertLinkInput {
+  addTopicIds: [String!]
   clientMutationId: String!
   organizationId: String!
+  resourceId: String
   title: String
-  topicIds: [String!]
   url: String!
 }
 
-type CreateLinkPayload {
+type UpsertLinkPayload {
   linkEdge: LinkEdge!
 }
 
@@ -143,7 +144,7 @@ type SelectTopicPayload {
 }
 
 type Mutation {
-  createLink(input: CreateLinkInput!): CreateLinkPayload
   createTopic(input: CreateTopicInput!): CreateTopicPayload
   selectTopic(input: SelectTopicInput!): SelectTopicPayload
+  upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
 }

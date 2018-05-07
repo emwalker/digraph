@@ -46,7 +46,7 @@ export default createFragmentContainer(TopicsPage, graphql`
     topics(first: 1000) @connection(key: "Organization_topics") {
       edges {
         node {
-          id
+          resourceId
           display: name
           resourcePath
         }

@@ -1,14 +1,22 @@
 // @flow
 import React, { Component } from 'react'
+import { createFragmentContainer, graphql } from 'react-relay'
 
 import Input from '../../Input'
+import upsertLinkMutation from '../../../../../mutations/upsertLinkMutation'
 
 type Props = {
   id: string,
-  display: string,
   isOpen: boolean,
+  relay: {
+    environment: Object,
+  },
+  link: {
+    resourceId: string,
+    title: string,
+    url: string,
+  },
   toggleFn: Function,
-  url: string,
 }
 
 type State = {
@@ -20,12 +28,22 @@ class EditLink extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      title: props.display,
-      url: props.url,
+      title: props.link.title,
+      url: props.link.url,
     }
   }
 
   onSave = () => {
+    const configs = []
+    upsertLinkMutation(
+      this.props.relay.environment,
+      configs,
+      {
+        resourceId: this.props.link.resourceId,
+        title: this.state.title,
+        url: this.state.url,
+      },
+    )
     this.props.toggleFn()
   }
 
@@ -59,4 +77,14 @@ class EditLink extends Component<Props, State> {
   }
 }
 
-export default EditLink
+export default createFragmentContainer(EditLink, graphql`
+  fragment EditLink_organization on Organization {
+    resourceId
+  }
+
+  fragment EditLink_link on Link {
+    resourceId
+    title
+    url
+  }
+`)

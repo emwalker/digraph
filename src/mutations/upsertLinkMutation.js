@@ -2,10 +2,10 @@ import { commitMutation, graphql } from 'react-relay'
 import uuidv1 from 'uuid/v1'
 
 const mutation = graphql`
-  mutation createLinkMutation(
-    $input: CreateLinkInput!
+  mutation upsertLinkMutation(
+    $input: UpsertLinkInput!
   ) {
-    createLink(input: $input) {
+    upsertLink(input: $input) {
       linkEdge {
         node {
           id

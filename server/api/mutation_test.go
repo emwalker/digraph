@@ -177,38 +177,14 @@ func TestSelectTopic(t *testing.T) {
 	testMutations(t, doc, expected)
 }
 
-func TestCreateLink(t *testing.T) {
+func TestUpsertLink(t *testing.T) {
 	doc := `
 	mutation M {
-		first: createLink(
+		first: upsertLink(
 			input: {
 				organizationId: "organization:tyrell",
-				url: "https://gnusto.test",
-				topicIds: [
-					"topic:biology",
-					"topic:chemistry",
-				],
-			}
-		) {
-			linkEdge {
-				node {
-					title
-					url
-					topics {
-						edges {
-							node {
-								name
-							}
-						}
-					}
-				}
-			}
-		},
-		second: createLink(
-			input: {
-				organizationId: "organization:tyrell",
-				url: "https://gnusto.test",
-				topicIds: [
+				url: "https://github.com",
+				addTopicIds: [
 					"topic:science",
 				],
 			}
@@ -227,6 +203,22 @@ func TestCreateLink(t *testing.T) {
 				}
 			}
 		},
+
+		second: upsertLink(
+			input: {
+				organizationId: "organization:tyrell",
+				resourceId: "link:wikipedia",
+				title: "Frotz",
+				url: "https://frotz.test",
+			}
+		) {
+			linkEdge {
+				node {
+					title
+					url
+				}
+			}
+		},
 	}`
 
 	expected := &graphql.Result{
@@ -234,31 +226,8 @@ func TestCreateLink(t *testing.T) {
 			"first": map[string]interface{}{
 				"linkEdge": map[string]interface{}{
 					"node": map[string]interface{}{
-						"title": "Gnusto's Homepage",
-						"url":   "https://gnusto.test",
-						"topics": map[string]interface{}{
-							"edges": []interface{}{
-								map[string]interface{}{
-									"node": map[string]interface{}{
-										"name": "Biology",
-									},
-								},
-								map[string]interface{}{
-									"node": map[string]interface{}{
-										"name": "Chemistry",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			// It makes use of an existing link if one is already present.
-			"second": map[string]interface{}{
-				"linkEdge": map[string]interface{}{
-					"node": map[string]interface{}{
-						"title": "Gnusto's Homepage",
-						"url":   "https://gnusto.test",
+						"title": "Github",
+						"url":   "https://github.com",
 						"topics": map[string]interface{}{
 							"edges": []interface{}{
 								map[string]interface{}{
@@ -278,6 +247,15 @@ func TestCreateLink(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+			},
+
+			"second": map[string]interface{}{
+				"linkEdge": map[string]interface{}{
+					"node": map[string]interface{}{
+						"title": "Frotz",
+						"url":   "https://frotz.test",
 					},
 				},
 			},

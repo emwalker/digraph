@@ -48,14 +48,14 @@ export default createFragmentContainer(LinksPage, graphql`
   fragment LinksPage_organization on Organization {
     id
     resourceId
+    ...EditLink_organization
 
     links(first: 1000) @connection(key: "Organization_links") {
       edges {
         node {
-          id
           display: title
           resourcePath: url
-          url
+          ...EditLink_link
 
           topics {
             edges {
