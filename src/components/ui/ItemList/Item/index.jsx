@@ -3,6 +3,8 @@ import React, { Component } from 'react'
 import { pathOr } from 'ramda'
 import classNames from 'classnames'
 
+import EditLink from './EditLink'
+
 /* eslint no-underscore-dangle: 0 */
 
 const edges = pathOr([], ['edges'])
@@ -29,9 +31,18 @@ type Props = {
   display: string,
   resourcePath: string,
   topics: Array[],
+  FormComponent: Object,
 }
 
-class Item extends Component<Props> {
+type State = {
+  formIsOpen: boolean,
+}
+
+class Item extends Component<Props, State> {
+  state = {
+    formIsOpen: false,
+  }
+
   get className(): string {
     return classNames(
       'Item-row',
@@ -40,28 +51,50 @@ class Item extends Component<Props> {
     )
   }
 
+  toggleForm = () => {
+    this.setState(({ formIsOpen }) => ({ formIsOpen: !formIsOpen }))
+  }
+
   render() {
     return (
       <li
         className={this.className}
         key={this.props.resourcePath}
       >
-        <div>
-          <a className="Box-row-link" href={this.props.resourcePath}>
-            { this.props.display || this.props.resourcePath }
-          </a>
+        <div className="d-flex flex-items-center">
+          <div className="four-fifths">
+            <div>
+              <a className="Box-row-link" href={this.props.resourcePath}>
+                { this.props.display || this.props.resourcePath }
+              </a>
+            </div>
+            <div
+              className="mt-1 link-url branch-name css-truncate css-truncate-target"
+            >
+              {this.props.resourcePath}
+            </div>
+            <div>
+              { edges(this.props.topics).map(renderTopic) }
+            </div>
+          </div>
+          <div className="one-fifth text-center">
+            {!this.state.formIsOpen &&
+            <button onClick={this.toggleForm} className="btn-link">Edit</button>
+            }
+          </div>
         </div>
-        <div
-          className="mt-1 link-url branch-name css-truncate css-truncate-target"
-        >
-          {this.props.resourcePath}
-        </div>
         <div>
-          { edges(this.props.topics).map(renderTopic) }
+          <this.props.FormComponent
+            isOpen={this.state.formIsOpen}
+            toggleFn={this.toggleForm}
+            {...this.props}
+          />
         </div>
       </li>
     )
   }
 }
+
+export { EditLink }
 
 export default Item

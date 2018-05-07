@@ -82,6 +82,7 @@ export default createFragmentContainer(TopicPage, graphql`
       edges {
         node {
           __typename
+          id
           display: name
           resourcePath
         }
@@ -92,8 +93,10 @@ export default createFragmentContainer(TopicPage, graphql`
       edges {
         node {
           __typename
+          id
           display: title
-          resourcePath: url
+          url
+          resourcePath
         }
       }
     }

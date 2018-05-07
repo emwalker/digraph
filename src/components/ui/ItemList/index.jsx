@@ -2,11 +2,18 @@
 import React from 'react'
 import { isEmpty } from 'ramda'
 
-import Item from './Item'
+import Item, { EditLink } from './Item'
 import BlankslateUI from '../Blankslate'
 
 type BlankslateProps = {
   message: string,
+}
+
+type ItemType = {
+  __typename: string,
+  display: string,
+  id: string,
+  resourcePath: string,
 }
 
 const Blankslate = ({ message }: BlankslateProps) => (
@@ -15,10 +22,22 @@ const Blankslate = ({ message }: BlankslateProps) => (
   </BlankslateUI>
 )
 
-type ItemType = {
-  id: string,
-  display: string,
-  resourcePath: string,
+const renderItem = ({
+  __typename, id, resourcePath, ...props
+}: ItemType) => {
+  const Form = __typename === 'Topic'
+    ? () => <div>Edit topic</div>
+    : EditLink
+
+  return (
+    <Item
+      id={id}
+      key={resourcePath}
+      resourcePath={resourcePath}
+      FormComponent={Form}
+      {...props}
+    />
+  )
 }
 
 type Props = {
@@ -30,14 +49,7 @@ type Props = {
 const List = ({ items }: Props) => (
   <div className="Box">
     <ul>
-      { items.map(({ resourcePath, ...props }) => (
-        <Item
-          key={resourcePath}
-          resourcePath={resourcePath}
-          {...props}
-        />
-      ))
-      }
+      { items.map(renderItem) }
     </ul>
   </div>
 )
