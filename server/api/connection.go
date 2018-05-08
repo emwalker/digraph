@@ -43,7 +43,7 @@ type Connection interface {
 	Init() error
 	SelectTopic(quad.IRI, string, string) (*Topic, error)
 	SelectedTopic(quad.IRI, string) (*Topic, error)
-	UpsertLink(quad.IRI, *Link) error
+	UpsertLink(quad.IRI, *Link, bool) error
 	Viewer() (interface{}, error)
 }
 

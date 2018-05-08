@@ -108,9 +108,9 @@ func (conn *CayleyConnection) Do(callback func(*graph.Transaction)) error {
 	return conn.store.ApplyTransaction(tx)
 }
 
-func addParentTopics(tx *graph.Transaction, orgId quad.IRI, node Resource) {
+func addParentTopics(tx *graph.Transaction, orgId quad.IRI, node Resource, ensureTopic bool) {
 	topicIds := node.ParentTopicIDs()
-	if len(topicIds) == 0 {
+	if len(topicIds) == 0 && ensureTopic {
 		tx.AddQuad(
 			quad.Make(quad.IRI("topic:root"), quad.IRI("di:includes"), node.IRI(), orgId),
 		)
@@ -133,7 +133,7 @@ func (conn *CayleyConnection) CreateTopic(orgId quad.IRI, node *Topic) error {
 		if node.Description != nil {
 			tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:description"), *node.Description, orgId))
 		}
-		addParentTopics(tx, orgId, node)
+		addParentTopics(tx, orgId, node, true)
 	})
 }
 
@@ -290,7 +290,7 @@ func (conn *CayleyConnection) FetchLinksForTopic(orgId quad.IRI, topicId quad.IR
 	return conn.loadIteratorTo(out, path, linkArrayType)
 }
 
-func (conn *CayleyConnection) UpsertLink(orgId quad.IRI, node *Link) error {
+func (conn *CayleyConnection) UpsertLink(orgId quad.IRI, node *Link, ensureTopic bool) error {
 	path := cayley.StartPath(conn.store, node.ResourceID).
 		Out(quad.IRI("di:url"), quad.IRI("di:title"))
 
@@ -303,6 +303,6 @@ func (conn *CayleyConnection) UpsertLink(orgId quad.IRI, node *Link) error {
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("rdf:type"), quad.IRI("di:link"), orgId))
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:url"), node.URL, orgId))
 		tx.AddQuad(quad.Make(node.ResourceID, quad.IRI("di:title"), node.Title, orgId))
-		addParentTopics(tx, orgId, node)
+		addParentTopics(tx, orgId, node, ensureTopic)
 	})
 }

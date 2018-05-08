@@ -296,7 +296,7 @@ func (config *Config) upsertLinkMutation(edgeType graphql.Output) *graphql.Field
 					Title:    stringOr("", title),
 					TopicIDs: *topicIds,
 				}, config.Connection)
-				checkErr(config.Connection.UpsertLink(orgId, node.(*Link)))
+				checkErr(config.Connection.UpsertLink(orgId, node.(*Link), true))
 			} else {
 				log.Println("Link is already in datastore:", url)
 				link := node.(*Link)
@@ -305,7 +305,7 @@ func (config *Config) upsertLinkMutation(edgeType graphql.Output) *graphql.Field
 				if title != nil {
 					link.Title = title.(string)
 				}
-				checkErr(config.Connection.UpsertLink(orgId, link))
+				checkErr(config.Connection.UpsertLink(orgId, link, false))
 			}
 
 			return map[string]interface{}{
