@@ -87,7 +87,6 @@ class Item extends Component<Props, State> {
           <this.props.FormComponent
             isOpen={this.state.formIsOpen}
             toggleFn={this.toggleForm}
-            link={{}}
             {...this.props}
           />
         </div>

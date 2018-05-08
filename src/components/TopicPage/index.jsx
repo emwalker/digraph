@@ -62,6 +62,7 @@ export default createFragmentContainer(TopicPage, graphql`
   fragment TopicPage_organization on Organization {
     ...AddTopic_organization
     ...AddLink_organization
+    ...EditLink_organization
   }
 
   fragment TopicPage_topic on Topic {
@@ -82,7 +83,7 @@ export default createFragmentContainer(TopicPage, graphql`
       edges {
         node {
           __typename
-          id
+          resourceId
           display: name
           resourcePath
         }
@@ -93,10 +94,12 @@ export default createFragmentContainer(TopicPage, graphql`
       edges {
         node {
           __typename
-          id
           display: title
+          resourceId
+          resourcePath: url
           url
-          resourcePath
+          title
+          ...EditLink_link
         }
       }
     }

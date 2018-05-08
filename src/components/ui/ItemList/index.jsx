@@ -24,23 +24,25 @@ const Blankslate = ({ message }: BlankslateProps) => (
 
 const renderItem = (
   {
-    __typename, resourceId, ...link
+    __typename, resourceId, ...item
   }: ItemType,
   props: Object,
 ) => {
-  const Form = __typename === 'Topic'
-    ? () => <div>Edit topic</div>
-    : EditLink
+  const isTopic = __typename === 'Topic'
+  const Form = isTopic ? () => null : EditLink
+  const className = isTopic ? 'Box-row-topic' : 'Box-row-link'
 
   return (
     <Item
+      __typename={__typename}
+      className={className}
       id={resourceId}
       key={resourceId}
       FormComponent={Form}
       resourceId={resourceId}
-      link={{ resourceId, ...link }}
+      item={{ resourceId, ...item }}
       {...props}
-      {...link}
+      {...item}
     />
   )
 }

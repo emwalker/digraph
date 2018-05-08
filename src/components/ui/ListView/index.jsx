@@ -10,7 +10,9 @@ type Props = {
   title: string,
 }
 
-export default ({ children, items, title }: Props) => (
+export default ({
+  children, items, title, ...props
+}: Props) => (
   <div>
     <div className="Subhead">
       <div className="Subhead-heading">{title}</div>
@@ -22,6 +24,7 @@ export default ({ children, items, title }: Props) => (
       <ItemList
         items={items}
         placeholder="There are no items in this list."
+        {...props}
       />
     </div>
   </div>

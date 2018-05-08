@@ -11,7 +11,7 @@ type Props = {
   relay: {
     environment: Object,
   },
-  link: {
+  item: {
     resourceId: string,
     title: string,
     url: string,
@@ -31,8 +31,8 @@ class EditLink extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      title: props.link.title,
-      url: props.link.url,
+      title: props.item.title,
+      url: props.item.url,
     }
   }
 
@@ -43,7 +43,7 @@ class EditLink extends Component<Props, State> {
       configs,
       {
         organizationId: this.props.organization.resourceId,
-        resourceId: this.props.link.resourceId,
+        resourceId: this.props.item.resourceId,
         title: this.state.title,
         url: this.state.url,
       },

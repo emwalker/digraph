@@ -57,6 +57,8 @@ export default createFragmentContainer(LinksPage, graphql`
           resourceId
           display: title
           resourcePath: url
+          title
+          url
           ...EditLink_link
 
           topics {
