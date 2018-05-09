@@ -44,7 +44,7 @@ func (array linkArray) Sort() {
 
 func init() {
 	voc.RegisterPrefix("foaf:", "http://xmlns.com/foaf/spec/")
-	voc.RegisterPrefix("di:", "http://github.com/emwalker/digraffe/")
+	voc.RegisterPrefix("di:", "http://github.com/emwalker/digraph/")
 	voc.RegisterPrefix("rdf:", "http://www.w3.org/1999/02/22-rdf-syntax-ns")
 	voc.RegisterPrefix("topic:", "/topics/")
 	voc.RegisterPrefix("link:", "/links/")

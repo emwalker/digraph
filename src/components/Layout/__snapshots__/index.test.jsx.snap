@@ -32,7 +32,7 @@ ShallowWrapper {
               className="masthead-logo"
               href="/"
             >
-              Digraffe
+              Digraph
             </a>
             <nav
               className="masthead-nav"
@@ -75,7 +75,7 @@ ShallowWrapper {
               Available for use under the MIT
                
               <a
-                href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                href="https://github.com/emwalker/digraph/blob/master/LICENSE.md"
               >
                 license
               </a>
@@ -105,7 +105,7 @@ ShallowWrapper {
               className="masthead-logo"
               href="/"
             >
-              Digraffe
+              Digraph
             </a>
             <nav
               className="masthead-nav"
@@ -141,7 +141,7 @@ ShallowWrapper {
                 className="masthead-logo"
                 href="/"
               >
-                Digraffe
+                Digraph
               </a>,
               <nav
                 className="masthead-nav"
@@ -173,12 +173,12 @@ ShallowWrapper {
               "key": undefined,
               "nodeType": "host",
               "props": Object {
-                "children": "Digraffe",
+                "children": "Digraph",
                 "className": "masthead-logo",
                 "href": "/",
               },
               "ref": null,
-              "rendered": "Digraffe",
+              "rendered": "Digraph",
               "type": "a",
             },
             Object {
@@ -284,7 +284,7 @@ ShallowWrapper {
               Available for use under the MIT
                
               <a
-                href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                href="https://github.com/emwalker/digraph/blob/master/LICENSE.md"
               >
                 license
               </a>
@@ -311,7 +311,7 @@ ShallowWrapper {
               Available for use under the MIT
                
               <a
-                href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                href="https://github.com/emwalker/digraph/blob/master/LICENSE.md"
               >
                 license
               </a>
@@ -335,7 +335,7 @@ ShallowWrapper {
                 "Available for use under the MIT",
                 " ",
                 <a
-                  href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                  href="https://github.com/emwalker/digraph/blob/master/LICENSE.md"
                 >
                   license
                 </a>,
@@ -359,7 +359,7 @@ ShallowWrapper {
                 "nodeType": "host",
                 "props": Object {
                   "children": "license",
-                  "href": "https://github.com/emwalker/digraffe/blob/master/LICENSE.md",
+                  "href": "https://github.com/emwalker/digraph/blob/master/LICENSE.md",
                 },
                 "ref": null,
                 "rendered": "license",
@@ -406,7 +406,7 @@ ShallowWrapper {
                 className="masthead-logo"
                 href="/"
               >
-                Digraffe
+                Digraph
               </a>
               <nav
                 className="masthead-nav"
@@ -449,7 +449,7 @@ ShallowWrapper {
                 Available for use under the MIT
                  
                 <a
-                  href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                  href="https://github.com/emwalker/digraph/blob/master/LICENSE.md"
                 >
                   license
                 </a>
@@ -479,7 +479,7 @@ ShallowWrapper {
                 className="masthead-logo"
                 href="/"
               >
-                Digraffe
+                Digraph
               </a>
               <nav
                 className="masthead-nav"
@@ -515,7 +515,7 @@ ShallowWrapper {
                   className="masthead-logo"
                   href="/"
                 >
-                  Digraffe
+                  Digraph
                 </a>,
                 <nav
                   className="masthead-nav"
@@ -547,12 +547,12 @@ ShallowWrapper {
                 "key": undefined,
                 "nodeType": "host",
                 "props": Object {
-                  "children": "Digraffe",
+                  "children": "Digraph",
                   "className": "masthead-logo",
                   "href": "/",
                 },
                 "ref": null,
-                "rendered": "Digraffe",
+                "rendered": "Digraph",
                 "type": "a",
               },
               Object {
@@ -658,7 +658,7 @@ ShallowWrapper {
                 Available for use under the MIT
                  
                 <a
-                  href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                  href="https://github.com/emwalker/digraph/blob/master/LICENSE.md"
                 >
                   license
                 </a>
@@ -685,7 +685,7 @@ ShallowWrapper {
                 Available for use under the MIT
                  
                 <a
-                  href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                  href="https://github.com/emwalker/digraph/blob/master/LICENSE.md"
                 >
                   license
                 </a>
@@ -709,7 +709,7 @@ ShallowWrapper {
                   "Available for use under the MIT",
                   " ",
                   <a
-                    href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md"
+                    href="https://github.com/emwalker/digraph/blob/master/LICENSE.md"
                   >
                     license
                   </a>,
@@ -733,7 +733,7 @@ ShallowWrapper {
                   "nodeType": "host",
                   "props": Object {
                     "children": "license",
-                    "href": "https://github.com/emwalker/digraffe/blob/master/LICENSE.md",
+                    "href": "https://github.com/emwalker/digraph/blob/master/LICENSE.md",
                   },
                   "ref": null,
                   "rendered": "license",

@@ -28,7 +28,7 @@ function sendPage(res, status, fetcher, element) {
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Language" content="en">
-    <title>Digraffe</title>
+    <title>Digraph</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
     <link rel="stylesheet" href="https://primer.github.io/archive/docs.css">

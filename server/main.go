@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/badoux/goscraper"
-	"github.com/emwalker/digraffe/server/api"
+	"github.com/emwalker/digraph/server/api"
 	"github.com/labstack/echo"
 )
 

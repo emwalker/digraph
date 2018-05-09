@@ -12,7 +12,7 @@ const Layout = ({ children }: Props) => (
     <header className="masthead">
       <div className="container">
         <a className="masthead-logo" href="/">
-          Digraffe
+          Digraph
         </a>
         <nav className="masthead-nav">
           <Link
@@ -41,7 +41,7 @@ const Layout = ({ children }: Props) => (
       <footer className="my-6 pt-4 border-top">
         <p className="mb-2">
           Available for use under the MIT{' '}
-          <a href="https://github.com/emwalker/digraffe/blob/master/LICENSE.md">license</a>.
+          <a href="https://github.com/emwalker/digraph/blob/master/LICENSE.md">license</a>.
           Copyright Eric Walker 2018.
           Derived from Github’s <a href="https://primer.github.io/">Primer</a>.
         </p>
