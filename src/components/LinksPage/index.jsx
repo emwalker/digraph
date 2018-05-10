@@ -1,40 +1,43 @@
 // @flow
 import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
+import { isEmpty } from 'ramda'
 
-import ItemList from '../ui/ItemList'
+import type { OrganizationType } from '../types'
 import { liftNodes } from '../../utils'
+import Link from '../ui/Link'
+import List from '../ui/List'
 
 type Props = {
-  organization: {
-    links: Object,
-  },
-  relay: {
-    environment: Object,
-  },
-  viewer: Object,
+  organization: OrganizationType,
 }
 
-const LinksPage = ({ organization, ...props }: Props) => (
-  <div>
-    <div className="Subhead">
-      <div className="Subhead-heading">Links</div>
+const LinksPage = ({ organization, ...props }: Props) => {
+  const links = liftNodes(organization.links)
+  return (
+    <div>
+      <div className="Subhead">
+        <div className="Subhead-heading">Links</div>
+      </div>
+      <List
+        placeholder="There are no links"
+        hasItems={!isEmpty(links)}
+      >
+        { links.map(link => (
+          <Link
+            key={link.resourceId}
+            organization={organization}
+            link={link}
+            {...props}
+          />
+        )) }
+      </List>
     </div>
-    <ItemList
-      title="Links"
-      items={liftNodes(organization.links)}
-      organization={organization}
-      {...props}
-    />
-  </div>
-)
+  )
+}
 
 export const query = graphql`
   query LinksPage_query_Query($organizationId: String!) {
-    viewer {
-      ...LinksPage_viewer
-    }
-
     organization(resourceId: $organizationId) {
       ...LinksPage_organization
     }
@@ -42,33 +45,14 @@ export const query = graphql`
 `
 
 export default createFragmentContainer(LinksPage, graphql`
-  fragment LinksPage_viewer on User {
-    name
-  }
-
   fragment LinksPage_organization on Organization {
-    id
-    resourceId
-    ...EditLink_organization
+    ...Link_organization
 
     links(first: 1000) @connection(key: "Organization_links") {
       edges {
         node {
           resourceId
-          display: title
-          resourcePath: url
-          title
-          url
-          ...EditLink_link
-
-          topics {
-            edges {
-              node {
-                name
-                resourcePath
-              }
-            }
-          }
+          ...Link_link
         }
       }
     }

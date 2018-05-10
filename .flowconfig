@@ -4,7 +4,7 @@
 .*/vendor/.*
 
 [include]
-app/javascript
+src/
 
 [libs]
 src/flow-typed

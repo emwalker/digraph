@@ -1,46 +1,73 @@
+// @flow
 import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
+import { isEmpty } from 'ramda'
 
-import ListView from '../ui/ListView'
+import type { TopicType } from '../types'
 import SidebarList from '../ui/SidebarList'
+import List from '../ui/List'
 import AddTopic from './AddTopic'
 import AddLink from './AddLink'
 import { liftNodes } from '../../utils'
+import Link from '../ui/Link'
+import Topic from '../ui/Topic'
 
 type Props = {
-  topic: {
-    name: string,
-  }
+  topic: TopicType,
 }
 
 const TopicPage = ({ topic, ...props }: Props) => {
   const {
     childTopics,
-    links,
+    links: childLinks,
     name,
     parentTopics,
   } = topic
-  const items = liftNodes(childTopics).concat(liftNodes(links))
+  const topics = liftNodes(childTopics)
+  const links = liftNodes(childLinks)
 
   return (
-    <ListView
-      title={name}
-      items={items}
-      {...props}
-    >
-      <SidebarList
-        title="Parent topics"
-        items={liftNodes(parentTopics)}
-      />
-      <AddTopic
-        topic={topic}
-        {...props}
-      />
-      <AddLink
-        topic={topic}
-        {...props}
-      />
-    </ListView>
+    <div>
+      <div className="Subhead">
+        <div className="Subhead-heading">{name}</div>
+      </div>
+      <div className="one-third column pl-0">
+        <SidebarList
+          title="Parent topics"
+          items={liftNodes(parentTopics)}
+        />
+        <AddTopic
+          topic={topic}
+          {...props}
+        />
+        <AddLink
+          topic={topic}
+          {...props}
+        />
+      </div>
+      <div className="two-thirds column pr-0">
+        <List
+          placeholder="There are no items in this list."
+          hasItems={!isEmpty(topics) || !isEmpty(links)}
+        >
+          { topics.map(childTopic => (
+            <Topic
+              key={childTopic.resourceId}
+              topic={childTopic}
+              {...props}
+            />
+          )) }
+
+          { links.map(link => (
+            <Link
+              key={link.resourceId}
+              link={link}
+              {...props}
+            />
+          )) }
+        </List>
+      </div>
+    </div>
   )
 }
 
@@ -62,7 +89,8 @@ export default createFragmentContainer(TopicPage, graphql`
   fragment TopicPage_organization on Organization {
     ...AddTopic_organization
     ...AddLink_organization
-    ...EditLink_organization
+    ...Link_organization
+    ...Topic_organization
   }
 
   fragment TopicPage_topic on Topic {
@@ -79,27 +107,20 @@ export default createFragmentContainer(TopicPage, graphql`
       }
     }
 
-    childTopics(first: 100) @connection(key: "Topic_childTopics") {
+    childTopics(first: 1000) @connection(key: "Topic_childTopics") {
       edges {
         node {
-          __typename
           resourceId
-          display: name
-          resourcePath
+          ...Topic_topic
         }
       }
     }
 
-    links(first: 100)  @connection(key: "Topic_links") {
+    links(first: 1000)  @connection(key: "Topic_links") {
       edges {
         node {
-          __typename
-          display: title
           resourceId
-          resourcePath: url
-          url
-          title
-          ...EditLink_link
+          ...Link_link
         }
       }
     }

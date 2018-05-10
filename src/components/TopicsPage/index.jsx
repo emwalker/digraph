@@ -1,8 +1,10 @@
 // @flow
 import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
+import { isEmpty } from 'ramda'
 
-import ItemList from '../ui/ItemList'
+import List from '../ui/List'
+import Topic from '../ui/Topic'
 import { liftNodes } from '../../utils'
 
 type Props = {
@@ -11,44 +13,48 @@ type Props = {
   },
 }
 
-const TopicsPage = ({ organization: { topics } }: Props) => (
-  <div>
-    <div className="Subhead">
-      <div className="Subhead-heading">Topics</div>
+const TopicsPage = ({ organization, ...props }: Props) => {
+  const topics = liftNodes(organization.topics)
+  return (
+    <div>
+      <div className="Subhead">
+        <div className="Subhead-heading">Topics</div>
+      </div>
+      <List
+        placeholder="There are no topics"
+        hasItems={!isEmpty(topics)}
+      >
+        { topics.map(topic => (
+          <Topic
+            key={topic.resourcePath}
+            topic={topic}
+            organization={organization}
+            {...props}
+          />
+        )) }
+      </List>
     </div>
-    <ItemList
-      title="Topics"
-      items={liftNodes(topics)}
-    />
-  </div>
-)
+  )
+}
 
 export const query = graphql`
 query TopicsPage_query_Query($organizationId: String!) {
-  viewer {
-    ...TopicsPage_viewer
-  }
-
   organization(resourceId: $organizationId) {
     ...TopicsPage_organization
   }
 }`
 
 export default createFragmentContainer(TopicsPage, graphql`
-  fragment TopicsPage_viewer on User {
-    name
-  }
-
   fragment TopicsPage_organization on Organization {
     id
     resourceId
+    ...Topic_organization
 
     topics(first: 1000) @connection(key: "Organization_topics") {
       edges {
         node {
-          resourceId
-          display: name
           resourcePath
+          ...Topic_topic
         }
       }
     }

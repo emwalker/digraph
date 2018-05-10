@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import Input from '../../Input'
-import upsertLinkMutation from '../../../../../mutations/upsertLinkMutation'
+import upsertLinkMutation from '../../../../mutations/upsertLinkMutation'
 
 type Props = {
   id: string,
@@ -11,7 +11,7 @@ type Props = {
   relay: {
     environment: Object,
   },
-  item: {
+  link: {
     resourceId: string,
     title: string,
     url: string,
@@ -19,7 +19,7 @@ type Props = {
   organization: {
     resourceId: string,
   },
-  toggleFn: Function,
+  toggleForm: Function,
 }
 
 type State = {
@@ -31,8 +31,8 @@ class EditLink extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      title: props.item.title,
-      url: props.item.url,
+      title: props.link.title,
+      url: props.link.url,
     }
   }
 
@@ -43,12 +43,12 @@ class EditLink extends Component<Props, State> {
       configs,
       {
         organizationId: this.props.organization.resourceId,
-        resourceId: this.props.item.resourceId,
+        resourceId: this.props.link.resourceId,
         title: this.state.title,
         url: this.state.url,
       },
     )
-    this.props.toggleFn()
+    this.props.toggleForm()
   }
 
   updateTitle = (event: Object) => {
@@ -67,7 +67,7 @@ class EditLink extends Component<Props, State> {
       <div>
         <div className="d-flex col-12">
           <Input
-            className="col-6"
+            className="col-5 mr-3"
             id={`edit-link-title-${this.props.id}`}
             label="Page title"
             onChange={this.updateTitle}
@@ -84,7 +84,7 @@ class EditLink extends Component<Props, State> {
         <div>
           <button onClick={this.onSave} className="btn-primary">Save</button>
           {' '} or {' '}
-          <button onClick={this.props.toggleFn} className="btn-link">cancel</button>
+          <button onClick={this.props.toggleForm} className="btn-link">cancel</button>
         </div>
       </div>
     )

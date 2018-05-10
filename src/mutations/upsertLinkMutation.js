@@ -8,21 +8,7 @@ const mutation = graphql`
     upsertLink(input: $input) {
       linkEdge {
         node {
-          id
-          resourceId
-          resourcePath
-          title
-          url
-
-          topics(first: 5) {
-            edges {
-              node {
-                name
-                resourceId
-                resourcePath
-              }
-            }
-          }
+          ...Link_link
         }
       }
     }

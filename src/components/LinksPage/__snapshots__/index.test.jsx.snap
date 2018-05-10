@@ -55,34 +55,8 @@ ShallowWrapper {
           </div>
         </div>,
         <Unknown
-          items={Array []}
-          organization={
-            Object {
-              "resourceId": "organization:tyrell",
-              "topics": Object {
-                "edges": Array [
-                  Object {
-                    "node": Object {
-                      "id": "1234",
-                      "name": "Frotz",
-                      "resourceId": "/topics/1234",
-                    },
-                  },
-                ],
-              },
-            }
-          }
-          relay={
-            Object {
-              "environment": Object {},
-            }
-          }
-          title="Links"
-          viewer={
-            Object {
-              "name": "Rezrov",
-            }
-          }
+          hasItems={false}
+          placeholder="There are no links"
         />,
       ],
     },
@@ -120,31 +94,12 @@ ShallowWrapper {
         "key": undefined,
         "nodeType": "function",
         "props": Object {
-          "items": Array [],
-          "organization": Object {
-            "resourceId": "organization:tyrell",
-            "topics": Object {
-              "edges": Array [
-                Object {
-                  "node": Object {
-                    "id": "1234",
-                    "name": "Frotz",
-                    "resourceId": "/topics/1234",
-                  },
-                },
-              ],
-            },
-          },
-          "relay": Object {
-            "environment": Object {},
-          },
-          "title": "Links",
-          "viewer": Object {
-            "name": "Rezrov",
-          },
+          "children": Array [],
+          "hasItems": false,
+          "placeholder": "There are no links",
         },
         "ref": null,
-        "rendered": null,
+        "rendered": Array [],
         "type": [Function],
       },
     ],
@@ -167,34 +122,8 @@ ShallowWrapper {
             </div>
           </div>,
           <Unknown
-            items={Array []}
-            organization={
-              Object {
-                "resourceId": "organization:tyrell",
-                "topics": Object {
-                  "edges": Array [
-                    Object {
-                      "node": Object {
-                        "id": "1234",
-                        "name": "Frotz",
-                        "resourceId": "/topics/1234",
-                      },
-                    },
-                  ],
-                },
-              }
-            }
-            relay={
-              Object {
-                "environment": Object {},
-              }
-            }
-            title="Links"
-            viewer={
-              Object {
-                "name": "Rezrov",
-              }
-            }
+            hasItems={false}
+            placeholder="There are no links"
           />,
         ],
       },
@@ -232,31 +161,12 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "function",
           "props": Object {
-            "items": Array [],
-            "organization": Object {
-              "resourceId": "organization:tyrell",
-              "topics": Object {
-                "edges": Array [
-                  Object {
-                    "node": Object {
-                      "id": "1234",
-                      "name": "Frotz",
-                      "resourceId": "/topics/1234",
-                    },
-                  },
-                ],
-              },
-            },
-            "relay": Object {
-              "environment": Object {},
-            },
-            "title": "Links",
-            "viewer": Object {
-              "name": "Rezrov",
-            },
+            "children": Array [],
+            "hasItems": false,
+            "placeholder": "There are no links",
           },
           "ref": null,
-          "rendered": null,
+          "rendered": Array [],
           "type": [Function],
         },
       ],

@@ -12,9 +12,8 @@ ShallowWrapper {
           "edges": Array [
             Object {
               "node": Object {
-                "id": "1234",
                 "name": "Frotz",
-                "resourceId": "/topics/1234",
+                "resourcePath": "/topics/1234",
               },
             },
           ],
@@ -50,17 +49,38 @@ ShallowWrapper {
           </div>
         </div>,
         <Unknown
-          items={
-            Array [
+          hasItems={true}
+          placeholder="There are no topics"
+        >
+          <Topic
+            organization={
               Object {
-                "id": "1234",
+                "resourceId": "organization:tyrell",
+                "topics": Object {
+                  "edges": Array [
+                    Object {
+                      "node": Object {
+                        "name": "Frotz",
+                        "resourcePath": "/topics/1234",
+                      },
+                    },
+                  ],
+                },
+              }
+            }
+            topic={
+              Object {
                 "name": "Frotz",
-                "resourceId": "/topics/1234",
-              },
-            ]
-          }
-          title="Topics"
-        />,
+                "resourcePath": "/topics/1234",
+              }
+            }
+            viewer={
+              Object {
+                "name": "Rezrov",
+              }
+            }
+          />
+        </Unknown>,
       ],
     },
     "ref": null,
@@ -97,17 +117,72 @@ ShallowWrapper {
         "key": undefined,
         "nodeType": "function",
         "props": Object {
-          "items": Array [
-            Object {
-              "id": "1234",
-              "name": "Frotz",
-              "resourceId": "/topics/1234",
-            },
+          "children": Array [
+            <Topic
+              organization={
+                Object {
+                  "resourceId": "organization:tyrell",
+                  "topics": Object {
+                    "edges": Array [
+                      Object {
+                        "node": Object {
+                          "name": "Frotz",
+                          "resourcePath": "/topics/1234",
+                        },
+                      },
+                    ],
+                  },
+                }
+              }
+              topic={
+                Object {
+                  "name": "Frotz",
+                  "resourcePath": "/topics/1234",
+                }
+              }
+              viewer={
+                Object {
+                  "name": "Rezrov",
+                }
+              }
+            />,
           ],
-          "title": "Topics",
+          "hasItems": true,
+          "placeholder": "There are no topics",
         },
         "ref": null,
-        "rendered": null,
+        "rendered": Array [
+          Object {
+            "instance": null,
+            "key": "/topics/1234",
+            "nodeType": "class",
+            "props": Object {
+              "organization": Object {
+                "resourceId": "organization:tyrell",
+                "topics": Object {
+                  "edges": Array [
+                    Object {
+                      "node": Object {
+                        "name": "Frotz",
+                        "resourcePath": "/topics/1234",
+                      },
+                    },
+                  ],
+                },
+              },
+              "topic": Object {
+                "name": "Frotz",
+                "resourcePath": "/topics/1234",
+              },
+              "viewer": Object {
+                "name": "Rezrov",
+              },
+            },
+            "ref": null,
+            "rendered": null,
+            "type": [Function],
+          },
+        ],
         "type": [Function],
       },
     ],
@@ -130,17 +205,38 @@ ShallowWrapper {
             </div>
           </div>,
           <Unknown
-            items={
-              Array [
+            hasItems={true}
+            placeholder="There are no topics"
+          >
+            <Topic
+              organization={
                 Object {
-                  "id": "1234",
+                  "resourceId": "organization:tyrell",
+                  "topics": Object {
+                    "edges": Array [
+                      Object {
+                        "node": Object {
+                          "name": "Frotz",
+                          "resourcePath": "/topics/1234",
+                        },
+                      },
+                    ],
+                  },
+                }
+              }
+              topic={
+                Object {
                   "name": "Frotz",
-                  "resourceId": "/topics/1234",
-                },
-              ]
-            }
-            title="Topics"
-          />,
+                  "resourcePath": "/topics/1234",
+                }
+              }
+              viewer={
+                Object {
+                  "name": "Rezrov",
+                }
+              }
+            />
+          </Unknown>,
         ],
       },
       "ref": null,
@@ -177,17 +273,72 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "function",
           "props": Object {
-            "items": Array [
-              Object {
-                "id": "1234",
-                "name": "Frotz",
-                "resourceId": "/topics/1234",
-              },
+            "children": Array [
+              <Topic
+                organization={
+                  Object {
+                    "resourceId": "organization:tyrell",
+                    "topics": Object {
+                      "edges": Array [
+                        Object {
+                          "node": Object {
+                            "name": "Frotz",
+                            "resourcePath": "/topics/1234",
+                          },
+                        },
+                      ],
+                    },
+                  }
+                }
+                topic={
+                  Object {
+                    "name": "Frotz",
+                    "resourcePath": "/topics/1234",
+                  }
+                }
+                viewer={
+                  Object {
+                    "name": "Rezrov",
+                  }
+                }
+              />,
             ],
-            "title": "Topics",
+            "hasItems": true,
+            "placeholder": "There are no topics",
           },
           "ref": null,
-          "rendered": null,
+          "rendered": Array [
+            Object {
+              "instance": null,
+              "key": "/topics/1234",
+              "nodeType": "class",
+              "props": Object {
+                "organization": Object {
+                  "resourceId": "organization:tyrell",
+                  "topics": Object {
+                    "edges": Array [
+                      Object {
+                        "node": Object {
+                          "name": "Frotz",
+                          "resourcePath": "/topics/1234",
+                        },
+                      },
+                    ],
+                  },
+                },
+                "topic": Object {
+                  "name": "Frotz",
+                  "resourcePath": "/topics/1234",
+                },
+                "viewer": Object {
+                  "name": "Rezrov",
+                },
+              },
+              "ref": null,
+              "rendered": null,
+              "type": [Function],
+            },
+          ],
           "type": [Function],
         },
       ],
