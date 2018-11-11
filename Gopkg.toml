@@ -29,6 +29,10 @@
   go-tests = true
   unused-packages = true
 
+[[override]]
+  name = "github.com/golang-migrate/migrate"
+  branch = "master"
+
 [[constraint]]
-  name = "github.com/mattes/migrate"
-  version = "3.0.1"
+  name = "github.com/99designs/gqlgen"
+  branch = "master"

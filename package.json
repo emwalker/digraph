@@ -5,7 +5,7 @@
   "scripts": {
     "start": "babel-node src/server",
     "eslint": "eslint --ext .js --ext .jsx src",
-    "relay": "relay-compiler --src ./src --schema ./src/schema.graphql  --extensions js jsx"
+    "relay": "relay-compiler --src ./src --schema ./schema.graphql  --extensions js jsx"
   },
   "author": "olebedev",
   "license": "MIT",

@@ -1,0 +1,23 @@
+# .gqlgen.yml example
+#
+# Refer to https://gqlgen.com/config/
+# for detailed .gqlgen.yml documentation.
+
+schema:
+- schema.graphql
+exec:
+  filename: models/generated.go
+  package: models
+model:
+  filename: models/models_gen.go
+  package: models
+models:
+  Organization:
+    model: github.com/emwalker/digraph/models.Organization
+  Topic:
+    model: github.com/emwalker/digraph/models.Topic
+  User:
+    model: github.com/emwalker/digraph/models.User
+resolver:
+  filename: resolver.go
+  type: Resolver

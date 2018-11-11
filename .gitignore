@@ -13,3 +13,4 @@
 /cayley.cfg.json
 /.cayley_history
 /data/personal.nq
+sqlboiler.yaml

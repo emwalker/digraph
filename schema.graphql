@@ -5,7 +5,7 @@ type PageInfo {
   endCursor: String
 }
 
-interface Namespacable {
+interface Namespaceable {
   organization: Organization!
 }
 
@@ -22,7 +22,7 @@ type User {
   selectedTopic: Topic
 }
 
-type Topic implements ResourceIdentifiable & Namespacable {
+type Topic implements ResourceIdentifiable & Namespaceable {
   childTopics(
     first: Int,
     after: String,
@@ -59,7 +59,7 @@ type TopicConnection {
   pageInfo: PageInfo!
 }
 
-type Link implements ResourceIdentifiable & Namespacable {
+type Link implements ResourceIdentifiable & Namespaceable {
   id: ID
   organization: Organization!
   resourceId: String!

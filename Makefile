@@ -2,7 +2,6 @@ BIN           = $(GOPATH)/bin
 ON            = $(BIN)/on
 NODE_BIN      = $(shell npm bin)
 PID           = .pid
-GO_FILES      = $(shell find ./server -type f -name "*.go")
 BUNDLE        = src/static/build/bundle.js
 APP           = $(shell find src -type f)
 IMPORT_PATH   = $(shell pwd | sed "s|^$(GOPATH)/src/||g")
@@ -11,7 +10,7 @@ GIT_HASH      = $(shell git rev-parse HEAD)
 LDFLAGS       = -w -X main.commitHash=$(GIT_HASH)
 GLIDE         := $(shell command -v glide 2> /dev/null)
 TIMESTAMP     = $(shell date -u +%s)
-DATABASES     = digraffe_dev digraffe_test
+DATABASES     = digraph_dev
 
 build: clean
 
@@ -23,13 +22,14 @@ kill:
 	@killall digraffe 2>/dev/null || true
 
 serve: clean kill
-	@yarn relay --watch &
-	@yarn start &
-	@go run server/main.go
+	#@yarn relay --watch &
+	#@yarn start &
+	@go run server/server.go
 
 lint:
-	@yarn run eslint || true
-	@golint $(GO_FILES) || true
+	golint models server
+	golint *.go
+	yarn run eslint
 
 install:
 	@yarn install
