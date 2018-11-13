@@ -10,7 +10,6 @@
 /tmp
 *__generated__*
 /scratchpad
-/cayley.cfg.json
-/.cayley_history
 /data/personal.nq
+/data/digraph.sql
 sqlboiler.yaml

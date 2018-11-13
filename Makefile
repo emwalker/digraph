@@ -10,7 +10,7 @@ GIT_HASH      = $(shell git rev-parse HEAD)
 LDFLAGS       = -w -X main.commitHash=$(GIT_HASH)
 GLIDE         := $(shell command -v glide 2> /dev/null)
 TIMESTAMP     = $(shell date -u +%s)
-DATABASES     = digraph_dev
+DBNAME        = digraph_dev
 
 build: clean
 
@@ -36,13 +36,13 @@ install:
 	@dep ensure
 
 migrate-up:
-	$(foreach database,$(DATABASES),\
+	$(foreach database,$(DBNAME),\
 		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
 			-source file://migrations up 1 ;\
 	)
 
 migrate-down:
-	$(foreach database,$(DATABASES),\
+	$(foreach database,$(DBNAME),\
 		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
 			-source file://migrations down 1 ;\
 	)
@@ -60,10 +60,9 @@ format:
 check: format test
 
 load:
-	@cayley load --config=./cayley.cfg.json --load=./data/personal.nq
+	dropdb $(DBNAME)
+	createdb $(DBNAME)
+	psql -d $(DBNAME) --set ON_ERROR_STOP=on < data/fixtures.sql
 
 dump:
-	@cayley dump --config=./cayley.cfg.json --dump=./data/personal.nq
-
-repl:
-	@cayley repl --config=./cayley.cfg.json
+	pg_dump -d $(DBNAME) > data/digraph.sql
