@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -23,22 +22,22 @@ import (
 
 // User is an object representing the database table.
 type User struct {
-	ID    string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name  string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Email null.String `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
+	ID           string `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name         string `boil:"name" json:"name" toml:"name" yaml:"name"`
+	PrimaryEmail string `boil:"primary_email" json:"primary_email" toml:"primary_email" yaml:"primary_email"`
 
 	R *userR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L userL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var UserColumns = struct {
-	ID    string
-	Name  string
-	Email string
+	ID           string
+	Name         string
+	PrimaryEmail string
 }{
-	ID:    "id",
-	Name:  "name",
-	Email: "email",
+	ID:           "id",
+	Name:         "name",
+	PrimaryEmail: "primary_email",
 }
 
 // UserRels is where relationship names are stored.
@@ -58,8 +57,8 @@ func (*userR) NewStruct() *userR {
 type userL struct{}
 
 var (
-	userColumns               = []string{"id", "name", "email"}
-	userColumnsWithoutDefault = []string{"name", "email"}
+	userColumns               = []string{"id", "name", "primary_email"}
+	userColumnsWithoutDefault = []string{"name", "primary_email"}
 	userColumnsWithDefault    = []string{"id"}
 	userPrimaryKeyColumns     = []string{"id"}
 )

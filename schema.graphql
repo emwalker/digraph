@@ -14,7 +14,7 @@ interface ResourceIdentifiable {
 }
 
 type User {
-  email: String!
+  primaryEmail: String!
   id: ID
   name: String!
   selectedTopic: Topic

@@ -122,7 +122,7 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Email         func(childComplexity int) int
+		PrimaryEmail  func(childComplexity int) int
 		Id            func(childComplexity int) int
 		Name          func(childComplexity int) int
 		SelectedTopic func(childComplexity int) int
@@ -146,15 +146,16 @@ type QueryResolver interface {
 }
 type TopicResolver interface {
 	ChildTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+	Description(ctx context.Context, obj *Topic) (*string, error)
 
 	Links(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*LinkConnection, error)
-	Name(ctx context.Context, obj *Topic) (string, error)
+
 	Organization(ctx context.Context, obj *Topic) (Organization, error)
 	ParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*TopicConnection, error)
 	ResourcePath(ctx context.Context, obj *Topic) (string, error)
 }
 type UserResolver interface {
-	Email(ctx context.Context, obj *User) (string, error)
+	PrimaryEmail(ctx context.Context, obj *User) (string, error)
 
 	SelectedTopic(ctx context.Context, obj *User) (*Topic, error)
 }
@@ -999,12 +1000,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpsertLinkPayload.LinkEdge(childComplexity), true
 
-	case "User.email":
-		if e.complexity.User.Email == nil {
+	case "User.primaryEmail":
+		if e.complexity.User.PrimaryEmail == nil {
 			break
 		}
 
-		return e.complexity.User.Email(childComplexity), true
+		return e.complexity.User.PrimaryEmail(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.Id == nil {
@@ -2345,7 +2346,11 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 				wg.Done()
 			}(i, field)
 		case "description":
-			out.Values[i] = ec._Topic_description(ctx, field, obj)
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Topic_description(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "id":
 			out.Values[i] = ec._Topic_id(ctx, field, obj)
 		case "links":
@@ -2355,14 +2360,10 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 				wg.Done()
 			}(i, field)
 		case "name":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Topic_name(ctx, field, obj)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
-				wg.Done()
-			}(i, field)
+			out.Values[i] = ec._Topic_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "organization":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -2446,15 +2447,19 @@ func (ec *executionContext) _Topic_description(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Description, nil
+		return ec.resolvers.Topic().Description(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 // nolint: vetshadow
@@ -2529,7 +2534,7 @@ func (ec *executionContext) _Topic_name(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Topic().Name(rctx, obj)
+		return obj.Name, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -2915,10 +2920,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("User")
-		case "email":
+		case "primaryEmail":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._User_email(ctx, field, obj)
+				out.Values[i] = ec._User_primaryEmail(ctx, field, obj)
 				if out.Values[i] == graphql.Null {
 					invalid = true
 				}
@@ -2949,7 +2954,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
+func (ec *executionContext) _User_primaryEmail(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer ec.Tracer.EndFieldExecution(ctx)
 	rctx := &graphql.ResolverContext{
@@ -2961,7 +2966,7 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().Email(rctx, obj)
+		return ec.resolvers.User().PrimaryEmail(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4710,7 +4715,7 @@ interface ResourceIdentifiable {
 }
 
 type User {
-  email: String!
+  primaryEmail: String!
   id: ID
   name: String!
   selectedTopic: Topic

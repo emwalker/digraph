@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -22,9 +23,10 @@ import (
 
 // Topic is an object representing the database table.
 type Topic struct {
-	OrganizationID string `boil:"organization_id" json:"organization_id" toml:"organization_id" yaml:"organization_id"`
-	ID             string `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Description    string `boil:"description" json:"description" toml:"description" yaml:"description"`
+	OrganizationID string      `boil:"organization_id" json:"organization_id" toml:"organization_id" yaml:"organization_id"`
+	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name           string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Description    null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
 
 	R *topicR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L topicL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -33,10 +35,12 @@ type Topic struct {
 var TopicColumns = struct {
 	OrganizationID string
 	ID             string
+	Name           string
 	Description    string
 }{
 	OrganizationID: "organization_id",
 	ID:             "id",
+	Name:           "name",
 	Description:    "description",
 }
 
@@ -61,8 +65,8 @@ func (*topicR) NewStruct() *topicR {
 type topicL struct{}
 
 var (
-	topicColumns               = []string{"organization_id", "id", "description"}
-	topicColumnsWithoutDefault = []string{"organization_id", "description"}
+	topicColumns               = []string{"organization_id", "id", "name", "description"}
+	topicColumnsWithoutDefault = []string{"organization_id", "name", "description"}
 	topicColumnsWithDefault    = []string{"id"}
 	topicPrimaryKeyColumns     = []string{"id"}
 )

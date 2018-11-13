@@ -48,8 +48,8 @@ migrate-down:
 	)
 
 test:
-	yarn jest
 	go test ./...
+	yarn jest
 
 format:
 	yarn eslint

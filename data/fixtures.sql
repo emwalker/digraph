@@ -106,7 +106,7 @@ ALTER TABLE public.topics OWNER TO postgres;
 CREATE TABLE public.users (
     id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
     name character varying(256) NOT NULL,
-    primary_email public.citext
+    primary_email public.citext NOT NULL
 );
 
 

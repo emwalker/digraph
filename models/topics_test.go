@@ -677,7 +677,7 @@ func testTopicsSelect(t *testing.T) {
 }
 
 var (
-	topicDBTypes = map[string]string{`Description`: `character varying`, `ID`: `uuid`, `OrganizationID`: `uuid`}
+	topicDBTypes = map[string]string{`Description`: `text`, `ID`: `uuid`, `Name`: `character varying`, `OrganizationID`: `uuid`}
 	_            = bytes.MinRead
 )
 

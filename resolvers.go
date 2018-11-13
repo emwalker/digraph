@@ -5,12 +5,15 @@ package digraph
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/emwalker/digraph/models"
 )
 
 // Resolver is the abstract base class for resolvers.
-type Resolver struct{}
+type Resolver struct {
+	DB *sql.DB
+}
 
 // Mutation returns a resolver that can be used for issuing mutations.
 func (r *Resolver) Mutation() models.MutationResolver {
@@ -48,7 +51,11 @@ func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
 
 // Organization returns a resolver that can be used to look up an organization.
 func (r *queryResolver) Organization(ctx context.Context, id string) (*models.Organization, error) {
-	panic("not implemented")
+	org, err := models.FindOrganization(ctx, r.DB, id)
+	if err != nil {
+		return nil, err
+	}
+	return org, nil
 }
 
 type organizationResolver struct{ models.OrganizationResolver }
@@ -58,12 +65,12 @@ type topicResolver struct{ models.TopicResolver }
 type userResolver struct{ models.TopicResolver }
 
 // Email returns the email of a user.
-func (r *userResolver) Email(context.Context, *models.User) (string, error) {
-	return "email@email.com", nil
+func (r *userResolver) PrimaryEmail(_ context.Context, user *models.User) (string, error) {
+	return user.PrimaryEmail, nil
 }
 
 // SelectedTopic returns the user's currently selected topic.
-func (r *userResolver) SelectedTopic(context.Context, *models.User) (*models.Topic, error) {
+func (r *userResolver) SelectedTopic(_ context.Context, user *models.User) (*models.Topic, error) {
 	return nil, nil
 }
 
