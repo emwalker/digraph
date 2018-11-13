@@ -17,7 +17,6 @@ type CreateTopicPayload struct {
 type Link struct {
 	ID           *string          `json:"id"`
 	Organization Organization     `json:"organization"`
-	ResourceID   string           `json:"resourceId"`
 	ResourcePath string           `json:"resourcePath"`
 	Title        string           `json:"title"`
 	URL          string           `json:"url"`
@@ -75,7 +74,6 @@ type UpsertLinkInput struct {
 	AddTopicIds      []string `json:"addTopicIds"`
 	ClientMutationID string   `json:"clientMutationId"`
 	OrganizationID   string   `json:"organizationId"`
-	ResourceID       *string  `json:"resourceId"`
 	Title            *string  `json:"title"`
 	URL              string   `json:"url"`
 }

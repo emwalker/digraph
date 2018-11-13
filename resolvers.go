@@ -47,7 +47,7 @@ func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
 }
 
 // Organization returns a resolver that can be used to look up an organization.
-func (r *queryResolver) Organization(ctx context.Context, resourceID string) (*models.Organization, error) {
+func (r *queryResolver) Organization(ctx context.Context, id string) (*models.Organization, error) {
 	panic("not implemented")
 }
 
@@ -60,11 +60,6 @@ type userResolver struct{ models.TopicResolver }
 // Email returns the email of a user.
 func (r *userResolver) Email(context.Context, *models.User) (string, error) {
 	return "email@email.com", nil
-}
-
-// ResourceID returns the resourceID of a user
-func (r *userResolver) ResourceID(context.Context, *models.User) (string, error) {
-	return "1234", nil
 }
 
 // SelectedTopic returns the user's currently selected topic.

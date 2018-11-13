@@ -10,7 +10,6 @@ interface Namespaceable {
 }
 
 interface ResourceIdentifiable {
-  resourceId: String!
   resourcePath: String!
 }
 
@@ -18,7 +17,6 @@ type User {
   email: String!
   id: ID
   name: String!
-  resourceId: String!
   selectedTopic: Topic
 }
 
@@ -45,7 +43,6 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection
-  resourceId: String!
   resourcePath: String!
 }
 
@@ -62,7 +59,6 @@ type TopicConnection {
 type Link implements ResourceIdentifiable & Namespaceable {
   id: ID
   organization: Organization!
-  resourceId: String!
   resourcePath: String!
   title: String!
   url: String!
@@ -93,9 +89,8 @@ type Organization implements ResourceIdentifiable {
     last: Int,
     before: String
   ): LinkConnection
-  resourceId: String!
   resourcePath: String!
-  topic(resourceId: String!): Topic
+  topic(id: ID!): Topic
   topics(
     first: Int,
     after: String,
@@ -106,7 +101,7 @@ type Organization implements ResourceIdentifiable {
 
 type Query {
   viewer: User
-  organization(resourceId: String!): Organization
+  organization(id: ID!): Organization
 }
 
 input CreateTopicInput {
@@ -125,7 +120,6 @@ input UpsertLinkInput {
   addTopicIds: [String!]
   clientMutationId: String!
   organizationId: String!
-  resourceId: String
   title: String
   url: String!
 }
