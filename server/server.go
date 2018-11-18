@@ -37,16 +37,17 @@ func newServer(playgroundPort string) *server {
 	}
 }
 
-func (s *server) handleGraphqlRequest() http.HandlerFunc {
-	return cors.Default().Handler(handler.GraphQL(s.schema)).(http.HandlerFunc)
+func (s *server) handleGraphqlRequest() http.Handler {
+	h := cors.Default().Handler(handler.GraphQL(s.schema))
+	return handlers.CombinedLoggingHandler(os.Stdout, handlers.CompressHandler(h))
 }
 
-func (s *server) handleGraphqlPlayground() http.HandlerFunc {
+func (s *server) handleGraphqlPlayground() http.Handler {
 	return handler.Playground("GraphQL playground", "/graphql")
 }
 
 func (s *server) routes() {
-	http.Handle("/graphql", handlers.CombinedLoggingHandler(os.Stdout, http.HandlerFunc(s.handleGraphqlRequest())))
+	http.Handle("/graphql", s.handleGraphqlRequest())
 	http.Handle("/", s.handleGraphqlPlayground())
 }
 

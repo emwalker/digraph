@@ -18,13 +18,13 @@ clean:
 	@rm -rf src/static/build/*
 
 kill:
+	@killall server 2>/dev/null || true
 	@killall node 2>/dev/null || true
-	@killall digraffe 2>/dev/null || true
 
 api:
-	@go run server/server.go
+	@go run server/server.go &
 
-start: api
+start: kill clean api
 	@yarn relay --watch &
 	@yarn start &
 
