@@ -21,7 +21,7 @@ kill:
 	@killall node 2>/dev/null || true
 	@killall digraffe 2>/dev/null || true
 
-serve: clean kill
+start:
 	@yarn relay --watch &
 	@yarn start &
 	@go run server/server.go

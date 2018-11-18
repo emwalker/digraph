@@ -10,7 +10,7 @@
     "graphql/introspection",
     "handler"
   ]
-  revision = "4bda3bc1291bdc0bc44e3057b5229d987eeecde2"
+  revision = "f7932b40ee0f75b35428af917cd05193b7f3414f"
 
 [[projects]]
   name = "github.com/agnivade/levenshtein"
@@ -102,6 +102,12 @@
   version = "v0.8.0"
 
 [[projects]]
+  name = "github.com/rs/cors"
+  packages = ["."]
+  revision = "9a47f48565a795472d43519dd49aac781f3034fb"
+  version = "v1.6.0"
+
+[[projects]]
   name = "github.com/spf13/afero"
   packages = [
     ".",
@@ -146,7 +152,7 @@
     "validator",
     "validator/rules"
   ]
-  revision = "07406bbdde4196e396e2f40c24defe84e9243ad5"
+  revision = "6f09700b13a33a80c5dc33117b8177aff00d906c"
 
 [[projects]]
   branch = "master"
@@ -182,7 +188,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "66b7b1311ac80bbafcd2daeef9a5e6e2cd1e2399"
+  revision = "93218def8b18e66adbdab3eca8ec334700329f1f"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -206,6 +212,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e7c4f175dd13612ad01df5b052aab2f9effc95c081ac89cbc19418ce4c898cec"
+  inputs-digest = "79824885b070032f208020b404ec93805260b36fd30a3541d78fd2a05b5decba"
   solver-name = "gps-cdcl"
   solver-version = 1

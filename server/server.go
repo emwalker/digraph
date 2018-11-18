@@ -10,6 +10,7 @@ import (
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 )
 
 const defaultPort = "8080"
@@ -24,9 +25,10 @@ func main() {
 	errIf(err)
 	resolver := &resolvers.Resolver{DB: db}
 
-	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
+	http.Handle("/", handler.Playground("GraphQL playground", "/graphql"))
+
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})
-	http.Handle("/query", handler.GraphQL(schema))
+	http.Handle("/graphql", cors.Default().Handler(handler.GraphQL(schema)))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

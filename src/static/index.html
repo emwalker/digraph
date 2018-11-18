@@ -1,23 +1,14 @@
 <!DOCTYPE html>
-<html data-uuid="{{ .UUID }}">
+<html>
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <link rel="stylesheet" href="/css/bundle.css">
-    <link
-      rel="stylesheet"
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css"
-      integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4"
-      crossorigin="anonymous"
-    />
-    <title>{{ .HTMLTitle }}</title>
-    {{ .HTMLMeta }}
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Language" content="en">
+    <title>Digraph</title>
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
   </head>
+
   <body>
-    <div id="main"></div>
-    <script>
-      window.__RELAY_PAYLOADS__ = JSON.parse("{}");
-    </script>
-    <script src="/js/bundle.js"></script>
+    <div id="root"></div>
+    <script src="/bundle.js"></script>
   </body>
 </html>

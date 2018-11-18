@@ -22,43 +22,16 @@ ShallowWrapper {
     "nodeType": "host",
     "props": Object {
       "children": Array [
-        <header
-          className="masthead"
-        >
-          <div
-            className="container"
-          >
-            <a
-              className="masthead-logo"
-              href="/"
-            >
-              Digraph
-            </a>
-            <nav
-              className="masthead-nav"
-            >
-              <Connect(BaseLink)
-                activeClassName="active"
-                className="test-topics-page"
-                href="/topics"
-                to="/topics"
-              >
-                Topics
-              </Connect(BaseLink)>
-              <Connect(BaseLink)
-                activeClassName="active"
-                className="test-links-page"
-                href="/links"
-                to="/links"
-              >
-                Links
-              </Connect(BaseLink)>
-            </nav>
-          </div>
-        </header>,
         <div
           className="container"
         >
+          <div
+            className="pagehead"
+          >
+            <h1>
+              Digraph
+            </h1>
+          </div>
           <div>
             some view
           </div>
@@ -79,13 +52,7 @@ ShallowWrapper {
               >
                 license
               </a>
-              . Copyright Eric Walker 2018. Derived from Github’s 
-              <a
-                href="https://primer.github.io/"
-              >
-                Primer
-              </a>
-              .
+              . © Eric Walker.
             </p>
           </footer>
         </div>,
@@ -98,176 +65,58 @@ ShallowWrapper {
         "key": undefined,
         "nodeType": "host",
         "props": Object {
-          "children": <div
-            className="container"
-          >
-            <a
-              className="masthead-logo"
-              href="/"
+          "children": Array [
+            <div
+              className="pagehead"
             >
-              Digraph
-            </a>
-            <nav
-              className="masthead-nav"
-            >
-              <Connect(BaseLink)
-                activeClassName="active"
-                className="test-topics-page"
-                href="/topics"
-                to="/topics"
-              >
-                Topics
-              </Connect(BaseLink)>
-              <Connect(BaseLink)
-                activeClassName="active"
-                className="test-links-page"
-                href="/links"
-                to="/links"
-              >
-                Links
-              </Connect(BaseLink)>
-            </nav>
-          </div>,
-          "className": "masthead",
+              <h1>
+                Digraph
+              </h1>
+            </div>,
+            <div>
+              some view
+            </div>,
+          ],
+          "className": "container",
         },
         "ref": null,
-        "rendered": Object {
-          "instance": null,
-          "key": undefined,
-          "nodeType": "host",
-          "props": Object {
-            "children": Array [
-              <a
-                className="masthead-logo"
-                href="/"
-              >
+        "rendered": Array [
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": <h1>
                 Digraph
-              </a>,
-              <nav
-                className="masthead-nav"
-              >
-                <Connect(BaseLink)
-                  activeClassName="active"
-                  className="test-topics-page"
-                  href="/topics"
-                  to="/topics"
-                >
-                  Topics
-                </Connect(BaseLink)>
-                <Connect(BaseLink)
-                  activeClassName="active"
-                  className="test-links-page"
-                  href="/links"
-                  to="/links"
-                >
-                  Links
-                </Connect(BaseLink)>
-              </nav>,
-            ],
-            "className": "container",
-          },
-          "ref": null,
-          "rendered": Array [
-            Object {
+              </h1>,
+              "className": "pagehead",
+            },
+            "ref": null,
+            "rendered": Object {
               "instance": null,
               "key": undefined,
               "nodeType": "host",
               "props": Object {
                 "children": "Digraph",
-                "className": "masthead-logo",
-                "href": "/",
               },
               "ref": null,
               "rendered": "Digraph",
-              "type": "a",
+              "type": "h1",
             },
-            Object {
-              "instance": null,
-              "key": undefined,
-              "nodeType": "host",
-              "props": Object {
-                "children": Array [
-                  <Connect(BaseLink)
-                    activeClassName="active"
-                    className="test-topics-page"
-                    href="/topics"
-                    to="/topics"
-                  >
-                    Topics
-                  </Connect(BaseLink)>,
-                  <Connect(BaseLink)
-                    activeClassName="active"
-                    className="test-links-page"
-                    href="/links"
-                    to="/links"
-                  >
-                    Links
-                  </Connect(BaseLink)>,
-                ],
-                "className": "masthead-nav",
-              },
-              "ref": null,
-              "rendered": Array [
-                Object {
-                  "instance": null,
-                  "key": undefined,
-                  "nodeType": "class",
-                  "props": Object {
-                    "activeClassName": "active",
-                    "children": "Topics",
-                    "className": "test-topics-page",
-                    "href": "/topics",
-                    "to": "/topics",
-                  },
-                  "ref": null,
-                  "rendered": "Topics",
-                  "type": [Function],
-                },
-                Object {
-                  "instance": null,
-                  "key": undefined,
-                  "nodeType": "class",
-                  "props": Object {
-                    "activeClassName": "active",
-                    "children": "Links",
-                    "className": "test-links-page",
-                    "href": "/links",
-                    "to": "/links",
-                  },
-                  "ref": null,
-                  "rendered": "Links",
-                  "type": [Function],
-                },
-              ],
-              "type": "nav",
-            },
-          ],
-          "type": "div",
-        },
-        "type": "header",
-      },
-      Object {
-        "instance": null,
-        "key": undefined,
-        "nodeType": "host",
-        "props": Object {
-          "children": <div>
-            some view
-          </div>,
-          "className": "container",
-        },
-        "ref": null,
-        "rendered": Object {
-          "instance": null,
-          "key": undefined,
-          "nodeType": "host",
-          "props": Object {
-            "children": "some view",
+            "type": "div",
           },
-          "ref": null,
-          "rendered": "some view",
-          "type": "div",
-        },
+          Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": "some view",
+            },
+            "ref": null,
+            "rendered": "some view",
+            "type": "div",
+          },
+        ],
         "type": "div",
       },
       Object {
@@ -288,13 +137,7 @@ ShallowWrapper {
               >
                 license
               </a>
-              . Copyright Eric Walker 2018. Derived from Github’s 
-              <a
-                href="https://primer.github.io/"
-              >
-                Primer
-              </a>
-              .
+              . © Eric Walker.
             </p>
           </footer>,
           "className": "container",
@@ -315,13 +158,7 @@ ShallowWrapper {
               >
                 license
               </a>
-              . Copyright Eric Walker 2018. Derived from Github’s 
-              <a
-                href="https://primer.github.io/"
-              >
-                Primer
-              </a>
-              .
+              . © Eric Walker.
             </p>,
             "className": "my-6 pt-4 border-top",
           },
@@ -339,13 +176,7 @@ ShallowWrapper {
                 >
                   license
                 </a>,
-                ". Copyright Eric Walker 2018. Derived from Github’s ",
-                <a
-                  href="https://primer.github.io/"
-                >
-                  Primer
-                </a>,
-                ".",
+                ". © Eric Walker.",
               ],
               "className": "mb-2",
             },
@@ -365,20 +196,7 @@ ShallowWrapper {
                 "rendered": "license",
                 "type": "a",
               },
-              ". Copyright Eric Walker 2018. Derived from Github’s ",
-              Object {
-                "instance": null,
-                "key": undefined,
-                "nodeType": "host",
-                "props": Object {
-                  "children": "Primer",
-                  "href": "https://primer.github.io/",
-                },
-                "ref": null,
-                "rendered": "Primer",
-                "type": "a",
-              },
-              ".",
+              ". © Eric Walker.",
             ],
             "type": "p",
           },
@@ -396,43 +214,16 @@ ShallowWrapper {
       "nodeType": "host",
       "props": Object {
         "children": Array [
-          <header
-            className="masthead"
-          >
-            <div
-              className="container"
-            >
-              <a
-                className="masthead-logo"
-                href="/"
-              >
-                Digraph
-              </a>
-              <nav
-                className="masthead-nav"
-              >
-                <Connect(BaseLink)
-                  activeClassName="active"
-                  className="test-topics-page"
-                  href="/topics"
-                  to="/topics"
-                >
-                  Topics
-                </Connect(BaseLink)>
-                <Connect(BaseLink)
-                  activeClassName="active"
-                  className="test-links-page"
-                  href="/links"
-                  to="/links"
-                >
-                  Links
-                </Connect(BaseLink)>
-              </nav>
-            </div>
-          </header>,
           <div
             className="container"
           >
+            <div
+              className="pagehead"
+            >
+              <h1>
+                Digraph
+              </h1>
+            </div>
             <div>
               some view
             </div>
@@ -453,13 +244,7 @@ ShallowWrapper {
                 >
                   license
                 </a>
-                . Copyright Eric Walker 2018. Derived from Github’s 
-                <a
-                  href="https://primer.github.io/"
-                >
-                  Primer
-                </a>
-                .
+                . © Eric Walker.
               </p>
             </footer>
           </div>,
@@ -472,176 +257,58 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "host",
           "props": Object {
-            "children": <div
-              className="container"
-            >
-              <a
-                className="masthead-logo"
-                href="/"
+            "children": Array [
+              <div
+                className="pagehead"
               >
-                Digraph
-              </a>
-              <nav
-                className="masthead-nav"
-              >
-                <Connect(BaseLink)
-                  activeClassName="active"
-                  className="test-topics-page"
-                  href="/topics"
-                  to="/topics"
-                >
-                  Topics
-                </Connect(BaseLink)>
-                <Connect(BaseLink)
-                  activeClassName="active"
-                  className="test-links-page"
-                  href="/links"
-                  to="/links"
-                >
-                  Links
-                </Connect(BaseLink)>
-              </nav>
-            </div>,
-            "className": "masthead",
+                <h1>
+                  Digraph
+                </h1>
+              </div>,
+              <div>
+                some view
+              </div>,
+            ],
+            "className": "container",
           },
           "ref": null,
-          "rendered": Object {
-            "instance": null,
-            "key": undefined,
-            "nodeType": "host",
-            "props": Object {
-              "children": Array [
-                <a
-                  className="masthead-logo"
-                  href="/"
-                >
+          "rendered": Array [
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": <h1>
                   Digraph
-                </a>,
-                <nav
-                  className="masthead-nav"
-                >
-                  <Connect(BaseLink)
-                    activeClassName="active"
-                    className="test-topics-page"
-                    href="/topics"
-                    to="/topics"
-                  >
-                    Topics
-                  </Connect(BaseLink)>
-                  <Connect(BaseLink)
-                    activeClassName="active"
-                    className="test-links-page"
-                    href="/links"
-                    to="/links"
-                  >
-                    Links
-                  </Connect(BaseLink)>
-                </nav>,
-              ],
-              "className": "container",
-            },
-            "ref": null,
-            "rendered": Array [
-              Object {
+                </h1>,
+                "className": "pagehead",
+              },
+              "ref": null,
+              "rendered": Object {
                 "instance": null,
                 "key": undefined,
                 "nodeType": "host",
                 "props": Object {
                   "children": "Digraph",
-                  "className": "masthead-logo",
-                  "href": "/",
                 },
                 "ref": null,
                 "rendered": "Digraph",
-                "type": "a",
+                "type": "h1",
               },
-              Object {
-                "instance": null,
-                "key": undefined,
-                "nodeType": "host",
-                "props": Object {
-                  "children": Array [
-                    <Connect(BaseLink)
-                      activeClassName="active"
-                      className="test-topics-page"
-                      href="/topics"
-                      to="/topics"
-                    >
-                      Topics
-                    </Connect(BaseLink)>,
-                    <Connect(BaseLink)
-                      activeClassName="active"
-                      className="test-links-page"
-                      href="/links"
-                      to="/links"
-                    >
-                      Links
-                    </Connect(BaseLink)>,
-                  ],
-                  "className": "masthead-nav",
-                },
-                "ref": null,
-                "rendered": Array [
-                  Object {
-                    "instance": null,
-                    "key": undefined,
-                    "nodeType": "class",
-                    "props": Object {
-                      "activeClassName": "active",
-                      "children": "Topics",
-                      "className": "test-topics-page",
-                      "href": "/topics",
-                      "to": "/topics",
-                    },
-                    "ref": null,
-                    "rendered": "Topics",
-                    "type": [Function],
-                  },
-                  Object {
-                    "instance": null,
-                    "key": undefined,
-                    "nodeType": "class",
-                    "props": Object {
-                      "activeClassName": "active",
-                      "children": "Links",
-                      "className": "test-links-page",
-                      "href": "/links",
-                      "to": "/links",
-                    },
-                    "ref": null,
-                    "rendered": "Links",
-                    "type": [Function],
-                  },
-                ],
-                "type": "nav",
-              },
-            ],
-            "type": "div",
-          },
-          "type": "header",
-        },
-        Object {
-          "instance": null,
-          "key": undefined,
-          "nodeType": "host",
-          "props": Object {
-            "children": <div>
-              some view
-            </div>,
-            "className": "container",
-          },
-          "ref": null,
-          "rendered": Object {
-            "instance": null,
-            "key": undefined,
-            "nodeType": "host",
-            "props": Object {
-              "children": "some view",
+              "type": "div",
             },
-            "ref": null,
-            "rendered": "some view",
-            "type": "div",
-          },
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": "some view",
+              },
+              "ref": null,
+              "rendered": "some view",
+              "type": "div",
+            },
+          ],
           "type": "div",
         },
         Object {
@@ -662,13 +329,7 @@ ShallowWrapper {
                 >
                   license
                 </a>
-                . Copyright Eric Walker 2018. Derived from Github’s 
-                <a
-                  href="https://primer.github.io/"
-                >
-                  Primer
-                </a>
-                .
+                . © Eric Walker.
               </p>
             </footer>,
             "className": "container",
@@ -689,13 +350,7 @@ ShallowWrapper {
                 >
                   license
                 </a>
-                . Copyright Eric Walker 2018. Derived from Github’s 
-                <a
-                  href="https://primer.github.io/"
-                >
-                  Primer
-                </a>
-                .
+                . © Eric Walker.
               </p>,
               "className": "my-6 pt-4 border-top",
             },
@@ -713,13 +368,7 @@ ShallowWrapper {
                   >
                     license
                   </a>,
-                  ". Copyright Eric Walker 2018. Derived from Github’s ",
-                  <a
-                    href="https://primer.github.io/"
-                  >
-                    Primer
-                  </a>,
-                  ".",
+                  ". © Eric Walker.",
                 ],
                 "className": "mb-2",
               },
@@ -739,20 +388,7 @@ ShallowWrapper {
                   "rendered": "license",
                   "type": "a",
                 },
-                ". Copyright Eric Walker 2018. Derived from Github’s ",
-                Object {
-                  "instance": null,
-                  "key": undefined,
-                  "nodeType": "host",
-                  "props": Object {
-                    "children": "Primer",
-                    "href": "https://primer.github.io/",
-                  },
-                  "ref": null,
-                  "rendered": "Primer",
-                  "type": "a",
-                },
-                ".",
+                ". © Eric Walker.",
               ],
               "type": "p",
             },

@@ -45,7 +45,7 @@ type queryResolver struct{ *Resolver }
 
 // Viewer returns the logged-in user.
 func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
-	panic("not implemented")
+	return models.Users().One(ctx, r.DB)
 }
 
 // Organization returns a resolver that can be used to look up an organization.

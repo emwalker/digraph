@@ -1,33 +1,31 @@
 import BrowserProtocol from 'farce/lib/BrowserProtocol'
-import createInitialFarceRouter from 'found/lib/createInitialFarceRouter'
+import createFarceRouter from 'found/lib/createFarceRouter'
+import createRender from 'found/lib/createRender'
+import { Resolver } from 'found-relay'
 import React from 'react'
 import ReactDOM from 'react-dom'
-
-import { ClientFetcher } from './fetcher'
-import {
-  createResolver,
-  historyMiddlewares,
-  render,
-  routeConfig,
-} from './router'
+import { Environment, RecordSource, Store, Network } from 'relay-runtime'
 
 import './css'
+import {
+  historyMiddlewares,
+  routeConfig,
+} from './router'
+import fetchQuery from './fetchQuery'
 
-(async () => {
-  // eslint-disable-next-line no-underscore-dangle
-  const fetcher = new ClientFetcher('http://localhost:5000/graphql', window.__RELAY_PAYLOADS__)
-  const resolver = createResolver(fetcher)
+const environment = new Environment({
+  network: Network.create(fetchQuery),
+  store: new Store(new RecordSource()),
+})
 
-  const Router = await createInitialFarceRouter({
-    historyProtocol: new BrowserProtocol(),
-    historyMiddlewares,
-    routeConfig,
-    resolver,
-    render,
-  })
+const Router = createFarceRouter({
+  historyProtocol: new BrowserProtocol(),
+  historyMiddlewares,
+  routeConfig,
+  render: createRender({}),
+})
 
-  ReactDOM.hydrate(
-    <Router resolver={resolver} />,
-    document.getElementById('root'),
-  )
-})()
+ReactDOM.render(
+  <Router resolver={new Resolver(environment)} />,
+  document.getElementById('root'),
+)

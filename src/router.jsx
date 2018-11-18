@@ -12,6 +12,7 @@ import TopicsPage, { query as topicsPageQuery } from './components/TopicsPage'
 import TopicPage, { query as topicPageQuery } from './components/TopicPage'
 import LinksPage, { query as linksPageQuery } from './components/LinksPage'
 import Layout from './components/Layout'
+import withErrorBoundary from './components/withErrorBoundary'
 
 export const historyMiddlewares = [queryMiddleware]
 
@@ -56,7 +57,7 @@ export const routeConfig = makeRouteConfig(
     })}
   >
     <Route
-      Component={Homepage}
+      Component={withErrorBoundary(Homepage)}
       query={homepageQuery}
     />
     <Route path="topics">

@@ -13,11 +13,7 @@ describe('<Layout />', () => {
     expect(wrapper).toMatchSnapshot()
   })
 
-  it('includes a topics menu item', () => {
-    expect(wrapper.find('.test-topics-page')).toHaveLength(1)
-  })
-
-  it('includes a links menu item', () => {
-    expect(wrapper.find('.test-links-page')).toHaveLength(1)
+  it('does not include links for the moment', () => {
+    expect(wrapper.find('.test-links-page')).toHaveLength(0)
   })
 })
