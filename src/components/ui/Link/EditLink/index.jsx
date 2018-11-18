@@ -93,11 +93,10 @@ class EditLink extends Component<Props, State> {
 
 export default createFragmentContainer(EditLink, graphql`
   fragment EditLink_organization on Organization {
-    resourceId
+    id
   }
 
   fragment EditLink_link on Link {
-    resourceId
     title
     url
   }

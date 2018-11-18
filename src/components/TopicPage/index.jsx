@@ -73,13 +73,13 @@ const TopicPage = ({ topic, ...props }: Props) => {
 
 export const query = graphql`
 query TopicPage_query_Query(
-  $organizationId: String!,
-  $topicId: String!
+  $orgId: ID!,
+  $topicId: ID!
 ) {
-  organization(resourceId: $organizationId) {
+  organization(id: $orgId) {
     ...TopicPage_organization
 
-    topic(resourceId: $topicId) {
+    topic(id: $topicId) {
       ...TopicPage_topic
     }
   }
@@ -110,7 +110,6 @@ export default createFragmentContainer(TopicPage, graphql`
     childTopics(first: 1000) @connection(key: "Topic_childTopics") {
       edges {
         node {
-          resourceId
           ...Topic_topic
         }
       }
@@ -119,7 +118,6 @@ export default createFragmentContainer(TopicPage, graphql`
     links(first: 1000)  @connection(key: "Topic_links") {
       edges {
         node {
-          resourceId
           ...Link_link
         }
       }

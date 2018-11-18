@@ -1,4 +1,5 @@
 package resolvers
+
 //go:generate gorunpkg github.com/99designs/gqlgen
 
 import (
@@ -69,4 +70,9 @@ func (r *Resolver) Topic() models.TopicResolver {
 // User returns an instance of models.UserResolver.
 func (r *Resolver) User() models.UserResolver {
 	return &userResolver{r}
+}
+
+// Link returns an instance of models.LinkResolver.
+func (r *Resolver) Link() models.LinkResolver {
+	return &linkResolver{r}
 }

@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/99designs/gqlgen/handler"
-	"github.com/emwalker/digraph/resolvers"
 	"github.com/emwalker/digraph/models"
+	"github.com/emwalker/digraph/resolvers"
 	_ "github.com/lib/pq"
 )
 

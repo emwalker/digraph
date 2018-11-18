@@ -12,6 +12,8 @@ model:
   filename: models/models_gen.go
   package: models
 models:
+  Link:
+    model: github.com/emwalker/digraph/models.Link
   Organization:
     model: github.com/emwalker/digraph/models.Organization
   Topic:

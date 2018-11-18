@@ -75,11 +75,10 @@ class AddTopic extends Component<RelayProps, State> {
 
 export default createFragmentContainer(AddTopic, graphql`
   fragment AddTopic_organization on Organization {
-    resourceId
+    id
   }
 
   fragment AddTopic_topic on Topic {
     id
-    resourceId
   }
 `)

@@ -22,15 +22,11 @@ func (r *organizationResolver) Topic(ctx context.Context, org *models.Organizati
 }
 
 // Topics returns a set of topics.
-func (r *organizationResolver) Topics(_ context.Context, org *models.Organization, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
-	conn := &models.TopicConnection{
-	}
-	return conn, nil
+func (r *organizationResolver) Topics(ctx context.Context, org *models.Organization, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
+	return topicConnection(org.Topics().All(ctx, r.DB))
 }
 
 // Links returns a set of links.
-func (r *organizationResolver) Links(_ context.Context, org *models.Organization, first *int, after *string, last *int, before *string) (*models.LinkConnection, error) {
-	conn := &models.LinkConnection{
-	}
-	return conn, nil
+func (r *organizationResolver) Links(ctx context.Context, org *models.Organization, first *int, after *string, last *int, before *string) (*models.LinkConnection, error) {
+	return linkConnection(org.Links().All(ctx, r.DB))
 }

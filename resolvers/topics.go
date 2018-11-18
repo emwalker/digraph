@@ -26,13 +26,13 @@ func (r *topicResolver) ResourcePath(_ context.Context, topic *models.Topic) (st
 	return "/topics/" + topic.ID, nil
 }
 
-func topicConnection(topics []*models.Topic, err error) (*models.TopicConnection, error) {
+func topicConnection(rows []*models.Topic, err error) (*models.TopicConnection, error) {
 	if err != nil {
 		return nil, err
 	}
 
-	edges := make([]*models.TopicEdge, len(topics))
-	for _, topic := range topics {
+	edges := make([]*models.TopicEdge, len(rows))
+	for _, topic := range rows {
 		edges = append(edges, &models.TopicEdge{Node: topic})
 	}
 
@@ -51,7 +51,5 @@ func (r *topicResolver) ParentTopics(ctx context.Context, topic *models.Topic, f
 
 // Links returns a set of links.
 func (r *topicResolver) Links(ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string) (*models.LinkConnection, error) {
-	conn := &models.LinkConnection{
-	}
-	return conn, nil
+	return linkConnection(models.Links().All(ctx, r.DB))
 }

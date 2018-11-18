@@ -22,13 +22,12 @@ kill:
 	@killall digraffe 2>/dev/null || true
 
 serve: clean kill
-	#@yarn relay --watch &
-	#@yarn start &
+	@yarn relay --watch &
+	@yarn start &
 	@go run server/server.go
 
 lint:
-	golint models server
-	golint *.go
+	golint models server resolvers
 	yarn run eslint
 
 install:

@@ -31,6 +31,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Link() LinkResolver
 	Mutation() MutationResolver
 	Organization() OrganizationResolver
 	Query() QueryResolver
@@ -129,6 +130,13 @@ type ComplexityRoot struct {
 	}
 }
 
+type LinkResolver interface {
+	Organization(ctx context.Context, obj *Link) (Organization, error)
+	ResourcePath(ctx context.Context, obj *Link) (string, error)
+	Title(ctx context.Context, obj *Link) (string, error)
+
+	Topics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+}
 type MutationResolver interface {
 	CreateTopic(ctx context.Context, input CreateTopicInput) (*CreateTopicPayload, error)
 	SelectTopic(ctx context.Context, input SelectTopicInput) (*SelectTopicPayload, error)
@@ -1136,6 +1144,7 @@ var linkImplementors = []string{"Link", "ResourceIdentifiable", "Namespaceable"}
 func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj *Link) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, linkImplementors)
 
+	var wg sync.WaitGroup
 	out := graphql.NewOrderedMap(len(fields))
 	invalid := false
 	for i, field := range fields {
@@ -1147,32 +1156,48 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._Link_id(ctx, field, obj)
 		case "organization":
-			out.Values[i] = ec._Link_organization(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Link_organization(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "resourcePath":
-			out.Values[i] = ec._Link_resourcePath(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Link_resourcePath(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "title":
-			out.Values[i] = ec._Link_title(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Link_title(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "url":
 			out.Values[i] = ec._Link_url(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
 		case "topics":
-			out.Values[i] = ec._Link_topics(ctx, field, obj)
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Link_topics(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-
+	wg.Wait()
 	if invalid {
 		return graphql.Null
 	}
@@ -1197,14 +1222,10 @@ func (ec *executionContext) _Link_id(ctx context.Context, field graphql.Collecte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalID(*res)
+	return graphql.MarshalID(res)
 }
 
 // nolint: vetshadow
@@ -1220,7 +1241,7 @@ func (ec *executionContext) _Link_organization(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Organization, nil
+		return ec.resolvers.Link().Organization(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1248,7 +1269,7 @@ func (ec *executionContext) _Link_resourcePath(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ResourcePath, nil
+		return ec.resolvers.Link().ResourcePath(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1275,7 +1296,7 @@ func (ec *executionContext) _Link_title(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Title, nil
+		return ec.resolvers.Link().Title(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1335,7 +1356,7 @@ func (ec *executionContext) _Link_topics(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Topics, nil
+		return ec.resolvers.Link().Topics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
 		return graphql.Null

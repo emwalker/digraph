@@ -14,18 +14,6 @@ type CreateTopicPayload struct {
 	TopicEdge TopicEdge `json:"topicEdge"`
 }
 
-type Link struct {
-	ID           *string          `json:"id"`
-	Organization Organization     `json:"organization"`
-	ResourcePath string           `json:"resourcePath"`
-	Title        string           `json:"title"`
-	URL          string           `json:"url"`
-	Topics       *TopicConnection `json:"topics"`
-}
-
-func (Link) IsResourceIdentifiable() {}
-func (Link) IsNamespaceable()        {}
-
 type LinkConnection struct {
 	Edges    []*LinkEdge `json:"edges"`
 	PageInfo PageInfo    `json:"pageInfo"`

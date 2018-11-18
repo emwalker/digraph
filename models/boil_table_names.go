@@ -4,11 +4,13 @@
 package models
 
 var TableNames = struct {
+	Links            string
 	Organizations    string
 	SchemaMigrations string
 	Topics           string
 	Users            string
 }{
+	Links:            "links",
 	Organizations:    "organizations",
 	SchemaMigrations: "schema_migrations",
 	Topics:           "topics",

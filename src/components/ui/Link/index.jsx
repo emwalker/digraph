@@ -56,14 +56,12 @@ class Link extends Component<Props, State> {
 
 export default createFragmentContainer(Link, graphql`
   fragment Link_organization on Organization {
-    resourceId
     ...EditLink_organization
   }
 
   fragment Link_link on Link {
     title
     url
-    resourceId
     ...EditLink_link
 
     topics(first: 10) {

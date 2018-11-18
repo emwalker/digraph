@@ -12,6 +12,7 @@ import "testing"
 // It does NOT run each operation group in parallel.
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
+	t.Run("Links", testLinks)
 	t.Run("Organizations", testOrganizations)
 	t.Run("SchemaMigrations", testSchemaMigrations)
 	t.Run("Topics", testTopics)
@@ -19,6 +20,7 @@ func TestParent(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
+	t.Run("Links", testLinksDelete)
 	t.Run("Organizations", testOrganizationsDelete)
 	t.Run("SchemaMigrations", testSchemaMigrationsDelete)
 	t.Run("Topics", testTopicsDelete)
@@ -26,6 +28,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestQueryDeleteAll(t *testing.T) {
+	t.Run("Links", testLinksQueryDeleteAll)
 	t.Run("Organizations", testOrganizationsQueryDeleteAll)
 	t.Run("SchemaMigrations", testSchemaMigrationsQueryDeleteAll)
 	t.Run("Topics", testTopicsQueryDeleteAll)
@@ -33,6 +36,7 @@ func TestQueryDeleteAll(t *testing.T) {
 }
 
 func TestSliceDeleteAll(t *testing.T) {
+	t.Run("Links", testLinksSliceDeleteAll)
 	t.Run("Organizations", testOrganizationsSliceDeleteAll)
 	t.Run("SchemaMigrations", testSchemaMigrationsSliceDeleteAll)
 	t.Run("Topics", testTopicsSliceDeleteAll)
@@ -40,6 +44,7 @@ func TestSliceDeleteAll(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
+	t.Run("Links", testLinksExists)
 	t.Run("Organizations", testOrganizationsExists)
 	t.Run("SchemaMigrations", testSchemaMigrationsExists)
 	t.Run("Topics", testTopicsExists)
@@ -47,6 +52,7 @@ func TestExists(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
+	t.Run("Links", testLinksFind)
 	t.Run("Organizations", testOrganizationsFind)
 	t.Run("SchemaMigrations", testSchemaMigrationsFind)
 	t.Run("Topics", testTopicsFind)
@@ -54,6 +60,7 @@ func TestFind(t *testing.T) {
 }
 
 func TestBind(t *testing.T) {
+	t.Run("Links", testLinksBind)
 	t.Run("Organizations", testOrganizationsBind)
 	t.Run("SchemaMigrations", testSchemaMigrationsBind)
 	t.Run("Topics", testTopicsBind)
@@ -61,6 +68,7 @@ func TestBind(t *testing.T) {
 }
 
 func TestOne(t *testing.T) {
+	t.Run("Links", testLinksOne)
 	t.Run("Organizations", testOrganizationsOne)
 	t.Run("SchemaMigrations", testSchemaMigrationsOne)
 	t.Run("Topics", testTopicsOne)
@@ -68,6 +76,7 @@ func TestOne(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
+	t.Run("Links", testLinksAll)
 	t.Run("Organizations", testOrganizationsAll)
 	t.Run("SchemaMigrations", testSchemaMigrationsAll)
 	t.Run("Topics", testTopicsAll)
@@ -75,6 +84,7 @@ func TestAll(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
+	t.Run("Links", testLinksCount)
 	t.Run("Organizations", testOrganizationsCount)
 	t.Run("SchemaMigrations", testSchemaMigrationsCount)
 	t.Run("Topics", testTopicsCount)
@@ -82,6 +92,7 @@ func TestCount(t *testing.T) {
 }
 
 func TestHooks(t *testing.T) {
+	t.Run("Links", testLinksHooks)
 	t.Run("Organizations", testOrganizationsHooks)
 	t.Run("SchemaMigrations", testSchemaMigrationsHooks)
 	t.Run("Topics", testTopicsHooks)
@@ -89,6 +100,8 @@ func TestHooks(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
+	t.Run("Links", testLinksInsert)
+	t.Run("Links", testLinksInsertWhitelist)
 	t.Run("Organizations", testOrganizationsInsert)
 	t.Run("Organizations", testOrganizationsInsertWhitelist)
 	t.Run("SchemaMigrations", testSchemaMigrationsInsert)
@@ -102,6 +115,7 @@ func TestInsert(t *testing.T) {
 // TestToOne tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOne(t *testing.T) {
+	t.Run("LinkToOrganizationUsingOrganization", testLinkToOneOrganizationUsingOrganization)
 	t.Run("TopicToOrganizationUsingOrganization", testTopicToOneOrganizationUsingOrganization)
 }
 
@@ -112,12 +126,14 @@ func TestOneToOne(t *testing.T) {}
 // TestToMany tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToMany(t *testing.T) {
+	t.Run("OrganizationToLinks", testOrganizationToManyLinks)
 	t.Run("OrganizationToTopics", testOrganizationToManyTopics)
 }
 
 // TestToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOneSet(t *testing.T) {
+	t.Run("LinkToOrganizationUsingLinks", testLinkToOneSetOpOrganizationUsingOrganization)
 	t.Run("TopicToOrganizationUsingTopics", testTopicToOneSetOpOrganizationUsingOrganization)
 }
 
@@ -136,6 +152,7 @@ func TestOneToOneRemove(t *testing.T) {}
 // TestToManyAdd tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToManyAdd(t *testing.T) {
+	t.Run("OrganizationToLinks", testOrganizationToManyAddOpLinks)
 	t.Run("OrganizationToTopics", testOrganizationToManyAddOpTopics)
 }
 
@@ -148,6 +165,7 @@ func TestToManySet(t *testing.T) {}
 func TestToManyRemove(t *testing.T) {}
 
 func TestReload(t *testing.T) {
+	t.Run("Links", testLinksReload)
 	t.Run("Organizations", testOrganizationsReload)
 	t.Run("SchemaMigrations", testSchemaMigrationsReload)
 	t.Run("Topics", testTopicsReload)
@@ -155,6 +173,7 @@ func TestReload(t *testing.T) {
 }
 
 func TestReloadAll(t *testing.T) {
+	t.Run("Links", testLinksReloadAll)
 	t.Run("Organizations", testOrganizationsReloadAll)
 	t.Run("SchemaMigrations", testSchemaMigrationsReloadAll)
 	t.Run("Topics", testTopicsReloadAll)
@@ -162,6 +181,7 @@ func TestReloadAll(t *testing.T) {
 }
 
 func TestSelect(t *testing.T) {
+	t.Run("Links", testLinksSelect)
 	t.Run("Organizations", testOrganizationsSelect)
 	t.Run("SchemaMigrations", testSchemaMigrationsSelect)
 	t.Run("Topics", testTopicsSelect)
@@ -169,6 +189,7 @@ func TestSelect(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Run("Links", testLinksUpdate)
 	t.Run("Organizations", testOrganizationsUpdate)
 	t.Run("SchemaMigrations", testSchemaMigrationsUpdate)
 	t.Run("Topics", testTopicsUpdate)
@@ -176,6 +197,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestSliceUpdateAll(t *testing.T) {
+	t.Run("Links", testLinksSliceUpdateAll)
 	t.Run("Organizations", testOrganizationsSliceUpdateAll)
 	t.Run("SchemaMigrations", testSchemaMigrationsSliceUpdateAll)
 	t.Run("Topics", testTopicsSliceUpdateAll)

@@ -39,13 +39,16 @@ var OrganizationColumns = struct {
 
 // OrganizationRels is where relationship names are stored.
 var OrganizationRels = struct {
+	Links  string
 	Topics string
 }{
+	Links:  "Links",
 	Topics: "Topics",
 }
 
 // organizationR is where relationships are stored.
 type organizationR struct {
+	Links  LinkSlice
 	Topics TopicSlice
 }
 
@@ -300,6 +303,27 @@ func (q organizationQuery) Exists(ctx context.Context, exec boil.ContextExecutor
 	return count > 0, nil
 }
 
+// Links retrieves all the link's Links with an executor.
+func (o *Organization) Links(mods ...qm.QueryMod) linkQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"links\".\"organization_id\"=?", o.ID),
+	)
+
+	query := Links(queryMods...)
+	queries.SetFrom(query.Query, "\"links\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"links\".*"})
+	}
+
+	return query
+}
+
 // Topics retrieves all the topic's Topics with an executor.
 func (o *Organization) Topics(mods ...qm.QueryMod) topicQuery {
 	var queryMods []qm.QueryMod
@@ -319,6 +343,97 @@ func (o *Organization) Topics(mods ...qm.QueryMod) topicQuery {
 	}
 
 	return query
+}
+
+// LoadLinks allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (organizationL) LoadLinks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeOrganization interface{}, mods queries.Applicator) error {
+	var slice []*Organization
+	var object *Organization
+
+	if singular {
+		object = maybeOrganization.(*Organization)
+	} else {
+		slice = *maybeOrganization.(*[]*Organization)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &organizationR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &organizationR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(qm.From(`links`), qm.WhereIn(`organization_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load links")
+	}
+
+	var resultSlice []*Link
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice links")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on links")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for links")
+	}
+
+	if len(linkAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Links = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &linkR{}
+			}
+			foreign.R.Organization = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.OrganizationID {
+				local.R.Links = append(local.R.Links, foreign)
+				if foreign.R == nil {
+					foreign.R = &linkR{}
+				}
+				foreign.R.Organization = local
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadTopics allows an eager lookup of values, cached into the
@@ -409,6 +524,59 @@ func (organizationL) LoadTopics(ctx context.Context, e boil.ContextExecutor, sin
 		}
 	}
 
+	return nil
+}
+
+// AddLinks adds the given related objects to the existing relationships
+// of the organization, optionally inserting them as new records.
+// Appends related to o.R.Links.
+// Sets related.R.Organization appropriately.
+func (o *Organization) AddLinks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Link) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.OrganizationID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"links\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"organization_id"}),
+				strmangle.WhereClause("\"", "\"", 2, linkPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.OrganizationID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &organizationR{
+			Links: related,
+		}
+	} else {
+		o.R.Links = append(o.R.Links, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &linkR{
+				Organization: o,
+			}
+		} else {
+			rel.R.Organization = o
+		}
+	}
 	return nil
 }
 
