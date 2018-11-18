@@ -14,5 +14,9 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Topics", testTopicsUpsert)
 
+	t.Run("TopicsLinks", testTopicsLinksUpsert)
+
+	t.Run("TopicsTopics", testTopicsTopicsUpsert)
+
 	t.Run("Users", testUsersUpsert)
 }

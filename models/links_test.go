@@ -494,6 +494,159 @@ func testLinksInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testLinkToManyChildTopicsLinks(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Link
+	var b, c TopicsLink
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, linkDBTypes, true, linkColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Link struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, topicsLinkDBTypes, false, topicsLinkColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, topicsLinkDBTypes, false, topicsLinkColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.ChildID = a.ID
+	c.ChildID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	topicsLink, err := a.ChildTopicsLinks().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range topicsLink {
+		if v.ChildID == b.ChildID {
+			bFound = true
+		}
+		if v.ChildID == c.ChildID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := LinkSlice{&a}
+	if err = a.L.LoadChildTopicsLinks(ctx, tx, false, (*[]*Link)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ChildTopicsLinks); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.ChildTopicsLinks = nil
+	if err = a.L.LoadChildTopicsLinks(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ChildTopicsLinks); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", topicsLink)
+	}
+}
+
+func testLinkToManyAddOpChildTopicsLinks(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Link
+	var b, c, d, e TopicsLink
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, linkDBTypes, false, strmangle.SetComplement(linkPrimaryKeyColumns, linkColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*TopicsLink{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, topicsLinkDBTypes, false, strmangle.SetComplement(topicsLinkPrimaryKeyColumns, topicsLinkColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*TopicsLink{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddChildTopicsLinks(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.ChildID {
+			t.Error("foreign key was wrong value", a.ID, first.ChildID)
+		}
+		if a.ID != second.ChildID {
+			t.Error("foreign key was wrong value", a.ID, second.ChildID)
+		}
+
+		if first.R.Child != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Child != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.ChildTopicsLinks[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ChildTopicsLinks[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.ChildTopicsLinks().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testLinkToOneOrganizationUsingOrganization(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))

@@ -62,6 +62,20 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: links; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.links (
+    organization_id uuid NOT NULL,
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    url text NOT NULL,
+    title text DEFAULT ''::text NOT NULL
+);
+
+
+ALTER TABLE public.links OWNER TO postgres;
+
+--
 -- Name: organizations; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -100,6 +114,32 @@ CREATE TABLE public.topics (
 ALTER TABLE public.topics OWNER TO postgres;
 
 --
+-- Name: topics_links; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.topics_links (
+    organization_id uuid NOT NULL,
+    parent_id uuid NOT NULL,
+    child_id uuid NOT NULL
+);
+
+
+ALTER TABLE public.topics_links OWNER TO postgres;
+
+--
+-- Name: topics_topics; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.topics_topics (
+    organization_id uuid NOT NULL,
+    parent_id uuid NOT NULL,
+    child_id uuid NOT NULL
+);
+
+
+ALTER TABLE public.topics_topics OWNER TO postgres;
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -111,6 +151,16 @@ CREATE TABLE public.users (
 
 
 ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- Data for Name: links; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.links (organization_id, id, url, title) FROM stdin;
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	fec9434a-eade-11e8-8231-3be3240b1542	https://github.com/	Github
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	10120416-eadf-11e8-8231-db1081f8c4fc	https://www.google.com/	Google
+\.
+
 
 --
 -- Data for Name: organizations; Type: TABLE DATA; Schema: public; Owner: postgres
@@ -126,7 +176,7 @@ COPY public.organizations (id, name) FROM stdin;
 --
 
 COPY public.schema_migrations (version, dirty) FROM stdin;
-1524281488	f
+1542580080	f
 \.
 
 
@@ -143,6 +193,22 @@ COPY public.topics (organization_id, id, name, description) FROM stdin;
 
 
 --
+-- Data for Name: topics_links; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.topics_links (organization_id, parent_id, child_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: topics_topics; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.topics_topics (organization_id, parent_id, child_id) FROM stdin;
+\.
+
+
+--
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -153,6 +219,14 @@ COPY public.users (id, name, primary_email) FROM stdin;
 45dca1fc-e6f0-11e8-8bc1-9f412923ac8b	Bozbar	bozbar@tyrell.test
 45dca260-e6f0-11e8-8bc1-a7bab2abca4f	Rezrov	rezrov@tyrell.test
 \.
+
+
+--
+-- Name: links links_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.links
+    ADD CONSTRAINT links_pkey PRIMARY KEY (id);
 
 
 --
@@ -172,11 +246,27 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: topics_links topics_links_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.topics_links
+    ADD CONSTRAINT topics_links_pkey PRIMARY KEY (organization_id, parent_id, child_id);
+
+
+--
 -- Name: topics topics_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.topics
     ADD CONSTRAINT topics_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: topics_topics topics_topics_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.topics_topics
+    ADD CONSTRAINT topics_topics_pkey PRIMARY KEY (parent_id, child_id);
 
 
 --
@@ -196,11 +286,81 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: topics_links_child_parent_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX topics_links_child_parent_idx ON public.topics_links USING btree (child_id, parent_id);
+
+
+--
+-- Name: topics_topics_child_parent_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX topics_topics_child_parent_idx ON public.topics_topics USING btree (child_id, parent_id);
+
+
+--
+-- Name: links links_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.links
+    ADD CONSTRAINT links_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: topics_links topics_links_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.topics_links
+    ADD CONSTRAINT topics_links_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.links(id);
+
+
+--
+-- Name: topics_links topics_links_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.topics_links
+    ADD CONSTRAINT topics_links_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: topics_links topics_links_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.topics_links
+    ADD CONSTRAINT topics_links_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.topics(id);
+
+
+--
 -- Name: topics topics_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.topics
     ADD CONSTRAINT topics_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: topics_topics topics_topics_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.topics_topics
+    ADD CONSTRAINT topics_topics_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.topics(id);
+
+
+--
+-- Name: topics_topics topics_topics_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.topics_topics
+    ADD CONSTRAINT topics_topics_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: topics_topics topics_topics_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.topics_topics
+    ADD CONSTRAINT topics_topics_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.topics(id);
 
 
 --
