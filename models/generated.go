@@ -51,9 +51,10 @@ type ComplexityRoot struct {
 		Id           func(childComplexity int) int
 		Organization func(childComplexity int) int
 		ResourcePath func(childComplexity int) int
+		Sha1         func(childComplexity int) int
 		Title        func(childComplexity int) int
-		Url          func(childComplexity int) int
 		Topics       func(childComplexity int, first *int, after *string, last *int, before *string) int
+		Url          func(childComplexity int) int
 	}
 
 	LinkConnection struct {
@@ -133,7 +134,6 @@ type ComplexityRoot struct {
 type LinkResolver interface {
 	Organization(ctx context.Context, obj *Link) (Organization, error)
 	ResourcePath(ctx context.Context, obj *Link) (string, error)
-	Title(ctx context.Context, obj *Link) (string, error)
 
 	Topics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (*TopicConnection, error)
 }
@@ -699,19 +699,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Link.ResourcePath(childComplexity), true
 
+	case "Link.sha1":
+		if e.complexity.Link.Sha1 == nil {
+			break
+		}
+
+		return e.complexity.Link.Sha1(childComplexity), true
+
 	case "Link.title":
 		if e.complexity.Link.Title == nil {
 			break
 		}
 
 		return e.complexity.Link.Title(childComplexity), true
-
-	case "Link.url":
-		if e.complexity.Link.Url == nil {
-			break
-		}
-
-		return e.complexity.Link.Url(childComplexity), true
 
 	case "Link.topics":
 		if e.complexity.Link.Topics == nil {
@@ -724,6 +724,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Link.Topics(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+
+	case "Link.url":
+		if e.complexity.Link.Url == nil {
+			break
+		}
+
+		return e.complexity.Link.Url(childComplexity), true
 
 	case "LinkConnection.edges":
 		if e.complexity.LinkConnection.Edges == nil {
@@ -1173,17 +1180,13 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 				}
 				wg.Done()
 			}(i, field)
+		case "sha1":
+			out.Values[i] = ec._Link_sha1(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "title":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Link_title(ctx, field, obj)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
-				wg.Done()
-			}(i, field)
-		case "url":
-			out.Values[i] = ec._Link_url(ctx, field, obj)
+			out.Values[i] = ec._Link_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -1193,6 +1196,11 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 				out.Values[i] = ec._Link_topics(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "url":
+			out.Values[i] = ec._Link_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1284,7 +1292,7 @@ func (ec *executionContext) _Link_resourcePath(ctx context.Context, field graphq
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_title(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_sha1(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer ec.Tracer.EndFieldExecution(ctx)
 	rctx := &graphql.ResolverContext{
@@ -1296,7 +1304,7 @@ func (ec *executionContext) _Link_title(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Link().Title(rctx, obj)
+		return obj.Sha1, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1311,7 +1319,7 @@ func (ec *executionContext) _Link_title(ctx context.Context, field graphql.Colle
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_url(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_title(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer ec.Tracer.EndFieldExecution(ctx)
 	rctx := &graphql.ResolverContext{
@@ -1323,7 +1331,7 @@ func (ec *executionContext) _Link_url(ctx context.Context, field graphql.Collect
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.URL, nil
+		return obj.Title, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1370,6 +1378,33 @@ func (ec *executionContext) _Link_topics(ctx context.Context, field graphql.Coll
 	}
 
 	return ec._TopicConnection(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Link_url(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rctx := &graphql.ResolverContext{
+		Object: "Link",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 var linkConnectionImplementors = []string{"LinkConnection"}
@@ -4776,14 +4811,15 @@ type Link implements ResourceIdentifiable & Namespaceable {
   id: ID
   organization: Organization!
   resourcePath: String!
+  sha1: String!
   title: String!
-  url: String!
   topics(
     first: Int,
     after: String,
     last: Int,
     before: String
   ): TopicConnection
+  url: String!
 }
 
 type LinkEdge {

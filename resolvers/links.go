@@ -15,6 +15,11 @@ func (r *linkResolver) Title(_ context.Context, link *models.Link) (string, erro
 	return link.Title, nil
 }
 
+// Description returns a description of the link.
+func (r *linkResolver) Sha1(_ context.Context, link *models.Link) (string, error) {
+	return link.Sha1, nil
+}
+
 // Organization returns a set of links.
 func (r *linkResolver) Organization(ctx context.Context, link *models.Link) (models.Organization, error) {
 	org, err := link.Organization().One(ctx, r.DB)

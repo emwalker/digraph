@@ -26,6 +26,7 @@ type Link struct {
 	ID             string `boil:"id" json:"id" toml:"id" yaml:"id"`
 	URL            string `boil:"url" json:"url" toml:"url" yaml:"url"`
 	Title          string `boil:"title" json:"title" toml:"title" yaml:"title"`
+	Sha1           string `boil:"sha1" json:"sha1" toml:"sha1" yaml:"sha1"`
 
 	R *linkR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L linkL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -36,11 +37,13 @@ var LinkColumns = struct {
 	ID             string
 	URL            string
 	Title          string
+	Sha1           string
 }{
 	OrganizationID: "organization_id",
 	ID:             "id",
 	URL:            "url",
 	Title:          "title",
+	Sha1:           "sha1",
 }
 
 // LinkRels is where relationship names are stored.
@@ -67,8 +70,8 @@ func (*linkR) NewStruct() *linkR {
 type linkL struct{}
 
 var (
-	linkColumns               = []string{"organization_id", "id", "url", "title"}
-	linkColumnsWithoutDefault = []string{"organization_id", "url"}
+	linkColumns               = []string{"organization_id", "id", "url", "title", "sha1"}
+	linkColumnsWithoutDefault = []string{"organization_id", "url", "sha1"}
 	linkColumnsWithDefault    = []string{"id", "title"}
 	linkPrimaryKeyColumns     = []string{"id"}
 )

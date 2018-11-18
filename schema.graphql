@@ -60,14 +60,15 @@ type Link implements ResourceIdentifiable & Namespaceable {
   id: ID
   organization: Organization!
   resourcePath: String!
+  sha1: String!
   title: String!
-  url: String!
   topics(
     first: Int,
     after: String,
     last: Int,
     before: String
   ): TopicConnection
+  url: String!
 }
 
 type LinkEdge {

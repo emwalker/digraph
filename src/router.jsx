@@ -53,7 +53,7 @@ export const routeConfig = makeRouteConfig(
     }
     prepareVariables={params => ({
       ...params,
-      organizationId: 'organization:tyrell',
+      orgId: '45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb',
     })}
   >
     <Route
@@ -62,7 +62,7 @@ export const routeConfig = makeRouteConfig(
     />
     <Route path="topics">
       <Route
-        Component={TopicsPage}
+        Component={withErrorBoundary(TopicsPage)}
         query={topicsPageQuery}
       />
       <Route
@@ -77,7 +77,7 @@ export const routeConfig = makeRouteConfig(
     </Route>
     <Route path="links">
       <Route
-        Component={LinksPage}
+        Component={withErrorBoundary(LinksPage)}
         query={linksPageQuery}
       />
     </Route>
