@@ -21,10 +21,12 @@ kill:
 	@killall node 2>/dev/null || true
 	@killall digraffe 2>/dev/null || true
 
-start:
+api:
+	@go run server/server.go
+
+start: api
 	@yarn relay --watch &
 	@yarn start &
-	@go run server/server.go
 
 lint:
 	golint models server resolvers
