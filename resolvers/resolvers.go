@@ -1,7 +1,5 @@
-package digraph
-
+package resolvers
 //go:generate gorunpkg github.com/99designs/gqlgen
-//go:generate sqlboiler psql
 
 import (
 	"context"
@@ -58,33 +56,17 @@ func (r *queryResolver) Organization(ctx context.Context, id string) (*models.Or
 	return org, nil
 }
 
-type organizationResolver struct{ models.OrganizationResolver }
-
-type topicResolver struct{ models.TopicResolver }
-
-type userResolver struct{ models.TopicResolver }
-
-// Email returns the email of a user.
-func (r *userResolver) PrimaryEmail(_ context.Context, user *models.User) (string, error) {
-	return user.PrimaryEmail, nil
-}
-
-// SelectedTopic returns the user's currently selected topic.
-func (r *userResolver) SelectedTopic(_ context.Context, user *models.User) (*models.Topic, error) {
-	return nil, nil
-}
-
 // Organization returns an instance of models.OrganizationResolver.
 func (r *Resolver) Organization() models.OrganizationResolver {
-	return &organizationResolver{}
+	return &organizationResolver{r}
 }
 
 // Topic returns an instance of models.TopicResolver.
 func (r *Resolver) Topic() models.TopicResolver {
-	return &topicResolver{}
+	return &topicResolver{r}
 }
 
 // User returns an instance of models.UserResolver.
 func (r *Resolver) User() models.UserResolver {
-	return &userResolver{}
+	return &userResolver{r}
 }

@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/99designs/gqlgen/handler"
-	"github.com/emwalker/digraph"
+	"github.com/emwalker/digraph/resolvers"
 	"github.com/emwalker/digraph/models"
 	_ "github.com/lib/pq"
 )
@@ -22,7 +22,7 @@ func main() {
 
 	db, err := sql.Open("postgres", "dbname=digraph_dev user=postgres sslmode=disable")
 	errIf(err)
-	resolver := &digraph.Resolver{DB: db}
+	resolver := &resolvers.Resolver{DB: db}
 
 	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})

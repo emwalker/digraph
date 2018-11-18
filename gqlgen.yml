@@ -19,5 +19,6 @@ models:
   User:
     model: github.com/emwalker/digraph/models.User
 resolver:
-  filename: resolver.go
+  filename: resolvers/resolver.go
   type: Resolver
+  package: resolvers

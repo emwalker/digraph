@@ -155,8 +155,6 @@ type TopicResolver interface {
 	ResourcePath(ctx context.Context, obj *Topic) (string, error)
 }
 type UserResolver interface {
-	PrimaryEmail(ctx context.Context, obj *User) (string, error)
-
 	SelectedTopic(ctx context.Context, obj *User) (*Topic, error)
 }
 
@@ -2921,14 +2919,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("User")
 		case "primaryEmail":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._User_primaryEmail(ctx, field, obj)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
-				wg.Done()
-			}(i, field)
+			out.Values[i] = ec._User_primaryEmail(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
 		case "name":
@@ -2966,7 +2960,7 @@ func (ec *executionContext) _User_primaryEmail(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().PrimaryEmail(rctx, obj)
+		return obj.PrimaryEmail, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
