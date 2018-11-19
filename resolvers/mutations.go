@@ -7,8 +7,8 @@ import (
 
 	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/models"
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 // CreateTopic creates a new topic.
@@ -17,8 +17,8 @@ func (r *MutationResolver) CreateTopic(ctx context.Context, input models.CreateT
 	defer tx.Commit()
 
 	topic := models.Topic{
-		Description: null.StringFromPtr(input.Description),
-		Name: input.Name,
+		Description:    null.StringFromPtr(input.Description),
+		Name:           input.Name,
 		OrganizationID: input.OrganizationID,
 	}
 

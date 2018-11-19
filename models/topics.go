@@ -46,23 +46,23 @@ var TopicColumns = struct {
 
 // TopicRels is where relationship names are stored.
 var TopicRels = struct {
-	Organization      string
-	ParentTopics      string
-	ChildTopics       string
-	ParentTopicsLinks string
+	Organization string
+	ChildLinks   string
+	ParentTopics string
+	ChildTopics  string
 }{
-	Organization:      "Organization",
-	ParentTopics:      "ParentTopics",
-	ChildTopics:       "ChildTopics",
-	ParentTopicsLinks: "ParentTopicsLinks",
+	Organization: "Organization",
+	ChildLinks:   "ChildLinks",
+	ParentTopics: "ParentTopics",
+	ChildTopics:  "ChildTopics",
 }
 
 // topicR is where relationships are stored.
 type topicR struct {
-	Organization      *Organization
-	ParentTopics      TopicSlice
-	ChildTopics       TopicSlice
-	ParentTopicsLinks TopicsLinkSlice
+	Organization *Organization
+	ChildLinks   LinkSlice
+	ParentTopics TopicSlice
+	ChildTopics  TopicSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -330,6 +330,28 @@ func (o *Topic) Organization(mods ...qm.QueryMod) organizationQuery {
 	return query
 }
 
+// ChildLinks retrieves all the link's Links with an executor via id column.
+func (o *Topic) ChildLinks(mods ...qm.QueryMod) linkQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.InnerJoin("\"link_topics\" on \"links\".\"id\" = \"link_topics\".\"child_id\""),
+		qm.Where("\"link_topics\".\"parent_id\"=?", o.ID),
+	)
+
+	query := Links(queryMods...)
+	queries.SetFrom(query.Query, "\"links\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"links\".*"})
+	}
+
+	return query
+}
+
 // ParentTopics retrieves all the topic's Topics with an executor via id column.
 func (o *Topic) ParentTopics(mods ...qm.QueryMod) topicQuery {
 	var queryMods []qm.QueryMod
@@ -369,27 +391,6 @@ func (o *Topic) ChildTopics(mods ...qm.QueryMod) topicQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"topics\".*"})
-	}
-
-	return query
-}
-
-// ParentTopicsLinks retrieves all the topics_link's TopicsLinks with an executor via parent_id column.
-func (o *Topic) ParentTopicsLinks(mods ...qm.QueryMod) topicsLinkQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"topics_links\".\"parent_id\"=?", o.ID),
-	)
-
-	query := TopicsLinks(queryMods...)
-	queries.SetFrom(query.Query, "\"topics_links\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"topics_links\".*"})
 	}
 
 	return query
@@ -484,6 +485,117 @@ func (topicL) LoadOrganization(ctx context.Context, e boil.ContextExecutor, sing
 					foreign.R = &organizationR{}
 				}
 				foreign.R.Topics = append(foreign.R.Topics, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadChildLinks allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (topicL) LoadChildLinks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeTopic interface{}, mods queries.Applicator) error {
+	var slice []*Topic
+	var object *Topic
+
+	if singular {
+		object = maybeTopic.(*Topic)
+	} else {
+		slice = *maybeTopic.(*[]*Topic)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &topicR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &topicR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(
+		qm.Select("\"links\".*, \"a\".\"parent_id\""),
+		qm.From("\"links\""),
+		qm.InnerJoin("\"link_topics\" as \"a\" on \"links\".\"id\" = \"a\".\"child_id\""),
+		qm.WhereIn("\"a\".\"parent_id\" in ?", args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load links")
+	}
+
+	var resultSlice []*Link
+
+	var localJoinCols []string
+	for results.Next() {
+		one := new(Link)
+		var localJoinCol string
+
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.URL, &one.Title, &one.Sha1, &localJoinCol)
+		if err != nil {
+			return errors.Wrap(err, "failed to scan eager loaded results for links")
+		}
+		if err = results.Err(); err != nil {
+			return errors.Wrap(err, "failed to plebian-bind eager loaded slice links")
+		}
+
+		resultSlice = append(resultSlice, one)
+		localJoinCols = append(localJoinCols, localJoinCol)
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on links")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for links")
+	}
+
+	if len(linkAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ChildLinks = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &linkR{}
+			}
+			foreign.R.ParentTopics = append(foreign.R.ParentTopics, object)
+		}
+		return nil
+	}
+
+	for i, foreign := range resultSlice {
+		localJoinCol := localJoinCols[i]
+		for _, local := range slice {
+			if local.ID == localJoinCol {
+				local.R.ChildLinks = append(local.R.ChildLinks, foreign)
+				if foreign.R == nil {
+					foreign.R = &linkR{}
+				}
+				foreign.R.ParentTopics = append(foreign.R.ParentTopics, local)
 				break
 			}
 		}
@@ -714,97 +826,6 @@ func (topicL) LoadChildTopics(ctx context.Context, e boil.ContextExecutor, singu
 	return nil
 }
 
-// LoadParentTopicsLinks allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (topicL) LoadParentTopicsLinks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeTopic interface{}, mods queries.Applicator) error {
-	var slice []*Topic
-	var object *Topic
-
-	if singular {
-		object = maybeTopic.(*Topic)
-	} else {
-		slice = *maybeTopic.(*[]*Topic)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &topicR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &topicR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	query := NewQuery(qm.From(`topics_links`), qm.WhereIn(`parent_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load topics_links")
-	}
-
-	var resultSlice []*TopicsLink
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice topics_links")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on topics_links")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for topics_links")
-	}
-
-	if len(topicsLinkAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.ParentTopicsLinks = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &topicsLinkR{}
-			}
-			foreign.R.Parent = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.ParentID {
-				local.R.ParentTopicsLinks = append(local.R.ParentTopicsLinks, foreign)
-				if foreign.R == nil {
-					foreign.R = &topicsLinkR{}
-				}
-				foreign.R.Parent = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // SetOrganization of the topic to the related item.
 // Sets o.R.Organization to related.
 // Adds o to related.R.Topics.
@@ -850,6 +871,146 @@ func (o *Topic) SetOrganization(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	return nil
+}
+
+// AddChildLinks adds the given related objects to the existing relationships
+// of the topic, optionally inserting them as new records.
+// Appends related to o.R.ChildLinks.
+// Sets related.R.ParentTopics appropriately.
+func (o *Topic) AddChildLinks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Link) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		}
+	}
+
+	for _, rel := range related {
+		query := "insert into \"link_topics\" (\"parent_id\", \"child_id\") values ($1, $2)"
+		values := []interface{}{o.ID, rel.ID}
+
+		if boil.DebugMode {
+			fmt.Fprintln(boil.DebugWriter, query)
+			fmt.Fprintln(boil.DebugWriter, values)
+		}
+
+		_, err = exec.ExecContext(ctx, query, values...)
+		if err != nil {
+			return errors.Wrap(err, "failed to insert into join table")
+		}
+	}
+	if o.R == nil {
+		o.R = &topicR{
+			ChildLinks: related,
+		}
+	} else {
+		o.R.ChildLinks = append(o.R.ChildLinks, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &linkR{
+				ParentTopics: TopicSlice{o},
+			}
+		} else {
+			rel.R.ParentTopics = append(rel.R.ParentTopics, o)
+		}
+	}
+	return nil
+}
+
+// SetChildLinks removes all previously related items of the
+// topic replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ParentTopics's ChildLinks accordingly.
+// Replaces o.R.ChildLinks with related.
+// Sets related.R.ParentTopics's ChildLinks accordingly.
+func (o *Topic) SetChildLinks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Link) error {
+	query := "delete from \"link_topics\" where \"parent_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	removeChildLinksFromParentTopicsSlice(o, related)
+	if o.R != nil {
+		o.R.ChildLinks = nil
+	}
+	return o.AddChildLinks(ctx, exec, insert, related...)
+}
+
+// RemoveChildLinks relationships from objects passed in.
+// Removes related items from R.ChildLinks (uses pointer comparison, removal does not keep order)
+// Sets related.R.ParentTopics.
+func (o *Topic) RemoveChildLinks(ctx context.Context, exec boil.ContextExecutor, related ...*Link) error {
+	var err error
+	query := fmt.Sprintf(
+		"delete from \"link_topics\" where \"parent_id\" = $1 and \"child_id\" in (%s)",
+		strmangle.Placeholders(dialect.UseIndexPlaceholders, len(related), 2, 1),
+	)
+	values := []interface{}{o.ID}
+	for _, rel := range related {
+		values = append(values, rel.ID)
+	}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err = exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+	removeChildLinksFromParentTopicsSlice(o, related)
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ChildLinks {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ChildLinks)
+			if ln > 1 && i < ln-1 {
+				o.R.ChildLinks[i] = o.R.ChildLinks[ln-1]
+			}
+			o.R.ChildLinks = o.R.ChildLinks[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+func removeChildLinksFromParentTopicsSlice(o *Topic, related []*Link) {
+	for _, rel := range related {
+		if rel.R == nil {
+			continue
+		}
+		for i, ri := range rel.R.ParentTopics {
+			if o.ID != ri.ID {
+				continue
+			}
+
+			ln := len(rel.R.ParentTopics)
+			if ln > 1 && i < ln-1 {
+				rel.R.ParentTopics[i] = rel.R.ParentTopics[ln-1]
+			}
+			rel.R.ParentTopics = rel.R.ParentTopics[:ln-1]
+			break
+		}
+	}
 }
 
 // AddParentTopics adds the given related objects to the existing relationships
@@ -1130,59 +1291,6 @@ func removeChildTopicsFromParentTopicsSlice(o *Topic, related []*Topic) {
 			break
 		}
 	}
-}
-
-// AddParentTopicsLinks adds the given related objects to the existing relationships
-// of the topic, optionally inserting them as new records.
-// Appends related to o.R.ParentTopicsLinks.
-// Sets related.R.Parent appropriately.
-func (o *Topic) AddParentTopicsLinks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*TopicsLink) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.ParentID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"topics_links\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"parent_id"}),
-				strmangle.WhereClause("\"", "\"", 2, topicsLinkPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.OrganizationID, rel.ParentID, rel.ChildID}
-
-			if boil.DebugMode {
-				fmt.Fprintln(boil.DebugWriter, updateQuery)
-				fmt.Fprintln(boil.DebugWriter, values)
-			}
-
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.ParentID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &topicR{
-			ParentTopicsLinks: related,
-		}
-	} else {
-		o.R.ParentTopicsLinks = append(o.R.ParentTopicsLinks, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &topicsLinkR{
-				Parent: o,
-			}
-		} else {
-			rel.R.Parent = o
-		}
-	}
-	return nil
 }
 
 // Topics retrieves all the records using an executor.

@@ -62,6 +62,18 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: link_topics; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.link_topics (
+    parent_id uuid NOT NULL,
+    child_id uuid NOT NULL
+);
+
+
+ALTER TABLE public.link_topics OWNER TO postgres;
+
+--
 -- Name: links; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -127,19 +139,6 @@ CREATE TABLE public.topics (
 ALTER TABLE public.topics OWNER TO postgres;
 
 --
--- Name: topics_links; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.topics_links (
-    organization_id uuid NOT NULL,
-    parent_id uuid NOT NULL,
-    child_id uuid NOT NULL
-);
-
-
-ALTER TABLE public.topics_links OWNER TO postgres;
-
---
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -151,6 +150,16 @@ CREATE TABLE public.users (
 
 
 ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- Data for Name: link_topics; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.link_topics (parent_id, child_id) FROM stdin;
+45dca814-e6f0-11e8-8bc1-b363da4aeace	10120416-eadf-11e8-8231-db1081f8c4fc
+45dcaaf8-e6f0-11e8-8bc1-d7a04cdda708	fec9434a-eade-11e8-8231-3be3240b1542
+\.
+
 
 --
 -- Data for Name: links; Type: TABLE DATA; Schema: public; Owner: postgres
@@ -176,7 +185,7 @@ COPY public.organizations (id, name) FROM stdin;
 --
 
 COPY public.schema_migrations (version, dirty) FROM stdin;
-1542601832	f
+1542604481	f
 \.
 
 
@@ -185,6 +194,9 @@ COPY public.schema_migrations (version, dirty) FROM stdin;
 --
 
 COPY public.topic_topics (parent_id, child_id) FROM stdin;
+45dca814-e6f0-11e8-8bc1-b363da4aeace	45dcaad0-e6f0-11e8-8bc1-677f3b3c362f
+45dca814-e6f0-11e8-8bc1-b363da4aeace	45dcaaf8-e6f0-11e8-8bc1-d7a04cdda708
+45dca814-e6f0-11e8-8bc1-b363da4aeace	45dcab0c-e6f0-11e8-8bc1-bbb431f062c7
 \.
 
 
@@ -201,14 +213,6 @@ COPY public.topics (organization_id, id, name, description) FROM stdin;
 
 
 --
--- Data for Name: topics_links; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.topics_links (organization_id, parent_id, child_id) FROM stdin;
-\.
-
-
---
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -219,6 +223,14 @@ COPY public.users (id, name, primary_email) FROM stdin;
 45dca1fc-e6f0-11e8-8bc1-9f412923ac8b	Bozbar	bozbar@tyrell.test
 45dca260-e6f0-11e8-8bc1-a7bab2abca4f	Rezrov	rezrov@tyrell.test
 \.
+
+
+--
+-- Name: link_topics link_topics_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.link_topics
+    ADD CONSTRAINT link_topics_pkey PRIMARY KEY (parent_id, child_id);
 
 
 --
@@ -251,14 +263,6 @@ ALTER TABLE ONLY public.organizations
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
-
-
---
--- Name: topics_links topics_links_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.topics_links
-    ADD CONSTRAINT topics_links_pkey PRIMARY KEY (organization_id, parent_id, child_id);
 
 
 --
@@ -297,7 +301,7 @@ ALTER TABLE ONLY public.users
 -- Name: topics_links_child_parent_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX topics_links_child_parent_idx ON public.topics_links USING btree (child_id, parent_id);
+CREATE INDEX topics_links_child_parent_idx ON public.link_topics USING btree (child_id, parent_id);
 
 
 --
@@ -308,35 +312,27 @@ CREATE INDEX topics_topics_child_parent_idx ON public.topic_topics USING btree (
 
 
 --
+-- Name: link_topics link_topics_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.link_topics
+    ADD CONSTRAINT link_topics_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.links(id);
+
+
+--
+-- Name: link_topics link_topics_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.link_topics
+    ADD CONSTRAINT link_topics_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.topics(id);
+
+
+--
 -- Name: links links_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.links
     ADD CONSTRAINT links_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
-
-
---
--- Name: topics_links topics_links_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.topics_links
-    ADD CONSTRAINT topics_links_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.links(id);
-
-
---
--- Name: topics_links topics_links_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.topics_links
-    ADD CONSTRAINT topics_links_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
-
-
---
--- Name: topics_links topics_links_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.topics_links
-    ADD CONSTRAINT topics_links_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.topics(id);
 
 
 --

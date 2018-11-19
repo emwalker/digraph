@@ -16,9 +16,6 @@ const LinksPage = ({ organization, ...props }: Props) => {
   const links = liftNodes(organization.links)
   return (
     <div>
-      <div className="Subhead">
-        <div className="Subhead-heading">Links</div>
-      </div>
       <List
         placeholder="There are no links"
         hasItems={!isEmpty(links)}

@@ -3,8 +3,8 @@ package resolvers
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/emwalker/digraph/models"
+	"github.com/stretchr/testify/assert"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -25,10 +25,10 @@ func createTopicTest(t *testing.T) {
 
 	desc := "Cultivation of the earth for food"
 	input := models.CreateTopicInput{
-		Description: &desc,
-		Name: "Agriculture",
+		Description:    &desc,
+		Name:           "Agriculture",
 		OrganizationID: orgId,
-		TopicIds: []string{parentTopic.ID},
+		TopicIds:       []string{parentTopic.ID},
 	}
 
 	var payload *models.CreateTopicPayload

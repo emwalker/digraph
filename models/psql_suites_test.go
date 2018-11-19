@@ -14,7 +14,5 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Topics", testTopicsUpsert)
 
-	t.Run("TopicsLinks", testTopicsLinksUpsert)
-
 	t.Run("Users", testUsersUpsert)
 }

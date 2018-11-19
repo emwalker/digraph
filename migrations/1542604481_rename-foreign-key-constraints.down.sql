@@ -1,0 +1,2 @@
+alter table link_topics rename constraint link_topics_child_id_fkey to topics_links_child_id_fkey ;
+alter table link_topics rename constraint link_topics_parent_id_fkey to topics_links_parent_id_fkey;

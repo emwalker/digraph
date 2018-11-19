@@ -45,5 +45,5 @@ func linkConnection(rows []*models.Link, err error) (*models.LinkConnection, err
 }
 
 func (r *linkResolver) Topics(ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
-	return topicConnection(models.Topics().All(ctx, r.DB))
+	return topicConnection(link.ParentTopics().All(ctx, r.DB))
 }

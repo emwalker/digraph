@@ -7,6 +7,8 @@ type Props = {
   children?: Node,
 }
 
+/* eslint jsx-a11y/anchor-is-valid: 0 */
+
 const Layout = ({ children }: Props) => (
   <div>
     <div className="container">

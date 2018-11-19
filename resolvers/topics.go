@@ -51,5 +51,5 @@ func (r *topicResolver) ParentTopics(ctx context.Context, topic *models.Topic, f
 
 // Links returns a set of links.
 func (r *topicResolver) Links(ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string) (*models.LinkConnection, error) {
-	return linkConnection(models.Links().All(ctx, r.DB))
+	return linkConnection(topic.ChildLinks().All(ctx, r.DB))
 }
