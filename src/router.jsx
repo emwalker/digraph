@@ -66,13 +66,9 @@ export const routeConfig = makeRouteConfig(
         query={topicsPageQuery}
       />
       <Route
-        path=":uuid"
+        path=":topicId"
         render={renderTopicPage}
         query={topicPageQuery}
-        prepareVariables={({ uuid, ...params }) => ({
-          topicId: `topic:${uuid}`,
-          ...params,
-        })}
       />
     </Route>
     <Route path="links">

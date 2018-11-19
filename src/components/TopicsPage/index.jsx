@@ -17,9 +17,6 @@ const TopicsPage = ({ organization, ...props }: Props) => {
   const topics = liftNodes(organization.topics)
   return (
     <div>
-      <div className="Subhead">
-        <div className="Subhead-heading">Topics</div>
-      </div>
       <List
         placeholder="There are no topics"
         hasItems={!isEmpty(topics)}
