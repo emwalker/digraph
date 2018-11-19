@@ -4704,12 +4704,7 @@ func UnmarshalUpsertLinkInput(v interface{}) (UpsertLinkInput, error) {
 			}
 		case "title":
 			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Title = &ptr1
-			}
-
+			it.Title, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -4872,7 +4867,7 @@ input UpsertLinkInput {
   addTopicIds: [String!]
   clientMutationId: String!
   organizationId: String!
-  title: String
+  title: String!
   url: String!
 }
 

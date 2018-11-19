@@ -62,7 +62,7 @@ type UpsertLinkInput struct {
 	AddTopicIds      []string `json:"addTopicIds"`
 	ClientMutationID string   `json:"clientMutationId"`
 	OrganizationID   string   `json:"organizationId"`
-	Title            *string  `json:"title"`
+	Title            string   `json:"title"`
 	URL              string   `json:"url"`
 }
 

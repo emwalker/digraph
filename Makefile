@@ -46,8 +46,13 @@ migrate-down:
 			-source file://migrations down 1 ;\
 	)
 
-test:
-	go test ./...
+.PHONY:
+
+test-integration:
+	go test ./test/integration/...
+
+test: .PHONY
+	go test ./models ./server ./resolvers
 	yarn jest
 
 format:

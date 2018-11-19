@@ -31,7 +31,7 @@ func topicConnection(rows []*models.Topic, err error) (*models.TopicConnection, 
 		return nil, err
 	}
 
-	edges := make([]*models.TopicEdge, len(rows))
+	var edges []*models.TopicEdge
 	for _, topic := range rows {
 		edges = append(edges, &models.TopicEdge{Node: topic})
 	}

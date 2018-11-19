@@ -36,7 +36,7 @@ func linkConnection(rows []*models.Link, err error) (*models.LinkConnection, err
 		return nil, err
 	}
 
-	edges := make([]*models.LinkEdge, len(rows))
+	var edges []*models.LinkEdge
 	for _, link := range rows {
 		edges = append(edges, &models.LinkEdge{Node: link})
 	}

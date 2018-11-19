@@ -121,7 +121,7 @@ input UpsertLinkInput {
   addTopicIds: [String!]
   clientMutationId: String!
   organizationId: String!
-  title: String
+  title: String!
   url: String!
 }
 

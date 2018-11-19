@@ -12,11 +12,12 @@ import (
 // Resolver is the abstract base class for resolvers.
 type Resolver struct {
 	DB *sql.DB
+	Tx *sql.Tx
 }
 
 // Mutation returns a resolver that can be used for issuing mutations.
 func (r *Resolver) Mutation() models.MutationResolver {
-	return &mutationResolver{r}
+	return &MutationResolver{r}
 }
 
 // Query returns a resolver that can be used for issuing queries.
@@ -24,7 +25,7 @@ func (r *Resolver) Query() models.QueryResolver {
 	return &queryResolver{r}
 }
 
-type mutationResolver struct{ *Resolver }
+type MutationResolver struct{ *Resolver }
 
 type queryResolver struct{ *Resolver }
 
