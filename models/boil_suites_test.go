@@ -17,7 +17,6 @@ func TestParent(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrations)
 	t.Run("Topics", testTopics)
 	t.Run("TopicsLinks", testTopicsLinks)
-	t.Run("TopicsTopics", testTopicsTopics)
 	t.Run("Users", testUsers)
 }
 
@@ -27,7 +26,6 @@ func TestDelete(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsDelete)
 	t.Run("Topics", testTopicsDelete)
 	t.Run("TopicsLinks", testTopicsLinksDelete)
-	t.Run("TopicsTopics", testTopicsTopicsDelete)
 	t.Run("Users", testUsersDelete)
 }
 
@@ -37,7 +35,6 @@ func TestQueryDeleteAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsQueryDeleteAll)
 	t.Run("Topics", testTopicsQueryDeleteAll)
 	t.Run("TopicsLinks", testTopicsLinksQueryDeleteAll)
-	t.Run("TopicsTopics", testTopicsTopicsQueryDeleteAll)
 	t.Run("Users", testUsersQueryDeleteAll)
 }
 
@@ -47,7 +44,6 @@ func TestSliceDeleteAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsSliceDeleteAll)
 	t.Run("Topics", testTopicsSliceDeleteAll)
 	t.Run("TopicsLinks", testTopicsLinksSliceDeleteAll)
-	t.Run("TopicsTopics", testTopicsTopicsSliceDeleteAll)
 	t.Run("Users", testUsersSliceDeleteAll)
 }
 
@@ -57,7 +53,6 @@ func TestExists(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsExists)
 	t.Run("Topics", testTopicsExists)
 	t.Run("TopicsLinks", testTopicsLinksExists)
-	t.Run("TopicsTopics", testTopicsTopicsExists)
 	t.Run("Users", testUsersExists)
 }
 
@@ -67,7 +62,6 @@ func TestFind(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsFind)
 	t.Run("Topics", testTopicsFind)
 	t.Run("TopicsLinks", testTopicsLinksFind)
-	t.Run("TopicsTopics", testTopicsTopicsFind)
 	t.Run("Users", testUsersFind)
 }
 
@@ -77,7 +71,6 @@ func TestBind(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsBind)
 	t.Run("Topics", testTopicsBind)
 	t.Run("TopicsLinks", testTopicsLinksBind)
-	t.Run("TopicsTopics", testTopicsTopicsBind)
 	t.Run("Users", testUsersBind)
 }
 
@@ -87,7 +80,6 @@ func TestOne(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsOne)
 	t.Run("Topics", testTopicsOne)
 	t.Run("TopicsLinks", testTopicsLinksOne)
-	t.Run("TopicsTopics", testTopicsTopicsOne)
 	t.Run("Users", testUsersOne)
 }
 
@@ -97,7 +89,6 @@ func TestAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsAll)
 	t.Run("Topics", testTopicsAll)
 	t.Run("TopicsLinks", testTopicsLinksAll)
-	t.Run("TopicsTopics", testTopicsTopicsAll)
 	t.Run("Users", testUsersAll)
 }
 
@@ -107,7 +98,6 @@ func TestCount(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsCount)
 	t.Run("Topics", testTopicsCount)
 	t.Run("TopicsLinks", testTopicsLinksCount)
-	t.Run("TopicsTopics", testTopicsTopicsCount)
 	t.Run("Users", testUsersCount)
 }
 
@@ -117,7 +107,6 @@ func TestHooks(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsHooks)
 	t.Run("Topics", testTopicsHooks)
 	t.Run("TopicsLinks", testTopicsLinksHooks)
-	t.Run("TopicsTopics", testTopicsTopicsHooks)
 	t.Run("Users", testUsersHooks)
 }
 
@@ -132,8 +121,6 @@ func TestInsert(t *testing.T) {
 	t.Run("Topics", testTopicsInsertWhitelist)
 	t.Run("TopicsLinks", testTopicsLinksInsert)
 	t.Run("TopicsLinks", testTopicsLinksInsertWhitelist)
-	t.Run("TopicsTopics", testTopicsTopicsInsert)
-	t.Run("TopicsTopics", testTopicsTopicsInsertWhitelist)
 	t.Run("Users", testUsersInsert)
 	t.Run("Users", testUsersInsertWhitelist)
 }
@@ -143,12 +130,9 @@ func TestInsert(t *testing.T) {
 func TestToOne(t *testing.T) {
 	t.Run("LinkToOrganizationUsingOrganization", testLinkToOneOrganizationUsingOrganization)
 	t.Run("TopicToOrganizationUsingOrganization", testTopicToOneOrganizationUsingOrganization)
+	t.Run("TopicsLinkToLinkUsingChild", testTopicsLinkToOneLinkUsingChild)
 	t.Run("TopicsLinkToOrganizationUsingOrganization", testTopicsLinkToOneOrganizationUsingOrganization)
 	t.Run("TopicsLinkToTopicUsingParent", testTopicsLinkToOneTopicUsingParent)
-	t.Run("TopicsLinkToLinkUsingChild", testTopicsLinkToOneLinkUsingChild)
-	t.Run("TopicsTopicToOrganizationUsingOrganization", testTopicsTopicToOneOrganizationUsingOrganization)
-	t.Run("TopicsTopicToTopicUsingParent", testTopicsTopicToOneTopicUsingParent)
-	t.Run("TopicsTopicToTopicUsingChild", testTopicsTopicToOneTopicUsingChild)
 }
 
 // TestOneToOne tests cannot be run in parallel
@@ -162,10 +146,9 @@ func TestToMany(t *testing.T) {
 	t.Run("OrganizationToLinks", testOrganizationToManyLinks)
 	t.Run("OrganizationToTopics", testOrganizationToManyTopics)
 	t.Run("OrganizationToTopicsLinks", testOrganizationToManyTopicsLinks)
-	t.Run("OrganizationToTopicsTopics", testOrganizationToManyTopicsTopics)
+	t.Run("TopicToParentTopics", testTopicToManyParentTopics)
+	t.Run("TopicToChildTopics", testTopicToManyChildTopics)
 	t.Run("TopicToParentTopicsLinks", testTopicToManyParentTopicsLinks)
-	t.Run("TopicToParentTopicsTopics", testTopicToManyParentTopicsTopics)
-	t.Run("TopicToChildTopicsTopics", testTopicToManyChildTopicsTopics)
 }
 
 // TestToOneSet tests cannot be run in parallel
@@ -173,12 +156,9 @@ func TestToMany(t *testing.T) {
 func TestToOneSet(t *testing.T) {
 	t.Run("LinkToOrganizationUsingLinks", testLinkToOneSetOpOrganizationUsingOrganization)
 	t.Run("TopicToOrganizationUsingTopics", testTopicToOneSetOpOrganizationUsingOrganization)
+	t.Run("TopicsLinkToLinkUsingChildTopicsLinks", testTopicsLinkToOneSetOpLinkUsingChild)
 	t.Run("TopicsLinkToOrganizationUsingTopicsLinks", testTopicsLinkToOneSetOpOrganizationUsingOrganization)
 	t.Run("TopicsLinkToTopicUsingParentTopicsLinks", testTopicsLinkToOneSetOpTopicUsingParent)
-	t.Run("TopicsLinkToLinkUsingChildTopicsLinks", testTopicsLinkToOneSetOpLinkUsingChild)
-	t.Run("TopicsTopicToOrganizationUsingTopicsTopics", testTopicsTopicToOneSetOpOrganizationUsingOrganization)
-	t.Run("TopicsTopicToTopicUsingParentTopicsTopics", testTopicsTopicToOneSetOpTopicUsingParent)
-	t.Run("TopicsTopicToTopicUsingChildTopicsTopics", testTopicsTopicToOneSetOpTopicUsingChild)
 }
 
 // TestToOneRemove tests cannot be run in parallel
@@ -200,19 +180,24 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("OrganizationToLinks", testOrganizationToManyAddOpLinks)
 	t.Run("OrganizationToTopics", testOrganizationToManyAddOpTopics)
 	t.Run("OrganizationToTopicsLinks", testOrganizationToManyAddOpTopicsLinks)
-	t.Run("OrganizationToTopicsTopics", testOrganizationToManyAddOpTopicsTopics)
+	t.Run("TopicToParentTopics", testTopicToManyAddOpParentTopics)
+	t.Run("TopicToChildTopics", testTopicToManyAddOpChildTopics)
 	t.Run("TopicToParentTopicsLinks", testTopicToManyAddOpParentTopicsLinks)
-	t.Run("TopicToParentTopicsTopics", testTopicToManyAddOpParentTopicsTopics)
-	t.Run("TopicToChildTopicsTopics", testTopicToManyAddOpChildTopicsTopics)
 }
 
 // TestToManySet tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToManySet(t *testing.T) {}
+func TestToManySet(t *testing.T) {
+	t.Run("TopicToParentTopics", testTopicToManySetOpParentTopics)
+	t.Run("TopicToChildTopics", testTopicToManySetOpChildTopics)
+}
 
 // TestToManyRemove tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToManyRemove(t *testing.T) {}
+func TestToManyRemove(t *testing.T) {
+	t.Run("TopicToParentTopics", testTopicToManyRemoveOpParentTopics)
+	t.Run("TopicToChildTopics", testTopicToManyRemoveOpChildTopics)
+}
 
 func TestReload(t *testing.T) {
 	t.Run("Links", testLinksReload)
@@ -220,7 +205,6 @@ func TestReload(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsReload)
 	t.Run("Topics", testTopicsReload)
 	t.Run("TopicsLinks", testTopicsLinksReload)
-	t.Run("TopicsTopics", testTopicsTopicsReload)
 	t.Run("Users", testUsersReload)
 }
 
@@ -230,7 +214,6 @@ func TestReloadAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsReloadAll)
 	t.Run("Topics", testTopicsReloadAll)
 	t.Run("TopicsLinks", testTopicsLinksReloadAll)
-	t.Run("TopicsTopics", testTopicsTopicsReloadAll)
 	t.Run("Users", testUsersReloadAll)
 }
 
@@ -240,7 +223,6 @@ func TestSelect(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsSelect)
 	t.Run("Topics", testTopicsSelect)
 	t.Run("TopicsLinks", testTopicsLinksSelect)
-	t.Run("TopicsTopics", testTopicsTopicsSelect)
 	t.Run("Users", testUsersSelect)
 }
 
@@ -250,7 +232,6 @@ func TestUpdate(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsUpdate)
 	t.Run("Topics", testTopicsUpdate)
 	t.Run("TopicsLinks", testTopicsLinksUpdate)
-	t.Run("TopicsTopics", testTopicsTopicsUpdate)
 	t.Run("Users", testUsersUpdate)
 }
 
@@ -260,6 +241,5 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsSliceUpdateAll)
 	t.Run("Topics", testTopicsSliceUpdateAll)
 	t.Run("TopicsLinks", testTopicsLinksSliceUpdateAll)
-	t.Run("TopicsTopics", testTopicsTopicsSliceUpdateAll)
 	t.Run("Users", testUsersSliceUpdateAll)
 }

@@ -8,11 +8,38 @@ import (
 	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/models"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/null"
 )
 
 // CreateTopic creates a new topic.
 func (r *MutationResolver) CreateTopic(ctx context.Context, input models.CreateTopicInput) (*models.CreateTopicPayload, error) {
-	panic("not implemented")
+	tx, err := r.DB.Begin()
+	defer tx.Commit()
+
+	topic := models.Topic{
+		Description: null.StringFromPtr(input.Description),
+		Name: input.Name,
+		OrganizationID: input.OrganizationID,
+	}
+
+	err = topic.Insert(ctx, tx, boil.Infer())
+	if err != nil {
+		return nil, err
+	}
+
+	var parents []*models.Topic
+	for _, parentId := range input.TopicIds {
+		parents = append(parents, &models.Topic{ID: parentId})
+	}
+
+	err = topic.AddParentTopics(ctx, tx, false, parents...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.CreateTopicPayload{
+		TopicEdge: models.TopicEdge{Node: &topic},
+	}, nil
 }
 
 // SelectTopic updates the currently selected topic.

@@ -494,6 +494,57 @@ func testTopicsLinksInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testTopicsLinkToOneLinkUsingChild(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local TopicsLink
+	var foreign Link
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, topicsLinkDBTypes, false, topicsLinkColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize TopicsLink struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, linkDBTypes, false, linkColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Link struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	local.ChildID = foreign.ID
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.Child().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := TopicsLinkSlice{&local}
+	if err = local.L.LoadChild(ctx, tx, false, (*[]*TopicsLink)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Child == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.Child = nil
+	if err = local.L.LoadChild(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Child == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
 func testTopicsLinkToOneOrganizationUsingOrganization(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -596,57 +647,59 @@ func testTopicsLinkToOneTopicUsingParent(t *testing.T) {
 	}
 }
 
-func testTopicsLinkToOneLinkUsingChild(t *testing.T) {
+func testTopicsLinkToOneSetOpLinkUsingChild(t *testing.T) {
+	var err error
+
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local TopicsLink
-	var foreign Link
+	var a TopicsLink
+	var b, c Link
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, topicsLinkDBTypes, false, topicsLinkColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize TopicsLink struct: %s", err)
+	if err = randomize.Struct(seed, &a, topicsLinkDBTypes, false, strmangle.SetComplement(topicsLinkPrimaryKeyColumns, topicsLinkColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
 	}
-	if err := randomize.Struct(seed, &foreign, linkDBTypes, false, linkColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Link struct: %s", err)
+	if err = randomize.Struct(seed, &b, linkDBTypes, false, strmangle.SetComplement(linkPrimaryKeyColumns, linkColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
 	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = randomize.Struct(seed, &c, linkDBTypes, false, strmangle.SetComplement(linkPrimaryKeyColumns, linkColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 
-	local.ChildID = foreign.ID
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.Child().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for i, x := range []*Link{&b, &c} {
+		err = a.SetChild(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
+		if a.R.Child != x {
+			t.Error("relationship struct not set to correct value")
+		}
 
-	slice := TopicsLinkSlice{&local}
-	if err = local.L.LoadChild(ctx, tx, false, (*[]*TopicsLink)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Child == nil {
-		t.Error("struct should have been eager loaded")
-	}
+		if x.R.ChildTopicsLinks[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.ChildID != x.ID {
+			t.Error("foreign key was wrong value", a.ChildID)
+		}
 
-	local.R.Child = nil
-	if err = local.L.LoadChild(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Child == nil {
-		t.Error("struct should have been eager loaded")
+		if exists, err := TopicsLinkExists(ctx, tx, a.OrganizationID, a.ParentID, a.ChildID); err != nil {
+			t.Fatal(err)
+		} else if !exists {
+			t.Error("want 'a' to exist")
+		}
+
 	}
 }
-
 func testTopicsLinkToOneSetOpOrganizationUsingOrganization(t *testing.T) {
 	var err error
 
@@ -743,59 +796,6 @@ func testTopicsLinkToOneSetOpTopicUsingParent(t *testing.T) {
 		}
 		if a.ParentID != x.ID {
 			t.Error("foreign key was wrong value", a.ParentID)
-		}
-
-		if exists, err := TopicsLinkExists(ctx, tx, a.OrganizationID, a.ParentID, a.ChildID); err != nil {
-			t.Fatal(err)
-		} else if !exists {
-			t.Error("want 'a' to exist")
-		}
-
-	}
-}
-func testTopicsLinkToOneSetOpLinkUsingChild(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a TopicsLink
-	var b, c Link
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, topicsLinkDBTypes, false, strmangle.SetComplement(topicsLinkPrimaryKeyColumns, topicsLinkColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, linkDBTypes, false, strmangle.SetComplement(linkPrimaryKeyColumns, linkColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, linkDBTypes, false, strmangle.SetComplement(linkPrimaryKeyColumns, linkColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*Link{&b, &c} {
-		err = a.SetChild(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.Child != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.ChildTopicsLinks[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.ChildID != x.ID {
-			t.Error("foreign key was wrong value", a.ChildID)
 		}
 
 		if exists, err := TopicsLinkExists(ctx, tx, a.OrganizationID, a.ParentID, a.ChildID); err != nil {

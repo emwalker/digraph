@@ -38,22 +38,20 @@ ShallowWrapper {
             <div
               className="UnderlineNav-body"
             >
-              <a
-                className="UnderlineNav-item selected"
-                href="/topics"
-                role="tab"
-                title="Topics"
+              <Link
+                activeClassName="selected"
+                className="UnderlineNav-item"
+                to="/topics"
               >
                 Topics
-              </a>
-              <a
+              </Link>
+              <Link
+                activeClassName="selected"
                 className="UnderlineNav-item"
-                href="/links"
-                role="tab"
-                title="Links"
+                to="/links"
               >
                 Links
-              </a>
+              </Link>
             </div>
           </nav>
           <div>
@@ -103,22 +101,20 @@ ShallowWrapper {
               <div
                 className="UnderlineNav-body"
               >
-                <a
-                  className="UnderlineNav-item selected"
-                  href="/topics"
-                  role="tab"
-                  title="Topics"
+                <Link
+                  activeClassName="selected"
+                  className="UnderlineNav-item"
+                  to="/topics"
                 >
                   Topics
-                </a>
-                <a
+                </Link>
+                <Link
+                  activeClassName="selected"
                   className="UnderlineNav-item"
-                  href="/links"
-                  role="tab"
-                  title="Links"
+                  to="/links"
                 >
                   Links
-                </a>
+                </Link>
               </div>
             </nav>,
             <div>
@@ -161,22 +157,20 @@ ShallowWrapper {
               "children": <div
                 className="UnderlineNav-body"
               >
-                <a
-                  className="UnderlineNav-item selected"
-                  href="/topics"
-                  role="tab"
-                  title="Topics"
+                <Link
+                  activeClassName="selected"
+                  className="UnderlineNav-item"
+                  to="/topics"
                 >
                   Topics
-                </a>
-                <a
+                </Link>
+                <Link
+                  activeClassName="selected"
                   className="UnderlineNav-item"
-                  href="/links"
-                  role="tab"
-                  title="Links"
+                  to="/links"
                 >
                   Links
-                </a>
+                </Link>
               </div>,
               "className": "UnderlineNav mb-3",
             },
@@ -187,22 +181,20 @@ ShallowWrapper {
               "nodeType": "host",
               "props": Object {
                 "children": Array [
-                  <a
-                    className="UnderlineNav-item selected"
-                    href="/topics"
-                    role="tab"
-                    title="Topics"
+                  <Link
+                    activeClassName="selected"
+                    className="UnderlineNav-item"
+                    to="/topics"
                   >
                     Topics
-                  </a>,
-                  <a
+                  </Link>,
+                  <Link
+                    activeClassName="selected"
                     className="UnderlineNav-item"
-                    href="/links"
-                    role="tab"
-                    title="Links"
+                    to="/links"
                   >
                     Links
-                  </a>,
+                  </Link>,
                 ],
                 "className": "UnderlineNav-body",
               },
@@ -211,32 +203,30 @@ ShallowWrapper {
                 Object {
                   "instance": null,
                   "key": undefined,
-                  "nodeType": "host",
+                  "nodeType": "class",
                   "props": Object {
+                    "activeClassName": "selected",
                     "children": "Topics",
-                    "className": "UnderlineNav-item selected",
-                    "href": "/topics",
-                    "role": "tab",
-                    "title": "Topics",
+                    "className": "UnderlineNav-item",
+                    "to": "/topics",
                   },
                   "ref": null,
                   "rendered": "Topics",
-                  "type": "a",
+                  "type": [Function],
                 },
                 Object {
                   "instance": null,
                   "key": undefined,
-                  "nodeType": "host",
+                  "nodeType": "class",
                   "props": Object {
+                    "activeClassName": "selected",
                     "children": "Links",
                     "className": "UnderlineNav-item",
-                    "href": "/links",
-                    "role": "tab",
-                    "title": "Links",
+                    "to": "/links",
                   },
                   "ref": null,
                   "rendered": "Links",
-                  "type": "a",
+                  "type": [Function],
                 },
               ],
               "type": "div",
@@ -368,22 +358,20 @@ ShallowWrapper {
               <div
                 className="UnderlineNav-body"
               >
-                <a
-                  className="UnderlineNav-item selected"
-                  href="/topics"
-                  role="tab"
-                  title="Topics"
+                <Link
+                  activeClassName="selected"
+                  className="UnderlineNav-item"
+                  to="/topics"
                 >
                   Topics
-                </a>
-                <a
+                </Link>
+                <Link
+                  activeClassName="selected"
                   className="UnderlineNav-item"
-                  href="/links"
-                  role="tab"
-                  title="Links"
+                  to="/links"
                 >
                   Links
-                </a>
+                </Link>
               </div>
             </nav>
             <div>
@@ -433,22 +421,20 @@ ShallowWrapper {
                 <div
                   className="UnderlineNav-body"
                 >
-                  <a
-                    className="UnderlineNav-item selected"
-                    href="/topics"
-                    role="tab"
-                    title="Topics"
+                  <Link
+                    activeClassName="selected"
+                    className="UnderlineNav-item"
+                    to="/topics"
                   >
                     Topics
-                  </a>
-                  <a
+                  </Link>
+                  <Link
+                    activeClassName="selected"
                     className="UnderlineNav-item"
-                    href="/links"
-                    role="tab"
-                    title="Links"
+                    to="/links"
                   >
                     Links
-                  </a>
+                  </Link>
                 </div>
               </nav>,
               <div>
@@ -491,22 +477,20 @@ ShallowWrapper {
                 "children": <div
                   className="UnderlineNav-body"
                 >
-                  <a
-                    className="UnderlineNav-item selected"
-                    href="/topics"
-                    role="tab"
-                    title="Topics"
+                  <Link
+                    activeClassName="selected"
+                    className="UnderlineNav-item"
+                    to="/topics"
                   >
                     Topics
-                  </a>
-                  <a
+                  </Link>
+                  <Link
+                    activeClassName="selected"
                     className="UnderlineNav-item"
-                    href="/links"
-                    role="tab"
-                    title="Links"
+                    to="/links"
                   >
                     Links
-                  </a>
+                  </Link>
                 </div>,
                 "className": "UnderlineNav mb-3",
               },
@@ -517,22 +501,20 @@ ShallowWrapper {
                 "nodeType": "host",
                 "props": Object {
                   "children": Array [
-                    <a
-                      className="UnderlineNav-item selected"
-                      href="/topics"
-                      role="tab"
-                      title="Topics"
+                    <Link
+                      activeClassName="selected"
+                      className="UnderlineNav-item"
+                      to="/topics"
                     >
                       Topics
-                    </a>,
-                    <a
+                    </Link>,
+                    <Link
+                      activeClassName="selected"
                       className="UnderlineNav-item"
-                      href="/links"
-                      role="tab"
-                      title="Links"
+                      to="/links"
                     >
                       Links
-                    </a>,
+                    </Link>,
                   ],
                   "className": "UnderlineNav-body",
                 },
@@ -541,32 +523,30 @@ ShallowWrapper {
                   Object {
                     "instance": null,
                     "key": undefined,
-                    "nodeType": "host",
+                    "nodeType": "class",
                     "props": Object {
+                      "activeClassName": "selected",
                       "children": "Topics",
-                      "className": "UnderlineNav-item selected",
-                      "href": "/topics",
-                      "role": "tab",
-                      "title": "Topics",
+                      "className": "UnderlineNav-item",
+                      "to": "/topics",
                     },
                     "ref": null,
                     "rendered": "Topics",
-                    "type": "a",
+                    "type": [Function],
                   },
                   Object {
                     "instance": null,
                     "key": undefined,
-                    "nodeType": "host",
+                    "nodeType": "class",
                     "props": Object {
+                      "activeClassName": "selected",
                       "children": "Links",
                       "className": "UnderlineNav-item",
-                      "href": "/links",
-                      "role": "tab",
-                      "title": "Links",
+                      "to": "/links",
                     },
                     "ref": null,
                     "rendered": "Links",
-                    "type": "a",
+                    "type": [Function],
                   },
                 ],
                 "type": "div",

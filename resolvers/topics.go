@@ -41,12 +41,12 @@ func topicConnection(rows []*models.Topic, err error) (*models.TopicConnection, 
 
 // ChildTopics returns a set of topics.
 func (r *topicResolver) ChildTopics(ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
-	return topicConnection(models.Topics().All(ctx, r.DB))
+	return topicConnection(topic.ChildTopics().All(ctx, r.DB))
 }
 
 // ParentTopics returns a set of links.
 func (r *topicResolver) ParentTopics(ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
-	return topicConnection(models.Topics().All(ctx, r.DB))
+	return topicConnection(topic.ParentTopics().All(ctx, r.DB))
 }
 
 // Links returns a set of links.

@@ -494,6 +494,174 @@ func testTopicsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testTopicToManyParentTopics(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Topic
+	var b, c Topic
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, topicDBTypes, true, topicColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Topic struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, topicDBTypes, false, topicColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, topicDBTypes, false, topicColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Exec("insert into \"topic_topics\" (\"child_id\", \"parent_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Exec("insert into \"topic_topics\" (\"child_id\", \"parent_id\") values ($1, $2)", a.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	topic, err := a.ParentTopics().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range topic {
+		if v.ID == b.ID {
+			bFound = true
+		}
+		if v.ID == c.ID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := TopicSlice{&a}
+	if err = a.L.LoadParentTopics(ctx, tx, false, (*[]*Topic)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ParentTopics); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.ParentTopics = nil
+	if err = a.L.LoadParentTopics(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ParentTopics); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", topic)
+	}
+}
+
+func testTopicToManyChildTopics(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Topic
+	var b, c Topic
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, topicDBTypes, true, topicColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Topic struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, topicDBTypes, false, topicColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, topicDBTypes, false, topicColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Exec("insert into \"topic_topics\" (\"parent_id\", \"child_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Exec("insert into \"topic_topics\" (\"parent_id\", \"child_id\") values ($1, $2)", a.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	topic, err := a.ChildTopics().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range topic {
+		if v.ID == b.ID {
+			bFound = true
+		}
+		if v.ID == c.ID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := TopicSlice{&a}
+	if err = a.L.LoadChildTopics(ctx, tx, false, (*[]*Topic)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ChildTopics); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.ChildTopics = nil
+	if err = a.L.LoadChildTopics(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ChildTopics); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", topic)
+	}
+}
+
 func testTopicToManyParentTopicsLinks(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -572,34 +740,30 @@ func testTopicToManyParentTopicsLinks(t *testing.T) {
 	}
 }
 
-func testTopicToManyParentTopicsTopics(t *testing.T) {
+func testTopicToManyAddOpParentTopics(t *testing.T) {
 	var err error
+
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Topic
-	var b, c TopicsTopic
+	var b, c, d, e Topic
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, topicDBTypes, true, topicColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Topic struct: %s", err)
+	if err = randomize.Struct(seed, &a, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Topic{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-
-	if err = randomize.Struct(seed, &b, topicsTopicDBTypes, false, topicsTopicColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, topicsTopicDBTypes, false, topicsTopicColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.ParentID = a.ID
-	c.ParentID = a.ID
-
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -607,77 +771,68 @@ func testTopicToManyParentTopicsTopics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	topicsTopic, err := a.ParentTopicsTopics().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
+	foreignersSplitByInsertion := [][]*Topic{
+		{&b, &c},
+		{&d, &e},
 	}
 
-	bFound, cFound := false, false
-	for _, v := range topicsTopic {
-		if v.ParentID == b.ParentID {
-			bFound = true
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddParentTopics(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if v.ParentID == c.ParentID {
-			cFound = true
+
+		first := x[0]
+		second := x[1]
+
+		if first.R.ChildTopics[0] != &a {
+			t.Error("relationship was not added properly to the slice")
 		}
-	}
+		if second.R.ChildTopics[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
 
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
+		if a.R.ParentTopics[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ParentTopics[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
 
-	slice := TopicSlice{&a}
-	if err = a.L.LoadParentTopicsTopics(ctx, tx, false, (*[]*Topic)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.ParentTopicsTopics); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.ParentTopicsTopics = nil
-	if err = a.L.LoadParentTopicsTopics(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.ParentTopicsTopics); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", topicsTopic)
+		count, err := a.ParentTopics().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
 	}
 }
 
-func testTopicToManyChildTopicsTopics(t *testing.T) {
+func testTopicToManySetOpParentTopics(t *testing.T) {
 	var err error
+
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Topic
-	var b, c TopicsTopic
+	var b, c, d, e Topic
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, topicDBTypes, true, topicColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Topic struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = randomize.Struct(seed, &a, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
+	foreigners := []*Topic{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
 
-	if err = randomize.Struct(seed, &b, topicsTopicDBTypes, false, topicsTopicColumnsWithDefault...); err != nil {
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, topicsTopicDBTypes, false, topicsTopicColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.ChildID = a.ID
-	c.ChildID = a.ID
-
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -685,46 +840,359 @@ func testTopicToManyChildTopicsTopics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	topicsTopic, err := a.ChildTopicsTopics().All(ctx, tx)
+	err = a.SetParentTopics(ctx, tx, false, &b, &c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	bFound, cFound := false, false
-	for _, v := range topicsTopic {
-		if v.ChildID == b.ChildID {
-			bFound = true
-		}
-		if v.ChildID == c.ChildID {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := TopicSlice{&a}
-	if err = a.L.LoadChildTopicsTopics(ctx, tx, false, (*[]*Topic)(&slice), nil); err != nil {
+	count, err := a.ParentTopics().Count(ctx, tx)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.ChildTopicsTopics); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
+	if count != 2 {
+		t.Error("count was wrong:", count)
 	}
 
-	a.R.ChildTopicsTopics = nil
-	if err = a.L.LoadChildTopicsTopics(ctx, tx, true, &a, nil); err != nil {
+	err = a.SetParentTopics(ctx, tx, true, &d, &e)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.ChildTopicsTopics); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
+
+	count, err = a.ParentTopics().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
 	}
 
-	if t.Failed() {
-		t.Logf("%#v", topicsTopic)
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.ChildTopics) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.ChildTopics) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.ChildTopics[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.ChildTopics[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.ParentTopics[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.ParentTopics[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testTopicToManyRemoveOpParentTopics(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Topic
+	var b, c, d, e Topic
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Topic{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddParentTopics(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.ParentTopics().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveParentTopics(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.ParentTopics().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.ChildTopics) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.ChildTopics) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.ChildTopics[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.ChildTopics[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.ParentTopics) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.ParentTopics[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.ParentTopics[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testTopicToManyAddOpChildTopics(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Topic
+	var b, c, d, e Topic
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Topic{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Topic{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddChildTopics(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if first.R.ParentTopics[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+		if second.R.ParentTopics[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+
+		if a.R.ChildTopics[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ChildTopics[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.ChildTopics().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testTopicToManySetOpChildTopics(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Topic
+	var b, c, d, e Topic
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Topic{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetChildTopics(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.ChildTopics().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetChildTopics(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.ChildTopics().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.ParentTopics) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.ParentTopics) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.ParentTopics[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.ParentTopics[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.ChildTopics[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.ChildTopics[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testTopicToManyRemoveOpChildTopics(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Topic
+	var b, c, d, e Topic
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Topic{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddChildTopics(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.ChildTopics().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveChildTopics(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.ChildTopics().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.ParentTopics) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.ParentTopics) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.ParentTopics[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.ParentTopics[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.ChildTopics) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.ChildTopics[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.ChildTopics[0] != &e {
+		t.Error("relationship to e should have been preserved")
 	}
 }
 
@@ -795,156 +1263,6 @@ func testTopicToManyAddOpParentTopicsLinks(t *testing.T) {
 		}
 
 		count, err := a.ParentTopicsLinks().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-func testTopicToManyAddOpParentTopicsTopics(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Topic
-	var b, c, d, e TopicsTopic
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*TopicsTopic{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, topicsTopicDBTypes, false, strmangle.SetComplement(topicsTopicPrimaryKeyColumns, topicsTopicColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*TopicsTopic{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddParentTopicsTopics(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.ID != first.ParentID {
-			t.Error("foreign key was wrong value", a.ID, first.ParentID)
-		}
-		if a.ID != second.ParentID {
-			t.Error("foreign key was wrong value", a.ID, second.ParentID)
-		}
-
-		if first.R.Parent != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Parent != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.ParentTopicsTopics[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.ParentTopicsTopics[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.ParentTopicsTopics().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-func testTopicToManyAddOpChildTopicsTopics(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Topic
-	var b, c, d, e TopicsTopic
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, topicDBTypes, false, strmangle.SetComplement(topicPrimaryKeyColumns, topicColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*TopicsTopic{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, topicsTopicDBTypes, false, strmangle.SetComplement(topicsTopicPrimaryKeyColumns, topicsTopicColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*TopicsTopic{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddChildTopicsTopics(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.ID != first.ChildID {
-			t.Error("foreign key was wrong value", a.ID, first.ChildID)
-		}
-		if a.ID != second.ChildID {
-			t.Error("foreign key was wrong value", a.ID, second.ChildID)
-		}
-
-		if first.R.Child != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Child != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.ChildTopicsTopics[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.ChildTopicsTopics[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.ChildTopicsTopics().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
