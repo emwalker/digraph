@@ -22,7 +22,7 @@ const LinksPage = ({ organization, ...props }: Props) => {
       >
         { links.map(link => (
           <Link
-            key={link.resourceId}
+            key={link.id}
             organization={organization}
             link={link}
             {...props}
@@ -48,6 +48,7 @@ export default createFragmentContainer(LinksPage, graphql`
     links(first: 1000) @connection(key: "Organization_links") {
       edges {
         node {
+          id
           ...Link_link
         }
       }

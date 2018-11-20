@@ -17,11 +17,11 @@ const Layout = ({ children }: Props) => (
       </div>
       <nav className="UnderlineNav mb-3">
         <div className="UnderlineNav-body">
-          <Link to="/topics" className="UnderlineNav-item" activeClassName="selected">
-            Topics
-          </Link>
           <Link to="/links" className="UnderlineNav-item" activeClassName="selected">
             Links
+          </Link>
+          <Link to="/topics" className="UnderlineNav-item" activeClassName="selected">
+            Topics
           </Link>
         </div>
       </nav>

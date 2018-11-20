@@ -52,7 +52,7 @@ const TopicPage = ({ topic, ...props }: Props) => {
         >
           { topics.map(childTopic => (
             <Topic
-              key={childTopic.resourceId}
+              key={childTopic.id}
               topic={childTopic}
               {...props}
             />
@@ -60,7 +60,7 @@ const TopicPage = ({ topic, ...props }: Props) => {
 
           { links.map(link => (
             <Link
-              key={link.resourceId}
+              key={link.id}
               link={link}
               {...props}
             />
@@ -110,6 +110,7 @@ export default createFragmentContainer(TopicPage, graphql`
     childTopics(first: 1000) @connection(key: "Topic_childTopics") {
       edges {
         node {
+          id
           ...Topic_topic
         }
       }
@@ -118,6 +119,7 @@ export default createFragmentContainer(TopicPage, graphql`
     links(first: 1000)  @connection(key: "Topic_links") {
       edges {
         node {
+          id
           ...Link_link
         }
       }

@@ -41,16 +41,16 @@ ShallowWrapper {
               <Link
                 activeClassName="selected"
                 className="UnderlineNav-item"
-                to="/topics"
+                to="/links"
               >
-                Topics
+                Links
               </Link>
               <Link
                 activeClassName="selected"
                 className="UnderlineNav-item"
-                to="/links"
+                to="/topics"
               >
-                Links
+                Topics
               </Link>
             </div>
           </nav>
@@ -104,16 +104,16 @@ ShallowWrapper {
                 <Link
                   activeClassName="selected"
                   className="UnderlineNav-item"
-                  to="/topics"
+                  to="/links"
                 >
-                  Topics
+                  Links
                 </Link>
                 <Link
                   activeClassName="selected"
                   className="UnderlineNav-item"
-                  to="/links"
+                  to="/topics"
                 >
-                  Links
+                  Topics
                 </Link>
               </div>
             </nav>,
@@ -160,16 +160,16 @@ ShallowWrapper {
                 <Link
                   activeClassName="selected"
                   className="UnderlineNav-item"
-                  to="/topics"
+                  to="/links"
                 >
-                  Topics
+                  Links
                 </Link>
                 <Link
                   activeClassName="selected"
                   className="UnderlineNav-item"
-                  to="/links"
+                  to="/topics"
                 >
-                  Links
+                  Topics
                 </Link>
               </div>,
               "className": "UnderlineNav mb-3",
@@ -184,16 +184,16 @@ ShallowWrapper {
                   <Link
                     activeClassName="selected"
                     className="UnderlineNav-item"
-                    to="/topics"
+                    to="/links"
                   >
-                    Topics
+                    Links
                   </Link>,
                   <Link
                     activeClassName="selected"
                     className="UnderlineNav-item"
-                    to="/links"
+                    to="/topics"
                   >
-                    Links
+                    Topics
                   </Link>,
                 ],
                 "className": "UnderlineNav-body",
@@ -206,12 +206,12 @@ ShallowWrapper {
                   "nodeType": "class",
                   "props": Object {
                     "activeClassName": "selected",
-                    "children": "Topics",
+                    "children": "Links",
                     "className": "UnderlineNav-item",
-                    "to": "/topics",
+                    "to": "/links",
                   },
                   "ref": null,
-                  "rendered": "Topics",
+                  "rendered": "Links",
                   "type": [Function],
                 },
                 Object {
@@ -220,12 +220,12 @@ ShallowWrapper {
                   "nodeType": "class",
                   "props": Object {
                     "activeClassName": "selected",
-                    "children": "Links",
+                    "children": "Topics",
                     "className": "UnderlineNav-item",
-                    "to": "/links",
+                    "to": "/topics",
                   },
                   "ref": null,
-                  "rendered": "Links",
+                  "rendered": "Topics",
                   "type": [Function],
                 },
               ],
@@ -361,16 +361,16 @@ ShallowWrapper {
                 <Link
                   activeClassName="selected"
                   className="UnderlineNav-item"
-                  to="/topics"
+                  to="/links"
                 >
-                  Topics
+                  Links
                 </Link>
                 <Link
                   activeClassName="selected"
                   className="UnderlineNav-item"
-                  to="/links"
+                  to="/topics"
                 >
-                  Links
+                  Topics
                 </Link>
               </div>
             </nav>
@@ -424,16 +424,16 @@ ShallowWrapper {
                   <Link
                     activeClassName="selected"
                     className="UnderlineNav-item"
-                    to="/topics"
+                    to="/links"
                   >
-                    Topics
+                    Links
                   </Link>
                   <Link
                     activeClassName="selected"
                     className="UnderlineNav-item"
-                    to="/links"
+                    to="/topics"
                   >
-                    Links
+                    Topics
                   </Link>
                 </div>
               </nav>,
@@ -480,16 +480,16 @@ ShallowWrapper {
                   <Link
                     activeClassName="selected"
                     className="UnderlineNav-item"
-                    to="/topics"
+                    to="/links"
                   >
-                    Topics
+                    Links
                   </Link>
                   <Link
                     activeClassName="selected"
                     className="UnderlineNav-item"
-                    to="/links"
+                    to="/topics"
                   >
-                    Links
+                    Topics
                   </Link>
                 </div>,
                 "className": "UnderlineNav mb-3",
@@ -504,16 +504,16 @@ ShallowWrapper {
                     <Link
                       activeClassName="selected"
                       className="UnderlineNav-item"
-                      to="/topics"
+                      to="/links"
                     >
-                      Topics
+                      Links
                     </Link>,
                     <Link
                       activeClassName="selected"
                       className="UnderlineNav-item"
-                      to="/links"
+                      to="/topics"
                     >
-                      Links
+                      Topics
                     </Link>,
                   ],
                   "className": "UnderlineNav-body",
@@ -526,12 +526,12 @@ ShallowWrapper {
                     "nodeType": "class",
                     "props": Object {
                       "activeClassName": "selected",
-                      "children": "Topics",
+                      "children": "Links",
                       "className": "UnderlineNav-item",
-                      "to": "/topics",
+                      "to": "/links",
                     },
                     "ref": null,
-                    "rendered": "Topics",
+                    "rendered": "Links",
                     "type": [Function],
                   },
                   Object {
@@ -540,12 +540,12 @@ ShallowWrapper {
                     "nodeType": "class",
                     "props": Object {
                       "activeClassName": "selected",
-                      "children": "Links",
+                      "children": "Topics",
                       "className": "UnderlineNav-item",
-                      "to": "/links",
+                      "to": "/topics",
                     },
                     "ref": null,
-                    "rendered": "Links",
+                    "rendered": "Topics",
                     "type": [Function],
                   },
                 ],
