@@ -61,7 +61,7 @@ format:
 	go fmt ./...
 	git diff-index --quiet HEAD --
 
-check: format test
+check: format test test-integration
 
 load:
 	dropdb $(DBNAME)
