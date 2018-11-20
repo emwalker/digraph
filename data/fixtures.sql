@@ -185,7 +185,7 @@ COPY public.organizations (id, name) FROM stdin;
 --
 
 COPY public.schema_migrations (version, dirty) FROM stdin;
-1542604481	f
+1542684831	f
 \.
 
 
@@ -205,10 +205,10 @@ COPY public.topic_topics (parent_id, child_id) FROM stdin;
 --
 
 COPY public.topics (organization_id, id, name, description) FROM stdin;
-45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dca814-e6f0-11e8-8bc1-b363da4aeace	Science	\N
 45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dcaad0-e6f0-11e8-8bc1-677f3b3c362f	Biology	\N
 45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dcaaf8-e6f0-11e8-8bc1-d7a04cdda708	Chemistry	\N
-45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dcab0c-e6f0-11e8-8bc1-bbb431f062c7	Physics	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dca814-e6f0-11e8-8bc1-b363da4aeace	Science	
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dcab0c-e6f0-11e8-8bc1-bbb431f062c7	Physics	
 \.
 
 
@@ -316,7 +316,7 @@ CREATE INDEX topics_topics_child_parent_idx ON public.topic_topics USING btree (
 --
 
 ALTER TABLE ONLY public.link_topics
-    ADD CONSTRAINT link_topics_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.links(id);
+    ADD CONSTRAINT link_topics_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.links(id) ON DELETE CASCADE;
 
 
 --
@@ -324,7 +324,7 @@ ALTER TABLE ONLY public.link_topics
 --
 
 ALTER TABLE ONLY public.link_topics
-    ADD CONSTRAINT link_topics_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.topics(id);
+    ADD CONSTRAINT link_topics_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.topics(id) ON DELETE CASCADE;
 
 
 --
@@ -336,6 +336,14 @@ ALTER TABLE ONLY public.links
 
 
 --
+-- Name: topic_topics topic_topics_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.topic_topics
+    ADD CONSTRAINT topic_topics_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.topics(id) ON DELETE CASCADE;
+
+
+--
 -- Name: topics topics_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -344,19 +352,11 @@ ALTER TABLE ONLY public.topics
 
 
 --
--- Name: topic_topics topics_topics_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.topic_topics
-    ADD CONSTRAINT topics_topics_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.topics(id);
-
-
---
 -- Name: topic_topics topics_topics_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.topic_topics
-    ADD CONSTRAINT topics_topics_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.topics(id);
+    ADD CONSTRAINT topics_topics_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.topics(id) ON DELETE CASCADE;
 
 
 --

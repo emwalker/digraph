@@ -33,7 +33,7 @@ func topicConnection(rows []*models.Topic, err error) (*models.TopicConnection, 
 
 	var edges []*models.TopicEdge
 	for _, topic := range rows {
-		edges = append(edges, &models.TopicEdge{Node: topic})
+		edges = append(edges, &models.TopicEdge{Node: *topic})
 	}
 
 	return &models.TopicConnection{Edges: edges}, nil

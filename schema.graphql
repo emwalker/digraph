@@ -1,59 +1,13 @@
-type PageInfo {
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-  endCursor: String
-}
-
-interface Namespaceable {
-  organization: Organization!
-}
-
-interface ResourceIdentifiable {
-  resourcePath: String!
-}
-
-type User {
-  primaryEmail: String!
-  id: ID
-  name: String!
-  selectedTopic: Topic
-}
-
-type Topic implements ResourceIdentifiable & Namespaceable {
-  childTopics(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection
+input CreateTopicInput {
+  clientMutationId: String
   description: String
-  id: ID
-  links(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): LinkConnection
   name: String!
-  organization: Organization!
-  parentTopics(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection
-  resourcePath: String!
+  organizationId: String!
+  topicIds: [String!]
 }
 
-type TopicEdge {
-  cursor: String!
-  node: Topic
-}
-
-type TopicConnection {
-  edges: [TopicEdge]
-  pageInfo: PageInfo!
+type CreateTopicPayload {
+  topicEdge: TopicEdge!
 }
 
 type Link implements ResourceIdentifiable & Namespaceable {
@@ -73,12 +27,23 @@ type Link implements ResourceIdentifiable & Namespaceable {
 
 type LinkEdge {
   cursor: String!
-  node: Link
+  node: Link!
 }
 
 type LinkConnection {
   edges: [LinkEdge]
   pageInfo: PageInfo!
+}
+
+type Mutation {
+  createTopic(input: CreateTopicInput!): CreateTopicPayload
+  selectTopic(input: SelectTopicInput!): SelectTopicPayload
+  updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
+  upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
+}
+
+interface Namespaceable {
+  organization: Organization!
 }
 
 type Organization implements ResourceIdentifiable {
@@ -100,33 +65,20 @@ type Organization implements ResourceIdentifiable {
   ): TopicConnection
 }
 
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
 type Query {
   viewer: User
   organization(id: ID!): Organization
 }
 
-input CreateTopicInput {
-  clientMutationId: String!
-  description: String
-  name: String!
-  organizationId: String!
-  topicIds: [String!]
-}
-
-type CreateTopicPayload {
-  topicEdge: TopicEdge!
-}
-
-input UpsertLinkInput {
-  addTopicIds: [String!]
-  clientMutationId: String!
-  organizationId: String!
-  title: String!
-  url: String!
-}
-
-type UpsertLinkPayload {
-  linkEdge: LinkEdge!
+interface ResourceIdentifiable {
+  resourcePath: String!
 }
 
 input SelectTopicInput {
@@ -138,8 +90,70 @@ type SelectTopicPayload {
   topic: Topic
 }
 
-type Mutation {
-  createTopic(input: CreateTopicInput!): CreateTopicPayload
-  selectTopic(input: SelectTopicInput!): SelectTopicPayload
-  upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
+type Topic implements ResourceIdentifiable & Namespaceable {
+  childTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
+  description: String
+  id: ID!
+  links(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): LinkConnection
+  name: String!
+  organization: Organization!
+  parentTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
+  resourcePath: String!
+}
+
+type TopicEdge {
+  cursor: String!
+  node: Topic!
+}
+
+type TopicConnection {
+  edges: [TopicEdge]
+  pageInfo: PageInfo!
+}
+
+type User {
+  primaryEmail: String!
+  id: ID
+  name: String!
+  selectedTopic: Topic
+}
+
+input UpdateTopicInput {
+  clientMutationId: String
+  description: String
+  id: ID!
+  name: String!
+  organizationId: String!
+  topicIds: [String!]
+}
+
+type UpdateTopicPayload {
+  topic: Topic!
+}
+
+input UpsertLinkInput {
+  addTopicIds: [String!]
+  clientMutationId: String
+  organizationId: String!
+  title: String!
+  url: String!
+}
+
+type UpsertLinkPayload {
+  linkEdge: LinkEdge!
 }

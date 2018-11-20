@@ -3,7 +3,7 @@
 package models
 
 type CreateTopicInput struct {
-	ClientMutationID string   `json:"clientMutationId"`
+	ClientMutationID *string  `json:"clientMutationId"`
 	Description      *string  `json:"description"`
 	Name             string   `json:"name"`
 	OrganizationID   string   `json:"organizationId"`
@@ -21,7 +21,7 @@ type LinkConnection struct {
 
 type LinkEdge struct {
 	Cursor string `json:"cursor"`
-	Node   *Link  `json:"node"`
+	Node   Link   `json:"node"`
 }
 
 type Namespaceable interface {
@@ -55,12 +55,25 @@ type TopicConnection struct {
 
 type TopicEdge struct {
 	Cursor string `json:"cursor"`
-	Node   *Topic `json:"node"`
+	Node   Topic  `json:"node"`
+}
+
+type UpdateTopicInput struct {
+	ClientMutationID *string  `json:"clientMutationId"`
+	Description      *string  `json:"description"`
+	ID               string   `json:"id"`
+	Name             string   `json:"name"`
+	OrganizationID   string   `json:"organizationId"`
+	TopicIds         []string `json:"topicIds"`
+}
+
+type UpdateTopicPayload struct {
+	Topic Topic `json:"topic"`
 }
 
 type UpsertLinkInput struct {
 	AddTopicIds      []string `json:"addTopicIds"`
-	ClientMutationID string   `json:"clientMutationId"`
+	ClientMutationID *string  `json:"clientMutationId"`
 	OrganizationID   string   `json:"organizationId"`
 	Title            string   `json:"title"`
 	URL              string   `json:"url"`

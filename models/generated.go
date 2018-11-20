@@ -70,6 +70,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateTopic func(childComplexity int, input CreateTopicInput) int
 		SelectTopic func(childComplexity int, input SelectTopicInput) int
+		UpdateTopic func(childComplexity int, input UpdateTopicInput) int
 		UpsertLink  func(childComplexity int, input UpsertLinkInput) int
 	}
 
@@ -119,6 +120,10 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	UpdateTopicPayload struct {
+		Topic func(childComplexity int) int
+	}
+
 	UpsertLinkPayload struct {
 		LinkEdge func(childComplexity int) int
 	}
@@ -140,6 +145,7 @@ type LinkResolver interface {
 type MutationResolver interface {
 	CreateTopic(ctx context.Context, input CreateTopicInput) (*CreateTopicPayload, error)
 	SelectTopic(ctx context.Context, input SelectTopicInput) (*SelectTopicPayload, error)
+	UpdateTopic(ctx context.Context, input UpdateTopicInput) (*UpdateTopicPayload, error)
 	UpsertLink(ctx context.Context, input UpsertLinkInput) (*UpsertLinkPayload, error)
 }
 type OrganizationResolver interface {
@@ -249,6 +255,21 @@ func field_Mutation_selectTopic_args(rawArgs map[string]interface{}) (map[string
 	if tmp, ok := rawArgs["input"]; ok {
 		var err error
 		arg0, err = UnmarshalSelectTopicInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_updateTopic_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 UpdateTopicInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalUpdateTopicInput(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -784,6 +805,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SelectTopic(childComplexity, args["input"].(SelectTopicInput)), true
 
+	case "Mutation.updateTopic":
+		if e.complexity.Mutation.UpdateTopic == nil {
+			break
+		}
+
+		args, err := field_Mutation_updateTopic_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateTopic(childComplexity, args["input"].(UpdateTopicInput)), true
+
 	case "Mutation.upsertLink":
 		if e.complexity.Mutation.UpsertLink == nil {
 			break
@@ -1005,6 +1038,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TopicEdge.Node(childComplexity), true
+
+	case "UpdateTopicPayload.topic":
+		if e.complexity.UpdateTopicPayload.Topic == nil {
+			break
+		}
+
+		return e.complexity.UpdateTopicPayload.Topic(childComplexity), true
 
 	case "UpsertLinkPayload.linkEdge":
 		if e.complexity.UpsertLinkPayload.LinkEdge == nil {
@@ -1549,6 +1589,9 @@ func (ec *executionContext) _LinkEdge(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "node":
 			out.Values[i] = ec._LinkEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1603,17 +1646,16 @@ func (ec *executionContext) _LinkEdge_node(ctx context.Context, field graphql.Co
 		return obj.Node, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*Link)
+	res := resTmp.(Link)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._Link(ctx, field.Selections, res)
+	return ec._Link(ctx, field.Selections, &res)
 }
 
 var mutationImplementors = []string{"Mutation"}
@@ -1638,6 +1680,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_createTopic(ctx, field)
 		case "selectTopic":
 			out.Values[i] = ec._Mutation_selectTopic(ctx, field)
+		case "updateTopic":
+			out.Values[i] = ec._Mutation_updateTopic(ctx, field)
 		case "upsertLink":
 			out.Values[i] = ec._Mutation_upsertLink(ctx, field)
 		default:
@@ -1719,6 +1763,41 @@ func (ec *executionContext) _Mutation_selectTopic(ctx context.Context, field gra
 	}
 
 	return ec._SelectTopicPayload(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_updateTopic(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_updateTopic_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateTopic(rctx, args["input"].(UpdateTopicInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*UpdateTopicPayload)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._UpdateTopicPayload(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -2407,6 +2486,9 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 			}(i, field)
 		case "id":
 			out.Values[i] = ec._Topic_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "links":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -2532,6 +2614,9 @@ func (ec *executionContext) _Topic_id(ctx context.Context, field graphql.Collect
 		return obj.ID, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
@@ -2834,6 +2919,9 @@ func (ec *executionContext) _TopicEdge(ctx context.Context, sel ast.SelectionSet
 			}
 		case "node":
 			out.Values[i] = ec._TopicEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2888,17 +2976,74 @@ func (ec *executionContext) _TopicEdge_node(ctx context.Context, field graphql.C
 		return obj.Node, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*Topic)
+	res := resTmp.(Topic)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
+	return ec._Topic(ctx, field.Selections, &res)
+}
+
+var updateTopicPayloadImplementors = []string{"UpdateTopicPayload"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _UpdateTopicPayload(ctx context.Context, sel ast.SelectionSet, obj *UpdateTopicPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, updateTopicPayloadImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpdateTopicPayload")
+		case "topic":
+			out.Values[i] = ec._UpdateTopicPayload_topic(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
 	}
 
-	return ec._Topic(ctx, field.Selections, res)
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UpdateTopicPayload_topic(ctx context.Context, field graphql.CollectedField, obj *UpdateTopicPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rctx := &graphql.ResolverContext{
+		Object: "UpdateTopicPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Topic, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Topic)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Topic(ctx, field.Selections, &res)
 }
 
 var upsertLinkPayloadImplementors = []string{"UpsertLinkPayload"}
@@ -4551,14 +4696,14 @@ func (ec *executionContext) _Namespaceable(ctx context.Context, sel ast.Selectio
 	switch obj := (*obj).(type) {
 	case nil:
 		return graphql.Null
-	case Topic:
-		return ec._Topic(ctx, sel, &obj)
-	case *Topic:
-		return ec._Topic(ctx, sel, obj)
 	case Link:
 		return ec._Link(ctx, sel, &obj)
 	case *Link:
 		return ec._Link(ctx, sel, obj)
+	case Topic:
+		return ec._Topic(ctx, sel, &obj)
+	case *Topic:
+		return ec._Topic(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -4568,10 +4713,6 @@ func (ec *executionContext) _ResourceIdentifiable(ctx context.Context, sel ast.S
 	switch obj := (*obj).(type) {
 	case nil:
 		return graphql.Null
-	case Topic:
-		return ec._Topic(ctx, sel, &obj)
-	case *Topic:
-		return ec._Topic(ctx, sel, obj)
 	case Link:
 		return ec._Link(ctx, sel, &obj)
 	case *Link:
@@ -4580,6 +4721,10 @@ func (ec *executionContext) _ResourceIdentifiable(ctx context.Context, sel ast.S
 		return ec._Organization(ctx, sel, &obj)
 	case *Organization:
 		return ec._Organization(ctx, sel, obj)
+	case Topic:
+		return ec._Topic(ctx, sel, &obj)
+	case *Topic:
+		return ec._Topic(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -4593,7 +4738,12 @@ func UnmarshalCreateTopicInput(v interface{}) (CreateTopicInput, error) {
 		switch k {
 		case "clientMutationId":
 			var err error
-			it.ClientMutationID, err = graphql.UnmarshalString(v)
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.ClientMutationID = &ptr1
+			}
+
 			if err != nil {
 				return it, err
 			}
@@ -4667,6 +4817,75 @@ func UnmarshalSelectTopicInput(v interface{}) (SelectTopicInput, error) {
 	return it, nil
 }
 
+func UnmarshalUpdateTopicInput(v interface{}) (UpdateTopicInput, error) {
+	var it UpdateTopicInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "clientMutationId":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.ClientMutationID = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Description = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "id":
+			var err error
+			it.ID, err = graphql.UnmarshalID(v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "organizationId":
+			var err error
+			it.OrganizationID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "topicIds":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				} else {
+					rawIf1 = []interface{}{v}
+				}
+			}
+			it.TopicIds = make([]string, len(rawIf1))
+			for idx1 := range rawIf1 {
+				it.TopicIds[idx1], err = graphql.UnmarshalString(rawIf1[idx1])
+			}
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalUpsertLinkInput(v interface{}) (UpsertLinkInput, error) {
 	var it UpsertLinkInput
 	var asMap = v.(map[string]interface{})
@@ -4692,7 +4911,12 @@ func UnmarshalUpsertLinkInput(v interface{}) (UpsertLinkInput, error) {
 			}
 		case "clientMutationId":
 			var err error
-			it.ClientMutationID, err = graphql.UnmarshalString(v)
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.ClientMutationID = &ptr1
+			}
+
 			if err != nil {
 				return it, err
 			}
@@ -4744,62 +4968,16 @@ func (ec *executionContext) introspectType(name string) *introspection.Type {
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `type PageInfo {
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-  endCursor: String
-}
-
-interface Namespaceable {
-  organization: Organization!
-}
-
-interface ResourceIdentifiable {
-  resourcePath: String!
-}
-
-type User {
-  primaryEmail: String!
-  id: ID
-  name: String!
-  selectedTopic: Topic
-}
-
-type Topic implements ResourceIdentifiable & Namespaceable {
-  childTopics(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection
+	&ast.Source{Name: "schema.graphql", Input: `input CreateTopicInput {
+  clientMutationId: String
   description: String
-  id: ID
-  links(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): LinkConnection
   name: String!
-  organization: Organization!
-  parentTopics(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection
-  resourcePath: String!
+  organizationId: String!
+  topicIds: [String!]
 }
 
-type TopicEdge {
-  cursor: String!
-  node: Topic
-}
-
-type TopicConnection {
-  edges: [TopicEdge]
-  pageInfo: PageInfo!
+type CreateTopicPayload {
+  topicEdge: TopicEdge!
 }
 
 type Link implements ResourceIdentifiable & Namespaceable {
@@ -4819,12 +4997,23 @@ type Link implements ResourceIdentifiable & Namespaceable {
 
 type LinkEdge {
   cursor: String!
-  node: Link
+  node: Link!
 }
 
 type LinkConnection {
   edges: [LinkEdge]
   pageInfo: PageInfo!
+}
+
+type Mutation {
+  createTopic(input: CreateTopicInput!): CreateTopicPayload
+  selectTopic(input: SelectTopicInput!): SelectTopicPayload
+  updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
+  upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
+}
+
+interface Namespaceable {
+  organization: Organization!
 }
 
 type Organization implements ResourceIdentifiable {
@@ -4846,33 +5035,20 @@ type Organization implements ResourceIdentifiable {
   ): TopicConnection
 }
 
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
 type Query {
   viewer: User
   organization(id: ID!): Organization
 }
 
-input CreateTopicInput {
-  clientMutationId: String!
-  description: String
-  name: String!
-  organizationId: String!
-  topicIds: [String!]
-}
-
-type CreateTopicPayload {
-  topicEdge: TopicEdge!
-}
-
-input UpsertLinkInput {
-  addTopicIds: [String!]
-  clientMutationId: String!
-  organizationId: String!
-  title: String!
-  url: String!
-}
-
-type UpsertLinkPayload {
-  linkEdge: LinkEdge!
+interface ResourceIdentifiable {
+  resourcePath: String!
 }
 
 input SelectTopicInput {
@@ -4884,10 +5060,72 @@ type SelectTopicPayload {
   topic: Topic
 }
 
-type Mutation {
-  createTopic(input: CreateTopicInput!): CreateTopicPayload
-  selectTopic(input: SelectTopicInput!): SelectTopicPayload
-  upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
+type Topic implements ResourceIdentifiable & Namespaceable {
+  childTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
+  description: String
+  id: ID!
+  links(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): LinkConnection
+  name: String!
+  organization: Organization!
+  parentTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
+  resourcePath: String!
+}
+
+type TopicEdge {
+  cursor: String!
+  node: Topic!
+}
+
+type TopicConnection {
+  edges: [TopicEdge]
+  pageInfo: PageInfo!
+}
+
+type User {
+  primaryEmail: String!
+  id: ID
+  name: String!
+  selectedTopic: Topic
+}
+
+input UpdateTopicInput {
+  clientMutationId: String
+  description: String
+  id: ID!
+  name: String!
+  organizationId: String!
+  topicIds: [String!]
+}
+
+type UpdateTopicPayload {
+  topic: Topic!
+}
+
+input UpsertLinkInput {
+  addTopicIds: [String!]
+  clientMutationId: String
+  organizationId: String!
+  title: String!
+  url: String!
+}
+
+type UpsertLinkPayload {
+  linkEdge: LinkEdge!
 }
 `},
 )

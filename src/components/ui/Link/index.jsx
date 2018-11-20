@@ -21,12 +21,12 @@ type State = {
 }
 
 class Link extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props)
-    this.topics = liftNodes(props.link.topics)
-    this.state = {
-      formIsOpen: false,
-    }
+  state = {
+    formIsOpen: false,
+  }
+
+  get topics() {
+    return liftNodes(this.props.link.topics)
   }
 
   toggleForm = () => {

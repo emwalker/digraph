@@ -2,11 +2,13 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import type { TopicType } from '../../types'
+import type { OrganizationType, TopicType } from '../../types'
 import { liftNodes } from '../../../utils'
 import Item from '../Item'
+import EditTopic from './EditTopic'
 
 type Props = {
+  organization: OrganizationType,
   topic: TopicType,
 }
 
@@ -15,12 +17,12 @@ type State = {
 }
 
 class Topic extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props)
-    this.parentTopics = liftNodes(props.topic.parentTopics)
-    this.state = {
-      formIsOpen: false,
-    }
+  state = {
+    formIsOpen: false,
+  }
+
+  get parentTopics(): TopicType[] {
+    return liftNodes(this.props.topic.parentTopics)
   }
 
   toggleForm = () => {
@@ -33,11 +35,18 @@ class Topic extends Component<Props, State> {
         className="Box-row--topic"
         formIsOpen={this.state.formIsOpen}
         title={this.props.topic.name}
+        description={this.props.topic.description}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}
         url={this.props.topic.resourcePath}
       >
-        Edit topic
+        <EditTopic
+          isOpen={this.state.formIsOpen}
+          organization={this.props.organization}
+          toggleForm={this.toggleForm}
+          topic={this.props.topic}
+          {...this.props}
+        />
       </Item>
     )
   }
@@ -46,11 +55,14 @@ class Topic extends Component<Props, State> {
 export default createFragmentContainer(Topic, graphql`
   fragment Topic_organization on Organization {
     id
+    ...EditTopic_organization
   }
 
   fragment Topic_topic on Topic {
+    description
     name
     resourcePath
+    ...EditTopic_topic
 
     parentTopics(first: 10) {
       edges {

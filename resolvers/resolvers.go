@@ -12,7 +12,6 @@ import (
 // Resolver is the abstract base class for resolvers.
 type Resolver struct {
 	DB *sql.DB
-	Tx *sql.Tx
 }
 
 // Mutation returns a resolver that can be used for issuing mutations.

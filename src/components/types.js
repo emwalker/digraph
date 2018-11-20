@@ -1,31 +1,25 @@
 // @flow
 
 export type OrganizationType = {
-  resourceId: string,
+  id: string,
 }
 
 export type TopicType = {
   name: string,
-  resourceId: string,
+  id: string,
   resourcePath: string,
 }
 
 export type LinkType = {
   title: string,
   url: string,
-  resourceId: string,
+  id: string,
 }
 
 export type RelayProps = {
-  organization: {
-    id: string,
-    resourceId: string,
-  },
+  organization: OrganizationType,
   relay: {
     environment: Object,
   },
-  topic: {
-    id: string,
-    resourceId: string,
-  },
+  topic: TopicType,
 }

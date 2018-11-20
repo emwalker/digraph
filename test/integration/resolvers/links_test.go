@@ -16,8 +16,7 @@ func TestLinks(t *testing.T) {
 }
 
 func upsertLinkTest(t *testing.T) {
-	r, ctx, tx := startMutationTest(t, testDB)
-	defer tx.Rollback()
+	r, ctx := startMutationTest(t, testDB)
 
 	input := models.UpsertLinkInput{
 		AddTopicIds:    []string{},
@@ -26,20 +25,22 @@ func upsertLinkTest(t *testing.T) {
 		URL:            "https://gnusto.blog",
 	}
 
-	var err error
-	var payload *models.UpsertLinkPayload
-
-	countBefore, _ := models.Links().Count(ctx, tx)
-	payload, err = r.UpsertLink(ctx, input)
+	countBefore, err := models.Links().Count(ctx, testDB)
+	payload1, err := r.UpsertLink(ctx, input)
 	assert.Nil(t, err)
-	countAfter, _ := models.Links().Count(ctx, tx)
+	countAfter, _ := models.Links().Count(ctx, testDB)
 	assert.Equal(t, countBefore+1, countAfter, "The number of links should increase")
 
-	assert.NotNil(t, payload)
-	assert.Equal(t, payload.LinkEdge.Node.URL, input.URL+"/")
+	assert.NotNil(t, payload1)
+	assert.Equal(t, payload1.LinkEdge.Node.URL, input.URL+"/")
 
-	_, err = r.UpsertLink(ctx, input)
+	payload2, err := r.UpsertLink(ctx, input)
 	assert.Nil(t, err)
-	countAfter, _ = models.Links().Count(ctx, tx)
+	countAfter, _ = models.Links().Count(ctx, testDB)
 	assert.Equal(t, countBefore+1, countAfter, "The number of links should stay the same")
+
+	count, err := payload2.LinkEdge.Node.Delete(ctx, testDB)
+	if assert.Nil(t, err) {
+		assert.Equal(t, int64(1), count)
+	}
 }

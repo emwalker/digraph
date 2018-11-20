@@ -2,9 +2,8 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import type { LinkType, OrganizationType } from '../../../types'
 import Input from '../../Input'
-import upsertLinkMutation from '../../../../mutations/upsertLinkMutation'
+import updateTopicMutation from '../../../../mutations/updateTopicMutation'
 
 type Props = {
   id: string,
@@ -12,35 +11,41 @@ type Props = {
   relay: {
     environment: Object,
   },
-  link: LinkType,
-  organization: OrganizationType,
+  topic: {
+    description: string,
+    id: string,
+    name: string,
+  },
+  organization: {
+    id: string,
+  },
   toggleForm: Function,
 }
 
 type State = {
-  title: string,
-  url: string,
+  description: string,
+  name: string,
 }
 
-class EditLink extends Component<Props, State> {
+class EditTopic extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      title: props.link.title,
-      url: props.link.url,
+      name: props.topic.name,
+      description: props.topic.description,
     }
   }
 
   onSave = () => {
-    const configs = []
-    upsertLinkMutation(
+    updateTopicMutation(
       this.props.relay.environment,
-      configs,
+      [],
       {
-        addTopicIds: this.addTopicIds,
+        topicIds: this.addTopicIds,
+        description: this.state.description || '',
+        id: this.props.topic.id,
+        name: this.state.name,
         organizationId: this.props.organization.id,
-        title: this.state.title,
-        url: this.state.url,
       },
     )
     this.props.toggleForm()
@@ -51,12 +56,12 @@ class EditLink extends Component<Props, State> {
     return []
   }
 
-  updateTitle = (event: Object) => {
-    this.setState({ title: event.currentTarget.value })
+  updateDescription = (event: Object) => {
+    this.setState({ description: event.currentTarget.value })
   }
 
-  updateUrl = (event: Object) => {
-    this.setState({ url: event.currentTarget.value })
+  updateName = (event: Object) => {
+    this.setState({ name: event.currentTarget.value })
   }
 
   render() {
@@ -69,16 +74,16 @@ class EditLink extends Component<Props, State> {
           <Input
             className="col-5 mr-3"
             id={`edit-link-title-${this.props.id}`}
-            label="Page title"
-            onChange={this.updateTitle}
-            value={this.state.title}
+            label="Name"
+            onChange={this.updateName}
+            value={this.state.name}
           />
           <Input
             className="col-6"
-            id={`edit-link-url-${this.props.id}`}
-            label="Url"
-            onChange={this.updateUrl}
-            value={this.state.url}
+            id={`edit-topic-description-${this.props.id}`}
+            label="Description"
+            onChange={this.updateDescription}
+            value={this.state.description}
           />
         </div>
         <div>
@@ -91,13 +96,14 @@ class EditLink extends Component<Props, State> {
   }
 }
 
-export default createFragmentContainer(EditLink, graphql`
-  fragment EditLink_organization on Organization {
+export default createFragmentContainer(EditTopic, graphql`
+  fragment EditTopic_organization on Organization {
     id
   }
 
-  fragment EditLink_link on Link {
-    title
-    url
+  fragment EditTopic_topic on Topic {
+    description
+    id
+    name
   }
 `)

@@ -21,9 +21,7 @@ func newTestDb(t *testing.T) *sql.DB {
 	return testDB
 }
 
-func startMutationTest(t *testing.T, db *sql.DB) (models.MutationResolver, context.Context, *sql.Tx) {
-	tx, err := db.Begin()
-	assert.Nil(t, err, "Unable to start a database transaction")
-	resolver := &resolvers.MutationResolver{&resolvers.Resolver{DB: db, Tx: tx}}
-	return resolver, context.Background(), tx
+func startMutationTest(t *testing.T, db *sql.DB) (models.MutationResolver, context.Context) {
+	resolver := &resolvers.MutationResolver{&resolvers.Resolver{DB: db}}
+	return resolver, context.Background()
 }

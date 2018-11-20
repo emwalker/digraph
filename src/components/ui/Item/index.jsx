@@ -11,6 +11,7 @@ import TopicBadge from '../TopicBadge'
 type Props = {
   children: Node,
   className: string,
+  description?: ?string,
   formIsOpen: boolean,
   title: string,
   toggleForm: Function,
@@ -19,6 +20,10 @@ type Props = {
 }
 
 class Item extends Component<Props> {
+  static defaultProps = {
+    description: null,
+  }
+
   get className() {
     return classNames(
       'Item-row',
@@ -42,6 +47,7 @@ class Item extends Component<Props> {
               <a className="Box-row-link" href={url}>
                 { this.props.title }
               </a>
+              <div>{ this.props.description }</div>
             </div>
             <div
               className="mt-1 link-url branch-name css-truncate css-truncate-target"
