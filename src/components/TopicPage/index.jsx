@@ -31,21 +31,7 @@ const TopicPage = ({ topic, ...props }: Props) => {
       <div className="Subhead">
         <div className="Subhead-heading">{name}</div>
       </div>
-      <div className="one-third column pl-0">
-        <SidebarList
-          title="Parent topics"
-          items={liftNodes(parentTopics)}
-        />
-        <AddTopic
-          topic={topic}
-          {...props}
-        />
-        <AddLink
-          topic={topic}
-          {...props}
-        />
-      </div>
-      <div className="two-thirds column pr-0">
+      <div className="two-thirds column pl-0">
         <List
           placeholder="There are no items in this list."
           hasItems={!isEmpty(topics) || !isEmpty(links)}
@@ -66,6 +52,20 @@ const TopicPage = ({ topic, ...props }: Props) => {
             />
           )) }
         </List>
+      </div>
+      <div className="one-third column pr-0">
+        <SidebarList
+          title="Parent topics"
+          items={liftNodes(parentTopics)}
+        />
+        <AddTopic
+          topic={topic}
+          {...props}
+        />
+        <AddLink
+          topic={topic}
+          {...props}
+        />
       </div>
     </div>
   )

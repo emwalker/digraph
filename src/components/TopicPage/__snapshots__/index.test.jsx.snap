@@ -34,7 +34,15 @@ ShallowWrapper {
           </div>
         </div>,
         <div
-          className="one-third column pl-0"
+          className="two-thirds column pl-0"
+        >
+          <Unknown
+            hasItems={false}
+            placeholder="There are no items in this list."
+          />
+        </div>,
+        <div
+          className="one-third column pr-0"
         >
           <Unknown
             items={Array []}
@@ -53,14 +61,6 @@ ShallowWrapper {
                 "name": "Frotz",
               }
             }
-          />
-        </div>,
-        <div
-          className="two-thirds column pr-0"
-        >
-          <Unknown
-            hasItems={false}
-            placeholder="There are no items in this list."
           />
         </div>,
       ],
@@ -99,6 +99,36 @@ ShallowWrapper {
         "key": undefined,
         "nodeType": "host",
         "props": Object {
+          "children": <Unknown
+            hasItems={false}
+            placeholder="There are no items in this list."
+          />,
+          "className": "two-thirds column pl-0",
+        },
+        "ref": null,
+        "rendered": Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "function",
+          "props": Object {
+            "children": Array [
+              Array [],
+              Array [],
+            ],
+            "hasItems": false,
+            "placeholder": "There are no items in this list.",
+          },
+          "ref": null,
+          "rendered": Array [],
+          "type": [Function],
+        },
+        "type": "div",
+      },
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "host",
+        "props": Object {
           "children": Array [
             <Unknown
               items={Array []}
@@ -119,7 +149,7 @@ ShallowWrapper {
               }
             />,
           ],
-          "className": "one-third column pl-0",
+          "className": "one-third column pr-0",
         },
         "ref": null,
         "rendered": Array [
@@ -164,36 +194,6 @@ ShallowWrapper {
         ],
         "type": "div",
       },
-      Object {
-        "instance": null,
-        "key": undefined,
-        "nodeType": "host",
-        "props": Object {
-          "children": <Unknown
-            hasItems={false}
-            placeholder="There are no items in this list."
-          />,
-          "className": "two-thirds column pr-0",
-        },
-        "ref": null,
-        "rendered": Object {
-          "instance": null,
-          "key": undefined,
-          "nodeType": "function",
-          "props": Object {
-            "children": Array [
-              Array [],
-              Array [],
-            ],
-            "hasItems": false,
-            "placeholder": "There are no items in this list.",
-          },
-          "ref": null,
-          "rendered": Array [],
-          "type": [Function],
-        },
-        "type": "div",
-      },
     ],
     "type": "div",
   },
@@ -214,7 +214,15 @@ ShallowWrapper {
             </div>
           </div>,
           <div
-            className="one-third column pl-0"
+            className="two-thirds column pl-0"
+          >
+            <Unknown
+              hasItems={false}
+              placeholder="There are no items in this list."
+            />
+          </div>,
+          <div
+            className="one-third column pr-0"
           >
             <Unknown
               items={Array []}
@@ -233,14 +241,6 @@ ShallowWrapper {
                   "name": "Frotz",
                 }
               }
-            />
-          </div>,
-          <div
-            className="two-thirds column pr-0"
-          >
-            <Unknown
-              hasItems={false}
-              placeholder="There are no items in this list."
             />
           </div>,
         ],
@@ -279,6 +279,36 @@ ShallowWrapper {
           "key": undefined,
           "nodeType": "host",
           "props": Object {
+            "children": <Unknown
+              hasItems={false}
+              placeholder="There are no items in this list."
+            />,
+            "className": "two-thirds column pl-0",
+          },
+          "ref": null,
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "function",
+            "props": Object {
+              "children": Array [
+                Array [],
+                Array [],
+              ],
+              "hasItems": false,
+              "placeholder": "There are no items in this list.",
+            },
+            "ref": null,
+            "rendered": Array [],
+            "type": [Function],
+          },
+          "type": "div",
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
             "children": Array [
               <Unknown
                 items={Array []}
@@ -299,7 +329,7 @@ ShallowWrapper {
                 }
               />,
             ],
-            "className": "one-third column pl-0",
+            "className": "one-third column pr-0",
           },
           "ref": null,
           "rendered": Array [
@@ -342,36 +372,6 @@ ShallowWrapper {
               "type": [Function],
             },
           ],
-          "type": "div",
-        },
-        Object {
-          "instance": null,
-          "key": undefined,
-          "nodeType": "host",
-          "props": Object {
-            "children": <Unknown
-              hasItems={false}
-              placeholder="There are no items in this list."
-            />,
-            "className": "two-thirds column pr-0",
-          },
-          "ref": null,
-          "rendered": Object {
-            "instance": null,
-            "key": undefined,
-            "nodeType": "function",
-            "props": Object {
-              "children": Array [
-                Array [],
-                Array [],
-              ],
-              "hasItems": false,
-              "placeholder": "There are no items in this list.",
-            },
-            "ref": null,
-            "rendered": Array [],
-            "type": [Function],
-          },
           "type": "div",
         },
       ],
