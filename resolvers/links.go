@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/emwalker/digraph/models"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type linkResolver struct {
@@ -44,6 +45,25 @@ func linkConnection(rows []*models.Link, err error) (*models.LinkConnection, err
 	return &models.LinkConnection{Edges: edges}, nil
 }
 
-func (r *linkResolver) Topics(ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
+func (r *linkResolver) AvailableParentTopics(ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
+	existingTopics, err := link.ParentTopics(qm.Select("id")).All(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	var existingIds []interface{}
+	for _, topic := range existingTopics {
+		existingIds = append(existingIds, topic.ID)
+	}
+
+	org, err := link.Organization().One(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	return topicConnection(org.Topics().All(ctx, r.DB))
+}
+
+func (r *linkResolver) ParentTopics(ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
 	return topicConnection(link.ParentTopics().All(ctx, r.DB))
 }

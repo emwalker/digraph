@@ -11,17 +11,23 @@ type CreateTopicPayload {
 }
 
 type Link implements ResourceIdentifiable & Namespaceable {
-  id: ID
-  organization: Organization!
-  resourcePath: String!
-  sha1: String!
-  title: String!
-  topics(
+  availableParentTopics(
     first: Int,
     after: String,
     last: Int,
     before: String
   ): TopicConnection
+  id: ID
+  organization: Organization!
+  resourcePath: String!
+  sha1: String!
+  parentTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
+  title: String!
   url: String!
 }
 
@@ -38,6 +44,7 @@ type LinkConnection {
 type Mutation {
   createTopic(input: CreateTopicInput!): CreateTopicPayload
   selectTopic(input: SelectTopicInput!): SelectTopicPayload
+  updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
 }
@@ -139,11 +146,21 @@ input UpdateTopicInput {
   id: ID!
   name: String!
   organizationId: String!
-  topicIds: [String!]
+  topicIds: [ID!]
 }
 
 type UpdateTopicPayload {
   topic: Topic!
+}
+
+input UpdateLinkTopicsInput {
+  clientMutationId: String
+  linkId: ID!
+  parentTopicIds: [ID!]
+}
+
+type UpdateLinkTopicsPayload {
+  link: Link!
 }
 
 input UpsertLinkInput {

@@ -10,6 +10,7 @@ import (
 	"github.com/emwalker/digraph/models"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 // https://stackoverflow.com/a/23502629/61048
@@ -135,5 +136,29 @@ func (r *MutationResolver) UpsertLink(ctx context.Context, input models.UpsertLi
 
 	return &models.UpsertLinkPayload{
 		LinkEdge: models.LinkEdge{Node: link},
+	}, nil
+}
+
+// UpdateItemTopics sets the topics on a link that implements the Topicable interface.
+func (r *MutationResolver) UpdateLinkTopics(ctx context.Context, input models.UpdateLinkTopicsInput) (*models.UpdateLinkTopicsPayload, error) {
+	link, err := models.Links(qm.Where("id = ?", input.LinkID)).One(ctx, r.DB)
+
+	var topics []*models.Topic
+	for _, topicID := range input.ParentTopicIds {
+		topics = append(topics, &models.Topic{ID: topicID})
+	}
+
+	err = link.SetParentTopics(ctx, r.DB, false, topics...)
+	if err != nil {
+		return nil, err
+	}
+
+	err = link.Reload(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.UpdateLinkTopicsPayload{
+		Link: *link,
 	}, nil
 }

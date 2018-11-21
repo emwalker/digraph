@@ -5,6 +5,9 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import type { LinkType, OrganizationType } from '../../../types'
 import Input from '../../Input'
 import upsertLinkMutation from '../../../../mutations/upsertLinkMutation'
+import updateLinkTopicsMutation from '../../../../mutations/updateLinkTopicsMutation'
+import EditTopicList from '../../EditTopicList'
+import { liftNodes } from '../../../../utils'
 
 type Props = {
   id: string,
@@ -37,7 +40,7 @@ class EditLink extends Component<Props, State> {
       this.props.relay.environment,
       configs,
       {
-        addTopicIds: this.addTopicIds,
+        addTopicIds: [],
         organizationId: this.props.organization.id,
         title: this.state.title,
         url: this.state.url,
@@ -46,13 +49,27 @@ class EditLink extends Component<Props, State> {
     this.props.toggleForm()
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  get addTopicIds(): string[] {
-    return []
+  get availableTopics(): Object[] {
+    return liftNodes(this.props.link.availableTopics)
+  }
+
+  get selectedTopics(): string[] {
+    return liftNodes(this.props.link.selectedTopics)
   }
 
   updateTitle = (event: Object) => {
     this.setState({ title: event.currentTarget.value })
+  }
+
+  updateTopics = (parentTopicIds: string[]) => {
+    updateLinkTopicsMutation(
+      this.props.relay.environment,
+      [],
+      {
+        linkId: this.props.link.id,
+        parentTopicIds,
+      },
+    )
   }
 
   updateUrl = (event: Object) => {
@@ -86,6 +103,11 @@ class EditLink extends Component<Props, State> {
           {' '} or {' '}
           <button onClick={this.props.toggleForm} className="btn-link">cancel</button>
         </div>
+        <EditTopicList
+          availableTopics={this.availableTopics}
+          selectedTopics={this.selectedTopics}
+          updateTopics={this.updateTopics}
+        />
       </div>
     )
   }
@@ -97,7 +119,26 @@ export default createFragmentContainer(EditLink, graphql`
   }
 
   fragment EditLink_link on Link {
+    id
     title
     url
+
+    selectedTopics: parentTopics(first: 1000) {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
+
+    availableTopics: availableParentTopics(first: 1000) {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
   }
 `)

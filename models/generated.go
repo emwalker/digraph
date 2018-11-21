@@ -48,13 +48,14 @@ type ComplexityRoot struct {
 	}
 
 	Link struct {
-		Id           func(childComplexity int) int
-		Organization func(childComplexity int) int
-		ResourcePath func(childComplexity int) int
-		Sha1         func(childComplexity int) int
-		Title        func(childComplexity int) int
-		Topics       func(childComplexity int, first *int, after *string, last *int, before *string) int
-		Url          func(childComplexity int) int
+		AvailableParentTopics func(childComplexity int, first *int, after *string, last *int, before *string) int
+		Id                    func(childComplexity int) int
+		Organization          func(childComplexity int) int
+		ResourcePath          func(childComplexity int) int
+		Sha1                  func(childComplexity int) int
+		ParentTopics          func(childComplexity int, first *int, after *string, last *int, before *string) int
+		Title                 func(childComplexity int) int
+		Url                   func(childComplexity int) int
 	}
 
 	LinkConnection struct {
@@ -68,10 +69,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateTopic func(childComplexity int, input CreateTopicInput) int
-		SelectTopic func(childComplexity int, input SelectTopicInput) int
-		UpdateTopic func(childComplexity int, input UpdateTopicInput) int
-		UpsertLink  func(childComplexity int, input UpsertLinkInput) int
+		CreateTopic      func(childComplexity int, input CreateTopicInput) int
+		SelectTopic      func(childComplexity int, input SelectTopicInput) int
+		UpdateLinkTopics func(childComplexity int, input UpdateLinkTopicsInput) int
+		UpdateTopic      func(childComplexity int, input UpdateTopicInput) int
+		UpsertLink       func(childComplexity int, input UpsertLinkInput) int
 	}
 
 	Organization struct {
@@ -120,6 +122,10 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	UpdateLinkTopicsPayload struct {
+		Link func(childComplexity int) int
+	}
+
 	UpdateTopicPayload struct {
 		Topic func(childComplexity int) int
 	}
@@ -137,14 +143,17 @@ type ComplexityRoot struct {
 }
 
 type LinkResolver interface {
+	AvailableParentTopics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+
 	Organization(ctx context.Context, obj *Link) (Organization, error)
 	ResourcePath(ctx context.Context, obj *Link) (string, error)
 
-	Topics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+	ParentTopics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (*TopicConnection, error)
 }
 type MutationResolver interface {
 	CreateTopic(ctx context.Context, input CreateTopicInput) (*CreateTopicPayload, error)
 	SelectTopic(ctx context.Context, input SelectTopicInput) (*SelectTopicPayload, error)
+	UpdateLinkTopics(ctx context.Context, input UpdateLinkTopicsInput) (*UpdateLinkTopicsPayload, error)
 	UpdateTopic(ctx context.Context, input UpdateTopicInput) (*UpdateTopicPayload, error)
 	UpsertLink(ctx context.Context, input UpsertLinkInput) (*UpsertLinkPayload, error)
 }
@@ -172,7 +181,69 @@ type UserResolver interface {
 	SelectedTopic(ctx context.Context, obj *User) (*Topic, error)
 }
 
-func field_Link_topics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func field_Link_availableParentTopics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg3
+	return args, nil
+
+}
+
+func field_Link_parentTopics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 *int
 	if tmp, ok := rawArgs["first"]; ok {
@@ -255,6 +326,21 @@ func field_Mutation_selectTopic_args(rawArgs map[string]interface{}) (map[string
 	if tmp, ok := rawArgs["input"]; ok {
 		var err error
 		arg0, err = UnmarshalSelectTopicInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_updateLinkTopics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 UpdateLinkTopicsInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalUpdateLinkTopicsInput(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -699,6 +785,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CreateTopicPayload.TopicEdge(childComplexity), true
 
+	case "Link.availableParentTopics":
+		if e.complexity.Link.AvailableParentTopics == nil {
+			break
+		}
+
+		args, err := field_Link_availableParentTopics_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Link.AvailableParentTopics(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+
 	case "Link.id":
 		if e.complexity.Link.Id == nil {
 			break
@@ -727,24 +825,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Link.Sha1(childComplexity), true
 
+	case "Link.parentTopics":
+		if e.complexity.Link.ParentTopics == nil {
+			break
+		}
+
+		args, err := field_Link_parentTopics_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Link.ParentTopics(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+
 	case "Link.title":
 		if e.complexity.Link.Title == nil {
 			break
 		}
 
 		return e.complexity.Link.Title(childComplexity), true
-
-	case "Link.topics":
-		if e.complexity.Link.Topics == nil {
-			break
-		}
-
-		args, err := field_Link_topics_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Link.Topics(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
 	case "Link.url":
 		if e.complexity.Link.Url == nil {
@@ -804,6 +902,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SelectTopic(childComplexity, args["input"].(SelectTopicInput)), true
+
+	case "Mutation.updateLinkTopics":
+		if e.complexity.Mutation.UpdateLinkTopics == nil {
+			break
+		}
+
+		args, err := field_Mutation_updateLinkTopics_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateLinkTopics(childComplexity, args["input"].(UpdateLinkTopicsInput)), true
 
 	case "Mutation.updateTopic":
 		if e.complexity.Mutation.UpdateTopic == nil {
@@ -1039,6 +1149,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TopicEdge.Node(childComplexity), true
 
+	case "UpdateLinkTopicsPayload.link":
+		if e.complexity.UpdateLinkTopicsPayload.Link == nil {
+			break
+		}
+
+		return e.complexity.UpdateLinkTopicsPayload.Link(childComplexity), true
+
 	case "UpdateTopicPayload.topic":
 		if e.complexity.UpdateTopicPayload.Topic == nil {
 			break
@@ -1200,6 +1317,12 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Link")
+		case "availableParentTopics":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Link_availableParentTopics(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "id":
 			out.Values[i] = ec._Link_id(ctx, field, obj)
 		case "organization":
@@ -1225,17 +1348,17 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "parentTopics":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Link_parentTopics(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "title":
 			out.Values[i] = ec._Link_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
-		case "topics":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Link_topics(ctx, field, obj)
-				wg.Done()
-			}(i, field)
 		case "url":
 			out.Values[i] = ec._Link_url(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -1250,6 +1373,41 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Link_availableParentTopics(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Link_availableParentTopics_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Link",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Link().AvailableParentTopics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*TopicConnection)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._TopicConnection(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -1359,6 +1517,41 @@ func (ec *executionContext) _Link_sha1(ctx context.Context, field graphql.Collec
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _Link_parentTopics(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Link_parentTopics_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Link",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Link().ParentTopics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*TopicConnection)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._TopicConnection(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _Link_title(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer ec.Tracer.EndFieldExecution(ctx)
@@ -1383,41 +1576,6 @@ func (ec *executionContext) _Link_title(ctx context.Context, field graphql.Colle
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Link_topics(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Link_topics_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Link",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Link().Topics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*TopicConnection)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._TopicConnection(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -1680,6 +1838,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_createTopic(ctx, field)
 		case "selectTopic":
 			out.Values[i] = ec._Mutation_selectTopic(ctx, field)
+		case "updateLinkTopics":
+			out.Values[i] = ec._Mutation_updateLinkTopics(ctx, field)
 		case "updateTopic":
 			out.Values[i] = ec._Mutation_updateTopic(ctx, field)
 		case "upsertLink":
@@ -1763,6 +1923,41 @@ func (ec *executionContext) _Mutation_selectTopic(ctx context.Context, field gra
 	}
 
 	return ec._SelectTopicPayload(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_updateLinkTopics(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_updateLinkTopics_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateLinkTopics(rctx, args["input"].(UpdateLinkTopicsInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*UpdateLinkTopicsPayload)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._UpdateLinkTopicsPayload(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -2986,6 +3181,64 @@ func (ec *executionContext) _TopicEdge_node(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
 	return ec._Topic(ctx, field.Selections, &res)
+}
+
+var updateLinkTopicsPayloadImplementors = []string{"UpdateLinkTopicsPayload"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _UpdateLinkTopicsPayload(ctx context.Context, sel ast.SelectionSet, obj *UpdateLinkTopicsPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, updateLinkTopicsPayloadImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpdateLinkTopicsPayload")
+		case "link":
+			out.Values[i] = ec._UpdateLinkTopicsPayload_link(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UpdateLinkTopicsPayload_link(ctx context.Context, field graphql.CollectedField, obj *UpdateLinkTopicsPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rctx := &graphql.ResolverContext{
+		Object: "UpdateLinkTopicsPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Link, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Link)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Link(ctx, field.Selections, &res)
 }
 
 var updateTopicPayloadImplementors = []string{"UpdateTopicPayload"}
@@ -4817,6 +5070,52 @@ func UnmarshalSelectTopicInput(v interface{}) (SelectTopicInput, error) {
 	return it, nil
 }
 
+func UnmarshalUpdateLinkTopicsInput(v interface{}) (UpdateLinkTopicsInput, error) {
+	var it UpdateLinkTopicsInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "clientMutationId":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.ClientMutationID = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "linkId":
+			var err error
+			it.LinkID, err = graphql.UnmarshalID(v)
+			if err != nil {
+				return it, err
+			}
+		case "parentTopicIds":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				} else {
+					rawIf1 = []interface{}{v}
+				}
+			}
+			it.ParentTopicIds = make([]string, len(rawIf1))
+			for idx1 := range rawIf1 {
+				it.ParentTopicIds[idx1], err = graphql.UnmarshalID(rawIf1[idx1])
+			}
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalUpdateTopicInput(v interface{}) (UpdateTopicInput, error) {
 	var it UpdateTopicInput
 	var asMap = v.(map[string]interface{})
@@ -4875,7 +5174,7 @@ func UnmarshalUpdateTopicInput(v interface{}) (UpdateTopicInput, error) {
 			}
 			it.TopicIds = make([]string, len(rawIf1))
 			for idx1 := range rawIf1 {
-				it.TopicIds[idx1], err = graphql.UnmarshalString(rawIf1[idx1])
+				it.TopicIds[idx1], err = graphql.UnmarshalID(rawIf1[idx1])
 			}
 			if err != nil {
 				return it, err
@@ -4981,17 +5280,23 @@ type CreateTopicPayload {
 }
 
 type Link implements ResourceIdentifiable & Namespaceable {
-  id: ID
-  organization: Organization!
-  resourcePath: String!
-  sha1: String!
-  title: String!
-  topics(
+  availableParentTopics(
     first: Int,
     after: String,
     last: Int,
     before: String
   ): TopicConnection
+  id: ID
+  organization: Organization!
+  resourcePath: String!
+  sha1: String!
+  parentTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
+  title: String!
   url: String!
 }
 
@@ -5008,6 +5313,7 @@ type LinkConnection {
 type Mutation {
   createTopic(input: CreateTopicInput!): CreateTopicPayload
   selectTopic(input: SelectTopicInput!): SelectTopicPayload
+  updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
 }
@@ -5109,11 +5415,21 @@ input UpdateTopicInput {
   id: ID!
   name: String!
   organizationId: String!
-  topicIds: [String!]
+  topicIds: [ID!]
 }
 
 type UpdateTopicPayload {
   topic: Topic!
+}
+
+input UpdateLinkTopicsInput {
+  clientMutationId: String
+  linkId: ID!
+  parentTopicIds: [ID!]
+}
+
+type UpdateLinkTopicsPayload {
+  link: Link!
 }
 
 input UpsertLinkInput {

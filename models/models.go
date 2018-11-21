@@ -1,16 +1,16 @@
 package models
 
-// IsNamespaceable has something to do with the GraphQL namespace.
+// IsNamespaceable tags Link as implementing the Namespaceable interface.
 func (Link) IsNamespaceable() {}
 
-// IsResourceIdentifiable has something to do with the GraphQL namespace.
+// IsResourceIdentifiable tags Link as implementing the ResourceIdentifiable interface.
 func (Link) IsResourceIdentifiable() {}
 
-// IsResourceIdentifiable has something to do with the GraphQL interface.
+// IsResourceIdentifiable tags Topic as implementing the ResourceIdentifiable interface.
 func (Topic) IsResourceIdentifiable() {}
 
-// IsNamespaceable has something to do with the GraphQL namespace.
+// IsNamespaceable tags Topic as implementing the Namespaceable interface.
 func (Topic) IsNamespaceable() {}
 
-// IsResourceIdentifiable has something to do with the GraphQL namespace.
+// IsResourceIdentifiable tags Organization as implementing the ResourceIdentifiable interface.
 func (Organization) IsResourceIdentifiable() {}

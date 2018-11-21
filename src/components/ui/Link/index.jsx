@@ -10,9 +10,9 @@ import Item from '../Item'
 
 type Props = {
   link: {
+    parentTopics: Object,
     title: string,
     url: string,
-    topics: Object,
   },
 }
 
@@ -25,8 +25,8 @@ class Link extends Component<Props, State> {
     formIsOpen: false,
   }
 
-  get topics() {
-    return liftNodes(this.props.link.topics)
+  get parentTopics() {
+    return liftNodes(this.props.link.parentTopics)
   }
 
   toggleForm = () => {
@@ -40,7 +40,7 @@ class Link extends Component<Props, State> {
         formIsOpen={this.state.formIsOpen}
         title={this.props.link.title}
         toggleForm={this.toggleForm}
-        topics={this.topics}
+        topics={this.parentTopics}
         url={this.props.link.url}
       >
         <EditLink
@@ -64,7 +64,7 @@ export default createFragmentContainer(Link, graphql`
     url
     ...EditLink_link
 
-    topics(first: 10) {
+    parentTopics(first: 10) {
       edges {
         node {
           name

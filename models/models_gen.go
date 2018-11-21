@@ -58,6 +58,16 @@ type TopicEdge struct {
 	Node   Topic  `json:"node"`
 }
 
+type UpdateLinkTopicsInput struct {
+	ClientMutationID *string  `json:"clientMutationId"`
+	LinkID           string   `json:"linkId"`
+	ParentTopicIds   []string `json:"parentTopicIds"`
+}
+
+type UpdateLinkTopicsPayload struct {
+	Link Link `json:"link"`
+}
+
 type UpdateTopicInput struct {
 	ClientMutationID *string  `json:"clientMutationId"`
 	Description      *string  `json:"description"`
