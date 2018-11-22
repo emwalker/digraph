@@ -82,11 +82,11 @@ type UpdateTopicPayload struct {
 }
 
 type UpsertLinkInput struct {
-	AddTopicIds      []string `json:"addTopicIds"`
-	ClientMutationID *string  `json:"clientMutationId"`
-	OrganizationID   string   `json:"organizationId"`
-	Title            string   `json:"title"`
-	URL              string   `json:"url"`
+	AddParentTopicIds []string `json:"addParentTopicIds"`
+	ClientMutationID  *string  `json:"clientMutationId"`
+	OrganizationID    string   `json:"organizationId"`
+	Title             *string  `json:"title"`
+	URL               string   `json:"url"`
 }
 
 type UpsertLinkPayload struct {

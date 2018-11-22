@@ -164,10 +164,10 @@ type UpdateLinkTopicsPayload {
 }
 
 input UpsertLinkInput {
-  addTopicIds: [String!]
+  addParentTopicIds: [String!]
   clientMutationId: String
   organizationId: String!
-  title: String!
+  title: String
   url: String!
 }
 

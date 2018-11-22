@@ -23,16 +23,21 @@ func TestLinks(t *testing.T) {
 func upsertLinkTest(t *testing.T) {
 	r, ctx := startMutationTest(t, testDB)
 
+	topic, err := models.Topics().One(ctx, testDB)
+	assert.Nil(t, err)
+
 	input := models.UpsertLinkInput{
-		AddTopicIds:    []string{},
-		OrganizationID: orgId,
-		Title:          "Gnusto's blog",
-		URL:            "https://gnusto.blog",
+		AddParentTopicIds: []string{topic.ID},
+		OrganizationID:    orgId,
+		URL:               "https://gnusto.blog",
 	}
 
 	countBefore, err := models.Links().Count(ctx, testDB)
 	payload1, err := r.UpsertLink(ctx, input)
-	assert.Nil(t, err)
+	if !assert.Nil(t, err) {
+		return
+	}
+
 	link := payload1.LinkEdge.Node
 
 	defer func() {
@@ -48,6 +53,10 @@ func upsertLinkTest(t *testing.T) {
 	assert.NotNil(t, payload1)
 	assert.Equal(t, payload1.LinkEdge.Node.URL, input.URL+"/")
 
+	topics, err := link.ParentTopics().All(ctx, testDB)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(topics))
+
 	_, err = r.UpsertLink(ctx, input)
 	assert.Nil(t, err)
 	countAfter, _ = models.Links().Count(ctx, testDB)
@@ -56,10 +65,9 @@ func upsertLinkTest(t *testing.T) {
 
 func createLink(t *testing.T, ctx context.Context, r models.MutationResolver) (*models.Link, func()) {
 	payload1, err := r.UpsertLink(ctx, models.UpsertLinkInput{
-		AddTopicIds:    []string{},
-		OrganizationID: orgId,
-		Title:          "Gnusto's blog",
-		URL:            "https://gnusto.blog",
+		AddParentTopicIds: []string{},
+		OrganizationID:    orgId,
+		URL:               "https://gnusto.blog",
 	})
 	assert.Nil(t, err)
 

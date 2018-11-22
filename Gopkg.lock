@@ -31,6 +31,12 @@
   version = "v1.0.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/badoux/goscraper"
+  packages = ["."]
+  revision = "0213ced7087832e81e8892e8d044150cfc153856"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
@@ -223,26 +229,43 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["idna"]
+  packages = [
+    "html",
+    "html/atom",
+    "html/charset",
+    "idna"
+  ]
   revision = "adae6a3d119ae4890b46832a2e88a95adc62b8e7"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "93218def8b18e66adbdab3eca8ec334700329f1f"
+  revision = "0cf1ed9e522b7dbb416f080a5c8003de9b702bf4"
 
 [[projects]]
   name = "golang.org/x/text"
   packages = [
     "collate",
     "collate/build",
+    "encoding",
+    "encoding/charmap",
+    "encoding/htmlindex",
+    "encoding/internal",
+    "encoding/internal/identifier",
+    "encoding/japanese",
+    "encoding/korean",
+    "encoding/simplifiedchinese",
+    "encoding/traditionalchinese",
+    "encoding/unicode",
     "internal/colltab",
     "internal/gen",
     "internal/tag",
     "internal/triegen",
     "internal/ucd",
+    "internal/utf8internal",
     "language",
+    "runes",
     "secure/bidirule",
     "transform",
     "unicode/bidi",
@@ -263,6 +286,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1cee0bfc38450afc67e25b8b093e1351be908fdfd1df223d957a60a8fb747eaa"
+  inputs-digest = "913b74153503dfe00d25b5bb35fd7ae2ee20c81f9204be3796e1d9bdcdc8efb9"
   solver-name = "gps-cdcl"
   solver-version = 1

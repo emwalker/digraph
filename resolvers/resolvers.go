@@ -7,6 +7,7 @@ import (
 	"database/sql"
 
 	"github.com/emwalker/digraph/models"
+	"github.com/emwalker/digraph/resolvers/pageinfo"
 )
 
 // Resolver is the abstract base class for resolvers.
@@ -16,7 +17,7 @@ type Resolver struct {
 
 // Mutation returns a resolver that can be used for issuing mutations.
 func (r *Resolver) Mutation() models.MutationResolver {
-	return &MutationResolver{r}
+	return &MutationResolver{r, &pageinfo.HtmlFetcher{}}
 }
 
 // Query returns a resolver that can be used for issuing queries.
@@ -24,7 +25,10 @@ func (r *Resolver) Query() models.QueryResolver {
 	return &queryResolver{r}
 }
 
-type MutationResolver struct{ *Resolver }
+type MutationResolver struct {
+	*Resolver
+	Fetcher pageinfo.Fetcher
+}
 
 type queryResolver struct{ *Resolver }
 

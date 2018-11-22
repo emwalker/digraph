@@ -40,7 +40,7 @@ class EditLink extends Component<Props, State> {
       this.props.relay.environment,
       configs,
       {
-        addTopicIds: [],
+        addParentTopicIds: [],
         organizationId: this.props.organization.id,
         title: this.state.title,
         url: this.state.url,

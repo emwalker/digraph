@@ -38,15 +38,15 @@ class AddLink extends Component<RelayProps, State> {
   }
 
   createLink() {
-    const { resourceId: organizationId } = this.props.organization
+    const { id: organizationId } = this.props.organization
 
     upsertLinkMutation(
       this.props.relay.environment,
       this.relayConfigs,
       {
+        addParentTopicIds: [this.props.topic.id],
         organizationId,
         url: this.state.url,
-        addTopicIds: [this.props.topic.resourceId],
       },
     )
     this.setState({ url: '' })

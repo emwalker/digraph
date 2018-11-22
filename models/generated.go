@@ -5191,7 +5191,7 @@ func UnmarshalUpsertLinkInput(v interface{}) (UpsertLinkInput, error) {
 
 	for k, v := range asMap {
 		switch k {
-		case "addTopicIds":
+		case "addParentTopicIds":
 			var err error
 			var rawIf1 []interface{}
 			if v != nil {
@@ -5201,9 +5201,9 @@ func UnmarshalUpsertLinkInput(v interface{}) (UpsertLinkInput, error) {
 					rawIf1 = []interface{}{v}
 				}
 			}
-			it.AddTopicIds = make([]string, len(rawIf1))
+			it.AddParentTopicIds = make([]string, len(rawIf1))
 			for idx1 := range rawIf1 {
-				it.AddTopicIds[idx1], err = graphql.UnmarshalString(rawIf1[idx1])
+				it.AddParentTopicIds[idx1], err = graphql.UnmarshalString(rawIf1[idx1])
 			}
 			if err != nil {
 				return it, err
@@ -5227,7 +5227,12 @@ func UnmarshalUpsertLinkInput(v interface{}) (UpsertLinkInput, error) {
 			}
 		case "title":
 			var err error
-			it.Title, err = graphql.UnmarshalString(v)
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Title = &ptr1
+			}
+
 			if err != nil {
 				return it, err
 			}
@@ -5433,10 +5438,10 @@ type UpdateLinkTopicsPayload {
 }
 
 input UpsertLinkInput {
-  addTopicIds: [String!]
+  addParentTopicIds: [String!]
   clientMutationId: String
   organizationId: String!
-  title: String!
+  title: String
   url: String!
 }
 
