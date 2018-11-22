@@ -156,8 +156,24 @@ ALTER TABLE public.users OWNER TO postgres;
 --
 
 COPY public.link_topics (parent_id, child_id) FROM stdin;
+f1e1b1d6-ee02-11e8-987f-5f8b10f1ae1b	0d7fbb5a-ee07-11e8-8995-3b56ae45c0b3
+f1e1b1d6-ee02-11e8-987f-5f8b10f1ae1b	1dbe632c-ee07-11e8-8995-77edd669ec46
+492019e8-ee07-11e8-8642-239c847b42a7	4d141478-ee07-11e8-ae67-53c85dce4ba5
+45dca814-e6f0-11e8-8bc1-b363da4aeace	4d141478-ee07-11e8-ae67-53c85dce4ba5
+87240524-ee07-11e8-a945-5b5230ce136b	897061a6-ee07-11e8-a945-a32c887b43c4
+c922b0ce-ee07-11e8-aa9d-131c55a142f2	caf89828-ee07-11e8-aa9d-a7c515f0a30c
+45dcab0c-e6f0-11e8-8bc1-bbb431f062c7	10120416-eadf-11e8-8231-db1081f8c4fc
 45dca814-e6f0-11e8-8bc1-b363da4aeace	10120416-eadf-11e8-8231-db1081f8c4fc
 45dcaaf8-e6f0-11e8-8bc1-d7a04cdda708	fec9434a-eade-11e8-8231-3be3240b1542
+45dcaad0-e6f0-11e8-8bc1-677f3b3c362f	fec9434a-eade-11e8-8231-3be3240b1542
+45dcab0c-e6f0-11e8-8bc1-bbb431f062c7	fec9434a-eade-11e8-8231-3be3240b1542
+07aa840c-ee08-11e8-ad4d-3b2ce62142ec	caf89828-ee07-11e8-aa9d-a7c515f0a30c
+3c35074c-ee08-11e8-9465-338bc5df4123	3e6c6fbe-ee08-11e8-bb66-77b3e2753eca
+9b022cf0-ee08-11e8-9465-5363c950bfbc	9dad3f1c-ee08-11e8-bb66-735b417eb99b
+c922b0ce-ee07-11e8-aa9d-131c55a142f2	9dad3f1c-ee08-11e8-bb66-735b417eb99b
+c922b0ce-ee07-11e8-aa9d-131c55a142f2	c4cda884-ee08-11e8-b1d2-db8198e90692
+9b022cf0-ee08-11e8-9465-5363c950bfbc	c4cda884-ee08-11e8-b1d2-db8198e90692
+45dca814-e6f0-11e8-8bc1-b363da4aeace	dde9cbd6-ee08-11e8-b1d2-572b8f794183
 \.
 
 
@@ -166,8 +182,18 @@ COPY public.link_topics (parent_id, child_id) FROM stdin;
 --
 
 COPY public.links (organization_id, id, url, title, sha1) FROM stdin;
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	3e6c6fbe-ee08-11e8-bb66-77b3e2753eca	https://www.inkandswitch.com/slow-software.html	Slow Software	dc9339c15d9b66d243ac81f37cc527ed207f20f8
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	9dad3f1c-ee08-11e8-bb66-735b417eb99b	https://www.zdnet.com/article/popular-dark-web-hosting-provider-got-hacked-6500-sites-down/	Popular Dark Web hosting provider got hacked, 6,500 sites down | ZDNet	711a56a337981ae0de4929d8de1b9a9ff1534034
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	c4cda884-ee08-11e8-b1d2-db8198e90692	https://news.ycombinator.com/item?id=18504490	Popular Dark Web hosting provider hacked, 6,500 sites down | Hacker News	f24fd9588600f1ca5974061fcab97a38593c9f82
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	dde9cbd6-ee08-11e8-b1d2-572b8f794183	https://phys.org/news/2018-11-dog-cow-horse-pig-rabbit.html	The taming of the dog, cow, horse, pig and rabbit	040c320ad8cc0bdba35172df0c1316e123f880b2
 45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	fec9434a-eade-11e8-8231-3be3240b1542	https://github.com/	Github	d7b3438d97f335e612a566a731eea5acb8fe83c8
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	0a77ebea-ee01-11e8-86f0-5b6a2394f2e2	https://golang.org/pkg/log/	log - The Go Programming Language	51afa0ea2bd70aa9f40b2d0a65a2178786252a4e
 45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	10120416-eadf-11e8-8231-db1081f8c4fc	https://www.google.com/	Google	595c3cce2409a55c13076f1bac5edee529fc2e58
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	0d7fbb5a-ee07-11e8-8995-3b56ae45c0b3	https://news.ycombinator.com/item?id=18504300	My hiring experience as a submarine sonar operator in the Norwegian Navy | Hacker News	55182389cc4f963bc6e8e1821689d8e5d5b82a78
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	1dbe632c-ee07-11e8-8995-77edd669ec46	https://www.brautaset.org/articles/2018/submarine-sonar-hiring.html	My hiring experience as a submarine sonar operator in the Norwegian Navy	6b12407e657f1bf5cef7782c4300232a82a58b8f
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	4d141478-ee07-11e8-ae67-53c85dce4ba5	https://www.scientificamerican.com/article/silent-and-simple-ion-engine-powers-a-plane-with-no-moving-parts/	Silent and Simple Ion Engine Powers a Plane with No Moving Parts	e38e13d1153527faccae187642938fe47bf0a4c3
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	897061a6-ee07-11e8-a945-a32c887b43c4	https://www.cia.gov/library/center-for-the-study-of-intelligence/csi-publications/books-and-monographs/psychology-of-intelligence-analysis/art4.html	Chapter 1  — Central Intelligence Agency	777771953559d7af66cf4e4c2d213515a2658be6
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	caf89828-ee07-11e8-aa9d-a7c515f0a30c	https://techcrunch.com/2018/11/21/amazon-admits-it-exposed-customer-email-addresses-doubles-down-on-secrecy/	Amazon admits it exposed customer email addresses, but refuses to give details	dadd4fd52333e89fa9c6c5db9f435287b3ce9652
 \.
 
 
@@ -197,6 +223,15 @@ COPY public.topic_topics (parent_id, child_id) FROM stdin;
 45dca814-e6f0-11e8-8bc1-b363da4aeace	45dcaad0-e6f0-11e8-8bc1-677f3b3c362f
 45dca814-e6f0-11e8-8bc1-b363da4aeace	45dcaaf8-e6f0-11e8-8bc1-d7a04cdda708
 45dca814-e6f0-11e8-8bc1-b363da4aeace	45dcab0c-e6f0-11e8-8bc1-bbb431f062c7
+df63295e-ee02-11e8-9e36-17d56b662bc8	f1e1b1d6-ee02-11e8-987f-5f8b10f1ae1b
+df63295e-ee02-11e8-9e36-17d56b662bc8	492019e8-ee07-11e8-8642-239c847b42a7
+45dcaad0-e6f0-11e8-8bc1-677f3b3c362f	45644e98-ecd9-11e8-8e0e-6fa75df8779e
+45dca814-e6f0-11e8-8bc1-b363da4aeace	87240524-ee07-11e8-a945-5b5230ce136b
+df63295e-ee02-11e8-9e36-17d56b662bc8	c922b0ce-ee07-11e8-aa9d-131c55a142f2
+df63295e-ee02-11e8-9e36-17d56b662bc8	f68eb472-ee07-11e8-aa9d-23d8a9db2265
+f68eb472-ee07-11e8-aa9d-23d8a9db2265	07aa840c-ee08-11e8-ad4d-3b2ce62142ec
+df63295e-ee02-11e8-9e36-17d56b662bc8	3c35074c-ee08-11e8-9465-338bc5df4123
+df63295e-ee02-11e8-9e36-17d56b662bc8	9b022cf0-ee08-11e8-9465-5363c950bfbc
 \.
 
 
@@ -205,10 +240,20 @@ COPY public.topic_topics (parent_id, child_id) FROM stdin;
 --
 
 COPY public.topics (organization_id, id, name, description) FROM stdin;
-45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dcaad0-e6f0-11e8-8bc1-677f3b3c362f	Biology	\N
 45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dcaaf8-e6f0-11e8-8bc1-d7a04cdda708	Chemistry	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	df63295e-ee02-11e8-9e36-17d56b662bc8	Everything	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	f1e1b1d6-ee02-11e8-987f-5f8b10f1ae1b	Hiring for a business	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	492019e8-ee07-11e8-8642-239c847b42a7	Engineering	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	87240524-ee07-11e8-a945-5b5230ce136b	Psychology	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	c922b0ce-ee07-11e8-aa9d-131c55a142f2	Computer security	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	f68eb472-ee07-11e8-aa9d-23d8a9db2265	Organizations, businesses and trusts	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	07aa840c-ee08-11e8-ad4d-3b2ce62142ec	Amazon.com, Inc	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	3c35074c-ee08-11e8-9465-338bc5df4123	Software	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	9b022cf0-ee08-11e8-9465-5363c950bfbc	The dark web	\N
 45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dca814-e6f0-11e8-8bc1-b363da4aeace	Science	
 45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dcab0c-e6f0-11e8-8bc1-bbb431f062c7	Physics	
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45644e98-ecd9-11e8-8e0e-6fa75df8779e	Zoology	\N
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	45dcaad0-e6f0-11e8-8bc1-677f3b3c362f	Biology	
 \.
 
 
