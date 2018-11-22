@@ -91,8 +91,20 @@ type URL struct {
 	Sha1         string
 }
 
+const normalizationFlags = pl.FlagRemoveDefaultPort |
+	pl.FlagDecodeDWORDHost |
+	pl.FlagDecodeOctalHost |
+	pl.FlagDecodeHexHost |
+	pl.FlagRemoveUnnecessaryHostDots |
+	pl.FlagRemoveDotSegments |
+	pl.FlagRemoveDuplicateSlashes |
+	pl.FlagUppercaseEscapes |
+	pl.FlagDecodeUnnecessaryEscapes |
+	pl.FlagEncodeNecessaryEscapes |
+	pl.FlagSortQuery
+
 func normalizeUrl(url string) (*URL, error) {
-	canonical, err := pl.NormalizeURLString(url, pl.FlagsUsuallySafeNonGreedy)
+	canonical, err := pl.NormalizeURLString(url, normalizationFlags)
 	if err != nil {
 		return nil, err
 	}
