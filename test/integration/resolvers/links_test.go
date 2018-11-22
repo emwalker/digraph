@@ -51,7 +51,7 @@ func upsertLinkTest(t *testing.T) {
 	assert.Equal(t, countBefore+1, countAfter, "The number of links should increase")
 
 	assert.NotNil(t, payload1)
-	assert.Equal(t, payload1.LinkEdge.Node.URL, input.URL+"/")
+	assert.Equal(t, input.URL, payload1.LinkEdge.Node.URL)
 
 	topics, err := link.ParentTopics().All(ctx, testDB)
 	assert.Nil(t, err)

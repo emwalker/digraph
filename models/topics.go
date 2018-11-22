@@ -27,6 +27,8 @@ type Topic struct {
 	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name           string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Description    null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
+	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *topicR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L topicL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,11 +39,15 @@ var TopicColumns = struct {
 	ID             string
 	Name           string
 	Description    string
+	CreatedAt      string
+	UpdatedAt      string
 }{
 	OrganizationID: "organization_id",
 	ID:             "id",
 	Name:           "name",
 	Description:    "description",
+	CreatedAt:      "created_at",
+	UpdatedAt:      "updated_at",
 }
 
 // TopicRels is where relationship names are stored.
@@ -74,9 +80,9 @@ func (*topicR) NewStruct() *topicR {
 type topicL struct{}
 
 var (
-	topicColumns               = []string{"organization_id", "id", "name", "description"}
+	topicColumns               = []string{"organization_id", "id", "name", "description", "created_at", "updated_at"}
 	topicColumnsWithoutDefault = []string{"organization_id", "name", "description"}
-	topicColumnsWithDefault    = []string{"id"}
+	topicColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
 	topicPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -550,7 +556,7 @@ func (topicL) LoadChildLinks(ctx context.Context, e boil.ContextExecutor, singul
 		one := new(Link)
 		var localJoinCol string
 
-		err = results.Scan(&one.OrganizationID, &one.ID, &one.URL, &one.Title, &one.Sha1, &localJoinCol)
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.URL, &one.Title, &one.Sha1, &one.CreatedAt, &one.UpdatedAt, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for links")
 		}
@@ -661,7 +667,7 @@ func (topicL) LoadParentTopics(ctx context.Context, e boil.ContextExecutor, sing
 		one := new(Topic)
 		var localJoinCol string
 
-		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &localJoinCol)
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for topics")
 		}
@@ -772,7 +778,7 @@ func (topicL) LoadChildTopics(ctx context.Context, e boil.ContextExecutor, singu
 		one := new(Topic)
 		var localJoinCol string
 
-		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &localJoinCol)
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for topics")
 		}
@@ -1333,6 +1339,14 @@ func (o *Topic) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 	}
 
 	var err error
+	currTime := time.Now().In(boil.GetLocation())
+
+	if o.CreatedAt.IsZero() {
+		o.CreatedAt = currTime
+	}
+	if o.UpdatedAt.IsZero() {
+		o.UpdatedAt = currTime
+	}
 
 	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
 		return err
@@ -1407,6 +1421,10 @@ func (o *Topic) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Topic) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
+	currTime := time.Now().In(boil.GetLocation())
+
+	o.UpdatedAt = currTime
+
 	var err error
 	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
 		return 0, err
@@ -1537,6 +1555,12 @@ func (o *Topic) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnC
 	if o == nil {
 		return errors.New("models: no topics provided for upsert")
 	}
+	currTime := time.Now().In(boil.GetLocation())
+
+	if o.CreatedAt.IsZero() {
+		o.CreatedAt = currTime
+	}
+	o.UpdatedAt = currTime
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
 		return err

@@ -22,11 +22,13 @@ import (
 
 // Link is an object representing the database table.
 type Link struct {
-	OrganizationID string `boil:"organization_id" json:"organization_id" toml:"organization_id" yaml:"organization_id"`
-	ID             string `boil:"id" json:"id" toml:"id" yaml:"id"`
-	URL            string `boil:"url" json:"url" toml:"url" yaml:"url"`
-	Title          string `boil:"title" json:"title" toml:"title" yaml:"title"`
-	Sha1           string `boil:"sha1" json:"sha1" toml:"sha1" yaml:"sha1"`
+	OrganizationID string    `boil:"organization_id" json:"organization_id" toml:"organization_id" yaml:"organization_id"`
+	ID             string    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	URL            string    `boil:"url" json:"url" toml:"url" yaml:"url"`
+	Title          string    `boil:"title" json:"title" toml:"title" yaml:"title"`
+	Sha1           string    `boil:"sha1" json:"sha1" toml:"sha1" yaml:"sha1"`
+	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt      time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *linkR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L linkL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -38,12 +40,16 @@ var LinkColumns = struct {
 	URL            string
 	Title          string
 	Sha1           string
+	CreatedAt      string
+	UpdatedAt      string
 }{
 	OrganizationID: "organization_id",
 	ID:             "id",
 	URL:            "url",
 	Title:          "title",
 	Sha1:           "sha1",
+	CreatedAt:      "created_at",
+	UpdatedAt:      "updated_at",
 }
 
 // LinkRels is where relationship names are stored.
@@ -70,9 +76,9 @@ func (*linkR) NewStruct() *linkR {
 type linkL struct{}
 
 var (
-	linkColumns               = []string{"organization_id", "id", "url", "title", "sha1"}
+	linkColumns               = []string{"organization_id", "id", "url", "title", "sha1", "created_at", "updated_at"}
 	linkColumnsWithoutDefault = []string{"organization_id", "url", "sha1"}
-	linkColumnsWithDefault    = []string{"id", "title"}
+	linkColumnsWithDefault    = []string{"id", "title", "created_at", "updated_at"}
 	linkPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -502,7 +508,7 @@ func (linkL) LoadParentTopics(ctx context.Context, e boil.ContextExecutor, singu
 		one := new(Topic)
 		var localJoinCol string
 
-		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &localJoinCol)
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for topics")
 		}
@@ -783,6 +789,14 @@ func (o *Link) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 	}
 
 	var err error
+	currTime := time.Now().In(boil.GetLocation())
+
+	if o.CreatedAt.IsZero() {
+		o.CreatedAt = currTime
+	}
+	if o.UpdatedAt.IsZero() {
+		o.UpdatedAt = currTime
+	}
 
 	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
 		return err
@@ -857,6 +871,10 @@ func (o *Link) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Link) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
+	currTime := time.Now().In(boil.GetLocation())
+
+	o.UpdatedAt = currTime
+
 	var err error
 	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
 		return 0, err
@@ -987,6 +1005,12 @@ func (o *Link) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 	if o == nil {
 		return errors.New("models: no links provided for upsert")
 	}
+	currTime := time.Now().In(boil.GetLocation())
+
+	if o.CreatedAt.IsZero() {
+		o.CreatedAt = currTime
+	}
+	o.UpdatedAt = currTime
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
 		return err

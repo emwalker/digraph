@@ -2,28 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/emwalker/digraph/models"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type topicResolver struct {
 	*Resolver
-}
-
-// Description returns a description of the topic.
-func (r *topicResolver) Description(_ context.Context, topic *models.Topic) (*string, error) {
-	return topic.Description.Ptr(), nil
-}
-
-// Organization returns a set of links.
-func (r *topicResolver) Organization(ctx context.Context, topic *models.Topic) (models.Organization, error) {
-	org, err := topic.Organization().One(ctx, r.DB)
-	return *org, err
-}
-
-// ResourcePath returns a path to the item.
-func (r *topicResolver) ResourcePath(_ context.Context, topic *models.Topic) (string, error) {
-	return "/topics/" + topic.ID, nil
 }
 
 func topicConnection(rows []*models.Topic, err error) (*models.TopicConnection, error) {
@@ -40,16 +26,50 @@ func topicConnection(rows []*models.Topic, err error) (*models.TopicConnection, 
 }
 
 // ChildTopics returns a set of topics.
-func (r *topicResolver) ChildTopics(ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
-	return topicConnection(topic.ChildTopics().All(ctx, r.DB))
+func (r *topicResolver) ChildTopics(
+	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
+) (*models.TopicConnection, error) {
+	return topicConnection(topic.ChildTopics(qm.OrderBy("name")).All(ctx, r.DB))
 }
 
-// ParentTopics returns a set of links.
-func (r *topicResolver) ParentTopics(ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string) (*models.TopicConnection, error) {
-	return topicConnection(topic.ParentTopics().All(ctx, r.DB))
+// CreatedAt returns the time of the topic's creation.
+func (r *topicResolver) CreatedAt(_ context.Context, topic *models.Topic) (string, error) {
+	return topic.CreatedAt.Format(time.RFC3339), nil
+}
+
+// Description returns a description of the topic.
+func (r *topicResolver) Description(_ context.Context, topic *models.Topic) (*string, error) {
+	return topic.Description.Ptr(), nil
 }
 
 // Links returns a set of links.
-func (r *topicResolver) Links(ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string) (*models.LinkConnection, error) {
-	return linkConnection(topic.ChildLinks().All(ctx, r.DB))
+func (r *topicResolver) Links(
+	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
+) (*models.LinkConnection, error) {
+	return linkConnection(topic.ChildLinks(qm.OrderBy("created_at desc")).All(ctx, r.DB))
+}
+
+// Organization returns a set of links.
+func (r *topicResolver) Organization(
+	ctx context.Context, topic *models.Topic,
+) (models.Organization, error) {
+	org, err := topic.Organization().One(ctx, r.DB)
+	return *org, err
+}
+
+// ParentTopics returns a set of links.
+func (r *topicResolver) ParentTopics(
+	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
+) (*models.TopicConnection, error) {
+	return topicConnection(topic.ParentTopics(qm.OrderBy("name")).All(ctx, r.DB))
+}
+
+// ResourcePath returns a path to the item.
+func (r *topicResolver) ResourcePath(_ context.Context, topic *models.Topic) (string, error) {
+	return "/topics/" + topic.ID, nil
+}
+
+// UpdatedAt returns the time of the most recent update.
+func (r *topicResolver) UpdatedAt(_ context.Context, topic *models.Topic) (string, error) {
+	return topic.UpdatedAt.Format(time.RFC3339), nil
 }

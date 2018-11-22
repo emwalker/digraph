@@ -1613,7 +1613,7 @@ func testTopicsSelect(t *testing.T) {
 }
 
 var (
-	topicDBTypes = map[string]string{`Description`: `text`, `ID`: `uuid`, `Name`: `character varying`, `OrganizationID`: `uuid`}
+	topicDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `Description`: `text`, `ID`: `uuid`, `Name`: `character varying`, `OrganizationID`: `uuid`, `UpdatedAt`: `timestamp with time zone`}
 	_            = bytes.MinRead
 )
 

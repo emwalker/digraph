@@ -875,7 +875,7 @@ func testOrganizationsSelect(t *testing.T) {
 }
 
 var (
-	organizationDBTypes = map[string]string{`ID`: `uuid`, `Name`: `character varying`}
+	organizationDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `ID`: `uuid`, `Name`: `character varying`, `UpdatedAt`: `timestamp with time zone`}
 	_                   = bytes.MinRead
 )
 

@@ -70,3 +70,6 @@ load:
 
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
+
+fixtures: dump
+	cp data/digraph.sql data/fixtures.sql

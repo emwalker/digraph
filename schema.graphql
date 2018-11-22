@@ -10,6 +10,8 @@ type CreateTopicPayload {
   topicEdge: TopicEdge!
 }
 
+scalar DateTime
+
 type Link implements ResourceIdentifiable & Namespaceable {
   availableParentTopics(
     first: Int,
@@ -17,6 +19,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection
+  createdAt: DateTime!
   id: ID
   organization: Organization!
   resourcePath: String!
@@ -28,6 +31,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
     before: String
   ): TopicConnection
   title: String!
+  updatedAt: DateTime!
   url: String!
 }
 
@@ -54,6 +58,7 @@ interface Namespaceable {
 }
 
 type Organization implements ResourceIdentifiable {
+  createdAt: DateTime!
   id: ID
   name: String!
   links(
@@ -70,6 +75,7 @@ type Organization implements ResourceIdentifiable {
     last: Int,
     before: String
   ): TopicConnection
+  updatedAt: DateTime!
 }
 
 type PageInfo {
@@ -104,6 +110,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection
+  createdAt: DateTime!
   description: String
   id: ID!
   links(
@@ -121,6 +128,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     before: String
   ): TopicConnection
   resourcePath: String!
+  updatedAt: DateTime!
 }
 
 type TopicEdge {
@@ -134,10 +142,12 @@ type TopicConnection {
 }
 
 type User {
-  primaryEmail: String!
+  createdAt: DateTime!
   id: ID
   name: String!
+  primaryEmail: String!
   selectedTopic: Topic
+  updatedAt: DateTime!
 }
 
 input UpdateTopicInput {
