@@ -7,6 +7,7 @@ import Input from '../../Input'
 import upsertLinkMutation from '../../../../mutations/upsertLinkMutation'
 import updateLinkTopicsMutation from '../../../../mutations/updateLinkTopicsMutation'
 import EditTopicList from '../../EditTopicList'
+import SaveOrCancel from '../../SaveOrCancel'
 import { liftNodes } from '../../../../utils'
 
 type Props = {
@@ -98,11 +99,10 @@ class EditLink extends Component<Props, State> {
             value={this.state.url}
           />
         </div>
-        <div>
-          <button onClick={this.onSave} className="btn-primary">Save</button>
-          {' '} or {' '}
-          <button onClick={this.props.toggleForm} className="btn-link">cancel</button>
-        </div>
+        <SaveOrCancel
+          onSave={this.onSave}
+          onCancel={this.props.toggleForm}
+        />
         <EditTopicList
           availableTopics={this.availableTopics}
           selectedTopics={this.selectedTopics}

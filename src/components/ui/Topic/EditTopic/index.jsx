@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import Input from '../../Input'
+import SaveOrCancel from '../../SaveOrCancel'
 import updateTopicMutation from '../../../../mutations/updateTopicMutation'
 
 type Props = {
@@ -86,11 +87,10 @@ class EditTopic extends Component<Props, State> {
             value={this.state.description}
           />
         </div>
-        <div>
-          <button onClick={this.onSave} className="btn-primary">Save</button>
-          {' '} or {' '}
-          <button onClick={this.props.toggleForm} className="btn-link">cancel</button>
-        </div>
+        <SaveOrCancel
+          onSave={this.onSave}
+          onCancel={this.props.toggleForm}
+        />
       </div>
     )
   }
