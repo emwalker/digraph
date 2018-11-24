@@ -24,7 +24,7 @@ kill:
 start: kill clean
 	@yarn relay --watch &
 	@yarn start &
-	@go run server/server.go
+	@go run server.go
 
 lint:
 	golint models server resolvers
@@ -52,7 +52,7 @@ test-integration:
 	go test ./test/integration/...
 
 test: .PHONY
-	go test ./models ./server ./resolvers
+	go test ./models ./resolvers
 	yarn jest
 
 format:
@@ -73,3 +73,7 @@ dump:
 
 fixtures: dump
 	cp data/digraph.sql data/fixtures.sql
+
+deploy:
+	yarn build
+	gcloud app deploy

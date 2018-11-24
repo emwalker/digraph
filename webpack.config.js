@@ -1,12 +1,13 @@
-var path = require('path')
-var webpack = require('webpack')
-var autoprefixer = require('autoprefixer')
-var precss = require('precss')
+const path = require('path')
+const webpack = require('webpack')
+const autoprefixer = require('autoprefixer')
+const precss = require('precss')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const CompressionPlugin = require('compression-webpack-plugin')
 
-var prodMode = process.env.NODE_ENV === 'production'
+const prodMode = process.env.NODE_ENV === 'production'
 
-const plugins = [
+var plugins = [
   new webpack.NoEmitOnErrorsPlugin(),
   new MiniCssExtractPlugin({
     filename: prodMode ? '[name].[hash].css' : '[name].css',
@@ -23,12 +24,16 @@ const plugins = [
 
 if (prodMode) {
   plugins = plugins.concat([
-    new webpack.optimize.UglifyJsPlugin({
-      output: {comments: false},
-      test: /bundle\.js?$/
-    }),
     new webpack.DefinePlugin({
       'process.env': {NODE_ENV: JSON.stringify('production')}
+    }),
+    new webpack.optimize.AggressiveMergingPlugin(),
+    new CompressionPlugin({
+      filename: "[path].gz[query]",
+      algorithm: "gzip",
+      test: /\.js(\?.*)?$|\.css$|\.html$/,
+      threshold: 10240,
+      minRatio: 0.8
     }),
   ])
 }
@@ -70,8 +75,8 @@ const config  = {
     host: 'localhost',
     port: 3001,
     proxy: {
-      '^/api/*': {
-        target: 'http://localhost:8080/api/',
+      '^/graphql/*': {
+        target: 'http://localhost:8080/graphql/',
         secure: false
       }
     }
@@ -100,6 +105,18 @@ const config  = {
   node: {
     fs: 'empty',
     module: 'empty'
+  },
+
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        commons: {
+          test: /[\\/]node_modules[\\/]/,
+          name: "vendors",
+          chunks: "all"
+        }
+      }
+    }
   },
 
   output: {

@@ -1,7 +1,7 @@
 /node_modules
 /bin
 /pkg
-/clint/static/build
+/src/static/build
 /vendor
 
 .pid
@@ -13,3 +13,4 @@
 /data/personal.nq
 /data/digraph.sql
 sqlboiler.yaml
+app.yaml

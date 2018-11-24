@@ -6,7 +6,8 @@
     "eslint": "eslint --ext .js --ext .jsx src",
     "flow": "./node_modules/.bin/flow",
     "relay": "relay-compiler --src ./src --schema ./schema.graphql  --extensions js jsx",
-    "start": "node_modules/.bin/webpack-dev-server --devtool inline-source-map --content-base src/static"
+    "start": "node_modules/.bin/webpack-dev-server --devtool inline-source-map --content-base src/static",
+    "build": "NODE_ENV=production node_modules/.bin/webpack -p --config ./webpack.config.js --optimize-minimize"
   },
   "author": "olebedev",
   "license": "MIT",
@@ -163,6 +164,7 @@
     "babel-plugin-module-resolver": "^3.1.1",
     "babel-plugin-relay": "^1.5.0",
     "babel-preset-flow": "^6.23.0",
+    "compression-webpack-plugin": "^2.0.0",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-import-resolver-babel-module": "^4.0.0",
     "eslint-import-resolver-webpack": "^0.10.1",
