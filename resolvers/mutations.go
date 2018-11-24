@@ -253,11 +253,14 @@ func (r *MutationResolver) UpsertLink(
 	}, nil
 }
 
-// UpdateItemTopics sets the topics on a link that implements the Topicable interface.
+// UpdateLinkTopics sets the parent topics on a link.
 func (r *MutationResolver) UpdateLinkTopics(
 	ctx context.Context, input models.UpdateLinkTopicsInput,
 ) (*models.UpdateLinkTopicsPayload, error) {
-	link, err := models.Links(qm.Where("id = ?", input.LinkID)).One(ctx, r.DB)
+	link, err := models.FindLink(ctx, r.DB, input.LinkID)
+	if err != nil {
+		return nil, err
+	}
 
 	topics := topicsFromIds(input.ParentTopicIds)
 	err = link.SetParentTopics(ctx, r.DB, false, topics...)
@@ -265,12 +268,27 @@ func (r *MutationResolver) UpdateLinkTopics(
 		return nil, err
 	}
 
-	err = link.Reload(ctx, r.DB)
+	return &models.UpdateLinkTopicsPayload{
+		Link: *link,
+	}, nil
+}
+
+// UpdateTopicParentTopics sets the parent topics on a topic.
+func (r *MutationResolver) UpdateTopicParentTopics(
+	ctx context.Context, input models.UpdateTopicParentTopicsInput,
+) (*models.UpdateTopicParentTopicsPayload, error) {
+	topic, err := models.FindTopic(ctx, r.DB, input.TopicID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.UpdateLinkTopicsPayload{
-		Link: *link,
+	parentTopics := topicsFromIds(input.ParentTopicIds)
+	err = topic.SetParentTopics(ctx, r.DB, false, parentTopics...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.UpdateTopicParentTopicsPayload{
+		Topic: *topic,
 	}, nil
 }

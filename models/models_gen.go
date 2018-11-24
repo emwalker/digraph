@@ -77,6 +77,16 @@ type UpdateTopicInput struct {
 	TopicIds         []string `json:"topicIds"`
 }
 
+type UpdateTopicParentTopicsInput struct {
+	ClientMutationID *string  `json:"clientMutationId"`
+	TopicID          string   `json:"topicId"`
+	ParentTopicIds   []string `json:"parentTopicIds"`
+}
+
+type UpdateTopicParentTopicsPayload struct {
+	Topic Topic `json:"topic"`
+}
+
 type UpdateTopicPayload struct {
 	Topic Topic `json:"topic"`
 }

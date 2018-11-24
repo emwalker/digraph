@@ -22,9 +22,12 @@ func TestTopics(t *testing.T) {
 
 	t.Run("createTopic", createTopicTest)
 	t.Run("updateTopicTest", updateTopicTest)
+	t.Run("updateTopicParentTopicsTest", updateTopicParentTopicsTest)
 }
 
-func createTopic(t *testing.T, r models.MutationResolver, ctx context.Context) *models.CreateTopicPayload {
+func createTopic(
+	t *testing.T, r models.MutationResolver, ctx context.Context,
+) (*models.CreateTopicPayload, func()) {
 	parentTopic, err := models.Topics(qm.Where("name like 'Science'")).One(ctx, testDB)
 	assert.Nil(t, err)
 	assert.NotNil(t, parentTopic)
@@ -37,31 +40,38 @@ func createTopic(t *testing.T, r models.MutationResolver, ctx context.Context) *
 		TopicIds:       []string{parentTopic.ID},
 	}
 
-	var payload *models.CreateTopicPayload
-	payload, err = r.CreateTopic(ctx, input)
+	var p1 *models.CreateTopicPayload
+	p1, err = r.CreateTopic(ctx, input)
 	assert.Nil(t, err)
-	assert.NotNil(t, payload)
-	return payload
+	assert.NotNil(t, p1)
+
+	cleanup := func() {
+		deleteTopic(t, p1.TopicEdge.Node)
+	}
+
+	return p1, cleanup
 }
 
 func createTopicTest(t *testing.T) {
 	r, ctx := startMutationTest(t, testDB)
 
-	payload := createTopic(t, r, ctx)
-	topic := payload.TopicEdge.Node
+	p1, cleanup := createTopic(t, r, ctx)
+	defer cleanup()
+
+	topic := p1.TopicEdge.Node
 
 	parent, err := topic.ParentTopics().One(ctx, testDB)
 	assert.Nil(t, err)
 	assert.NotNil(t, parent)
-
-	deleteTopic(t, topic)
 }
 
 func updateTopicTest(t *testing.T) {
 	r, ctx := startMutationTest(t, testDB)
 
-	payload1 := createTopic(t, r, ctx)
-	topic := payload1.TopicEdge.Node
+	p1, cleanup := createTopic(t, r, ctx)
+	defer cleanup()
+
+	topic := p1.TopicEdge.Node
 	assert.Equal(t, "Agriculture", topic.Name)
 
 	var err error
@@ -74,16 +84,44 @@ func updateTopicTest(t *testing.T) {
 		ID:             topic.ID,
 	}
 
-	payload2, err := r.UpdateTopic(ctx, input)
+	p2, err := r.UpdateTopic(ctx, input)
 
-	if assert.Nil(t, err) {
-		assert.Equal(t, topic.ID, payload2.Topic.ID)
-
-		topic = payload2.Topic
-		err = topic.Reload(ctx, testDB)
-		assert.Nil(t, err)
-		assert.Equal(t, "Agricultures", topic.Name)
-
-		deleteTopic(t, topic)
+	if !assert.Nil(t, err) {
+		return
 	}
+
+	assert.Equal(t, topic.ID, p2.Topic.ID)
+
+	topic = p2.Topic
+	err = topic.Reload(ctx, testDB)
+	assert.Nil(t, err)
+	assert.Equal(t, "Agricultures", topic.Name)
+}
+
+func updateTopicParentTopicsTest(t *testing.T) {
+	r, ctx := startMutationTest(t, testDB)
+
+	p1, cleanup := createTopic(t, r, ctx)
+	defer cleanup()
+	topic1 := p1.TopicEdge.Node
+
+	p2, cleanup := createTopic(t, r, ctx)
+	defer cleanup()
+	topic2 := p2.TopicEdge.Node
+
+	parentTopics, err := topic2.ParentTopics().All(ctx, testDB)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(parentTopics))
+
+	_, err = r.UpdateTopicParentTopics(ctx, models.UpdateTopicParentTopicsInput{
+		TopicID:        topic2.ID,
+		ParentTopicIds: []string{topic1.ID, parentTopics[0].ID},
+	})
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	parentTopics, err = topic2.ParentTopics().All(ctx, testDB)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(parentTopics))
 }

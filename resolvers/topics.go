@@ -25,6 +25,28 @@ func topicConnection(rows []*models.Topic, err error) (*models.TopicConnection, 
 	return &models.TopicConnection{Edges: edges}, nil
 }
 
+// AvailableParentTopics returns the topics that can be added to the link.
+func (r *topicResolver) AvailableParentTopics(
+	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
+) (*models.TopicConnection, error) {
+	existingTopics, err := topic.ParentTopics(qm.Select("id")).All(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	var existingIds []interface{}
+	for _, topic := range existingTopics {
+		existingIds = append(existingIds, topic.ID)
+	}
+
+	org, err := topic.Organization().One(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	return topicConnection(org.Topics().All(ctx, r.DB))
+}
+
 // ChildTopics returns a set of topics.
 func (r *topicResolver) ChildTopics(
 	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,

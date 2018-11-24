@@ -50,6 +50,7 @@ type Mutation {
   selectTopic(input: SelectTopicInput!): SelectTopicPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
+  updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
 }
 
@@ -104,6 +105,12 @@ type SelectTopicPayload {
 }
 
 type Topic implements ResourceIdentifiable & Namespaceable {
+  availableParentTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
   childTopics(
     first: Int,
     after: String,
@@ -171,6 +178,16 @@ input UpdateLinkTopicsInput {
 
 type UpdateLinkTopicsPayload {
   link: Link!
+}
+
+input UpdateTopicParentTopicsInput {
+  clientMutationId: String
+  topicId: ID!
+  parentTopicIds: [ID!]
+}
+
+type UpdateTopicParentTopicsPayload {
+  topic: Topic!
 }
 
 input UpsertLinkInput {

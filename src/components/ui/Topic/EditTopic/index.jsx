@@ -2,25 +2,23 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
+import type { TopicType, OrganizationType } from '../../../types'
 import Input from '../../Input'
 import SaveOrCancel from '../../SaveOrCancel'
 import updateTopicMutation from '../../../../mutations/updateTopicMutation'
+import updateTopicTopicsMutation from '../../../../mutations/updateTopicParentTopicsMutation'
+import EditTopicList from '../../EditTopicList'
+import { liftNodes } from '../../../../utils'
 
 type Props = {
   id: string,
   isOpen: boolean,
+  organization: OrganizationType,
   relay: {
     environment: Object,
   },
-  topic: {
-    description: string,
-    id: string,
-    name: string,
-  },
-  organization: {
-    id: string,
-  },
   toggleForm: Function,
+  topic: TopicType,
 }
 
 type State = {
@@ -57,6 +55,25 @@ class EditTopic extends Component<Props, State> {
     return []
   }
 
+  get availableTopics(): Object[] {
+    return liftNodes(this.props.topic.availableTopics)
+  }
+
+  get selectedTopics(): string[] {
+    return liftNodes(this.props.topic.selectedTopics)
+  }
+
+  updateParentTopics = (parentTopicIds: string[]) => {
+    updateTopicTopicsMutation(
+      this.props.relay.environment,
+      [],
+      {
+        topicId: this.props.topic.id,
+        parentTopicIds,
+      },
+    )
+  }
+
   updateDescription = (event: Object) => {
     this.setState({ description: event.currentTarget.value })
   }
@@ -91,6 +108,11 @@ class EditTopic extends Component<Props, State> {
           onSave={this.onSave}
           onCancel={this.props.toggleForm}
         />
+        <EditTopicList
+          availableTopics={this.availableTopics}
+          selectedTopics={this.selectedTopics}
+          updateTopics={this.updateParentTopics}
+        />
       </div>
     )
   }
@@ -105,5 +127,23 @@ export default createFragmentContainer(EditTopic, graphql`
     description
     id
     name
+
+    selectedTopics: parentTopics(first: 1000) {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
+
+    availableTopics: availableParentTopics(first: 1000) {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
   }
 `)
