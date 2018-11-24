@@ -34,7 +34,7 @@
   branch = "master"
   name = "github.com/badoux/goscraper"
   packages = ["."]
-  revision = "0213ced7087832e81e8892e8d044150cfc153856"
+  revision = "363803726ad4e2ab262b4e01362e98458df0b231"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -241,7 +241,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "0cf1ed9e522b7dbb416f080a5c8003de9b702bf4"
+  revision = "62eef0e2fa9b2c385f7b2778e763486da6880d37"
 
 [[projects]]
   name = "golang.org/x/text"

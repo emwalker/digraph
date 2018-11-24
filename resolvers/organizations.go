@@ -20,7 +20,6 @@ func (r *organizationResolver) CreatedAt(
 }
 
 // Link returns a specific link.
-// Links returns a set of links.
 func (r *organizationResolver) Link(
 	ctx context.Context, org *models.Organization, linkId string,
 ) (*models.Link, error) {

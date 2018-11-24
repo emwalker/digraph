@@ -28,7 +28,7 @@ func TestTopics(t *testing.T) {
 func createTopic(
 	t *testing.T, r models.MutationResolver, ctx context.Context,
 ) (*models.CreateTopicPayload, func()) {
-	parentTopic, err := models.Topics(qm.Where("name like 'Science'")).One(ctx, testDB)
+	parentTopic, err := models.Topics(qm.Where("name like 'Everything'")).One(ctx, testDB)
 	assert.Nil(t, err)
 	assert.NotNil(t, parentTopic)
 
