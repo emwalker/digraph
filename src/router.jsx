@@ -28,7 +28,7 @@ const renderTopicPage = ({ props, error }: any) => {
   if (error)
     return <div>There was a problem.</div>
   if (!props)
-    return <div>loading ...</div>
+    return <div>Loading ...</div>
   if (!props.organization)
     return <div>You must log in and select an organization first.</div>
   return (
@@ -39,6 +39,7 @@ const renderTopicPage = ({ props, error }: any) => {
   )
 }
 
+/* eslint function-paren-newline: 0 */
 export const routeConfig = makeRouteConfig(
   <Route
     Component={Layout}

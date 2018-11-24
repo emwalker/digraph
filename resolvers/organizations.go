@@ -19,6 +19,14 @@ func (r *organizationResolver) CreatedAt(
 	return org.CreatedAt.Format(time.RFC3339), nil
 }
 
+// Link returns a specific link.
+// Links returns a set of links.
+func (r *organizationResolver) Link(
+	ctx context.Context, org *models.Organization, linkId string,
+) (*models.Link, error) {
+	return org.Links(qm.Where("id = ?", linkId)).One(ctx, r.DB)
+}
+
 // Links returns a set of links.
 func (r *organizationResolver) Links(
 	ctx context.Context, org *models.Organization, first *int, after *string, last *int,

@@ -55,14 +55,13 @@ class Topic extends Component<Props, State> {
 export default createFragmentContainer(Topic, graphql`
   fragment Topic_organization on Organization {
     id
-    ...EditTopic_organization
   }
 
   fragment Topic_topic on Topic {
     description
+    id
     name
     resourcePath
-    ...EditTopic_topic
 
     parentTopics(first: 10) {
       edges {

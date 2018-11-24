@@ -113,8 +113,10 @@ const config  = {
   resolve: {
     extensions: ['.mjs', '.js', '.jsx', '.css', '.scss'],
     alias: {
-      'components': path.join(__dirname, 'src/components')
-    }
+      components: path.resolve('src/components'),
+      mutations: path.resolve('src/mutations'),
+      utils: path.resolve('src/utils'),
+    },
   }
 }
 

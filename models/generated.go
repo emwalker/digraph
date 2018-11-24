@@ -83,6 +83,7 @@ type ComplexityRoot struct {
 		CreatedAt    func(childComplexity int) int
 		Id           func(childComplexity int) int
 		Name         func(childComplexity int) int
+		Link         func(childComplexity int, id string) int
 		Links        func(childComplexity int, first *int, after *string, last *int, before *string) int
 		ResourcePath func(childComplexity int) int
 		Topic        func(childComplexity int, id string) int
@@ -178,6 +179,7 @@ type MutationResolver interface {
 type OrganizationResolver interface {
 	CreatedAt(ctx context.Context, obj *Organization) (string, error)
 
+	Link(ctx context.Context, obj *Organization, id string) (*Link, error)
 	Links(ctx context.Context, obj *Organization, first *int, after *string, last *int, before *string) (*LinkConnection, error)
 	ResourcePath(ctx context.Context, obj *Organization) (string, error)
 	Topic(ctx context.Context, obj *Organization, id string) (*Topic, error)
@@ -418,6 +420,21 @@ func field_Mutation_upsertLink_args(rawArgs map[string]interface{}) (map[string]
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Organization_link_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 
 }
@@ -1089,6 +1106,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Organization.Name(childComplexity), true
+
+	case "Organization.link":
+		if e.complexity.Organization.Link == nil {
+			break
+		}
+
+		args, err := field_Organization_link_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Organization.Link(childComplexity, args["id"].(string)), true
 
 	case "Organization.links":
 		if e.complexity.Organization.Links == nil {
@@ -2361,6 +2390,12 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "link":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Organization_link(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "links":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -2484,6 +2519,41 @@ func (ec *executionContext) _Organization_name(ctx context.Context, field graphq
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Organization_link(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Organization_link_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Organization",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Organization().Link(rctx, obj, args["id"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Link)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Link(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -5997,6 +6067,7 @@ type Organization implements ResourceIdentifiable {
   createdAt: DateTime!
   id: ID
   name: String!
+  link(id: ID!): Link
   links(
     first: Int,
     after: String,

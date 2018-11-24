@@ -15,5 +15,6 @@ src/flow-typed
 experimental.strict_call_arity=true
 esproposal.decorators=ignore
 module.file_ext=.scss
+module.system.node.resolve_dirname=src
 
 [strict]

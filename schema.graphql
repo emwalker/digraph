@@ -62,6 +62,7 @@ type Organization implements ResourceIdentifiable {
   createdAt: DateTime!
   id: ID
   name: String!
+  link(id: ID!): Link
   links(
     first: Int,
     after: String,

@@ -4,6 +4,7 @@
   "description": "",
   "scripts": {
     "eslint": "eslint --ext .js --ext .jsx src",
+    "flow": "./node_modules/.bin/flow",
     "relay": "relay-compiler --src ./src --schema ./schema.graphql  --extensions js jsx",
     "start": "node_modules/.bin/webpack-dev-server --devtool inline-source-map --content-base src/static"
   },
@@ -164,23 +165,41 @@
     "babel-preset-flow": "^6.23.0",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-import-resolver-babel-module": "^4.0.0",
-    "eslint-plugin-import": "^2.10.0",
+    "eslint-import-resolver-webpack": "^0.10.1",
+    "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-jest": "^21.15.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "flow-bin": "^0.69.0",
     "graphql": "^0.13.2",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^22.4.3",
+    "jest-enzyme": "^7.0.1",
     "react-test-renderer": "16",
     "relay-compiler": "^1.6.0",
     "webpack-cli": "^2.0.15",
     "webpack-dev-server": "^3.1.10"
   },
   "jest": {
+    "roots": [
+      "<rootDir>/src/"
+    ],
+    "moduleDirectories": [
+      "<rootDir>/node_modules",
+      "<rootDir>/src/"
+    ],
+    "moduleFileExtensions": [
+      "js",
+      "jsx"
+    ],
     "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/src/__mocks__/fileMock.js",
-      "\\.(css|scss|less)$": "identity-obj-proxy"
+      "\\.(css|less)$": "<rootDir>/src/__mock__/styleMock.js"
     },
-    "setupTestFrameworkScriptFile": "<rootDir>/src/setupTests.js"
+    "setupFiles": [
+      "<rootDir>/src/__mock__/jestSetup.js"
+    ],
+    "setupTestFrameworkScriptFile": "./node_modules/jest-enzyme/lib/index.js",
+    "snapshotSerializers": [
+      "enzyme-to-json/serializer"
+    ]
   }
 }
