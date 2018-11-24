@@ -74,6 +74,8 @@ dump:
 fixtures: dump
 	cp data/digraph.sql data/fixtures.sql
 
-deploy:
+build:
 	yarn build
+
+deploy: build
 	gcloud app deploy
