@@ -32,7 +32,13 @@ func (r *organizationResolver) Links(
 	ctx context.Context, org *models.Organization, first *int, after *string, last *int,
 	before *string,
 ) (*models.LinkConnection, error) {
-	return linkConnection(org.Links(qm.OrderBy("created_at desc")).All(ctx, r.DB))
+	pageSize := 100
+	if first != nil {
+		pageSize = *first
+	}
+
+	scope := org.Links(qm.OrderBy("created_at desc"), qm.Limit(pageSize))
+	return linkConnection(scope.All(ctx, r.DB))
 }
 
 // ResourcePath returns a path to the item.
