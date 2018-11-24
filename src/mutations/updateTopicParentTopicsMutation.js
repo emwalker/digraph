@@ -8,13 +8,7 @@ export default defaultMutation(graphql`
   ) {
     updateTopicParentTopics(input: $input) {
       topic {
-        parentTopics(first: 100) {
-          edges {
-            node {
-              id
-            }
-          }
-        }
+        ...Topic_topic
       }
     }
   }

@@ -89,6 +89,7 @@ export default createFragmentContainer(TopicPage, graphql`
   fragment TopicPage_organization on Organization {
     ...AddTopic_organization
     ...AddLink_organization
+    ...Link_organization
     ...Topic_organization
   }
 

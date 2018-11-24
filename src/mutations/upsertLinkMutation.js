@@ -1,7 +1,8 @@
-import { commitMutation, graphql } from 'react-relay'
-import uuidv1 from 'uuid/v1'
+import { graphql } from 'react-relay'
 
-const mutation = graphql`
+import defaultMutation from './defaultMutation'
+
+export default defaultMutation(graphql`
   mutation upsertLinkMutation(
     $input: UpsertLinkInput!
   ) {
@@ -13,19 +14,4 @@ const mutation = graphql`
       }
     }
   }
-`
-
-export default (environment, configs, input) => {
-  const clientMutationId = uuidv1()
-
-  return commitMutation(
-    environment,
-    {
-      configs,
-      mutation,
-      variables: {
-        input: { clientMutationId, ...input },
-      },
-    },
-  )
-}
+`)
