@@ -3,11 +3,14 @@ const webpack = require('webpack')
 const autoprefixer = require('autoprefixer')
 const precss = require('precss')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-const CompressionPlugin = require('compression-webpack-plugin')
+const ManifestPlugin = require('webpack-manifest-plugin')
 
 const prodMode = process.env.NODE_ENV === 'production'
 
 var plugins = [
+  new ManifestPlugin({
+    publicPath: '/static/',
+  }),
   new webpack.NoEmitOnErrorsPlugin(),
   new MiniCssExtractPlugin({
     filename: prodMode ? '[name].[hash].css' : '[name].css',
@@ -28,13 +31,6 @@ if (prodMode) {
       'process.env': {NODE_ENV: JSON.stringify('production')}
     }),
     new webpack.optimize.AggressiveMergingPlugin(),
-    new CompressionPlugin({
-      filename: "[path].gz[query]",
-      algorithm: "gzip",
-      test: /\.js(\?.*)?$|\.css$|\.html$/,
-      threshold: 10240,
-      minRatio: 0.8
-    }),
   ])
 }
 
@@ -71,12 +67,11 @@ const config  = {
     historyApiFallback: true,
     hot: true,
     inline: true,
-
-    host: 'localhost',
     port: 3001,
+    host: 'localhost',
     proxy: {
-      '^/graphql/*': {
-        target: 'http://localhost:8080/graphql/',
+      '/graphql': {
+        target: 'http://localhost:8080/',
         secure: false
       }
     }
@@ -98,7 +93,7 @@ const config  = {
     }
   ],
 
-  mode: 'development',
+  mode: process.env.NODE_ENV,
 
   module: modules,
 
@@ -120,9 +115,9 @@ const config  = {
   },
 
   output: {
-    path: path.join(__dirname, 'src/static/build'),
+    path: path.join(__dirname, 'public/webpack'),
     publicPath: '/',
-    filename: 'bundle.js'
+    filename: prodMode ? '[name].[hash].js' : 'bundle.js',
   },
 
   plugins: plugins,

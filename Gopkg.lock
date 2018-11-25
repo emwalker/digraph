@@ -49,6 +49,19 @@
   version = "v1.4.7"
 
 [[projects]]
+  name = "github.com/go-webpack/webpack"
+  packages = [
+    ".",
+    "helper",
+    "reader",
+    "reader/manifest",
+    "reader/stats",
+    "util"
+  ]
+  revision = "a85a90567aea38d1bd147dd4f00bf502965633ba"
+  version = "v1.4.2"
+
+[[projects]]
   name = "github.com/gofrs/uuid"
   packages = ["."]
   revision = "7077aa61129615a0d7f45c49101cd011ab221c27"
@@ -286,6 +299,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "913b74153503dfe00d25b5bb35fd7ae2ee20c81f9204be3796e1d9bdcdc8efb9"
+  inputs-digest = "0b43ff649532c72baaf1028db7f09bdcfc38aaf74768acdc3ac3b7b497020356"
   solver-name = "gps-cdcl"
   solver-version = 1

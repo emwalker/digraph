@@ -12,19 +12,14 @@ GLIDE         := $(shell command -v glide 2> /dev/null)
 TIMESTAMP     = $(shell date -u +%s)
 DBNAME        = digraph_dev
 
-build: clean
-
-clean:
-	@rm -rf src/static/build/*
-
 kill:
 	@killall server 2>/dev/null || true
 	@killall node 2>/dev/null || true
 
-start: kill clean
+start: kill
 	@yarn relay --watch &
 	@yarn start &
-	@go run server.go
+	@go run server.go -dev
 
 lint:
 	golint models server resolvers
@@ -74,7 +69,10 @@ dump:
 fixtures: dump
 	cp data/digraph.sql data/fixtures.sql
 
-build:
+clean:
+	rm -f public/webpack/*.js* public/webpack/*.css*
+
+build: clean
 	yarn build
 
 deploy: build

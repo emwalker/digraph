@@ -1,7 +1,7 @@
 /node_modules
 /bin
 /pkg
-/src/static/build
+/public/webpack
 /vendor
 
 .pid

@@ -1,5 +1,5 @@
 export default (operation, variables) => (
-  fetch('http://localhost:8080/graphql', {
+  fetch('/graphql', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
