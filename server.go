@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -22,14 +23,16 @@ import (
 const defaultPort = "8080"
 
 type server struct {
-	connectionString string
-	db               *sql.DB
-	devMode          bool
-	port             string
-	schema           graphql.ExecutableSchema
+	connectionString  string
+	db                *sql.DB
+	devMode           bool
+	port              string
+	schema            graphql.ExecutableSchema
+	basicAuthUsername string
+	basicAuthPassword string
 }
 
-func newServer(port string, devMode bool) *server {
+func newServer(port string, devMode bool, username, password string) *server {
 	connectionString := os.Getenv("POSTGRES_CONNECTION")
 	if connectionString == "" {
 		panic("POSTGRES_CONNECTION not set")
@@ -45,11 +48,13 @@ func newServer(port string, devMode bool) *server {
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})
 
 	return &server{
-		connectionString: connectionString,
-		db:               db,
-		devMode:          devMode,
-		port:             port,
-		schema:           schema,
+		basicAuthPassword: password,
+		basicAuthUsername: username,
+		connectionString:  connectionString,
+		db:                db,
+		devMode:           devMode,
+		port:              port,
+		schema:            schema,
 	}
 }
 
@@ -58,7 +63,12 @@ func main() {
 	webpack.Plugin = "manifest"
 	webpack.Init(*devMode)
 
-	s := newServer(getPlaygroundPort(), *devMode)
+	s := newServer(
+		getPlaygroundPort(),
+		*devMode,
+		os.Getenv("BASIC_AUTH_USERNAME"),
+		os.Getenv("BASIC_AUTH_PASSWORD"),
+	)
 	s.routes()
 	s.run()
 }
@@ -67,6 +77,31 @@ func failIf(err error) {
 	if err != nil {
 		log.Fatal("there was a problem: ", err)
 	}
+}
+
+func (s *server) basicAuthRequired(r *http.Request) bool {
+	if s.basicAuthUsername == "" && s.basicAuthPassword == "" {
+		return false
+	}
+
+	user, pass, ok := r.BasicAuth()
+	return !ok ||
+		subtle.ConstantTimeCompare([]byte(user), []byte(s.basicAuthUsername)) != 1 ||
+		subtle.ConstantTimeCompare([]byte(pass), []byte(s.basicAuthPassword)) != 1
+}
+
+// https://stackoverflow.com/a/39591234/61048
+func (s *server) basicAuth(handler http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.basicAuthRequired(r) {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Digraph"`)
+			w.WriteHeader(401)
+			w.Write([]byte("Unauthorized.\n"))
+			return
+		}
+
+		handler.ServeHTTP(w, r)
+	})
 }
 
 const homepageTemplate = `<!doctype html>
@@ -84,7 +119,6 @@ const homepageTemplate = `<!doctype html>
     {{ asset "main.js" }}
   </body>
 </html>`
-
 
 func (s *server) handleRoot() http.Handler {
 	funcMap := map[string]interface{}{"asset": webpack.AssetHelper}
@@ -117,11 +151,11 @@ func (s *server) handleStaticFiles() http.Handler {
 }
 
 func (s *server) routes() {
-	http.Handle("/static/", s.handleStaticFiles())
-	http.Handle("/graphql", s.handleGraphqlRequest())
-	http.Handle("/playground", s.handleGraphqlPlayground())
-	http.Handle("/_ah/health", s.handleHealthCheck())
-	http.Handle("/", s.handleRoot())
+	http.Handle("/static/", s.basicAuth(s.handleStaticFiles()))
+	http.Handle("/graphql", s.basicAuth(s.handleGraphqlRequest()))
+	http.Handle("/playground", s.basicAuth(s.handleGraphqlPlayground()))
+	http.Handle("/_ah/health", s.basicAuth(s.handleHealthCheck()))
+	http.Handle("/", s.basicAuth(s.handleRoot()))
 }
 
 func (s *server) run() {
