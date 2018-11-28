@@ -8,6 +8,7 @@ module.exports = {
     "no-unexpected-multiline": "error",
     "flowtype/define-flow-type": 1,
     "flowtype/use-flow-type": 1,
+    "jsx-a11y/anchor-is-valid": ["error", "never"],
     "function-paren-newline": ["error", "consistent"],
     "object-curly-newline": ["error",  {"consistent": true}],
   },

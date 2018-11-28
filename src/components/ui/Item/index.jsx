@@ -2,6 +2,7 @@
 import React, { Component } from 'react'
 import type { Node } from 'react'
 import classNames from 'classnames'
+import { Link } from 'found'
 
 import type { Topic } from '../../types'
 import TopicBadge from '../TopicBadge'
@@ -44,9 +45,9 @@ class Item extends Component<Props> {
         <div className="d-flex flex-items-center">
           <div className="four-fifths">
             <div>
-              <a className="Box-row-link" href={url}>
+              <Link to={url} className="Box-row-link">
                 { this.props.title }
-              </a>
+              </Link>
               <div>{ this.props.description }</div>
             </div>
             <div

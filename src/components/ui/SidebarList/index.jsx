@@ -1,6 +1,7 @@
 // @flow
 import React from 'react'
 import { isEmpty } from 'ramda'
+import { Link } from 'found'
 
 import BlankslateUI from '../Blankslate'
 
@@ -26,9 +27,9 @@ const ItemList = ({ items }: ItemListProps) => (
         className="Box-row"
         key={resourcePath}
       >
-        <a className="Box-row-link" href={resourcePath}>
+        <Link to={resourcePath} className="Box-row-link">
           { display }
-        </a>
+        </Link>
       </li>
     ))}
   </ul>

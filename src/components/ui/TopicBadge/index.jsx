@@ -1,5 +1,6 @@
 // @flow
 import React from 'react'
+import { Link } from 'found'
 
 type Props = {
   name: string,
@@ -7,11 +8,11 @@ type Props = {
 }
 
 export default ({ name, resourcePath }: Props) => (
-  <a className="Box-row-link" href={resourcePath} key={resourcePath}>
+  <Link to={resourcePath} className="Box-row-link" key={resourcePath}>
     <span
       className="Label Label--outline Label--outline-gray"
     >
       {name}
     </span>
-  </a>
+  </Link>
 )
