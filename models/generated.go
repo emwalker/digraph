@@ -37,6 +37,7 @@ type ResolverRoot interface {
 	Query() QueryResolver
 	Topic() TopicResolver
 	User() UserResolver
+	View() ViewResolver
 }
 
 type DirectiveRoot struct {
@@ -83,11 +84,7 @@ type ComplexityRoot struct {
 		CreatedAt    func(childComplexity int) int
 		Id           func(childComplexity int) int
 		Name         func(childComplexity int) int
-		Link         func(childComplexity int, id string) int
-		Links        func(childComplexity int, first *int, after *string, last *int, before *string) int
 		ResourcePath func(childComplexity int) int
-		Topic        func(childComplexity int, id string) int
-		Topics       func(childComplexity int, first *int, after *string, last *int, before *string) int
 		UpdatedAt    func(childComplexity int) int
 	}
 
@@ -99,8 +96,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Viewer       func(childComplexity int) int
-		Organization func(childComplexity int, id string) int
+		Viewer func(childComplexity int) int
+		View   func(childComplexity int, organizationIds []string) int
 	}
 
 	SelectTopicPayload struct {
@@ -155,6 +152,13 @@ type ComplexityRoot struct {
 		SelectedTopic func(childComplexity int) int
 		UpdatedAt     func(childComplexity int) int
 	}
+
+	View struct {
+		Link   func(childComplexity int, id string) int
+		Links  func(childComplexity int, first *int, after *string, last *int, before *string) int
+		Topic  func(childComplexity int, id string) int
+		Topics func(childComplexity int, first *int, after *string, last *int, before *string) int
+	}
 }
 
 type LinkResolver interface {
@@ -179,16 +183,12 @@ type MutationResolver interface {
 type OrganizationResolver interface {
 	CreatedAt(ctx context.Context, obj *Organization) (string, error)
 
-	Link(ctx context.Context, obj *Organization, id string) (*Link, error)
-	Links(ctx context.Context, obj *Organization, first *int, after *string, last *int, before *string) (*LinkConnection, error)
 	ResourcePath(ctx context.Context, obj *Organization) (string, error)
-	Topic(ctx context.Context, obj *Organization, id string) (*Topic, error)
-	Topics(ctx context.Context, obj *Organization, first *int, after *string, last *int, before *string) (*TopicConnection, error)
 	UpdatedAt(ctx context.Context, obj *Organization) (string, error)
 }
 type QueryResolver interface {
 	Viewer(ctx context.Context) (*User, error)
-	Organization(ctx context.Context, id string) (*Organization, error)
+	View(ctx context.Context, organizationIds []string) (View, error)
 }
 type TopicResolver interface {
 	AvailableParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*TopicConnection, error)
@@ -208,6 +208,12 @@ type UserResolver interface {
 
 	SelectedTopic(ctx context.Context, obj *User) (*Topic, error)
 	UpdatedAt(ctx context.Context, obj *User) (string, error)
+}
+type ViewResolver interface {
+	Link(ctx context.Context, obj *View, id string) (*Link, error)
+	Links(ctx context.Context, obj *View, first *int, after *string, last *int, before *string) (*LinkConnection, error)
+	Topic(ctx context.Context, obj *View, id string) (*Topic, error)
+	Topics(ctx context.Context, obj *View, first *int, after *string, last *int, before *string) (*TopicConnection, error)
 }
 
 func field_Link_availableParentTopics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
@@ -424,171 +430,28 @@ func field_Mutation_upsertLink_args(rawArgs map[string]interface{}) (map[string]
 
 }
 
-func field_Organization_link_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func field_Query_view_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
+	var arg0 []string
+	if tmp, ok := rawArgs["organizationIds"]; ok {
 		var err error
-		arg0, err = graphql.UnmarshalID(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-
-}
-
-func field_Organization_links_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		var err error
-		var ptr1 int
+		var rawIf1 []interface{}
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
-			arg0 = &ptr1
+			if tmp1, ok := tmp.([]interface{}); ok {
+				rawIf1 = tmp1
+			} else {
+				rawIf1 = []interface{}{tmp}
+			}
 		}
-
+		arg0 = make([]string, len(rawIf1))
+		for idx1 := range rawIf1 {
+			arg0[idx1], err = graphql.UnmarshalID(rawIf1[idx1])
+		}
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg1 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		var err error
-		var ptr1 int
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
-			arg2 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["before"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg3 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["before"] = arg3
-	return args, nil
-
-}
-
-func field_Organization_topic_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		var err error
-		arg0, err = graphql.UnmarshalID(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-
-}
-
-func field_Organization_topics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		var err error
-		var ptr1 int
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
-			arg0 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg1 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		var err error
-		var ptr1 int
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
-			arg2 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["before"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg3 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["before"] = arg3
-	return args, nil
-
-}
-
-func field_Query_organization_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		var err error
-		arg0, err = graphql.UnmarshalID(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
+	args["organizationIds"] = arg0
 	return args, nil
 
 }
@@ -795,6 +658,160 @@ func field_Topic_links_args(rawArgs map[string]interface{}) (map[string]interfac
 }
 
 func field_Topic_parentTopics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg3
+	return args, nil
+
+}
+
+func field_View_link_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+
+}
+
+func field_View_links_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg3
+	return args, nil
+
+}
+
+func field_View_topic_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+
+}
+
+func field_View_topics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 *int
 	if tmp, ok := rawArgs["first"]; ok {
@@ -1107,60 +1124,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Organization.Name(childComplexity), true
 
-	case "Organization.link":
-		if e.complexity.Organization.Link == nil {
-			break
-		}
-
-		args, err := field_Organization_link_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Organization.Link(childComplexity, args["id"].(string)), true
-
-	case "Organization.links":
-		if e.complexity.Organization.Links == nil {
-			break
-		}
-
-		args, err := field_Organization_links_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Organization.Links(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
-
 	case "Organization.resourcePath":
 		if e.complexity.Organization.ResourcePath == nil {
 			break
 		}
 
 		return e.complexity.Organization.ResourcePath(childComplexity), true
-
-	case "Organization.topic":
-		if e.complexity.Organization.Topic == nil {
-			break
-		}
-
-		args, err := field_Organization_topic_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Organization.Topic(childComplexity, args["id"].(string)), true
-
-	case "Organization.topics":
-		if e.complexity.Organization.Topics == nil {
-			break
-		}
-
-		args, err := field_Organization_topics_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Organization.Topics(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
 	case "Organization.updatedAt":
 		if e.complexity.Organization.UpdatedAt == nil {
@@ -1204,17 +1173,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Viewer(childComplexity), true
 
-	case "Query.organization":
-		if e.complexity.Query.Organization == nil {
+	case "Query.view":
+		if e.complexity.Query.View == nil {
 			break
 		}
 
-		args, err := field_Query_organization_args(rawArgs)
+		args, err := field_Query_view_args(rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Organization(childComplexity, args["id"].(string)), true
+		return e.complexity.Query.View(childComplexity, args["organizationIds"].([]string)), true
 
 	case "SelectTopicPayload.topic":
 		if e.complexity.SelectTopicPayload.Topic == nil {
@@ -1417,6 +1386,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.UpdatedAt(childComplexity), true
+
+	case "View.link":
+		if e.complexity.View.Link == nil {
+			break
+		}
+
+		args, err := field_View_link_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.View.Link(childComplexity, args["id"].(string)), true
+
+	case "View.links":
+		if e.complexity.View.Links == nil {
+			break
+		}
+
+		args, err := field_View_links_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.View.Links(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+
+	case "View.topic":
+		if e.complexity.View.Topic == nil {
+			break
+		}
+
+		args, err := field_View_topic_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.View.Topic(childComplexity, args["id"].(string)), true
+
+	case "View.topics":
+		if e.complexity.View.Topics == nil {
+			break
+		}
+
+		args, err := field_View_topics_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.View.Topics(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
 	}
 	return 0, false
@@ -2390,18 +2407,6 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
-		case "link":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Organization_link(ctx, field, obj)
-				wg.Done()
-			}(i, field)
-		case "links":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Organization_links(ctx, field, obj)
-				wg.Done()
-			}(i, field)
 		case "resourcePath":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -2409,18 +2414,6 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 				if out.Values[i] == graphql.Null {
 					invalid = true
 				}
-				wg.Done()
-			}(i, field)
-		case "topic":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Organization_topic(ctx, field, obj)
-				wg.Done()
-			}(i, field)
-		case "topics":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Organization_topics(ctx, field, obj)
 				wg.Done()
 			}(i, field)
 		case "updatedAt":
@@ -2522,76 +2515,6 @@ func (ec *executionContext) _Organization_name(ctx context.Context, field graphq
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Organization_link(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Organization_link_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Organization",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Organization().Link(rctx, obj, args["id"].(string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Link)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._Link(ctx, field.Selections, res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Organization_links(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Organization_links_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Organization",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Organization().Links(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*LinkConnection)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._LinkConnection(ctx, field.Selections, res)
-}
-
-// nolint: vetshadow
 func (ec *executionContext) _Organization_resourcePath(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer ec.Tracer.EndFieldExecution(ctx)
@@ -2616,76 +2539,6 @@ func (ec *executionContext) _Organization_resourcePath(ctx context.Context, fiel
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Organization_topic(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Organization_topic_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Organization",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Organization().Topic(rctx, obj, args["id"].(string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Topic)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._Topic(ctx, field.Selections, res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Organization_topics(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Organization_topics_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Organization",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Organization().Topics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*TopicConnection)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._TopicConnection(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -2889,10 +2742,13 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				out.Values[i] = ec._Query_viewer(ctx, field)
 				wg.Done()
 			}(i, field)
-		case "organization":
+		case "view":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Query_organization(ctx, field)
+				out.Values[i] = ec._Query_view(ctx, field)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "__type":
@@ -2940,11 +2796,11 @@ func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.Col
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Query_organization(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_view(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer ec.Tracer.EndFieldExecution(ctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Query_organization_args(rawArgs)
+	args, err := field_Query_view_args(rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -2958,20 +2814,19 @@ func (ec *executionContext) _Query_organization(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Organization(rctx, args["id"].(string))
+		return ec.resolvers.Query().View(rctx, args["organizationIds"].([]string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*Organization)
+	res := resTmp.(View)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._Organization(ctx, field.Selections, res)
+	return ec._View(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -4191,6 +4046,196 @@ func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+var viewImplementors = []string{"View"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj *View) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, viewImplementors)
+
+	var wg sync.WaitGroup
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("View")
+		case "link":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._View_link(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "links":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._View_links(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "topic":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._View_topic(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "topics":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._View_topics(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	wg.Wait()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _View_link(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_View_link_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "View",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.View().Link(rctx, obj, args["id"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Link)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Link(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _View_links(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_View_links_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "View",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.View().Links(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*LinkConnection)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._LinkConnection(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _View_topic(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_View_topic_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "View",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.View().Topic(rctx, obj, args["id"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Topic)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Topic(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _View_topics(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer ec.Tracer.EndFieldExecution(ctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_View_topics_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "View",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.View().Topics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*TopicConnection)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._TopicConnection(ctx, field.Selections, res)
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -6067,21 +6112,7 @@ type Organization implements ResourceIdentifiable {
   createdAt: DateTime!
   id: ID
   name: String!
-  link(id: ID!): Link
-  links(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): LinkConnection
   resourcePath: String!
-  topic(id: ID!): Topic
-  topics(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection
   updatedAt: DateTime!
 }
 
@@ -6094,7 +6125,7 @@ type PageInfo {
 
 type Query {
   viewer: User
-  organization(id: ID!): Organization
+  view(organizationIds: [ID!]): View!
 }
 
 interface ResourceIdentifiable {
@@ -6206,6 +6237,23 @@ input UpsertLinkInput {
 
 type UpsertLinkPayload {
   linkEdge: LinkEdge!
+}
+
+type View {
+  link(id: ID!): Link
+  links(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): LinkConnection
+  topic(id: ID!): Topic
+  topics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
 }
 `},
 )

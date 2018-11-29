@@ -20,6 +20,8 @@ models:
     model: github.com/emwalker/digraph/models.Topic
   User:
     model: github.com/emwalker/digraph/models.User
+  View:
+    model: github.com/emwalker/digraph/models.View
 resolver:
   filename: resolvers/resolver.go
   type: Resolver

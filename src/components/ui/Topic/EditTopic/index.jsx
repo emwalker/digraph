@@ -2,32 +2,33 @@
 import React from 'react'
 import { QueryRenderer, graphql } from 'react-relay'
 
-import type { TopicType, OrganizationType } from 'components/types'
+import type { TopicType } from 'components/types'
+import { defaultOrganizationId } from 'components/constants'
 import EditTopicForm from './EditTopicForm'
 
 type RendererProps = {
   error: ?Object,
   props: ?{
-    organization: {
+    view: {
       link: LinkType,
     },
   },
 }
 
 /* eslint react/prop-types: 0 */
+/* eslint react/no-unused-prop-types: 0 */
 
 const renderer = ({ isOpen, toggleForm }) => ({ error, props }: RendererProps) => {
   if (error)
     return <div>{error.message}</div>
 
-  if (!props || !props.organization)
+  if (!props || !props.view)
     return null
 
   return (
     <EditTopicForm
       isOpen={isOpen}
-      topic={props.organization.topic}
-      organization={props.organization}
+      topic={props.view.topic}
       toggleForm={toggleForm}
     />
   )
@@ -36,21 +37,19 @@ const renderer = ({ isOpen, toggleForm }) => ({ error, props }: RendererProps) =
 type Props = {
   isOpen: boolean,
   topic: TopicType,
-  organization: OrganizationType,
   relay: {
     environment: Object,
   },
   toggleForm: Function,
+  view: Object,
 }
 
-const EditTopic = ({ isOpen, topic, organization, relay, toggleForm }: Props) => (
+const EditTopic = ({ isOpen, topic, relay, toggleForm }: Props) => (
   <QueryRenderer
     environment={relay.environment}
     query={graphql`
-      query EditTopicQuery($organizationId: ID!, $topicId: ID!) {
-        organization(id: $organizationId) {
-          ...EditTopicForm_organization
-
+      query EditTopicQuery($orgIds: [ID!], $topicId: ID!) {
+        view(organizationIds: $orgIds) {
           topic(id: $topicId) {
             ...EditTopicForm_topic
           }
@@ -59,7 +58,7 @@ const EditTopic = ({ isOpen, topic, organization, relay, toggleForm }: Props) =>
     `}
     variables={{
       topicId: topic.id,
-      organizationId: organization.id,
+      orgIds: [defaultOrganizationId],
     }}
     render={renderer({ isOpen, toggleForm })}
   />

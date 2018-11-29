@@ -53,10 +53,6 @@ class Topic extends Component<Props, State> {
 }
 
 export default createFragmentContainer(Topic, graphql`
-  fragment Topic_organization on Organization {
-    id
-  }
-
   fragment Topic_topic on Topic {
     description
     id

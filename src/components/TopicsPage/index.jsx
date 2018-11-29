@@ -8,13 +8,13 @@ import Topic from '../ui/Topic'
 import { liftNodes } from '../../utils'
 
 type Props = {
-  organization: {
+  view: {
     topics: Object,
   },
 }
 
-const TopicsPage = ({ organization, ...props }: Props) => {
-  const topics = liftNodes(organization.topics)
+const TopicsPage = ({ view, ...props }: Props) => {
+  const topics = liftNodes(view.topics)
   return (
     <div>
       <List
@@ -25,7 +25,6 @@ const TopicsPage = ({ organization, ...props }: Props) => {
           <Topic
             key={topic.resourcePath}
             topic={topic}
-            organization={organization}
             {...props}
           />
         )) }
@@ -35,18 +34,15 @@ const TopicsPage = ({ organization, ...props }: Props) => {
 }
 
 export const query = graphql`
-query TopicsPage_query_Query($orgId: ID!) {
-  organization(id: $orgId) {
-    ...TopicsPage_organization
+query TopicsPage_query_Query($orgIds: [ID!]) {
+  view(organizationIds: $orgIds) {
+    ...TopicsPage_view
   }
 }`
 
 export default createFragmentContainer(TopicsPage, graphql`
-  fragment TopicsPage_organization on Organization {
-    id
-    ...Topic_organization
-
-    topics(first: 1000) @connection(key: "Organization_topics") {
+  fragment TopicsPage_view on View {
+    topics(first: 1000) @connection(key: "View_topics") {
       edges {
         node {
           resourcePath

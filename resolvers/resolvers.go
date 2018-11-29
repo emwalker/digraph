@@ -37,13 +37,9 @@ func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
 	return models.Users().One(ctx, r.DB)
 }
 
-// Organization returns a resolver that can be used to look up an organization.
-func (r *queryResolver) Organization(ctx context.Context, id string) (*models.Organization, error) {
-	org, err := models.FindOrganization(ctx, r.DB, id)
-	if err != nil {
-		return nil, err
-	}
-	return org, nil
+// View returns a resolver that filters results on the basis of one or more organizations.
+func (r *queryResolver) View(ctx context.Context, organizationIds []string) (models.View, error) {
+	return models.View{OrganizationIds: organizationIds}, nil
 }
 
 // Organization returns an instance of models.OrganizationResolver.
@@ -64,4 +60,9 @@ func (r *Resolver) User() models.UserResolver {
 // Link returns an instance of models.LinkResolver.
 func (r *Resolver) Link() models.LinkResolver {
 	return &linkResolver{r}
+}
+
+// View returns an instance of models.ViewResolver
+func (r *Resolver) View() models.ViewResolver {
+	return &viewResolver{r}
 }

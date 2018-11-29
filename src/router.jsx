@@ -7,6 +7,7 @@ import React from 'react'
 import { graphql } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
+import { defaultOrganizationId } from './components/constants'
 import Homepage, { query as homepageQuery } from './components/Homepage'
 import TopicsPage, { query as topicsPageQuery } from './components/TopicsPage'
 import TopicPage, { query as topicPageQuery } from './components/TopicPage'
@@ -29,11 +30,11 @@ const renderTopicPage = ({ props, error }: any) => {
     return <div>There was a problem.</div>
   if (!props)
     return <div>Loading ...</div>
-  if (!props.organization)
+  if (!props.view)
     return <div>You must log in and select an organization first.</div>
   return (
     <TopicPage
-      topic={props.organization.topic}
+      topic={props.view.topic}
       {...props}
     />
   )
@@ -54,7 +55,7 @@ export const routeConfig = makeRouteConfig(
     }
     prepareVariables={params => ({
       ...params,
-      orgId: '45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb',
+      orgIds: [defaultOrganizationId],
     })}
   >
     <Route

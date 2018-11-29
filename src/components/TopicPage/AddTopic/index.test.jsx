@@ -5,14 +5,8 @@ import AddTopic from './index'
 jest.mock('react-relay', () => ({ createFragmentContainer: component => component }))
 
 describe('<AddTopic />', () => {
-  const organization = {
-    resourceId: 'organization:tyrell',
-  }
-
   const wrapper = shallow(
-    <AddTopic
-      organization={organization}
-    />,
+    <AddTopic />,
   )
 
   it('renders', () => {

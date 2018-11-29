@@ -2,7 +2,8 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import type { TopicType, OrganizationType } from 'components/types'
+import type { TopicType } from 'components/types'
+import { defaultOrganizationId } from 'components/constants'
 import Input from 'components/ui/Input'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
 import updateTopicMutation from 'mutations/updateTopicMutation'
@@ -13,7 +14,6 @@ import { liftNodes } from 'utils'
 type Props = {
   id: string,
   isOpen: boolean,
-  organization: OrganizationType,
   relay: {
     environment: Object,
   },
@@ -44,7 +44,7 @@ class EditTopicForm extends Component<Props, State> {
         description: this.state.description || '',
         id: this.props.topic.id,
         name: this.state.name,
-        organizationId: this.props.organization.id,
+        organizationId: defaultOrganizationId,
       },
     )
     this.props.toggleForm()

@@ -73,12 +73,10 @@ const TopicPage = ({ topic, ...props }: Props) => {
 
 export const query = graphql`
 query TopicPage_query_Query(
-  $orgId: ID!,
+  $orgIds: [ID!],
   $topicId: ID!
 ) {
-  organization(id: $orgId) {
-    ...TopicPage_organization
-
+  view(organizationIds: $orgIds) {
     topic(id: $topicId) {
       ...TopicPage_topic
     }
@@ -86,13 +84,6 @@ query TopicPage_query_Query(
 }`
 
 export default createFragmentContainer(TopicPage, graphql`
-  fragment TopicPage_organization on Organization {
-    ...AddTopic_organization
-    ...AddLink_organization
-    ...Link_organization
-    ...Topic_organization
-  }
-
   fragment TopicPage_topic on Topic {
     name
     ...AddTopic_topic

@@ -2,7 +2,8 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import createTopicMutation from '../../../mutations/createTopicMutation'
+import { defaultOrganizationId } from 'components/constants'
+import createTopicMutation from 'mutations/createTopicMutation'
 import type { RelayProps } from '../../types'
 
 /* eslint jsx-a11y/label-has-for: 0 */
@@ -38,13 +39,11 @@ class AddTopic extends Component<RelayProps, State> {
   }
 
   createTopic() {
-    const { id: organizationId } = this.props.organization
-
     createTopicMutation(
       this.props.relay.environment,
       this.relayConfigs,
       {
-        organizationId,
+        organizationId: defaultOrganizationId,
         name: this.state.name,
         topicIds: [this.props.topic.id],
       },

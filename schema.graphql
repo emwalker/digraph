@@ -62,21 +62,7 @@ type Organization implements ResourceIdentifiable {
   createdAt: DateTime!
   id: ID
   name: String!
-  link(id: ID!): Link
-  links(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): LinkConnection
   resourcePath: String!
-  topic(id: ID!): Topic
-  topics(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection
   updatedAt: DateTime!
 }
 
@@ -89,7 +75,7 @@ type PageInfo {
 
 type Query {
   viewer: User
-  organization(id: ID!): Organization
+  view(organizationIds: [ID!]): View!
 }
 
 interface ResourceIdentifiable {
@@ -201,4 +187,21 @@ input UpsertLinkInput {
 
 type UpsertLinkPayload {
   linkEdge: LinkEdge!
+}
+
+type View {
+  link(id: ID!): Link
+  links(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): LinkConnection
+  topic(id: ID!): Topic
+  topics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection
 }

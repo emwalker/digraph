@@ -3,17 +3,12 @@ import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
-import type { OrganizationType } from '../types'
 import { liftNodes } from '../../utils'
 import Link from '../ui/Link'
 import List from '../ui/List'
 
-type Props = {
-  organization: OrganizationType,
-}
-
-const LinksPage = ({ organization, ...props }: Props) => {
-  const links = liftNodes(organization.links)
+const LinksPage = ({ view, ...props }: Props) => {
+  const links = liftNodes(view.links)
   return (
     <div>
       <List
@@ -23,7 +18,6 @@ const LinksPage = ({ organization, ...props }: Props) => {
         { links.map(link => (
           <Link
             key={link.id}
-            organization={organization}
             link={link}
             {...props}
           />
@@ -34,17 +28,15 @@ const LinksPage = ({ organization, ...props }: Props) => {
 }
 
 export const query = graphql`
-  query LinksPage_query_Query($orgId: ID!) {
-    organization(id: $orgId) {
-      ...LinksPage_organization
+  query LinksPage_query_Query($orgIds: [ID!]) {
+    view(organizationIds: $orgIds) {
+      ...LinksPage_view
     }
   }
 `
 
 export default createFragmentContainer(LinksPage, graphql`
-  fragment LinksPage_organization on Organization {
-    ...Link_organization
-
+  fragment LinksPage_view on View {
     links(first: 50) @connection(key: "Organization_links") {
       edges {
         node {

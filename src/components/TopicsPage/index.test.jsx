@@ -9,7 +9,7 @@ describe('<TopicsPage />', () => {
     name: 'Rezrov',
   }
 
-  const organization = {
+  const view = {
     resourceId: 'organization:tyrell',
     topics: {
       edges: [
@@ -25,7 +25,7 @@ describe('<TopicsPage />', () => {
 
   const wrapper = shallow(
     <TopicsPage
-      organization={organization}
+      view={view}
       viewer={viewer}
     />,
   )
