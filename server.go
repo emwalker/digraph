@@ -169,7 +169,7 @@ func (s *server) routes() {
 	http.Handle("/static/", s.withBasicAuth(s.handleStaticFiles()))
 	http.Handle("/graphql", s.withBasicAuth(s.handleGraphqlRequest()))
 	http.Handle("/playground", s.withBasicAuth(s.handleGraphqlPlayground()))
-	http.Handle("/_ah/health", s.withBasicAuth(s.handleHealthCheck()))
+	http.Handle("/_ah/health", s.handleHealthCheck())
 	http.Handle("/", s.withBasicAuth(s.handleRoot()))
 }
 
