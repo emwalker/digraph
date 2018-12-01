@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/subtle"
 	"database/sql"
 	"flag"
@@ -12,12 +13,14 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/handler"
+	"github.com/emwalker/digraph/loaders"
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/go-webpack/webpack"
 	"github.com/gorilla/handlers"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 const defaultPort = "8080"
@@ -63,6 +66,8 @@ func main() {
 	webpack.Plugin = "manifest"
 	webpack.Init(*devMode)
 
+	boil.DebugMode = true
+
 	s := newServer(
 		getPlaygroundPort(),
 		*devMode,
@@ -91,7 +96,7 @@ func (s *server) basicAuthRequired(r *http.Request) bool {
 }
 
 // https://stackoverflow.com/a/39591234/61048
-func (s *server) basicAuth(handler http.Handler) http.HandlerFunc {
+func (s *server) withBasicAuth(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if s.basicAuthRequired(r) {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Digraph"`)
@@ -100,7 +105,16 @@ func (s *server) basicAuth(handler http.Handler) http.HandlerFunc {
 			return
 		}
 
-		handler.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// https://github.com/vektah/gqlgen-tutorials/blob/master/dataloader/graph.go
+func (s *server) withLoaders(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, loaders.TopicLoaderKey, loaders.NewTopicLoader(ctx, s.db))
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -132,7 +146,8 @@ func (s *server) handleRoot() http.Handler {
 
 func (s *server) handleGraphqlRequest() http.Handler {
 	h := cors.Default().Handler(handler.GraphQL(s.schema))
-	return handlers.CombinedLoggingHandler(os.Stdout, handlers.CompressHandler(h))
+	handler := handlers.CombinedLoggingHandler(os.Stdout, handlers.CompressHandler(h))
+	return s.withLoaders(handler)
 }
 
 func (s *server) handleGraphqlPlayground() http.Handler {
@@ -151,11 +166,11 @@ func (s *server) handleStaticFiles() http.Handler {
 }
 
 func (s *server) routes() {
-	http.Handle("/static/", s.basicAuth(s.handleStaticFiles()))
-	http.Handle("/graphql", s.basicAuth(s.handleGraphqlRequest()))
-	http.Handle("/playground", s.basicAuth(s.handleGraphqlPlayground()))
-	http.Handle("/_ah/health", s.basicAuth(s.handleHealthCheck()))
-	http.Handle("/", s.basicAuth(s.handleRoot()))
+	http.Handle("/static/", s.withBasicAuth(s.handleStaticFiles()))
+	http.Handle("/graphql", s.withBasicAuth(s.handleGraphqlRequest()))
+	http.Handle("/playground", s.withBasicAuth(s.handleGraphqlPlayground()))
+	http.Handle("/_ah/health", s.withBasicAuth(s.handleHealthCheck()))
+	http.Handle("/", s.withBasicAuth(s.handleRoot()))
 }
 
 func (s *server) run() {

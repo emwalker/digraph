@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/emwalker/digraph/models"
@@ -74,6 +75,11 @@ func (r *linkResolver) ResourcePath(_ context.Context, link *models.Link) (strin
 func (r *linkResolver) ParentTopics(
 	ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string,
 ) (*models.TopicConnection, error) {
+	if link.R != nil && link.R.ParentTopics != nil {
+		return topicConnection(link.R.ParentTopics, nil)
+	}
+
+	log.Print("Fetching parent topics for link")
 	return topicConnection(link.ParentTopics().All(ctx, r.DB))
 }
 

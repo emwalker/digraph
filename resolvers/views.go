@@ -2,12 +2,27 @@ package resolvers
 
 import (
 	"context"
+	"log"
 
 	"github.com/emwalker/digraph/models"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type viewResolver struct{ *Resolver }
+
+func topicQueryMods(view *models.View, filter qm.QueryMod) []qm.QueryMod {
+	mods := []qm.QueryMod{
+		qm.InnerJoin("organizations o on topics.organization_id = o.id"),
+		qm.WhereIn("o.id in ?", view.OrganizationIdsForQuery()...),
+		qm.Load("ParentTopics"),
+		qm.Load("ChildTopics"),
+		qm.Load("ChildLinks"),
+	}
+	if filter != nil {
+		mods = append(mods, filter)
+	}
+	return mods
+}
 
 // Link returns a specific link.
 func (r *viewResolver) Link(
@@ -43,6 +58,7 @@ func (r *viewResolver) Links(
 		qm.InnerJoin("organizations o on links.organization_id = o.id"),
 		qm.WhereIn("o.id in ?", view.OrganizationIdsForQuery()...),
 		qm.OrderBy("created_at desc"),
+		qm.Load("ParentTopics"),
 		qm.Limit(pageSize),
 	)
 	return linkConnection(scope.All(ctx, r.DB))
@@ -56,11 +72,8 @@ func (r *viewResolver) Topic(
 		return nil, nil
 	}
 
-	scope := models.Topics(
-		qm.InnerJoin("organizations o on topics.organization_id = o.id"),
-		qm.WhereIn("o.id in ?", view.OrganizationIdsForQuery()...),
-		qm.Where("topics.id = ?", topicID),
-	)
+	log.Printf("Fetching topic %s", topicID)
+	scope := models.Topics(topicQueryMods(view, qm.Where("topics.id = ?", topicID))...)
 	return scope.One(ctx, r.DB)
 }
 
@@ -73,10 +86,6 @@ func (r *viewResolver) Topics(
 		return topicConnection(models.Topics(qm.Where("1 = 0")).All(ctx, r.DB))
 	}
 
-	scope := models.Topics(
-		qm.InnerJoin("organizations o on topics.organization_id = o.id"),
-		qm.WhereIn("o.id in ?", view.OrganizationIdsForQuery()...),
-		qm.OrderBy("topics.name"),
-	)
+	scope := models.Topics(topicQueryMods(view, nil)...)
 	return topicConnection(scope.All(ctx, r.DB))
 }

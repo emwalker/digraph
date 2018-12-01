@@ -2,11 +2,17 @@ package resolvers
 
 import (
 	"context"
+	"log"
 	"time"
 
+	"github.com/emwalker/digraph/loaders"
 	"github.com/emwalker/digraph/models"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
+
+func getTopicLoader(ctx context.Context) *loaders.TopicLoader {
+	return ctx.Value(loaders.TopicLoaderKey).(*loaders.TopicLoader)
+}
 
 type topicResolver struct {
 	*Resolver
@@ -68,7 +74,8 @@ func (r *topicResolver) Description(_ context.Context, topic *models.Topic) (*st
 func (r *topicResolver) Links(
 	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
 ) (*models.LinkConnection, error) {
-	return linkConnection(topic.ChildLinks(qm.OrderBy("created_at desc")).All(ctx, r.DB))
+	scope := topic.ChildLinks(qm.OrderBy("created_at desc"), qm.Load("ParentTopics"))
+	return linkConnection(scope.All(ctx, r.DB))
 }
 
 // Organization returns a set of links.
@@ -83,6 +90,11 @@ func (r *topicResolver) Organization(
 func (r *topicResolver) ParentTopics(
 	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
 ) (*models.TopicConnection, error) {
+	if topic.R != nil && topic.R.ParentTopics != nil {
+		return topicConnection(topic.R.ParentTopics, nil)
+	}
+
+	log.Printf("Fetching parent topics for topic %s", topic.ID)
 	return topicConnection(topic.ParentTopics(qm.OrderBy("name")).All(ctx, r.DB))
 }
 
