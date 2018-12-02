@@ -6,7 +6,7 @@
     "eslint": "eslint --ext .js --ext .jsx src",
     "flow": "./node_modules/.bin/flow",
     "relay": "relay-compiler --src ./src --schema ./schema.graphql  --extensions js jsx",
-    "start": "node_modules/.bin/webpack-dev-server --devtool inline-source-map --content-base src/static",
+    "start": "node_modules/.bin/webpack-dev-server --mode development --watch --progress --devtool inline-source-map --content-base src/static",
     "build": "NODE_ENV=production node_modules/.bin/webpack -p --config ./webpack.config.js --optimize-minimize"
   },
   "author": "olebedev",
