@@ -55,10 +55,6 @@ class Link extends Component<Props, State> {
 }
 
 export default createFragmentContainer(Link, graphql`
-  fragment Link_organization on Organization {
-    id
-  }
-
   fragment Link_link on Link {
     id
     title

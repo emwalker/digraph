@@ -1,10 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<LinksPage /> renders 1`] = `
-<div>
-  <Component
-    hasItems={false}
-    placeholder="There are no links"
-  />
-</div>
+<Component
+  hasItems={false}
+  placeholder="There are no links"
+/>
 `;

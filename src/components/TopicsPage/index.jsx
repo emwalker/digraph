@@ -16,33 +16,33 @@ type Props = {
 const TopicsPage = ({ view, ...props }: Props) => {
   const topics = liftNodes(view.topics)
   return (
-    <div>
-      <List
-        placeholder="There are no topics"
-        hasItems={!isEmpty(topics)}
-      >
-        { topics.map(topic => (
-          <Topic
-            key={topic.resourcePath}
-            topic={topic}
-            {...props}
-          />
-        )) }
-      </List>
-    </div>
+    <List
+      placeholder="There are no topics"
+      hasItems={!isEmpty(topics)}
+    >
+      { topics.map(topic => (
+        <Topic
+          key={topic.resourcePath}
+          topic={topic}
+          {...props}
+        />
+      )) }
+    </List>
   )
 }
 
 export const query = graphql`
-query TopicsPage_query_Query($orgIds: [ID!]) {
+query TopicsPage_query_Query($orgIds: [ID!], $searchString: String) {
   view(organizationIds: $orgIds) {
-    ...TopicsPage_view
+    ...TopicsPage_view @arguments(searchString: $searchString)
   }
 }`
 
 export default createFragmentContainer(TopicsPage, graphql`
-  fragment TopicsPage_view on View {
-    topics(first: 1000) @connection(key: "View_topics") {
+  fragment TopicsPage_view on View @argumentDefinitions(
+    searchString: {type: "String", defaultValue: ""},
+  ) {
+    topics(first: 100, searchString: $searchString) @connection(key: "View_topics") {
       edges {
         node {
           resourcePath

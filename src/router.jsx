@@ -53,10 +53,14 @@ export const routeConfig = makeRouteConfig(
         }
       }`
     }
-    prepareVariables={params => ({
-      ...params,
-      orgIds: [defaultOrganizationId],
-    })}
+    prepareVariables={(params, { location }) => {
+      const { q } = location.query
+      return {
+        ...params,
+        orgIds: [defaultOrganizationId],
+        searchString: q,
+      }
+    }}
   >
     <Route
       Component={withErrorBoundary(Homepage)}

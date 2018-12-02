@@ -1,25 +1,23 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<TopicsPage /> renders 1`] = `
-<div>
-  <Component
-    hasItems={true}
-    placeholder="There are no topics"
-  >
-    <Topic
-      key="/topics/1234"
-      topic={
-        Object {
-          "name": "Frotz",
-          "resourcePath": "/topics/1234",
-        }
+<Component
+  hasItems={true}
+  placeholder="There are no topics"
+>
+  <Topic
+    key="/topics/1234"
+    topic={
+      Object {
+        "name": "Frotz",
+        "resourcePath": "/topics/1234",
       }
-      viewer={
-        Object {
-          "name": "Rezrov",
-        }
+    }
+    viewer={
+      Object {
+        "name": "Rezrov",
       }
-    />
-  </Component>
-</div>
+    }
+  />
+</Component>
 `;

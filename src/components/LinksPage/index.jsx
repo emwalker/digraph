@@ -10,20 +10,18 @@ import List from '../ui/List'
 const LinksPage = ({ view, ...props }: Props) => {
   const links = liftNodes(view.links)
   return (
-    <div>
-      <List
-        placeholder="There are no links"
-        hasItems={!isEmpty(links)}
-      >
-        { links.map(link => (
-          <Link
-            key={link.id}
-            link={link}
-            {...props}
-          />
-        )) }
-      </List>
-    </div>
+    <List
+      placeholder="There are no links"
+      hasItems={!isEmpty(links)}
+    >
+      { links.map(link => (
+        <Link
+          key={link.id}
+          link={link}
+          {...props}
+        />
+      )) }
+    </List>
   )
 }
 

@@ -8,9 +8,19 @@ exports[`<Layout /> renders 1`] = `
     <div
       className="pagehead"
     >
-      <h1>
-        Digraph
-      </h1>
+      <div
+        className="container-lg clearfix"
+      >
+        <h1
+          className="float-left"
+        >
+          Digraph
+        </h1>
+        <FilterInput
+          onEnter={[Function]}
+          value=""
+        />
+      </div>
     </div>
     <nav
       className="UnderlineNav mb-3"

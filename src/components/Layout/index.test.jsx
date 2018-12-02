@@ -3,8 +3,20 @@ import { shallow } from 'enzyme'
 import Layout from './index'
 
 describe('<Layout />', () => {
+  const router = {
+    push: jest.fn(),
+  }
+
+  const location = {
+    query: { q: '' },
+    search: '',
+  }
+
   const wrapper = shallow(
-    <Layout>
+    <Layout
+      router={router}
+      location={location}
+    >
       <div>some view</div>
     </Layout>,
   )

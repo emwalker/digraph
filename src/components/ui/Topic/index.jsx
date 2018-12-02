@@ -42,7 +42,6 @@ class Topic extends Component<Props, State> {
       >
         <EditTopic
           isOpen={this.state.formIsOpen}
-          organization={this.props.organization}
           toggleForm={this.toggleForm}
           topic={this.props.topic}
           {...this.props}
