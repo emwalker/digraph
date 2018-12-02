@@ -1,4 +1,4 @@
-package resolvers
+package resolvers_test
 
 import (
 	"context"
@@ -9,14 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestView(t *testing.T) {
-	testDB = newTestDb(t)
-	defer testDB.Close()
-
-	t.Run("upsertLink", testQueryView)
-}
-
-func testQueryView(t *testing.T) {
+func TestQueryView(t *testing.T) {
 	// When the organization is in the db
 	query := (&resolvers.Resolver{DB: testDB}).View()
 	v1 := &models.View{OrganizationIds: []string{orgId}}

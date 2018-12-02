@@ -1,4 +1,4 @@
-package resolvers
+package resolvers_test
 
 import (
 	"context"
@@ -11,16 +11,27 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func TestLinks(t *testing.T) {
-	testDB = newTestDb(t)
-	defer testDB.Close()
+func createLink(t *testing.T, ctx context.Context, r models.MutationResolver) (*models.Link, func()) {
+	payload1, err := r.UpsertLink(ctx, models.UpsertLinkInput{
+		AddParentTopicIds: []string{},
+		OrganizationID:    orgId,
+		URL:               "https://gnusto.blog",
+	})
+	assert.Nil(t, err)
 
-	t.Run("upsertLink", upsertLinkTest)
-	t.Run("updateParentTopics", updateParentTopics)
-	t.Run("availableTopics", availableTopics)
+	link := payload1.LinkEdge.Node
+
+	cleanup := func() {
+		count, err := link.Delete(ctx, testDB)
+		if assert.Nil(t, err) {
+			assert.Equal(t, int64(1), count)
+		}
+	}
+
+	return &link, cleanup
 }
 
-func upsertLinkTest(t *testing.T) {
+func TestUpsertLink(t *testing.T) {
 	r, ctx := startMutationTest(t, testDB)
 
 	topic, err := models.Topics().One(ctx, testDB)
@@ -63,27 +74,7 @@ func upsertLinkTest(t *testing.T) {
 	assert.Equal(t, countBefore+1, countAfter, "The number of links should stay the same")
 }
 
-func createLink(t *testing.T, ctx context.Context, r models.MutationResolver) (*models.Link, func()) {
-	payload1, err := r.UpsertLink(ctx, models.UpsertLinkInput{
-		AddParentTopicIds: []string{},
-		OrganizationID:    orgId,
-		URL:               "https://gnusto.blog",
-	})
-	assert.Nil(t, err)
-
-	link := payload1.LinkEdge.Node
-
-	cleanup := func() {
-		count, err := link.Delete(ctx, testDB)
-		if assert.Nil(t, err) {
-			assert.Equal(t, int64(1), count)
-		}
-	}
-
-	return &link, cleanup
-}
-
-func updateParentTopics(t *testing.T) {
+func TestUpdateParentTopics(t *testing.T) {
 	r, ctx := startMutationTest(t, testDB)
 
 	link, cleanup := createLink(t, ctx, r)
@@ -112,7 +103,7 @@ func updateParentTopics(t *testing.T) {
 	assert.NotZero(t, len(parentTopics))
 }
 
-func availableTopics(t *testing.T) {
+func TestAvailableTopics(t *testing.T) {
 	r, ctx := startMutationTest(t, testDB)
 
 	link, cleanup := createLink(t, ctx, r)

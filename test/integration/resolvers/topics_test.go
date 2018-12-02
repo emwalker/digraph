@@ -1,4 +1,4 @@
-package resolvers
+package resolvers_test
 
 import (
 	"context"
@@ -14,15 +14,6 @@ func deleteTopic(t *testing.T, topic models.Topic) {
 	if assert.Nil(t, err) {
 		assert.Equal(t, int64(1), count)
 	}
-}
-
-func TestTopics(t *testing.T) {
-	testDB = newTestDb(t)
-	defer testDB.Close()
-
-	t.Run("createTopic", createTopicTest)
-	t.Run("updateTopicTest", updateTopicTest)
-	t.Run("updateTopicParentTopicsTest", updateTopicParentTopicsTest)
 }
 
 func createTopic(
@@ -52,7 +43,7 @@ func createTopic(
 	return p1, cleanup
 }
 
-func createTopicTest(t *testing.T) {
+func TestCreateTopic(t *testing.T) {
 	r, ctx := startMutationTest(t, testDB)
 
 	p1, cleanup := createTopic(t, r, ctx)
@@ -65,7 +56,7 @@ func createTopicTest(t *testing.T) {
 	assert.NotNil(t, parent)
 }
 
-func updateTopicTest(t *testing.T) {
+func TestUpdateTopic(t *testing.T) {
 	r, ctx := startMutationTest(t, testDB)
 
 	p1, cleanup := createTopic(t, r, ctx)
@@ -98,7 +89,7 @@ func updateTopicTest(t *testing.T) {
 	assert.Equal(t, "Agricultures", topic.Name)
 }
 
-func updateTopicParentTopicsTest(t *testing.T) {
+func TestTopicParentTopics(t *testing.T) {
 	r, ctx := startMutationTest(t, testDB)
 
 	p1, cleanup := createTopic(t, r, ctx)
@@ -121,7 +112,12 @@ func updateTopicParentTopicsTest(t *testing.T) {
 		return
 	}
 
-	parentTopics, err = topic2.ParentTopics().All(ctx, testDB)
-	assert.Nil(t, err)
+	if parentTopics, err = topic2.ParentTopics().All(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, 2, len(parentTopics))
+}
+
+func TestSearchTopic(t *testing.T) {
+	// t.Fatal("hi")
 }

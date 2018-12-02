@@ -1,28 +1,37 @@
-package resolvers
+package resolvers_test
 
 import (
 	"context"
 	"database/sql"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/emwalker/digraph/resolvers/pageinfo"
-	"github.com/stretchr/testify/assert"
 )
+
 
 const orgId = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
 var testDB *sql.DB
 
-type testFetcher struct{}
+func TestMain(m *testing.M) {
+	testDB = newTestDb()
+	defer testDB.Close()
+	os.Exit(m.Run())
+}
 
-func newTestDb(t *testing.T) *sql.DB {
+func newTestDb() *sql.DB {
 	var err error
-	testDB, err = sql.Open("postgres", "dbname=digraph_dev user=postgres sslmode=disable")
-	assert.Nil(t, err, "Unable to connect to the database")
+	if testDB, err = sql.Open("postgres", "dbname=digraph_dev user=postgres sslmode=disable"); err != nil {
+		log.Fatal("Unable to connect to the database", err)
+	}
 	return testDB
 }
+
+type testFetcher struct{}
 
 func startMutationTest(t *testing.T, db *sql.DB) (models.MutationResolver, context.Context) {
 	resolver := &resolvers.MutationResolver{
