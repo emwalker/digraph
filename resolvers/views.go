@@ -10,7 +10,7 @@ import (
 
 type viewResolver struct{ *Resolver }
 
-func topicQueryMods(view *models.View, filter qm.QueryMod) []qm.QueryMod {
+func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string) []qm.QueryMod {
 	mods := []qm.QueryMod{
 		qm.InnerJoin("organizations o on topics.organization_id = o.id"),
 		qm.WhereIn("o.id in ?", view.OrganizationIdsForQuery()...),
@@ -18,9 +18,15 @@ func topicQueryMods(view *models.View, filter qm.QueryMod) []qm.QueryMod {
 		qm.Load("ChildTopics"),
 		qm.Load("ChildLinks"),
 	}
+
 	if filter != nil {
 		mods = append(mods, filter)
 	}
+
+	if searchString != nil {
+		mods = append(mods, qm.Where("topics.name ilike ? || '%%'", *searchString))
+	}
+
 	return mods
 }
 
@@ -73,19 +79,19 @@ func (r *viewResolver) Topic(
 	}
 
 	log.Printf("Fetching topic %s", topicID)
-	scope := models.Topics(topicQueryMods(view, qm.Where("topics.id = ?", topicID))...)
+	scope := models.Topics(topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil)...)
 	return scope.One(ctx, r.DB)
 }
 
 // Topics returns a set of topics.
 func (r *viewResolver) Topics(
-	ctx context.Context, view *models.View, first *int, after *string, last *int,
-	before *string,
+	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
+	last *int, before *string,
 ) (*models.TopicConnection, error) {
 	if len(view.OrganizationIds) < 1 {
 		return topicConnection(models.Topics(qm.Where("1 = 0")).All(ctx, r.DB))
 	}
 
-	scope := models.Topics(topicQueryMods(view, nil)...)
+	scope := models.Topics(topicQueryMods(view, nil, searchString)...)
 	return topicConnection(scope.All(ctx, r.DB))
 }

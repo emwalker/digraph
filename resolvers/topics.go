@@ -55,9 +55,16 @@ func (r *topicResolver) AvailableParentTopics(
 
 // ChildTopics returns a set of topics.
 func (r *topicResolver) ChildTopics(
-	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
+	ctx context.Context, topic *models.Topic, searchString *string, first *int, after *string,
+	last *int, before *string,
 ) (*models.TopicConnection, error) {
-	return topicConnection(topic.ChildTopics(qm.OrderBy("name")).All(ctx, r.DB))
+	mods := []qm.QueryMod{qm.OrderBy("name")}
+
+	if searchString != nil && *searchString != "" {
+		mods = append(mods, qm.Where("name ilike ? || '%%'", *searchString))
+	}
+
+	return topicConnection(topic.ChildTopics(mods...).All(ctx, r.DB))
 }
 
 // CreatedAt returns the time of the topic's creation.
@@ -72,7 +79,8 @@ func (r *topicResolver) Description(_ context.Context, topic *models.Topic) (*st
 
 // Links returns a set of links.
 func (r *topicResolver) Links(
-	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
+	ctx context.Context, topic *models.Topic, first *int, after *string,
+	last *int, before *string,
 ) (*models.LinkConnection, error) {
 	scope := topic.ChildLinks(qm.OrderBy("created_at desc"), qm.Load("ParentTopics"))
 	return linkConnection(scope.All(ctx, r.DB))

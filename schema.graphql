@@ -99,6 +99,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     before: String
   ): TopicConnection
   childTopics(
+    searchString: String,
     first: Int,
     after: String,
     last: Int,
@@ -199,6 +200,7 @@ type View {
   ): LinkConnection
   topic(id: ID!): Topic
   topics(
+    searchString: String,
     first: Int,
     after: String,
     last: Int,

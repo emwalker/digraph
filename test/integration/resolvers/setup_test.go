@@ -12,7 +12,6 @@ import (
 	"github.com/emwalker/digraph/resolvers/pageinfo"
 )
 
-
 const orgId = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
 var testDB *sql.DB
@@ -31,14 +30,25 @@ func newTestDb() *sql.DB {
 	return testDB
 }
 
+func newView() *models.View {
+	return &models.View{OrganizationIds: []string{orgId}}
+}
+
 type testFetcher struct{}
 
-func startMutationTest(t *testing.T, db *sql.DB) (models.MutationResolver, context.Context) {
+type mutator struct {
+	t        *testing.T
+	db       *sql.DB
+	ctx      context.Context
+	resolver models.MutationResolver
+}
+
+func newMutator(t *testing.T) mutator {
 	resolver := &resolvers.MutationResolver{
-		&resolvers.Resolver{DB: db},
+		&resolvers.Resolver{DB: testDB},
 		&testFetcher{},
 	}
-	return resolver, context.Background()
+	return mutator{t, testDB, context.Background(), resolver}
 }
 
 func (f *testFetcher) FetchPage(url string) (*pageinfo.PageInfo, error) {
