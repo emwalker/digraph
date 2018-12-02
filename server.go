@@ -26,26 +26,25 @@ import (
 const defaultPort = "8080"
 
 type server struct {
+	basicAuthUsername string
+	basicAuthPassword string
 	connectionString  string
 	db                *sql.DB
 	devMode           bool
+	logLevel          int
 	port              string
 	schema            graphql.ExecutableSchema
-	basicAuthUsername string
-	basicAuthPassword string
 }
 
-func newServer(port string, devMode bool, username, password string) *server {
+func newServer(port string, devMode bool, username, password string, logLevel int) *server {
 	connectionString := os.Getenv("POSTGRES_CONNECTION")
 	if connectionString == "" {
 		panic("POSTGRES_CONNECTION not set")
 	}
 
 	db, err := sql.Open("postgres", connectionString)
-	failIf(err)
-
-	err = db.Ping()
-	failIf(err)
+	must(err)
+	must(db.Ping())
 
 	resolver := &resolvers.Resolver{DB: db}
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})
@@ -56,6 +55,7 @@ func newServer(port string, devMode bool, username, password string) *server {
 		connectionString:  connectionString,
 		db:                db,
 		devMode:           devMode,
+		logLevel:          logLevel,
 		port:              port,
 		schema:            schema,
 	}
@@ -66,19 +66,22 @@ func main() {
 	webpack.Plugin = "manifest"
 	webpack.Init(*devMode)
 
-	boil.DebugMode = true
+	logLevel := flag.Int("log", 1, "Print debugging information to the console")
+
+	flag.Parse()
 
 	s := newServer(
 		getPlaygroundPort(),
 		*devMode,
 		os.Getenv("BASIC_AUTH_USERNAME"),
 		os.Getenv("BASIC_AUTH_PASSWORD"),
+		*logLevel,
 	)
 	s.routes()
 	s.run()
 }
 
-func failIf(err error) {
+func must(err error) {
 	if err != nil {
 		log.Fatal("there was a problem: ", err)
 	}
@@ -145,8 +148,11 @@ func (s *server) handleRoot() http.Handler {
 }
 
 func (s *server) handleGraphqlRequest() http.Handler {
-	h := cors.Default().Handler(handler.GraphQL(s.schema))
-	handler := handlers.CombinedLoggingHandler(os.Stdout, handlers.CompressHandler(h))
+	handler := cors.Default().Handler(handler.GraphQL(s.schema))
+	handler = handlers.CompressHandler(handler)
+	if s.logLevel > 0 {
+		handler = handlers.CombinedLoggingHandler(os.Stdout, handler)
+	}
 	return s.withLoaders(handler)
 }
 
@@ -174,6 +180,11 @@ func (s *server) routes() {
 }
 
 func (s *server) run() {
+	log.Printf("Running server with log level %d", s.logLevel)
+	if s.logLevel > 1 {
+		boil.DebugMode = true
+	}
+
 	log.Printf("Connect to http://localhost:%s/playground for the GraphQL playground", s.port)
 	log.Printf("Listening on port %s", s.port)
 	log.Fatal(http.ListenAndServe(":"+s.port, nil))

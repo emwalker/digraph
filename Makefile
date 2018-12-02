@@ -19,7 +19,7 @@ kill:
 start: kill
 	@yarn relay --watch &
 	@yarn start &
-	@go run server.go -dev
+	@go run server.go --dev --log 2
 
 lint:
 	golint models server resolvers
