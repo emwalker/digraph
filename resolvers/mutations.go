@@ -263,8 +263,11 @@ func (r *MutationResolver) UpdateLinkTopics(
 	}
 
 	topics := topicsFromIds(input.ParentTopicIds)
-	err = link.SetParentTopics(ctx, r.DB, false, topics...)
-	if err != nil {
+	if err = link.SetParentTopics(ctx, r.DB, false, topics...); err != nil {
+		return nil, err
+	}
+
+	if err = link.Reload(ctx, r.DB); err != nil {
 		return nil, err
 	}
 
@@ -283,8 +286,11 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 	}
 
 	parentTopics := topicsFromIds(input.ParentTopicIds)
-	err = topic.SetParentTopics(ctx, r.DB, false, parentTopics...)
-	if err != nil {
+	if err = topic.SetParentTopics(ctx, r.DB, false, parentTopics...); err != nil {
+		return nil, err
+	}
+
+	if err = topic.Reload(ctx, r.DB); err != nil {
 		return nil, err
 	}
 
