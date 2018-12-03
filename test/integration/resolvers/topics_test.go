@@ -6,62 +6,13 @@ import (
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/stretchr/testify/assert"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
-
-func (m mutator) deleteTopic(topic models.Topic) {
-	count, err := topic.Delete(m.ctx, m.db)
-	if assert.Nil(m.t, err) {
-		assert.Equal(m.t, int64(1), count)
-	}
-}
-
-func (m mutator) createTopic(name string) (*models.CreateTopicPayload, func()) {
-	parentTopic, err := models.Topics(qm.Where("name like 'Everything'")).One(m.ctx, m.db)
-	assert.Nil(m.t, err)
-	assert.NotNil(m.t, parentTopic)
-
-	input := models.CreateTopicInput{
-		Name:           name,
-		OrganizationID: orgId,
-		TopicIds:       []string{parentTopic.ID},
-	}
-
-	var p1 *models.CreateTopicPayload
-	p1, err = m.resolver.CreateTopic(m.ctx, input)
-	assert.Nil(m.t, err)
-	assert.NotNil(m.t, p1)
-
-	cleanup := func() {
-		m.deleteTopic(p1.TopicEdge.Node)
-	}
-
-	return p1, cleanup
-}
-
-func (m mutator) addParentTopicToTopic(child, parent models.Topic) {
-	everything, err := models.Topics(qm.Where("name like 'Everything'")).One(m.ctx, testDB)
-	if err != nil {
-		m.t.Fatal(err)
-	}
-
-	input := models.UpdateTopicParentTopicsInput{
-		TopicID:        child.ID,
-		ParentTopicIds: []string{everything.ID, parent.ID},
-	}
-
-	if _, err := m.resolver.UpdateTopicParentTopics(m.ctx, input); err != nil {
-		m.t.Fatal(err)
-	}
-}
 
 func TestCreateTopic(t *testing.T) {
 	m := newMutator(t)
 
-	p1, cleanup := m.createTopic("Agriculture")
+	topic, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
-
-	topic := p1.TopicEdge.Node
 
 	parent, err := topic.ParentTopics().One(m.ctx, testDB)
 	assert.Nil(t, err)
@@ -71,10 +22,9 @@ func TestCreateTopic(t *testing.T) {
 func TestUpdateTopic(t *testing.T) {
 	m := newMutator(t)
 
-	p1, cleanup := m.createTopic("Agriculture")
+	topic, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
 
-	topic := p1.TopicEdge.Node
 	assert.Equal(t, "Agriculture", topic.Name)
 
 	var err error
@@ -95,7 +45,7 @@ func TestUpdateTopic(t *testing.T) {
 
 	assert.Equal(t, topic.ID, p2.Topic.ID)
 
-	topic = p2.Topic
+	topic = &p2.Topic
 	err = topic.Reload(m.ctx, m.db)
 	assert.Nil(t, err)
 	assert.Equal(t, "Agricultures", topic.Name)
@@ -104,13 +54,11 @@ func TestUpdateTopic(t *testing.T) {
 func TestTopicParentTopics(t *testing.T) {
 	m := newMutator(t)
 
-	p1, cleanup := m.createTopic("Agriculture")
+	topic1, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
-	topic1 := p1.TopicEdge.Node
 
-	p2, cleanup := m.createTopic("Crop rotation")
+	topic2, cleanup := m.createTopic("Crop rotation")
 	defer cleanup()
-	topic2 := p2.TopicEdge.Node
 
 	parentTopics, err := topic2.ParentTopics().All(m.ctx, m.db)
 	assert.Nil(t, err)
@@ -127,13 +75,11 @@ func TestTopicParentTopics(t *testing.T) {
 func TestSearchChildTopics(t *testing.T) {
 	m := newMutator(t)
 
-	p1, cleanup := m.createTopic("Agriculture")
+	topic, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
-	topic := p1.TopicEdge.Node
 
-	p2, cleanup := m.createTopic("Crop rotation")
+	childTopic, cleanup := m.createTopic("Crop rotation")
 	defer cleanup()
-	childTopic := p2.TopicEdge.Node
 
 	m.addParentTopicToTopic(childTopic, topic)
 
@@ -173,7 +119,66 @@ func TestSearchChildTopics(t *testing.T) {
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			conn, err := topicResolver.ChildTopics(m.ctx, &topic, &td.SearchString, nil, nil, nil, nil)
+			conn, err := topicResolver.ChildTopics(m.ctx, topic, &td.SearchString, nil, nil, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if count := len(conn.Edges); td.Count != count {
+				t.Fatalf("Expected %d results, got %d", td.Count, count)
+			}
+		})
+	}
+}
+
+func TestSearchLinksInTopic(t *testing.T) {
+	m := newMutator(t)
+
+	topic, cleanup := m.createTopic("News organizations")
+	defer cleanup()
+
+	link, cleanup := m.createLink("New York Times", "https://www.nytimes.com")
+	defer cleanup()
+
+	m.addParentTopicToLink(link, topic)
+
+	cases := []struct {
+		Name         string
+		SearchString string
+		Count        int
+	}{
+		{
+			Name:         "When an empty string is provided",
+			SearchString: "",
+			Count:        1,
+		},
+		{
+			Name:         "When there is a full match",
+			SearchString: "New York Times",
+			Count:        1,
+		},
+		{
+			Name:         "When there is a prefix match",
+			SearchString: "New Yor",
+			Count:        1,
+		},
+		{
+			Name:         "When there is a suffix match",
+			SearchString: "York Times",
+			Count:        0, // Maybe later
+		},
+		{
+			Name:         "When there is no match",
+			SearchString: "astronomy",
+			Count:        0,
+		},
+	}
+
+	topicResolver := (&resolvers.Resolver{DB: testDB}).Topic()
+
+	for _, td := range cases {
+		t.Run(td.Name, func(t *testing.T) {
+			conn, err := topicResolver.Links(m.ctx, topic, &td.SearchString, nil, nil, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

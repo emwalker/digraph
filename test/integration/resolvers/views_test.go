@@ -9,6 +9,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	ge = func(expected, actual int) bool {
+		return actual >= expected
+	}
+
+	eq = func(expected, actual int) bool {
+		return actual == expected
+	}
+)
+
 func TestQueryView(t *testing.T) {
 	// When the organization is in the db
 	query := (&resolvers.Resolver{DB: testDB}).View()
@@ -43,23 +53,13 @@ func TestQueryView(t *testing.T) {
 func TestSearchTopics(t *testing.T) {
 	m := newMutator(t)
 
-	p1, cleanup := m.createTopic("Agriculture")
+	topic, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
-	topic := p1.TopicEdge.Node
 
-	p2, cleanup := m.createTopic("Crop rotation")
+	childTopic, cleanup := m.createTopic("Crop rotation")
 	defer cleanup()
-	childTopic := p2.TopicEdge.Node
 
 	m.addParentTopicToTopic(childTopic, topic)
-
-	ge := func(expected, actual int) bool {
-		return actual >= expected
-	}
-
-	eq := func(expected, actual int) bool {
-		return actual == expected
-	}
 
 	cases := []struct {
 		Name         string
@@ -105,6 +105,72 @@ func TestSearchTopics(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			conn, err := viewResolver.Topics(m.ctx, view, &td.SearchString, nil, nil, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if count := len(conn.Edges); !td.Success(td.Count, count) {
+				t.Fatalf("Expected %d results, got %d", td.Count, count)
+			}
+		})
+	}
+}
+
+func TestSearchLinks(t *testing.T) {
+	m := newMutator(t)
+
+	topic, cleanup := m.createTopic("News organizations")
+	defer cleanup()
+
+	link, cleanup := m.createLink("New York Times", "https://www.nytimes.com")
+	defer cleanup()
+
+	m.addParentTopicToLink(link, topic)
+
+	cases := []struct {
+		Name         string
+		SearchString string
+		Count        int
+		Success      func(int, int) bool
+	}{
+		{
+			Name:         "When an empty string is provided",
+			SearchString: "",
+			Count:        1,
+			Success:      ge,
+		},
+		{
+			Name:         "When there is a full match",
+			SearchString: "New York Times",
+			Count:        1,
+			Success:      eq,
+		},
+		{
+			Name:         "When there is a prefix match",
+			SearchString: "New Yor",
+			Count:        1,
+			Success:      eq,
+		},
+		{
+			Name:         "When there is a suffix match",
+			SearchString: "York Times",
+			Count:        0, // Maybe later
+			Success:      eq,
+		},
+		{
+			Name:         "When there is no match",
+			SearchString: "astronomy",
+			Count:        0,
+			Success:      eq,
+		},
+	}
+
+	view := &models.View{OrganizationIds: []string{orgId}}
+	viewResolver := (&resolvers.Resolver{DB: testDB}).View()
+
+	for _, td := range cases {
+		t.Run(td.Name, func(t *testing.T) {
+			conn, err := viewResolver.Links(m.ctx, view, &td.SearchString, nil, nil, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

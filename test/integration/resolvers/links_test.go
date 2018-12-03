@@ -10,32 +10,6 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func (m mutator) createLink() (*models.Link, func()) {
-	payload1, err := m.resolver.UpsertLink(m.ctx, models.UpsertLinkInput{
-		AddParentTopicIds: []string{},
-		OrganizationID:    orgId,
-		URL:               "https://gnusto.blog",
-	})
-	if err != nil {
-		m.t.Fatal(err)
-	}
-
-	link := payload1.LinkEdge.Node
-
-	cleanup := func() {
-		count, err := link.Delete(m.ctx, testDB)
-		if err != nil {
-			m.t.Fatal(err)
-		}
-
-		if count != int64(1) {
-			m.t.Fatal("Expected at least one updated record")
-		}
-	}
-
-	return &link, cleanup
-}
-
 func TestUpsertLink(t *testing.T) {
 	m := newMutator(t)
 
@@ -85,7 +59,7 @@ func TestUpsertLink(t *testing.T) {
 func TestUpdateParentTopics(t *testing.T) {
 	m := newMutator(t)
 
-	link, cleanup := m.createLink()
+	link, cleanup := m.createLink("Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
 	topics, err := link.ParentTopics().All(m.ctx, m.db)
@@ -114,7 +88,7 @@ func TestUpdateParentTopics(t *testing.T) {
 func TestAvailableTopics(t *testing.T) {
 	m := newMutator(t)
 
-	link, cleanup := m.createLink()
+	link, cleanup := m.createLink("Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
 	query := (&resolvers.Resolver{DB: m.db}).Link()

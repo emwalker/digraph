@@ -10,6 +10,7 @@ import (
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/emwalker/digraph/resolvers/pageinfo"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const orgId = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
@@ -57,4 +58,95 @@ func (f *testFetcher) FetchPage(url string) (*pageinfo.PageInfo, error) {
 		URL:   url,
 		Title: &title,
 	}, nil
+}
+
+func (m mutator) addParentTopicToTopic(child, parent *models.Topic) {
+	everything, err := models.Topics(qm.Where("name like 'Everything'")).One(m.ctx, testDB)
+	if err != nil {
+		m.t.Fatal(err)
+	}
+
+	input := models.UpdateTopicParentTopicsInput{
+		TopicID:        child.ID,
+		ParentTopicIds: []string{everything.ID, parent.ID},
+	}
+
+	if _, err := m.resolver.UpdateTopicParentTopics(m.ctx, input); err != nil {
+		m.t.Fatal(err)
+	}
+}
+
+func (m mutator) addParentTopicToLink(link *models.Link, topic *models.Topic) {
+	input := models.UpdateLinkTopicsInput{
+		LinkID:         link.ID,
+		ParentTopicIds: []string{topic.ID},
+	}
+
+	if _, err := m.resolver.UpdateLinkTopics(m.ctx, input); err != nil {
+		m.t.Fatal(err)
+	}
+}
+
+func (m mutator) deleteTopic(topic models.Topic) {
+	count, err := topic.Delete(m.ctx, m.db)
+	if err != nil {
+		m.t.Fatal(err)
+	}
+
+	if count != int64(1) {
+		m.t.Fatal("Expected a single row to be deleted")
+	}
+}
+
+func (m mutator) createTopic(name string) (*models.Topic, func()) {
+	parentTopic, err := models.Topics(qm.Where("name like 'Everything'")).One(m.ctx, m.db)
+	if err != nil {
+		m.t.Fatal(err)
+	}
+
+	input := models.CreateTopicInput{
+		Name:           name,
+		OrganizationID: orgId,
+		TopicIds:       []string{parentTopic.ID},
+	}
+
+	payload, err := m.resolver.CreateTopic(m.ctx, input)
+	if err != nil {
+		m.t.Fatal(err)
+	}
+
+	topic := payload.TopicEdge.Node
+
+	cleanup := func() {
+		m.deleteTopic(topic)
+	}
+
+	return &topic, cleanup
+}
+
+func (m mutator) createLink(title, url string) (*models.Link, func()) {
+	payload1, err := m.resolver.UpsertLink(m.ctx, models.UpsertLinkInput{
+		AddParentTopicIds: []string{},
+		OrganizationID:    orgId,
+		Title:             &title,
+		URL:               url,
+	})
+	if err != nil {
+		m.t.Fatal(err)
+	}
+
+	link := payload1.LinkEdge.Node
+
+	cleanup := func() {
+		count, err := link.Delete(m.ctx, testDB)
+		if err != nil {
+			m.t.Fatal(err)
+		}
+
+		if count != int64(1) {
+			m.t.Fatal("Expected at least one updated record")
+		}
+	}
+
+	return &link, cleanup
 }

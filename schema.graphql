@@ -109,6 +109,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   description: String
   id: ID!
   links(
+    searchString: String,
     first: Int,
     after: String,
     last: Int,
@@ -193,6 +194,7 @@ type UpsertLinkPayload {
 type View {
   link(id: ID!): Link
   links(
+    searchString: String,
     first: Int,
     after: String,
     last: Int,

@@ -26,16 +26,18 @@ const LinksPage = ({ view, ...props }: Props) => {
 }
 
 export const query = graphql`
-  query LinksPage_query_Query($orgIds: [ID!]) {
+  query LinksPage_query_Query($orgIds: [ID!], $searchString: String) {
     view(organizationIds: $orgIds) {
-      ...LinksPage_view
+      ...LinksPage_view @arguments(searchString: $searchString)
     }
   }
 `
 
 export default createFragmentContainer(LinksPage, graphql`
-  fragment LinksPage_view on View {
-    links(first: 50) @connection(key: "Organization_links") {
+  fragment LinksPage_view on View @argumentDefinitions(
+    searchString: {type: "String", defaultValue: ""},
+  ) {
+    links(first: 50, searchString: $searchString) @connection(key: "Organization_links") {
       edges {
         node {
           id

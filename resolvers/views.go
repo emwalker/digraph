@@ -48,7 +48,7 @@ func (r *viewResolver) Link(
 
 // Links returns a set of links.
 func (r *viewResolver) Links(
-	ctx context.Context, view *models.View, first *int, after *string, last *int,
+	ctx context.Context, view *models.View, searchString *string, first *int, after *string, last *int,
 	before *string,
 ) (*models.LinkConnection, error) {
 	if len(view.OrganizationIds) < 1 {
@@ -60,13 +60,19 @@ func (r *viewResolver) Links(
 		pageSize = *first
 	}
 
-	scope := models.Links(
+	mods := []qm.QueryMod{
 		qm.InnerJoin("organizations o on links.organization_id = o.id"),
 		qm.WhereIn("o.id in ?", view.OrganizationIdsForQuery()...),
 		qm.OrderBy("created_at desc"),
 		qm.Load("ParentTopics"),
 		qm.Limit(pageSize),
-	)
+	}
+
+	if searchString != nil && *searchString != "" {
+		mods = append(mods, qm.Where("title ilike ? || '%%'", searchString))
+	}
+
+	scope := models.Links(mods...)
 	return linkConnection(scope.All(ctx, r.DB))
 }
 

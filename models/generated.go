@@ -110,7 +110,7 @@ type ComplexityRoot struct {
 		CreatedAt             func(childComplexity int) int
 		Description           func(childComplexity int) int
 		Id                    func(childComplexity int) int
-		Links                 func(childComplexity int, first *int, after *string, last *int, before *string) int
+		Links                 func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 		Name                  func(childComplexity int) int
 		Organization          func(childComplexity int) int
 		ParentTopics          func(childComplexity int, first *int, after *string, last *int, before *string) int
@@ -155,7 +155,7 @@ type ComplexityRoot struct {
 
 	View struct {
 		Link   func(childComplexity int, id string) int
-		Links  func(childComplexity int, first *int, after *string, last *int, before *string) int
+		Links  func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 		Topic  func(childComplexity int, id string) int
 		Topics func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 	}
@@ -196,7 +196,7 @@ type TopicResolver interface {
 	CreatedAt(ctx context.Context, obj *Topic) (string, error)
 	Description(ctx context.Context, obj *Topic) (*string, error)
 
-	Links(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*LinkConnection, error)
+	Links(ctx context.Context, obj *Topic, searchString *string, first *int, after *string, last *int, before *string) (*LinkConnection, error)
 
 	Organization(ctx context.Context, obj *Topic) (Organization, error)
 	ParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*TopicConnection, error)
@@ -211,7 +211,7 @@ type UserResolver interface {
 }
 type ViewResolver interface {
 	Link(ctx context.Context, obj *View, id string) (*Link, error)
-	Links(ctx context.Context, obj *View, first *int, after *string, last *int, before *string) (*LinkConnection, error)
+	Links(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (*LinkConnection, error)
 	Topic(ctx context.Context, obj *View, id string) (*Topic, error)
 	Topics(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (*TopicConnection, error)
 }
@@ -611,12 +611,12 @@ func field_Topic_childTopics_args(rawArgs map[string]interface{}) (map[string]in
 
 func field_Topic_links_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	var arg0 *string
+	if tmp, ok := rawArgs["searchString"]; ok {
 		var err error
-		var ptr1 int
+		var ptr1 string
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
+			ptr1, err = graphql.UnmarshalString(tmp)
 			arg0 = &ptr1
 		}
 
@@ -624,13 +624,13 @@ func field_Topic_links_args(rawArgs map[string]interface{}) (map[string]interfac
 			return nil, err
 		}
 	}
-	args["first"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
+	args["searchString"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
 		var err error
-		var ptr1 string
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg1 = &ptr1
 		}
 
@@ -638,13 +638,13 @@ func field_Topic_links_args(rawArgs map[string]interface{}) (map[string]interfac
 			return nil, err
 		}
 	}
-	args["after"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["last"]; ok {
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
 		var err error
-		var ptr1 int
+		var ptr1 string
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
+			ptr1, err = graphql.UnmarshalString(tmp)
 			arg2 = &ptr1
 		}
 
@@ -652,13 +652,13 @@ func field_Topic_links_args(rawArgs map[string]interface{}) (map[string]interfac
 			return nil, err
 		}
 	}
-	args["last"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["before"]; ok {
+	args["after"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
 		var err error
-		var ptr1 string
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg3 = &ptr1
 		}
 
@@ -666,7 +666,21 @@ func field_Topic_links_args(rawArgs map[string]interface{}) (map[string]interfac
 			return nil, err
 		}
 	}
-	args["before"] = arg3
+	args["last"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg4
 	return args, nil
 
 }
@@ -750,12 +764,12 @@ func field_View_link_args(rawArgs map[string]interface{}) (map[string]interface{
 
 func field_View_links_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	var arg0 *string
+	if tmp, ok := rawArgs["searchString"]; ok {
 		var err error
-		var ptr1 int
+		var ptr1 string
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
+			ptr1, err = graphql.UnmarshalString(tmp)
 			arg0 = &ptr1
 		}
 
@@ -763,13 +777,13 @@ func field_View_links_args(rawArgs map[string]interface{}) (map[string]interface
 			return nil, err
 		}
 	}
-	args["first"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
+	args["searchString"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
 		var err error
-		var ptr1 string
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg1 = &ptr1
 		}
 
@@ -777,13 +791,13 @@ func field_View_links_args(rawArgs map[string]interface{}) (map[string]interface
 			return nil, err
 		}
 	}
-	args["after"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["last"]; ok {
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
 		var err error
-		var ptr1 int
+		var ptr1 string
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
+			ptr1, err = graphql.UnmarshalString(tmp)
 			arg2 = &ptr1
 		}
 
@@ -791,13 +805,13 @@ func field_View_links_args(rawArgs map[string]interface{}) (map[string]interface
 			return nil, err
 		}
 	}
-	args["last"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["before"]; ok {
+	args["after"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
 		var err error
-		var ptr1 string
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg3 = &ptr1
 		}
 
@@ -805,7 +819,21 @@ func field_View_links_args(rawArgs map[string]interface{}) (map[string]interface
 			return nil, err
 		}
 	}
-	args["before"] = arg3
+	args["last"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg4
 	return args, nil
 
 }
@@ -1275,7 +1303,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Topic.Links(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+		return e.complexity.Topic.Links(childComplexity, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
 	case "Topic.name":
 		if e.complexity.Topic.Name == nil {
@@ -1437,7 +1465,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.View.Links(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+		return e.complexity.View.Links(childComplexity, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
 	case "View.topic":
 		if e.complexity.View.Topic == nil {
@@ -3250,7 +3278,7 @@ func (ec *executionContext) _Topic_links(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Topic().Links(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+		return ec.resolvers.Topic().Links(rctx, obj, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4180,7 +4208,7 @@ func (ec *executionContext) _View_links(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.View().Links(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+		return ec.resolvers.View().Links(rctx, obj, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -6187,6 +6215,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   description: String
   id: ID!
   links(
+    searchString: String,
     first: Int,
     after: String,
     last: Int,
@@ -6271,6 +6300,7 @@ type UpsertLinkPayload {
 type View {
   link(id: ID!): Link
   links(
+    searchString: String,
     first: Int,
     after: String,
     last: Int,

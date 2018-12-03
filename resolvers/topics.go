@@ -79,10 +79,19 @@ func (r *topicResolver) Description(_ context.Context, topic *models.Topic) (*st
 
 // Links returns a set of links.
 func (r *topicResolver) Links(
-	ctx context.Context, topic *models.Topic, first *int, after *string,
+	ctx context.Context, topic *models.Topic, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (*models.LinkConnection, error) {
-	scope := topic.ChildLinks(qm.OrderBy("created_at desc"), qm.Load("ParentTopics"))
+	mods := []qm.QueryMod{
+		qm.OrderBy("created_at desc"),
+		qm.Load("ParentTopics"),
+	}
+
+	if searchString != nil && *searchString != "" {
+		mods = append(mods, qm.Where("title ilike ? || '%%'", searchString))
+	}
+
+	scope := topic.ChildLinks(mods...)
 	return linkConnection(scope.All(ctx, r.DB))
 }
 

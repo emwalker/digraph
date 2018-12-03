@@ -110,7 +110,7 @@ export default createFragmentContainer(TopicPage, graphql`
       }
     }
 
-    links(first: 1000)  @connection(key: "Topic_links") {
+    links(first: 1000, searchString: $searchString)  @connection(key: "Topic_links") {
       edges {
         node {
           id
