@@ -74,17 +74,20 @@ const TopicPage = ({ topic, ...props }: Props) => {
 export const query = graphql`
 query TopicPage_query_Query(
   $orgIds: [ID!],
-  $topicId: ID!
+  $topicId: ID!,
+  $searchString: String,
 ) {
   view(organizationIds: $orgIds) {
     topic(id: $topicId) {
-      ...TopicPage_topic
+      ...TopicPage_topic @arguments(searchString: $searchString)
     }
   }
 }`
 
 export default createFragmentContainer(TopicPage, graphql`
-  fragment TopicPage_topic on Topic {
+  fragment TopicPage_topic on Topic @argumentDefinitions(
+    searchString: {type: "String", defaultValue: ""},
+  ) {
     name
     ...AddTopic_topic
     ...AddLink_topic
@@ -98,7 +101,7 @@ export default createFragmentContainer(TopicPage, graphql`
       }
     }
 
-    childTopics(first: 1000) @connection(key: "Topic_childTopics") {
+    childTopics(first: 1000, searchString: $searchString) @connection(key: "Topic_childTopics") {
       edges {
         node {
           id
