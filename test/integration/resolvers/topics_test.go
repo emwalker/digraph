@@ -16,18 +16,32 @@ func TestCreateTopic(t *testing.T) {
 
 	parent, err := t1.ParentTopics().One(m.ctx, testDB)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if parent == nil {
-		t.Error("The topic should have a parent topic")
+		t.Fatal("The topic should have a parent topic")
 	}
 
 	// It does not create a second topic with the same name within the specified organization.
 	t2, _ := m.createTopic("Agriculture")
 
 	if t1.ID != t2.ID {
-		t.Error("Another topic with the same name was created")
+		t.Fatal("Another topic with the same name was created")
+	}
+}
+
+func TestCreateTopicDoesNotAllowLinks(t *testing.T) {
+	m := newMutator(t)
+
+	input := models.CreateTopicInput{
+		Name:           "http://gnusto.blog",
+		OrganizationID: orgId,
+	}
+
+	_, err := m.resolver.CreateTopic(m.ctx, input)
+	if err == nil {
+		t.Fatal("CreateTopic should not create a topic from a link")
 	}
 }
 

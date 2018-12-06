@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/sha1"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 
 	pl "github.com/PuerkitoBio/purell"
@@ -88,10 +90,22 @@ func parentTopicsToAdd(
 	return parents, nil
 }
 
+func isURL(name string) bool {
+	_, err := url.ParseRequestURI(name)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 // CreateTopic creates a new topic.
 func (r *MutationResolver) CreateTopic(
 	ctx context.Context, input models.CreateTopicInput,
 ) (*models.CreateTopicPayload, error) {
+	if isURL(input.Name) {
+		return nil, errors.New(fmt.Sprintf("Cannot create a topic from a url: %s", input.Name))
+	}
+
 	org, err := models.FindOrganization(ctx, r.DB, input.OrganizationID)
 	if err != nil {
 		return nil, err
