@@ -11,12 +11,24 @@ import (
 func TestCreateTopic(t *testing.T) {
 	m := newMutator(t)
 
-	topic, cleanup := m.createTopic("Agriculture")
+	t1, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
 
-	parent, err := topic.ParentTopics().One(m.ctx, testDB)
-	assert.Nil(t, err)
-	assert.NotNil(t, parent)
+	parent, err := t1.ParentTopics().One(m.ctx, testDB)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if parent == nil {
+		t.Error("The topic should have a parent topic")
+	}
+
+	// It does not create a second topic with the same name within the specified organization.
+	t2, _ := m.createTopic("Agriculture")
+
+	if t1.ID != t2.ID {
+		t.Error("Another topic with the same name was created")
+	}
 }
 
 func TestUpdateTopic(t *testing.T) {

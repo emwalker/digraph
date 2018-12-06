@@ -40,25 +40,74 @@ func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
 	return
 }
 
-// CreateTopic creates a new topic.
-func (r *MutationResolver) CreateTopic(
-	ctx context.Context, input models.CreateTopicInput,
-) (*models.CreateTopicPayload, error) {
+func upsertTopic(
+	ctx context.Context, tx *sql.Tx, org *models.Organization, input models.CreateTopicInput,
+) (*models.Topic, error) {
+	existing, _ := org.Topics(qm.Where("name ilike ?", input.Name)).One(ctx, tx)
+	if existing != nil {
+		log.Printf("Topic %s already exists", input.Name)
+		return existing, nil
+	}
+
 	topic := models.Topic{
 		Description:    null.StringFromPtr(input.Description),
 		Name:           input.Name,
 		OrganizationID: input.OrganizationID,
 	}
 
-	err := transact(r.DB, func(tx *sql.Tx) error {
-		err := topic.Insert(ctx, tx, boil.Infer())
+	log.Printf("Creating new topic %s", input.Name)
+	err := topic.Insert(ctx, tx, boil.Infer())
+	if err != nil {
+		return nil, err
+	}
+	return &topic, nil
+}
+
+func parentTopicsToAdd(
+	ctx context.Context, tx *sql.Tx, topic *models.Topic, topicIds []string,
+) ([]*models.Topic, error) {
+	parentTopics, err := topic.ParentTopics().All(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	seen := map[string]bool{}
+	for _, parent := range parentTopics {
+		seen[parent.ID] = true
+	}
+
+	var parents []*models.Topic
+
+	for _, parentId := range topicIds {
+		if _, ok := seen[parentId]; ok {
+			continue
+		}
+		parents = append(parents, &models.Topic{ID: parentId})
+	}
+
+	return parents, nil
+}
+
+// CreateTopic creates a new topic.
+func (r *MutationResolver) CreateTopic(
+	ctx context.Context, input models.CreateTopicInput,
+) (*models.CreateTopicPayload, error) {
+	org, err := models.FindOrganization(ctx, r.DB, input.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+
+	var topic *models.Topic
+
+	err = transact(r.DB, func(tx *sql.Tx) error {
+		topic, err = upsertTopic(ctx, tx, org, input)
 		if err != nil {
 			return err
 		}
 
-		var parents []*models.Topic
-		for _, parentId := range input.TopicIds {
-			parents = append(parents, &models.Topic{ID: parentId})
+		parents, err := parentTopicsToAdd(ctx, tx, topic, input.TopicIds)
+		if err != nil {
+			return err
 		}
 
 		err = topic.AddParentTopics(ctx, tx, false, parents...)
@@ -74,7 +123,7 @@ func (r *MutationResolver) CreateTopic(
 	}
 
 	return &models.CreateTopicPayload{
-		TopicEdge: models.TopicEdge{Node: topic},
+		TopicEdge: models.TopicEdge{Node: *topic},
 	}, nil
 }
 
