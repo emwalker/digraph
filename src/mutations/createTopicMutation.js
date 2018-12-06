@@ -9,9 +9,7 @@ export default defaultMutation(graphql`
     createTopic(input: $input) {
       topicEdge {
         node {
-          id
-          name
-          resourcePath
+          ...Topic_topic
         }
       }
     }

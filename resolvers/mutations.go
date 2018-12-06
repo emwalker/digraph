@@ -136,6 +136,11 @@ func (r *MutationResolver) CreateTopic(
 		return nil, err
 	}
 
+	err = topic.Reload(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
 	return &models.CreateTopicPayload{
 		TopicEdge: models.TopicEdge{Node: *topic},
 	}, nil
