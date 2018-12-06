@@ -6,7 +6,26 @@ type Props = {
   value: string,
 }
 
-class FilterInput extends Component<Props> {
+type State = {
+  value: string,
+}
+
+class FilterInput extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props)
+    this.state = {
+      value: props.value,
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.setState({ value: nextProps.value })
+  }
+
+  onChange = (event) => {
+    this.setState({ value: event.target.value })
+  }
+
   onEnter = (string) => {
     if (this.props.onEnter)
       this.props.onEnter(string)
@@ -21,11 +40,12 @@ class FilterInput extends Component<Props> {
     <input
       aria-label="Filter input"
       className="form-control float-right mt-3"
-      defaultValue={this.props.value}
+      onChange={this.onChange}
       onKeyPress={this.onKeyPress}
       placeholder="Filter"
       size="40"
       type="text"
+      value={this.state.value}
     />
   )
 }
