@@ -2,16 +2,20 @@
 
 package models
 
-type CreateTopicInput struct {
-	ClientMutationID *string  `json:"clientMutationId"`
-	Description      *string  `json:"description"`
-	Name             string   `json:"name"`
-	OrganizationID   string   `json:"organizationId"`
-	TopicIds         []string `json:"topicIds"`
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
+type Alert struct {
+	Text string    `json:"text"`
+	Type AlertType `json:"type"`
+	ID   string    `json:"id"`
 }
 
-type CreateTopicPayload struct {
-	TopicEdge TopicEdge `json:"topicEdge"`
+type Alertable interface {
+	IsAlertable()
 }
 
 type LinkConnection struct {
@@ -101,4 +105,56 @@ type UpsertLinkInput struct {
 
 type UpsertLinkPayload struct {
 	LinkEdge LinkEdge `json:"linkEdge"`
+}
+
+type UpsertTopicInput struct {
+	ClientMutationID *string  `json:"clientMutationId"`
+	Description      *string  `json:"description"`
+	Name             string   `json:"name"`
+	OrganizationID   string   `json:"organizationId"`
+	TopicIds         []string `json:"topicIds"`
+}
+
+type UpsertTopicPayload struct {
+	Alerts    []Alert   `json:"alerts"`
+	TopicEdge TopicEdge `json:"topicEdge"`
+}
+
+func (UpsertTopicPayload) IsAlertable() {}
+
+type AlertType string
+
+const (
+	AlertTypeSuccess AlertType = "SUCCESS"
+	AlertTypeWarn    AlertType = "WARN"
+	AlertTypeError   AlertType = "ERROR"
+)
+
+func (e AlertType) IsValid() bool {
+	switch e {
+	case AlertTypeSuccess, AlertTypeWarn, AlertTypeError:
+		return true
+	}
+	return false
+}
+
+func (e AlertType) String() string {
+	return string(e)
+}
+
+func (e *AlertType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AlertType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AlertType", str)
+	}
+	return nil
+}
+
+func (e AlertType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

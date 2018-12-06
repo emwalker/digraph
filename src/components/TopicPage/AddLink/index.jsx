@@ -73,10 +73,6 @@ class AddLink extends Component<RelayProps, State> {
 }
 
 export default createFragmentContainer(AddLink, graphql`
-  fragment AddLink_organization on Organization {
-    id
-  }
-
   fragment AddLink_topic on Topic {
     id
   }

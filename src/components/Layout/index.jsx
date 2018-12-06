@@ -4,6 +4,7 @@ import type { Node } from 'react'
 import { Link } from 'found'
 
 import FilterInput from './FilterInput'
+import FlashMessages from '../FlashMessages'
 
 type Props = {
   children?: Node,
@@ -53,6 +54,7 @@ class Layout extends Component<Props> {
               <FilterInput onEnter={this.onSearch} value={this.searchString} />
             </div>
           </div>
+          <FlashMessages />
           <nav className="UnderlineNav mb-3">
             <div className="UnderlineNav-body">
               <Link to="/links" className="UnderlineNav-item" activeClassName="selected">

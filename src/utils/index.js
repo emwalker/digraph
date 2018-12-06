@@ -1,6 +1,19 @@
 // @flow
-import { compose, isNil, map, prop, propOr, reject } from 'ramda'
+import {
+  compose,
+  isNil,
+  map,
+  prop,
+  propOr,
+  reject,
+  uniq,
+} from 'ramda'
 
 /* eslint import/prefer-default-export: 0 */
 
-export const liftNodes = compose(reject(isNil), map(prop('node')), propOr([], 'edges'))
+export const liftNodes = compose(
+  uniq,
+  reject(isNil),
+  map(prop('node')),
+  propOr([], 'edges'),
+)

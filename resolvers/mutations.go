@@ -13,6 +13,7 @@ import (
 	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers/pageinfo"
+	"github.com/google/uuid"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -43,12 +44,12 @@ func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
 }
 
 func upsertTopic(
-	ctx context.Context, tx *sql.Tx, org *models.Organization, input models.CreateTopicInput,
-) (*models.Topic, error) {
+	ctx context.Context, tx *sql.Tx, org *models.Organization, input models.UpsertTopicInput,
+) (*models.Topic, bool, error) {
 	existing, _ := org.Topics(qm.Where("name ilike ?", input.Name)).One(ctx, tx)
 	if existing != nil {
 		log.Printf("Topic %s already exists", input.Name)
-		return existing, nil
+		return existing, false, nil
 	}
 
 	topic := models.Topic{
@@ -60,9 +61,9 @@ func upsertTopic(
 	log.Printf("Creating new topic %s", input.Name)
 	err := topic.Insert(ctx, tx, boil.Infer())
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return &topic, nil
+	return &topic, true, nil
 }
 
 func parentTopicsToAdd(
@@ -98,10 +99,24 @@ func isURL(name string) bool {
 	return true
 }
 
-// CreateTopic creates a new topic.
-func (r *MutationResolver) CreateTopic(
-	ctx context.Context, input models.CreateTopicInput,
-) (*models.CreateTopicPayload, error) {
+func warningAlerts(messages ...string) []models.Alert {
+	id := uuid.New()
+	var alerts []models.Alert
+	for _, message := range messages {
+		alert := models.Alert{
+			Text: message,
+			Type: models.AlertTypeWarn,
+			ID:   id.String(),
+		}
+		alerts = append(alerts, alert)
+	}
+	return alerts
+}
+
+// UpsertTopic creates a new topic.
+func (r *MutationResolver) UpsertTopic(
+	ctx context.Context, input models.UpsertTopicInput,
+) (*models.UpsertTopicPayload, error) {
 	if isURL(input.Name) {
 		return nil, errors.New(fmt.Sprintf("Cannot create a topic from a url: %s", input.Name))
 	}
@@ -112,9 +127,10 @@ func (r *MutationResolver) CreateTopic(
 	}
 
 	var topic *models.Topic
+	var created bool
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		topic, err = upsertTopic(ctx, tx, org, input)
+		topic, created, err = upsertTopic(ctx, tx, org, input)
 		if err != nil {
 			return err
 		}
@@ -141,7 +157,14 @@ func (r *MutationResolver) CreateTopic(
 		return nil, err
 	}
 
-	return &models.CreateTopicPayload{
+	if created {
+		return &models.UpsertTopicPayload{
+			TopicEdge: models.TopicEdge{Node: *topic},
+		}, nil
+	}
+
+	return &models.UpsertTopicPayload{
+		Alerts:    warningAlerts(fmt.Sprintf("A topic with the name '%s' already exists", input.Name)),
 		TopicEdge: models.TopicEdge{Node: *topic},
 	}, nil
 }

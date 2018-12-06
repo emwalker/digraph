@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
 import { defaultOrganizationId } from 'components/constants'
-import createTopicMutation from 'mutations/createTopicMutation'
+import upsertTopicMutation from 'mutations/upsertTopicMutation'
 import type { RelayProps } from '../../types'
 
 /* eslint jsx-a11y/label-has-for: 0 */
@@ -39,7 +39,7 @@ class AddTopic extends Component<RelayProps, State> {
   }
 
   createTopic() {
-    createTopicMutation(
+    upsertTopicMutation(
       this.props.relay.environment,
       this.relayConfigs,
       {
@@ -73,10 +73,6 @@ class AddTopic extends Component<RelayProps, State> {
 }
 
 export default createFragmentContainer(AddTopic, graphql`
-  fragment AddTopic_organization on Organization {
-    id
-  }
-
   fragment AddTopic_topic on Topic {
     id
   }

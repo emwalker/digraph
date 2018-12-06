@@ -3,16 +3,17 @@
 package models
 
 import (
-	bytes "bytes"
-	context "context"
-	fmt "fmt"
-	strconv "strconv"
-	sync "sync"
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"strconv"
+	"sync"
 
-	graphql "github.com/99designs/gqlgen/graphql"
-	introspection "github.com/99designs/gqlgen/graphql/introspection"
-	gqlparser "github.com/vektah/gqlparser"
-	ast "github.com/vektah/gqlparser/ast"
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/introspection"
+	"github.com/vektah/gqlparser"
+	"github.com/vektah/gqlparser/ast"
 )
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
@@ -44,8 +45,10 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	CreateTopicPayload struct {
-		TopicEdge func(childComplexity int) int
+	Alert struct {
+		Text func(childComplexity int) int
+		Type func(childComplexity int) int
+		Id   func(childComplexity int) int
 	}
 
 	Link struct {
@@ -72,12 +75,12 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateTopic             func(childComplexity int, input CreateTopicInput) int
 		SelectTopic             func(childComplexity int, input SelectTopicInput) int
 		UpdateLinkTopics        func(childComplexity int, input UpdateLinkTopicsInput) int
 		UpdateTopic             func(childComplexity int, input UpdateTopicInput) int
 		UpdateTopicParentTopics func(childComplexity int, input UpdateTopicParentTopicsInput) int
 		UpsertLink              func(childComplexity int, input UpsertLinkInput) int
+		UpsertTopic             func(childComplexity int, input UpsertTopicInput) int
 	}
 
 	Organization struct {
@@ -144,6 +147,11 @@ type ComplexityRoot struct {
 		LinkEdge func(childComplexity int) int
 	}
 
+	UpsertTopicPayload struct {
+		Alerts    func(childComplexity int) int
+		TopicEdge func(childComplexity int) int
+	}
+
 	User struct {
 		CreatedAt     func(childComplexity int) int
 		Id            func(childComplexity int) int
@@ -173,12 +181,12 @@ type LinkResolver interface {
 	UpdatedAt(ctx context.Context, obj *Link) (string, error)
 }
 type MutationResolver interface {
-	CreateTopic(ctx context.Context, input CreateTopicInput) (*CreateTopicPayload, error)
 	SelectTopic(ctx context.Context, input SelectTopicInput) (*SelectTopicPayload, error)
 	UpdateLinkTopics(ctx context.Context, input UpdateLinkTopicsInput) (*UpdateLinkTopicsPayload, error)
 	UpdateTopic(ctx context.Context, input UpdateTopicInput) (*UpdateTopicPayload, error)
 	UpdateTopicParentTopics(ctx context.Context, input UpdateTopicParentTopicsInput) (*UpdateTopicParentTopicsPayload, error)
 	UpsertLink(ctx context.Context, input UpsertLinkInput) (*UpsertLinkPayload, error)
+	UpsertTopic(ctx context.Context, input UpsertTopicInput) (*UpsertTopicPayload, error)
 }
 type OrganizationResolver interface {
 	CreatedAt(ctx context.Context, obj *Organization) (string, error)
@@ -340,21 +348,6 @@ func field_Link_parentTopics_args(rawArgs map[string]interface{}) (map[string]in
 
 }
 
-func field_Mutation_createTopic_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 CreateTopicInput
-	if tmp, ok := rawArgs["input"]; ok {
-		var err error
-		arg0, err = UnmarshalCreateTopicInput(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-
-}
-
 func field_Mutation_selectTopic_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 SelectTopicInput
@@ -421,6 +414,21 @@ func field_Mutation_upsertLink_args(rawArgs map[string]interface{}) (map[string]
 	if tmp, ok := rawArgs["input"]; ok {
 		var err error
 		arg0, err = UnmarshalUpsertLinkInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_upsertTopic_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 UpsertTopicInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalUpsertTopicInput(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -972,12 +980,26 @@ func (e *executableSchema) Schema() *ast.Schema {
 func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]interface{}) (int, bool) {
 	switch typeName + "." + field {
 
-	case "CreateTopicPayload.topicEdge":
-		if e.complexity.CreateTopicPayload.TopicEdge == nil {
+	case "Alert.text":
+		if e.complexity.Alert.Text == nil {
 			break
 		}
 
-		return e.complexity.CreateTopicPayload.TopicEdge(childComplexity), true
+		return e.complexity.Alert.Text(childComplexity), true
+
+	case "Alert.type":
+		if e.complexity.Alert.Type == nil {
+			break
+		}
+
+		return e.complexity.Alert.Type(childComplexity), true
+
+	case "Alert.id":
+		if e.complexity.Alert.Id == nil {
+			break
+		}
+
+		return e.complexity.Alert.Id(childComplexity), true
 
 	case "Link.availableParentTopics":
 		if e.complexity.Link.AvailableParentTopics == nil {
@@ -1087,18 +1109,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LinkEdge.Node(childComplexity), true
 
-	case "Mutation.createTopic":
-		if e.complexity.Mutation.CreateTopic == nil {
-			break
-		}
-
-		args, err := field_Mutation_createTopic_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateTopic(childComplexity, args["input"].(CreateTopicInput)), true
-
 	case "Mutation.selectTopic":
 		if e.complexity.Mutation.SelectTopic == nil {
 			break
@@ -1158,6 +1168,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpsertLink(childComplexity, args["input"].(UpsertLinkInput)), true
+
+	case "Mutation.upsertTopic":
+		if e.complexity.Mutation.UpsertTopic == nil {
+			break
+		}
+
+		args, err := field_Mutation_upsertTopic_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpsertTopic(childComplexity, args["input"].(UpsertTopicInput)), true
 
 	case "Organization.createdAt":
 		if e.complexity.Organization.CreatedAt == nil {
@@ -1401,6 +1423,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpsertLinkPayload.LinkEdge(childComplexity), true
 
+	case "UpsertTopicPayload.alerts":
+		if e.complexity.UpsertTopicPayload.Alerts == nil {
+			break
+		}
+
+		return e.complexity.UpsertTopicPayload.Alerts(childComplexity), true
+
+	case "UpsertTopicPayload.topicEdge":
+		if e.complexity.UpsertTopicPayload.TopicEdge == nil {
+			break
+		}
+
+		return e.complexity.UpsertTopicPayload.TopicEdge(childComplexity), true
+
 	case "User.createdAt":
 		if e.complexity.User.CreatedAt == nil {
 			break
@@ -1537,11 +1573,11 @@ type executionContext struct {
 	*executableSchema
 }
 
-var createTopicPayloadImplementors = []string{"CreateTopicPayload"}
+var alertImplementors = []string{"Alert"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _CreateTopicPayload(ctx context.Context, sel ast.SelectionSet, obj *CreateTopicPayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ctx, sel, createTopicPayloadImplementors)
+func (ec *executionContext) _Alert(ctx context.Context, sel ast.SelectionSet, obj *Alert) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, alertImplementors)
 
 	out := graphql.NewOrderedMap(len(fields))
 	invalid := false
@@ -1550,9 +1586,19 @@ func (ec *executionContext) _CreateTopicPayload(ctx context.Context, sel ast.Sel
 
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("CreateTopicPayload")
-		case "topicEdge":
-			out.Values[i] = ec._CreateTopicPayload_topicEdge(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("Alert")
+		case "text":
+			out.Values[i] = ec._Alert_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "type":
+			out.Values[i] = ec._Alert_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "id":
+			out.Values[i] = ec._Alert_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -1568,11 +1614,11 @@ func (ec *executionContext) _CreateTopicPayload(ctx context.Context, sel ast.Sel
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CreateTopicPayload_topicEdge(ctx context.Context, field graphql.CollectedField, obj *CreateTopicPayload) graphql.Marshaler {
+func (ec *executionContext) _Alert_text(ctx context.Context, field graphql.CollectedField, obj *Alert) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "CreateTopicPayload",
+		Object: "Alert",
 		Args:   nil,
 		Field:  field,
 	}
@@ -1580,7 +1626,7 @@ func (ec *executionContext) _CreateTopicPayload_topicEdge(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TopicEdge, nil
+		return obj.Text, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1588,11 +1634,64 @@ func (ec *executionContext) _CreateTopicPayload_topicEdge(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(TopicEdge)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
 
-	return ec._TopicEdge(ctx, field.Selections, &res)
+// nolint: vetshadow
+func (ec *executionContext) _Alert_type(ctx context.Context, field graphql.CollectedField, obj *Alert) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Alert",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AlertType)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return res
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Alert_id(ctx context.Context, field graphql.CollectedField, obj *Alert) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Alert",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 var linkImplementors = []string{"Link", "ResourceIdentifiable", "Namespaceable"}
@@ -1689,7 +1788,7 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 // nolint: vetshadow
 func (ec *executionContext) _Link_availableParentTopics(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Link_availableParentTopics_args(rawArgs)
 	if err != nil {
@@ -1724,7 +1823,7 @@ func (ec *executionContext) _Link_availableParentTopics(ctx context.Context, fie
 // nolint: vetshadow
 func (ec *executionContext) _Link_createdAt(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Link",
 		Args:   nil,
@@ -1751,7 +1850,7 @@ func (ec *executionContext) _Link_createdAt(ctx context.Context, field graphql.C
 // nolint: vetshadow
 func (ec *executionContext) _Link_id(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Link",
 		Args:   nil,
@@ -1775,7 +1874,7 @@ func (ec *executionContext) _Link_id(ctx context.Context, field graphql.Collecte
 // nolint: vetshadow
 func (ec *executionContext) _Link_organization(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Link",
 		Args:   nil,
@@ -1803,7 +1902,7 @@ func (ec *executionContext) _Link_organization(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) _Link_resourcePath(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Link",
 		Args:   nil,
@@ -1830,7 +1929,7 @@ func (ec *executionContext) _Link_resourcePath(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) _Link_sha1(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Link",
 		Args:   nil,
@@ -1857,7 +1956,7 @@ func (ec *executionContext) _Link_sha1(ctx context.Context, field graphql.Collec
 // nolint: vetshadow
 func (ec *executionContext) _Link_parentTopics(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Link_parentTopics_args(rawArgs)
 	if err != nil {
@@ -1892,7 +1991,7 @@ func (ec *executionContext) _Link_parentTopics(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) _Link_title(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Link",
 		Args:   nil,
@@ -1919,7 +2018,7 @@ func (ec *executionContext) _Link_title(ctx context.Context, field graphql.Colle
 // nolint: vetshadow
 func (ec *executionContext) _Link_updatedAt(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Link",
 		Args:   nil,
@@ -1946,7 +2045,7 @@ func (ec *executionContext) _Link_updatedAt(ctx context.Context, field graphql.C
 // nolint: vetshadow
 func (ec *executionContext) _Link_url(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Link",
 		Args:   nil,
@@ -2005,7 +2104,7 @@ func (ec *executionContext) _LinkConnection(ctx context.Context, sel ast.Selecti
 // nolint: vetshadow
 func (ec *executionContext) _LinkConnection_edges(ctx context.Context, field graphql.CollectedField, obj *LinkConnection) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "LinkConnection",
 		Args:   nil,
@@ -2066,7 +2165,7 @@ func (ec *executionContext) _LinkConnection_edges(ctx context.Context, field gra
 // nolint: vetshadow
 func (ec *executionContext) _LinkConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *LinkConnection) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "LinkConnection",
 		Args:   nil,
@@ -2129,7 +2228,7 @@ func (ec *executionContext) _LinkEdge(ctx context.Context, sel ast.SelectionSet,
 // nolint: vetshadow
 func (ec *executionContext) _LinkEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *LinkEdge) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "LinkEdge",
 		Args:   nil,
@@ -2156,7 +2255,7 @@ func (ec *executionContext) _LinkEdge_cursor(ctx context.Context, field graphql.
 // nolint: vetshadow
 func (ec *executionContext) _LinkEdge_node(ctx context.Context, field graphql.CollectedField, obj *LinkEdge) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "LinkEdge",
 		Args:   nil,
@@ -2199,8 +2298,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createTopic":
-			out.Values[i] = ec._Mutation_createTopic(ctx, field)
 		case "selectTopic":
 			out.Values[i] = ec._Mutation_selectTopic(ctx, field)
 		case "updateLinkTopics":
@@ -2211,6 +2308,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_updateTopicParentTopics(ctx, field)
 		case "upsertLink":
 			out.Values[i] = ec._Mutation_upsertLink(ctx, field)
+		case "upsertTopic":
+			out.Values[i] = ec._Mutation_upsertTopic(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2223,44 +2322,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Mutation_createTopic(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Mutation_createTopic_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Mutation",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateTopic(rctx, args["input"].(CreateTopicInput))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*CreateTopicPayload)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._CreateTopicPayload(ctx, field.Selections, res)
-}
-
-// nolint: vetshadow
 func (ec *executionContext) _Mutation_selectTopic(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Mutation_selectTopic_args(rawArgs)
 	if err != nil {
@@ -2295,7 +2359,7 @@ func (ec *executionContext) _Mutation_selectTopic(ctx context.Context, field gra
 // nolint: vetshadow
 func (ec *executionContext) _Mutation_updateLinkTopics(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Mutation_updateLinkTopics_args(rawArgs)
 	if err != nil {
@@ -2330,7 +2394,7 @@ func (ec *executionContext) _Mutation_updateLinkTopics(ctx context.Context, fiel
 // nolint: vetshadow
 func (ec *executionContext) _Mutation_updateTopic(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Mutation_updateTopic_args(rawArgs)
 	if err != nil {
@@ -2365,7 +2429,7 @@ func (ec *executionContext) _Mutation_updateTopic(ctx context.Context, field gra
 // nolint: vetshadow
 func (ec *executionContext) _Mutation_updateTopicParentTopics(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Mutation_updateTopicParentTopics_args(rawArgs)
 	if err != nil {
@@ -2400,7 +2464,7 @@ func (ec *executionContext) _Mutation_updateTopicParentTopics(ctx context.Contex
 // nolint: vetshadow
 func (ec *executionContext) _Mutation_upsertLink(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Mutation_upsertLink_args(rawArgs)
 	if err != nil {
@@ -2430,6 +2494,41 @@ func (ec *executionContext) _Mutation_upsertLink(ctx context.Context, field grap
 	}
 
 	return ec._UpsertLinkPayload(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_upsertTopic(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_upsertTopic_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpsertTopic(rctx, args["input"].(UpsertTopicInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*UpsertTopicPayload)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._UpsertTopicPayload(ctx, field.Selections, res)
 }
 
 var organizationImplementors = []string{"Organization", "ResourceIdentifiable"}
@@ -2495,7 +2594,7 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 // nolint: vetshadow
 func (ec *executionContext) _Organization_createdAt(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Organization",
 		Args:   nil,
@@ -2522,7 +2621,7 @@ func (ec *executionContext) _Organization_createdAt(ctx context.Context, field g
 // nolint: vetshadow
 func (ec *executionContext) _Organization_id(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Organization",
 		Args:   nil,
@@ -2546,7 +2645,7 @@ func (ec *executionContext) _Organization_id(ctx context.Context, field graphql.
 // nolint: vetshadow
 func (ec *executionContext) _Organization_name(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Organization",
 		Args:   nil,
@@ -2573,7 +2672,7 @@ func (ec *executionContext) _Organization_name(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) _Organization_resourcePath(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Organization",
 		Args:   nil,
@@ -2600,7 +2699,7 @@ func (ec *executionContext) _Organization_resourcePath(ctx context.Context, fiel
 // nolint: vetshadow
 func (ec *executionContext) _Organization_updatedAt(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Organization",
 		Args:   nil,
@@ -2666,7 +2765,7 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 // nolint: vetshadow
 func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *PageInfo) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "PageInfo",
 		Args:   nil,
@@ -2693,7 +2792,7 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 // nolint: vetshadow
 func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *PageInfo) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "PageInfo",
 		Args:   nil,
@@ -2720,7 +2819,7 @@ func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field
 // nolint: vetshadow
 func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "PageInfo",
 		Args:   nil,
@@ -2748,7 +2847,7 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 // nolint: vetshadow
 func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "PageInfo",
 		Args:   nil,
@@ -2825,7 +2924,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 // nolint: vetshadow
 func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Query",
 		Args:   nil,
@@ -2854,7 +2953,7 @@ func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.Col
 // nolint: vetshadow
 func (ec *executionContext) _Query_view(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Query_view_args(rawArgs)
 	if err != nil {
@@ -2888,7 +2987,7 @@ func (ec *executionContext) _Query_view(ctx context.Context, field graphql.Colle
 // nolint: vetshadow
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Query___type_args(rawArgs)
 	if err != nil {
@@ -2904,7 +3003,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.introspectType(args["name"].(string)), nil
+		return ec.introspectType(args["name"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -2923,7 +3022,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 // nolint: vetshadow
 func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Query",
 		Args:   nil,
@@ -2933,7 +3032,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.introspectSchema(), nil
+		return ec.introspectSchema()
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -2979,7 +3078,7 @@ func (ec *executionContext) _SelectTopicPayload(ctx context.Context, sel ast.Sel
 // nolint: vetshadow
 func (ec *executionContext) _SelectTopicPayload_topic(ctx context.Context, field graphql.CollectedField, obj *SelectTopicPayload) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "SelectTopicPayload",
 		Args:   nil,
@@ -3110,7 +3209,7 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 // nolint: vetshadow
 func (ec *executionContext) _Topic_availableParentTopics(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Topic_availableParentTopics_args(rawArgs)
 	if err != nil {
@@ -3145,7 +3244,7 @@ func (ec *executionContext) _Topic_availableParentTopics(ctx context.Context, fi
 // nolint: vetshadow
 func (ec *executionContext) _Topic_childTopics(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Topic_childTopics_args(rawArgs)
 	if err != nil {
@@ -3180,7 +3279,7 @@ func (ec *executionContext) _Topic_childTopics(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) _Topic_createdAt(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Topic",
 		Args:   nil,
@@ -3207,7 +3306,7 @@ func (ec *executionContext) _Topic_createdAt(ctx context.Context, field graphql.
 // nolint: vetshadow
 func (ec *executionContext) _Topic_description(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Topic",
 		Args:   nil,
@@ -3235,7 +3334,7 @@ func (ec *executionContext) _Topic_description(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) _Topic_id(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Topic",
 		Args:   nil,
@@ -3262,7 +3361,7 @@ func (ec *executionContext) _Topic_id(ctx context.Context, field graphql.Collect
 // nolint: vetshadow
 func (ec *executionContext) _Topic_links(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Topic_links_args(rawArgs)
 	if err != nil {
@@ -3297,7 +3396,7 @@ func (ec *executionContext) _Topic_links(ctx context.Context, field graphql.Coll
 // nolint: vetshadow
 func (ec *executionContext) _Topic_name(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Topic",
 		Args:   nil,
@@ -3324,7 +3423,7 @@ func (ec *executionContext) _Topic_name(ctx context.Context, field graphql.Colle
 // nolint: vetshadow
 func (ec *executionContext) _Topic_organization(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Topic",
 		Args:   nil,
@@ -3352,7 +3451,7 @@ func (ec *executionContext) _Topic_organization(ctx context.Context, field graph
 // nolint: vetshadow
 func (ec *executionContext) _Topic_parentTopics(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_Topic_parentTopics_args(rawArgs)
 	if err != nil {
@@ -3387,7 +3486,7 @@ func (ec *executionContext) _Topic_parentTopics(ctx context.Context, field graph
 // nolint: vetshadow
 func (ec *executionContext) _Topic_resourcePath(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Topic",
 		Args:   nil,
@@ -3414,7 +3513,7 @@ func (ec *executionContext) _Topic_resourcePath(ctx context.Context, field graph
 // nolint: vetshadow
 func (ec *executionContext) _Topic_updatedAt(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "Topic",
 		Args:   nil,
@@ -3473,7 +3572,7 @@ func (ec *executionContext) _TopicConnection(ctx context.Context, sel ast.Select
 // nolint: vetshadow
 func (ec *executionContext) _TopicConnection_edges(ctx context.Context, field graphql.CollectedField, obj *TopicConnection) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "TopicConnection",
 		Args:   nil,
@@ -3534,7 +3633,7 @@ func (ec *executionContext) _TopicConnection_edges(ctx context.Context, field gr
 // nolint: vetshadow
 func (ec *executionContext) _TopicConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *TopicConnection) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "TopicConnection",
 		Args:   nil,
@@ -3597,7 +3696,7 @@ func (ec *executionContext) _TopicEdge(ctx context.Context, sel ast.SelectionSet
 // nolint: vetshadow
 func (ec *executionContext) _TopicEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *TopicEdge) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "TopicEdge",
 		Args:   nil,
@@ -3624,7 +3723,7 @@ func (ec *executionContext) _TopicEdge_cursor(ctx context.Context, field graphql
 // nolint: vetshadow
 func (ec *executionContext) _TopicEdge_node(ctx context.Context, field graphql.CollectedField, obj *TopicEdge) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "TopicEdge",
 		Args:   nil,
@@ -3682,7 +3781,7 @@ func (ec *executionContext) _UpdateLinkTopicsPayload(ctx context.Context, sel as
 // nolint: vetshadow
 func (ec *executionContext) _UpdateLinkTopicsPayload_link(ctx context.Context, field graphql.CollectedField, obj *UpdateLinkTopicsPayload) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "UpdateLinkTopicsPayload",
 		Args:   nil,
@@ -3740,7 +3839,7 @@ func (ec *executionContext) _UpdateTopicParentTopicsPayload(ctx context.Context,
 // nolint: vetshadow
 func (ec *executionContext) _UpdateTopicParentTopicsPayload_topic(ctx context.Context, field graphql.CollectedField, obj *UpdateTopicParentTopicsPayload) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "UpdateTopicParentTopicsPayload",
 		Args:   nil,
@@ -3798,7 +3897,7 @@ func (ec *executionContext) _UpdateTopicPayload(ctx context.Context, sel ast.Sel
 // nolint: vetshadow
 func (ec *executionContext) _UpdateTopicPayload_topic(ctx context.Context, field graphql.CollectedField, obj *UpdateTopicPayload) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "UpdateTopicPayload",
 		Args:   nil,
@@ -3856,7 +3955,7 @@ func (ec *executionContext) _UpsertLinkPayload(ctx context.Context, sel ast.Sele
 // nolint: vetshadow
 func (ec *executionContext) _UpsertLinkPayload_linkEdge(ctx context.Context, field graphql.CollectedField, obj *UpsertLinkPayload) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "UpsertLinkPayload",
 		Args:   nil,
@@ -3879,6 +3978,129 @@ func (ec *executionContext) _UpsertLinkPayload_linkEdge(ctx context.Context, fie
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
 	return ec._LinkEdge(ctx, field.Selections, &res)
+}
+
+var upsertTopicPayloadImplementors = []string{"UpsertTopicPayload", "Alertable"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _UpsertTopicPayload(ctx context.Context, sel ast.SelectionSet, obj *UpsertTopicPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, upsertTopicPayloadImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpsertTopicPayload")
+		case "alerts":
+			out.Values[i] = ec._UpsertTopicPayload_alerts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "topicEdge":
+			out.Values[i] = ec._UpsertTopicPayload_topicEdge(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UpsertTopicPayload_alerts(ctx context.Context, field graphql.CollectedField, obj *UpsertTopicPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UpsertTopicPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Alerts, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]Alert)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Alert(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UpsertTopicPayload_topicEdge(ctx context.Context, field graphql.CollectedField, obj *UpsertTopicPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UpsertTopicPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TopicEdge, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TopicEdge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._TopicEdge(ctx, field.Selections, &res)
 }
 
 var userImplementors = []string{"User"}
@@ -3946,7 +4168,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 // nolint: vetshadow
 func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "User",
 		Args:   nil,
@@ -3973,7 +4195,7 @@ func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.C
 // nolint: vetshadow
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "User",
 		Args:   nil,
@@ -3997,7 +4219,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 // nolint: vetshadow
 func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "User",
 		Args:   nil,
@@ -4024,7 +4246,7 @@ func (ec *executionContext) _User_name(ctx context.Context, field graphql.Collec
 // nolint: vetshadow
 func (ec *executionContext) _User_primaryEmail(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "User",
 		Args:   nil,
@@ -4051,7 +4273,7 @@ func (ec *executionContext) _User_primaryEmail(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) _User_selectedTopic(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "User",
 		Args:   nil,
@@ -4080,7 +4302,7 @@ func (ec *executionContext) _User_selectedTopic(ctx context.Context, field graph
 // nolint: vetshadow
 func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "User",
 		Args:   nil,
@@ -4157,7 +4379,7 @@ func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj
 // nolint: vetshadow
 func (ec *executionContext) _View_link(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_View_link_args(rawArgs)
 	if err != nil {
@@ -4192,7 +4414,7 @@ func (ec *executionContext) _View_link(ctx context.Context, field graphql.Collec
 // nolint: vetshadow
 func (ec *executionContext) _View_links(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_View_links_args(rawArgs)
 	if err != nil {
@@ -4227,7 +4449,7 @@ func (ec *executionContext) _View_links(ctx context.Context, field graphql.Colle
 // nolint: vetshadow
 func (ec *executionContext) _View_topic(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_View_topic_args(rawArgs)
 	if err != nil {
@@ -4262,7 +4484,7 @@ func (ec *executionContext) _View_topic(ctx context.Context, field graphql.Colle
 // nolint: vetshadow
 func (ec *executionContext) _View_topics(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field_View_topics_args(rawArgs)
 	if err != nil {
@@ -4339,7 +4561,7 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 // nolint: vetshadow
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Directive",
 		Args:   nil,
@@ -4366,7 +4588,7 @@ func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql
 // nolint: vetshadow
 func (ec *executionContext) ___Directive_description(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Directive",
 		Args:   nil,
@@ -4390,7 +4612,7 @@ func (ec *executionContext) ___Directive_description(ctx context.Context, field 
 // nolint: vetshadow
 func (ec *executionContext) ___Directive_locations(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Directive",
 		Args:   nil,
@@ -4426,7 +4648,7 @@ func (ec *executionContext) ___Directive_locations(ctx context.Context, field gr
 // nolint: vetshadow
 func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Directive",
 		Args:   nil,
@@ -4525,7 +4747,7 @@ func (ec *executionContext) ___EnumValue(ctx context.Context, sel ast.SelectionS
 // nolint: vetshadow
 func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql.CollectedField, obj *introspection.EnumValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__EnumValue",
 		Args:   nil,
@@ -4552,7 +4774,7 @@ func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql
 // nolint: vetshadow
 func (ec *executionContext) ___EnumValue_description(ctx context.Context, field graphql.CollectedField, obj *introspection.EnumValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__EnumValue",
 		Args:   nil,
@@ -4576,7 +4798,7 @@ func (ec *executionContext) ___EnumValue_description(ctx context.Context, field 
 // nolint: vetshadow
 func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field graphql.CollectedField, obj *introspection.EnumValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__EnumValue",
 		Args:   nil,
@@ -4586,7 +4808,7 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.IsDeprecated, nil
+		return obj.IsDeprecated(), nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4603,7 +4825,7 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 // nolint: vetshadow
 func (ec *executionContext) ___EnumValue_deprecationReason(ctx context.Context, field graphql.CollectedField, obj *introspection.EnumValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__EnumValue",
 		Args:   nil,
@@ -4613,15 +4835,19 @@ func (ec *executionContext) ___EnumValue_deprecationReason(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DeprecationReason, nil
+		return obj.DeprecationReason(), nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 var __FieldImplementors = []string{"__Field"}
@@ -4676,7 +4902,7 @@ func (ec *executionContext) ___Field(ctx context.Context, sel ast.SelectionSet, 
 // nolint: vetshadow
 func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Field) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Field",
 		Args:   nil,
@@ -4703,7 +4929,7 @@ func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.Col
 // nolint: vetshadow
 func (ec *executionContext) ___Field_description(ctx context.Context, field graphql.CollectedField, obj *introspection.Field) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Field",
 		Args:   nil,
@@ -4727,7 +4953,7 @@ func (ec *executionContext) ___Field_description(ctx context.Context, field grap
 // nolint: vetshadow
 func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.CollectedField, obj *introspection.Field) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Field",
 		Args:   nil,
@@ -4787,7 +5013,7 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 // nolint: vetshadow
 func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.CollectedField, obj *introspection.Field) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Field",
 		Args:   nil,
@@ -4822,7 +5048,7 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 // nolint: vetshadow
 func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field graphql.CollectedField, obj *introspection.Field) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Field",
 		Args:   nil,
@@ -4832,7 +5058,7 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.IsDeprecated, nil
+		return obj.IsDeprecated(), nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4849,7 +5075,7 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 // nolint: vetshadow
 func (ec *executionContext) ___Field_deprecationReason(ctx context.Context, field graphql.CollectedField, obj *introspection.Field) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Field",
 		Args:   nil,
@@ -4859,15 +5085,19 @@ func (ec *executionContext) ___Field_deprecationReason(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DeprecationReason, nil
+		return obj.DeprecationReason(), nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 var __InputValueImplementors = []string{"__InputValue"}
@@ -4912,7 +5142,7 @@ func (ec *executionContext) ___InputValue(ctx context.Context, sel ast.Selection
 // nolint: vetshadow
 func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphql.CollectedField, obj *introspection.InputValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__InputValue",
 		Args:   nil,
@@ -4939,7 +5169,7 @@ func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) ___InputValue_description(ctx context.Context, field graphql.CollectedField, obj *introspection.InputValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__InputValue",
 		Args:   nil,
@@ -4963,7 +5193,7 @@ func (ec *executionContext) ___InputValue_description(ctx context.Context, field
 // nolint: vetshadow
 func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphql.CollectedField, obj *introspection.InputValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__InputValue",
 		Args:   nil,
@@ -4998,7 +5228,7 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) ___InputValue_defaultValue(ctx context.Context, field graphql.CollectedField, obj *introspection.InputValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__InputValue",
 		Args:   nil,
@@ -5070,7 +5300,7 @@ func (ec *executionContext) ___Schema(ctx context.Context, sel ast.SelectionSet,
 // nolint: vetshadow
 func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.CollectedField, obj *introspection.Schema) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Schema",
 		Args:   nil,
@@ -5130,7 +5360,7 @@ func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.C
 // nolint: vetshadow
 func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graphql.CollectedField, obj *introspection.Schema) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Schema",
 		Args:   nil,
@@ -5165,7 +5395,7 @@ func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graph
 // nolint: vetshadow
 func (ec *executionContext) ___Schema_mutationType(ctx context.Context, field graphql.CollectedField, obj *introspection.Schema) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Schema",
 		Args:   nil,
@@ -5194,7 +5424,7 @@ func (ec *executionContext) ___Schema_mutationType(ctx context.Context, field gr
 // nolint: vetshadow
 func (ec *executionContext) ___Schema_subscriptionType(ctx context.Context, field graphql.CollectedField, obj *introspection.Schema) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Schema",
 		Args:   nil,
@@ -5223,7 +5453,7 @@ func (ec *executionContext) ___Schema_subscriptionType(ctx context.Context, fiel
 // nolint: vetshadow
 func (ec *executionContext) ___Schema_directives(ctx context.Context, field graphql.CollectedField, obj *introspection.Schema) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Schema",
 		Args:   nil,
@@ -5329,7 +5559,7 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // nolint: vetshadow
 func (ec *executionContext) ___Type_kind(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Type",
 		Args:   nil,
@@ -5356,7 +5586,7 @@ func (ec *executionContext) ___Type_kind(ctx context.Context, field graphql.Coll
 // nolint: vetshadow
 func (ec *executionContext) ___Type_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Type",
 		Args:   nil,
@@ -5384,7 +5614,7 @@ func (ec *executionContext) ___Type_name(ctx context.Context, field graphql.Coll
 // nolint: vetshadow
 func (ec *executionContext) ___Type_description(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Type",
 		Args:   nil,
@@ -5408,7 +5638,7 @@ func (ec *executionContext) ___Type_description(ctx context.Context, field graph
 // nolint: vetshadow
 func (ec *executionContext) ___Type_fields(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field___Type_fields_args(rawArgs)
 	if err != nil {
@@ -5471,7 +5701,7 @@ func (ec *executionContext) ___Type_fields(ctx context.Context, field graphql.Co
 // nolint: vetshadow
 func (ec *executionContext) ___Type_interfaces(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Type",
 		Args:   nil,
@@ -5528,7 +5758,7 @@ func (ec *executionContext) ___Type_interfaces(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) ___Type_possibleTypes(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Type",
 		Args:   nil,
@@ -5585,7 +5815,7 @@ func (ec *executionContext) ___Type_possibleTypes(ctx context.Context, field gra
 // nolint: vetshadow
 func (ec *executionContext) ___Type_enumValues(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args, err := field___Type_enumValues_args(rawArgs)
 	if err != nil {
@@ -5648,7 +5878,7 @@ func (ec *executionContext) ___Type_enumValues(ctx context.Context, field graphq
 // nolint: vetshadow
 func (ec *executionContext) ___Type_inputFields(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Type",
 		Args:   nil,
@@ -5705,7 +5935,7 @@ func (ec *executionContext) ___Type_inputFields(ctx context.Context, field graph
 // nolint: vetshadow
 func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer ec.Tracer.EndFieldExecution(ctx)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object: "__Type",
 		Args:   nil,
@@ -5729,6 +5959,19 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	}
 
 	return ec.___Type(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Alertable(ctx context.Context, sel ast.SelectionSet, obj *Alertable) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case UpsertTopicPayload:
+		return ec._UpsertTopicPayload(ctx, sel, &obj)
+	case *UpsertTopicPayload:
+		return ec._UpsertTopicPayload(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
 }
 
 func (ec *executionContext) _Namespaceable(ctx context.Context, sel ast.SelectionSet, obj *Namespaceable) graphql.Marshaler {
@@ -5767,69 +6010,6 @@ func (ec *executionContext) _ResourceIdentifiable(ctx context.Context, sel ast.S
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
-}
-
-func UnmarshalCreateTopicInput(v interface{}) (CreateTopicInput, error) {
-	var it CreateTopicInput
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "clientMutationId":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.ClientMutationID = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "description":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Description = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "name":
-			var err error
-			it.Name, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "organizationId":
-			var err error
-			it.OrganizationID, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "topicIds":
-			var err error
-			var rawIf1 []interface{}
-			if v != nil {
-				if tmp1, ok := v.([]interface{}); ok {
-					rawIf1 = tmp1
-				} else {
-					rawIf1 = []interface{}{v}
-				}
-			}
-			it.TopicIds = make([]string, len(rawIf1))
-			for idx1 := range rawIf1 {
-				it.TopicIds[idx1], err = graphql.UnmarshalString(rawIf1[idx1])
-			}
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
 }
 
 func UnmarshalSelectTopicInput(v interface{}) (SelectTopicInput, error) {
@@ -6080,6 +6260,69 @@ func UnmarshalUpsertLinkInput(v interface{}) (UpsertLinkInput, error) {
 	return it, nil
 }
 
+func UnmarshalUpsertTopicInput(v interface{}) (UpsertTopicInput, error) {
+	var it UpsertTopicInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "clientMutationId":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.ClientMutationID = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Description = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "organizationId":
+			var err error
+			it.OrganizationID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "topicIds":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				} else {
+					rawIf1 = []interface{}{v}
+				}
+			}
+			it.TopicIds = make([]string, len(rawIf1))
+			for idx1 := range rawIf1 {
+				it.TopicIds[idx1], err = graphql.UnmarshalString(rawIf1[idx1])
+			}
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}, next graphql.Resolver) (ret interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6095,25 +6338,35 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}
 	return res
 }
 
-func (ec *executionContext) introspectSchema() *introspection.Schema {
-	return introspection.WrapSchema(parsedSchema)
+func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
+	if ec.DisableIntrospection {
+		return nil, errors.New("introspection disabled")
+	}
+	return introspection.WrapSchema(parsedSchema), nil
 }
 
-func (ec *executionContext) introspectType(name string) *introspection.Type {
-	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name])
+func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
+	if ec.DisableIntrospection {
+		return nil, errors.New("introspection disabled")
+	}
+	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `input CreateTopicInput {
-  clientMutationId: String
-  description: String
-  name: String!
-  organizationId: String!
-  topicIds: [String!]
+	&ast.Source{Name: "schema.graphql", Input: `type Alert {
+  text: String!
+  type: AlertType!
+  id: String!
 }
 
-type CreateTopicPayload {
-  topicEdge: TopicEdge!
+interface Alertable {
+  alerts: [Alert!]!
+}
+
+enum AlertType {
+  SUCCESS
+  WARN
+  ERROR
 }
 
 scalar DateTime
@@ -6152,12 +6405,12 @@ type LinkConnection {
 }
 
 type Mutation {
-  createTopic(input: CreateTopicInput!): CreateTopicPayload
   selectTopic(input: SelectTopicInput!): SelectTopicPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
+  upsertTopic(input: UpsertTopicInput!): UpsertTopicPayload
 }
 
 interface Namespaceable {
@@ -6295,6 +6548,19 @@ input UpsertLinkInput {
 
 type UpsertLinkPayload {
   linkEdge: LinkEdge!
+}
+
+input UpsertTopicInput {
+  clientMutationId: String
+  description: String
+  name: String!
+  organizationId: String!
+  topicIds: [String!]
+}
+
+type UpsertTopicPayload implements Alertable {
+  alerts: [Alert!]!
+  topicEdge: TopicEdge!
 }
 
 type View {

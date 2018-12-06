@@ -1,13 +1,17 @@
-input CreateTopicInput {
-  clientMutationId: String
-  description: String
-  name: String!
-  organizationId: String!
-  topicIds: [String!]
+type Alert {
+  text: String!
+  type: AlertType!
+  id: String!
 }
 
-type CreateTopicPayload {
-  topicEdge: TopicEdge!
+interface Alertable {
+  alerts: [Alert!]!
+}
+
+enum AlertType {
+  SUCCESS
+  WARN
+  ERROR
 }
 
 scalar DateTime
@@ -46,12 +50,12 @@ type LinkConnection {
 }
 
 type Mutation {
-  createTopic(input: CreateTopicInput!): CreateTopicPayload
   selectTopic(input: SelectTopicInput!): SelectTopicPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
+  upsertTopic(input: UpsertTopicInput!): UpsertTopicPayload
 }
 
 interface Namespaceable {
@@ -189,6 +193,19 @@ input UpsertLinkInput {
 
 type UpsertLinkPayload {
   linkEdge: LinkEdge!
+}
+
+input UpsertTopicInput {
+  clientMutationId: String
+  description: String
+  name: String!
+  organizationId: String!
+  topicIds: [String!]
+}
+
+type UpsertTopicPayload implements Alertable {
+  alerts: [Alert!]!
+  topicEdge: TopicEdge!
 }
 
 type View {

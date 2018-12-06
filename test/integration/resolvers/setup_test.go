@@ -104,13 +104,13 @@ func (m mutator) createTopic(name string) (*models.Topic, func()) {
 		m.t.Fatal(err)
 	}
 
-	input := models.CreateTopicInput{
+	input := models.UpsertTopicInput{
 		Name:           name,
 		OrganizationID: orgId,
 		TopicIds:       []string{parentTopic.ID},
 	}
 
-	payload, err := m.resolver.CreateTopic(m.ctx, input)
+	payload, err := m.resolver.UpsertTopic(m.ctx, input)
 	if err != nil {
 		m.t.Fatal(err)
 	}

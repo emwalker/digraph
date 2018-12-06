@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Alert /> renders 1`] = `
+<div
+  className="flash fade in mt-3 mb-3"
+>
+  <button
+    className="flash-close"
+  >
+    <Octicon
+      name="x"
+    />
+  </button>
+</div>
+`;

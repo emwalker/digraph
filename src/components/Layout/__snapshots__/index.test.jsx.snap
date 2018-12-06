@@ -22,6 +22,9 @@ exports[`<Layout /> renders 1`] = `
         />
       </div>
     </div>
+    <FlashMessages
+      message={null}
+    />
     <nav
       className="UnderlineNav mb-3"
     >

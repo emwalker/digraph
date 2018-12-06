@@ -2,15 +2,20 @@
 
 
 [[projects]]
-  branch = "master"
   name = "github.com/99designs/gqlgen"
   packages = [
+    "cmd",
+    "codegen",
+    "codegen/templates",
     "complexity",
     "graphql",
     "graphql/introspection",
-    "handler"
+    "handler",
+    "internal/gopath",
+    "internal/imports"
   ]
-  revision = "f7932b40ee0f75b35428af917cd05193b7f3414f"
+  revision = "3a7f37c7e22a8fedce430c4d340ad5c1351198f4"
+  version = "v0.7.1"
 
 [[projects]]
   name = "github.com/PuerkitoBio/purell"
@@ -66,6 +71,12 @@
   packages = ["."]
   revision = "7077aa61129615a0d7f45c49101cd011ab221c27"
   version = "v3.1.2"
+
+[[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "9b3b1e0f5f99ae461456d768e7d301a7acdaa2d8"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/gorilla/handlers"
@@ -186,8 +197,8 @@
 [[projects]]
   name = "github.com/spf13/viper"
   packages = ["."]
-  revision = "2c12c60302a5a0e62ee102ca9bc996277c2f64f5"
-  version = "v1.2.1"
+  revision = "41cd1c3aa32b2685fae6c296e6f044bc68922c0e"
+  version = "v1.3.0"
 
 [[projects]]
   name = "github.com/stretchr/testify"
@@ -196,7 +207,12 @@
   version = "v1.2.2"
 
 [[projects]]
-  branch = "master"
+  name = "github.com/urfave/cli"
+  packages = ["."]
+  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
+  version = "v1.20.0"
+
+[[projects]]
   name = "github.com/vektah/gqlparser"
   packages = [
     ".",
@@ -207,7 +223,8 @@
     "validator",
     "validator/rules"
   ]
-  revision = "6f09700b13a33a80c5dc33117b8177aff00d906c"
+  revision = "e805d08bb209b1accdea76bd2327811858d81985"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -248,13 +265,13 @@
     "html/charset",
     "idna"
   ]
-  revision = "adae6a3d119ae4890b46832a2e88a95adc62b8e7"
+  revision = "351d144fa1fc0bd934e2408202be0c29f25e35a0"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "62eef0e2fa9b2c385f7b2778e763486da6880d37"
+  revision = "a5c9d58dba9a56f97aaa86f55e638b718c5a6c42"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -291,14 +308,28 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "go/buildutil",
+    "go/internal/cgo",
+    "go/loader",
+    "imports",
+    "internal/fastwalk",
+    "internal/gopathwalk"
+  ]
+  revision = "3576414c54a492fc48cd913814eb209914c717f0"
+
+[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
+  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
+  version = "v2.2.2"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0b43ff649532c72baaf1028db7f09bdcfc38aaf74768acdc3ac3b7b497020356"
+  inputs-digest = "64721416a5ff4fb0c50af0c6bc712e56bacb2a20cacd4375876c7f5fc98e7355"
   solver-name = "gps-cdcl"
   solver-version = 1

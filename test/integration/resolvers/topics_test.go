@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateTopic(t *testing.T) {
+func TestUpsertTopic(t *testing.T) {
 	m := newMutator(t)
 
 	t1, cleanup := m.createTopic("Agriculture")
@@ -24,24 +24,34 @@ func TestCreateTopic(t *testing.T) {
 	}
 
 	// It does not create a second topic with the same name within the specified organization.
-	t2, _ := m.createTopic("Agriculture")
+	input := models.UpsertTopicInput{
+		Name:           "Agriculture",
+		OrganizationID: orgId,
+	}
+
+	payload, err := m.resolver.UpsertTopic(m.ctx, input)
+	t2 := payload.TopicEdge.Node
 
 	if t1.ID != t2.ID {
 		t.Fatal("Another topic with the same name was created")
 	}
+
+	if len(payload.Alerts) == 0 {
+		t.Fatal("UpsertTopic should add an alert about this being a duplicate")
+	}
 }
 
-func TestCreateTopicDoesNotAllowLinks(t *testing.T) {
+func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
 	m := newMutator(t)
 
-	input := models.CreateTopicInput{
+	input := models.UpsertTopicInput{
 		Name:           "http://gnusto.blog",
 		OrganizationID: orgId,
 	}
 
-	_, err := m.resolver.CreateTopic(m.ctx, input)
+	_, err := m.resolver.UpsertTopic(m.ctx, input)
 	if err == nil {
-		t.Fatal("CreateTopic should not create a topic from a link")
+		t.Fatal("UpsertTopic should not create a topic from a link")
 	}
 }
 
