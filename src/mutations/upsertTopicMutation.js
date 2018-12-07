@@ -1,20 +1,7 @@
 import { graphql } from 'react-relay'
 
 import defaultMutation from './defaultMutation'
-
-const updater = (store) => {
-  const payload = store.getRootField('upsertTopic')
-  const alerts = payload.getLinkedRecords('alerts')
-
-  for (let i = 0; i < alerts.length; i += 1) {
-    const alert = alerts[i]
-    window.flashMessages.addMessage({
-      text: alert.getValue('text'),
-      type: alert.getValue('type'),
-      id: alert.getValue('id'),
-    })
-  }
-}
+import flashMessageUpdater from './flashMessageUpdater'
 
 export default defaultMutation(graphql`
   mutation upsertTopicMutation(
@@ -34,4 +21,4 @@ export default defaultMutation(graphql`
       }
     }
   }
-`, updater)
+`, flashMessageUpdater('upsertTopic'))

@@ -144,6 +144,7 @@ type ComplexityRoot struct {
 	}
 
 	UpsertLinkPayload struct {
+		Alerts   func(childComplexity int) int
 		LinkEdge func(childComplexity int) int
 	}
 
@@ -1415,6 +1416,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateTopicPayload.Topic(childComplexity), true
+
+	case "UpsertLinkPayload.alerts":
+		if e.complexity.UpsertLinkPayload.Alerts == nil {
+			break
+		}
+
+		return e.complexity.UpsertLinkPayload.Alerts(childComplexity), true
 
 	case "UpsertLinkPayload.linkEdge":
 		if e.complexity.UpsertLinkPayload.LinkEdge == nil {
@@ -3922,7 +3930,7 @@ func (ec *executionContext) _UpdateTopicPayload_topic(ctx context.Context, field
 	return ec._Topic(ctx, field.Selections, &res)
 }
 
-var upsertLinkPayloadImplementors = []string{"UpsertLinkPayload"}
+var upsertLinkPayloadImplementors = []string{"UpsertLinkPayload", "Alertable"}
 
 // nolint: gocyclo, errcheck, gas, goconst
 func (ec *executionContext) _UpsertLinkPayload(ctx context.Context, sel ast.SelectionSet, obj *UpsertLinkPayload) graphql.Marshaler {
@@ -3936,11 +3944,13 @@ func (ec *executionContext) _UpsertLinkPayload(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UpsertLinkPayload")
-		case "linkEdge":
-			out.Values[i] = ec._UpsertLinkPayload_linkEdge(ctx, field, obj)
+		case "alerts":
+			out.Values[i] = ec._UpsertLinkPayload_alerts(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "linkEdge":
+			out.Values[i] = ec._UpsertLinkPayload_linkEdge(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3950,6 +3960,66 @@ func (ec *executionContext) _UpsertLinkPayload(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UpsertLinkPayload_alerts(ctx context.Context, field graphql.CollectedField, obj *UpsertLinkPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UpsertLinkPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Alerts, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]Alert)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Alert(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
 }
 
 // nolint: vetshadow
@@ -3968,16 +4038,17 @@ func (ec *executionContext) _UpsertLinkPayload_linkEdge(ctx context.Context, fie
 		return obj.LinkEdge, nil
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(LinkEdge)
+	res := resTmp.(*LinkEdge)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	return ec._LinkEdge(ctx, field.Selections, &res)
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._LinkEdge(ctx, field.Selections, res)
 }
 
 var upsertTopicPayloadImplementors = []string{"UpsertTopicPayload", "Alertable"}
@@ -4001,9 +4072,6 @@ func (ec *executionContext) _UpsertTopicPayload(ctx context.Context, sel ast.Sel
 			}
 		case "topicEdge":
 			out.Values[i] = ec._UpsertTopicPayload_topicEdge(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4091,16 +4159,17 @@ func (ec *executionContext) _UpsertTopicPayload_topicEdge(ctx context.Context, f
 		return obj.TopicEdge, nil
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(TopicEdge)
+	res := resTmp.(*TopicEdge)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	return ec._TopicEdge(ctx, field.Selections, &res)
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._TopicEdge(ctx, field.Selections, res)
 }
 
 var userImplementors = []string{"User"}
@@ -5965,6 +6034,10 @@ func (ec *executionContext) _Alertable(ctx context.Context, sel ast.SelectionSet
 	switch obj := (*obj).(type) {
 	case nil:
 		return graphql.Null
+	case UpsertLinkPayload:
+		return ec._UpsertLinkPayload(ctx, sel, &obj)
+	case *UpsertLinkPayload:
+		return ec._UpsertLinkPayload(ctx, sel, obj)
 	case UpsertTopicPayload:
 		return ec._UpsertTopicPayload(ctx, sel, &obj)
 	case *UpsertTopicPayload:
@@ -6546,8 +6619,9 @@ input UpsertLinkInput {
   url: String!
 }
 
-type UpsertLinkPayload {
-  linkEdge: LinkEdge!
+type UpsertLinkPayload implements Alertable {
+  alerts: [Alert!]!
+  linkEdge: LinkEdge
 }
 
 input UpsertTopicInput {
@@ -6560,7 +6634,7 @@ input UpsertTopicInput {
 
 type UpsertTopicPayload implements Alertable {
   alerts: [Alert!]!
-  topicEdge: TopicEdge!
+  topicEdge: TopicEdge
 }
 
 type View {

@@ -191,8 +191,9 @@ input UpsertLinkInput {
   url: String!
 }
 
-type UpsertLinkPayload {
-  linkEdge: LinkEdge!
+type UpsertLinkPayload implements Alertable {
+  alerts: [Alert!]!
+  linkEdge: LinkEdge
 }
 
 input UpsertTopicInput {
@@ -205,7 +206,7 @@ input UpsertTopicInput {
 
 type UpsertTopicPayload implements Alertable {
   alerts: [Alert!]!
-  topicEdge: TopicEdge!
+  topicEdge: TopicEdge
 }
 
 type View {

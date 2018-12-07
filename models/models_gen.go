@@ -104,8 +104,11 @@ type UpsertLinkInput struct {
 }
 
 type UpsertLinkPayload struct {
-	LinkEdge LinkEdge `json:"linkEdge"`
+	Alerts   []Alert   `json:"alerts"`
+	LinkEdge *LinkEdge `json:"linkEdge"`
 }
+
+func (UpsertLinkPayload) IsAlertable() {}
 
 type UpsertTopicInput struct {
 	ClientMutationID *string  `json:"clientMutationId"`
@@ -116,8 +119,8 @@ type UpsertTopicInput struct {
 }
 
 type UpsertTopicPayload struct {
-	Alerts    []Alert   `json:"alerts"`
-	TopicEdge TopicEdge `json:"topicEdge"`
+	Alerts    []Alert    `json:"alerts"`
+	TopicEdge *TopicEdge `json:"topicEdge"`
 }
 
 func (UpsertTopicPayload) IsAlertable() {}

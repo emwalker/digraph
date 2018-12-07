@@ -14,7 +14,9 @@ func TestUpsertLink(t *testing.T) {
 	m := newMutator(t)
 
 	topic, err := models.Topics().One(m.ctx, testDB)
-	assert.Nil(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	input := models.UpsertLinkInput{
 		AddParentTopicIds: []string{topic.ID},
@@ -41,19 +43,36 @@ func TestUpsertLink(t *testing.T) {
 	}()
 
 	countAfter, _ := models.Links().Count(m.ctx, m.db)
-	assert.Equal(t, countBefore+1, countAfter, "The number of links should increase")
+	if countAfter != countBefore+1 {
+		t.Fatal("The number of links should increase")
+	}
 
-	assert.NotNil(t, payload1)
-	assert.Equal(t, input.URL, payload1.LinkEdge.Node.URL)
+	if input.URL != payload1.LinkEdge.Node.URL {
+		t.Fatal("Unexpected url", payload1.LinkEdge.Node.URL)
+	}
 
 	topics, err := link.ParentTopics().All(m.ctx, m.db)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(topics))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	_, err = m.resolver.UpsertLink(m.ctx, input)
-	assert.Nil(t, err)
+	if len(topics) != 1 {
+		t.Fatal("Expected link to have a topic")
+	}
+
+	payload2, err := m.resolver.UpsertLink(m.ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(payload2.Alerts) < 1 {
+		t.Fatal("Expected an alert")
+	}
+
 	countAfter, _ = models.Links().Count(m.ctx, m.db)
-	assert.Equal(t, countBefore+1, countAfter, "The number of links should stay the same")
+	if countAfter != countBefore+1 {
+		t.Fatal("The number of links should stay the same")
+	}
 }
 
 func TestUpdateParentTopics(t *testing.T) {

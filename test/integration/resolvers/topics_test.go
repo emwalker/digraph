@@ -49,9 +49,17 @@ func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
 		OrganizationID: orgId,
 	}
 
-	_, err := m.resolver.UpsertTopic(m.ctx, input)
-	if err == nil {
+	payload, err := m.resolver.UpsertTopic(m.ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if payload.TopicEdge != nil {
 		t.Fatal("UpsertTopic should not create a topic from a link")
+	}
+
+	if len(payload.Alerts) < 1 {
+		t.Fatal("Expected an alert")
 	}
 }
 

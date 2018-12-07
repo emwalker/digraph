@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha1"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -99,13 +98,13 @@ func isURL(name string) bool {
 	return true
 }
 
-func warningAlerts(messages ...string) []models.Alert {
+func alerts(typ models.AlertType, messages ...string) []models.Alert {
 	id := uuid.New()
 	var alerts []models.Alert
 	for _, message := range messages {
 		alert := models.Alert{
 			Text: message,
-			Type: models.AlertTypeWarn,
+			Type: typ,
 			ID:   id.String(),
 		}
 		alerts = append(alerts, alert)
@@ -118,7 +117,9 @@ func (r *MutationResolver) UpsertTopic(
 	ctx context.Context, input models.UpsertTopicInput,
 ) (*models.UpsertTopicPayload, error) {
 	if isURL(input.Name) {
-		return nil, errors.New(fmt.Sprintf("Cannot create a topic from a url: %s", input.Name))
+		return &models.UpsertTopicPayload{
+			Alerts: alerts(models.AlertTypeWarn, fmt.Sprintf("Not a valid topic name: %s", input.Name)),
+		}, nil
 	}
 
 	org, err := models.FindOrganization(ctx, r.DB, input.OrganizationID)
@@ -159,13 +160,13 @@ func (r *MutationResolver) UpsertTopic(
 
 	if created {
 		return &models.UpsertTopicPayload{
-			TopicEdge: models.TopicEdge{Node: *topic},
+			TopicEdge: &models.TopicEdge{Node: *topic},
 		}, nil
 	}
 
 	return &models.UpsertTopicPayload{
-		Alerts:    warningAlerts(fmt.Sprintf("A topic with the name '%s' already exists", input.Name)),
-		TopicEdge: models.TopicEdge{Node: *topic},
+		Alerts:    alerts(models.AlertTypeSuccess, fmt.Sprintf("A topic with the name \"%s\" was found", input.Name)),
+		TopicEdge: &models.TopicEdge{Node: *topic},
 	}, nil
 }
 
@@ -313,6 +314,13 @@ func (r *MutationResolver) UpsertLink(
 		URL:            url.CanonicalURL,
 	}
 
+	existing, err := models.Links(
+		qm.Where("organization_id = ? and sha1 like ?", input.OrganizationID, url.Sha1),
+	).Count(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
 	err = transact(r.DB, func(tx *sql.Tx) error {
 		err = link.Upsert(
 			ctx,
@@ -339,8 +347,13 @@ func (r *MutationResolver) UpsertLink(
 		return nil, err
 	}
 
+	if existing < 1 {
+		return &models.UpsertLinkPayload{LinkEdge: &models.LinkEdge{Node: link}}, nil
+	}
+
 	return &models.UpsertLinkPayload{
-		LinkEdge: models.LinkEdge{Node: link},
+		Alerts:   alerts(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", input.URL)),
+		LinkEdge: &models.LinkEdge{Node: link},
 	}, nil
 }
 
