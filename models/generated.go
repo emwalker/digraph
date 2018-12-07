@@ -136,7 +136,8 @@ type ComplexityRoot struct {
 	}
 
 	UpdateTopicParentTopicsPayload struct {
-		Topic func(childComplexity int) int
+		Alerts func(childComplexity int) int
+		Topic  func(childComplexity int) int
 	}
 
 	UpdateTopicPayload struct {
@@ -1402,6 +1403,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateLinkTopicsPayload.Link(childComplexity), true
+
+	case "UpdateTopicParentTopicsPayload.alerts":
+		if e.complexity.UpdateTopicParentTopicsPayload.Alerts == nil {
+			break
+		}
+
+		return e.complexity.UpdateTopicParentTopicsPayload.Alerts(childComplexity), true
 
 	case "UpdateTopicParentTopicsPayload.topic":
 		if e.complexity.UpdateTopicParentTopicsPayload.Topic == nil {
@@ -3814,7 +3822,7 @@ func (ec *executionContext) _UpdateLinkTopicsPayload_link(ctx context.Context, f
 	return ec._Link(ctx, field.Selections, &res)
 }
 
-var updateTopicParentTopicsPayloadImplementors = []string{"UpdateTopicParentTopicsPayload"}
+var updateTopicParentTopicsPayloadImplementors = []string{"UpdateTopicParentTopicsPayload", "Alertable"}
 
 // nolint: gocyclo, errcheck, gas, goconst
 func (ec *executionContext) _UpdateTopicParentTopicsPayload(ctx context.Context, sel ast.SelectionSet, obj *UpdateTopicParentTopicsPayload) graphql.Marshaler {
@@ -3828,6 +3836,11 @@ func (ec *executionContext) _UpdateTopicParentTopicsPayload(ctx context.Context,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UpdateTopicParentTopicsPayload")
+		case "alerts":
+			out.Values[i] = ec._UpdateTopicParentTopicsPayload_alerts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "topic":
 			out.Values[i] = ec._UpdateTopicParentTopicsPayload_topic(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -3842,6 +3855,66 @@ func (ec *executionContext) _UpdateTopicParentTopicsPayload(ctx context.Context,
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UpdateTopicParentTopicsPayload_alerts(ctx context.Context, field graphql.CollectedField, obj *UpdateTopicParentTopicsPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UpdateTopicParentTopicsPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Alerts, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]Alert)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Alert(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
 }
 
 // nolint: vetshadow
@@ -6034,6 +6107,10 @@ func (ec *executionContext) _Alertable(ctx context.Context, sel ast.SelectionSet
 	switch obj := (*obj).(type) {
 	case nil:
 		return graphql.Null
+	case UpdateTopicParentTopicsPayload:
+		return ec._UpdateTopicParentTopicsPayload(ctx, sel, &obj)
+	case *UpdateTopicParentTopicsPayload:
+		return ec._UpdateTopicParentTopicsPayload(ctx, sel, obj)
 	case UpsertLinkPayload:
 		return ec._UpsertLinkPayload(ctx, sel, &obj)
 	case *UpsertLinkPayload:
@@ -6607,7 +6684,8 @@ input UpdateTopicParentTopicsInput {
   parentTopicIds: [ID!]
 }
 
-type UpdateTopicParentTopicsPayload {
+type UpdateTopicParentTopicsPayload implements Alertable {
+  alerts: [Alert!]!
   topic: Topic!
 }
 

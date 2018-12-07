@@ -30,14 +30,56 @@ func TestUpsertTopic(t *testing.T) {
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t2 := payload.TopicEdge.Node
 
 	if t1.ID != t2.ID {
 		t.Fatal("Another topic with the same name was created")
 	}
 
-	if len(payload.Alerts) == 0 {
+	if len(payload.Alerts) < 1 {
 		t.Fatal("UpsertTopic should add an alert about this being a duplicate")
+	}
+
+	if payload.Alerts[0].Type != models.AlertTypeSuccess {
+		t.Fatal("Expected a success alert")
+	}
+}
+
+func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
+	m := newMutator(t)
+
+	t1, cleanup := m.createTopic("Agriculture")
+	defer cleanup()
+
+	t2, cleanup := m.createTopic("Husbandry")
+	defer cleanup()
+
+	m.addParentTopicToTopic(t2, t1)
+
+	input := models.UpsertTopicInput{
+		Name:           "Agriculture",
+		OrganizationID: orgId,
+		TopicIds:       []string{t2.ID},
+	}
+
+	payload, err := m.resolver.UpsertTopic(m.ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(payload.Alerts) == 0 {
+		t.Fatal("UpsertTopic should add an alert about not being able to create a cycle")
+	}
+
+	if payload.Alerts[0].Type != models.AlertTypeWarn {
+		t.Fatal("Expected a warning")
+	}
+
+	if payload.TopicEdge != nil {
+		t.Fatal("Expected topic not to be upserted")
 	}
 }
 
@@ -60,6 +102,36 @@ func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
 
 	if len(payload.Alerts) < 1 {
 		t.Fatal("Expected an alert")
+	}
+}
+
+func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
+	m := newMutator(t)
+
+	t1, cleanup := m.createTopic("Grandparent")
+	defer cleanup()
+
+	t2, cleanup := m.createTopic("Parent")
+	defer cleanup()
+
+	t3, cleanup := m.createTopic("Child")
+	defer cleanup()
+
+	m.addParentTopicToTopic(t2, t1)
+	m.addParentTopicToTopic(t3, t2)
+
+	input := models.UpdateTopicParentTopicsInput{
+		TopicID:        t1.ID,
+		ParentTopicIds: []string{t3.ID},
+	}
+
+	payload, err := m.resolver.UpdateTopicParentTopics(m.ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(payload.Alerts) < 1 {
+		t.Fatal("Expected an alert that a topic could not be added as a parent")
 	}
 }
 

@@ -88,8 +88,11 @@ type UpdateTopicParentTopicsInput struct {
 }
 
 type UpdateTopicParentTopicsPayload struct {
-	Topic Topic `json:"topic"`
+	Alerts []Alert `json:"alerts"`
+	Topic  Topic   `json:"topic"`
 }
+
+func (UpdateTopicParentTopicsPayload) IsAlertable() {}
 
 type UpdateTopicPayload struct {
 	Topic Topic `json:"topic"`

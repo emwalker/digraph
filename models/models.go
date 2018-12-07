@@ -1,5 +1,9 @@
 package models
 
+import (
+	"github.com/google/uuid"
+)
+
 // IsNamespaceable tags Link as implementing the Namespaceable interface.
 func (Link) IsNamespaceable() {}
 
@@ -14,3 +18,11 @@ func (Topic) IsNamespaceable() {}
 
 // IsResourceIdentifiable tags Organization as implementing the ResourceIdentifiable interface.
 func (Organization) IsResourceIdentifiable() {}
+
+func NewAlert(typ AlertType, text string) *Alert {
+	return &Alert{
+		ID:   uuid.New().String(),
+		Text: text,
+		Type: typ,
+	}
+}

@@ -12,9 +12,9 @@ import (
 	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers/pageinfo"
-	"github.com/google/uuid"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -42,35 +42,76 @@ func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
 	return
 }
 
+func cycleWarning(descendant, ancestor *models.Topic) *models.Alert {
+	return models.NewAlert(
+		models.AlertTypeWarn,
+		fmt.Sprintf(
+			`"%s" is a descendant of "%s" and cannot be added as a parent topic`,
+			descendant.Name,
+			ancestor.Name,
+		),
+	)
+}
+
+func invalidNameWarning(name string) *models.Alert {
+	return models.NewAlert(
+		models.AlertTypeWarn,
+		fmt.Sprintf("Not a valid topic name: %s", name),
+	)
+}
+
+func isDescendantOf(ctx context.Context, exec boil.ContextExecutor, topic, ancestor *models.Topic) (bool, error) {
+	type resultInfo struct {
+		Count int `boil:"match_count"`
+	}
+
+	var result resultInfo
+
+	// TODO: do a batch query and look for matching ids in the result instead of iterating over each
+	// individual topic.
+	err := queries.Raw(`
+	with recursive children as (
+	  select parent_id, child_id from topic_topics
+	  where parent_id = $1
+	union
+	  select pt.child_id, ct.child_id
+	  from topic_topics ct
+	  inner join children pt on pt.child_id = ct.parent_id
+	)
+	select count(*) match_count from children c where c.child_id = $2
+	`, ancestor.ID, topic.ID).Bind(ctx, exec, &result)
+
+	if err != nil {
+		return false, err
+	}
+
+	return result.Count > 0, nil
+}
+
 func upsertTopic(
-	ctx context.Context, tx *sql.Tx, org *models.Organization, input models.UpsertTopicInput,
+	ctx context.Context, exec boil.ContextExecutor, org *models.Organization, topic *models.Topic,
 ) (*models.Topic, bool, error) {
-	existing, _ := org.Topics(qm.Where("name ilike ?", input.Name)).One(ctx, tx)
+	existing, _ := org.Topics(qm.Where("name ilike ?", topic.Name)).One(ctx, exec)
 	if existing != nil {
-		log.Printf("Topic %s already exists", input.Name)
+		log.Printf("Topic %s already exists", topic.Name)
 		return existing, false, nil
 	}
 
-	topic := models.Topic{
-		Description:    null.StringFromPtr(input.Description),
-		Name:           input.Name,
-		OrganizationID: input.OrganizationID,
-	}
-
-	log.Printf("Creating new topic %s", input.Name)
-	err := topic.Insert(ctx, tx, boil.Infer())
+	log.Printf("Creating new topic %s", topic.Name)
+	err := topic.Insert(ctx, exec, boil.Infer())
 	if err != nil {
 		return nil, false, err
 	}
-	return &topic, true, nil
+
+	return topic, true, nil
 }
 
 func parentTopicsToAdd(
-	ctx context.Context, tx *sql.Tx, topic *models.Topic, topicIds []string,
-) ([]*models.Topic, error) {
-	parentTopics, err := topic.ParentTopics().All(ctx, tx)
+	ctx context.Context, exec boil.ContextExecutor, topic *models.Topic, topicIds []string,
+) ([]*models.Topic, []models.Alert, error) {
+	parentTopics, err := topic.ParentTopics().All(ctx, exec)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	seen := map[string]bool{}
@@ -79,15 +120,27 @@ func parentTopicsToAdd(
 	}
 
 	var parents []*models.Topic
+	var alerts []models.Alert
 
 	for _, parentId := range topicIds {
 		if _, ok := seen[parentId]; ok {
 			continue
 		}
-		parents = append(parents, &models.Topic{ID: parentId})
+		parent := &models.Topic{ID: parentId}
+		willHaveCycle, err := isDescendantOf(ctx, exec, parent, topic)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if willHaveCycle {
+			parent.Reload(ctx, exec)
+			alerts = append(alerts, *cycleWarning(parent, topic))
+		} else {
+			parents = append(parents, parent)
+		}
 	}
 
-	return parents, nil
+	return parents, alerts, nil
 }
 
 func isURL(name string) bool {
@@ -98,74 +151,78 @@ func isURL(name string) bool {
 	return true
 }
 
-func alerts(typ models.AlertType, messages ...string) []models.Alert {
-	id := uuid.New()
-	var alerts []models.Alert
-	for _, message := range messages {
-		alert := models.Alert{
-			Text: message,
-			Type: typ,
-			ID:   id.String(),
-		}
-		alerts = append(alerts, alert)
-	}
-	return alerts
-}
-
 // UpsertTopic creates a new topic.
 func (r *MutationResolver) UpsertTopic(
 	ctx context.Context, input models.UpsertTopicInput,
 ) (*models.UpsertTopicPayload, error) {
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+
 	if isURL(input.Name) {
+		tx.Rollback()
 		return &models.UpsertTopicPayload{
-			Alerts: alerts(models.AlertTypeWarn, fmt.Sprintf("Not a valid topic name: %s", input.Name)),
+			Alerts: []models.Alert{*invalidNameWarning(input.Name)},
 		}, nil
 	}
 
-	org, err := models.FindOrganization(ctx, r.DB, input.OrganizationID)
+	org, err := models.FindOrganization(ctx, tx, input.OrganizationID)
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
-	var topic *models.Topic
+	topic := &models.Topic{
+		Description:    null.StringFromPtr(input.Description),
+		Name:           input.Name,
+		OrganizationID: input.OrganizationID,
+	}
 	var created bool
 
-	err = transact(r.DB, func(tx *sql.Tx) error {
-		topic, created, err = upsertTopic(ctx, tx, org, input)
-		if err != nil {
-			return err
-		}
-
-		parents, err := parentTopicsToAdd(ctx, tx, topic, input.TopicIds)
-		if err != nil {
-			return err
-		}
-
-		err = topic.AddParentTopics(ctx, tx, false, parents...)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
+	topic, created, err = upsertTopic(ctx, tx, org, topic)
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
+
+	parents, alerts, err := parentTopicsToAdd(ctx, tx, topic, input.TopicIds)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if len(alerts) > 0 {
+		tx.Rollback()
+		return &models.UpsertTopicPayload{Alerts: alerts}, nil
+	}
+
+	if len(parents) > 0 {
+		err = topic.AddParentTopics(ctx, tx, false, parents...)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+	tx.Commit()
 
 	err = topic.Reload(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}
 
-	if created {
-		return &models.UpsertTopicPayload{
-			TopicEdge: &models.TopicEdge{Node: *topic},
-		}, nil
+	if !created {
+		alerts = append(
+			alerts,
+			*models.NewAlert(
+				models.AlertTypeSuccess,
+				fmt.Sprintf("A topic with the name \"%s\" was found", input.Name),
+			),
+		)
 	}
 
 	return &models.UpsertTopicPayload{
-		Alerts:    alerts(models.AlertTypeSuccess, fmt.Sprintf("A topic with the name \"%s\" was found", input.Name)),
+		Alerts:    alerts,
 		TopicEdge: &models.TopicEdge{Node: *topic},
 	}, nil
 }
@@ -352,7 +409,9 @@ func (r *MutationResolver) UpsertLink(
 	}
 
 	return &models.UpsertLinkPayload{
-		Alerts:   alerts(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", input.URL)),
+		Alerts: []models.Alert{
+			*models.NewAlert(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", input.URL)),
+		},
 		LinkEdge: &models.LinkEdge{Node: link},
 	}, nil
 }
@@ -380,25 +439,60 @@ func (r *MutationResolver) UpdateLinkTopics(
 	}, nil
 }
 
+func parentTopicsAndAlerts(
+	ctx context.Context, tx *sql.Tx, topic *models.Topic, parentIds []string,
+) ([]*models.Topic, []models.Alert, error) {
+	maybeParentTopics := topicsFromIds(parentIds)
+	var parentTopics []*models.Topic
+	var alerts []models.Alert
+
+	for _, parent := range maybeParentTopics {
+		willHaveCycle, err := isDescendantOf(ctx, tx, parent, topic)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if willHaveCycle {
+			parent.Reload(ctx, tx)
+			alerts = append(alerts, *cycleWarning(parent, topic))
+		} else {
+			parentTopics = append(parentTopics, parent)
+		}
+	}
+
+	return parentTopics, alerts, nil
+}
+
 // UpdateTopicParentTopics sets the parent topics on a topic.
 func (r *MutationResolver) UpdateTopicParentTopics(
 	ctx context.Context, input models.UpdateTopicParentTopicsInput,
 ) (*models.UpdateTopicParentTopicsPayload, error) {
-	topic, err := models.FindTopic(ctx, r.DB, input.TopicID)
+	tx, err := r.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	parentTopics := topicsFromIds(input.ParentTopicIds)
-	if err = topic.SetParentTopics(ctx, r.DB, false, parentTopics...); err != nil {
+	topic, err := models.FindTopic(ctx, tx, input.TopicID)
+	if err != nil {
 		return nil, err
 	}
 
-	if err = topic.Reload(ctx, r.DB); err != nil {
+	parentTopics, alerts, err := parentTopicsAndAlerts(ctx, tx, topic, input.ParentTopicIds)
+
+	if err = topic.SetParentTopics(ctx, tx, false, parentTopics...); err != nil {
+		return nil, err
+	}
+
+	if err = topic.Reload(ctx, tx); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
 	return &models.UpdateTopicParentTopicsPayload{
-		Topic: *topic,
+		Alerts: alerts,
+		Topic:  *topic,
 	}, nil
 }

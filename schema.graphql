@@ -179,7 +179,8 @@ input UpdateTopicParentTopicsInput {
   parentTopicIds: [ID!]
 }
 
-type UpdateTopicParentTopicsPayload {
+type UpdateTopicParentTopicsPayload implements Alertable {
+  alerts: [Alert!]!
   topic: Topic!
 }
 
