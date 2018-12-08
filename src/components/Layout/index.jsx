@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import type { Node } from 'react'
 import { Link } from 'found'
 
+import Header from './Header'
 import FilterInput from './FilterInput'
 import FlashMessages from '../FlashMessages'
 
@@ -43,17 +44,12 @@ class Layout extends Component<Props> {
   }
 
   render = () => {
-    const { children } = this.props
+    const { children, viewer } = this.props
 
     return (
       <div>
         <div className="container">
-          <div className="pagehead">
-            <div className="container-lg clearfix">
-              <h1 className="float-left">Digraph</h1>
-              <FilterInput onEnter={this.onSearch} value={this.searchString} />
-            </div>
-          </div>
+          <Header viewer={viewer} />
           <FlashMessages />
           <nav className="UnderlineNav mb-3">
             <div className="UnderlineNav-body">
@@ -63,6 +59,9 @@ class Layout extends Component<Props> {
               <Link to="/topics" className="UnderlineNav-item" activeClassName="selected">
                 Topics
               </Link>
+            </div>
+            <div className="UnderlineNav-actions">
+              <FilterInput onEnter={this.onSearch} value={this.searchString} />
             </div>
           </nav>
           { children }

@@ -5,23 +5,9 @@ exports[`<Layout /> renders 1`] = `
   <div
     className="container"
   >
-    <div
-      className="pagehead"
-    >
-      <div
-        className="container-lg clearfix"
-      >
-        <h1
-          className="float-left"
-        >
-          Digraph
-        </h1>
-        <FilterInput
-          onEnter={[Function]}
-          value=""
-        />
-      </div>
-    </div>
+    <Header
+      viewer={null}
+    />
     <FlashMessages
       message={null}
     />
@@ -45,6 +31,14 @@ exports[`<Layout /> renders 1`] = `
         >
           Topics
         </Link>
+      </div>
+      <div
+        className="UnderlineNav-actions"
+      >
+        <FilterInput
+          onEnter={[Function]}
+          value=""
+        />
       </div>
     </nav>
     <div>

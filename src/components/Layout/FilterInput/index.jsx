@@ -39,10 +39,10 @@ class FilterInput extends Component<Props, State> {
   render = () => (
     <input
       aria-label="Filter input"
-      className="form-control float-right mt-3"
+      className="form-control"
       onChange={this.onChange}
       onKeyPress={this.onKeyPress}
-      placeholder="Filter"
+      placeholder="Search"
       size="40"
       type="text"
       value={this.state.value}
