@@ -47,7 +47,7 @@ test-integration:
 	go test ./test/integration/...
 
 test: .PHONY
-	go test ./models ./resolvers
+	go test ./models ./resolvers ./server
 	yarn jest
 
 format:

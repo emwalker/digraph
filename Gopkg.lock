@@ -36,10 +36,10 @@
   version = "v1.0.1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/badoux/goscraper"
   packages = ["."]
-  revision = "363803726ad4e2ab262b4e01362e98458df0b231"
+  revision = "9b4686c4b62c22b0489d53dddf5421605caba33e"
+  version = "v1"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -73,16 +73,46 @@
   version = "v3.1.2"
 
 [[projects]]
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/google/uuid"
   packages = ["."]
   revision = "9b3b1e0f5f99ae461456d768e7d301a7acdaa2d8"
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/gorilla/context"
+  packages = ["."]
+  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
+  version = "v1.1.1"
+
+[[projects]]
   name = "github.com/gorilla/handlers"
   packages = ["."]
   revision = "7e0847f9db758cdebd26c149d0ae9d5d0b9c98ce"
   version = "v1.4.0"
+
+[[projects]]
+  name = "github.com/gorilla/mux"
+  packages = ["."]
+  revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
+  version = "v1.6.2"
+
+[[projects]]
+  name = "github.com/gorilla/securecookie"
+  packages = ["."]
+  revision = "e59506cc896acb7f7bf732d4fdf5e25f7ccd8983"
+  version = "v1.1.1"
+
+[[projects]]
+  name = "github.com/gorilla/sessions"
+  packages = ["."]
+  revision = "f57b7e2d29c6211d16ffa52a0998272f75799030"
+  version = "v1.1.3"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -136,6 +166,16 @@
   packages = ["."]
   revision = "c2353362d570a7bfa228149c62842019201cfb71"
   version = "v1.8.0"
+
+[[projects]]
+  name = "github.com/markbates/goth"
+  packages = [
+    ".",
+    "gothic",
+    "providers/github"
+  ]
+  revision = "bc6d8ddf751a745f37ca5567dbbfc4157bbf5da9"
+  version = "v1.47.2"
 
 [[projects]]
   name = "github.com/mitchellh/mapstructure"
@@ -197,8 +237,8 @@
 [[projects]]
   name = "github.com/spf13/viper"
   packages = ["."]
-  revision = "41cd1c3aa32b2685fae6c296e6f044bc68922c0e"
-  version = "v1.3.0"
+  revision = "6d33b5a963d922d182c91e8a1c88d81fd150cfd4"
+  version = "v1.3.1"
 
 [[projects]]
   name = "github.com/stretchr/testify"
@@ -260,18 +300,29 @@
   branch = "master"
   name = "golang.org/x/net"
   packages = [
+    "context",
+    "context/ctxhttp",
     "html",
     "html/atom",
     "html/charset",
     "idna"
   ]
-  revision = "351d144fa1fc0bd934e2408202be0c29f25e35a0"
+  revision = "610586996380ceef02dd726cc09df7e00a3f8e56"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/oauth2"
+  packages = [
+    ".",
+    "internal"
+  ]
+  revision = "d668ce993890a79bda886613ee587a69dd5da7a6"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "a5c9d58dba9a56f97aaa86f55e638b718c5a6c42"
+  revision = "70b957f3b65e069b4930ea94e2721eefa0f8f695"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -319,7 +370,21 @@
     "internal/fastwalk",
     "internal/gopathwalk"
   ]
-  revision = "3576414c54a492fc48cd913814eb209914c717f0"
+  revision = "4c874b978acba4ecd4a257d3bb8829dd5de17be8"
+
+[[projects]]
+  name = "google.golang.org/appengine"
+  packages = [
+    "internal",
+    "internal/base",
+    "internal/datastore",
+    "internal/log",
+    "internal/remote_api",
+    "internal/urlfetch",
+    "urlfetch"
+  ]
+  revision = "4a4468ece617fc8205e99368fa2200e9d1fad421"
+  version = "v1.3.0"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -330,6 +395,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "64721416a5ff4fb0c50af0c6bc712e56bacb2a20cacd4375876c7f5fc98e7355"
+  inputs-digest = "16ed90221aaf92111d8191af5b98fa3ea01a7dfd277a4150c74da1ab7c2dad7b"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -50,6 +50,7 @@ func (s *Server) Routes() {
 	http.Handle("/playground", s.withBasicAuth(s.handleGraphqlPlayground()))
 	http.Handle("/_ah/health", s.handleHealthCheck())
 	http.Handle("/", s.withBasicAuth(s.handleRoot()))
+	s.RegisterOauth2Routes()
 }
 
 func (s *Server) Run() {

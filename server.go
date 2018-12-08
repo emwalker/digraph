@@ -27,7 +27,7 @@ func main() {
 
 	flag.Parse()
 
-	connectionString := os.Getenv("POSTGRES_CONNECTION")
+	connectionString := os.Getenv("DIGRAPH_POSTGRES_CONNECTION")
 	if connectionString == "" {
 		panic("POSTGRES_CONNECTION not set")
 	}
@@ -35,8 +35,8 @@ func main() {
 	s := server.New(
 		getPlaygroundPort(),
 		*devMode,
-		os.Getenv("BASIC_AUTH_USERNAME"),
-		os.Getenv("BASIC_AUTH_PASSWORD"),
+		os.Getenv("DIGRAPH_BASIC_AUTH_USERNAME"),
+		os.Getenv("DIGRAPH_BASIC_AUTH_PASSWORD"),
 		*logLevel,
 		connectionString,
 	)
