@@ -142,6 +142,7 @@ type TopicConnection {
 }
 
 type User {
+  avatarUrl: String!
   createdAt: DateTime!
   id: ID
   name: String!

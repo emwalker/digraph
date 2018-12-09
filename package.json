@@ -45,7 +45,7 @@
     "normalize.css": "^6.0.0",
     "postcss-loader": "2.1.6",
     "precss": "^1.4.0",
-    "primer": "^10.9.0",
+    "primer": "^10.10.2",
     "proxy-middleware": "^0.15.0",
     "ramda": "^0.25.0",
     "react": "16",

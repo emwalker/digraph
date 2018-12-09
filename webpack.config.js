@@ -39,7 +39,6 @@ const modules = {
     {test: /\.(png|gif)$/, loader: 'url-loader?name=[name]@[hash].[ext]&limit=5000'},
     {test: /\.svg$/, loader: 'url-loader?name=[name]@[hash].[ext]&limit=5000!svgo-loader?useConfig=svgo1'},
     {test: /\.(pdf|ico|jpg|eot|otf|woff|ttf|mp4|webm)$/, loader: 'file-loader?name=[name]@[hash].[ext]'},
-    {test: /\.json$/, loader: 'json-loader'},
     {
       test: /\.jsx?$/,
       include: path.join(__dirname, 'src'),
@@ -57,7 +56,7 @@ const modules = {
     {
       test: /\.mjs$/,
       include: /node_modules/,
-      type: "javascript/auto",
+      type: 'javascript/auto',
     },
   ]
 }

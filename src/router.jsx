@@ -50,6 +50,7 @@ export const routeConfig = makeRouteConfig(
       query router_Query {
         viewer {
           name
+          avatarUrl
         }
       }`
     }

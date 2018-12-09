@@ -11,6 +11,15 @@ type userResolver struct {
 	*Resolver
 }
 
+// AvatarURL provides a link to a picture of the user.
+func (r *userResolver) AvatarURL(_ context.Context, user *models.User) (string, error) {
+	url := user.GithubAvatarURL.Ptr()
+	if url != nil {
+		return *url, nil
+	}
+	return "", nil
+}
+
 // CreatedAt returns of the creation of the user account.
 func (r *userResolver) CreatedAt(_ context.Context, user *models.User) (string, error) {
 	return user.CreatedAt.Format(time.RFC3339), nil

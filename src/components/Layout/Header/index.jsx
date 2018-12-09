@@ -1,6 +1,9 @@
 // @flow
 import React from 'react'
 
+import ViewerDropdown from './ViewerDropdown'
+import GithubLogin from './GithubLogin'
+
 type Props = {
     viewer: ?Object,
 }
@@ -12,19 +15,13 @@ const Header = ({ viewer }: Props) => (
         <h1>Digraph</h1>
       </nav>
       <div className="d-lg-flex float-right mt-1">
-        <ul className="user-nav d-lg-flex flex-items-center list-style-none">
-          {viewer && (
-            <li className="dropdown">
-              <details
-                className="details-overlay details-reset d-none d-lg-flex pl-lg-2 py-2 py-lg-0 flex-items-center"
-              >
-                <summary className="HeaderNavlink name mt-1">
-                  { viewer.name }
-                  <span className="dropdown-caret" />
-                </summary>
-              </details>
-            </li>
-          )}
+        <ul className="user-nav d-lg-flex list-style-none">
+          <li className="dropdown">
+            {viewer
+              ? <ViewerDropdown viewer={viewer} />
+              : <GithubLogin />
+            }
+          </li>
         </ul>
       </div>
     </div>

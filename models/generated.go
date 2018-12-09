@@ -155,6 +155,7 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
+		AvatarUrl     func(childComplexity int) int
 		CreatedAt     func(childComplexity int) int
 		Id            func(childComplexity int) int
 		Name          func(childComplexity int) int
@@ -214,6 +215,7 @@ type TopicResolver interface {
 	UpdatedAt(ctx context.Context, obj *Topic) (string, error)
 }
 type UserResolver interface {
+	AvatarURL(ctx context.Context, obj *User) (string, error)
 	CreatedAt(ctx context.Context, obj *User) (string, error)
 
 	SelectedTopic(ctx context.Context, obj *User) (*Topic, error)
@@ -1452,6 +1454,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpsertTopicPayload.TopicEdge(childComplexity), true
+
+	case "User.avatarUrl":
+		if e.complexity.User.AvatarUrl == nil {
+			break
+		}
+
+		return e.complexity.User.AvatarUrl(childComplexity), true
 
 	case "User.createdAt":
 		if e.complexity.User.CreatedAt == nil {
@@ -4260,6 +4269,15 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("User")
+		case "avatarUrl":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_avatarUrl(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "createdAt":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -4305,6 +4323,33 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_avatarUrl(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().AvatarURL(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 // nolint: vetshadow
@@ -6647,6 +6692,7 @@ type TopicConnection {
 }
 
 type User {
+  avatarUrl: String!
   createdAt: DateTime!
   id: ID
   name: String!

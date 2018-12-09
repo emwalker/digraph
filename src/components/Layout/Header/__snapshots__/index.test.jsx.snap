@@ -18,23 +18,18 @@ exports[`<Header /> renders 1`] = `
       className="d-lg-flex float-right mt-1"
     >
       <ul
-        className="user-nav d-lg-flex flex-items-center list-style-none"
+        className="user-nav d-lg-flex list-style-none"
       >
         <li
           className="dropdown"
         >
-          <details
-            className="details-overlay details-reset d-none d-lg-flex pl-lg-2 py-2 py-lg-0 flex-items-center"
-          >
-            <summary
-              className="HeaderNavlink name mt-1"
-            >
-              Frotz
-              <span
-                className="dropdown-caret"
-              />
-            </summary>
-          </details>
+          <ViewerDropdown
+            viewer={
+              Object {
+                "name": "Frotz",
+              }
+            }
+          />
         </li>
       </ul>
     </div>
