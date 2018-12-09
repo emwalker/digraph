@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/models"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type userResolver struct {
@@ -23,6 +24,15 @@ func (r *userResolver) AvatarURL(_ context.Context, user *models.User) (string, 
 // CreatedAt returns of the creation of the user account.
 func (r *userResolver) CreatedAt(_ context.Context, user *models.User) (string, error) {
 	return user.CreatedAt.Format(time.RFC3339), nil
+}
+
+func (r *userResolver) DefaultRepository(
+	ctx context.Context, user *models.User,
+) (*models.Repository, error) {
+	return models.Repositories(
+		qm.Load("Organization"),
+		qm.Where("system = true"),
+	).One(ctx, r.DB)
 }
 
 // Email returns the email of a user.

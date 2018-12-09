@@ -36,6 +36,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Organization() OrganizationResolver
 	Query() QueryResolver
+	Repository() RepositoryResolver
 	Topic() TopicResolver
 	User() UserResolver
 	View() ViewResolver
@@ -75,7 +76,6 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		SelectTopic             func(childComplexity int, input SelectTopicInput) int
 		UpdateLinkTopics        func(childComplexity int, input UpdateLinkTopicsInput) int
 		UpdateTopic             func(childComplexity int, input UpdateTopicInput) int
 		UpdateTopicParentTopics func(childComplexity int, input UpdateTopicParentTopicsInput) int
@@ -103,8 +103,11 @@ type ComplexityRoot struct {
 		View   func(childComplexity int, organizationIds []string) int
 	}
 
-	SelectTopicPayload struct {
-		Topic func(childComplexity int) int
+	Repository struct {
+		Id           func(childComplexity int) int
+		Organization func(childComplexity int) int
+		Name         func(childComplexity int) int
+		Owner        func(childComplexity int) int
 	}
 
 	Topic struct {
@@ -117,6 +120,7 @@ type ComplexityRoot struct {
 		Name                  func(childComplexity int) int
 		Organization          func(childComplexity int) int
 		ParentTopics          func(childComplexity int, first *int, after *string, last *int, before *string) int
+		Repository            func(childComplexity int) int
 		ResourcePath          func(childComplexity int) int
 		UpdatedAt             func(childComplexity int) int
 	}
@@ -155,13 +159,14 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		AvatarUrl     func(childComplexity int) int
-		CreatedAt     func(childComplexity int) int
-		Id            func(childComplexity int) int
-		Name          func(childComplexity int) int
-		PrimaryEmail  func(childComplexity int) int
-		SelectedTopic func(childComplexity int) int
-		UpdatedAt     func(childComplexity int) int
+		AvatarUrl         func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		DefaultRepository func(childComplexity int) int
+		Id                func(childComplexity int) int
+		Name              func(childComplexity int) int
+		PrimaryEmail      func(childComplexity int) int
+		SelectedTopic     func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
 	}
 
 	View struct {
@@ -184,7 +189,6 @@ type LinkResolver interface {
 	UpdatedAt(ctx context.Context, obj *Link) (string, error)
 }
 type MutationResolver interface {
-	SelectTopic(ctx context.Context, input SelectTopicInput) (*SelectTopicPayload, error)
 	UpdateLinkTopics(ctx context.Context, input UpdateLinkTopicsInput) (*UpdateLinkTopicsPayload, error)
 	UpdateTopic(ctx context.Context, input UpdateTopicInput) (*UpdateTopicPayload, error)
 	UpdateTopicParentTopics(ctx context.Context, input UpdateTopicParentTopicsInput) (*UpdateTopicParentTopicsPayload, error)
@@ -201,6 +205,11 @@ type QueryResolver interface {
 	Viewer(ctx context.Context) (*User, error)
 	View(ctx context.Context, organizationIds []string) (View, error)
 }
+type RepositoryResolver interface {
+	Organization(ctx context.Context, obj *Repository) (Organization, error)
+
+	Owner(ctx context.Context, obj *Repository) (User, error)
+}
 type TopicResolver interface {
 	AvailableParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*TopicConnection, error)
 	ChildTopics(ctx context.Context, obj *Topic, searchString *string, first *int, after *string, last *int, before *string) (*TopicConnection, error)
@@ -211,12 +220,14 @@ type TopicResolver interface {
 
 	Organization(ctx context.Context, obj *Topic) (Organization, error)
 	ParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+	Repository(ctx context.Context, obj *Topic) (Repository, error)
 	ResourcePath(ctx context.Context, obj *Topic) (string, error)
 	UpdatedAt(ctx context.Context, obj *Topic) (string, error)
 }
 type UserResolver interface {
 	AvatarURL(ctx context.Context, obj *User) (string, error)
 	CreatedAt(ctx context.Context, obj *User) (string, error)
+	DefaultRepository(ctx context.Context, obj *User) (*Repository, error)
 
 	SelectedTopic(ctx context.Context, obj *User) (*Topic, error)
 	UpdatedAt(ctx context.Context, obj *User) (string, error)
@@ -348,21 +359,6 @@ func field_Link_parentTopics_args(rawArgs map[string]interface{}) (map[string]in
 		}
 	}
 	args["before"] = arg3
-	return args, nil
-
-}
-
-func field_Mutation_selectTopic_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 SelectTopicInput
-	if tmp, ok := rawArgs["input"]; ok {
-		var err error
-		arg0, err = UnmarshalSelectTopicInput(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
 	return args, nil
 
 }
@@ -1113,18 +1109,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LinkEdge.Node(childComplexity), true
 
-	case "Mutation.selectTopic":
-		if e.complexity.Mutation.SelectTopic == nil {
-			break
-		}
-
-		args, err := field_Mutation_selectTopic_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SelectTopic(childComplexity, args["input"].(SelectTopicInput)), true
-
 	case "Mutation.updateLinkTopics":
 		if e.complexity.Mutation.UpdateLinkTopics == nil {
 			break
@@ -1267,12 +1251,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.View(childComplexity, args["organizationIds"].([]string)), true
 
-	case "SelectTopicPayload.topic":
-		if e.complexity.SelectTopicPayload.Topic == nil {
+	case "Repository.id":
+		if e.complexity.Repository.Id == nil {
 			break
 		}
 
-		return e.complexity.SelectTopicPayload.Topic(childComplexity), true
+		return e.complexity.Repository.Id(childComplexity), true
+
+	case "Repository.organization":
+		if e.complexity.Repository.Organization == nil {
+			break
+		}
+
+		return e.complexity.Repository.Organization(childComplexity), true
+
+	case "Repository.name":
+		if e.complexity.Repository.Name == nil {
+			break
+		}
+
+		return e.complexity.Repository.Name(childComplexity), true
+
+	case "Repository.owner":
+		if e.complexity.Repository.Owner == nil {
+			break
+		}
+
+		return e.complexity.Repository.Owner(childComplexity), true
 
 	case "Topic.availableParentTopics":
 		if e.complexity.Topic.AvailableParentTopics == nil {
@@ -1356,6 +1361,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Topic.ParentTopics(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+
+	case "Topic.repository":
+		if e.complexity.Topic.Repository == nil {
+			break
+		}
+
+		return e.complexity.Topic.Repository(childComplexity), true
 
 	case "Topic.resourcePath":
 		if e.complexity.Topic.ResourcePath == nil {
@@ -1468,6 +1480,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.CreatedAt(childComplexity), true
+
+	case "User.defaultRepository":
+		if e.complexity.User.DefaultRepository == nil {
+			break
+		}
+
+		return e.complexity.User.DefaultRepository(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.Id == nil {
@@ -2323,8 +2342,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "selectTopic":
-			out.Values[i] = ec._Mutation_selectTopic(ctx, field)
 		case "updateLinkTopics":
 			out.Values[i] = ec._Mutation_updateLinkTopics(ctx, field)
 		case "updateTopic":
@@ -2344,41 +2361,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		return graphql.Null
 	}
 	return out
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Mutation_selectTopic(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Mutation_selectTopic_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Mutation",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SelectTopic(rctx, args["input"].(SelectTopicInput))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*SelectTopicPayload)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._SelectTopicPayload(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -3073,12 +3055,13 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.___Schema(ctx, field.Selections, res)
 }
 
-var selectTopicPayloadImplementors = []string{"SelectTopicPayload"}
+var repositoryImplementors = []string{"Repository"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _SelectTopicPayload(ctx context.Context, sel ast.SelectionSet, obj *SelectTopicPayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ctx, sel, selectTopicPayloadImplementors)
+func (ec *executionContext) _Repository(ctx context.Context, sel ast.SelectionSet, obj *Repository) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, repositoryImplementors)
 
+	var wg sync.WaitGroup
 	out := graphql.NewOrderedMap(len(fields))
 	invalid := false
 	for i, field := range fields {
@@ -3086,14 +3069,37 @@ func (ec *executionContext) _SelectTopicPayload(ctx context.Context, sel ast.Sel
 
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("SelectTopicPayload")
-		case "topic":
-			out.Values[i] = ec._SelectTopicPayload_topic(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("Repository")
+		case "id":
+			out.Values[i] = ec._Repository_id(ctx, field, obj)
+		case "organization":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Repository_organization(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "name":
+			out.Values[i] = ec._Repository_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "owner":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Repository_owner(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-
+	wg.Wait()
 	if invalid {
 		return graphql.Null
 	}
@@ -3101,11 +3107,11 @@ func (ec *executionContext) _SelectTopicPayload(ctx context.Context, sel ast.Sel
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _SelectTopicPayload_topic(ctx context.Context, field graphql.CollectedField, obj *SelectTopicPayload) graphql.Marshaler {
+func (ec *executionContext) _Repository_id(ctx context.Context, field graphql.CollectedField, obj *Repository) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "SelectTopicPayload",
+		Object: "Repository",
 		Args:   nil,
 		Field:  field,
 	}
@@ -3113,20 +3119,98 @@ func (ec *executionContext) _SelectTopicPayload_topic(ctx context.Context, field
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Topic, nil
+		return obj.ID, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Topic)
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalID(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Repository_organization(ctx context.Context, field graphql.CollectedField, obj *Repository) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Repository",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Repository().Organization(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Organization)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
+	return ec._Organization(ctx, field.Selections, &res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Repository_name(ctx context.Context, field graphql.CollectedField, obj *Repository) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Repository",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
 
-	return ec._Topic(ctx, field.Selections, res)
+// nolint: vetshadow
+func (ec *executionContext) _Repository_owner(ctx context.Context, field graphql.CollectedField, obj *Repository) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Repository",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Repository().Owner(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(User)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._User(ctx, field.Selections, &res)
 }
 
 var topicImplementors = []string{"Topic", "ResourceIdentifiable", "Namespaceable"}
@@ -3200,6 +3284,15 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Topic_parentTopics(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "repository":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Topic_repository(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "resourcePath":
@@ -3506,6 +3599,34 @@ func (ec *executionContext) _Topic_parentTopics(ctx context.Context, field graph
 	}
 
 	return ec._TopicConnection(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Topic_repository(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Topic",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Topic().Repository(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Repository)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Repository(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -4287,6 +4408,12 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				}
 				wg.Done()
 			}(i, field)
+		case "defaultRepository":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_defaultRepository(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
 		case "name":
@@ -4377,6 +4504,35 @@ func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_defaultRepository(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().DefaultRepository(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Repository)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Repository(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -6207,30 +6363,6 @@ func (ec *executionContext) _ResourceIdentifiable(ctx context.Context, sel ast.S
 	}
 }
 
-func UnmarshalSelectTopicInput(v interface{}) (SelectTopicInput, error) {
-	var it SelectTopicInput
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "organizationId":
-			var err error
-			it.OrganizationID, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "topicId":
-			var err error
-			it.TopicID, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func UnmarshalUpdateLinkTopicsInput(v interface{}) (UpdateLinkTopicsInput, error) {
 	var it UpdateLinkTopicsInput
 	var asMap = v.(map[string]interface{})
@@ -6317,9 +6449,9 @@ func UnmarshalUpdateTopicInput(v interface{}) (UpdateTopicInput, error) {
 			if err != nil {
 				return it, err
 			}
-		case "organizationId":
+		case "repositoryId":
 			var err error
-			it.OrganizationID, err = graphql.UnmarshalString(v)
+			it.RepositoryID, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -6426,9 +6558,9 @@ func UnmarshalUpsertLinkInput(v interface{}) (UpsertLinkInput, error) {
 			if err != nil {
 				return it, err
 			}
-		case "organizationId":
+		case "repositoryId":
 			var err error
-			it.OrganizationID, err = graphql.UnmarshalString(v)
+			it.RepositoryID, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -6489,9 +6621,9 @@ func UnmarshalUpsertTopicInput(v interface{}) (UpsertTopicInput, error) {
 			if err != nil {
 				return it, err
 			}
-		case "organizationId":
+		case "repositoryId":
 			var err error
-			it.OrganizationID, err = graphql.UnmarshalString(v)
+			it.RepositoryID, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -6600,7 +6732,6 @@ type LinkConnection {
 }
 
 type Mutation {
-  selectTopic(input: SelectTopicInput!): SelectTopicPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
@@ -6632,17 +6763,15 @@ type Query {
   view(organizationIds: [ID!]): View!
 }
 
+type Repository {
+  id: ID
+  organization: Organization!
+  name: String!
+  owner: User!
+}
+
 interface ResourceIdentifiable {
   resourcePath: String!
-}
-
-input SelectTopicInput {
-  organizationId: String!
-  topicId: String!
-}
-
-type SelectTopicPayload {
-  topic: Topic
 }
 
 type Topic implements ResourceIdentifiable & Namespaceable {
@@ -6677,6 +6806,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection
+  repository: Repository!
   resourcePath: String!
   updatedAt: DateTime!
 }
@@ -6694,6 +6824,7 @@ type TopicConnection {
 type User {
   avatarUrl: String!
   createdAt: DateTime!
+  defaultRepository: Repository
   id: ID
   name: String!
   primaryEmail: String!
@@ -6706,7 +6837,7 @@ input UpdateTopicInput {
   description: String
   id: ID!
   name: String!
-  organizationId: String!
+  repositoryId: String!
   topicIds: [ID!]
 }
 
@@ -6738,7 +6869,7 @@ type UpdateTopicParentTopicsPayload implements Alertable {
 input UpsertLinkInput {
   addParentTopicIds: [String!]
   clientMutationId: String
-  organizationId: String!
+  repositoryId: String!
   title: String
   url: String!
 }
@@ -6752,7 +6883,7 @@ input UpsertTopicInput {
   clientMutationId: String
   description: String
   name: String!
-  organizationId: String!
+  repositoryId: String!
   topicIds: [String!]
 }
 

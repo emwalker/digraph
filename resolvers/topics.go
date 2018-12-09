@@ -115,6 +115,14 @@ func (r *topicResolver) ParentTopics(
 	return topicConnection(topic.ParentTopics(qm.OrderBy("name")).All(ctx, r.DB))
 }
 
+// Repository returns the repostory of the topic.
+func (r *topicResolver) Repository(
+	ctx context.Context, topic *models.Topic,
+) (models.Repository, error) {
+	org, err := topic.Repository().One(ctx, r.DB)
+	return *org, err
+}
+
 // ResourcePath returns a path to the item.
 func (r *topicResolver) ResourcePath(_ context.Context, topic *models.Topic) (string, error) {
 	return "/topics/" + topic.ID, nil

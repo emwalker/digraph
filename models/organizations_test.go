@@ -572,6 +572,84 @@ func testOrganizationToManyLinks(t *testing.T) {
 	}
 }
 
+func testOrganizationToManyRepositories(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Organization
+	var b, c Repository
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, organizationDBTypes, true, organizationColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Organization struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, repositoryDBTypes, false, repositoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, repositoryDBTypes, false, repositoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.OrganizationID = a.ID
+	c.OrganizationID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	repository, err := a.Repositories().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range repository {
+		if v.OrganizationID == b.OrganizationID {
+			bFound = true
+		}
+		if v.OrganizationID == c.OrganizationID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := OrganizationSlice{&a}
+	if err = a.L.LoadRepositories(ctx, tx, false, (*[]*Organization)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Repositories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Repositories = nil
+	if err = a.L.LoadRepositories(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Repositories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", repository)
+	}
+}
+
 func testOrganizationToManyTopics(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -717,6 +795,81 @@ func testOrganizationToManyAddOpLinks(t *testing.T) {
 		}
 
 		count, err := a.Links().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testOrganizationToManyAddOpRepositories(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Organization
+	var b, c, d, e Repository
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, organizationDBTypes, false, strmangle.SetComplement(organizationPrimaryKeyColumns, organizationColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Repository{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Repository{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddRepositories(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.OrganizationID {
+			t.Error("foreign key was wrong value", a.ID, first.OrganizationID)
+		}
+		if a.ID != second.OrganizationID {
+			t.Error("foreign key was wrong value", a.ID, second.OrganizationID)
+		}
+
+		if first.R.Organization != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Organization != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Repositories[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Repositories[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Repositories().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}

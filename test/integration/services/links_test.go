@@ -8,9 +8,12 @@ import (
 )
 
 func TestUpsertBadLink(t *testing.T) {
-	ctx := context.Background()
+	c := services.Connection{
+		Exec:  testDB,
+		Actor: testActor,
+	}
 
-	result, err := services.UpsertLink(ctx, testDB, orgId, "topic name", nil, []string{})
+	result, err := c.UpsertLink(context.Background(), defaultRepo, "topic name", nil, []string{})
 	if err != nil {
 		t.Fatal(err)
 	}

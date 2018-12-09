@@ -77,8 +77,8 @@ func isURL(name string) bool {
 	return true
 }
 
-func addParentTopicsToLink(
-	ctx context.Context, exec boil.ContextExecutor, link models.Link, parentTopicIds []string,
+func (c Connection) addParentTopicsToLink(
+	ctx context.Context, link models.Link, parentTopicIds []string,
 ) error {
 	if len(parentTopicIds) < 1 {
 		return nil
@@ -92,7 +92,7 @@ func addParentTopicsToLink(
 	overlappingTopics, err := link.ParentTopics(
 		qm.Select("id"),
 		qm.WhereIn("id in ?", topicIds...),
-	).All(ctx, exec)
+	).All(ctx, c.Exec)
 
 	if err != nil {
 		return err
@@ -115,12 +115,12 @@ func addParentTopicsToLink(
 	}
 
 	topics := common.TopicsFromIds(insertIds)
-	return link.AddParentTopics(ctx, exec, false, topics...)
+	return link.AddParentTopics(ctx, c.Exec, false, topics...)
 }
 
-func UpsertLink(
-	ctx context.Context, exec boil.ContextExecutor, organizationID, providedUrl string,
-	providedTitle *string, parentTopicIds []string,
+func (c Connection) UpsertLink(
+	ctx context.Context, repo *models.Repository, providedUrl string, providedTitle *string,
+	parentTopicIds []string,
 ) (*UpsertLinkResult, error) {
 	var alerts []models.Alert
 
@@ -138,28 +138,32 @@ func UpsertLink(
 	}
 
 	link := models.Link{
-		OrganizationID: organizationID,
+		OrganizationID: repo.OrganizationID,
+		RepositoryID:   repo.ID,
 		Sha1:           url.Sha1,
 		Title:          title,
 		URL:            url.CanonicalURL,
 	}
 
-	existing, err := models.Links(
-		qm.Where("organization_id = ? and sha1 like ?", organizationID, url.Sha1),
-	).Count(ctx, exec)
+	existing, err := repo.Links(qm.Where("sha1 like ?", url.Sha1)).Count(ctx, c.Exec)
 	if err != nil {
 		return nil, err
 	}
 
 	err = link.Upsert(
-		ctx, exec, true, []string{"organization_id", "sha1"}, boil.Whitelist("url", "title"), boil.Infer(),
+		ctx,
+		c.Exec,
+		true,
+		[]string{"repository_id", "sha1"},
+		boil.Whitelist("url", "title"),
+		boil.Infer(),
 	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = addParentTopicsToLink(ctx, exec, link, parentTopicIds)
+	err = c.addParentTopicsToLink(ctx, link, parentTopicIds)
 	if err != nil {
 		return nil, err
 	}

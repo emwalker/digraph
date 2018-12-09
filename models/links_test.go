@@ -857,6 +857,57 @@ func testLinkToOneOrganizationUsingOrganization(t *testing.T) {
 	}
 }
 
+func testLinkToOneRepositoryUsingRepository(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local Link
+	var foreign Repository
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, linkDBTypes, false, linkColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Link struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, repositoryDBTypes, false, repositoryColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Repository struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	local.RepositoryID = foreign.ID
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.Repository().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := LinkSlice{&local}
+	if err = local.L.LoadRepository(ctx, tx, false, (*[]*Link)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Repository == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.Repository = nil
+	if err = local.L.LoadRepository(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Repository == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
 func testLinkToOneSetOpOrganizationUsingOrganization(t *testing.T) {
 	var err error
 
@@ -911,6 +962,63 @@ func testLinkToOneSetOpOrganizationUsingOrganization(t *testing.T) {
 
 		if a.OrganizationID != x.ID {
 			t.Error("foreign key was wrong value", a.OrganizationID, x.ID)
+		}
+	}
+}
+func testLinkToOneSetOpRepositoryUsingRepository(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Link
+	var b, c Repository
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, linkDBTypes, false, strmangle.SetComplement(linkPrimaryKeyColumns, linkColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Repository{&b, &c} {
+		err = a.SetRepository(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Repository != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.Links[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.RepositoryID != x.ID {
+			t.Error("foreign key was wrong value", a.RepositoryID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.RepositoryID))
+		reflect.Indirect(reflect.ValueOf(&a.RepositoryID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.RepositoryID != x.ID {
+			t.Error("foreign key was wrong value", a.RepositoryID, x.ID)
 		}
 	}
 }
@@ -989,7 +1097,7 @@ func testLinksSelect(t *testing.T) {
 }
 
 var (
-	linkDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `ID`: `uuid`, `OrganizationID`: `uuid`, `Sha1`: `character varying`, `Title`: `text`, `URL`: `text`, `UpdatedAt`: `timestamp with time zone`}
+	linkDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `ID`: `uuid`, `OrganizationID`: `uuid`, `RepositoryID`: `uuid`, `Sha1`: `character varying`, `Title`: `text`, `URL`: `text`, `UpdatedAt`: `timestamp with time zone`}
 	_           = bytes.MinRead
 )
 

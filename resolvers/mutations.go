@@ -45,10 +45,19 @@ func (r *MutationResolver) UpsertTopic(
 	var err error
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		result, err = services.UpsertTopic(
+		c := services.Connection{
+			Exec:  tx,
+			Actor: r.Actor,
+		}
+
+		repo, err := models.FindRepository(ctx, tx, input.RepositoryID)
+		if err != nil {
+			return err
+		}
+
+		result, err = c.UpsertTopic(
 			ctx,
-			tx,
-			input.OrganizationID,
+			repo,
 			input.Name,
 			input.Description,
 			input.TopicIds,
@@ -71,25 +80,24 @@ func (r *MutationResolver) UpsertTopic(
 	}, nil
 }
 
-// SelectTopic updates the currently selected topic.
-func (r *MutationResolver) SelectTopic(
-	ctx context.Context, input models.SelectTopicInput,
-) (*models.SelectTopicPayload, error) {
-	panic("not implemented")
-}
-
 // UpdateTopic updates the fields on a topic.
 func (r *MutationResolver) UpdateTopic(
 	ctx context.Context, input models.UpdateTopicInput,
 ) (*models.UpdateTopicPayload, error) {
+	repo, err := models.FindRepository(ctx, r.DB, input.RepositoryID)
+	if err != nil {
+		return nil, err
+	}
+
 	topic := models.Topic{
-		OrganizationID: input.OrganizationID,
 		Name:           input.Name,
 		Description:    null.StringFromPtr(input.Description),
 		ID:             input.ID,
+		OrganizationID: repo.OrganizationID,
+		RepositoryID:   input.RepositoryID,
 	}
 
-	_, err := topic.Update(ctx, r.DB, boil.Infer())
+	_, err = topic.Update(ctx, r.DB, boil.Infer())
 	if err != nil {
 		return nil, err
 	}
@@ -105,10 +113,16 @@ func (r *MutationResolver) UpsertLink(
 	var err error
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		result, err = services.UpsertLink(
+		repo, err := models.FindRepository(ctx, tx, input.RepositoryID)
+		if err != nil {
+			return err
+		}
+
+		c := services.Connection{Exec: tx, Actor: r.Actor}
+
+		result, err = c.UpsertLink(
 			ctx,
-			tx,
-			input.OrganizationID,
+			repo,
 			input.URL,
 			input.Title,
 			input.AddParentTopicIds,
@@ -163,11 +177,13 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 	var err error
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
+		c := services.Connection{Exec: tx, Actor: r.Actor}
+
 		if topic, err = models.FindTopic(ctx, tx, input.TopicID); err != nil {
 			return err
 		}
 
-		result, err = services.UpdateTopicParentTopics(ctx, tx, topic, input.ParentTopicIds)
+		result, err = c.UpdateTopicParentTopics(ctx, topic, input.ParentTopicIds)
 		return err
 	})
 

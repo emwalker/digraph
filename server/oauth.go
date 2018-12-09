@@ -63,7 +63,10 @@ func callbackPath(devMode bool, port, provider string) string {
 
 func (s *Server) maybeSaveSession(gothUser goth.User, w http.ResponseWriter, r *http.Request) error {
 	tx, err := s.db.Begin()
-	result, err := services.FetchOrMakeSession(r.Context(), s.db, gothUser)
+
+	c := services.Connection{Exec: tx, Actor: nil}
+
+	result, err := c.FetchOrMakeSession(r.Context(), gothUser)
 	if err != nil {
 		return err
 	}

@@ -25,8 +25,8 @@ func TestUpsertTopic(t *testing.T) {
 
 	// It does not create a second topic with the same name within the specified organization.
 	input := models.UpsertTopicInput{
-		Name:           "Agriculture",
-		OrganizationID: orgId,
+		Name:         "Agriculture",
+		RepositoryID: defaultRepo.ID,
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
@@ -61,7 +61,7 @@ func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
 
 	input := models.UpsertTopicInput{
 		Name:           "Agriculture",
-		OrganizationID: orgId,
+		RepositoryID:   defaultRepo.ID,
 		TopicIds:       []string{t2.ID},
 	}
 
@@ -88,7 +88,7 @@ func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
 
 	input := models.UpsertTopicInput{
 		Name:           "http://gnusto.blog",
-		OrganizationID: orgId,
+		RepositoryID:   defaultRepo.ID,
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
@@ -147,24 +147,29 @@ func TestUpdateTopic(t *testing.T) {
 	desc := "Cultivating"
 
 	input := models.UpdateTopicInput{
-		Name:           "Agricultures",
+		Name:           "Agricultura",
 		Description:    &desc,
-		OrganizationID: orgId,
+		RepositoryID:   defaultRepo.ID,
 		ID:             topic.ID,
 	}
 
 	p2, err := m.resolver.UpdateTopic(m.ctx, input)
-
-	if !assert.Nil(t, err) {
-		return
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	assert.Equal(t, topic.ID, p2.Topic.ID)
+	if topic.ID != p2.Topic.ID {
+		t.Fatal("Expected the topics to be the same")
+	}
 
 	topic = &p2.Topic
-	err = topic.Reload(m.ctx, m.db)
-	assert.Nil(t, err)
-	assert.Equal(t, "Agricultures", topic.Name)
+	if err = topic.Reload(m.ctx, m.db); err != nil {
+		t.Fatal(err)
+	}
+
+	if topic.Name != "Agricultura" {
+		t.Fatal("Expected the name of the topic to be updated")
+	}
 }
 
 func TestTopicParentTopics(t *testing.T) {

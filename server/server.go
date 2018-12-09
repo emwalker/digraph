@@ -19,6 +19,7 @@ type Server struct {
 	DevMode           bool
 	LogLevel          int
 	Port              string
+	resolver          *resolvers.Resolver
 	schema            graphql.ExecutableSchema
 }
 
@@ -40,6 +41,7 @@ func New(
 		DevMode:           devMode,
 		LogLevel:          logLevel,
 		Port:              port,
+		resolver:          resolver,
 		schema:            schema,
 	}
 }

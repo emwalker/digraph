@@ -16,7 +16,7 @@ type Props = {
   topic: TopicType,
 }
 
-const TopicPage = ({ topic, ...props }: Props) => {
+const TopicPage = ({ topic, viewer, ...props }: Props) => {
   const {
     childTopics,
     links: childLinks,
@@ -60,10 +60,12 @@ const TopicPage = ({ topic, ...props }: Props) => {
         />
         <AddTopic
           topic={topic}
+          viewer={viewer}
           {...props}
         />
         <AddLink
           topic={topic}
+          viewer={viewer}
           {...props}
         />
       </div>
@@ -77,6 +79,12 @@ query TopicPage_query_Query(
   $topicId: ID!,
   $searchString: String,
 ) {
+  viewer {
+    defaultRepository {
+      id
+    }
+  }
+
   view(organizationIds: $orgIds) {
     topic(id: $topicId) {
       ...TopicPage_topic @arguments(searchString: $searchString)

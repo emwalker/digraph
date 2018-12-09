@@ -16,6 +16,8 @@ models:
     model: github.com/emwalker/digraph/models.Link
   Organization:
     model: github.com/emwalker/digraph/models.Organization
+  Repository:
+    model: github.com/emwalker/digraph/models.Repository
   Topic:
     model: github.com/emwalker/digraph/models.Topic
   User:

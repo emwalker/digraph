@@ -19,7 +19,7 @@ func TestUpsertLink(t *testing.T) {
 
 	input := models.UpsertLinkInput{
 		AddParentTopicIds: []string{topic.ID},
-		OrganizationID:    orgId,
+		RepositoryID:      defaultRepo.ID,
 		URL:               "https://gnusto.blog",
 	}
 

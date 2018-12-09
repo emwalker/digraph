@@ -85,6 +85,9 @@ func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 			return
 		}
 
+		// Figure out a way to avoid mutating the resolver after the fact
+		s.resolver.Actor = session.R.User
+
 		ctx = context.WithValue(ctx, "currentUser", session.R.User)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

@@ -29,6 +29,7 @@ type Topic struct {
 	Description    null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
 	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	RepositoryID   string      `boil:"repository_id" json:"repository_id" toml:"repository_id" yaml:"repository_id"`
 
 	R *topicR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L topicL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -41,6 +42,7 @@ var TopicColumns = struct {
 	Description    string
 	CreatedAt      string
 	UpdatedAt      string
+	RepositoryID   string
 }{
 	OrganizationID: "organization_id",
 	ID:             "id",
@@ -48,16 +50,19 @@ var TopicColumns = struct {
 	Description:    "description",
 	CreatedAt:      "created_at",
 	UpdatedAt:      "updated_at",
+	RepositoryID:   "repository_id",
 }
 
 // TopicRels is where relationship names are stored.
 var TopicRels = struct {
 	Organization string
+	Repository   string
 	ChildLinks   string
 	ParentTopics string
 	ChildTopics  string
 }{
 	Organization: "Organization",
+	Repository:   "Repository",
 	ChildLinks:   "ChildLinks",
 	ParentTopics: "ParentTopics",
 	ChildTopics:  "ChildTopics",
@@ -66,6 +71,7 @@ var TopicRels = struct {
 // topicR is where relationships are stored.
 type topicR struct {
 	Organization *Organization
+	Repository   *Repository
 	ChildLinks   LinkSlice
 	ParentTopics TopicSlice
 	ChildTopics  TopicSlice
@@ -80,8 +86,8 @@ func (*topicR) NewStruct() *topicR {
 type topicL struct{}
 
 var (
-	topicColumns               = []string{"organization_id", "id", "name", "description", "created_at", "updated_at"}
-	topicColumnsWithoutDefault = []string{"organization_id", "name", "description"}
+	topicColumns               = []string{"organization_id", "id", "name", "description", "created_at", "updated_at", "repository_id"}
+	topicColumnsWithoutDefault = []string{"organization_id", "name", "description", "repository_id"}
 	topicColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
 	topicPrimaryKeyColumns     = []string{"id"}
 )
@@ -336,6 +342,20 @@ func (o *Topic) Organization(mods ...qm.QueryMod) organizationQuery {
 	return query
 }
 
+// Repository pointed to by the foreign key.
+func (o *Topic) Repository(mods ...qm.QueryMod) repositoryQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("id=?", o.RepositoryID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Repositories(queryMods...)
+	queries.SetFrom(query.Query, "\"repositories\"")
+
+	return query
+}
+
 // ChildLinks retrieves all the link's Links with an executor via id column.
 func (o *Topic) ChildLinks(mods ...qm.QueryMod) linkQuery {
 	var queryMods []qm.QueryMod
@@ -499,6 +519,103 @@ func (topicL) LoadOrganization(ctx context.Context, e boil.ContextExecutor, sing
 	return nil
 }
 
+// LoadRepository allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (topicL) LoadRepository(ctx context.Context, e boil.ContextExecutor, singular bool, maybeTopic interface{}, mods queries.Applicator) error {
+	var slice []*Topic
+	var object *Topic
+
+	if singular {
+		object = maybeTopic.(*Topic)
+	} else {
+		slice = *maybeTopic.(*[]*Topic)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &topicR{}
+		}
+		args = append(args, object.RepositoryID)
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &topicR{}
+			}
+
+			for _, a := range args {
+				if a == obj.RepositoryID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.RepositoryID)
+
+		}
+	}
+
+	query := NewQuery(qm.From(`repositories`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Repository")
+	}
+
+	var resultSlice []*Repository
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Repository")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for repositories")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for repositories")
+	}
+
+	if len(topicAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Repository = foreign
+		if foreign.R == nil {
+			foreign.R = &repositoryR{}
+		}
+		foreign.R.Topics = append(foreign.R.Topics, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.RepositoryID == foreign.ID {
+				local.R.Repository = foreign
+				if foreign.R == nil {
+					foreign.R = &repositoryR{}
+				}
+				foreign.R.Topics = append(foreign.R.Topics, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadChildLinks allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (topicL) LoadChildLinks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeTopic interface{}, mods queries.Applicator) error {
@@ -556,7 +673,7 @@ func (topicL) LoadChildLinks(ctx context.Context, e boil.ContextExecutor, singul
 		one := new(Link)
 		var localJoinCol string
 
-		err = results.Scan(&one.OrganizationID, &one.ID, &one.URL, &one.Title, &one.Sha1, &one.CreatedAt, &one.UpdatedAt, &localJoinCol)
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.URL, &one.Title, &one.Sha1, &one.CreatedAt, &one.UpdatedAt, &one.RepositoryID, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for links")
 		}
@@ -667,7 +784,7 @@ func (topicL) LoadParentTopics(ctx context.Context, e boil.ContextExecutor, sing
 		one := new(Topic)
 		var localJoinCol string
 
-		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &localJoinCol)
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &one.RepositoryID, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for topics")
 		}
@@ -778,7 +895,7 @@ func (topicL) LoadChildTopics(ctx context.Context, e boil.ContextExecutor, singu
 		one := new(Topic)
 		var localJoinCol string
 
-		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &localJoinCol)
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &one.RepositoryID, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for topics")
 		}
@@ -870,6 +987,53 @@ func (o *Topic) SetOrganization(ctx context.Context, exec boil.ContextExecutor, 
 
 	if related.R == nil {
 		related.R = &organizationR{
+			Topics: TopicSlice{o},
+		}
+	} else {
+		related.R.Topics = append(related.R.Topics, o)
+	}
+
+	return nil
+}
+
+// SetRepository of the topic to the related item.
+// Sets o.R.Repository to related.
+// Adds o to related.R.Topics.
+func (o *Topic) SetRepository(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Repository) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"topics\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"repository_id"}),
+		strmangle.WhereClause("\"", "\"", 2, topicPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.RepositoryID = related.ID
+	if o.R == nil {
+		o.R = &topicR{
+			Repository: related,
+		}
+	} else {
+		o.R.Repository = related
+	}
+
+	if related.R == nil {
+		related.R = &repositoryR{
 			Topics: TopicSlice{o},
 		}
 	} else {

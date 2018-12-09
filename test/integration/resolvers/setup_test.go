@@ -17,7 +17,10 @@ import (
 
 const orgId = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
-var testDB *sql.DB
+var (
+	testDB *sql.DB
+	defaultRepo *models.Repository
+)
 
 type testFetcher struct{}
 
@@ -32,6 +35,16 @@ func TestMain(m *testing.M) {
 	services.Fetcher = &testFetcher{}
 	testDB = newTestDb()
 	defer testDB.Close()
+
+	var err error
+
+	defaultRepo, err = models.Repositories(
+		qm.Where("organization_id = ? and system", orgId),
+	).One(context.Background(), testDB)
+	if err != nil {
+		panic(err)
+	}
+
 	os.Exit(m.Run())
 }
 
@@ -48,10 +61,16 @@ func newView() *models.View {
 }
 
 func newMutator(t *testing.T) mutator {
-	resolver := &resolvers.MutationResolver{
-		&resolvers.Resolver{DB: testDB},
+	ctx := context.Background()
+	actor, err := models.Users().One(ctx, testDB)
+	if err != nil {
+		panic(err)
 	}
-	return mutator{t, testDB, context.Background(), resolver}
+
+	resolver := &resolvers.MutationResolver{
+		&resolvers.Resolver{DB: testDB, Actor: actor},
+	}
+	return mutator{t, testDB, ctx, resolver}
 }
 
 func (f *testFetcher) FetchPage(url string) (*pageinfo.PageInfo, error) {
@@ -108,7 +127,7 @@ func (m mutator) createTopic(name string) (*models.Topic, func()) {
 
 	input := models.UpsertTopicInput{
 		Name:           name,
-		OrganizationID: orgId,
+		RepositoryID:   defaultRepo.ID,
 		TopicIds:       []string{parentTopic.ID},
 	}
 
@@ -129,7 +148,7 @@ func (m mutator) createTopic(name string) (*models.Topic, func()) {
 func (m mutator) createLink(title, url string) (*models.Link, func()) {
 	payload1, err := m.resolver.UpsertLink(m.ctx, models.UpsertLinkInput{
 		AddParentTopicIds: []string{},
-		OrganizationID:    orgId,
+		RepositoryID:      defaultRepo.ID,
 		Title:             &title,
 		URL:               url,
 	})

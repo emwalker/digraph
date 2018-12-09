@@ -21,25 +21,29 @@ type FetchOrMakeSessionSessionResult struct {
 	UserCreated    bool
 }
 
-func FetchOrMakeSession(
-	ctx context.Context, exec boil.ContextExecutor, gothUser goth.User,
+func (c Connection) FetchOrMakeSession(
+	ctx context.Context, gothUser goth.User,
 ) (*FetchOrMakeSessionSessionResult, error) {
 	if gothUser.Provider != "github" {
 		return nil, errors.New("Do not know how to look up a non-Github user yet")
 	}
 
 	session, err := models.Sessions(
-		qm.Select("sessions.id id", "sessions.user_id user_id", "encode(sessions.session_id::bytea, 'hex') session_id"),
+		qm.Select(
+			"sessions.id id",
+			"sessions.user_id user_id",
+			"encode(sessions.session_id::bytea, 'hex') session_id",
+		),
 		qm.InnerJoin("users u on sessions.user_id = u.id"),
 		qm.Where("github_username like ?", gothUser.NickName),
-	).One(ctx, exec)
+	).One(ctx, c.Exec)
 
 	if err != nil && err.Error() != rowNotFound {
 		return nil, err
 	}
 
 	if session != nil {
-		user, err := session.User().One(ctx, exec)
+		user, err := session.User().One(ctx, c.Exec)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +66,7 @@ func FetchOrMakeSession(
 		mods = append(mods, qm.Or("primary_email like ?", gothUser.Email))
 	}
 
-	user, err := models.Users(mods...).One(ctx, exec)
+	user, err := models.Users(mods...).One(ctx, c.Exec)
 	if err != nil && err.Error() != rowNotFound {
 		return nil, err
 	}
@@ -75,7 +79,7 @@ func FetchOrMakeSession(
 			GithubUsername:  null.StringFrom(gothUser.NickName),
 			GithubAvatarURL: null.StringFrom(gothUser.AvatarURL),
 		}
-		if err = user.Insert(ctx, exec, boil.Infer()); err != nil {
+		if err = user.Insert(ctx, c.Exec, boil.Infer()); err != nil {
 			return nil, err
 		}
 		userCreated = true
@@ -83,13 +87,13 @@ func FetchOrMakeSession(
 		log.Printf("Updating github account info for user %s", user.ID)
 		user.GithubUsername = null.StringFrom(gothUser.NickName)
 		user.GithubAvatarURL = null.StringFrom(gothUser.AvatarURL)
-		if _, err = user.Update(ctx, exec, boil.Infer()); err != nil {
+		if _, err = user.Update(ctx, c.Exec, boil.Infer()); err != nil {
 			return nil, err
 		}
 	}
 
 	session = &models.Session{UserID: user.ID}
-	if err = session.Insert(ctx, exec, boil.Infer()); err != nil {
+	if err = session.Insert(ctx, c.Exec, boil.Infer()); err != nil {
 		return nil, err
 	}
 

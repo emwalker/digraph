@@ -43,15 +43,6 @@ type ResourceIdentifiable interface {
 	IsResourceIdentifiable()
 }
 
-type SelectTopicInput struct {
-	OrganizationID string `json:"organizationId"`
-	TopicID        string `json:"topicId"`
-}
-
-type SelectTopicPayload struct {
-	Topic *Topic `json:"topic"`
-}
-
 type TopicConnection struct {
 	Edges    []*TopicEdge `json:"edges"`
 	PageInfo PageInfo     `json:"pageInfo"`
@@ -77,7 +68,7 @@ type UpdateTopicInput struct {
 	Description      *string  `json:"description"`
 	ID               string   `json:"id"`
 	Name             string   `json:"name"`
-	OrganizationID   string   `json:"organizationId"`
+	RepositoryID     string   `json:"repositoryId"`
 	TopicIds         []string `json:"topicIds"`
 }
 
@@ -101,7 +92,7 @@ type UpdateTopicPayload struct {
 type UpsertLinkInput struct {
 	AddParentTopicIds []string `json:"addParentTopicIds"`
 	ClientMutationID  *string  `json:"clientMutationId"`
-	OrganizationID    string   `json:"organizationId"`
+	RepositoryID      string   `json:"repositoryId"`
 	Title             *string  `json:"title"`
 	URL               string   `json:"url"`
 }
@@ -117,7 +108,7 @@ type UpsertTopicInput struct {
 	ClientMutationID *string  `json:"clientMutationId"`
 	Description      *string  `json:"description"`
 	Name             string   `json:"name"`
-	OrganizationID   string   `json:"organizationId"`
+	RepositoryID     string   `json:"repositoryId"`
 	TopicIds         []string `json:"topicIds"`
 }
 

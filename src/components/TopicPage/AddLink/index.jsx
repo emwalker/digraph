@@ -8,11 +8,19 @@ import type { RelayProps } from '../../types'
 
 /* eslint jsx-a11y/label-has-for: 0 */
 
+type Props = RelayProps & {
+  viewer: {
+    defaultRepository: {
+      id: ID,
+    },
+  },
+}
+
 type State = {
   url: string,
 }
 
-class AddLink extends Component<RelayProps, State> {
+class AddLink extends Component<Props, State> {
   state = {
     url: '',
   }
@@ -34,6 +42,12 @@ class AddLink extends Component<RelayProps, State> {
     }]
   }
 
+  get repositoryId(): ?string {
+    if (this.props.viewer)
+      return this.props.viewer.defaultRepository.id
+    return null
+  }
+
   updateUrl = (event: Object) => {
     this.setState({ url: event.currentTarget.value })
   }
@@ -44,7 +58,7 @@ class AddLink extends Component<RelayProps, State> {
       this.relayConfigs,
       {
         addParentTopicIds: [this.props.topic.id],
-        organizationId: defaultOrganizationId,
+        repositoryId: this.repositoryId,
         url: this.state.url,
       },
     )

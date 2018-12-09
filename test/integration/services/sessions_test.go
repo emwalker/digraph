@@ -18,7 +18,8 @@ func fetchOrMakeSession(
 	ctx := context.Background()
 
 	tx, err := testDB.Begin()
-	result, err := services.FetchOrMakeSession(ctx, tx, gothUser)
+	c := services.Connection{Exec: tx, Actor: testActor}
+	result, err := c.FetchOrMakeSession(ctx, gothUser)
 	tx.Commit()
 
 	if err != nil {

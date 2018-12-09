@@ -50,7 +50,6 @@ type LinkConnection {
 }
 
 type Mutation {
-  selectTopic(input: SelectTopicInput!): SelectTopicPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
@@ -82,17 +81,15 @@ type Query {
   view(organizationIds: [ID!]): View!
 }
 
+type Repository {
+  id: ID
+  organization: Organization!
+  name: String!
+  owner: User!
+}
+
 interface ResourceIdentifiable {
   resourcePath: String!
-}
-
-input SelectTopicInput {
-  organizationId: String!
-  topicId: String!
-}
-
-type SelectTopicPayload {
-  topic: Topic
 }
 
 type Topic implements ResourceIdentifiable & Namespaceable {
@@ -127,6 +124,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection
+  repository: Repository!
   resourcePath: String!
   updatedAt: DateTime!
 }
@@ -144,6 +142,7 @@ type TopicConnection {
 type User {
   avatarUrl: String!
   createdAt: DateTime!
+  defaultRepository: Repository
   id: ID
   name: String!
   primaryEmail: String!
@@ -156,7 +155,7 @@ input UpdateTopicInput {
   description: String
   id: ID!
   name: String!
-  organizationId: String!
+  repositoryId: String!
   topicIds: [ID!]
 }
 
@@ -188,7 +187,7 @@ type UpdateTopicParentTopicsPayload implements Alertable {
 input UpsertLinkInput {
   addParentTopicIds: [String!]
   clientMutationId: String
-  organizationId: String!
+  repositoryId: String!
   title: String
   url: String!
 }
@@ -202,7 +201,7 @@ input UpsertTopicInput {
   clientMutationId: String
   description: String
   name: String!
-  organizationId: String!
+  repositoryId: String!
   topicIds: [String!]
 }
 
