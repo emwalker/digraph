@@ -17,6 +17,7 @@ type Props = {
   router: {
     push: Function,
   },
+  viewer: Object,
 }
 
 /* eslint jsx-a11y/anchor-is-valid: 0 */

@@ -13,6 +13,7 @@ import (
 // Resolver is the abstract base class for resolvers.
 type Resolver struct {
 	DB *sql.DB
+	currentUser *models.User
 }
 
 // Mutation returns a resolver that can be used for issuing mutations.
@@ -32,9 +33,13 @@ type MutationResolver struct {
 
 type queryResolver struct{ *Resolver }
 
+func getCurrentUser(ctx context.Context) *models.User {
+	return ctx.Value("currentUser").(*models.User)
+}
+
 // Viewer returns the logged-in user.
 func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
-	return models.Users().One(ctx, r.DB)
+	return getCurrentUser(ctx), nil
 }
 
 // View returns a resolver that filters results on the basis of one or more organizations.

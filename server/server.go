@@ -46,7 +46,7 @@ func New(
 
 func (s *Server) Routes() {
 	http.Handle("/static/", s.withBasicAuth(s.handleStaticFiles()))
-	http.Handle("/graphql", s.withBasicAuth(s.handleGraphqlRequest()))
+	http.Handle("/graphql", s.withSession(s.withBasicAuth(s.handleGraphqlRequest())))
 	http.Handle("/playground", s.withBasicAuth(s.handleGraphqlPlayground()))
 	http.Handle("/_ah/health", s.handleHealthCheck())
 	http.Handle("/", s.withBasicAuth(s.handleRoot()))

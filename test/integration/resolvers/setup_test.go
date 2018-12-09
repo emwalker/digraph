@@ -10,6 +10,7 @@ import (
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/emwalker/digraph/resolvers/pageinfo"
+	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 

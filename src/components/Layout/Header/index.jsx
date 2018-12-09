@@ -2,10 +2,10 @@
 import React from 'react'
 
 type Props = {
-    viewer: Object,
+    viewer: ?Object,
 }
 
-const Header = ({ viewer }) => (
+const Header = ({ viewer }: Props) => (
   <header className="Header pagehead">
     <div className="container-lg clearfix">
       <nav className="d-lg-flex float-left">
@@ -30,9 +30,5 @@ const Header = ({ viewer }) => (
     </div>
   </header>
 )
-
-Header.defaultProps = {
-  viewer: null,
-}
 
 export default Header

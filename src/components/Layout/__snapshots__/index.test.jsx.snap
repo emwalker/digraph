@@ -5,9 +5,7 @@ exports[`<Layout /> renders 1`] = `
   <div
     className="container"
   >
-    <Header
-      viewer={null}
-    />
+    <Header />
     <FlashMessages
       message={null}
     />

@@ -11,11 +11,16 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/emwalker/digraph/loaders"
+	"github.com/emwalker/digraph/models"
 	"github.com/go-webpack/webpack"
 	"github.com/gorilla/handlers"
 	_ "github.com/lib/pq"
+	"github.com/markbates/goth/gothic"
 	"github.com/rs/cors"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
+
+const userSessionKey = "userSession"
 
 func must(err error) {
 	if err != nil {
@@ -53,6 +58,34 @@ func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, loaders.TopicLoaderKey, loaders.NewTopicLoader(ctx, s.db))
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (s *Server) withSession(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessionID, err := gothic.GetFromSession(userSessionKey, r)
+		if err != nil {
+			log.Printf("No user session found: %s", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		ctx := r.Context()
+
+		log.Printf("A session id found, looking up session: %s", sessionID)
+		session, err := models.Sessions(
+			qm.Load("User"),
+			qm.Where("session_id = decode(?, 'hex')", sessionID),
+		).One(ctx, s.db)
+
+		if err != nil {
+			log.Printf("Session not found for session id %s", sessionID)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		ctx = context.WithValue(ctx, "currentUser", session.R.User)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

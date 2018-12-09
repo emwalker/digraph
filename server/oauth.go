@@ -2,10 +2,11 @@ package server
 
 import (
 	"fmt"
-	"html/template"
+	"log"
 	"net/http"
 	"os"
 
+	"github.com/emwalker/digraph/services"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/github"
@@ -34,6 +35,8 @@ func (s *Server) RegisterOauth2Routes() {
 			os.Getenv("DIGRAPH_GITHUB_CLIENT_ID"),
 			os.Getenv("DIGRAPH_GITHUB_CLIENT_SECRET"),
 			callbackPath(s.DevMode, s.Port, "github"),
+			// Strictly for deduping with other OAuth providers
+			"user:email",
 		),
 	)
 
@@ -41,9 +44,14 @@ func (s *Server) RegisterOauth2Routes() {
 		return "github", nil
 	}
 
-	http.Handle(oauthCallbackRoute("github"))
-	http.Handle(oauthLogoutRoute("github"))
-	http.Handle(oauthAuthRoute("github"))
+	http.Handle(s.oauthCallbackRoute("github"))
+	http.Handle(s.oauthLogoutRoute("github"))
+	http.Handle(s.oauthAuthRoute("github"))
+}
+
+func redirectTo(w http.ResponseWriter, path string) {
+	w.Header().Set("Location", path)
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 func callbackPath(devMode bool, port, provider string) string {
@@ -53,40 +61,74 @@ func callbackPath(devMode bool, port, provider string) string {
 	return fmt.Sprintf("https://digraph.app/auth/%s/callback", provider)
 }
 
-func oauthCallbackRoute(provider string) (string, http.Handler) {
+func (s *Server) maybeSaveSession(gothUser goth.User, w http.ResponseWriter, r *http.Request) error {
+	tx, err := s.db.Begin()
+	result, err := services.FetchOrMakeSession(r.Context(), s.db, gothUser)
+	if err != nil {
+		return err
+	}
+
+	tx.Commit()
+
+	if err = gothic.StoreInSession(userSessionKey, string(result.Session.SessionID), r, w); err != nil {
+		log.Printf("Unable to store session id with session: %s", err)
+		return err
+	}
+
+	log.Printf("Stored session id in session: %s", result.Session.SessionID)
+	return nil
+}
+
+func (s *Server) oauthCallbackRoute(provider string) (string, http.Handler) {
 	path := fmt.Sprintf("/auth/%s/callback", provider)
 
 	return path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, err := gothic.CompleteUserAuth(w, r)
+		gothUser, err := gothic.CompleteUserAuth(w, r)
 		if err != nil {
+			log.Printf("Failed to complete user auth: %s", err)
 			fmt.Fprintln(w, err)
 			return
 		}
-		t, _ := template.New("foo").Parse(userTemplate)
-		t.Execute(w, user)
+
+		if err = s.maybeSaveSession(gothUser, w, r); err != nil {
+			log.Printf("Failed to store user session data: %s", err)
+			fmt.Fprintln(w, err)
+			return
+		}
+
+		log.Print("Redirecting to homepage")
+		redirectTo(w, "/")
 	})
 }
 
-func oauthLogoutRoute(provider string) (string, http.Handler) {
+func (s *Server) oauthLogoutRoute(provider string) (string, http.Handler) {
 	path := fmt.Sprintf("/logout/%s", provider)
 
 	return path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gothic.Logout(w, r)
-		w.Header().Set("Location", "/")
-		w.WriteHeader(http.StatusTemporaryRedirect)
+		redirectTo(w, "/")
 	})
 }
 
-func oauthAuthRoute(provider string) (string, http.Handler) {
+func (s *Server) oauthAuthRoute(provider string) (string, http.Handler) {
 	path := fmt.Sprintf("/auth/%s", provider)
 
 	return path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Try to get the user without re-authenticating
-		if gothUser, err := gothic.CompleteUserAuth(w, r); err == nil {
-			t, _ := template.New("foo").Parse(userTemplate)
-			t.Execute(w, gothUser)
-		} else {
+		gothUser, err := gothic.CompleteUserAuth(w, r)
+		if err != nil {
+			log.Printf("No session data found, initiating oauth with %s", provider)
 			gothic.BeginAuthHandler(w, r)
+			return
 		}
+
+		if err = s.maybeSaveSession(gothUser, w, r); err != nil {
+			log.Printf("Failed to store user session data: %s", err)
+			fmt.Fprintln(w, err)
+			return
+		}
+
+		log.Printf("Session data found, redirecting to homepage")
+		redirectTo(w, "/")
 	})
 }
