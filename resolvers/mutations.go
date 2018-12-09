@@ -121,9 +121,13 @@ func (r *MutationResolver) UpsertLink(
 		return nil, err
 	}
 
+	if result.Link == nil {
+		return &models.UpsertLinkPayload{Alerts: result.Alerts}, nil
+	}
+
 	return &models.UpsertLinkPayload{
 		Alerts:   result.Alerts,
-		LinkEdge: &models.LinkEdge{Node: result.Link},
+		LinkEdge: &models.LinkEdge{Node: *result.Link},
 	}, nil
 }
 

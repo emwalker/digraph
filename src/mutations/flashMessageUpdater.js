@@ -2,6 +2,9 @@
 
 export default rootField => (store) => {
   const payload = store.getRootField(rootField)
+  if (!payload)
+    return
+
   const alerts = payload.getLinkedRecords('alerts')
 
   for (let i = 0; i < alerts.length; i += 1) {

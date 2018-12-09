@@ -17,7 +17,7 @@ import (
 
 type UpsertLinkResult struct {
 	Alerts      []models.Alert
-	Link        models.Link
+	Link        *models.Link
 	LinkCreated bool
 }
 
@@ -131,7 +131,10 @@ func UpsertLink(
 
 	title, err := providedOrFetchedTitle(url.CanonicalURL, providedTitle)
 	if err != nil {
-		return nil, err
+		alerts = append(alerts,
+			*models.NewAlert(models.AlertTypeWarn, fmt.Sprintf("Not a valid link: %s", providedUrl)),
+		)
+		return &UpsertLinkResult{Alerts: alerts}, nil
 	}
 
 	link := models.Link{
@@ -169,7 +172,7 @@ func UpsertLink(
 
 	return &UpsertLinkResult{
 		Alerts:      alerts,
-		Link:        link,
+		Link:        &link,
 		LinkCreated: existing < 1,
 	}, nil
 }
