@@ -6,7 +6,6 @@ import (
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 	_ "github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -81,13 +80,23 @@ func TestUpdateParentTopics(t *testing.T) {
 	link, cleanup := m.createLink("Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
-	topics, err := link.ParentTopics().All(m.ctx, m.db)
-	assert.Equal(t, 0, len(topics))
+	var topics []*models.Topic
+	var err error
 
-	addTopics, err := models.Topics(qm.Limit(3)).All(m.ctx, m.db)
-	assert.Nil(t, err)
+	if topics, err = link.ParentTopics().All(m.ctx, m.db); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(topics) != 0 {
+		t.Fatal("Expected to find no topics")
+	}
+
+	var addTopics []*models.Topic
+	if addTopics, err = models.Topics(qm.Limit(3)).All(m.ctx, m.db); err != nil {
+		t.Fatal(err)
+	}
+
 	var topicIds []string
-
 	for _, topic := range addTopics {
 		topicIds = append(topicIds, topic.ID)
 	}
@@ -96,12 +105,22 @@ func TestUpdateParentTopics(t *testing.T) {
 		LinkID:         link.ID,
 		ParentTopicIds: topicIds,
 	})
-	assert.Nil(t, err)
-	assert.NotNil(t, payload2)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	parentTopics, err := link.ParentTopics().All(m.ctx, m.db)
-	assert.Nil(t, err)
-	assert.NotZero(t, len(parentTopics))
+	if payload2 == nil {
+		t.Fatal("Expected a non-nil result for payload2")
+	}
+
+	var parentTopics []*models.Topic
+	if parentTopics, err = link.ParentTopics().All(m.ctx, m.db); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(parentTopics) < 1 {
+		t.Fatal("Expected at least one topic")
+	}
 }
 
 func TestAvailableTopics(t *testing.T) {
@@ -113,7 +132,11 @@ func TestAvailableTopics(t *testing.T) {
 	query := (&resolvers.Resolver{DB: m.db}).Link()
 
 	connection, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil)
-	if assert.Nil(t, err) {
-		assert.True(t, len(connection.Edges) > 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(connection.Edges) < 1 {
+		t.Fatal("Expected at least one topic edge")
 	}
 }
