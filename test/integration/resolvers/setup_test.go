@@ -9,7 +9,8 @@ import (
 
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
-	"github.com/emwalker/digraph/resolvers/pageinfo"
+	"github.com/emwalker/digraph/services"
+	"github.com/emwalker/digraph/services/pageinfo"
 	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -18,7 +19,17 @@ const orgId = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
 var testDB *sql.DB
 
+type testFetcher struct{}
+
+type mutator struct {
+	t        *testing.T
+	db       *sql.DB
+	ctx      context.Context
+	resolver models.MutationResolver
+}
+
 func TestMain(m *testing.M) {
+	services.Fetcher = &testFetcher{}
 	testDB = newTestDb()
 	defer testDB.Close()
 	os.Exit(m.Run())
@@ -36,19 +47,9 @@ func newView() *models.View {
 	return &models.View{OrganizationIds: []string{orgId}}
 }
 
-type testFetcher struct{}
-
-type mutator struct {
-	t        *testing.T
-	db       *sql.DB
-	ctx      context.Context
-	resolver models.MutationResolver
-}
-
 func newMutator(t *testing.T) mutator {
 	resolver := &resolvers.MutationResolver{
 		&resolvers.Resolver{DB: testDB},
-		&testFetcher{},
 	}
 	return mutator{t, testDB, context.Background(), resolver}
 }
