@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"log"
+	"net/url"
 
 	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/common"
@@ -66,6 +67,14 @@ func providedOrFetchedTitle(url string, providedTitle *string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func isURL(name string) bool {
+	_, err := url.ParseRequestURI(name)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func addParentTopicsToLink(
