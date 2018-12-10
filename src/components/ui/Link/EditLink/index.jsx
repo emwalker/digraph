@@ -29,6 +29,7 @@ const renderer = ({ isOpen, toggleForm }) => ({ error, props }: RendererProps) =
       isOpen={isOpen}
       link={props.view.link}
       toggleForm={toggleForm}
+      viewer={props.viewer}
     />
   )
 }
@@ -47,6 +48,10 @@ const EditLink = ({ isOpen, link, relay, toggleForm }: Props) => (
     environment={relay.environment}
     query={graphql`
       query EditLinkQuery($orgIds: [ID!], $linkId: ID!) {
+        viewer {
+          ...EditLinkForm_viewer
+        }
+
         view(organizationIds: $orgIds) {
           link(id: $linkId) {
             ...EditLinkForm_link

@@ -3,7 +3,6 @@ import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { LinkType } from 'components/types'
-import { defaultOrganizationId } from 'components/constants'
 import Input from 'components/ui/Input'
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
 import updateLinkTopicsMutation from 'mutations/updateLinkTopicsMutation'
@@ -19,6 +18,11 @@ type Props = {
   },
   link: LinkType,
   toggleForm: Function,
+  viewer: {
+    defaultRepository: {
+      id: string,
+    },
+  },
 }
 
 type State = {
@@ -42,7 +46,7 @@ class EditLinkForm extends Component<Props, State> {
       configs,
       {
         addParentTopicIds: [],
-        organizationId: defaultOrganizationId,
+        repositoryId: this.props.viewer.defaultRepository.id,
         title: this.state.title,
         url: this.state.url,
       },
@@ -114,6 +118,12 @@ class EditLinkForm extends Component<Props, State> {
 }
 
 export default createFragmentContainer(EditLinkForm, graphql`
+  fragment EditLinkForm_viewer on User {
+    defaultRepository {
+      id
+    }
+  }
+
   fragment EditLinkForm_link on Link {
     id
     title

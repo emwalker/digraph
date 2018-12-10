@@ -3,7 +3,6 @@ import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { TopicType } from 'components/types'
-import { defaultOrganizationId } from 'components/constants'
 import Input from 'components/ui/Input'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
 import updateTopicMutation from 'mutations/updateTopicMutation'
@@ -19,6 +18,11 @@ type Props = {
   },
   toggleForm: Function,
   topic: TopicType,
+  viewer: {
+    defaultRepository: {
+      id: string,
+    },
+  },
 }
 
 type State = {
@@ -44,7 +48,7 @@ class EditTopicForm extends Component<Props, State> {
         description: this.state.description || '',
         id: this.props.topic.id,
         name: this.state.name,
-        organizationId: defaultOrganizationId,
+        repositoryId: this.props.viewer.defaultRepository.id,
       },
     )
     this.props.toggleForm()
@@ -119,8 +123,10 @@ class EditTopicForm extends Component<Props, State> {
 }
 
 export default createFragmentContainer(EditTopicForm, graphql`
-  fragment EditTopicForm_organization on Organization {
-    id
+  fragment EditTopicForm_viewer on User {
+    defaultRepository {
+      id
+    }
   }
 
   fragment EditTopicForm_topic on Topic {

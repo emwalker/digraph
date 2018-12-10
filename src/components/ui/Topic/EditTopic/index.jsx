@@ -12,6 +12,7 @@ type RendererProps = {
     view: {
       link: LinkType,
     },
+    viewer: Oobject,
   },
 }
 
@@ -29,6 +30,7 @@ const renderer = ({ isOpen, toggleForm }) => ({ error, props }: RendererProps) =
     <EditTopicForm
       isOpen={isOpen}
       topic={props.view.topic}
+      viewer={props.viewer}
       toggleForm={toggleForm}
     />
   )
@@ -49,6 +51,10 @@ const EditTopic = ({ isOpen, topic, relay, toggleForm }: Props) => (
     environment={relay.environment}
     query={graphql`
       query EditTopicQuery($orgIds: [ID!], $topicId: ID!) {
+        viewer {
+          ...EditTopicForm_viewer
+        }
+
         view(organizationIds: $orgIds) {
           topic(id: $topicId) {
             ...EditTopicForm_topic
