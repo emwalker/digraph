@@ -4,23 +4,25 @@
 package models
 
 var TableNames = struct {
-	LinkTopics       string
-	Links            string
-	Organizations    string
-	Repositories     string
-	SchemaMigrations string
-	Sessions         string
-	TopicTopics      string
-	Topics           string
-	Users            string
+	LinkTopics          string
+	Links               string
+	OrganizationMembers string
+	Organizations       string
+	Repositories        string
+	SchemaMigrations    string
+	Sessions            string
+	TopicTopics         string
+	Topics              string
+	Users               string
 }{
-	LinkTopics:       "link_topics",
-	Links:            "links",
-	Organizations:    "organizations",
-	Repositories:     "repositories",
-	SchemaMigrations: "schema_migrations",
-	Sessions:         "sessions",
-	TopicTopics:      "topic_topics",
-	Topics:           "topics",
-	Users:            "users",
+	LinkTopics:          "link_topics",
+	Links:               "links",
+	OrganizationMembers: "organization_members",
+	Organizations:       "organizations",
+	Repositories:        "repositories",
+	SchemaMigrations:    "schema_migrations",
+	Sessions:            "sessions",
+	TopicTopics:         "topic_topics",
+	Topics:              "topics",
+	Users:               "users",
 }

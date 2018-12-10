@@ -10,8 +10,6 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-type cleanupFunc func() error
-
 func fetchOrMakeSession(
 	t *testing.T, gothUser goth.User,
 ) (*services.FetchOrMakeSessionSessionResult, cleanupFunc, error) {
@@ -28,6 +26,13 @@ func fetchOrMakeSession(
 
 	cleanup := func() error {
 		if _, err = result.Session.Delete(ctx, testDB); err != nil {
+			return err
+		}
+
+		_, err := models.Organizations(
+			qm.Where("login like ?", result.User.Login),
+		).DeleteAll(ctx, testDB)
+		if err != nil {
 			return err
 		}
 

@@ -14,6 +14,11 @@ import Topic from '../ui/Topic'
 
 type Props = {
   topic: TopicType,
+  viewer: {
+    defaultRepository: {
+      id: string,
+    },
+  },
 }
 
 const TopicPage = ({ topic, viewer, ...props }: Props) => {

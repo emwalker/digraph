@@ -31,7 +31,7 @@ func (r *userResolver) DefaultRepository(
 ) (*models.Repository, error) {
 	return models.Repositories(
 		qm.Load("Organization"),
-		qm.Where("system = true"),
+		qm.Where("system = true and owner_id = ?", user.ID),
 	).One(ctx, r.DB)
 }
 

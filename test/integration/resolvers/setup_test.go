@@ -18,7 +18,7 @@ import (
 const orgId = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
 var (
-	testDB *sql.DB
+	testDB      *sql.DB
 	defaultRepo *models.Repository
 )
 
@@ -126,9 +126,9 @@ func (m mutator) createTopic(name string) (*models.Topic, func()) {
 	}
 
 	input := models.UpsertTopicInput{
-		Name:           name,
-		RepositoryID:   defaultRepo.ID,
-		TopicIds:       []string{parentTopic.ID},
+		Name:         name,
+		RepositoryID: defaultRepo.ID,
+		TopicIds:     []string{parentTopic.ID},
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)

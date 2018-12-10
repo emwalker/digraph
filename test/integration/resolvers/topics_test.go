@@ -60,9 +60,9 @@ func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
 	m.addParentTopicToTopic(t2, t1)
 
 	input := models.UpsertTopicInput{
-		Name:           "Agriculture",
-		RepositoryID:   defaultRepo.ID,
-		TopicIds:       []string{t2.ID},
+		Name:         "Agriculture",
+		RepositoryID: defaultRepo.ID,
+		TopicIds:     []string{t2.ID},
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
@@ -87,8 +87,8 @@ func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
 	m := newMutator(t)
 
 	input := models.UpsertTopicInput{
-		Name:           "http://gnusto.blog",
-		RepositoryID:   defaultRepo.ID,
+		Name:         "http://gnusto.blog",
+		RepositoryID: defaultRepo.ID,
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
@@ -147,10 +147,10 @@ func TestUpdateTopic(t *testing.T) {
 	desc := "Cultivating"
 
 	input := models.UpdateTopicInput{
-		Name:           "Agricultura",
-		Description:    &desc,
-		RepositoryID:   defaultRepo.ID,
-		ID:             topic.ID,
+		Name:         "Agricultura",
+		Description:  &desc,
+		RepositoryID: defaultRepo.ID,
+		ID:           topic.ID,
 	}
 
 	p2, err := m.resolver.UpdateTopic(m.ctx, input)

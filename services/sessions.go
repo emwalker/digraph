@@ -73,15 +73,19 @@ func (c Connection) FetchOrMakeSession(
 
 	if user == nil {
 		log.Printf("User with a github username '%s' not found, creating", gothUser.NickName)
-		user = &models.User{
-			Name:            gothUser.Name,
-			PrimaryEmail:    gothUser.Email,
-			GithubUsername:  null.StringFrom(gothUser.NickName),
-			GithubAvatarURL: null.StringFrom(gothUser.AvatarURL),
-		}
-		if err = user.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+		result, err := c.CreateUser(
+			ctx,
+			gothUser.Name,
+			gothUser.Email,
+			gothUser.NickName,
+			gothUser.AvatarURL,
+		)
+
+		if err != nil {
 			return nil, err
 		}
+
+		user = result.User
 		userCreated = true
 	} else {
 		log.Printf("Updating github account info for user %s", user.ID)

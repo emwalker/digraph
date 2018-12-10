@@ -2,7 +2,6 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import { defaultOrganizationId } from 'components/constants'
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
 import type { RelayProps } from '../../types'
 

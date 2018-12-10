@@ -30,6 +30,7 @@ type User struct {
 	UpdatedAt       time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	GithubUsername  null.String `boil:"github_username" json:"github_username,omitempty" toml:"github_username" yaml:"github_username,omitempty"`
 	GithubAvatarURL null.String `boil:"github_avatar_url" json:"github_avatar_url,omitempty" toml:"github_avatar_url" yaml:"github_avatar_url,omitempty"`
+	Login           string      `boil:"login" json:"login" toml:"login" yaml:"login"`
 
 	R *userR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L userL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,6 +44,7 @@ var UserColumns = struct {
 	UpdatedAt       string
 	GithubUsername  string
 	GithubAvatarURL string
+	Login           string
 }{
 	ID:              "id",
 	Name:            "name",
@@ -51,21 +53,25 @@ var UserColumns = struct {
 	UpdatedAt:       "updated_at",
 	GithubUsername:  "github_username",
 	GithubAvatarURL: "github_avatar_url",
+	Login:           "login",
 }
 
 // UserRels is where relationship names are stored.
 var UserRels = struct {
-	OwnerRepositories string
-	Sessions          string
+	OrganizationMembers string
+	OwnerRepositories   string
+	Sessions            string
 }{
-	OwnerRepositories: "OwnerRepositories",
-	Sessions:          "Sessions",
+	OrganizationMembers: "OrganizationMembers",
+	OwnerRepositories:   "OwnerRepositories",
+	Sessions:            "Sessions",
 }
 
 // userR is where relationships are stored.
 type userR struct {
-	OwnerRepositories RepositorySlice
-	Sessions          SessionSlice
+	OrganizationMembers OrganizationMemberSlice
+	OwnerRepositories   RepositorySlice
+	Sessions            SessionSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -77,8 +83,8 @@ func (*userR) NewStruct() *userR {
 type userL struct{}
 
 var (
-	userColumns               = []string{"id", "name", "primary_email", "created_at", "updated_at", "github_username", "github_avatar_url"}
-	userColumnsWithoutDefault = []string{"name", "primary_email", "github_username", "github_avatar_url"}
+	userColumns               = []string{"id", "name", "primary_email", "created_at", "updated_at", "github_username", "github_avatar_url", "login"}
+	userColumnsWithoutDefault = []string{"name", "primary_email", "github_username", "github_avatar_url", "login"}
 	userColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
 	userPrimaryKeyColumns     = []string{"id"}
 )
@@ -319,6 +325,27 @@ func (q userQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool,
 	return count > 0, nil
 }
 
+// OrganizationMembers retrieves all the organization_member's OrganizationMembers with an executor.
+func (o *User) OrganizationMembers(mods ...qm.QueryMod) organizationMemberQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"organization_members\".\"user_id\"=?", o.ID),
+	)
+
+	query := OrganizationMembers(queryMods...)
+	queries.SetFrom(query.Query, "\"organization_members\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"organization_members\".*"})
+	}
+
+	return query
+}
+
 // OwnerRepositories retrieves all the repository's Repositories with an executor via owner_id column.
 func (o *User) OwnerRepositories(mods ...qm.QueryMod) repositoryQuery {
 	var queryMods []qm.QueryMod
@@ -359,6 +386,97 @@ func (o *User) Sessions(mods ...qm.QueryMod) sessionQuery {
 	}
 
 	return query
+}
+
+// LoadOrganizationMembers allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadOrganizationMembers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		object = maybeUser.(*User)
+	} else {
+		slice = *maybeUser.(*[]*User)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(qm.From(`organization_members`), qm.WhereIn(`user_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load organization_members")
+	}
+
+	var resultSlice []*OrganizationMember
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice organization_members")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on organization_members")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for organization_members")
+	}
+
+	if len(organizationMemberAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.OrganizationMembers = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &organizationMemberR{}
+			}
+			foreign.R.User = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.UserID {
+				local.R.OrganizationMembers = append(local.R.OrganizationMembers, foreign)
+				if foreign.R == nil {
+					foreign.R = &organizationMemberR{}
+				}
+				foreign.R.User = local
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadOwnerRepositories allows an eager lookup of values, cached into the
@@ -540,6 +658,59 @@ func (userL) LoadSessions(ctx context.Context, e boil.ContextExecutor, singular 
 		}
 	}
 
+	return nil
+}
+
+// AddOrganizationMembers adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.OrganizationMembers.
+// Sets related.R.User appropriately.
+func (o *User) AddOrganizationMembers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*OrganizationMember) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.UserID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"organization_members\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"user_id"}),
+				strmangle.WhereClause("\"", "\"", 2, organizationMemberPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.OrganizationID, rel.UserID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.UserID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			OrganizationMembers: related,
+		}
+	} else {
+		o.R.OrganizationMembers = append(o.R.OrganizationMembers, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &organizationMemberR{
+				User: o,
+			}
+		} else {
+			rel.R.User = o
+		}
+	}
 	return nil
 }
 
