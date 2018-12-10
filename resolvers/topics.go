@@ -61,7 +61,7 @@ func (r *topicResolver) ChildTopics(
 	mods := []qm.QueryMod{qm.OrderBy("name")}
 
 	if searchString != nil && *searchString != "" {
-		mods = append(mods, qm.Where("name ilike ? || '%%'", *searchString))
+		mods = append(mods, qm.Where("name ilike '%%' || ? || '%%'", *searchString))
 	}
 
 	return topicConnection(topic.ChildTopics(mods...).All(ctx, r.DB))
@@ -88,7 +88,7 @@ func (r *topicResolver) Links(
 	}
 
 	if searchString != nil && *searchString != "" {
-		mods = append(mods, qm.Where("title ilike ? || '%%'", searchString))
+		mods = append(mods, qm.Where("title ilike '%%' || ? || '%%'", searchString))
 	}
 
 	scope := topic.ChildLinks(mods...)

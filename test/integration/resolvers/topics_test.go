@@ -227,7 +227,7 @@ func TestSearchChildTopics(t *testing.T) {
 		{
 			Name:         "When there is a suffix match",
 			SearchString: "rotation",
-			Count:        0, // Maybe later
+			Count:        1,
 		},
 		{
 			Name:         "When there is no match",
@@ -286,7 +286,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 		{
 			Name:         "When there is a suffix match",
 			SearchString: "York Times",
-			Count:        0, // Maybe later
+			Count:        1,
 		},
 		{
 			Name:         "When there is no match",
