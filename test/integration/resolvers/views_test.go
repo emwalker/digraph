@@ -88,7 +88,7 @@ func TestSearchTopics(t *testing.T) {
 		{
 			Name:         "When there is a suffix match",
 			SearchString: "rotation",
-			Count:        0, // Maybe later
+			Count:        1,
 			Success:      eq,
 		},
 		{
@@ -143,19 +143,19 @@ func TestSearchLinks(t *testing.T) {
 			Name:         "When there is a full match",
 			SearchString: "New York Times",
 			Count:        1,
-			Success:      eq,
+			Success:      ge,
 		},
 		{
 			Name:         "When there is a prefix match",
 			SearchString: "New Yor",
 			Count:        1,
-			Success:      eq,
+			Success:      ge,
 		},
 		{
 			Name:         "When there is a suffix match",
 			SearchString: "York Times",
-			Count:        0, // Maybe later
-			Success:      eq,
+			Count:        1,
+			Success:      ge,
 		},
 		{
 			Name:         "When there is no match",

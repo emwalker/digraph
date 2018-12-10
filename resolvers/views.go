@@ -24,7 +24,7 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string)
 	}
 
 	if searchString != nil {
-		mods = append(mods, qm.Where("topics.name ilike ? || '%%'", *searchString))
+		mods = append(mods, qm.Where("topics.name ilike '%%' || ? || '%%'", *searchString))
 	}
 
 	return mods
@@ -69,7 +69,7 @@ func (r *viewResolver) Links(
 	}
 
 	if searchString != nil && *searchString != "" {
-		mods = append(mods, qm.Where("title ilike ? || '%%'", searchString))
+		mods = append(mods, qm.Where("title ilike '%%' || ? || '%%'", searchString))
 	}
 
 	scope := models.Links(mods...)
