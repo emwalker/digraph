@@ -22,9 +22,9 @@ type Link implements ResourceIdentifiable & Namespaceable {
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   createdAt: DateTime!
-  id: ID
+  id: ID!
   organization: Organization!
   resourcePath: String!
   sha1: String!
@@ -33,7 +33,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   title: String!
   updatedAt: DateTime!
   url: String!
@@ -92,20 +92,30 @@ interface ResourceIdentifiable {
   resourcePath: String!
 }
 
+union SearchResultItem = Topic | Link
+
+type SearchResultItemEdge {
+  node: SearchResultItem
+}
+
+type SearchResultItemConnection {
+  edges: [SearchResultItemEdge]
+}
+
 type Topic implements ResourceIdentifiable & Namespaceable {
   availableParentTopics(
     first: Int,
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   childTopics(
     searchString: String,
     first: Int,
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   createdAt: DateTime!
   description: String
   id: ID!
@@ -115,7 +125,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     after: String,
     last: Int,
     before: String
-  ): LinkConnection
+  ): LinkConnection!
   name: String!
   organization: Organization!
   parentTopics(
@@ -123,9 +133,16 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   repository: Repository!
   resourcePath: String!
+  search(
+    searchString: String!,
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): SearchResultItemConnection!
   updatedAt: DateTime!
 }
 
@@ -218,7 +235,7 @@ type View {
     after: String,
     last: Int,
     before: String
-  ): LinkConnection
+  ): LinkConnection!
   topic(id: ID!): Topic
   topics(
     searchString: String,
@@ -226,5 +243,5 @@ type View {
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
 }

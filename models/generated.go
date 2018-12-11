@@ -110,6 +110,14 @@ type ComplexityRoot struct {
 		Owner        func(childComplexity int) int
 	}
 
+	SearchResultItemConnection struct {
+		Edges func(childComplexity int) int
+	}
+
+	SearchResultItemEdge struct {
+		Node func(childComplexity int) int
+	}
+
 	Topic struct {
 		AvailableParentTopics func(childComplexity int, first *int, after *string, last *int, before *string) int
 		ChildTopics           func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
@@ -122,6 +130,7 @@ type ComplexityRoot struct {
 		ParentTopics          func(childComplexity int, first *int, after *string, last *int, before *string) int
 		Repository            func(childComplexity int) int
 		ResourcePath          func(childComplexity int) int
+		Search                func(childComplexity int, searchString string, first *int, after *string, last *int, before *string) int
 		UpdatedAt             func(childComplexity int) int
 	}
 
@@ -178,13 +187,13 @@ type ComplexityRoot struct {
 }
 
 type LinkResolver interface {
-	AvailableParentTopics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+	AvailableParentTopics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (TopicConnection, error)
 	CreatedAt(ctx context.Context, obj *Link) (string, error)
 
 	Organization(ctx context.Context, obj *Link) (Organization, error)
 	ResourcePath(ctx context.Context, obj *Link) (string, error)
 
-	ParentTopics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+	ParentTopics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (TopicConnection, error)
 
 	UpdatedAt(ctx context.Context, obj *Link) (string, error)
 }
@@ -211,17 +220,18 @@ type RepositoryResolver interface {
 	Owner(ctx context.Context, obj *Repository) (User, error)
 }
 type TopicResolver interface {
-	AvailableParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*TopicConnection, error)
-	ChildTopics(ctx context.Context, obj *Topic, searchString *string, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+	AvailableParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (TopicConnection, error)
+	ChildTopics(ctx context.Context, obj *Topic, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
 	CreatedAt(ctx context.Context, obj *Topic) (string, error)
 	Description(ctx context.Context, obj *Topic) (*string, error)
 
-	Links(ctx context.Context, obj *Topic, searchString *string, first *int, after *string, last *int, before *string) (*LinkConnection, error)
+	Links(ctx context.Context, obj *Topic, searchString *string, first *int, after *string, last *int, before *string) (LinkConnection, error)
 
 	Organization(ctx context.Context, obj *Topic) (Organization, error)
-	ParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+	ParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (TopicConnection, error)
 	Repository(ctx context.Context, obj *Topic) (Repository, error)
 	ResourcePath(ctx context.Context, obj *Topic) (string, error)
+	Search(ctx context.Context, obj *Topic, searchString string, first *int, after *string, last *int, before *string) (SearchResultItemConnection, error)
 	UpdatedAt(ctx context.Context, obj *Topic) (string, error)
 }
 type UserResolver interface {
@@ -234,9 +244,9 @@ type UserResolver interface {
 }
 type ViewResolver interface {
 	Link(ctx context.Context, obj *View, id string) (*Link, error)
-	Links(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (*LinkConnection, error)
+	Links(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (LinkConnection, error)
 	Topic(ctx context.Context, obj *View, id string) (*Topic, error)
-	Topics(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (*TopicConnection, error)
+	Topics(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
 }
 
 func field_Link_availableParentTopics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
@@ -751,6 +761,77 @@ func field_Topic_parentTopics_args(rawArgs map[string]interface{}) (map[string]i
 		}
 	}
 	args["before"] = arg3
+	return args, nil
+
+}
+
+func field_Topic_search_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["searchString"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["searchString"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg4
 	return args, nil
 
 }
@@ -1279,6 +1360,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Repository.Owner(childComplexity), true
 
+	case "SearchResultItemConnection.edges":
+		if e.complexity.SearchResultItemConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.SearchResultItemConnection.Edges(childComplexity), true
+
+	case "SearchResultItemEdge.node":
+		if e.complexity.SearchResultItemEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.SearchResultItemEdge.Node(childComplexity), true
+
 	case "Topic.availableParentTopics":
 		if e.complexity.Topic.AvailableParentTopics == nil {
 			break
@@ -1375,6 +1470,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Topic.ResourcePath(childComplexity), true
+
+	case "Topic.search":
+		if e.complexity.Topic.Search == nil {
+			break
+		}
+
+		args, err := field_Topic_search_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Topic.Search(childComplexity, args["searchString"].(string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
 	case "Topic.updatedAt":
 		if e.complexity.Topic.UpdatedAt == nil {
@@ -1757,6 +1864,9 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Link_availableParentTopics(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "createdAt":
@@ -1770,6 +1880,9 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 			}(i, field)
 		case "id":
 			out.Values[i] = ec._Link_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "organization":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -1797,6 +1910,9 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Link_parentTopics(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "title":
@@ -1851,17 +1967,16 @@ func (ec *executionContext) _Link_availableParentTopics(ctx context.Context, fie
 		return ec.resolvers.Link().AvailableParentTopics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*TopicConnection)
+	res := resTmp.(TopicConnection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._TopicConnection(ctx, field.Selections, res)
+	return ec._TopicConnection(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -1907,6 +2022,9 @@ func (ec *executionContext) _Link_id(ctx context.Context, field graphql.Collecte
 		return obj.ID, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
@@ -2019,17 +2137,16 @@ func (ec *executionContext) _Link_parentTopics(ctx context.Context, field graphq
 		return ec.resolvers.Link().ParentTopics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*TopicConnection)
+	res := resTmp.(TopicConnection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._TopicConnection(ctx, field.Selections, res)
+	return ec._TopicConnection(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -3213,6 +3330,146 @@ func (ec *executionContext) _Repository_owner(ctx context.Context, field graphql
 	return ec._User(ctx, field.Selections, &res)
 }
 
+var searchResultItemConnectionImplementors = []string{"SearchResultItemConnection"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _SearchResultItemConnection(ctx context.Context, sel ast.SelectionSet, obj *SearchResultItemConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, searchResultItemConnectionImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SearchResultItemConnection")
+		case "edges":
+			out.Values[i] = ec._SearchResultItemConnection_edges(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _SearchResultItemConnection_edges(ctx context.Context, field graphql.CollectedField, obj *SearchResultItemConnection) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "SearchResultItemConnection",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*SearchResultItemEdge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+
+				return ec._SearchResultItemEdge(ctx, field.Selections, res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+var searchResultItemEdgeImplementors = []string{"SearchResultItemEdge"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _SearchResultItemEdge(ctx context.Context, sel ast.SelectionSet, obj *SearchResultItemEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, searchResultItemEdgeImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SearchResultItemEdge")
+		case "node":
+			out.Values[i] = ec._SearchResultItemEdge_node(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _SearchResultItemEdge_node(ctx context.Context, field graphql.CollectedField, obj *SearchResultItemEdge) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "SearchResultItemEdge",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(SearchResultItem)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._SearchResultItem(ctx, field.Selections, &res)
+}
+
 var topicImplementors = []string{"Topic", "ResourceIdentifiable", "Namespaceable"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -3232,12 +3489,18 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Topic_availableParentTopics(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "childTopics":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Topic_childTopics(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "createdAt":
@@ -3264,6 +3527,9 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Topic_links(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "name":
@@ -3284,6 +3550,9 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Topic_parentTopics(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "repository":
@@ -3299,6 +3568,15 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Topic_resourcePath(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "search":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Topic_search(ctx, field, obj)
 				if out.Values[i] == graphql.Null {
 					invalid = true
 				}
@@ -3346,17 +3624,16 @@ func (ec *executionContext) _Topic_availableParentTopics(ctx context.Context, fi
 		return ec.resolvers.Topic().AvailableParentTopics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*TopicConnection)
+	res := resTmp.(TopicConnection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._TopicConnection(ctx, field.Selections, res)
+	return ec._TopicConnection(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -3381,17 +3658,16 @@ func (ec *executionContext) _Topic_childTopics(ctx context.Context, field graphq
 		return ec.resolvers.Topic().ChildTopics(rctx, obj, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*TopicConnection)
+	res := resTmp.(TopicConnection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._TopicConnection(ctx, field.Selections, res)
+	return ec._TopicConnection(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -3498,17 +3774,16 @@ func (ec *executionContext) _Topic_links(ctx context.Context, field graphql.Coll
 		return ec.resolvers.Topic().Links(rctx, obj, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*LinkConnection)
+	res := resTmp.(LinkConnection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._LinkConnection(ctx, field.Selections, res)
+	return ec._LinkConnection(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -3588,17 +3863,16 @@ func (ec *executionContext) _Topic_parentTopics(ctx context.Context, field graph
 		return ec.resolvers.Topic().ParentTopics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*TopicConnection)
+	res := resTmp.(TopicConnection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._TopicConnection(ctx, field.Selections, res)
+	return ec._TopicConnection(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -3654,6 +3928,40 @@ func (ec *executionContext) _Topic_resourcePath(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Topic_search(ctx context.Context, field graphql.CollectedField, obj *Topic) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Topic_search_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Topic",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Topic().Search(rctx, obj, args["searchString"].(string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(SearchResultItemConnection)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._SearchResultItemConnection(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -4694,6 +5002,9 @@ func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._View_links(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "topic":
@@ -4706,6 +5017,9 @@ func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._View_topics(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		default:
@@ -4776,17 +5090,16 @@ func (ec *executionContext) _View_links(ctx context.Context, field graphql.Colle
 		return ec.resolvers.View().Links(rctx, obj, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*LinkConnection)
+	res := resTmp.(LinkConnection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._LinkConnection(ctx, field.Selections, res)
+	return ec._LinkConnection(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -4846,17 +5159,16 @@ func (ec *executionContext) _View_topics(ctx context.Context, field graphql.Coll
 		return ec.resolvers.View().Topics(rctx, obj, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*TopicConnection)
+	res := resTmp.(TopicConnection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._TopicConnection(ctx, field.Selections, res)
+	return ec._TopicConnection(ctx, field.Selections, &res)
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -6363,6 +6675,23 @@ func (ec *executionContext) _ResourceIdentifiable(ctx context.Context, sel ast.S
 	}
 }
 
+func (ec *executionContext) _SearchResultItem(ctx context.Context, sel ast.SelectionSet, obj *SearchResultItem) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case Topic:
+		return ec._Topic(ctx, sel, &obj)
+	case *Topic:
+		return ec._Topic(ctx, sel, obj)
+	case Link:
+		return ec._Link(ctx, sel, &obj)
+	case *Link:
+		return ec._Link(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func UnmarshalUpdateLinkTopicsInput(v interface{}) (UpdateLinkTopicsInput, error) {
 	var it UpdateLinkTopicsInput
 	var asMap = v.(map[string]interface{})
@@ -6704,9 +7033,9 @@ type Link implements ResourceIdentifiable & Namespaceable {
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   createdAt: DateTime!
-  id: ID
+  id: ID!
   organization: Organization!
   resourcePath: String!
   sha1: String!
@@ -6715,7 +7044,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   title: String!
   updatedAt: DateTime!
   url: String!
@@ -6774,20 +7103,30 @@ interface ResourceIdentifiable {
   resourcePath: String!
 }
 
+union SearchResultItem = Topic | Link
+
+type SearchResultItemEdge {
+  node: SearchResultItem
+}
+
+type SearchResultItemConnection {
+  edges: [SearchResultItemEdge]
+}
+
 type Topic implements ResourceIdentifiable & Namespaceable {
   availableParentTopics(
     first: Int,
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   childTopics(
     searchString: String,
     first: Int,
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   createdAt: DateTime!
   description: String
   id: ID!
@@ -6797,7 +7136,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     after: String,
     last: Int,
     before: String
-  ): LinkConnection
+  ): LinkConnection!
   name: String!
   organization: Organization!
   parentTopics(
@@ -6805,9 +7144,16 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
   repository: Repository!
   resourcePath: String!
+  search(
+    searchString: String!,
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): SearchResultItemConnection!
   updatedAt: DateTime!
 }
 
@@ -6900,7 +7246,7 @@ type View {
     after: String,
     last: Int,
     before: String
-  ): LinkConnection
+  ): LinkConnection!
   topic(id: ID!): Topic
   topics(
     searchString: String,
@@ -6908,7 +7254,7 @@ type View {
     after: String,
     last: Int,
     before: String
-  ): TopicConnection
+  ): TopicConnection!
 }
 `},
 )

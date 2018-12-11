@@ -32,7 +32,7 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string)
 
 // Link returns a specific link.
 func (r *viewResolver) Link(
-	ctx context.Context, view *models.View, linkId string,
+	ctx context.Context, view *models.View, linkID string,
 ) (*models.Link, error) {
 	if len(view.OrganizationIds) < 1 {
 		return nil, nil
@@ -41,7 +41,7 @@ func (r *viewResolver) Link(
 	scope := models.Links(
 		qm.InnerJoin("organizations o on links.organization_id = o.id"),
 		qm.WhereIn("o.id in ?", view.OrganizationIdsForQuery()...),
-		qm.Where("links.id = ?", linkId),
+		qm.Where("links.id = ?", linkID),
 	)
 	return scope.One(ctx, r.DB)
 }
@@ -50,7 +50,7 @@ func (r *viewResolver) Link(
 func (r *viewResolver) Links(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string, last *int,
 	before *string,
-) (*models.LinkConnection, error) {
+) (models.LinkConnection, error) {
 	if len(view.OrganizationIds) < 1 {
 		return linkConnection(models.Links(qm.Where("1 = 0")).All(ctx, r.DB))
 	}
@@ -93,7 +93,7 @@ func (r *viewResolver) Topic(
 func (r *viewResolver) Topics(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
 	last *int, before *string,
-) (*models.TopicConnection, error) {
+) (models.TopicConnection, error) {
 	if len(view.OrganizationIds) < 1 {
 		return topicConnection(models.Topics(qm.Where("1 = 0")).All(ctx, r.DB))
 	}

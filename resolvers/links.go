@@ -13,9 +13,9 @@ type linkResolver struct {
 	*Resolver
 }
 
-func linkConnection(rows []*models.Link, err error) (*models.LinkConnection, error) {
+func linkConnection(rows []*models.Link, err error) (models.LinkConnection, error) {
 	if err != nil {
-		return nil, err
+		return models.LinkConnection{}, err
 	}
 
 	var edges []*models.LinkEdge
@@ -23,16 +23,16 @@ func linkConnection(rows []*models.Link, err error) (*models.LinkConnection, err
 		edges = append(edges, &models.LinkEdge{Node: *link})
 	}
 
-	return &models.LinkConnection{Edges: edges}, nil
+	return models.LinkConnection{Edges: edges}, nil
 }
 
 // AvailableParentTopics returns the topics that can be added to the link.
 func (r *linkResolver) AvailableParentTopics(
 	ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string,
-) (*models.TopicConnection, error) {
+) (models.TopicConnection, error) {
 	existingTopics, err := link.ParentTopics(qm.Select("id")).All(ctx, r.DB)
 	if err != nil {
-		return nil, err
+		return models.TopicConnection{}, err
 	}
 
 	var existingIds []interface{}
@@ -42,7 +42,7 @@ func (r *linkResolver) AvailableParentTopics(
 
 	org, err := link.Organization().One(ctx, r.DB)
 	if err != nil {
-		return nil, err
+		return models.TopicConnection{}, err
 	}
 
 	return topicConnection(org.Topics().All(ctx, r.DB))
@@ -69,7 +69,7 @@ func (r *linkResolver) ResourcePath(_ context.Context, link *models.Link) (strin
 // ParentTopics returns the topics under which the link is categorized.
 func (r *linkResolver) ParentTopics(
 	ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string,
-) (*models.TopicConnection, error) {
+) (models.TopicConnection, error) {
 	if link.R != nil && link.R.ParentTopics != nil {
 		return topicConnection(link.R.ParentTopics, nil)
 	}

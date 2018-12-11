@@ -43,6 +43,18 @@ type ResourceIdentifiable interface {
 	IsResourceIdentifiable()
 }
 
+type SearchResultItem interface {
+	IsSearchResultItem()
+}
+
+type SearchResultItemConnection struct {
+	Edges []*SearchResultItemEdge `json:"edges"`
+}
+
+type SearchResultItemEdge struct {
+	Node SearchResultItem `json:"node"`
+}
+
 type TopicConnection struct {
 	Edges    []*TopicEdge `json:"edges"`
 	PageInfo PageInfo     `json:"pageInfo"`

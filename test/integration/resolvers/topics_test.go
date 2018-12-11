@@ -310,3 +310,74 @@ func TestSearchLinksInTopic(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchInTopic(t *testing.T) {
+	m := newMutator(t)
+
+	t1, cleanup := m.createTopic("News organizations")
+	defer cleanup()
+
+	l1, cleanup := m.createLink("News", "https://en.wikipedia.org/wiki/News")
+	defer cleanup()
+	m.addParentTopicToLink(l1, t1)
+
+	t2, cleanup := m.createTopic("New York Times")
+	defer cleanup()
+	m.addParentTopicToTopic(t2, t1)
+
+	l2, cleanup := m.createLink("New York Times", "https://www.nytimes.com")
+	defer cleanup()
+	m.addParentTopicToLink(l2, t2)
+
+	cases := []struct {
+		Name         string
+		SearchString string
+		Count        int
+	}{
+		{
+			Name:         "Everything is returned when an empty string is provided",
+			SearchString: "",
+			Count:        3,
+		},
+		{
+			Name:         "Links directly under the topic are returned",
+			SearchString: "News",
+			Count:        1,
+		},
+		{
+			Name:         "Descendant links and topics are returned",
+			SearchString: "New York Times",
+			Count:        2,
+		},
+		{
+			Name:         "Prefix matches work",
+			SearchString: "New Yor",
+			Count:        2,
+		},
+		{
+			Name:         "Suffix matches work",
+			SearchString: "York Times",
+			Count:        2,
+		},
+		{
+			Name:         "No results are returned when there is no match",
+			SearchString: "astronomy",
+			Count:        0,
+		},
+	}
+
+	topicResolver := (&resolvers.Resolver{DB: testDB}).Topic()
+
+	for _, td := range cases {
+		t.Run(td.Name, func(t *testing.T) {
+			conn, err := topicResolver.Search(m.ctx, t1, td.SearchString, nil, nil, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if count := len(conn.Edges); td.Count != count {
+				t.Fatalf("Expected %d results, got %d", td.Count, count)
+			}
+		})
+	}
+}

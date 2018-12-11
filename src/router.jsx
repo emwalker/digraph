@@ -11,6 +11,7 @@ import { defaultOrganizationId } from './components/constants'
 import Homepage, { query as homepageQuery } from './components/Homepage'
 import TopicsPage, { query as topicsPageQuery } from './components/TopicsPage'
 import TopicPage, { query as topicPageQuery } from './components/TopicPage'
+import TopicSearchPage, { query as topicSearchPageQuery } from './components/TopicSearchPage'
 import Layout from './components/Layout'
 import withErrorBoundary from './components/withErrorBoundary'
 
@@ -27,13 +28,29 @@ export function createResolver(fetcher) {
 const renderTopicPage = ({ props, error }: any) => {
   if (error)
     return <div>There was a problem.</div>
+
   if (!props)
     return null
+
   if (!props.view)
     return <div>You must log in and select an organization first.</div>
+
+  const { location } = props
+
+  if (location.query.q) {
+    return (
+      <TopicSearchPage
+        topic={props.view.topic}
+        location={location}
+        {...props}
+      />
+    )
+  }
+
   return (
     <TopicPage
       topic={props.view.topic}
+      location={location}
       {...props}
     />
   )
@@ -74,7 +91,11 @@ export const routeConfig = makeRouteConfig(
       <Route
         path=":topicId"
         render={renderTopicPage}
-        query={topicPageQuery}
+        getQuery={({ location }) => (
+          location.query.q
+            ? topicSearchPageQuery
+            : topicPageQuery
+        )}
       />
     </Route>
   </Route>,

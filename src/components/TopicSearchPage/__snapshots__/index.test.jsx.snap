@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<TopicPage /> renders 1`] = `
+<div>
+  <Subhead
+    heading="Frotz"
+  />
+  <div
+    className="two-thirds column pl-0"
+  >
+    <Component
+      hasItems={false}
+      placeholder="There are no items in this list."
+    />
+  </div>
+  <div
+    className="one-third column pr-0"
+  >
+    <Component
+      items={Array []}
+      title="Parent topics"
+    />
+  </div>
+</div>
+`;
