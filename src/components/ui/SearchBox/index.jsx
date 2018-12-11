@@ -10,7 +10,7 @@ type State = {
   value: string,
 }
 
-class FilterInput extends Component<Props, State> {
+class SearchBox extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
@@ -37,17 +37,19 @@ class FilterInput extends Component<Props, State> {
   }
 
   render = () => (
-    <input
-      aria-label="Filter input"
-      className="form-control"
-      onChange={this.onChange}
-      onKeyPress={this.onKeyPress}
-      placeholder="Search"
-      size="40"
-      type="text"
-      value={this.state.value}
-    />
+    <div className="form-group mb-1 mt-1" style={{ width: '317px' }}>
+      <input
+        aria-label="Search"
+        className="form-control"
+        onChange={this.onChange}
+        onKeyPress={this.onKeyPress}
+        placeholder="Search"
+        size="20"
+        type="text"
+        value={this.state.value}
+      />
+    </div>
   )
 }
 
-export default FilterInput
+export default SearchBox

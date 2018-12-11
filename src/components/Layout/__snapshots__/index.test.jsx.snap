@@ -9,36 +9,6 @@ exports[`<Layout /> renders 1`] = `
     <FlashMessages
       message={null}
     />
-    <nav
-      className="UnderlineNav mb-3"
-    >
-      <div
-        className="UnderlineNav-body"
-      >
-        <Link
-          activeClassName="selected"
-          className="UnderlineNav-item"
-          to="/links"
-        >
-          Links
-        </Link>
-        <Link
-          activeClassName="selected"
-          className="UnderlineNav-item"
-          to="/topics"
-        >
-          Topics
-        </Link>
-      </div>
-      <div
-        className="UnderlineNav-actions"
-      >
-        <FilterInput
-          onEnter={[Function]}
-          value=""
-        />
-      </div>
-    </nav>
     <div>
       some view
     </div>

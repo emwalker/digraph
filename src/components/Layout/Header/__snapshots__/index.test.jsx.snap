@@ -2,7 +2,7 @@
 
 exports[`<Header /> renders 1`] = `
 <header
-  className="Header pagehead"
+  className="Header pagehead pb-3"
 >
   <div
     className="container-lg clearfix"
@@ -10,8 +10,27 @@ exports[`<Header /> renders 1`] = `
     <nav
       className="d-lg-flex float-left"
     >
-      <h1>
-        Digraph
+      <h1
+        className="h3 mt-2 text-normal"
+      >
+        <Link
+          className="text-gray-dark n-link no-underline"
+          to="/topics/df63295e-ee02-11e8-9e36-17d56b662bc8"
+        >
+          <span
+            className="mr-2 d-inline-block"
+          >
+            <Octicon
+              name="git-branch"
+              style={
+                Object {
+                  "verticalAlign": "middle",
+                }
+              }
+            />
+          </span>
+          Digraph
+        </Link>
       </h1>
     </nav>
     <div

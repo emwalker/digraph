@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<FilterInput /> renders 1`] = `
+<div
+  className="form-group mb-1 mt-1"
+  style={
+    Object {
+      "width": "317px",
+    }
+  }
+>
+  <input
+    aria-label="Search"
+    className="form-control"
+    onChange={[Function]}
+    onKeyPress={[Function]}
+    placeholder="Search"
+    size="20"
+    type="text"
+    value="some search phrase"
+  />
+</div>
+`;

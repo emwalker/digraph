@@ -40,6 +40,7 @@
     "graphql-import": "^0.7.1",
     "graphql-tools": "^4.0.3",
     "immutability-helper": "^2.8.1",
+    "is-url-external": "^1.0.3",
     "mini-css-extract-plugin": "^0.4.4",
     "node-sass": "^4.9.0",
     "normalize.css": "^6.0.0",

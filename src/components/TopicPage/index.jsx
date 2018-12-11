@@ -3,9 +3,10 @@ import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
+import Subhead from 'components/ui/Subhead'
+import SidebarList from 'components/ui/SidebarList'
+import List from 'components/ui/List'
 import type { TopicType } from '../types'
-import SidebarList from '../ui/SidebarList'
-import List from '../ui/List'
 import AddTopic from './AddTopic'
 import AddLink from './AddLink'
 import { liftNodes } from '../../utils'
@@ -13,6 +14,8 @@ import Link from '../ui/Link'
 import Topic from '../ui/Topic'
 
 type Props = {
+  location: Object,
+  router: Object,
   topic: TopicType,
   viewer: {
     defaultRepository: {
@@ -21,7 +24,7 @@ type Props = {
   },
 }
 
-const TopicPage = ({ topic, viewer, ...props }: Props) => {
+const TopicPage = ({ location, router, topic, viewer, ...props }: Props) => {
   const {
     childTopics,
     links: childLinks,
@@ -33,9 +36,11 @@ const TopicPage = ({ topic, viewer, ...props }: Props) => {
 
   return (
     <div>
-      <div className="Subhead">
-        <div className="Subhead-heading">{name}</div>
-      </div>
+      <Subhead
+        heading={name}
+        location={location}
+        router={router}
+      />
       <div className="two-thirds column pl-0">
         <List
           placeholder="There are no items in this list."

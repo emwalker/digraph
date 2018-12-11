@@ -2,15 +2,9 @@
 
 exports[`<TopicPage /> renders 1`] = `
 <div>
-  <div
-    className="Subhead"
-  >
-    <div
-      className="Subhead-heading"
-    >
-      Frotz
-    </div>
-  </div>
+  <Subhead
+    heading="Frotz"
+  />
   <div
     className="two-thirds column pl-0"
   >
