@@ -60,7 +60,10 @@ func (r *topicResolver) ChildTopics(
 	ctx context.Context, topic *models.Topic, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.TopicConnection, error) {
-	mods := []qm.QueryMod{qm.OrderBy("name")}
+	mods := []qm.QueryMod{
+		qm.Load("ParentTopics"),
+		qm.OrderBy("name"),
+	}
 
 	if searchString != nil && *searchString != "" {
 		mods = append(mods, qm.Where("name ilike '%%' || ? || '%%'", *searchString))
@@ -85,8 +88,8 @@ func (r *topicResolver) Links(
 	last *int, before *string,
 ) (models.LinkConnection, error) {
 	mods := []qm.QueryMod{
-		qm.OrderBy("created_at desc"),
 		qm.Load("ParentTopics"),
+		qm.OrderBy("created_at desc"),
 	}
 
 	if searchString != nil && *searchString != "" {

@@ -21,6 +21,11 @@ start: kill
 	@yarn start &
 	@go run server.go --dev --log 1
 
+start-debug: kill
+	@yarn relay --watch &
+	@yarn start &
+	@go run server.go --dev --log 2
+
 lint:
 	golint models server resolvers
 	yarn run eslint

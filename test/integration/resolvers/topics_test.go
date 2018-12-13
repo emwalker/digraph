@@ -381,3 +381,31 @@ func TestSearchInTopic(t *testing.T) {
 		})
 	}
 }
+
+func TestParentTopicPreloading(t *testing.T) {
+	r := (&resolvers.Resolver{DB: testDB}).Topic()
+	m := newMutator(t)
+
+	t1, cleanup := m.createTopic("News organizations")
+	defer cleanup()
+
+	t2, cleanup := m.createTopic("New York Times")
+	defer cleanup()
+	m.addParentTopicToTopic(t2, t1)
+
+	var err error
+	var connection models.TopicConnection
+
+	if connection, err = r.ChildTopics(m.ctx, t1, nil, nil, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(connection.Edges) < 1 {
+		t.Fatal("Expected at least one child topic")
+	}
+
+	child := connection.Edges[0].Node
+	if child.R == nil || child.R.ParentTopics == nil {
+		t.Fatal("Parent topics not preloaded")
+	}
+}
