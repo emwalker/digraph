@@ -3,12 +3,12 @@ import React from 'react'
 import { QueryRenderer, graphql } from 'react-relay'
 
 import type { TopicType } from 'components/types'
-import { defaultOrganizationId } from 'components/constants'
 import EditTopicForm from './EditTopicForm'
 
 type RendererProps = {
   error: ?Object,
   props: ?{
+    orgLogin: string,
     view: {
       link: LinkType,
     },
@@ -19,7 +19,7 @@ type RendererProps = {
 /* eslint react/prop-types: 0 */
 /* eslint react/no-unused-prop-types: 0 */
 
-const renderer = ({ isOpen, toggleForm }) => ({ error, props }: RendererProps) => {
+const renderer = ({ isOpen, orgLogin, toggleForm }) => ({ error, props }: RendererProps) => {
   if (error)
     return <div>{error.message}</div>
 
@@ -29,6 +29,7 @@ const renderer = ({ isOpen, toggleForm }) => ({ error, props }: RendererProps) =
   return (
     <EditTopicForm
       isOpen={isOpen}
+      orgLogin={orgLogin}
       topic={props.view.topic}
       viewer={props.viewer}
       toggleForm={toggleForm}
@@ -46,16 +47,16 @@ type Props = {
   view: Object,
 }
 
-const EditTopic = ({ isOpen, topic, relay, toggleForm }: Props) => (
+const EditTopic = ({ isOpen, orgLogin, topic, relay, toggleForm }: Props) => (
   <QueryRenderer
     environment={relay.environment}
     query={graphql`
-      query EditTopicQuery($orgIds: [ID!], $topicId: ID!) {
+      query EditTopicQuery($repoIds: [ID!], $topicId: ID!) {
         viewer {
           ...EditTopicForm_viewer
         }
 
-        view(organizationIds: $orgIds) {
+        view(repositoryIds: $repoIds) {
           topic(id: $topicId) {
             ...EditTopicForm_topic
           }
@@ -63,10 +64,10 @@ const EditTopic = ({ isOpen, topic, relay, toggleForm }: Props) => (
       }
     `}
     variables={{
+      repoIds: [],
       topicId: topic.id,
-      orgIds: [defaultOrganizationId],
     }}
-    render={renderer({ isOpen, toggleForm })}
+    render={renderer({ isOpen, orgLogin, toggleForm })}
   />
 )
 

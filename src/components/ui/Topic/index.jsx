@@ -9,6 +9,7 @@ import EditTopic from './EditTopic'
 
 type Props = {
   organization: OrganizationType,
+  orgLogin: string,
   topic: TopicType,
   viewer: Object,
 }
@@ -43,6 +44,7 @@ class Topic extends Component<Props, State> {
       >
         <EditTopic
           isOpen={this.state.formIsOpen}
+          orgLogin={this.props.orgLogin}
           toggleForm={this.toggleForm}
           topic={this.props.topic}
           viewer={this.props.viewer}

@@ -1,13 +1,18 @@
 package models
 
 type View struct {
-	OrganizationIds []string
+	ViewerID      string
+	RepositoryIds []string
 }
 
-func (v *View) OrganizationIdsForQuery() []interface{} {
+func (v *View) RepositoryIdsForQuery() []interface{} {
 	var ids []interface{}
-	for _, organizationId := range v.OrganizationIds {
-		ids = append(ids, organizationId)
+	for _, id := range v.RepositoryIds {
+		ids = append(ids, id)
 	}
 	return ids
+}
+
+func (v *View) RepositoriesSelected() bool {
+	return len(v.RepositoryIds) > 0
 }

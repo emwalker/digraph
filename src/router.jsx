@@ -7,7 +7,6 @@ import React from 'react'
 import { graphql } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
-import { defaultOrganizationId } from './components/constants'
 import Homepage, { query as homepageQuery } from './components/Homepage'
 import TopicsPage, { query as topicsPageQuery } from './components/TopicsPage'
 import TopicPage, { query as topicPageQuery } from './components/TopicPage'
@@ -35,12 +34,12 @@ const renderTopicPage = ({ props, error }: any) => {
   if (!props.view)
     return <div>You must log in and select an organization first.</div>
 
-  const { location } = props
+  const { location, params, view } = props
 
   if (location.query.q) {
     return (
       <TopicSearchPage
-        topic={props.view.topic}
+        topic={view.topic}
         location={location}
         {...props}
       />
@@ -49,8 +48,9 @@ const renderTopicPage = ({ props, error }: any) => {
 
   return (
     <TopicPage
-      topic={props.view.topic}
+      topic={view.topic}
       location={location}
+      orgLogin={params.orgLogin}
       {...props}
     />
   )
@@ -67,6 +67,12 @@ export const routeConfig = makeRouteConfig(
         viewer {
           name
           avatarUrl
+
+          defaultRepository {
+            rootTopic {
+              resourcePath
+            }
+          }
         }
       }`
     }
@@ -74,7 +80,7 @@ export const routeConfig = makeRouteConfig(
       const { q } = location.query
       return {
         ...params,
-        orgIds: [defaultOrganizationId],
+        repoIds: [],
         searchString: q,
       }
     }}
@@ -83,20 +89,24 @@ export const routeConfig = makeRouteConfig(
       Component={withErrorBoundary(Homepage)}
       query={homepageQuery}
     />
-    <Route path="topics">
-      <Route
-        Component={withErrorBoundary(TopicsPage)}
-        query={topicsPageQuery}
-      />
-      <Route
-        path=":topicId"
-        render={renderTopicPage}
-        getQuery={({ location }) => (
-          location.query.q
-            ? topicSearchPageQuery
-            : topicPageQuery
-        )}
-      />
+    <Route
+      path=":orgLogin"
+    >
+      <Route path="topics">
+        <Route
+          Component={withErrorBoundary(TopicsPage)}
+          query={topicsPageQuery}
+        />
+        <Route
+          path=":topicId"
+          render={renderTopicPage}
+          getQuery={({ location }) => (
+            location.query.q
+              ? topicSearchPageQuery
+              : topicPageQuery
+          )}
+        />
+      </Route>
     </Route>
   </Route>,
 )

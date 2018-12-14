@@ -6,32 +6,15 @@ import (
 
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/services"
+	helpers "github.com/emwalker/digraph/testing"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
-
-func createUser(
-	c services.Connection, ctx context.Context, name, email, githubUsername, githubAvatarURL string,
-) (*services.CreateUserResult, cleanupFunc, error) {
-	result, err := c.CreateUser(ctx, name, email, githubUsername, githubAvatarURL)
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	cleanup := func() error {
-		result.User.Delete(ctx, c.Exec)
-		result.Organization.Delete(ctx, c.Exec)
-		return nil
-	}
-
-	return result, cleanup, nil
-}
 
 func TestCreateUser(t *testing.T) {
 	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
 
-	result, cleanup, err := createUser(
+	result, cleanup, err := helpers.CreateUser(
 		c,
 		ctx,
 		"Gnusto Frotz",
@@ -55,6 +38,10 @@ func TestCreateUser(t *testing.T) {
 
 	if result.Repository == nil {
 		t.Fatal("Expected a repo to be present")
+	}
+
+	if result.RootTopic == nil {
+		t.Fatal("Expected a root topic to be present")
 	}
 
 	membership, err := models.OrganizationMembers(

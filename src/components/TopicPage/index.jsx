@@ -15,12 +15,11 @@ import Topic from '../ui/Topic'
 
 type Props = {
   location: Object,
+  orgLogin: string,
   router: Object,
   topic: TopicType,
   viewer: {
-    defaultRepository: {
-      id: string,
-    },
+    id: string,
   },
 }
 
@@ -85,17 +84,15 @@ const TopicPage = ({ location, router, topic, viewer, ...props }: Props) => {
 
 export const query = graphql`
 query TopicPage_query_Query(
-  $orgIds: [ID!],
+  $repoIds: [ID!],
   $topicId: ID!,
   $searchString: String,
 ) {
   viewer {
-    defaultRepository {
-      id
-    }
+    id
   }
 
-  view(organizationIds: $orgIds) {
+  view(repositoryIds: $repoIds) {
     topic(id: $topicId) {
       ...TopicPage_topic @arguments(searchString: $searchString)
     }

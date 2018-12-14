@@ -30,6 +30,7 @@ type Topic struct {
 	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	RepositoryID   string      `boil:"repository_id" json:"repository_id" toml:"repository_id" yaml:"repository_id"`
+	Root           bool        `boil:"root" json:"root" toml:"root" yaml:"root"`
 
 	R *topicR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L topicL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,6 +44,7 @@ var TopicColumns = struct {
 	CreatedAt      string
 	UpdatedAt      string
 	RepositoryID   string
+	Root           string
 }{
 	OrganizationID: "organization_id",
 	ID:             "id",
@@ -51,6 +53,7 @@ var TopicColumns = struct {
 	CreatedAt:      "created_at",
 	UpdatedAt:      "updated_at",
 	RepositoryID:   "repository_id",
+	Root:           "root",
 }
 
 // TopicRels is where relationship names are stored.
@@ -86,9 +89,9 @@ func (*topicR) NewStruct() *topicR {
 type topicL struct{}
 
 var (
-	topicColumns               = []string{"organization_id", "id", "name", "description", "created_at", "updated_at", "repository_id"}
+	topicColumns               = []string{"organization_id", "id", "name", "description", "created_at", "updated_at", "repository_id", "root"}
 	topicColumnsWithoutDefault = []string{"organization_id", "name", "description", "repository_id"}
-	topicColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	topicColumnsWithDefault    = []string{"id", "created_at", "updated_at", "root"}
 	topicPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -784,7 +787,7 @@ func (topicL) LoadParentTopics(ctx context.Context, e boil.ContextExecutor, sing
 		one := new(Topic)
 		var localJoinCol string
 
-		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &one.RepositoryID, &localJoinCol)
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &one.RepositoryID, &one.Root, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for topics")
 		}
@@ -895,7 +898,7 @@ func (topicL) LoadChildTopics(ctx context.Context, e boil.ContextExecutor, singu
 		one := new(Topic)
 		var localJoinCol string
 
-		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &one.RepositoryID, &localJoinCol)
+		err = results.Scan(&one.OrganizationID, &one.ID, &one.Name, &one.Description, &one.CreatedAt, &one.UpdatedAt, &one.RepositoryID, &one.Root, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for topics")
 		}

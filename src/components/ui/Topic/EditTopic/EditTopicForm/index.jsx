@@ -18,11 +18,6 @@ type Props = {
   },
   toggleForm: Function,
   topic: TopicType,
-  viewer: {
-    defaultRepository: {
-      id: string,
-    },
-  },
 }
 
 type State = {
@@ -48,7 +43,6 @@ class EditTopicForm extends Component<Props, State> {
         description: this.state.description || '',
         id: this.props.topic.id,
         name: this.state.name,
-        repositoryId: this.props.viewer.defaultRepository.id,
       },
     )
     this.props.toggleForm()

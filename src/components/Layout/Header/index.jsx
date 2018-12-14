@@ -2,13 +2,21 @@
 import React from 'react'
 import { Link } from 'found'
 import Octicon from 'react-component-octicons'
+import { pathOr } from 'ramda'
 
-import { everythingTopicPath } from 'components/constants'
 import ViewerDropdown from './ViewerDropdown'
 import GithubLogin from './GithubLogin'
 
+const rootPath = pathOr('/', ['defaultRepository', 'rootTopic', 'resourcePath'])
+
 type Props = {
-    viewer: ?Object,
+  viewer: ?{
+    defaultRepository: {
+      rootTopic: {
+        resourcePath: string,
+      },
+    },
+  },
 }
 
 const Header = ({ viewer }: Props) => (
@@ -17,7 +25,7 @@ const Header = ({ viewer }: Props) => (
       <nav className="d-lg-flex float-left">
         <h1 className="h3 mt-2 text-normal">
           <Link
-            to={everythingTopicPath}
+            to={viewer ? rootPath(viewer) : '/'}
             className="text-gray-dark n-link no-underline"
           >
             <span className="mr-2 d-inline-block">

@@ -13,16 +13,12 @@ import { liftNodes } from 'utils'
 type Props = {
   id: string,
   isOpen: boolean,
+  orgLogin: string,
   relay: {
     environment: Object,
   },
   link: LinkType,
   toggleForm: Function,
-  viewer: {
-    defaultRepository: {
-      id: string,
-    },
-  },
 }
 
 type State = {
@@ -46,7 +42,8 @@ class EditLinkForm extends Component<Props, State> {
       configs,
       {
         addParentTopicIds: [],
-        repositoryId: this.props.viewer.defaultRepository.id,
+        organizationLogin: this.props.orgLogin,
+        repositoryName: 'system:default',
         title: this.state.title,
         url: this.state.url,
       },

@@ -11,6 +11,7 @@ import (
 	"github.com/emwalker/digraph/services"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func init() {
@@ -37,6 +38,18 @@ func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
 	return
 }
 
+func findRepo(
+	ctx context.Context, exec boil.ContextExecutor, actor *models.User, orgLogin, repoName string,
+) (*models.Repository, error) {
+	mods := []qm.QueryMod{
+		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
+		qm.Where(`
+			o.login = ? and repositories.name = ? and repositories.owner_id = ?
+		`, orgLogin, repoName, actor.ID),
+	}
+	return actor.OwnerRepositories(mods...).One(ctx, exec)
+}
+
 // UpsertTopic creates a new topic.
 func (r *MutationResolver) UpsertTopic(
 	ctx context.Context, input models.UpsertTopicInput,
@@ -45,16 +58,12 @@ func (r *MutationResolver) UpsertTopic(
 	var err error
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		c := services.Connection{
-			Exec:  tx,
-			Actor: r.Actor,
-		}
-
-		repo, err := models.FindRepository(ctx, tx, input.RepositoryID)
+		repo, err := findRepo(ctx, tx, r.Actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			return err
 		}
 
+		c := services.Connection{Exec: tx, Actor: r.Actor}
 		result, err = c.UpsertTopic(
 			ctx,
 			repo,
@@ -84,25 +93,24 @@ func (r *MutationResolver) UpsertTopic(
 func (r *MutationResolver) UpdateTopic(
 	ctx context.Context, input models.UpdateTopicInput,
 ) (*models.UpdateTopicPayload, error) {
-	repo, err := models.FindRepository(ctx, r.DB, input.RepositoryID)
+	topic, err := models.Topics(
+		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+		qm.Where("topics.id = ? and r.owner_id = ?", input.ID, r.Actor.ID),
+	).One(ctx, r.DB)
+
 	if err != nil {
 		return nil, err
 	}
 
-	topic := models.Topic{
-		Name:           input.Name,
-		Description:    null.StringFromPtr(input.Description),
-		ID:             input.ID,
-		OrganizationID: repo.OrganizationID,
-		RepositoryID:   input.RepositoryID,
-	}
+	topic.Name = input.Name
+	topic.Description = null.StringFromPtr(input.Description)
 
 	_, err = topic.Update(ctx, r.DB, boil.Infer())
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.UpdateTopicPayload{Topic: topic}, nil
+	return &models.UpdateTopicPayload{Topic: *topic}, nil
 }
 
 // UpsertLink adds a new link to the database.
@@ -113,7 +121,7 @@ func (r *MutationResolver) UpsertLink(
 	var err error
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		repo, err := models.FindRepository(ctx, tx, input.RepositoryID)
+		repo, err := findRepo(ctx, tx, r.Actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			return err
 		}

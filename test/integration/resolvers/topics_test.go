@@ -9,7 +9,7 @@ import (
 )
 
 func TestUpsertTopic(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	t1, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
@@ -25,8 +25,9 @@ func TestUpsertTopic(t *testing.T) {
 
 	// It does not create a second topic with the same name within the specified organization.
 	input := models.UpsertTopicInput{
-		Name:         "Agriculture",
-		RepositoryID: defaultRepo.ID,
+		Name:              "Agriculture",
+		OrganizationLogin: testActor.Login,
+		RepositoryName:    m.defaultRepo().Name,
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
@@ -49,7 +50,7 @@ func TestUpsertTopic(t *testing.T) {
 }
 
 func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	t1, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
@@ -60,9 +61,10 @@ func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
 	m.addParentTopicToTopic(t2, t1)
 
 	input := models.UpsertTopicInput{
-		Name:         "Agriculture",
-		RepositoryID: defaultRepo.ID,
-		TopicIds:     []string{t2.ID},
+		Name:              "Agriculture",
+		OrganizationLogin: testActor.Login,
+		RepositoryName:    m.defaultRepo().Name,
+		TopicIds:          []string{t2.ID},
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
@@ -84,11 +86,12 @@ func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
 }
 
 func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	input := models.UpsertTopicInput{
-		Name:         "http://gnusto.blog",
-		RepositoryID: defaultRepo.ID,
+		Name:              "http://gnusto.blog",
+		OrganizationLogin: testActor.Login,
+		RepositoryName:    m.defaultRepo().Name,
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
@@ -106,7 +109,7 @@ func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
 }
 
 func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	t1, cleanup := m.createTopic("Grandparent")
 	defer cleanup()
@@ -136,7 +139,7 @@ func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
 }
 
 func TestUpdateTopic(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	topic, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
@@ -147,10 +150,9 @@ func TestUpdateTopic(t *testing.T) {
 	desc := "Cultivating"
 
 	input := models.UpdateTopicInput{
-		Name:         "Agricultura",
-		Description:  &desc,
-		RepositoryID: defaultRepo.ID,
-		ID:           topic.ID,
+		Name:        "Agricultura",
+		Description: &desc,
+		ID:          topic.ID,
 	}
 
 	p2, err := m.resolver.UpdateTopic(m.ctx, input)
@@ -173,7 +175,7 @@ func TestUpdateTopic(t *testing.T) {
 }
 
 func TestTopicParentTopics(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	topic1, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
@@ -194,7 +196,7 @@ func TestTopicParentTopics(t *testing.T) {
 }
 
 func TestSearchChildTopics(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	topic, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
@@ -253,7 +255,7 @@ func TestSearchChildTopics(t *testing.T) {
 }
 
 func TestSearchLinksInTopic(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	topic, cleanup := m.createTopic("News organizations")
 	defer cleanup()
@@ -312,7 +314,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 }
 
 func TestSearchInTopic(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	t1, cleanup := m.createTopic("News organizations")
 	defer cleanup()
@@ -384,7 +386,7 @@ func TestSearchInTopic(t *testing.T) {
 
 func TestParentTopicPreloading(t *testing.T) {
 	r := (&resolvers.Resolver{DB: testDB}).Topic()
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	t1, cleanup := m.createTopic("News organizations")
 	defer cleanup()

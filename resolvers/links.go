@@ -53,7 +53,7 @@ func (r *linkResolver) CreatedAt(_ context.Context, link *models.Link) (string, 
 	return link.CreatedAt.Format(time.RFC3339), nil
 }
 
-// Organization returns a set of links.
+// Organization returns the organization for a link.
 func (r *linkResolver) Organization(
 	ctx context.Context, link *models.Link,
 ) (models.Organization, error) {
@@ -75,7 +75,11 @@ func (r *linkResolver) ParentTopics(
 	}
 
 	log.Print("Fetching parent topics for link")
-	return topicConnection(link.ParentTopics().All(ctx, r.DB))
+	mods := []qm.QueryMod{
+		qm.Load("Repository"),
+		qm.Load("Organization"),
+	}
+	return topicConnection(link.ParentTopics(mods...).All(ctx, r.DB))
 }
 
 // UpdatedAt returns the time of the most recent update.

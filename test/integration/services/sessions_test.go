@@ -6,13 +6,14 @@ import (
 
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/services"
+	helpers "github.com/emwalker/digraph/testing"
 	"github.com/markbates/goth"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func fetchOrMakeSession(
 	t *testing.T, gothUser goth.User,
-) (*services.FetchOrMakeSessionSessionResult, cleanupFunc, error) {
+) (*services.FetchOrMakeSessionSessionResult, helpers.CleanupFunc, error) {
 	ctx := context.Background()
 
 	tx, err := testDB.Begin()

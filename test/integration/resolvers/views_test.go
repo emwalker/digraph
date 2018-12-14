@@ -6,7 +6,8 @@ import (
 
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
-	"github.com/stretchr/testify/assert"
+	"github.com/emwalker/digraph/services"
+	helpers "github.com/emwalker/digraph/testing"
 )
 
 var (
@@ -20,38 +21,51 @@ var (
 )
 
 func TestQueryView(t *testing.T) {
-	// When the organization is in the db
+	ctx := context.Background()
 	query := (&resolvers.Resolver{DB: testDB}).View()
-	v1 := &models.View{OrganizationIds: []string{orgId}}
-	connection, err := query.Topics(context.Background(), v1, nil, nil, nil, nil, nil)
-	if !assert.Nil(t, err) {
-		return
+
+	// When the repository is in the db
+	repo, err := testActor.DefaultRepo(ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	assert.NotEmpty(t, connection.Edges)
+	v1 := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{repo.ID}}
+	connection, err := query.Topics(ctx, v1, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// When the organization is not in the db
+	if len(connection.Edges) < 1 {
+		t.Fatal("Expected a result")
+	}
+
+	// When the repo is not in the db
 	fakeId := "542d7ecc-f378-11e8-8eb2-f2801f1b9fd1"
-	v2 := &models.View{OrganizationIds: []string{fakeId}}
-	connection, err = query.Topics(context.Background(), v2, nil, nil, nil, nil, nil)
-	if !assert.Nil(t, err) {
-		return
+	v2 := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{fakeId}}
+	connection, err = query.Topics(ctx, v2, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	assert.Empty(t, connection.Edges)
-
-	// When no organization id is provided
-	v3 := &models.View{OrganizationIds: []string{}}
-	connection, err = query.Topics(context.Background(), v3, nil, nil, nil, nil, nil)
-	if !assert.Nil(t, err) {
-		return
+	if len(connection.Edges) > 0 {
+		t.Fatal("Did not expect a result")
 	}
 
-	assert.Empty(t, connection.Edges)
+	// When no repo id is provided
+	v3 := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{}}
+	connection, err = query.Topics(ctx, v3, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(connection.Edges) < 1 {
+		t.Fatal("Expected a result")
+	}
 }
 
 func TestSearchTopics(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	topic, cleanup := m.createTopic("Agriculture")
 	defer cleanup()
@@ -99,7 +113,7 @@ func TestSearchTopics(t *testing.T) {
 		},
 	}
 
-	view := &models.View{OrganizationIds: []string{orgId}}
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 	viewResolver := (&resolvers.Resolver{DB: testDB}).View()
 
 	for _, td := range cases {
@@ -117,7 +131,7 @@ func TestSearchTopics(t *testing.T) {
 }
 
 func TestSearchLinks(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	topic, cleanup := m.createTopic("News organizations")
 	defer cleanup()
@@ -165,7 +179,7 @@ func TestSearchLinks(t *testing.T) {
 		},
 	}
 
-	view := &models.View{OrganizationIds: []string{orgId}}
+	view := &models.View{RepositoryIds: []string{m.defaultRepo().ID}}
 	viewResolver := (&resolvers.Resolver{DB: testDB}).View()
 
 	for _, td := range cases {
@@ -179,5 +193,82 @@ func TestSearchLinks(t *testing.T) {
 				t.Fatalf("Expected %d results, got %d", td.Count, count)
 			}
 		})
+	}
+}
+
+func TestTopicVisibility(t *testing.T) {
+	ctx := context.Background()
+	c := services.Connection{Exec: testDB, Actor: testActor}
+
+	r1, cleanup, err := helpers.CreateUser(
+		c,
+		ctx,
+		"Gnusto",
+		"gnusto@gnusto.com",
+		"gnusto",
+		"http://some-long-url",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	r2, cleanup, err := helpers.CreateUser(
+		c,
+		ctx,
+		"Frotz",
+		"frotz@frotz.com",
+		"frotz",
+		"http://some-long-url",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	if r1.User.ID == r2.User.ID {
+		t.Fatal("Two users should have been created")
+	}
+
+	m1 := newMutator(t, r1.User)
+	m2 := newMutator(t, r2.User)
+
+	t1, cleanup := m1.createTopic("News organizations")
+	defer cleanup()
+
+	t2, cleanup := m2.createTopic("News organizations")
+	defer cleanup()
+
+	if t1.ID == t2.ID {
+		t.Fatal("Topics should not be de-duped between repos")
+	}
+
+	r := (&resolvers.Resolver{DB: testDB}).View()
+	v1 := &models.View{ViewerID: r1.User.ID, RepositoryIds: []string{r1.Repository.ID}}
+	v2 := &models.View{ViewerID: r2.User.ID, RepositoryIds: []string{r2.Repository.ID}}
+	var topic *models.Topic
+
+	if topic, err = r.Topic(ctx, v1, t1.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if topic == nil {
+		t.Fatal("User 1 unable to fetch own topic")
+	}
+
+	if topic, err = r.Topic(ctx, v1, t2.ID); err == nil {
+		t.Fatal("User 1 able to see topic in private repo of user 2")
+	}
+
+	if topic, err = r.Topic(ctx, v2, t2.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if topic == nil {
+		t.Fatal("User 2 unable to fetch own topic")
+	}
+
+	if topic, err = r.Topic(ctx, v2, t1.ID); err == nil {
+		t.Fatal("User 2 able to see topic in private repo of user 1")
 	}
 }

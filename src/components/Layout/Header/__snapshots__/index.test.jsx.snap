@@ -15,7 +15,7 @@ exports[`<Header /> renders 1`] = `
       >
         <Link
           className="text-gray-dark n-link no-underline"
-          to="/topics/df63295e-ee02-11e8-9e36-17d56b662bc8"
+          to="/some-repo/topics/123"
         >
           <span
             className="mr-2 d-inline-block"
@@ -45,6 +45,11 @@ exports[`<Header /> renders 1`] = `
           <ViewerDropdown
             viewer={
               Object {
+                "defaultRepository": Object {
+                  "rootTopic": Object {
+                    "resourcePath": "/some-repo/topics/123",
+                  },
+                },
                 "name": "Frotz",
               }
             }

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/models"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type userResolver struct {
@@ -29,10 +28,7 @@ func (r *userResolver) CreatedAt(_ context.Context, user *models.User) (string, 
 func (r *userResolver) DefaultRepository(
 	ctx context.Context, user *models.User,
 ) (*models.Repository, error) {
-	return models.Repositories(
-		qm.Load("Organization"),
-		qm.Where("system = true and owner_id = ?", user.ID),
-	).One(ctx, r.DB)
+	return user.DefaultRepo(ctx, r.DB)
 }
 
 // Email returns the email of a user.

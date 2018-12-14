@@ -14,6 +14,7 @@ type CreateUserResult struct {
 	User         *models.User
 	Repository   *models.Repository
 	Organization *models.Organization
+	RootTopic    *models.Topic
 }
 
 func (c Connection) CreateUser(
@@ -69,9 +70,22 @@ func (c Connection) CreateUser(
 		return nil, err
 	}
 
+	log.Printf("Creating a root topic for %s", githubUsername)
+	topic := models.Topic{
+		OrganizationID: org.ID,
+		RepositoryID:   repo.ID,
+		Name:           "Everything",
+		Root:           true,
+	}
+
+	if err = topic.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+		return nil, err
+	}
+
 	return &CreateUserResult{
 		User:         &user,
 		Organization: &org,
 		Repository:   &repo,
+		RootTopic:    &topic,
 	}, nil
 }

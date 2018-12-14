@@ -78,7 +78,7 @@ type PageInfo {
 
 type Query {
   viewer: User
-  view(organizationIds: [ID!]): View!
+  view(repositoryIds: [ID!], viewerId: ID): View!
 }
 
 type Repository {
@@ -86,6 +86,7 @@ type Repository {
   organization: Organization!
   name: String!
   owner: User!
+  rootTopic: Topic!
 }
 
 interface ResourceIdentifiable {
@@ -172,7 +173,6 @@ input UpdateTopicInput {
   description: String
   id: ID!
   name: String!
-  repositoryId: String!
   topicIds: [ID!]
 }
 
@@ -204,7 +204,8 @@ type UpdateTopicParentTopicsPayload implements Alertable {
 input UpsertLinkInput {
   addParentTopicIds: [String!]
   clientMutationId: String
-  repositoryId: String!
+  organizationLogin: String!
+  repositoryName: String!
   title: String
   url: String!
 }
@@ -218,7 +219,8 @@ input UpsertTopicInput {
   clientMutationId: String
   description: String
   name: String!
-  repositoryId: String!
+  organizationLogin: String!
+  repositoryName: String!
   topicIds: [String!]
 }
 

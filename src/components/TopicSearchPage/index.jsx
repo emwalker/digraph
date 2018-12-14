@@ -75,11 +75,11 @@ class TopicSearchPage extends Component<Props> {
 
 export const query = graphql`
 query TopicSearchPage_query_Query(
-  $orgIds: [ID!],
+  $repoIds: [ID!],
   $topicId: ID!,
   $searchString: String!,
 ) {
-  view(organizationIds: $orgIds) {
+  view(repositoryIds: $repoIds) {
     topic(id: $topicId) {
       ...TopicSearchPage_topic @arguments(searchString: $searchString)
     }

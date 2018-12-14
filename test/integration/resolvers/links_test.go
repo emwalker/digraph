@@ -10,7 +10,7 @@ import (
 )
 
 func TestUpsertLink(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	topic, err := models.Topics().One(m.ctx, testDB)
 	if err != nil {
@@ -19,7 +19,8 @@ func TestUpsertLink(t *testing.T) {
 
 	input := models.UpsertLinkInput{
 		AddParentTopicIds: []string{topic.ID},
-		RepositoryID:      defaultRepo.ID,
+		OrganizationLogin: testActor.Login,
+		RepositoryName:    m.defaultRepo().Name,
 		URL:               "https://gnusto.blog",
 	}
 
@@ -75,7 +76,7 @@ func TestUpsertLink(t *testing.T) {
 }
 
 func TestUpdateParentTopics(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
 
 	link, cleanup := m.createLink("Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
@@ -124,7 +125,10 @@ func TestUpdateParentTopics(t *testing.T) {
 }
 
 func TestAvailableTopics(t *testing.T) {
-	m := newMutator(t)
+	m := newMutator(t, testActor)
+
+	_, cleanup := m.createTopic("Something")
+	defer cleanup()
 
 	link, cleanup := m.createLink("Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()

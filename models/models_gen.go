@@ -80,7 +80,6 @@ type UpdateTopicInput struct {
 	Description      *string  `json:"description"`
 	ID               string   `json:"id"`
 	Name             string   `json:"name"`
-	RepositoryID     string   `json:"repositoryId"`
 	TopicIds         []string `json:"topicIds"`
 }
 
@@ -104,7 +103,8 @@ type UpdateTopicPayload struct {
 type UpsertLinkInput struct {
 	AddParentTopicIds []string `json:"addParentTopicIds"`
 	ClientMutationID  *string  `json:"clientMutationId"`
-	RepositoryID      string   `json:"repositoryId"`
+	OrganizationLogin string   `json:"organizationLogin"`
+	RepositoryName    string   `json:"repositoryName"`
 	Title             *string  `json:"title"`
 	URL               string   `json:"url"`
 }
@@ -117,11 +117,12 @@ type UpsertLinkPayload struct {
 func (UpsertLinkPayload) IsAlertable() {}
 
 type UpsertTopicInput struct {
-	ClientMutationID *string  `json:"clientMutationId"`
-	Description      *string  `json:"description"`
-	Name             string   `json:"name"`
-	RepositoryID     string   `json:"repositoryId"`
-	TopicIds         []string `json:"topicIds"`
+	ClientMutationID  *string  `json:"clientMutationId"`
+	Description       *string  `json:"description"`
+	Name              string   `json:"name"`
+	OrganizationLogin string   `json:"organizationLogin"`
+	RepositoryName    string   `json:"repositoryName"`
+	TopicIds          []string `json:"topicIds"`
 }
 
 type UpsertTopicPayload struct {

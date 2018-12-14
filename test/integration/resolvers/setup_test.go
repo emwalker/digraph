@@ -11,6 +11,7 @@ import (
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/emwalker/digraph/services"
 	"github.com/emwalker/digraph/services/pageinfo"
+	helpers "github.com/emwalker/digraph/testing"
 	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -18,17 +19,29 @@ import (
 const orgId = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
 var (
-	testDB      *sql.DB
-	defaultRepo *models.Repository
+	testDB    *sql.DB
+	testActor *models.User
 )
 
 type testFetcher struct{}
 
 type mutator struct {
-	t        *testing.T
-	db       *sql.DB
+	actor    *models.User
 	ctx      context.Context
+	db       *sql.DB
 	resolver models.MutationResolver
+	t        *testing.T
+}
+
+func (m mutator) defaultRepo() *models.Repository {
+	repo, err := m.actor.OwnerRepositories(
+		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
+		qm.Where("repositories.system and o.login = ?", m.actor.Login),
+	).One(m.ctx, testDB)
+	if err != nil {
+		panic(err)
+	}
+	return repo
 }
 
 func TestMain(m *testing.M) {
@@ -38,9 +51,7 @@ func TestMain(m *testing.M) {
 
 	var err error
 
-	defaultRepo, err = models.Repositories(
-		qm.Where("organization_id = ? and system", orgId),
-	).One(context.Background(), testDB)
+	testActor, err = models.Users().One(context.Background(), testDB)
 	if err != nil {
 		panic(err)
 	}
@@ -56,21 +67,18 @@ func newTestDb() *sql.DB {
 	return testDB
 }
 
-func newView() *models.View {
-	return &models.View{OrganizationIds: []string{orgId}}
-}
-
-func newMutator(t *testing.T) mutator {
-	ctx := context.Background()
-	actor, err := models.Users().One(ctx, testDB)
-	if err != nil {
-		panic(err)
-	}
-
+func newMutator(t *testing.T, actor *models.User) mutator {
 	resolver := &resolvers.MutationResolver{
 		&resolvers.Resolver{DB: testDB, Actor: actor},
 	}
-	return mutator{t, testDB, ctx, resolver}
+
+	return mutator{
+		actor:    actor,
+		ctx:      context.Background(),
+		db:       testDB,
+		resolver: resolver,
+		t:        t,
+	}
 }
 
 func (f *testFetcher) FetchPage(url string) (*pageinfo.PageInfo, error) {
@@ -82,7 +90,7 @@ func (f *testFetcher) FetchPage(url string) (*pageinfo.PageInfo, error) {
 }
 
 func (m mutator) addParentTopicToTopic(child, parent *models.Topic) {
-	everything, err := models.Topics(qm.Where("name like 'Everything'")).One(m.ctx, testDB)
+	everything, err := models.Topics(qm.Where("name like 'Everything'")).One(context.Background(), testDB)
 	if err != nil {
 		m.t.Fatal(err)
 	}
@@ -119,16 +127,17 @@ func (m mutator) deleteTopic(topic models.Topic) {
 	}
 }
 
-func (m mutator) createTopic(name string) (*models.Topic, func()) {
+func (m mutator) createTopic(name string) (*models.Topic, helpers.CleanupFunc) {
 	parentTopic, err := models.Topics(qm.Where("name like 'Everything'")).One(m.ctx, m.db)
 	if err != nil {
 		m.t.Fatal(err)
 	}
 
 	input := models.UpsertTopicInput{
-		Name:         name,
-		RepositoryID: defaultRepo.ID,
-		TopicIds:     []string{parentTopic.ID},
+		Name:              name,
+		OrganizationLogin: m.actor.Login,
+		RepositoryName:    m.defaultRepo().Name,
+		TopicIds:          []string{parentTopic.ID},
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
@@ -138,17 +147,19 @@ func (m mutator) createTopic(name string) (*models.Topic, func()) {
 
 	topic := payload.TopicEdge.Node
 
-	cleanup := func() {
+	cleanup := func() error {
 		m.deleteTopic(topic)
+		return nil
 	}
 
 	return &topic, cleanup
 }
 
-func (m mutator) createLink(title, url string) (*models.Link, func()) {
+func (m mutator) createLink(title, url string) (*models.Link, helpers.CleanupFunc) {
 	payload1, err := m.resolver.UpsertLink(m.ctx, models.UpsertLinkInput{
 		AddParentTopicIds: []string{},
-		RepositoryID:      defaultRepo.ID,
+		OrganizationLogin: testActor.Login,
+		RepositoryName:    m.defaultRepo().Name,
 		Title:             &title,
 		URL:               url,
 	})
@@ -158,7 +169,7 @@ func (m mutator) createLink(title, url string) (*models.Link, func()) {
 
 	link := payload1.LinkEdge.Node
 
-	cleanup := func() {
+	cleanup := func() error {
 		count, err := link.Delete(m.ctx, testDB)
 		if err != nil {
 			m.t.Fatal(err)
@@ -167,6 +178,7 @@ func (m mutator) createLink(title, url string) (*models.Link, func()) {
 		if count != int64(1) {
 			m.t.Fatal("Expected at least one updated record")
 		}
+		return nil
 	}
 
 	return &link, cleanup

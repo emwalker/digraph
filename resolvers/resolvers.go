@@ -5,6 +5,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/emwalker/digraph/models"
 )
@@ -75,6 +76,15 @@ func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
 }
 
 // View returns a resolver that filters results on the basis of one or more organizations.
-func (r *queryResolver) View(ctx context.Context, organizationIds []string) (models.View, error) {
-	return models.View{OrganizationIds: organizationIds}, nil
+func (r *queryResolver) View(
+	ctx context.Context, repositoryIds []string, viewerID *string,
+) (models.View, error) {
+	if viewerID == nil {
+		var viewer *models.User
+		if viewer = getCurrentUser(ctx); viewer == nil {
+			return models.View{}, errors.New("No viewer has been provided")
+		}
+		viewerID = &viewer.ID
+	}
+	return models.View{ViewerID: *viewerID, RepositoryIds: repositoryIds}, nil
 }

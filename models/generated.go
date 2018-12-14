@@ -100,7 +100,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Viewer func(childComplexity int) int
-		View   func(childComplexity int, organizationIds []string) int
+		View   func(childComplexity int, repositoryIds []string, viewerId *string) int
 	}
 
 	Repository struct {
@@ -108,6 +108,7 @@ type ComplexityRoot struct {
 		Organization func(childComplexity int) int
 		Name         func(childComplexity int) int
 		Owner        func(childComplexity int) int
+		RootTopic    func(childComplexity int) int
 	}
 
 	SearchResultItemConnection struct {
@@ -212,12 +213,13 @@ type OrganizationResolver interface {
 }
 type QueryResolver interface {
 	Viewer(ctx context.Context) (*User, error)
-	View(ctx context.Context, organizationIds []string) (View, error)
+	View(ctx context.Context, repositoryIds []string, viewerId *string) (View, error)
 }
 type RepositoryResolver interface {
 	Organization(ctx context.Context, obj *Repository) (Organization, error)
 
 	Owner(ctx context.Context, obj *Repository) (User, error)
+	RootTopic(ctx context.Context, obj *Repository) (Topic, error)
 }
 type TopicResolver interface {
 	AvailableParentTopics(ctx context.Context, obj *Topic, first *int, after *string, last *int, before *string) (TopicConnection, error)
@@ -451,7 +453,7 @@ func field_Mutation_upsertTopic_args(rawArgs map[string]interface{}) (map[string
 func field_Query_view_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 []string
-	if tmp, ok := rawArgs["organizationIds"]; ok {
+	if tmp, ok := rawArgs["repositoryIds"]; ok {
 		var err error
 		var rawIf1 []interface{}
 		if tmp != nil {
@@ -469,7 +471,21 @@ func field_Query_view_args(rawArgs map[string]interface{}) (map[string]interface
 			return nil, err
 		}
 	}
-	args["organizationIds"] = arg0
+	args["repositoryIds"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["viewerId"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalID(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["viewerId"] = arg1
 	return args, nil
 
 }
@@ -1330,7 +1346,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.View(childComplexity, args["organizationIds"].([]string)), true
+		return e.complexity.Query.View(childComplexity, args["repositoryIds"].([]string), args["viewerId"].(*string)), true
 
 	case "Repository.id":
 		if e.complexity.Repository.Id == nil {
@@ -1359,6 +1375,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Repository.Owner(childComplexity), true
+
+	case "Repository.rootTopic":
+		if e.complexity.Repository.RootTopic == nil {
+			break
+		}
+
+		return e.complexity.Repository.RootTopic(childComplexity), true
 
 	case "SearchResultItemConnection.edges":
 		if e.complexity.SearchResultItemConnection.Edges == nil {
@@ -3093,7 +3116,7 @@ func (ec *executionContext) _Query_view(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().View(rctx, args["organizationIds"].([]string))
+		return ec.resolvers.Query().View(rctx, args["repositoryIds"].([]string), args["viewerId"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3207,6 +3230,15 @@ func (ec *executionContext) _Repository(ctx context.Context, sel ast.SelectionSe
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Repository_owner(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "rootTopic":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Repository_rootTopic(ctx, field, obj)
 				if out.Values[i] == graphql.Null {
 					invalid = true
 				}
@@ -3328,6 +3360,34 @@ func (ec *executionContext) _Repository_owner(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
 	return ec._User(ctx, field.Selections, &res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Repository_rootTopic(ctx context.Context, field graphql.CollectedField, obj *Repository) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Repository",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Repository().RootTopic(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Topic)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Topic(ctx, field.Selections, &res)
 }
 
 var searchResultItemConnectionImplementors = []string{"SearchResultItemConnection"}
@@ -6778,12 +6838,6 @@ func UnmarshalUpdateTopicInput(v interface{}) (UpdateTopicInput, error) {
 			if err != nil {
 				return it, err
 			}
-		case "repositoryId":
-			var err error
-			it.RepositoryID, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
 		case "topicIds":
 			var err error
 			var rawIf1 []interface{}
@@ -6887,9 +6941,15 @@ func UnmarshalUpsertLinkInput(v interface{}) (UpsertLinkInput, error) {
 			if err != nil {
 				return it, err
 			}
-		case "repositoryId":
+		case "organizationLogin":
 			var err error
-			it.RepositoryID, err = graphql.UnmarshalString(v)
+			it.OrganizationLogin, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "repositoryName":
+			var err error
+			it.RepositoryName, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -6950,9 +7010,15 @@ func UnmarshalUpsertTopicInput(v interface{}) (UpsertTopicInput, error) {
 			if err != nil {
 				return it, err
 			}
-		case "repositoryId":
+		case "organizationLogin":
 			var err error
-			it.RepositoryID, err = graphql.UnmarshalString(v)
+			it.OrganizationLogin, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "repositoryName":
+			var err error
+			it.RepositoryName, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -7089,7 +7155,7 @@ type PageInfo {
 
 type Query {
   viewer: User
-  view(organizationIds: [ID!]): View!
+  view(repositoryIds: [ID!], viewerId: ID): View!
 }
 
 type Repository {
@@ -7097,6 +7163,7 @@ type Repository {
   organization: Organization!
   name: String!
   owner: User!
+  rootTopic: Topic!
 }
 
 interface ResourceIdentifiable {
@@ -7183,7 +7250,6 @@ input UpdateTopicInput {
   description: String
   id: ID!
   name: String!
-  repositoryId: String!
   topicIds: [ID!]
 }
 
@@ -7215,7 +7281,8 @@ type UpdateTopicParentTopicsPayload implements Alertable {
 input UpsertLinkInput {
   addParentTopicIds: [String!]
   clientMutationId: String
-  repositoryId: String!
+  organizationLogin: String!
+  repositoryName: String!
   title: String
   url: String!
 }
@@ -7229,7 +7296,8 @@ input UpsertTopicInput {
   clientMutationId: String
   description: String
   name: String!
-  repositoryId: String!
+  organizationLogin: String!
+  repositoryName: String!
   topicIds: [String!]
 }
 

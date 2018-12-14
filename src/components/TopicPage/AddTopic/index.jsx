@@ -12,10 +12,9 @@ type State = {
 }
 
 type Props = RelayProps & {
+  orgLogin: string,
   viewer: {
-    defaultRepository: {
-      id: ID,
-    },
+    id: ID,
   },
 }
 
@@ -41,12 +40,6 @@ class AddTopic extends Component<Props, State> {
     }]
   }
 
-  get repositoryId(): ?string {
-    if (this.props.viewer)
-      return this.props.viewer.defaultRepository.id
-    return null
-  }
-
   updateName = (event: Object) => {
     this.setState({ name: event.currentTarget.value })
   }
@@ -57,7 +50,8 @@ class AddTopic extends Component<Props, State> {
       this.relayConfigs,
       {
         name: this.state.name,
-        repositoryId: this.repositoryId,
+        repositoryName: 'system:default',
+        organizationLogin: this.props.orgLogin,
         topicIds: [this.props.topic.id],
       },
     )

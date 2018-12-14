@@ -3,7 +3,6 @@ import React from 'react'
 import { QueryRenderer, graphql } from 'react-relay'
 
 import type { LinkType } from 'components/types'
-import { defaultOrganizationId } from 'components/constants'
 import EditLinkForm from './EditLinkForm'
 
 type RendererProps = {
@@ -12,12 +11,13 @@ type RendererProps = {
     view: {
       link: LinkType,
     },
+    orgLogin: string,
   },
 }
 
 /* eslint react/prop-types: 0 */
 
-const renderer = ({ isOpen, toggleForm }) => ({ error, props }: RendererProps) => {
+const renderer = ({ isOpen, orgLogin, toggleForm }) => ({ error, props }: RendererProps) => {
   if (error)
     return <div>{error.message}</div>
 
@@ -28,6 +28,7 @@ const renderer = ({ isOpen, toggleForm }) => ({ error, props }: RendererProps) =
     <EditLinkForm
       isOpen={isOpen}
       link={props.view.link}
+      orgLogin={orgLogin}
       toggleForm={toggleForm}
       viewer={props.viewer}
     />
@@ -43,16 +44,16 @@ type Props = {
   toggleForm: Function,
 }
 
-const EditLink = ({ isOpen, link, relay, toggleForm }: Props) => (
+const EditLink = ({ isOpen, link, orgLogin, relay, toggleForm }: Props) => (
   <QueryRenderer
     environment={relay.environment}
     query={graphql`
-      query EditLinkQuery($orgIds: [ID!], $linkId: ID!) {
+      query EditLinkQuery($repoIds: [ID!], $linkId: ID!) {
         viewer {
           ...EditLinkForm_viewer
         }
 
-        view(organizationIds: $orgIds) {
+        view(repositoryIds: $repoIds) {
           link(id: $linkId) {
             ...EditLinkForm_link
           }
@@ -61,9 +62,9 @@ const EditLink = ({ isOpen, link, relay, toggleForm }: Props) => (
     `}
     variables={{
       linkId: link.id,
-      orgIds: [defaultOrganizationId],
+      repoIds: [],
     }}
-    render={renderer({ isOpen, toggleForm })}
+    render={renderer({ isOpen, orgLogin, toggleForm })}
   />
 )
 

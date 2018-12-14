@@ -6,6 +6,11 @@ import Header from './index'
 const props = {
   viewer: {
     name: 'Frotz',
+    defaultRepository: {
+      rootTopic: {
+        resourcePath: '/some-repo/topics/123',
+      },
+    },
   },
 }
 

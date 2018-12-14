@@ -1,7 +1,11 @@
 package models
 
 import (
+	"context"
+
 	"github.com/google/uuid"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 // IsNamespaceable tags Link as implementing the Namespaceable interface.
@@ -12,6 +16,9 @@ func (Link) IsResourceIdentifiable() {}
 
 // IsSearchResultItem tags Link as being in the SearchResultItem union.
 func (Link) IsSearchResultItem() {}
+
+// IsResourceIdentifiable tags Repository as implementing the ResourceIdentifiable interface.
+func (Repository) IsResourceIdentifiable() {}
 
 // IsNamespaceable tags Topic as implementing the Namespaceable interface.
 func (Topic) IsNamespaceable() {}
@@ -32,4 +39,17 @@ func NewAlert(typ AlertType, text string) *Alert {
 		Text: text,
 		Type: typ,
 	}
+}
+
+func (u *User) DefaultRepo(ctx context.Context, exec boil.ContextExecutor) (*Repository, error) {
+	// log.Printf("Looking for %s and %s (%s)", u.Login, u.ID, u.Name)
+	return Repositories(
+		qm.Load("Organization"),
+		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
+		qm.Where("o.login = ? and repositories.system and repositories.owner_id = ?", u.Login, u.ID),
+	).One(ctx, exec)
+}
+
+func (r *Repository) RootTopic(ctx context.Context, exec boil.ContextExecutor) (*Topic, error) {
+	return r.Topics(qm.Where("root")).One(ctx, exec)
 }

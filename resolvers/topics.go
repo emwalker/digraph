@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math"
 	"time"
@@ -61,7 +62,11 @@ func (r *topicResolver) ChildTopics(
 	last *int, before *string,
 ) (models.TopicConnection, error) {
 	mods := []qm.QueryMod{
+		qm.Load("Repository"),
+		qm.Load("Organization"),
 		qm.Load("ParentTopics"),
+		qm.Load("ParentTopics.Repository"),
+		qm.Load("ParentTopics.Organization"),
 		qm.OrderBy("name"),
 	}
 
@@ -89,6 +94,8 @@ func (r *topicResolver) Links(
 ) (models.LinkConnection, error) {
 	mods := []qm.QueryMod{
 		qm.Load("ParentTopics"),
+		qm.Load("ParentTopics.Repository"),
+		qm.Load("ParentTopics.Organization"),
 		qm.OrderBy("created_at desc"),
 	}
 
@@ -100,15 +107,18 @@ func (r *topicResolver) Links(
 	return linkConnection(scope.All(ctx, r.DB))
 }
 
-// Organization returns a set of links.
+// Organization returns an organization.
 func (r *topicResolver) Organization(
 	ctx context.Context, topic *models.Topic,
 ) (models.Organization, error) {
+	if topic.R != nil && topic.R.Organization != nil {
+		return *topic.R.Organization, nil
+	}
 	org, err := topic.Organization().One(ctx, r.DB)
 	return *org, err
 }
 
-// ParentTopics returns a set of links.
+// ParentTopics returns a set of topics.
 func (r *topicResolver) ParentTopics(
 	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
@@ -117,20 +127,47 @@ func (r *topicResolver) ParentTopics(
 	}
 
 	log.Printf("Fetching parent topics for topic %s", topic.ID)
-	return topicConnection(topic.ParentTopics(qm.OrderBy("name")).All(ctx, r.DB))
+	mods := []qm.QueryMod{
+		qm.Load("Repository"),
+		qm.Load("Organization"),
+		qm.OrderBy("name"),
+	}
+	return topicConnection(topic.ParentTopics(mods...).All(ctx, r.DB))
 }
 
 // Repository returns the repostory of the topic.
 func (r *topicResolver) Repository(
 	ctx context.Context, topic *models.Topic,
 ) (models.Repository, error) {
+	if topic.R != nil && topic.R.Repository != nil {
+		return *topic.R.Repository, nil
+	}
 	org, err := topic.Repository().One(ctx, r.DB)
 	return *org, err
 }
 
 // ResourcePath returns a path to the item.
-func (r *topicResolver) ResourcePath(_ context.Context, topic *models.Topic) (string, error) {
-	return "/topics/" + topic.ID, nil
+func (r *topicResolver) ResourcePath(ctx context.Context, topic *models.Topic) (string, error) {
+	var repo *models.Repository
+	var org *models.Organization
+	var err error
+
+	if topic.R != nil && topic.R.Repository != nil {
+		repo = topic.R.Repository
+	} else if repo, err = topic.Repository().One(ctx, r.DB); err != nil {
+		return "", err
+	}
+
+	if topic.R != nil && topic.R.Organization != nil {
+		org = topic.R.Organization
+	} else if org, err = topic.Organization().One(ctx, r.DB); err != nil {
+		return "", err
+	}
+
+	if repo.System {
+		return fmt.Sprintf("/%s/topics/%s", org.Login, topic.ID), nil
+	}
+	return fmt.Sprintf("/%s/%s/topics/%s", org.Login, repo.Name, topic.ID), nil
 }
 
 func (r *topicResolver) matchingDescendantTopics(
