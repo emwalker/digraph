@@ -39,6 +39,7 @@ const TopicPage = ({ location, router, topic, viewer, ...props }: Props) => {
         heading={name}
         location={location}
         router={router}
+        viewer={viewer}
       />
       <div className="two-thirds column pl-0">
         <List
@@ -90,6 +91,7 @@ query TopicPage_query_Query(
 ) {
   viewer {
     id
+    ...Subhead_viewer
   }
 
   view(repositoryIds: $repoIds) {

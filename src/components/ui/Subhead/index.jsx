@@ -1,8 +1,11 @@
 // @flow
 import React, { Component } from 'react'
+import { createFragmentContainer, graphql } from 'react-relay'
+import { pathOr } from 'ramda'
 
-import { everythingTopicPath } from 'components/constants'
 import SearchBox from 'components/ui/SearchBox'
+
+const resourcePath = pathOr('/', ['defaultRepository', 'rootTopic', 'resourcePath'])
 
 type Props = {
   heading: string,
@@ -14,16 +17,27 @@ type Props = {
   router: {
     push: Function,
   },
+  viewer: {
+    defaultRepository: {
+      rootTopic: {
+        resourcePath: string,
+      },
+    },
+  },
 }
 
 class Subhead extends Component<Props> {
   onSearch = (query) => {
     if (query === '') {
-      this.props.router.push({ pathname: everythingTopicPath })
+      this.props.router.push({ pathname: this.pathname })
       return
     }
 
-    this.props.router.push({ pathname: everythingTopicPath, query: { q: query } })
+    this.props.router.push({ pathname: this.pathname, query: { q: query } })
+  }
+
+  get pathname(): string {
+    return resourcePath(this.props.viewer)
   }
 
   get searchString(): string {
@@ -40,4 +54,12 @@ class Subhead extends Component<Props> {
   )
 }
 
-export default Subhead
+export default createFragmentContainer(Subhead, graphql`
+  fragment Subhead_viewer on User {
+    defaultRepository {
+      rootTopic {
+        resourcePath
+      }
+    }
+  }
+`)
