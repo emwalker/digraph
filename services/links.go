@@ -17,6 +17,7 @@ import (
 
 type UpsertLinkResult struct {
 	Alerts      []models.Alert
+	Cleanup     CleanupFunc
 	Link        *models.Link
 	LinkCreated bool
 }
@@ -134,7 +135,7 @@ func (c Connection) UpsertLink(
 		alerts = append(alerts,
 			*models.NewAlert(models.AlertTypeWarn, fmt.Sprintf("Not a valid link: %s", providedUrl)),
 		)
-		return &UpsertLinkResult{Alerts: alerts}, nil
+		return &UpsertLinkResult{Alerts: alerts, Cleanup: func() error { return nil }}, nil
 	}
 
 	link := models.Link{
@@ -163,8 +164,15 @@ func (c Connection) UpsertLink(
 		return nil, err
 	}
 
-	err = c.addParentTopicsToLink(ctx, link, parentTopicIds)
-	if err != nil {
+	if len(parentTopicIds) < 1 {
+		var rootTopic *models.Topic
+		if rootTopic, err = repo.Topics(qm.Where("root")).One(ctx, c.Exec); err != nil {
+			return nil, err
+		}
+		parentTopicIds = append(parentTopicIds, rootTopic.ID)
+	}
+
+	if err = c.addParentTopicsToLink(ctx, link, parentTopicIds); err != nil {
 		return nil, err
 	}
 
@@ -174,8 +182,19 @@ func (c Connection) UpsertLink(
 		}
 	}
 
+	cleanup := func() error {
+		if existing < 1 {
+			log.Printf("Deleteing link %s", link.ID)
+			if _, err = link.Delete(ctx, c.Exec); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
 	return &UpsertLinkResult{
 		Alerts:      alerts,
+		Cleanup:     cleanup,
 		Link:        &link,
 		LinkCreated: existing < 1,
 	}, nil

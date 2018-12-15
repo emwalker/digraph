@@ -22,6 +22,7 @@ type UpsertTopicResult struct {
 	Alerts       []models.Alert
 	Topic        *models.Topic
 	TopicCreated bool
+	Cleanup      CleanupFunc
 }
 
 func (c Connection) UpdateTopicParentTopics(
@@ -63,6 +64,14 @@ func (c Connection) UpsertTopic(
 		return nil, err
 	}
 
+	if len(parentTopicIds) < 1 {
+		var rootTopic *models.Topic
+		if rootTopic, err = repo.Topics(qm.Where("root")).One(ctx, c.Exec); err != nil {
+			return nil, err
+		}
+		parentTopicIds = append(parentTopicIds, rootTopic.ID)
+	}
+
 	parents, alerts, err := c.parentTopicsToAdd(ctx, topic, parentTopicIds)
 	if err != nil {
 		return nil, err
@@ -94,8 +103,19 @@ func (c Connection) UpsertTopic(
 		)
 	}
 
+	cleanup := func() error {
+		if created {
+			log.Printf("Deleteing topic %s", topic.ID)
+			if _, err = topic.Delete(ctx, c.Exec); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
 	return &UpsertTopicResult{
 		Alerts:       alerts,
+		Cleanup:      cleanup,
 		Topic:        topic,
 		TopicCreated: created,
 	}, nil

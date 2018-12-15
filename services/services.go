@@ -9,3 +9,5 @@ type Connection struct {
 	Exec  boil.ContextExecutor
 	Actor *models.User
 }
+
+type CleanupFunc func() error

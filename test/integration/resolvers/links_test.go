@@ -88,8 +88,8 @@ func TestUpdateParentTopics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(topics) != 0 {
-		t.Fatal("Expected to find no topics")
+	if len(topics) > 1 {
+		t.Fatal("Expected to find only a single topic")
 	}
 
 	var addTopics []*models.Topic
