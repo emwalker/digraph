@@ -99,14 +99,9 @@ func (r *viewResolver) Repository(
 		return nil, errors.New("Either id or organizationLogin must be provided")
 	}
 
-	if name == nil {
-		buf := "system:default"
-		name = &buf
-	}
-
 	mods := []qm.QueryMod{
 		qm.InnerJoin("organizations o on repositories.organization_id = o.id"),
-		qm.Where("repositories.name = ? and o.login = ?", name, organizationLogin),
+		qm.Where("repositories.system and o.login = ?", organizationLogin),
 	}
 	return models.Repositories(mods...).One(ctx, r.DB)
 }

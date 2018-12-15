@@ -13,7 +13,7 @@ type repositoryResolver struct {
 func (r *repositoryResolver) DisplayName(
 	ctx context.Context, repo *models.Repository,
 ) (string, error) {
-	if repo.Name == "system:default" {
+	if repo.IsPrivate() {
 		return "Private collection", nil
 	}
 	return repo.Name, nil
@@ -23,7 +23,7 @@ func (r *repositoryResolver) DisplayName(
 func (r *repositoryResolver) IsPrivate(
 	ctx context.Context, repo *models.Repository,
 ) (bool, error) {
-	return repo.System == true, nil
+	return repo.IsPrivate(), nil
 }
 
 // Organization returns a set of links.
@@ -31,6 +31,9 @@ func (r *repositoryResolver) Organization(
 	ctx context.Context, repo *models.Repository,
 ) (models.Organization, error) {
 	org, err := repo.Organization().One(ctx, r.DB)
+	if err != nil {
+		return models.Organization{}, err
+	}
 	return *org, err
 }
 

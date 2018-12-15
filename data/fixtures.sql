@@ -660,7 +660,7 @@ b336b93e-fc14-11e8-bd87-4304c8bbc51f	system:default	2018-12-09 18:44:07.08699-06
 --
 
 COPY public.repositories (id, organization_id, name, owner_id, system) FROM stdin;
-74d371f6-fc0e-11e8-b94e-2b8c1a2e2e6c	45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	system:default	4e92536e-fb72-11e8-b625-13a08229cacc	t
+74d371f6-fc0e-11e8-b94e-2b8c1a2e2e6c	45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	General collection	4e92536e-fb72-11e8-b625-13a08229cacc	t
 b337077c-fc14-11e8-bd87-4bb3a707bd88	b336b93e-fc14-11e8-bd87-4304c8bbc51f	system:default	4e92536e-fb72-11e8-b625-13a08229cacc	t
 \.
 
@@ -808,6 +808,7 @@ b336b93e-fc14-11e8-bd87-4304c8bbc51f	53680af8-ef9e-11e8-843e-737cd2a3e62f	Aviati
 b336b93e-fc14-11e8-bd87-4304c8bbc51f	bd9789e0-efa2-11e8-9c47-3b8ea26f89ae	Wars	\N	2018-12-08 22:52:44.727635-06	2018-12-14 00:09:15.502897-06	b337077c-fc14-11e8-bd87-4bb3a707bd88	f
 b336b93e-fc14-11e8-bd87-4304c8bbc51f	df63295e-ee02-11e8-9e36-17d56b662bc8	Everything		2018-12-08 22:52:44.727635-06	2018-12-14 00:09:15.502897-06	b337077c-fc14-11e8-bd87-4bb3a707bd88	t
 b336b93e-fc14-11e8-bd87-4304c8bbc51f	37f6d00e-ff68-11e8-830a-63c0bad76138	New topicz		2018-12-14 00:19:31.536962-06	2018-12-14 00:39:05.421744-06	b337077c-fc14-11e8-bd87-4bb3a707bd88	f
+45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb	9c3be6be-00a1-11e9-9bfe-03433e250b67	Everything	\N	2018-12-15 13:42:52.238226-06	2018-12-15 13:42:52.238226-06	74d371f6-fc0e-11e8-b94e-2b8c1a2e2e6c	t
 b336b93e-fc14-11e8-bd87-4304c8bbc51f	385d490c-ff4e-11e8-8929-ff7a7358d385	New subtopic	\N	2018-12-13 21:13:25.293111-06	2018-12-14 00:09:15.502897-06	b337077c-fc14-11e8-bd87-4bb3a707bd88	f
 b336b93e-fc14-11e8-bd87-4304c8bbc51f	f1e1b1d6-ee02-11e8-987f-5f8b10f1ae1b	Hiring for a business	\N	2018-12-08 22:52:44.727635-06	2018-12-14 00:09:15.502897-06	b337077c-fc14-11e8-bd87-4bb3a707bd88	f
 b336b93e-fc14-11e8-bd87-4304c8bbc51f	492019e8-ee07-11e8-8642-239c847b42a7	Engineering	\N	2018-12-08 22:52:44.727635-06	2018-12-14 00:09:15.502897-06	b337077c-fc14-11e8-bd87-4bb3a707bd88	f
@@ -845,7 +846,7 @@ COPY public.users (id, name, primary_email, created_at, updated_at, github_usern
 -- Name: sessions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.sessions_id_seq', 43, true);
+SELECT pg_catalog.setval('public.sessions_id_seq', 64, true);
 
 
 --

@@ -53,3 +53,7 @@ func (u *User) DefaultRepo(ctx context.Context, exec boil.ContextExecutor) (*Rep
 func (r *Repository) RootTopic(ctx context.Context, exec boil.ContextExecutor) (*Topic, error) {
 	return r.Topics(qm.Where("root")).One(ctx, exec)
 }
+
+func (r *Repository) IsPrivate() bool {
+	return r.System && r.Name == "system:default"
+}
