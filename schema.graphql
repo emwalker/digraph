@@ -82,9 +82,11 @@ type Query {
 }
 
 type Repository {
+  displayName: String!
   id: ID
-  organization: Organization!
+  isPrivate: Boolean!
   name: String!
+  organization: Organization!
   owner: User!
   rootTopic: Topic!
 }
@@ -238,6 +240,7 @@ type View {
     last: Int,
     before: String
   ): LinkConnection!
+  repository(id: ID, name: String, organizationLogin: String): Repository
   topic(id: ID!): Topic
   topics(
     searchString: String,

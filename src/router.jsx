@@ -51,6 +51,7 @@ const renderTopicPage = ({ props, error }: any) => {
       topic={view.topic}
       location={location}
       orgLogin={params.orgLogin}
+      repoName={params.repoName}
       {...props}
     />
   )

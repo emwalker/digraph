@@ -10,6 +10,22 @@ type repositoryResolver struct {
 	*Resolver
 }
 
+func (r *repositoryResolver) DisplayName(
+	ctx context.Context, repo *models.Repository,
+) (string, error) {
+	if repo.Name == "system:default" {
+		return "Private collection", nil
+	}
+	return repo.Name, nil
+}
+
+// isPrivate indicates whether the repository is private or not.
+func (r *repositoryResolver) IsPrivate(
+	ctx context.Context, repo *models.Repository,
+) (bool, error) {
+	return repo.System == true, nil
+}
+
 // Organization returns a set of links.
 func (r *repositoryResolver) Organization(
 	ctx context.Context, repo *models.Repository,

@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/emwalker/digraph/models"
@@ -82,6 +83,32 @@ func (r *viewResolver) Links(
 
 	scope := models.Links(mods...)
 	return linkConnection(scope.All(ctx, r.DB))
+}
+
+func (r *viewResolver) Repository(
+	ctx context.Context, view *models.View, id, name, organizationLogin *string,
+) (*models.Repository, error) {
+	if id != nil {
+		mods := []qm.QueryMod{
+			qm.Where("id = ?", id),
+		}
+		return models.Repositories(mods...).One(ctx, r.DB)
+	}
+
+	if organizationLogin == nil {
+		return nil, errors.New("Either id or organizationLogin must be provided")
+	}
+
+	if name == nil {
+		buf := "system:default"
+		name = &buf
+	}
+
+	mods := []qm.QueryMod{
+		qm.InnerJoin("organizations o on repositories.organization_id = o.id"),
+		qm.Where("repositories.name = ? and o.login = ?", name, organizationLogin),
+	}
+	return models.Repositories(mods...).One(ctx, r.DB)
 }
 
 // Topic returns a topic for a given id.

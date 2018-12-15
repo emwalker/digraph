@@ -272,3 +272,57 @@ func TestTopicVisibility(t *testing.T) {
 		t.Fatal("User 2 able to see topic in private repo of user 1")
 	}
 }
+
+func TestFetchRepositoryFromView(t *testing.T) {
+	ctx := context.Background()
+	m := newMutator(t, testActor)
+
+	repo := m.defaultRepo()
+	org, err := repo.Organization().One(ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	view := &models.View{RepositoryIds: []string{repo.ID}}
+	viewResolver := (&resolvers.Resolver{DB: testDB}).View()
+
+	cases := []struct {
+		Name     string
+		RepoID   *string
+		RepoName *string
+		OrgLogin *string
+	}{
+		{
+			Name:     "When the repository id is provided",
+			RepoID:   &repo.ID,
+			RepoName: nil,
+			OrgLogin: nil,
+		},
+		{
+			Name:     "When the org login and repo name are provied",
+			RepoID:   nil,
+			RepoName: &repo.Name,
+			OrgLogin: &org.Login,
+		},
+		{
+			Name:     "When only the org login is provided",
+			RepoID:   nil,
+			RepoName: nil,
+			OrgLogin: &org.Login,
+		},
+	}
+
+	for _, td := range cases {
+		t.Run(td.Name, func(t *testing.T) {
+			// Using a name and org login
+			fetchedRepo, err := viewResolver.Repository(ctx, view, td.RepoID, td.RepoName, td.OrgLogin)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if repo.ID != fetchedRepo.ID {
+				t.Fatalf("Expected repo %s, got repo %s", repo.ID, fetchedRepo.ID)
+			}
+		})
+	}
+}

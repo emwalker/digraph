@@ -2,6 +2,14 @@
 
 exports[`<TopicPage /> renders 1`] = `
 <div>
+  <Breadcrumbs
+    repository={
+      Object {
+        "displayName": "Private collection",
+        "isPrivate": true,
+      }
+    }
+  />
   <Subhead
     heading="Frotz"
   />
@@ -26,11 +34,27 @@ exports[`<TopicPage /> renders 1`] = `
           "name": "Frotz",
         }
       }
+      view={
+        Object {
+          "repository": Object {
+            "displayName": "Private collection",
+            "isPrivate": true,
+          },
+        }
+      }
     />
     <AddLink
       topic={
         Object {
           "name": "Frotz",
+        }
+      }
+      view={
+        Object {
+          "repository": Object {
+            "displayName": "Private collection",
+            "isPrivate": true,
+          },
         }
       }
     />
