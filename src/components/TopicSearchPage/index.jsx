@@ -6,19 +6,24 @@ import { isEmpty } from 'ramda'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
 import List from 'components/ui/List'
+import Link from 'components/ui/Link'
+import Topic from 'components/ui/Topic'
+import Breadcrumbs from 'components/ui/Breadcrumbs'
 import type { TopicType } from '../types'
 import { liftNodes } from '../../utils'
-import Link from '../ui/Link'
-import Topic from '../ui/Topic'
 
 /* eslint no-underscore-dangle: 0 */
 
 type Props = {
   location: Object,
+  orgLogin: string,
   router: Object,
   topic: TopicType,
   viewer: {
     defaultRepository: Object,
+  },
+  view: {
+    repository: Object,
   },
 }
 
@@ -42,7 +47,7 @@ class TopicSearchPage extends Component<Props> {
   }
 
   render = () => {
-    const { location, router, topic, viewer } = this.props
+    const { location, orgLogin, router, topic, view, viewer } = this.props
     const {
       searchResults,
       name,
@@ -52,6 +57,10 @@ class TopicSearchPage extends Component<Props> {
 
     return (
       <div>
+        <Breadcrumbs
+          orgLogin={orgLogin}
+          repository={view.repository}
+        />
         <Subhead
           heading={name}
           location={location}
@@ -79,6 +88,8 @@ class TopicSearchPage extends Component<Props> {
 
 export const query = graphql`
 query TopicSearchPage_query_Query(
+  $orgLogin: String!
+  $repoName: String,
   $repoIds: [ID!],
   $topicId: ID!,
   $searchString: String!,
@@ -88,6 +99,10 @@ query TopicSearchPage_query_Query(
   }
 
   view(repositoryIds: $repoIds) {
+    repository(organizationLogin: $orgLogin, name: $repoName) {
+      ...Breadcrumbs_repository
+    }
+
     topic(id: $topicId) {
       ...TopicSearchPage_topic @arguments(searchString: $searchString)
     }

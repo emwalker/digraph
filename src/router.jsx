@@ -39,6 +39,8 @@ const renderTopicPage = ({ props, error }: any) => {
   if (location.query.q) {
     return (
       <TopicSearchPage
+        orgLogin={params.orgLogin}
+        repoName={params.repoName}
         topic={view.topic}
         location={location}
         {...props}

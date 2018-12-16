@@ -10,7 +10,14 @@ describe('<TopicPage />', () => {
     name: 'Frotz',
   }
 
-  const wrapper = shallow(<TopicPage topic={topic} />)
+  const view = {
+    repository: {
+      displayName: 'Private collection',
+      isPrivate: true,
+    },
+  }
+
+  const wrapper = shallow(<TopicPage topic={topic} view={view} />)
 
   it('renders', () => {
     expect(wrapper).toMatchSnapshot()
