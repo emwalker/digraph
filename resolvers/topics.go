@@ -179,7 +179,7 @@ func (r *topicResolver) matchingDescendantTopics(
 
 	err := queries.Raw(`
 	with recursive child_topics as (
-	  select parent_id, child_id
+	  select parent_id, parent_id as child_id
 	  from topic_topics where parent_id = $1
 	union
 	  select pt.child_id, ct.child_id

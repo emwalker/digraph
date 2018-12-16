@@ -1,6 +1,7 @@
 package resolvers_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/emwalker/digraph/models"
@@ -339,12 +340,12 @@ func TestSearchInTopic(t *testing.T) {
 		{
 			Name:         "Everything is returned when an empty string is provided",
 			SearchString: "",
-			Count:        3,
+			Count:        4,
 		},
 		{
 			Name:         "Links directly under the topic are returned",
 			SearchString: "News",
-			Count:        1,
+			Count:        2,
 		},
 		{
 			Name:         "Descendant links and topics are returned",
@@ -381,6 +382,43 @@ func TestSearchInTopic(t *testing.T) {
 				t.Fatalf("Expected %d results, got %d", td.Count, count)
 			}
 		})
+	}
+}
+
+func TestRootTopicIncludedInResults(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+
+	var err error
+	var root *models.Topic
+	if root, err = m.defaultRepo().RootTopic(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
+	topicResolver := (&resolvers.Resolver{DB: testDB}).Topic()
+
+	var conn models.SearchResultItemConnection
+	if conn, err = topicResolver.Search(ctx, root, root.Name, nil, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(conn.Edges) < 1 {
+		t.Fatal("Expected a result")
+	}
+
+	resultTopicIds := make(map[string]bool)
+	for _, edge := range conn.Edges {
+		if topic, ok := edge.Node.(models.Topic); ok {
+			resultTopicIds[topic.ID] = true
+		}
+	}
+
+	if len(resultTopicIds) < 1 {
+		t.Fatal("Expected at least one topic")
+	}
+
+	if _, ok := resultTopicIds[root.ID]; !ok {
+		t.Fatal("Expected root topic to show up in results")
 	}
 }
 
