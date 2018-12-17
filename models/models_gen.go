@@ -61,8 +61,8 @@ type TopicConnection struct {
 }
 
 type TopicEdge struct {
-	Cursor string `json:"cursor"`
-	Node   Topic  `json:"node"`
+	Cursor string     `json:"cursor"`
+	Node   TopicValue `json:"node"`
 }
 
 type UpdateLinkTopicsInput struct {
@@ -90,14 +90,14 @@ type UpdateTopicParentTopicsInput struct {
 }
 
 type UpdateTopicParentTopicsPayload struct {
-	Alerts []Alert `json:"alerts"`
-	Topic  Topic   `json:"topic"`
+	Alerts []Alert    `json:"alerts"`
+	Topic  TopicValue `json:"topic"`
 }
 
 func (UpdateTopicParentTopicsPayload) IsAlertable() {}
 
 type UpdateTopicPayload struct {
-	Topic Topic `json:"topic"`
+	Topic TopicValue `json:"topic"`
 }
 
 type UpsertLinkInput struct {

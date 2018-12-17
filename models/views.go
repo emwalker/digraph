@@ -3,6 +3,7 @@ package models
 type View struct {
 	CurrentOrganizationLogin string
 	CurrentRepositoryName    *string
+	CurrentRepository        *Repository
 	RepositoryIds            []string
 	ViewerID                 string
 }

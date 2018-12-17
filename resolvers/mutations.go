@@ -14,6 +14,10 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+type MutationResolver struct {
+	*Resolver
+}
+
 func init() {
 	log.SetOutput(os.Stdout)
 }
@@ -85,7 +89,7 @@ func (r *MutationResolver) UpsertTopic(
 
 	return &models.UpsertTopicPayload{
 		Alerts:    result.Alerts,
-		TopicEdge: &models.TopicEdge{Node: *result.Topic},
+		TopicEdge: &models.TopicEdge{Node: models.TopicValue{result.Topic, nil}},
 	}, nil
 }
 
@@ -110,7 +114,7 @@ func (r *MutationResolver) UpdateTopic(
 		return nil, err
 	}
 
-	return &models.UpdateTopicPayload{Topic: *topic}, nil
+	return &models.UpdateTopicPayload{Topic: models.TopicValue{topic, nil}}, nil
 }
 
 // UpsertLink adds a new link to the database.
@@ -201,6 +205,6 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 
 	return &models.UpdateTopicParentTopicsPayload{
 		Alerts: result.Alerts,
-		Topic:  *result.Topic,
+		Topic:  models.TopicValue{result.Topic, nil},
 	}, nil
 }

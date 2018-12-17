@@ -13,22 +13,22 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func getTopicLoader(ctx context.Context) *loaders.TopicLoader {
-	return ctx.Value(loaders.TopicLoaderKey).(*loaders.TopicLoader)
-}
-
 type topicResolver struct {
 	*Resolver
 }
 
-func topicConnection(rows []*models.Topic, err error) (models.TopicConnection, error) {
+func getTopicLoader(ctx context.Context) *loaders.TopicLoader {
+	return ctx.Value(loaders.TopicLoaderKey).(*loaders.TopicLoader)
+}
+
+func topicConnection(view *models.View, rows []*models.Topic, err error) (models.TopicConnection, error) {
 	if err != nil {
 		return models.TopicConnection{}, err
 	}
 
 	var edges []*models.TopicEdge
 	for _, topic := range rows {
-		edges = append(edges, &models.TopicEdge{Node: *topic})
+		edges = append(edges, &models.TopicEdge{Node: models.TopicValue{topic, view}})
 	}
 
 	return models.TopicConnection{Edges: edges}, nil
@@ -36,7 +36,7 @@ func topicConnection(rows []*models.Topic, err error) (models.TopicConnection, e
 
 // AvailableParentTopics returns the topics that can be added to the link.
 func (r *topicResolver) AvailableParentTopics(
-	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
+	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
 	existingTopics, err := topic.ParentTopics(qm.Select("id")).All(ctx, r.DB)
 	if err != nil {
@@ -53,12 +53,19 @@ func (r *topicResolver) AvailableParentTopics(
 		return models.TopicConnection{}, err
 	}
 
-	return topicConnection(org.Topics().All(ctx, r.DB))
+	topics, err := org.Topics().All(ctx, r.DB)
+	return topicConnection(topic.View, topics, err)
+}
+
+func (r *topicResolver) BelongsToCurrentRepository(
+	ctx context.Context, topic *models.TopicValue,
+) (bool, error) {
+	return topic.View.CurrentRepository.ID == topic.RepositoryID, nil
 }
 
 // ChildTopics returns a set of topics.
 func (r *topicResolver) ChildTopics(
-	ctx context.Context, topic *models.Topic, searchString *string, first *int, after *string,
+	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.TopicConnection, error) {
 	mods := []qm.QueryMod{
@@ -74,22 +81,35 @@ func (r *topicResolver) ChildTopics(
 		mods = append(mods, qm.Where("name ilike '%%' || ? || '%%'", *searchString))
 	}
 
-	return topicConnection(topic.ChildTopics(mods...).All(ctx, r.DB))
+	topics, err := topic.ChildTopics(mods...).All(ctx, r.DB)
+	return topicConnection(topic.View, topics, err)
 }
 
 // CreatedAt returns the time of the topic's creation.
-func (r *topicResolver) CreatedAt(_ context.Context, topic *models.Topic) (string, error) {
+func (r *topicResolver) CreatedAt(_ context.Context, topic *models.TopicValue) (string, error) {
 	return topic.CreatedAt.Format(time.RFC3339), nil
 }
 
 // Description returns a description of the topic.
-func (r *topicResolver) Description(_ context.Context, topic *models.Topic) (*string, error) {
+func (r *topicResolver) Description(_ context.Context, topic *models.TopicValue) (*string, error) {
 	return topic.Description.Ptr(), nil
+}
+
+// DisplayColor returns a color by which to display the topic.
+func (r *topicResolver) DisplayColor(
+	ctx context.Context, topic *models.TopicValue,
+) (string, error) {
+	color := topic.DisplayColor()
+	return color, nil
+}
+
+func (r *topicResolver) ID(_ context.Context, topic *models.TopicValue) (string, error) {
+	return topic.ID, nil
 }
 
 // Links returns a set of links.
 func (r *topicResolver) Links(
-	ctx context.Context, topic *models.Topic, searchString *string, first *int, after *string,
+	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.LinkConnection, error) {
 	mods := []qm.QueryMod{
@@ -107,9 +127,13 @@ func (r *topicResolver) Links(
 	return linkConnection(scope.All(ctx, r.DB))
 }
 
+func (r *topicResolver) Name(_ context.Context, topic *models.TopicValue) (string, error) {
+	return topic.Name, nil
+}
+
 // Organization returns an organization.
 func (r *topicResolver) Organization(
-	ctx context.Context, topic *models.Topic,
+	ctx context.Context, topic *models.TopicValue,
 ) (models.Organization, error) {
 	if topic.R != nil && topic.R.Organization != nil {
 		return *topic.R.Organization, nil
@@ -120,10 +144,10 @@ func (r *topicResolver) Organization(
 
 // ParentTopics returns a set of topics.
 func (r *topicResolver) ParentTopics(
-	ctx context.Context, topic *models.Topic, first *int, after *string, last *int, before *string,
+	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
 	if topic.R != nil && topic.R.ParentTopics != nil {
-		return topicConnection(topic.R.ParentTopics, nil)
+		return topicConnection(topic.View, topic.R.ParentTopics, nil)
 	}
 
 	log.Printf("Fetching parent topics for topic %s", topic.ID)
@@ -132,12 +156,14 @@ func (r *topicResolver) ParentTopics(
 		qm.Load("Organization"),
 		qm.OrderBy("name"),
 	}
-	return topicConnection(topic.ParentTopics(mods...).All(ctx, r.DB))
+
+	topics, err := topic.ParentTopics(mods...).All(ctx, r.DB)
+	return topicConnection(topic.View, topics, err)
 }
 
 // Repository returns the repostory of the topic.
 func (r *topicResolver) Repository(
-	ctx context.Context, topic *models.Topic,
+	ctx context.Context, topic *models.TopicValue,
 ) (models.Repository, error) {
 	if topic.R != nil && topic.R.Repository != nil {
 		return *topic.R.Repository, nil
@@ -147,7 +173,7 @@ func (r *topicResolver) Repository(
 }
 
 // ResourcePath returns a path to the item.
-func (r *topicResolver) ResourcePath(ctx context.Context, topic *models.Topic) (string, error) {
+func (r *topicResolver) ResourcePath(ctx context.Context, topic *models.TopicValue) (string, error) {
 	var repo *models.Repository
 	var org *models.Organization
 	var err error
@@ -171,8 +197,8 @@ func (r *topicResolver) ResourcePath(ctx context.Context, topic *models.Topic) (
 }
 
 func (r *topicResolver) matchingDescendantTopics(
-	ctx context.Context, topic *models.Topic, searchString string, limit int,
-) ([]*models.Topic, error) {
+	ctx context.Context, topic *models.TopicValue, searchString string, limit int,
+) ([]*models.TopicValue, error) {
 	var rows []struct {
 		ID string
 	}
@@ -205,11 +231,21 @@ func (r *topicResolver) matchingDescendantTopics(
 		ids = append(ids, row.ID)
 	}
 
-	return models.Topics(qm.Load("ParentTopics"), qm.WhereIn("id in ?", ids...)).All(ctx, r.DB)
+	topics, err := models.Topics(qm.Load("ParentTopics"), qm.WhereIn("id in ?", ids...)).All(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	var topicValues []*models.TopicValue
+	for _, t := range topics {
+		topicValues = append(topicValues, &models.TopicValue{t, topic.View})
+	}
+
+	return topicValues, nil
 }
 
 func (r *topicResolver) matchingDescendantLinks(
-	ctx context.Context, topic *models.Topic, searchString string, limit int,
+	ctx context.Context, topic *models.TopicValue, searchString string, limit int,
 ) ([]*models.Link, error) {
 	var rows []struct {
 		ID string
@@ -248,14 +284,14 @@ func (r *topicResolver) matchingDescendantLinks(
 }
 
 func (r *topicResolver) Search(
-	ctx context.Context, topic *models.Topic, searchString string, first *int, after *string,
+	ctx context.Context, topic *models.TopicValue, searchString string, first *int, after *string,
 	last *int, before *string,
 ) (models.SearchResultItemConnection, error) {
 	log.Printf("Searching topic %s for '%s'", topic.ID, searchString)
 
 	var (
 		err    error
-		topics []*models.Topic
+		topics []*models.TopicValue
 		links  []*models.Link
 		edges  []*models.SearchResultItemEdge
 	)
@@ -286,6 +322,6 @@ func (r *topicResolver) Search(
 }
 
 // UpdatedAt returns the time of the most recent update.
-func (r *topicResolver) UpdatedAt(_ context.Context, topic *models.Topic) (string, error) {
+func (r *topicResolver) UpdatedAt(_ context.Context, topic *models.TopicValue) (string, error) {
 	return topic.UpdatedAt.Format(time.RFC3339), nil
 }

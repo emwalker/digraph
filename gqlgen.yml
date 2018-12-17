@@ -19,7 +19,7 @@ models:
   Repository:
     model: github.com/emwalker/digraph/models.Repository
   Topic:
-    model: github.com/emwalker/digraph/models.Topic
+    model: github.com/emwalker/digraph/models.TopicValue
   User:
     model: github.com/emwalker/digraph/models.User
   View:

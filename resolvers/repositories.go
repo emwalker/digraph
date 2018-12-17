@@ -48,10 +48,10 @@ func (r *repositoryResolver) Owner(
 // RootTopic returns the root topic of the repository.
 func (r *repositoryResolver) RootTopic(
 	ctx context.Context, repo *models.Repository,
-) (models.Topic, error) {
+) (models.TopicValue, error) {
 	topic, err := repo.RootTopic(ctx, r.DB)
 	if err != nil {
-		return models.Topic{}, err
+		return models.TopicValue{}, err
 	}
 	return *topic, err
 }

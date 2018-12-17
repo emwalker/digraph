@@ -14,6 +14,8 @@ enum AlertType {
   ERROR
 }
 
+scalar Color
+
 scalar DateTime
 
 type Link implements ResourceIdentifiable & Namespaceable {
@@ -117,6 +119,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection!
+  belongsToCurrentRepository: Boolean!
   childTopics(
     searchString: String,
     first: Int,
@@ -126,6 +129,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   ): TopicConnection!
   createdAt: DateTime!
   description: String
+  displayColor: Color!
   id: ID!
   links(
     searchString: String,
@@ -171,7 +175,6 @@ type User {
   id: ID
   name: String!
   primaryEmail: String!
-  selectedTopic: Topic
   updatedAt: DateTime!
 }
 

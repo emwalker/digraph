@@ -8,6 +8,11 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+type TopicValue struct {
+	*Topic
+	View *View
+}
+
 // IsNamespaceable tags Link as implementing the Namespaceable interface.
 func (Link) IsNamespaceable() {}
 
@@ -50,10 +55,15 @@ func (u *User) DefaultRepo(ctx context.Context, exec boil.ContextExecutor) (*Rep
 	).One(ctx, exec)
 }
 
-func (r *Repository) RootTopic(ctx context.Context, exec boil.ContextExecutor) (*Topic, error) {
-	return r.Topics(qm.Where("root")).One(ctx, exec)
+func (r *Repository) RootTopic(ctx context.Context, exec boil.ContextExecutor) (*TopicValue, error) {
+	topic, err := r.Topics(qm.Where("root")).One(ctx, exec)
+	return &TopicValue{Topic: topic}, err
 }
 
 func (r *Repository) IsPrivate() bool {
 	return r.System && r.Name == "system:default"
+}
+
+func (t *TopicValue) DisplayColor() string {
+	return "#dbedff"
 }

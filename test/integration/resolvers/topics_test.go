@@ -390,7 +390,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 	ctx := context.Background()
 
 	var err error
-	var root *models.Topic
+	var root *models.TopicValue
 	if root, err = m.defaultRepo().RootTopic(ctx, testDB); err != nil {
 		t.Fatal(err)
 	}
@@ -408,7 +408,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 
 	resultTopicIds := make(map[string]bool)
 	for _, edge := range conn.Edges {
-		if topic, ok := edge.Node.(models.Topic); ok {
+		if topic, ok := edge.Node.(models.TopicValue); ok {
 			resultTopicIds[topic.ID] = true
 		}
 	}
@@ -447,5 +447,37 @@ func TestParentTopicPreloading(t *testing.T) {
 	child := connection.Edges[0].Node
 	if child.R == nil || child.R.ParentTopics == nil {
 		t.Fatal("Parent topics not preloaded")
+	}
+}
+
+func TestBelongsToCurrentRepository(t *testing.T) {
+	ctx := context.Background()
+
+	view := &models.View{CurrentRepository: &models.Repository{ID: "1"}}
+
+	var topic *models.TopicValue
+	var belongs bool
+	var err error
+
+	topic = &models.TopicValue{&models.Topic{Name: "Frotz", RepositoryID: "1"}, view}
+
+	topicResolver := (&resolvers.Resolver{DB: testDB}).Topic()
+
+	if belongs, err = topicResolver.BelongsToCurrentRepository(ctx, topic); err != nil {
+		t.Fatal(err)
+	}
+
+	if !belongs {
+		t.Fatal("Expected topic to belong to the current repository")
+	}
+
+	topic = &models.TopicValue{&models.Topic{Name: "Frotz", RepositoryID: "2"}, view}
+
+	if belongs, err = topicResolver.BelongsToCurrentRepository(ctx, topic); err != nil {
+		t.Fatal(err)
+	}
+
+	if belongs {
+		t.Fatal("Expected topic to not belong to the current repository")
 	}
 }

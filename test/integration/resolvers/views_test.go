@@ -246,7 +246,7 @@ func TestTopicVisibility(t *testing.T) {
 	r := (&resolvers.Resolver{DB: testDB}).View()
 	v1 := &models.View{ViewerID: r1.User.ID, RepositoryIds: []string{r1.Repository.ID}}
 	v2 := &models.View{ViewerID: r2.User.ID, RepositoryIds: []string{r2.Repository.ID}}
-	var topic *models.Topic
+	var topic *models.TopicValue
 
 	if topic, err = r.Topic(ctx, v1, t1.ID); err != nil {
 		t.Fatal(err)
@@ -270,58 +270,5 @@ func TestTopicVisibility(t *testing.T) {
 
 	if topic, err = r.Topic(ctx, v2, t1.ID); err == nil {
 		t.Fatal("User 2 able to see topic in private repo of user 1")
-	}
-}
-
-func TestFetchRepositoryFromView(t *testing.T) {
-	ctx := context.Background()
-	m := newMutator(t, testActor)
-
-	repo := m.defaultRepo()
-	org, err := repo.Organization().One(ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	viewResolver := (&resolvers.Resolver{DB: testDB}).View()
-
-	cases := []struct {
-		Name     string
-		RepoID   *string
-		RepoName *string
-		OrgLogin *string
-	}{
-		{
-			Name:     "When the org login and repo name are provied",
-			RepoID:   nil,
-			RepoName: &repo.Name,
-			OrgLogin: &org.Login,
-		},
-		{
-			Name:     "When only the org login is provided",
-			RepoID:   nil,
-			RepoName: nil,
-			OrgLogin: &org.Login,
-		},
-	}
-
-	for _, td := range cases {
-		t.Run(td.Name, func(t *testing.T) {
-			view := &models.View{
-				CurrentOrganizationLogin: *td.OrgLogin,
-				CurrentRepositoryName:    td.RepoName,
-				RepositoryIds:            []string{},
-			}
-
-			// Using a name and org login
-			currentRepo, err := viewResolver.CurrentRepository(ctx, view)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if repo.ID != currentRepo.ID {
-				t.Fatalf("Expected repo %s, got repo %s", repo.ID, currentRepo.ID)
-			}
-		})
 	}
 }

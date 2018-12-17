@@ -89,7 +89,7 @@ func (f *testFetcher) FetchPage(url string) (*pageinfo.PageInfo, error) {
 	}, nil
 }
 
-func (m mutator) addParentTopicToTopic(child, parent *models.Topic) {
+func (m mutator) addParentTopicToTopic(child, parent *models.TopicValue) {
 	everything, err := models.Topics(qm.Where("name like 'Everything'")).One(context.Background(), testDB)
 	if err != nil {
 		m.t.Fatal(err)
@@ -105,7 +105,7 @@ func (m mutator) addParentTopicToTopic(child, parent *models.Topic) {
 	}
 }
 
-func (m mutator) addParentTopicToLink(link *models.Link, topic *models.Topic) {
+func (m mutator) addParentTopicToLink(link *models.Link, topic *models.TopicValue) {
 	input := models.UpdateLinkTopicsInput{
 		LinkID:         link.ID,
 		ParentTopicIds: []string{topic.ID},
@@ -116,7 +116,7 @@ func (m mutator) addParentTopicToLink(link *models.Link, topic *models.Topic) {
 	}
 }
 
-func (m mutator) deleteTopic(topic models.Topic) {
+func (m mutator) deleteTopic(topic models.TopicValue) {
 	count, err := topic.Delete(m.ctx, m.db)
 	if err != nil {
 		m.t.Fatal(err)
@@ -127,7 +127,7 @@ func (m mutator) deleteTopic(topic models.Topic) {
 	}
 }
 
-func (m mutator) createTopic(name string) (*models.Topic, helpers.CleanupFunc) {
+func (m mutator) createTopic(name string) (*models.TopicValue, helpers.CleanupFunc) {
 	parentTopic, err := models.Topics(qm.Where("name like 'Everything'")).One(m.ctx, m.db)
 	if err != nil {
 		m.t.Fatal(err)

@@ -45,7 +45,8 @@ func (r *linkResolver) AvailableParentTopics(
 		return models.TopicConnection{}, err
 	}
 
-	return topicConnection(org.Topics().All(ctx, r.DB))
+	topics, err := org.Topics().All(ctx, r.DB)
+	return topicConnection(nil, topics, err)
 }
 
 // CreatedAt returns the time at which the link was first added.
@@ -71,7 +72,7 @@ func (r *linkResolver) ParentTopics(
 	ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
 	if link.R != nil && link.R.ParentTopics != nil {
-		return topicConnection(link.R.ParentTopics, nil)
+		return topicConnection(nil, link.R.ParentTopics, nil)
 	}
 
 	log.Print("Fetching parent topics for link")
@@ -79,7 +80,9 @@ func (r *linkResolver) ParentTopics(
 		qm.Load("Repository"),
 		qm.Load("Organization"),
 	}
-	return topicConnection(link.ParentTopics(mods...).All(ctx, r.DB))
+
+	topics, err := link.ParentTopics(mods...).All(ctx, r.DB)
+	return topicConnection(nil, topics, err)
 }
 
 // UpdatedAt returns the time of the most recent update.

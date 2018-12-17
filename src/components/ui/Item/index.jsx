@@ -13,6 +13,7 @@ type Props = {
   children: Node,
   className: string,
   description?: ?string,
+  displayColor: ?string,
   formIsOpen: boolean,
   title: string,
   toggleForm: Function,
@@ -23,15 +24,21 @@ type Props = {
 class Item extends Component<Props> {
   static defaultProps = {
     description: null,
+    displayColor: '#fff',
   }
 
   get className() {
     return classNames(
       'Item-row',
       'Box-row',
-      'Box-row--hover-gray',
       this.props.className,
     )
+  }
+
+  get style(): Object {
+    return {
+      borderLeft: `5px solid ${this.props.displayColor}`,
+    }
   }
 
   render() {
@@ -40,6 +47,7 @@ class Item extends Component<Props> {
     return (
       <li
         className={this.className}
+        style={this.style}
         key={url}
       >
         <div className="d-flex flex-items-center">

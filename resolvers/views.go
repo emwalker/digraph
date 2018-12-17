@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"log"
 
 	"github.com/emwalker/digraph/models"
@@ -88,33 +87,17 @@ func (r *viewResolver) Links(
 func (r *viewResolver) CurrentRepository(
 	ctx context.Context, view *models.View,
 ) (*models.Repository, error) {
-	log.Printf("Querying for current repo in view: %v", view)
-
-	if view.CurrentOrganizationLogin == "" {
-		return nil, errors.New("No current organization login provided")
-	}
-
-	mods := []qm.QueryMod{
-		qm.InnerJoin("organizations o on repositories.organization_id = o.id"),
-		qm.Where("o.login = ?", view.CurrentOrganizationLogin),
-	}
-
-	if view.CurrentRepositoryName == nil {
-		mods = append(mods, qm.Where("repositories.system"))
-	} else {
-		mods = append(mods, qm.Where("repositories.name = ?", *view.CurrentRepositoryName))
-	}
-
-	return models.Repositories(mods...).One(ctx, r.DB)
+	return view.CurrentRepository, nil
 }
 
 // Topic returns a topic for a given id.
 func (r *viewResolver) Topic(
 	ctx context.Context, view *models.View, topicID string,
-) (*models.Topic, error) {
+) (*models.TopicValue, error) {
 	log.Printf("Fetching topic %s", topicID)
 	scope := models.Topics(topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil, nil)...)
-	return scope.One(ctx, r.DB)
+	topic, err := scope.One(ctx, r.DB)
+	return &models.TopicValue{topic, view}, err
 }
 
 // Topics returns a set of topics.
@@ -122,6 +105,6 @@ func (r *viewResolver) Topics(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.TopicConnection, error) {
-	scope := models.Topics(topicQueryMods(view, nil, searchString, first)...)
-	return topicConnection(scope.All(ctx, r.DB))
+	topics, err := models.Topics(topicQueryMods(view, nil, searchString, first)...).All(ctx, r.DB)
+	return topicConnection(view, topics, err)
 }

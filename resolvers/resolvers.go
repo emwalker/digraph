@@ -5,7 +5,6 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"errors"
 
 	"github.com/emwalker/digraph/models"
 )
@@ -24,20 +23,6 @@ func (r *Resolver) Mutation() models.MutationResolver {
 // Query returns a resolver that can be used for issuing queries.
 func (r *Resolver) Query() models.QueryResolver {
 	return &queryResolver{r}
-}
-
-type MutationResolver struct {
-	*Resolver
-}
-
-type queryResolver struct{ *Resolver }
-
-func getCurrentUser(ctx context.Context) *models.User {
-	value := ctx.Value("currentUser")
-	if user, ok := value.(*models.User); ok {
-		return user
-	}
-	return nil
 }
 
 // Link returns an instance of models.LinkResolver.
@@ -70,26 +55,10 @@ func (r *Resolver) View() models.ViewResolver {
 	return &viewResolver{r}
 }
 
-// Viewer returns the logged-in user.
-func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
-	return getCurrentUser(ctx), nil
-}
-
-// View returns a resolver that filters results on the basis of one or more organizations.
-func (r *queryResolver) View(
-	ctx context.Context, orgLogin string, repoName *string, repositoryIds []string, viewerID *string,
-) (models.View, error) {
-	if viewerID == nil {
-		var viewer *models.User
-		if viewer = getCurrentUser(ctx); viewer == nil {
-			return models.View{}, errors.New("No viewer has been provided")
-		}
-		viewerID = &viewer.ID
+func getCurrentUser(ctx context.Context) *models.User {
+	value := ctx.Value("currentUser")
+	if user, ok := value.(*models.User); ok {
+		return user
 	}
-	return models.View{
-		CurrentOrganizationLogin: orgLogin,
-		CurrentRepositoryName:    repoName,
-		ViewerID:                 *viewerID,
-		RepositoryIds:            repositoryIds,
-	}, nil
+	return nil
 }

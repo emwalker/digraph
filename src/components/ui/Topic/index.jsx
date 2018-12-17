@@ -23,6 +23,12 @@ class Topic extends Component<Props, State> {
     formIsOpen: false,
   }
 
+  get displayColor(): string {
+    return this.props.topic.belongsToCurrentRepository
+      ? 'transparent'
+      : this.props.topic.displayColor
+  }
+
   get parentTopics(): TopicType[] {
     return liftNodes(this.props.topic.parentTopics)
   }
@@ -35,6 +41,7 @@ class Topic extends Component<Props, State> {
     return (
       <Item
         className="Box-row--topic"
+        displayColor={this.displayColor}
         formIsOpen={this.state.formIsOpen}
         title={this.props.topic.name}
         description={this.props.topic.description}
@@ -57,7 +64,9 @@ class Topic extends Component<Props, State> {
 
 export default createFragmentContainer(Topic, graphql`
   fragment Topic_topic on Topic {
+    belongsToCurrentRepository
     description
+    displayColor
     id
     name
     resourcePath
