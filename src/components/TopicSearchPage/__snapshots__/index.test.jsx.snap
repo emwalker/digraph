@@ -2,14 +2,7 @@
 
 exports[`<TopicPage /> renders 1`] = `
 <div>
-  <Breadcrumbs
-    repository={
-      Object {
-        "displayName": "Private collection",
-        "isPrivate": true,
-      }
-    }
-  />
+  <Breadcrumbs />
   <Subhead
     heading="Frotz"
   />

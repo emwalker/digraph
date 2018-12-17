@@ -283,7 +283,6 @@ func TestFetchRepositoryFromView(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	view := &models.View{RepositoryIds: []string{repo.ID}}
 	viewResolver := (&resolvers.Resolver{DB: testDB}).View()
 
 	cases := []struct {
@@ -292,12 +291,6 @@ func TestFetchRepositoryFromView(t *testing.T) {
 		RepoName *string
 		OrgLogin *string
 	}{
-		{
-			Name:     "When the repository id is provided",
-			RepoID:   &repo.ID,
-			RepoName: nil,
-			OrgLogin: nil,
-		},
 		{
 			Name:     "When the org login and repo name are provied",
 			RepoID:   nil,
@@ -314,14 +307,20 @@ func TestFetchRepositoryFromView(t *testing.T) {
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
+			view := &models.View{
+				CurrentOrganizationLogin: *td.OrgLogin,
+				CurrentRepositoryName:    td.RepoName,
+				RepositoryIds:            []string{},
+			}
+
 			// Using a name and org login
-			fetchedRepo, err := viewResolver.Repository(ctx, view, td.RepoID, td.RepoName, td.OrgLogin)
+			currentRepo, err := viewResolver.CurrentRepository(ctx, view)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if repo.ID != fetchedRepo.ID {
-				t.Fatalf("Expected repo %s, got repo %s", repo.ID, fetchedRepo.ID)
+			if repo.ID != currentRepo.ID {
+				t.Fatalf("Expected repo %s, got repo %s", repo.ID, currentRepo.ID)
 			}
 		})
 	}

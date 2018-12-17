@@ -8,7 +8,6 @@ import { graphql } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
 import Homepage, { query as homepageQuery } from './components/Homepage'
-import TopicsPage, { query as topicsPageQuery } from './components/TopicsPage'
 import TopicPage, { query as topicPageQuery } from './components/TopicPage'
 import TopicSearchPage, { query as topicSearchPageQuery } from './components/TopicSearchPage'
 import Layout from './components/Layout'
@@ -50,10 +49,10 @@ const renderTopicPage = ({ props, error }: any) => {
 
   return (
     <TopicPage
-      topic={view.topic}
       location={location}
       orgLogin={params.orgLogin}
       repoName={params.repoName}
+      topic={view.topic}
       {...props}
     />
   )
@@ -92,14 +91,8 @@ export const routeConfig = makeRouteConfig(
       Component={withErrorBoundary(Homepage)}
       query={homepageQuery}
     />
-    <Route
-      path=":orgLogin"
-    >
+    <Route path=":orgLogin">
       <Route path="topics">
-        <Route
-          Component={withErrorBoundary(TopicsPage)}
-          query={topicsPageQuery}
-        />
         <Route
           path=":topicId"
           render={renderTopicPage}

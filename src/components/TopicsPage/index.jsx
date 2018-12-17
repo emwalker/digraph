@@ -32,8 +32,17 @@ const TopicsPage = ({ view, ...props }: Props) => {
 }
 
 export const query = graphql`
-query TopicsPage_query_Query($repoIds: [ID!], $searchString: String) {
-  view(repositoryIds: $repoIds) {
+query TopicsPage_query_Query(
+  $orgLogin: String!,
+  $repoName: String,
+  $repoIds: [ID!],
+  $searchString: String,
+) {
+  view(
+    currentOrganizationLogin: $orgLogin,
+    currentRepositoryName: $repoName,
+    repositoryIds: $repoIds,
+  ) {
     ...TopicsPage_view @arguments(searchString: $searchString)
   }
 }`

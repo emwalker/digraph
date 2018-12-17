@@ -77,7 +77,7 @@ func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
 
 // View returns a resolver that filters results on the basis of one or more organizations.
 func (r *queryResolver) View(
-	ctx context.Context, repositoryIds []string, viewerID *string,
+	ctx context.Context, orgLogin string, repoName *string, repositoryIds []string, viewerID *string,
 ) (models.View, error) {
 	if viewerID == nil {
 		var viewer *models.User
@@ -86,5 +86,10 @@ func (r *queryResolver) View(
 		}
 		viewerID = &viewer.ID
 	}
-	return models.View{ViewerID: *viewerID, RepositoryIds: repositoryIds}, nil
+	return models.View{
+		CurrentOrganizationLogin: orgLogin,
+		CurrentRepositoryName:    repoName,
+		ViewerID:                 *viewerID,
+		RepositoryIds:            repositoryIds,
+	}, nil
 }

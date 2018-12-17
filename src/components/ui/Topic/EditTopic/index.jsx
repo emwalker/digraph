@@ -51,12 +51,21 @@ const EditTopic = ({ isOpen, orgLogin, topic, relay, toggleForm }: Props) => (
   <QueryRenderer
     environment={relay.environment}
     query={graphql`
-      query EditTopicQuery($repoIds: [ID!], $topicId: ID!) {
+      query EditTopicQuery(
+        $orgLogin: String!,
+        $repoName: String,
+        $repoIds: [ID!],
+        $topicId: ID!,
+      ) {
         viewer {
           ...EditTopicForm_viewer
         }
 
-        view(repositoryIds: $repoIds) {
+        view(
+          currentOrganizationLogin: $orgLogin,
+          currentRepositoryName: $repoName,
+          repositoryIds: $repoIds,
+        ) {
           topic(id: $topicId) {
             ...EditTopicForm_topic
           }
@@ -64,6 +73,8 @@ const EditTopic = ({ isOpen, orgLogin, topic, relay, toggleForm }: Props) => (
       }
     `}
     variables={{
+      orgLogin,
+      repoName: null,
       repoIds: [],
       topicId: topic.id,
     }}

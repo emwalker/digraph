@@ -23,7 +23,7 @@ type Props = {
     defaultRepository: Object,
   },
   view: {
-    repository: Object,
+    currentRepository: Object,
   },
 }
 
@@ -59,7 +59,7 @@ class TopicSearchPage extends Component<Props> {
       <div>
         <Breadcrumbs
           orgLogin={orgLogin}
-          repository={view.repository}
+          repository={view.currentRepository}
         />
         <Subhead
           heading={name}
@@ -98,8 +98,12 @@ query TopicSearchPage_query_Query(
     ...Subhead_viewer
   }
 
-  view(repositoryIds: $repoIds) {
-    repository(organizationLogin: $orgLogin, name: $repoName) {
+  view(
+    currentOrganizationLogin: $orgLogin,
+    currentRepositoryName: $repoName,
+    repositoryIds: $repoIds,
+  ) {
+    currentRepository {
       ...Breadcrumbs_repository
     }
 

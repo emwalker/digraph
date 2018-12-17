@@ -78,7 +78,12 @@ type PageInfo {
 
 type Query {
   viewer: User
-  view(repositoryIds: [ID!], viewerId: ID): View!
+  view(
+    currentOrganizationLogin: String!,
+    currentRepositoryName: String,
+    repositoryIds: [ID!],
+    viewerId: ID
+  ): View!
 }
 
 type Repository {
@@ -240,7 +245,7 @@ type View {
     last: Int,
     before: String
   ): LinkConnection!
-  repository(id: ID, name: String, organizationLogin: String): Repository
+  currentRepository: Repository
   topic(id: ID!): Topic
   topics(
     searchString: String,

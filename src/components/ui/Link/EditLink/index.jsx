@@ -48,12 +48,21 @@ const EditLink = ({ isOpen, link, orgLogin, relay, toggleForm }: Props) => (
   <QueryRenderer
     environment={relay.environment}
     query={graphql`
-      query EditLinkQuery($repoIds: [ID!], $linkId: ID!) {
+      query EditLinkQuery(
+        $orgLogin: String!,
+        $repoName: String,
+        $repoIds: [ID!],
+        $linkId: ID!,
+      ) {
         viewer {
           ...EditLinkForm_viewer
         }
 
-        view(repositoryIds: $repoIds) {
+        view(
+          currentOrganizationLogin: $orgLogin,
+          currentRepositoryName: $repoName,
+          repositoryIds: $repoIds,
+        ) {
           link(id: $linkId) {
             ...EditLinkForm_link
           }
@@ -61,6 +70,8 @@ const EditLink = ({ isOpen, link, orgLogin, relay, toggleForm }: Props) => (
       }
     `}
     variables={{
+      orgLogin,
+      repoName: null,
       linkId: link.id,
       repoIds: [],
     }}

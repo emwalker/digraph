@@ -1,8 +1,10 @@
 package models
 
 type View struct {
-	ViewerID      string
-	RepositoryIds []string
+	CurrentOrganizationLogin string
+	CurrentRepositoryName    *string
+	RepositoryIds            []string
+	ViewerID                 string
 }
 
 func (v *View) RepositoryIdsForQuery() []interface{} {

@@ -66,8 +66,8 @@ func (r *viewResolver) Link(
 
 // Links returns a set of links.
 func (r *viewResolver) Links(
-	ctx context.Context, view *models.View, searchString *string, first *int, after *string, last *int,
-	before *string,
+	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
+	last *int, before *string,
 ) (models.LinkConnection, error) {
 	mods := []qm.QueryMod{
 		qm.OrderBy("created_at desc"),
@@ -85,24 +85,26 @@ func (r *viewResolver) Links(
 	return linkConnection(scope.All(ctx, r.DB))
 }
 
-func (r *viewResolver) Repository(
-	ctx context.Context, view *models.View, id, name, organizationLogin *string,
+func (r *viewResolver) CurrentRepository(
+	ctx context.Context, view *models.View,
 ) (*models.Repository, error) {
-	if id != nil {
-		mods := []qm.QueryMod{
-			qm.Where("id = ?", id),
-		}
-		return models.Repositories(mods...).One(ctx, r.DB)
-	}
+	log.Printf("Querying for current repo in view: %v", view)
 
-	if organizationLogin == nil {
-		return nil, errors.New("Either id or organizationLogin must be provided")
+	if view.CurrentOrganizationLogin == "" {
+		return nil, errors.New("No current organization login provided")
 	}
 
 	mods := []qm.QueryMod{
 		qm.InnerJoin("organizations o on repositories.organization_id = o.id"),
-		qm.Where("repositories.system and o.login = ?", organizationLogin),
+		qm.Where("o.login = ?", view.CurrentOrganizationLogin),
 	}
+
+	if view.CurrentRepositoryName == nil {
+		mods = append(mods, qm.Where("repositories.system"))
+	} else {
+		mods = append(mods, qm.Where("repositories.name = ?", *view.CurrentRepositoryName))
+	}
+
 	return models.Repositories(mods...).One(ctx, r.DB)
 }
 

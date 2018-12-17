@@ -21,7 +21,7 @@ type Props = {
   router: Object,
   topic: TopicType,
   view: {
-    repository: Object,
+    currentRepository: Object,
   },
   viewer: {
     id: string,
@@ -46,7 +46,7 @@ class TopicPage extends Component<Props> {
       <div>
         <Breadcrumbs
           orgLogin={this.props.orgLogin}
-          repository={this.props.view.repository}
+          repository={this.props.view.currentRepository}
         />
         <Subhead
           heading={name}
@@ -110,8 +110,12 @@ query TopicPage_query_Query(
     ...Subhead_viewer
   }
 
-  view(repositoryIds: $repoIds) {
-    repository(organizationLogin: $orgLogin, name: $repoName) {
+  view(
+    currentOrganizationLogin: $orgLogin,
+    currentRepositoryName: $repoName,
+    repositoryIds: $repoIds,
+  ) {
+    currentRepository {
       ...Breadcrumbs_repository
     }
 

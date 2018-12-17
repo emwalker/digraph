@@ -100,7 +100,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Viewer func(childComplexity int) int
-		View   func(childComplexity int, repositoryIds []string, viewerId *string) int
+		View   func(childComplexity int, currentOrganizationLogin string, currentRepositoryName *string, repositoryIds []string, viewerId *string) int
 	}
 
 	Repository struct {
@@ -182,11 +182,11 @@ type ComplexityRoot struct {
 	}
 
 	View struct {
-		Link       func(childComplexity int, id string) int
-		Links      func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
-		Repository func(childComplexity int, id *string, name *string, organizationLogin *string) int
-		Topic      func(childComplexity int, id string) int
-		Topics     func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
+		Link              func(childComplexity int, id string) int
+		Links             func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
+		CurrentRepository func(childComplexity int) int
+		Topic             func(childComplexity int, id string) int
+		Topics            func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 	}
 }
 
@@ -216,12 +216,10 @@ type OrganizationResolver interface {
 }
 type QueryResolver interface {
 	Viewer(ctx context.Context) (*User, error)
-	View(ctx context.Context, repositoryIds []string, viewerId *string) (View, error)
+	View(ctx context.Context, currentOrganizationLogin string, currentRepositoryName *string, repositoryIds []string, viewerId *string) (View, error)
 }
 type RepositoryResolver interface {
 	DisplayName(ctx context.Context, obj *Repository) (string, error)
-
-	IsPrivate(ctx context.Context, obj *Repository) (bool, error)
 
 	Organization(ctx context.Context, obj *Repository) (Organization, error)
 	Owner(ctx context.Context, obj *Repository) (User, error)
@@ -253,7 +251,7 @@ type UserResolver interface {
 type ViewResolver interface {
 	Link(ctx context.Context, obj *View, id string) (*Link, error)
 	Links(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (LinkConnection, error)
-	Repository(ctx context.Context, obj *View, id *string, name *string, organizationLogin *string) (*Repository, error)
+	CurrentRepository(ctx context.Context, obj *View) (*Repository, error)
 	Topic(ctx context.Context, obj *View, id string) (*Topic, error)
 	Topics(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
 }
@@ -459,7 +457,30 @@ func field_Mutation_upsertTopic_args(rawArgs map[string]interface{}) (map[string
 
 func field_Query_view_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 []string
+	var arg0 string
+	if tmp, ok := rawArgs["currentOrganizationLogin"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["currentOrganizationLogin"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["currentRepositoryName"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["currentRepositoryName"] = arg1
+	var arg2 []string
 	if tmp, ok := rawArgs["repositoryIds"]; ok {
 		var err error
 		var rawIf1 []interface{}
@@ -470,29 +491,29 @@ func field_Query_view_args(rawArgs map[string]interface{}) (map[string]interface
 				rawIf1 = []interface{}{tmp}
 			}
 		}
-		arg0 = make([]string, len(rawIf1))
+		arg2 = make([]string, len(rawIf1))
 		for idx1 := range rawIf1 {
-			arg0[idx1], err = graphql.UnmarshalID(rawIf1[idx1])
+			arg2[idx1], err = graphql.UnmarshalID(rawIf1[idx1])
 		}
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["repositoryIds"] = arg0
-	var arg1 *string
+	args["repositoryIds"] = arg2
+	var arg3 *string
 	if tmp, ok := rawArgs["viewerId"]; ok {
 		var err error
 		var ptr1 string
 		if tmp != nil {
 			ptr1, err = graphql.UnmarshalID(tmp)
-			arg1 = &ptr1
+			arg3 = &ptr1
 		}
 
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["viewerId"] = arg1
+	args["viewerId"] = arg3
 	return args, nil
 
 }
@@ -950,54 +971,6 @@ func field_View_links_args(rawArgs map[string]interface{}) (map[string]interface
 
 }
 
-func field_View_repository_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["id"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalID(tmp)
-			arg0 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["name"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg1 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["name"] = arg1
-	var arg2 *string
-	if tmp, ok := rawArgs["organizationLogin"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg2 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["organizationLogin"] = arg2
-	return args, nil
-
-}
-
 func field_View_topic_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1401,7 +1374,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.View(childComplexity, args["repositoryIds"].([]string), args["viewerId"].(*string)), true
+		return e.complexity.Query.View(childComplexity, args["currentOrganizationLogin"].(string), args["currentRepositoryName"].(*string), args["repositoryIds"].([]string), args["viewerId"].(*string)), true
 
 	case "Repository.displayName":
 		if e.complexity.Repository.DisplayName == nil {
@@ -1746,17 +1719,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.View.Links(childComplexity, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
-	case "View.repository":
-		if e.complexity.View.Repository == nil {
+	case "View.currentRepository":
+		if e.complexity.View.CurrentRepository == nil {
 			break
 		}
 
-		args, err := field_View_repository_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.View.Repository(childComplexity, args["id"].(*string), args["name"].(*string), args["organizationLogin"].(*string)), true
+		return e.complexity.View.CurrentRepository(childComplexity), true
 
 	case "View.topic":
 		if e.complexity.View.Topic == nil {
@@ -3197,7 +3165,7 @@ func (ec *executionContext) _Query_view(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().View(rctx, args["repositoryIds"].([]string), args["viewerId"].(*string))
+		return ec.resolvers.Query().View(rctx, args["currentOrganizationLogin"].(string), args["currentRepositoryName"].(*string), args["repositoryIds"].([]string), args["viewerId"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3303,14 +3271,10 @@ func (ec *executionContext) _Repository(ctx context.Context, sel ast.SelectionSe
 		case "id":
 			out.Values[i] = ec._Repository_id(ctx, field, obj)
 		case "isPrivate":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Repository_isPrivate(ctx, field, obj)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
-				wg.Done()
-			}(i, field)
+			out.Values[i] = ec._Repository_isPrivate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "name":
 			out.Values[i] = ec._Repository_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -3418,7 +3382,7 @@ func (ec *executionContext) _Repository_isPrivate(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Repository().IsPrivate(rctx, obj)
+		return obj.IsPrivate(), nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5220,10 +5184,10 @@ func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj
 				}
 				wg.Done()
 			}(i, field)
-		case "repository":
+		case "currentRepository":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._View_repository(ctx, field, obj)
+				out.Values[i] = ec._View_currentRepository(ctx, field, obj)
 				wg.Done()
 			}(i, field)
 		case "topic":
@@ -5322,25 +5286,19 @@ func (ec *executionContext) _View_links(ctx context.Context, field graphql.Colle
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _View_repository(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
+func (ec *executionContext) _View_currentRepository(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_View_repository_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
 	rctx := &graphql.ResolverContext{
 		Object: "View",
-		Args:   args,
+		Args:   nil,
 		Field:  field,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.View().Repository(rctx, obj, args["id"].(*string), args["name"].(*string), args["organizationLogin"].(*string))
+		return ec.resolvers.View().CurrentRepository(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -7349,7 +7307,12 @@ type PageInfo {
 
 type Query {
   viewer: User
-  view(repositoryIds: [ID!], viewerId: ID): View!
+  view(
+    currentOrganizationLogin: String!,
+    currentRepositoryName: String,
+    repositoryIds: [ID!],
+    viewerId: ID
+  ): View!
 }
 
 type Repository {
@@ -7511,7 +7474,7 @@ type View {
     last: Int,
     before: String
   ): LinkConnection!
-  repository(id: ID, name: String, organizationLogin: String): Repository
+  currentRepository: Repository
   topic(id: ID!): Topic
   topics(
     searchString: String,
