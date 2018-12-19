@@ -8,6 +8,8 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// TopicValue wraps a topic with a view in order to be able to answer questions like
+// "is this topic from this repo?"
 type TopicValue struct {
 	*Topic
 	View *View
@@ -46,6 +48,7 @@ func NewAlert(typ AlertType, text string) *Alert {
 	}
 }
 
+// DefaultRepo returns the user's default repo.
 func (u *User) DefaultRepo(ctx context.Context, exec boil.ContextExecutor) (*Repository, error) {
 	// log.Printf("Looking for %s and %s (%s)", u.Login, u.ID, u.Name)
 	return Repositories(
@@ -55,15 +58,32 @@ func (u *User) DefaultRepo(ctx context.Context, exec boil.ContextExecutor) (*Rep
 	).One(ctx, exec)
 }
 
+// RootTopic returns the root topic of the repository.
 func (r *Repository) RootTopic(ctx context.Context, exec boil.ContextExecutor) (*TopicValue, error) {
 	topic, err := r.Topics(qm.Where("root")).One(ctx, exec)
 	return &TopicValue{Topic: topic}, err
 }
 
+// IsPrivate is true if the repository is a private repo.
 func (r *Repository) IsPrivate() bool {
 	return r.System && r.Name == "system:default"
 }
 
+// DisplayColor returns a string of the hex color to use for the topic.
 func (t *TopicValue) DisplayColor() string {
 	return "#dbedff"
+}
+
+// View returns a view using the topic's repo and organization.
+func (t *Topic) View(ctx context.Context, exec boil.ContextExecutor) (*View, error) {
+	repo, err := t.Repository(qm.Load("Organization")).One(ctx, exec)
+	if err != nil {
+		return nil, err
+	}
+
+	return &View{
+		CurrentOrganizationLogin: repo.R.Organization.Login,
+		CurrentRepositoryName:    &repo.Name,
+		CurrentRepository:        repo,
+	}, nil
 }

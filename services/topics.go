@@ -13,11 +13,13 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// UpdateTopicParentTopicsResult holds the result of an UpdateTopicParentTopics call.
 type UpdateTopicParentTopicsResult struct {
 	Alerts []models.Alert
 	Topic  *models.Topic
 }
 
+// UpsertTopicResult holds the result of an UpsertTopic call.
 type UpsertTopicResult struct {
 	Alerts       []models.Alert
 	Topic        *models.Topic
@@ -25,6 +27,7 @@ type UpsertTopicResult struct {
 	Cleanup      CleanupFunc
 }
 
+// UpdateTopicParentTopics updates the parent topics of a topic.
 func (c Connection) UpdateTopicParentTopics(
 	ctx context.Context, topic *models.Topic, parentTopicIds []string,
 ) (*UpdateTopicParentTopicsResult, error) {
@@ -41,6 +44,7 @@ func (c Connection) UpdateTopicParentTopics(
 	return &UpdateTopicParentTopicsResult{alerts, topic}, nil
 }
 
+// UpsertTopic updates a topic if it exists and creates it if it does not exist.
 func (c Connection) UpsertTopic(
 	ctx context.Context, repo *models.Repository, name string, description *string,
 	parentTopicIds []string,
@@ -227,11 +231,11 @@ func (c Connection) parentTopicsToAdd(
 	var parents []*models.Topic
 	var alerts []models.Alert
 
-	for _, parentId := range topicIds {
-		if _, ok := seen[parentId]; ok {
+	for _, parentID := range topicIds {
+		if _, ok := seen[parentID]; ok {
 			continue
 		}
-		parent := &models.Topic{ID: parentId}
+		parent := &models.Topic{ID: parentID}
 		willHaveCycle, err := c.isDescendantOf(ctx, parent, topic)
 		if err != nil {
 			return nil, nil, err

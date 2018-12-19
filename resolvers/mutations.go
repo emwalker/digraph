@@ -14,6 +14,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// MutationResolver holds configuration information for a mutation.
 type MutationResolver struct {
 	*Resolver
 }
@@ -60,9 +61,10 @@ func (r *MutationResolver) UpsertTopic(
 ) (*models.UpsertTopicPayload, error) {
 	var result *services.UpsertTopicResult
 	var err error
+	var repo *models.Repository
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		repo, err := findRepo(ctx, tx, r.Actor, input.OrganizationLogin, input.RepositoryName)
+		repo, err = findRepo(ctx, tx, r.Actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			return err
 		}
@@ -87,9 +89,15 @@ func (r *MutationResolver) UpsertTopic(
 		return &models.UpsertTopicPayload{Alerts: result.Alerts}, nil
 	}
 
+	view := &models.View{
+		CurrentOrganizationLogin: input.OrganizationLogin,
+		CurrentRepositoryName:    &input.RepositoryName,
+		CurrentRepository:        repo,
+	}
+
 	return &models.UpsertTopicPayload{
 		Alerts:    result.Alerts,
-		TopicEdge: &models.TopicEdge{Node: models.TopicValue{result.Topic, nil}},
+		TopicEdge: &models.TopicEdge{Node: models.TopicValue{result.Topic, view}},
 	}, nil
 }
 
@@ -114,7 +122,14 @@ func (r *MutationResolver) UpdateTopic(
 		return nil, err
 	}
 
-	return &models.UpdateTopicPayload{Topic: models.TopicValue{topic, nil}}, nil
+	view, err := topic.View(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.UpdateTopicPayload{
+		Topic: models.TopicValue{topic, view},
+	}, nil
 }
 
 // UpsertLink adds a new link to the database.
@@ -203,8 +218,13 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 		return nil, err
 	}
 
+	view, err := topic.View(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
 	return &models.UpdateTopicParentTopicsPayload{
 		Alerts: result.Alerts,
-		Topic:  models.TopicValue{result.Topic, nil},
+		Topic:  models.TopicValue{result.Topic, view},
 	}, nil
 }
