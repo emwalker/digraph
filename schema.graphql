@@ -52,6 +52,7 @@ type LinkConnection {
 }
 
 type Mutation {
+  selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
@@ -90,12 +91,23 @@ type Query {
 
 type Repository {
   displayName: String!
+  fullName: String!
   id: ID
   isPrivate: Boolean!
   name: String!
   organization: Organization!
   owner: User!
   rootTopic: Topic!
+}
+
+type RepositoryConnection {
+  edges: [RepositoryEdge]
+}
+
+type RepositoryEdge {
+  cursor: String!
+  node: Repository!
+  isSelected: Boolean!
 }
 
 interface ResourceIdentifiable {
@@ -110,6 +122,16 @@ type SearchResultItemEdge {
 
 type SearchResultItemConnection {
   edges: [SearchResultItemEdge]
+}
+
+input SelectRepositoryInput {
+  clientMutationId: String
+  repositoryId: ID
+}
+
+type SelectRepositoryPayload {
+  repository: Repository
+  viewer: User!
 }
 
 type Topic implements ResourceIdentifiable & Namespaceable {
@@ -175,6 +197,13 @@ type User {
   id: ID
   name: String!
   primaryEmail: String!
+  repositories(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): RepositoryConnection!
+  selectedRepository: Repository
   updatedAt: DateTime!
 }
 

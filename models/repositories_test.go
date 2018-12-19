@@ -650,6 +650,83 @@ func testRepositoryToManyTopics(t *testing.T) {
 	}
 }
 
+func testRepositoryToManySelectedRepositoryUsers(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Repository
+	var b, c User
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, repositoryDBTypes, true, repositoryColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Repository struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, userDBTypes, false, userColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, userDBTypes, false, userColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.SelectedRepositoryID, a.ID)
+	queries.Assign(&c.SelectedRepositoryID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	user, err := a.SelectedRepositoryUsers().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range user {
+		if queries.Equal(v.SelectedRepositoryID, b.SelectedRepositoryID) {
+			bFound = true
+		}
+		if queries.Equal(v.SelectedRepositoryID, c.SelectedRepositoryID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := RepositorySlice{&a}
+	if err = a.L.LoadSelectedRepositoryUsers(ctx, tx, false, (*[]*Repository)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.SelectedRepositoryUsers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.SelectedRepositoryUsers = nil
+	if err = a.L.LoadSelectedRepositoryUsers(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.SelectedRepositoryUsers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", user)
+	}
+}
+
 func testRepositoryToManyAddOpLinks(t *testing.T) {
 	var err error
 
@@ -800,6 +877,257 @@ func testRepositoryToManyAddOpTopics(t *testing.T) {
 		}
 	}
 }
+func testRepositoryToManyAddOpSelectedRepositoryUsers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Repository
+	var b, c, d, e User
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*User{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*User{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddSelectedRepositoryUsers(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.SelectedRepositoryID) {
+			t.Error("foreign key was wrong value", a.ID, first.SelectedRepositoryID)
+		}
+		if !queries.Equal(a.ID, second.SelectedRepositoryID) {
+			t.Error("foreign key was wrong value", a.ID, second.SelectedRepositoryID)
+		}
+
+		if first.R.SelectedRepository != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.SelectedRepository != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.SelectedRepositoryUsers[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.SelectedRepositoryUsers[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.SelectedRepositoryUsers().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testRepositoryToManySetOpSelectedRepositoryUsers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Repository
+	var b, c, d, e User
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*User{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetSelectedRepositoryUsers(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.SelectedRepositoryUsers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetSelectedRepositoryUsers(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.SelectedRepositoryUsers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.SelectedRepositoryID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.SelectedRepositoryID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.SelectedRepositoryID) {
+		t.Error("foreign key was wrong value", a.ID, d.SelectedRepositoryID)
+	}
+	if !queries.Equal(a.ID, e.SelectedRepositoryID) {
+		t.Error("foreign key was wrong value", a.ID, e.SelectedRepositoryID)
+	}
+
+	if b.R.SelectedRepository != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.SelectedRepository != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.SelectedRepository != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.SelectedRepository != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.SelectedRepositoryUsers[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.SelectedRepositoryUsers[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testRepositoryToManyRemoveOpSelectedRepositoryUsers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Repository
+	var b, c, d, e User
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*User{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddSelectedRepositoryUsers(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.SelectedRepositoryUsers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveSelectedRepositoryUsers(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.SelectedRepositoryUsers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.SelectedRepositoryID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.SelectedRepositoryID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.SelectedRepository != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.SelectedRepository != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.SelectedRepository != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.SelectedRepository != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.SelectedRepositoryUsers) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.SelectedRepositoryUsers[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.SelectedRepositoryUsers[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testRepositoryToOneOrganizationUsingOrganization(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))

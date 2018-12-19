@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/emwalker/digraph/models"
 )
@@ -17,6 +18,30 @@ func (r *repositoryResolver) DisplayName(
 		return "Private collection", nil
 	}
 	return repo.Name, nil
+}
+
+// FullName returns a path-like name that can be used in lists and select options.
+func (r *repositoryResolver) FullName(
+	ctx context.Context, repo *models.Repository,
+) (string, error) {
+	loader := getOrganizationLoader(ctx)
+	var org *models.Organization
+	var err error
+
+	if org, err = loader.Load(repo.OrganizationID); err != nil {
+		return "", err
+	}
+
+	var name string
+	if repo.IsPrivate() {
+		name = "private"
+	} else if repo.System {
+		name = "general"
+	} else {
+		name = repo.Name
+	}
+
+	return fmt.Sprintf("%s/%s", org.Login, name), nil
 }
 
 // isPrivate indicates whether the repository is private or not.

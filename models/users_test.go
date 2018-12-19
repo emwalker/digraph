@@ -953,6 +953,165 @@ func testUserToManyAddOpSessions(t *testing.T) {
 		}
 	}
 }
+func testUserToOneRepositoryUsingSelectedRepository(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local User
+	var foreign Repository
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, userDBTypes, true, userColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize User struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, repositoryDBTypes, false, repositoryColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Repository struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.SelectedRepositoryID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.SelectedRepository().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := UserSlice{&local}
+	if err = local.L.LoadSelectedRepository(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.SelectedRepository == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.SelectedRepository = nil
+	if err = local.L.LoadSelectedRepository(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.SelectedRepository == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
+func testUserToOneSetOpRepositoryUsingSelectedRepository(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c Repository
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Repository{&b, &c} {
+		err = a.SetSelectedRepository(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.SelectedRepository != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.SelectedRepositoryUsers[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.SelectedRepositoryID, x.ID) {
+			t.Error("foreign key was wrong value", a.SelectedRepositoryID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.SelectedRepositoryID))
+		reflect.Indirect(reflect.ValueOf(&a.SelectedRepositoryID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.SelectedRepositoryID, x.ID) {
+			t.Error("foreign key was wrong value", a.SelectedRepositoryID, x.ID)
+		}
+	}
+}
+
+func testUserToOneRemoveOpRepositoryUsingSelectedRepository(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b Repository
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetSelectedRepository(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveSelectedRepository(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.SelectedRepository().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.SelectedRepository != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.SelectedRepositoryID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.SelectedRepositoryUsers) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
 
 func testUsersReload(t *testing.T) {
 	t.Parallel()
@@ -1028,7 +1187,7 @@ func testUsersSelect(t *testing.T) {
 }
 
 var (
-	userDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `GithubAvatarURL`: `character varying`, `GithubUsername`: `character varying`, `ID`: `uuid`, `Login`: `character varying`, `Name`: `character varying`, `PrimaryEmail`: `USER-DEFINED`, `UpdatedAt`: `timestamp with time zone`}
+	userDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `GithubAvatarURL`: `character varying`, `GithubUsername`: `character varying`, `ID`: `uuid`, `Login`: `character varying`, `Name`: `character varying`, `PrimaryEmail`: `USER-DEFINED`, `SelectedRepositoryID`: `uuid`, `UpdatedAt`: `timestamp with time zone`}
 	_           = bytes.MinRead
 )
 

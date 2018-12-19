@@ -29,6 +29,7 @@ var userTemplate = `
 <p>ExpiresAt: {{.ExpiresAt}}</p>
 <p>RefreshToken: {{.RefreshToken}}</p>`
 
+// RegisterOauth2Routes adds Oauth 2 handlers to the server.
 func (s *Server) RegisterOauth2Routes() {
 	goth.UseProviders(
 		github.New(
@@ -73,7 +74,7 @@ func (s *Server) maybeSaveSession(gothUser goth.User, w http.ResponseWriter, r *
 
 	tx.Commit()
 
-	if err = gothic.StoreInSession(userSessionKey, string(result.Session.SessionID), r, w); err != nil {
+	if err = gothic.StoreInSession(string(userSessionKey), string(result.Session.SessionID), r, w); err != nil {
 		log.Printf("Unable to store session id with session: %s", err)
 		return err
 	}

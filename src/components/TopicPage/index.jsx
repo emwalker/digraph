@@ -9,6 +9,7 @@ import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
 import Breadcrumbs from 'components/ui/Breadcrumbs'
+import SelectRepository from 'components/ui/SelectRepository'
 import type { TopicType } from '../types'
 import AddTopic from './AddTopic'
 import AddLink from './AddLink'
@@ -91,6 +92,9 @@ class TopicPage extends Component<Props> {
             viewer={this.props.viewer}
             {...props}
           />
+          <SelectRepository
+            viewer={this.props.viewer}
+          />
         </div>
       </div>
     )
@@ -108,6 +112,7 @@ query TopicPage_query_Query(
   viewer {
     id
     ...Subhead_viewer
+    ...SelectRepository_viewer
   }
 
   view(

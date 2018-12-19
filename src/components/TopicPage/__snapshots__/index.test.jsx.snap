@@ -51,6 +51,7 @@ exports[`<TopicPage /> renders 1`] = `
         }
       }
     />
+    <SelectRepository />
   </div>
 </div>
 `;

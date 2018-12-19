@@ -12,15 +12,19 @@ import (
 	"github.com/99designs/gqlgen/handler"
 	"github.com/emwalker/digraph/loaders"
 	"github.com/emwalker/digraph/models"
+	"github.com/emwalker/digraph/resolvers"
 	"github.com/go-webpack/webpack"
 	"github.com/gorilla/handlers"
+	// Load the PQ drivers
 	_ "github.com/lib/pq"
 	"github.com/markbates/goth/gothic"
 	"github.com/rs/cors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-const userSessionKey = "userSession"
+const (
+	userSessionKey = "userSessionKey"
+)
 
 func must(err error) {
 	if err != nil {
@@ -58,6 +62,7 @@ func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, loaders.TopicLoaderKey, loaders.NewTopicLoader(ctx, s.db))
+		ctx = context.WithValue(ctx, loaders.OrganizationLoaderKey, loaders.NewOrganizationLoader(ctx, s.db))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -86,9 +91,11 @@ func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 		}
 
 		// Figure out a way to avoid mutating the resolver after the fact
-		s.resolver.Actor = session.R.User
+		user := session.R.User
+		s.resolver.Actor = user
 
-		ctx = context.WithValue(ctx, "currentUser", session.R.User)
+		log.Printf("Adding user %s to context", user.Name)
+		ctx = context.WithValue(ctx, resolvers.CurrentUserKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

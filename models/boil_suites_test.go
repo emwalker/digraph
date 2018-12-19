@@ -163,6 +163,7 @@ func TestToOne(t *testing.T) {
 	t.Run("SessionToUserUsingUser", testSessionToOneUserUsingUser)
 	t.Run("TopicToOrganizationUsingOrganization", testTopicToOneOrganizationUsingOrganization)
 	t.Run("TopicToRepositoryUsingRepository", testTopicToOneRepositoryUsingRepository)
+	t.Run("UserToRepositoryUsingSelectedRepository", testUserToOneRepositoryUsingSelectedRepository)
 }
 
 // TestOneToOne tests cannot be run in parallel
@@ -179,6 +180,7 @@ func TestToMany(t *testing.T) {
 	t.Run("OrganizationToTopics", testOrganizationToManyTopics)
 	t.Run("RepositoryToLinks", testRepositoryToManyLinks)
 	t.Run("RepositoryToTopics", testRepositoryToManyTopics)
+	t.Run("RepositoryToSelectedRepositoryUsers", testRepositoryToManySelectedRepositoryUsers)
 	t.Run("TopicToChildLinks", testTopicToManyChildLinks)
 	t.Run("TopicToParentTopics", testTopicToManyParentTopics)
 	t.Run("TopicToChildTopics", testTopicToManyChildTopics)
@@ -199,11 +201,14 @@ func TestToOneSet(t *testing.T) {
 	t.Run("SessionToUserUsingSessions", testSessionToOneSetOpUserUsingUser)
 	t.Run("TopicToOrganizationUsingTopics", testTopicToOneSetOpOrganizationUsingOrganization)
 	t.Run("TopicToRepositoryUsingTopics", testTopicToOneSetOpRepositoryUsingRepository)
+	t.Run("UserToRepositoryUsingSelectedRepositoryUsers", testUserToOneSetOpRepositoryUsingSelectedRepository)
 }
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToOneRemove(t *testing.T) {}
+func TestToOneRemove(t *testing.T) {
+	t.Run("UserToRepositoryUsingSelectedRepositoryUsers", testUserToOneRemoveOpRepositoryUsingSelectedRepository)
+}
 
 // TestOneToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
@@ -223,6 +228,7 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("OrganizationToTopics", testOrganizationToManyAddOpTopics)
 	t.Run("RepositoryToLinks", testRepositoryToManyAddOpLinks)
 	t.Run("RepositoryToTopics", testRepositoryToManyAddOpTopics)
+	t.Run("RepositoryToSelectedRepositoryUsers", testRepositoryToManyAddOpSelectedRepositoryUsers)
 	t.Run("TopicToChildLinks", testTopicToManyAddOpChildLinks)
 	t.Run("TopicToParentTopics", testTopicToManyAddOpParentTopics)
 	t.Run("TopicToChildTopics", testTopicToManyAddOpChildTopics)
@@ -235,6 +241,7 @@ func TestToManyAdd(t *testing.T) {
 // or deadlocks can occur.
 func TestToManySet(t *testing.T) {
 	t.Run("LinkToParentTopics", testLinkToManySetOpParentTopics)
+	t.Run("RepositoryToSelectedRepositoryUsers", testRepositoryToManySetOpSelectedRepositoryUsers)
 	t.Run("TopicToChildLinks", testTopicToManySetOpChildLinks)
 	t.Run("TopicToParentTopics", testTopicToManySetOpParentTopics)
 	t.Run("TopicToChildTopics", testTopicToManySetOpChildTopics)
@@ -244,6 +251,7 @@ func TestToManySet(t *testing.T) {
 // or deadlocks can occur.
 func TestToManyRemove(t *testing.T) {
 	t.Run("LinkToParentTopics", testLinkToManyRemoveOpParentTopics)
+	t.Run("RepositoryToSelectedRepositoryUsers", testRepositoryToManyRemoveOpSelectedRepositoryUsers)
 	t.Run("TopicToChildLinks", testTopicToManyRemoveOpChildLinks)
 	t.Run("TopicToParentTopics", testTopicToManyRemoveOpParentTopics)
 	t.Run("TopicToChildTopics", testTopicToManyRemoveOpChildTopics)

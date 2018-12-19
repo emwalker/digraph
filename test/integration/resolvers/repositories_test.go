@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 )
 
@@ -39,5 +40,37 @@ func TestRootTopic(t *testing.T) {
 
 	if path != rootPath {
 		t.Fatalf("Unexpected root path: %s", rootPath)
+	}
+}
+
+func TestSelectRepository(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+
+	repo, err := testActor.SelectedRepository().One(ctx, testDB)
+	if err == nil && repo != nil {
+		if err = testActor.RemoveSelectedRepository(ctx, m.db, repo); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = testActor.Reload(ctx, m.db); err != nil {
+		t.Fatal(err)
+	}
+
+	if testActor.SelectedRepositoryID.Ptr() != nil {
+		t.Fatalf("Expected user to not have a repository selected: %v", testActor.SelectedRepositoryID)
+	}
+
+	repo = m.defaultRepo()
+
+	ctx = context.WithValue(ctx, resolvers.CurrentUserKey, testActor)
+	payload, err := m.resolver.SelectRepository(ctx, models.SelectRepositoryInput{RepositoryID: &repo.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if payload.Repository.ID != repo.ID {
+		t.Fatal("Expected the repository to be the one that was selected")
 	}
 }

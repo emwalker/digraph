@@ -9,6 +9,8 @@ import (
 	"github.com/emwalker/digraph/models"
 )
 
+const CurrentUserKey = "currentUserKey"
+
 // Resolver is the abstract base class for resolvers.
 type Resolver struct {
 	DB    *sql.DB
@@ -56,7 +58,7 @@ func (r *Resolver) View() models.ViewResolver {
 }
 
 func getCurrentUser(ctx context.Context) *models.User {
-	value := ctx.Value("currentUser")
+	value := ctx.Value(CurrentUserKey)
 	if user, ok := value.(*models.User); ok {
 		return user
 	}

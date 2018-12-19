@@ -4,11 +4,16 @@ import (
 	"context"
 	"time"
 
+	"github.com/emwalker/digraph/loaders"
 	"github.com/emwalker/digraph/models"
 )
 
 type organizationResolver struct {
 	*Resolver
+}
+
+func getOrganizationLoader(ctx context.Context) *loaders.OrganizationLoader {
+	return ctx.Value(loaders.OrganizationLoaderKey).(*loaders.OrganizationLoader)
 }
 
 // CreatedAt returns the time of the organization's creation.

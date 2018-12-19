@@ -39,6 +39,16 @@ type PageInfo struct {
 	EndCursor       *string `json:"endCursor"`
 }
 
+type RepositoryConnection struct {
+	Edges []*RepositoryEdge `json:"edges"`
+}
+
+type RepositoryEdge struct {
+	Cursor     string     `json:"cursor"`
+	Node       Repository `json:"node"`
+	IsSelected bool       `json:"isSelected"`
+}
+
 type ResourceIdentifiable interface {
 	IsResourceIdentifiable()
 }
@@ -53,6 +63,16 @@ type SearchResultItemConnection struct {
 
 type SearchResultItemEdge struct {
 	Node SearchResultItem `json:"node"`
+}
+
+type SelectRepositoryInput struct {
+	ClientMutationID *string `json:"clientMutationId"`
+	RepositoryID     *string `json:"repositoryId"`
+}
+
+type SelectRepositoryPayload struct {
+	Repository *Repository `json:"repository"`
+	Viewer     User        `json:"viewer"`
 }
 
 type TopicConnection struct {

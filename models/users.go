@@ -23,45 +23,50 @@ import (
 
 // User is an object representing the database table.
 type User struct {
-	ID              string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name            string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	PrimaryEmail    string      `boil:"primary_email" json:"primary_email" toml:"primary_email" yaml:"primary_email"`
-	CreatedAt       time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt       time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	GithubUsername  null.String `boil:"github_username" json:"github_username,omitempty" toml:"github_username" yaml:"github_username,omitempty"`
-	GithubAvatarURL null.String `boil:"github_avatar_url" json:"github_avatar_url,omitempty" toml:"github_avatar_url" yaml:"github_avatar_url,omitempty"`
-	Login           string      `boil:"login" json:"login" toml:"login" yaml:"login"`
+	ID                   string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name                 string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	PrimaryEmail         string      `boil:"primary_email" json:"primary_email" toml:"primary_email" yaml:"primary_email"`
+	CreatedAt            time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt            time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	GithubUsername       null.String `boil:"github_username" json:"github_username,omitempty" toml:"github_username" yaml:"github_username,omitempty"`
+	GithubAvatarURL      null.String `boil:"github_avatar_url" json:"github_avatar_url,omitempty" toml:"github_avatar_url" yaml:"github_avatar_url,omitempty"`
+	Login                string      `boil:"login" json:"login" toml:"login" yaml:"login"`
+	SelectedRepositoryID null.String `boil:"selected_repository_id" json:"selected_repository_id,omitempty" toml:"selected_repository_id" yaml:"selected_repository_id,omitempty"`
 
 	R *userR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L userL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var UserColumns = struct {
-	ID              string
-	Name            string
-	PrimaryEmail    string
-	CreatedAt       string
-	UpdatedAt       string
-	GithubUsername  string
-	GithubAvatarURL string
-	Login           string
+	ID                   string
+	Name                 string
+	PrimaryEmail         string
+	CreatedAt            string
+	UpdatedAt            string
+	GithubUsername       string
+	GithubAvatarURL      string
+	Login                string
+	SelectedRepositoryID string
 }{
-	ID:              "id",
-	Name:            "name",
-	PrimaryEmail:    "primary_email",
-	CreatedAt:       "created_at",
-	UpdatedAt:       "updated_at",
-	GithubUsername:  "github_username",
-	GithubAvatarURL: "github_avatar_url",
-	Login:           "login",
+	ID:                   "id",
+	Name:                 "name",
+	PrimaryEmail:         "primary_email",
+	CreatedAt:            "created_at",
+	UpdatedAt:            "updated_at",
+	GithubUsername:       "github_username",
+	GithubAvatarURL:      "github_avatar_url",
+	Login:                "login",
+	SelectedRepositoryID: "selected_repository_id",
 }
 
 // UserRels is where relationship names are stored.
 var UserRels = struct {
+	SelectedRepository  string
 	OrganizationMembers string
 	OwnerRepositories   string
 	Sessions            string
 }{
+	SelectedRepository:  "SelectedRepository",
 	OrganizationMembers: "OrganizationMembers",
 	OwnerRepositories:   "OwnerRepositories",
 	Sessions:            "Sessions",
@@ -69,6 +74,7 @@ var UserRels = struct {
 
 // userR is where relationships are stored.
 type userR struct {
+	SelectedRepository  *Repository
 	OrganizationMembers OrganizationMemberSlice
 	OwnerRepositories   RepositorySlice
 	Sessions            SessionSlice
@@ -83,8 +89,8 @@ func (*userR) NewStruct() *userR {
 type userL struct{}
 
 var (
-	userColumns               = []string{"id", "name", "primary_email", "created_at", "updated_at", "github_username", "github_avatar_url", "login"}
-	userColumnsWithoutDefault = []string{"name", "primary_email", "github_username", "github_avatar_url", "login"}
+	userColumns               = []string{"id", "name", "primary_email", "created_at", "updated_at", "github_username", "github_avatar_url", "login", "selected_repository_id"}
+	userColumnsWithoutDefault = []string{"name", "primary_email", "github_username", "github_avatar_url", "login", "selected_repository_id"}
 	userColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
 	userPrimaryKeyColumns     = []string{"id"}
 )
@@ -325,6 +331,20 @@ func (q userQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool,
 	return count > 0, nil
 }
 
+// SelectedRepository pointed to by the foreign key.
+func (o *User) SelectedRepository(mods ...qm.QueryMod) repositoryQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("id=?", o.SelectedRepositoryID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Repositories(queryMods...)
+	queries.SetFrom(query.Query, "\"repositories\"")
+
+	return query
+}
+
 // OrganizationMembers retrieves all the organization_member's OrganizationMembers with an executor.
 func (o *User) OrganizationMembers(mods ...qm.QueryMod) organizationMemberQuery {
 	var queryMods []qm.QueryMod
@@ -386,6 +406,107 @@ func (o *User) Sessions(mods ...qm.QueryMod) sessionQuery {
 	}
 
 	return query
+}
+
+// LoadSelectedRepository allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (userL) LoadSelectedRepository(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		object = maybeUser.(*User)
+	} else {
+		slice = *maybeUser.(*[]*User)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		if !queries.IsNil(object.SelectedRepositoryID) {
+			args = append(args, object.SelectedRepositoryID)
+		}
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.SelectedRepositoryID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.SelectedRepositoryID) {
+				args = append(args, obj.SelectedRepositoryID)
+			}
+
+		}
+	}
+
+	query := NewQuery(qm.From(`repositories`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Repository")
+	}
+
+	var resultSlice []*Repository
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Repository")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for repositories")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for repositories")
+	}
+
+	if len(userAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.SelectedRepository = foreign
+		if foreign.R == nil {
+			foreign.R = &repositoryR{}
+		}
+		foreign.R.SelectedRepositoryUsers = append(foreign.R.SelectedRepositoryUsers, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.SelectedRepositoryID, foreign.ID) {
+				local.R.SelectedRepository = foreign
+				if foreign.R == nil {
+					foreign.R = &repositoryR{}
+				}
+				foreign.R.SelectedRepositoryUsers = append(foreign.R.SelectedRepositoryUsers, local)
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadOrganizationMembers allows an eager lookup of values, cached into the
@@ -658,6 +779,84 @@ func (userL) LoadSessions(ctx context.Context, e boil.ContextExecutor, singular 
 		}
 	}
 
+	return nil
+}
+
+// SetSelectedRepository of the user to the related item.
+// Sets o.R.SelectedRepository to related.
+// Adds o to related.R.SelectedRepositoryUsers.
+func (o *User) SetSelectedRepository(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Repository) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"users\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"selected_repository_id"}),
+		strmangle.WhereClause("\"", "\"", 2, userPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.SelectedRepositoryID, related.ID)
+	if o.R == nil {
+		o.R = &userR{
+			SelectedRepository: related,
+		}
+	} else {
+		o.R.SelectedRepository = related
+	}
+
+	if related.R == nil {
+		related.R = &repositoryR{
+			SelectedRepositoryUsers: UserSlice{o},
+		}
+	} else {
+		related.R.SelectedRepositoryUsers = append(related.R.SelectedRepositoryUsers, o)
+	}
+
+	return nil
+}
+
+// RemoveSelectedRepository relationship.
+// Sets o.R.SelectedRepository to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *User) RemoveSelectedRepository(ctx context.Context, exec boil.ContextExecutor, related *Repository) error {
+	var err error
+
+	queries.SetScanner(&o.SelectedRepositoryID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("selected_repository_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.R.SelectedRepository = nil
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.SelectedRepositoryUsers {
+		if queries.Equal(o.SelectedRepositoryID, ri.SelectedRepositoryID) {
+			continue
+		}
+
+		ln := len(related.R.SelectedRepositoryUsers)
+		if ln > 1 && i < ln-1 {
+			related.R.SelectedRepositoryUsers[i] = related.R.SelectedRepositoryUsers[ln-1]
+		}
+		related.R.SelectedRepositoryUsers = related.R.SelectedRepositoryUsers[:ln-1]
+		break
+	}
 	return nil
 }
 

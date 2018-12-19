@@ -55,6 +55,52 @@ func findRepo(
 	return actor.OwnerRepositories(mods...).One(ctx, exec)
 }
 
+// SelectRepository selects the repository for the current user.
+func (r *MutationResolver) SelectRepository(
+	ctx context.Context, input models.SelectRepositoryInput,
+) (*models.SelectRepositoryPayload, error) {
+	repoID := input.RepositoryID
+	user := getCurrentUser(ctx)
+
+	var err error
+	var repo *models.Repository
+
+	if repoID == nil {
+		exists, err := user.SelectedRepository().Exists(ctx, r.DB)
+		if exists {
+			log.Printf("Unselecting repository from %s", user.ID)
+			repo, err = user.SelectedRepository().One(ctx, r.DB)
+
+			if err = user.RemoveSelectedRepository(ctx, r.DB, repo); err != nil {
+				return nil, err
+			}
+
+			if err = user.Reload(ctx, r.DB); err != nil {
+				return nil, err
+			}
+		}
+		return &models.SelectRepositoryPayload{nil, *user}, nil
+	}
+
+	repo = &models.Repository{ID: *repoID}
+	log.Printf("Selecting repository %s for user %s", repo.ID, user.ID)
+	if err = user.SetSelectedRepository(ctx, r.DB, false, repo); err != nil {
+		return nil, err
+	}
+
+	log.Printf("Reloading repo %s", repo.ID)
+	if err = repo.Reload(ctx, r.DB); err != nil {
+		return nil, err
+	}
+
+	log.Printf("Reloading user %s", user.ID)
+	if err = user.Reload(ctx, r.DB); err != nil {
+		return nil, err
+	}
+
+	return &models.SelectRepositoryPayload{repo, *user}, nil
+}
+
 // UpsertTopic creates a new topic.
 func (r *MutationResolver) UpsertTopic(
 	ctx context.Context, input models.UpsertTopicInput,

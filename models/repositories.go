@@ -48,23 +48,26 @@ var RepositoryColumns = struct {
 
 // RepositoryRels is where relationship names are stored.
 var RepositoryRels = struct {
-	Organization string
-	Owner        string
-	Links        string
-	Topics       string
+	Organization            string
+	Owner                   string
+	Links                   string
+	Topics                  string
+	SelectedRepositoryUsers string
 }{
-	Organization: "Organization",
-	Owner:        "Owner",
-	Links:        "Links",
-	Topics:       "Topics",
+	Organization:            "Organization",
+	Owner:                   "Owner",
+	Links:                   "Links",
+	Topics:                  "Topics",
+	SelectedRepositoryUsers: "SelectedRepositoryUsers",
 }
 
 // repositoryR is where relationships are stored.
 type repositoryR struct {
-	Organization *Organization
-	Owner        *User
-	Links        LinkSlice
-	Topics       TopicSlice
+	Organization            *Organization
+	Owner                   *User
+	Links                   LinkSlice
+	Topics                  TopicSlice
+	SelectedRepositoryUsers UserSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -383,6 +386,27 @@ func (o *Repository) Topics(mods ...qm.QueryMod) topicQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"topics\".*"})
+	}
+
+	return query
+}
+
+// SelectedRepositoryUsers retrieves all the user's Users with an executor via selected_repository_id column.
+func (o *Repository) SelectedRepositoryUsers(mods ...qm.QueryMod) userQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"users\".\"selected_repository_id\"=?", o.ID),
+	)
+
+	query := Users(queryMods...)
+	queries.SetFrom(query.Query, "\"users\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"users\".*"})
 	}
 
 	return query
@@ -764,6 +788,97 @@ func (repositoryL) LoadTopics(ctx context.Context, e boil.ContextExecutor, singu
 	return nil
 }
 
+// LoadSelectedRepositoryUsers allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (repositoryL) LoadSelectedRepositoryUsers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRepository interface{}, mods queries.Applicator) error {
+	var slice []*Repository
+	var object *Repository
+
+	if singular {
+		object = maybeRepository.(*Repository)
+	} else {
+		slice = *maybeRepository.(*[]*Repository)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &repositoryR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &repositoryR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(qm.From(`users`), qm.WhereIn(`selected_repository_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load users")
+	}
+
+	var resultSlice []*User
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice users")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on users")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for users")
+	}
+
+	if len(userAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.SelectedRepositoryUsers = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &userR{}
+			}
+			foreign.R.SelectedRepository = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.SelectedRepositoryID) {
+				local.R.SelectedRepositoryUsers = append(local.R.SelectedRepositoryUsers, foreign)
+				if foreign.R == nil {
+					foreign.R = &userR{}
+				}
+				foreign.R.SelectedRepository = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetOrganization of the repository to the related item.
 // Sets o.R.Organization to related.
 // Adds o to related.R.Repositories.
@@ -961,6 +1076,129 @@ func (o *Repository) AddTopics(ctx context.Context, exec boil.ContextExecutor, i
 			rel.R.Repository = o
 		}
 	}
+	return nil
+}
+
+// AddSelectedRepositoryUsers adds the given related objects to the existing relationships
+// of the repository, optionally inserting them as new records.
+// Appends related to o.R.SelectedRepositoryUsers.
+// Sets related.R.SelectedRepository appropriately.
+func (o *Repository) AddSelectedRepositoryUsers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*User) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.SelectedRepositoryID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"users\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"selected_repository_id"}),
+				strmangle.WhereClause("\"", "\"", 2, userPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.SelectedRepositoryID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &repositoryR{
+			SelectedRepositoryUsers: related,
+		}
+	} else {
+		o.R.SelectedRepositoryUsers = append(o.R.SelectedRepositoryUsers, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &userR{
+				SelectedRepository: o,
+			}
+		} else {
+			rel.R.SelectedRepository = o
+		}
+	}
+	return nil
+}
+
+// SetSelectedRepositoryUsers removes all previously related items of the
+// repository replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.SelectedRepository's SelectedRepositoryUsers accordingly.
+// Replaces o.R.SelectedRepositoryUsers with related.
+// Sets related.R.SelectedRepository's SelectedRepositoryUsers accordingly.
+func (o *Repository) SetSelectedRepositoryUsers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*User) error {
+	query := "update \"users\" set \"selected_repository_id\" = null where \"selected_repository_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.SelectedRepositoryUsers {
+			queries.SetScanner(&rel.SelectedRepositoryID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.SelectedRepository = nil
+		}
+
+		o.R.SelectedRepositoryUsers = nil
+	}
+	return o.AddSelectedRepositoryUsers(ctx, exec, insert, related...)
+}
+
+// RemoveSelectedRepositoryUsers relationships from objects passed in.
+// Removes related items from R.SelectedRepositoryUsers (uses pointer comparison, removal does not keep order)
+// Sets related.R.SelectedRepository.
+func (o *Repository) RemoveSelectedRepositoryUsers(ctx context.Context, exec boil.ContextExecutor, related ...*User) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.SelectedRepositoryID, nil)
+		if rel.R != nil {
+			rel.R.SelectedRepository = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("selected_repository_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.SelectedRepositoryUsers {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.SelectedRepositoryUsers)
+			if ln > 1 && i < ln-1 {
+				o.R.SelectedRepositoryUsers[i] = o.R.SelectedRepositoryUsers[ln-1]
+			}
+			o.R.SelectedRepositoryUsers = o.R.SelectedRepositoryUsers[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

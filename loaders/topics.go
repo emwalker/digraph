@@ -12,19 +12,8 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// TopicLoaderKey is the key under which the topic loader is stored in the session.
 const TopicLoaderKey = "topicLoader"
-
-type config struct {
-	db *sql.DB
-}
-
-func convertIds(ids []string) []interface{} {
-	var translatedIds []interface{}
-	for _, id := range ids {
-		translatedIds = append(translatedIds, id)
-	}
-	return translatedIds
-}
 
 func fetchTopicsFromDB(ctx context.Context, c *config) func(ids []string) ([]*models.Topic, []error) {
 	return func(ids []string) ([]*models.Topic, []error) {
@@ -41,6 +30,7 @@ func fetchTopicsFromDB(ctx context.Context, c *config) func(ids []string) ([]*mo
 	}
 }
 
+// NewTopicLoader returns a new topic loader.
 func NewTopicLoader(ctx context.Context, db *sql.DB) *TopicLoader {
 	return &TopicLoader{
 		maxBatch: 100,

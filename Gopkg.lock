@@ -174,8 +174,8 @@
     "gothic",
     "providers/github"
   ]
-  revision = "bc6d8ddf751a745f37ca5567dbbfc4157bbf5da9"
-  version = "v1.47.2"
+  revision = "9e535b8e4e7f89a003cbe6c3e535e0247bc32d57"
+  version = "v1.48.0"
 
 [[projects]]
   name = "github.com/mitchellh/mapstructure"
@@ -213,8 +213,8 @@
     ".",
     "mem"
   ]
-  revision = "d40851caa0d747393da1ffb28f7f9d8b4eeffebd"
-  version = "v1.1.2"
+  revision = "a5d6946387efe7d64d09dcba68cdd523dc1273a3"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/spf13/cast"
@@ -307,7 +307,7 @@
     "html/charset",
     "idna"
   ]
-  revision = "610586996380ceef02dd726cc09df7e00a3f8e56"
+  revision = "e147a9138326bc0e9d4e179541ffd8af41cff8a9"
 
 [[projects]]
   branch = "master"
@@ -322,7 +322,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "ad97f365e15054527b467150f898ec66d7f81e14"
+  revision = "074acd46bca67915925527c07849494d115e7c43"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -364,13 +364,18 @@
   packages = [
     "go/ast/astutil",
     "go/buildutil",
+    "go/gcexportdata",
     "go/internal/cgo",
+    "go/internal/gcimporter",
     "go/loader",
+    "go/packages",
+    "go/types/typeutil",
     "imports",
     "internal/fastwalk",
-    "internal/gopathwalk"
+    "internal/gopathwalk",
+    "internal/semver"
   ]
-  revision = "4c874b978acba4ecd4a257d3bb8829dd5de17be8"
+  revision = "d4971274fe382404aee0e8c163af974f2bf738e6"
 
 [[projects]]
   name = "google.golang.org/appengine"
