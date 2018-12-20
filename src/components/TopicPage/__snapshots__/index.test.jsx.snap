@@ -21,6 +21,7 @@ exports[`<TopicPage /> renders 1`] = `
       items={Array []}
       title="Parent topics"
     />
+    <SelectRepository />
     <AddTopic
       topic={
         Object {
@@ -51,7 +52,6 @@ exports[`<TopicPage /> renders 1`] = `
         }
       }
     />
-    <SelectRepository />
   </div>
 </div>
 `;

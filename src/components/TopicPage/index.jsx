@@ -82,6 +82,9 @@ class TopicPage extends Component<Props> {
             title="Parent topics"
             items={liftNodes(parentTopics)}
           />
+          <SelectRepository
+            viewer={this.props.viewer}
+          />
           <AddTopic
             topic={topic}
             viewer={this.props.viewer}
@@ -91,9 +94,6 @@ class TopicPage extends Component<Props> {
             topic={topic}
             viewer={this.props.viewer}
             {...props}
-          />
-          <SelectRepository
-            viewer={this.props.viewer}
           />
         </div>
       </div>
