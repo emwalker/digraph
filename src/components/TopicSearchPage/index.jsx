@@ -33,6 +33,7 @@ class TopicSearchPage extends Component<Props> {
       return (
         <Link
           key={item.id}
+          orgLogin={this.props.orgLogin}
           link={item}
         />
       )
@@ -41,6 +42,7 @@ class TopicSearchPage extends Component<Props> {
     return (
       <Topic
         key={item.id}
+        orgLogin={this.props.orgLogin}
         topic={item}
       />
     )
