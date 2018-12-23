@@ -16,6 +16,15 @@ func getOrganizationLoader(ctx context.Context) *loaders.OrganizationLoader {
 	return ctx.Value(loaders.OrganizationLoaderKey).(*loaders.OrganizationLoader)
 }
 
+func fetchOrganization(ctx context.Context, organizationId string) (models.Organization, error) {
+	loader := getOrganizationLoader(ctx)
+	org, err := loader.Load(organizationId)
+	if err != nil {
+		return models.Organization{}, err
+	}
+	return *org, nil
+}
+
 // CreatedAt returns the time of the organization's creation.
 func (r *organizationResolver) CreatedAt(
 	_ context.Context, org *models.Organization,

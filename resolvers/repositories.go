@@ -55,11 +55,7 @@ func (r *repositoryResolver) IsPrivate(
 func (r *repositoryResolver) Organization(
 	ctx context.Context, repo *models.Repository,
 ) (models.Organization, error) {
-	org, err := repo.Organization().One(ctx, r.DB)
-	if err != nil {
-		return models.Organization{}, err
-	}
-	return *org, err
+	return fetchOrganization(ctx, repo.OrganizationID)
 }
 
 // Organization returns a set of links.

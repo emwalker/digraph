@@ -40,7 +40,7 @@ func (r *linkResolver) AvailableParentTopics(
 		existingIds = append(existingIds, topic.ID)
 	}
 
-	org, err := link.Organization().One(ctx, r.DB)
+	org, err := fetchOrganization(ctx, link.OrganizationID)
 	if err != nil {
 		return models.TopicConnection{}, err
 	}
@@ -58,8 +58,7 @@ func (r *linkResolver) CreatedAt(_ context.Context, link *models.Link) (string, 
 func (r *linkResolver) Organization(
 	ctx context.Context, link *models.Link,
 ) (models.Organization, error) {
-	org, err := link.Organization().One(ctx, r.DB)
-	return *org, err
+	return fetchOrganization(ctx, link.OrganizationID)
 }
 
 // ResourcePath returns a path to the item.
@@ -78,7 +77,6 @@ func (r *linkResolver) ParentTopics(
 	log.Print("Fetching parent topics for link")
 	mods := []qm.QueryMod{
 		qm.Load("Repository"),
-		qm.Load("Organization"),
 	}
 
 	topics, err := link.ParentTopics(mods...).All(ctx, r.DB)

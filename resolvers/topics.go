@@ -70,7 +70,6 @@ func (r *topicResolver) ChildTopics(
 ) (models.TopicConnection, error) {
 	mods := []qm.QueryMod{
 		qm.Load("Repository"),
-		qm.Load("Organization"),
 		qm.Load("ParentTopics"),
 		qm.Load("ParentTopics.Repository"),
 		qm.Load("ParentTopics.Organization"),
@@ -135,11 +134,7 @@ func (r *topicResolver) Name(_ context.Context, topic *models.TopicValue) (strin
 func (r *topicResolver) Organization(
 	ctx context.Context, topic *models.TopicValue,
 ) (models.Organization, error) {
-	if topic.R != nil && topic.R.Organization != nil {
-		return *topic.R.Organization, nil
-	}
-	org, err := topic.Organization().One(ctx, r.DB)
-	return *org, err
+	return fetchOrganization(ctx, topic.OrganizationID)
 }
 
 // ParentTopics returns a set of topics.
@@ -153,7 +148,6 @@ func (r *topicResolver) ParentTopics(
 	log.Printf("Fetching parent topics for topic %s", topic.ID)
 	mods := []qm.QueryMod{
 		qm.Load("Repository"),
-		qm.Load("Organization"),
 		qm.OrderBy("name"),
 	}
 

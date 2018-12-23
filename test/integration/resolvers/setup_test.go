@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/emwalker/digraph/loaders"
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/emwalker/digraph/services"
@@ -72,9 +73,13 @@ func newMutator(t *testing.T, actor *models.User) mutator {
 		&resolvers.Resolver{DB: testDB, Actor: actor},
 	}
 
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, loaders.TopicLoaderKey, loaders.NewTopicLoader(ctx, testDB))
+	ctx = context.WithValue(ctx, loaders.OrganizationLoaderKey, loaders.NewOrganizationLoader(ctx, testDB))
+
 	return mutator{
 		actor:    actor,
-		ctx:      context.Background(),
+		ctx:      ctx,
 		db:       testDB,
 		resolver: resolver,
 		t:        t,
