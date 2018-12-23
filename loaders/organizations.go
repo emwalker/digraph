@@ -4,25 +4,25 @@ package loaders
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"time"
 
 	"github.com/emwalker/digraph/models"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 // OrganizationLoaderKey is the key under which the topic loader is stored in the session.
 const OrganizationLoaderKey = "organizationLoader"
 
-func fetchOrganizationsFromDB(
-	ctx context.Context, c *config,
-) func(ids []string) ([]*models.Organization, []error) {
+type organizationFetcher func(ids []string) ([]*models.Organization, []error)
+
+func fetchOrganizationsFromDB(ctx context.Context, c *config) organizationFetcher {
 	return func(ids []string) ([]*models.Organization, []error) {
 		log.Printf("Fetching organization ids %v", ids)
 		orgs, err := models.Organizations(
 			qm.WhereIn("id in ?", convertIds(ids)...),
-		).All(ctx, c.db)
+		).All(ctx, c.exec)
 
 		if err != nil {
 			return nil, []error{err}
@@ -43,10 +43,10 @@ func fetchOrganizationsFromDB(
 }
 
 // NewOrganizationLoader returns a loader that can be used to batch load organizations.
-func NewOrganizationLoader(ctx context.Context, db *sql.DB) *OrganizationLoader {
+func NewOrganizationLoader(ctx context.Context, exec boil.ContextExecutor, wait time.Duration) *OrganizationLoader {
 	return &OrganizationLoader{
-		maxBatch: 100,
-		wait:     1 * time.Millisecond,
-		fetch:    fetchOrganizationsFromDB(ctx, &config{db}),
+		maxBatch: 1000,
+		wait:     wait,
+		fetch:    fetchOrganizationsFromDB(ctx, &config{exec}),
 	}
 }

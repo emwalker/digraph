@@ -34,6 +34,22 @@ func topicConnection(view *models.View, rows []*models.Topic, err error) (models
 	return models.TopicConnection{Edges: edges}, nil
 }
 
+func topicRepository(ctx context.Context, topic *models.TopicValue) (*models.Repository, error) {
+	if topic.R != nil && topic.R.Repository != nil {
+		return topic.R.Repository, nil
+	}
+	repo, err := fetchRepository(ctx, topic.RepositoryID)
+	return &repo, err
+}
+
+func topicOrganization(ctx context.Context, topic *models.TopicValue) (*models.Organization, error) {
+	if topic.R != nil && topic.R.Organization != nil {
+		return topic.R.Organization, nil
+	}
+	org, err := fetchOrganization(ctx, topic.OrganizationID)
+	return &org, err
+}
+
 // AvailableParentTopics returns the topics that can be added to the link.
 func (r *topicResolver) AvailableParentTopics(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
@@ -48,7 +64,7 @@ func (r *topicResolver) AvailableParentTopics(
 		existingIds = append(existingIds, topic.ID)
 	}
 
-	org, err := topic.Organization().One(ctx, r.DB)
+	org, err := topicOrganization(ctx, topic)
 	if err != nil {
 		return models.TopicConnection{}, err
 	}
@@ -69,10 +85,7 @@ func (r *topicResolver) ChildTopics(
 	last *int, before *string,
 ) (models.TopicConnection, error) {
 	mods := []qm.QueryMod{
-		qm.Load("Repository"),
 		qm.Load("ParentTopics"),
-		qm.Load("ParentTopics.Repository"),
-		qm.Load("ParentTopics.Organization"),
 		qm.OrderBy("name"),
 	}
 
@@ -113,8 +126,6 @@ func (r *topicResolver) Links(
 ) (models.LinkConnection, error) {
 	mods := []qm.QueryMod{
 		qm.Load("ParentTopics"),
-		qm.Load("ParentTopics.Repository"),
-		qm.Load("ParentTopics.Organization"),
 		qm.OrderBy("created_at desc"),
 	}
 
@@ -134,7 +145,8 @@ func (r *topicResolver) Name(_ context.Context, topic *models.TopicValue) (strin
 func (r *topicResolver) Organization(
 	ctx context.Context, topic *models.TopicValue,
 ) (models.Organization, error) {
-	return fetchOrganization(ctx, topic.OrganizationID)
+	org, err := topicOrganization(ctx, topic)
+	return *org, err
 }
 
 // ParentTopics returns a set of topics.
@@ -147,7 +159,6 @@ func (r *topicResolver) ParentTopics(
 
 	log.Printf("Fetching parent topics for topic %s", topic.ID)
 	mods := []qm.QueryMod{
-		qm.Load("Repository"),
 		qm.OrderBy("name"),
 	}
 
@@ -159,28 +170,19 @@ func (r *topicResolver) ParentTopics(
 func (r *topicResolver) Repository(
 	ctx context.Context, topic *models.TopicValue,
 ) (models.Repository, error) {
-	if topic.R != nil && topic.R.Repository != nil {
-		return *topic.R.Repository, nil
-	}
-	org, err := topic.Repository().One(ctx, r.DB)
-	return *org, err
+	repo, err := topicRepository(ctx, topic)
+	return *repo, err
 }
 
 // ResourcePath returns a path to the item.
 func (r *topicResolver) ResourcePath(ctx context.Context, topic *models.TopicValue) (string, error) {
-	var repo *models.Repository
-	var org *models.Organization
-	var err error
-
-	if topic.R != nil && topic.R.Repository != nil {
-		repo = topic.R.Repository
-	} else if repo, err = topic.Repository().One(ctx, r.DB); err != nil {
+	repo, err := topicRepository(ctx, topic)
+	if err != nil {
 		return "", err
 	}
 
-	if topic.R != nil && topic.R.Organization != nil {
-		org = topic.R.Organization
-	} else if org, err = topic.Organization().One(ctx, r.DB); err != nil {
+	org, err := topicOrganization(ctx, topic)
+	if err != nil {
 		return "", err
 	}
 
@@ -225,7 +227,7 @@ func (r *topicResolver) matchingDescendantTopics(
 		ids = append(ids, row.ID)
 	}
 
-	topics, err := models.Topics(qm.Load("ParentTopics"), qm.WhereIn("id in ?", ids...)).All(ctx, r.DB)
+	topics, err := models.Topics(qm.WhereIn("id in ?", ids...)).All(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +276,10 @@ func (r *topicResolver) matchingDescendantLinks(
 		ids = append(ids, row.ID)
 	}
 
-	return models.Links(qm.Load("ParentTopics"), qm.WhereIn("id in ?", ids...)).All(ctx, r.DB)
+	return models.Links(
+		qm.Load("ParentTopics"),
+		qm.WhereIn("id in ?", ids...),
+	).All(ctx, r.DB)
 }
 
 func (r *topicResolver) Search(

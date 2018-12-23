@@ -168,7 +168,7 @@ func (r *MutationResolver) UpdateTopic(
 		return nil, err
 	}
 
-	view, err := topic.View(ctx, r.DB)
+	view, err := newViewFromTopic(ctx, r.DB, topic)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +264,7 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 		return nil, err
 	}
 
-	view, err := topic.View(ctx, r.DB)
+	view, err := newViewFromTopic(ctx, r.DB, topic)
 	if err != nil {
 		return nil, err
 	}

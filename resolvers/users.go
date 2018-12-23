@@ -66,7 +66,12 @@ func (r *userResolver) Repositories(
 func (r *userResolver) SelectedRepository(
 	ctx context.Context, user *models.User,
 ) (*models.Repository, error) {
-	return user.SelectedRepository().One(ctx, r.DB)
+	repoId := user.SelectedRepositoryID.Ptr()
+	if repoId == nil {
+		return nil, nil
+	}
+	repo, err := fetchRepository(ctx, *repoId)
+	return &repo, err
 }
 
 // UpdatedAt returns the time of the most recent update.

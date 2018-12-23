@@ -10,15 +10,15 @@ import (
 )
 
 func TestRootTopic(t *testing.T) {
-	ctx := context.Background()
+	m := newMutator(t, testActor)
 	resolver := &resolvers.Resolver{DB: testDB}
 
-	defaultRepo, err := testActor.DefaultRepo(ctx, testDB)
+	defaultRepo, err := testActor.DefaultRepo(m.ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	rootTopic, err := defaultRepo.RootTopic(ctx, testDB)
+	rootTopic, err := defaultRepo.RootTopic(m.ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestRootTopic(t *testing.T) {
 	topicResolver := resolver.Topic()
 	var rootPath string
 
-	if rootPath, err = topicResolver.ResourcePath(ctx, &topic); err != nil {
+	if rootPath, err = topicResolver.ResourcePath(m.ctx, &topic); err != nil {
 		t.Fatal(err)
 	}
 

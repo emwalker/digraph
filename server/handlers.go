@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"text/template"
+	"time"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/emwalker/digraph/loaders"
@@ -61,8 +62,7 @@ func (s *Server) withBasicAuth(next http.Handler) http.HandlerFunc {
 func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		ctx = context.WithValue(ctx, loaders.TopicLoaderKey, loaders.NewTopicLoader(ctx, s.db))
-		ctx = context.WithValue(ctx, loaders.OrganizationLoaderKey, loaders.NewOrganizationLoader(ctx, s.db))
+		ctx = loaders.AddToContext(ctx, s.db, 1*time.Millisecond)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

@@ -52,7 +52,6 @@ func NewAlert(typ AlertType, text string) *Alert {
 func (u *User) DefaultRepo(ctx context.Context, exec boil.ContextExecutor) (*Repository, error) {
 	// log.Printf("Looking for %s and %s (%s)", u.Login, u.ID, u.Name)
 	return Repositories(
-		qm.Load("Organization"),
 		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
 		qm.Where("o.login = ? and repositories.system and repositories.owner_id = ?", u.Login, u.ID),
 	).One(ctx, exec)
@@ -72,18 +71,4 @@ func (r *Repository) IsPrivate() bool {
 // DisplayColor returns a string of the hex color to use for the topic.
 func (t *TopicValue) DisplayColor() string {
 	return "#dbedff"
-}
-
-// View returns a view using the topic's repo and organization.
-func (t *Topic) View(ctx context.Context, exec boil.ContextExecutor) (*View, error) {
-	repo, err := t.Repository(qm.Load("Organization")).One(ctx, exec)
-	if err != nil {
-		return nil, err
-	}
-
-	return &View{
-		CurrentOrganizationLogin: repo.R.Organization.Login,
-		CurrentRepositoryName:    &repo.Name,
-		CurrentRepository:        repo,
-	}, nil
 }

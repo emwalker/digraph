@@ -1,11 +1,14 @@
 package loaders
 
 import (
-	"database/sql"
+	"context"
+	"time"
+
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 type config struct {
-	db *sql.DB
+	exec boil.ContextExecutor
 }
 
 func convertIds(ids []string) []interface{} {
@@ -14,4 +17,11 @@ func convertIds(ids []string) []interface{} {
 		translatedIds = append(translatedIds, id)
 	}
 	return translatedIds
+}
+
+func AddToContext(ctx context.Context, exec boil.ContextExecutor, wait time.Duration) context.Context {
+	ctx = context.WithValue(ctx, TopicLoaderKey, NewTopicLoader(ctx, exec, wait))
+	ctx = context.WithValue(ctx, OrganizationLoaderKey, NewOrganizationLoader(ctx, exec, wait))
+	ctx = context.WithValue(ctx, RepositoryLoaderKey, NewRepositoryLoader(ctx, exec, wait))
+	return ctx
 }

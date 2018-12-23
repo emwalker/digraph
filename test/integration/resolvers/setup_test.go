@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/emwalker/digraph/loaders"
 	"github.com/emwalker/digraph/models"
@@ -74,8 +75,7 @@ func newMutator(t *testing.T, actor *models.User) mutator {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, loaders.TopicLoaderKey, loaders.NewTopicLoader(ctx, testDB))
-	ctx = context.WithValue(ctx, loaders.OrganizationLoaderKey, loaders.NewOrganizationLoader(ctx, testDB))
+	ctx = loaders.AddToContext(ctx, testDB, 1*time.Millisecond)
 
 	return mutator{
 		actor:    actor,

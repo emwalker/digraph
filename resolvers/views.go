@@ -5,10 +5,29 @@ import (
 	"log"
 
 	"github.com/emwalker/digraph/models"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type viewResolver struct{ *Resolver }
+
+func newViewFromTopic(ctx context.Context, exec boil.ContextExecutor, topic *models.Topic) (*models.View, error) {
+	repo, err := fetchRepository(ctx, topic.RepositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	org, err := fetchOrganization(ctx, repo.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.View{
+		CurrentOrganizationLogin: org.Login,
+		CurrentRepositoryName:    &repo.Name,
+		CurrentRepository:        &repo,
+	}, nil
+}
 
 func pageSizeOrDefault(first *int) int {
 	if first == nil {
@@ -28,13 +47,6 @@ func addRepos(mods []qm.QueryMod, view *models.View) []qm.QueryMod {
 
 func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string, first *int) []qm.QueryMod {
 	mods := []qm.QueryMod{
-		qm.Load("ParentTopics"),
-		qm.Load("ParentTopics.Organization"),
-		qm.Load("ParentTopics.Repository"),
-		qm.Load("ChildTopics"),
-		qm.Load("ChildTopics.Organization"),
-		qm.Load("ChildTopics.Repository"),
-		qm.Load("ChildLinks"),
 		qm.Limit(pageSizeOrDefault(first)),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 	}
@@ -70,7 +82,6 @@ func (r *viewResolver) Links(
 ) (models.LinkConnection, error) {
 	mods := []qm.QueryMod{
 		qm.OrderBy("created_at desc"),
-		qm.Load("ParentTopics"),
 		qm.Limit(pageSizeOrDefault(first)),
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
 	}

@@ -26,6 +26,22 @@ func linkConnection(rows []*models.Link, err error) (models.LinkConnection, erro
 	return models.LinkConnection{Edges: edges}, nil
 }
 
+func linkRepository(ctx context.Context, link *models.Link) (*models.Repository, error) {
+	if link.R != nil && link.R.Repository != nil {
+		return link.R.Repository, nil
+	}
+	repo, err := fetchRepository(ctx, link.RepositoryID)
+	return &repo, err
+}
+
+func linkOrganization(ctx context.Context, link *models.Link) (*models.Organization, error) {
+	if link.R != nil && link.R.Organization != nil {
+		return link.R.Organization, nil
+	}
+	repo, err := fetchOrganization(ctx, link.OrganizationID)
+	return &repo, err
+}
+
 // AvailableParentTopics returns the topics that can be added to the link.
 func (r *linkResolver) AvailableParentTopics(
 	ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string,
@@ -58,7 +74,8 @@ func (r *linkResolver) CreatedAt(_ context.Context, link *models.Link) (string, 
 func (r *linkResolver) Organization(
 	ctx context.Context, link *models.Link,
 ) (models.Organization, error) {
-	return fetchOrganization(ctx, link.OrganizationID)
+	org, err := linkOrganization(ctx, link)
+	return *org, err
 }
 
 // ResourcePath returns a path to the item.
@@ -75,9 +92,7 @@ func (r *linkResolver) ParentTopics(
 	}
 
 	log.Print("Fetching parent topics for link")
-	mods := []qm.QueryMod{
-		qm.Load("Repository"),
-	}
+	mods := []qm.QueryMod{}
 
 	topics, err := link.ParentTopics(mods...).All(ctx, r.DB)
 	return topicConnection(nil, topics, err)

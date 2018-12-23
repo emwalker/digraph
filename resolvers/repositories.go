@@ -4,11 +4,25 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/emwalker/digraph/loaders"
 	"github.com/emwalker/digraph/models"
 )
 
 type repositoryResolver struct {
 	*Resolver
+}
+
+func getRepositoryLoader(ctx context.Context) *loaders.RepositoryLoader {
+	return ctx.Value(loaders.RepositoryLoaderKey).(*loaders.RepositoryLoader)
+}
+
+func fetchRepository(ctx context.Context, repoId string) (models.Repository, error) {
+	loader := getRepositoryLoader(ctx)
+	repo, err := loader.Load(repoId)
+	if err != nil {
+		return models.Repository{}, err
+	}
+	return *repo, nil
 }
 
 func (r *repositoryResolver) DisplayName(
@@ -24,11 +38,10 @@ func (r *repositoryResolver) DisplayName(
 func (r *repositoryResolver) FullName(
 	ctx context.Context, repo *models.Repository,
 ) (string, error) {
-	loader := getOrganizationLoader(ctx)
-	var org *models.Organization
+	var org models.Organization
 	var err error
 
-	if org, err = loader.Load(repo.OrganizationID); err != nil {
+	if org, err = fetchOrganization(ctx, repo.OrganizationID); err != nil {
 		return "", err
 	}
 
@@ -62,8 +75,8 @@ func (r *repositoryResolver) Organization(
 func (r *repositoryResolver) Owner(
 	ctx context.Context, repo *models.Repository,
 ) (models.User, error) {
-	org, err := repo.Owner().One(ctx, r.DB)
-	return *org, err
+	owner, err := repo.Owner().One(ctx, r.DB)
+	return *owner, err
 }
 
 // RootTopic returns the root topic of the repository.
