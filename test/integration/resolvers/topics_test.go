@@ -449,35 +449,3 @@ func TestParentTopicPreloading(t *testing.T) {
 		t.Fatal("Parent topics not preloaded")
 	}
 }
-
-func TestBelongsToCurrentRepository(t *testing.T) {
-	ctx := context.Background()
-
-	view := &models.View{CurrentRepository: &models.Repository{ID: "1"}}
-
-	var topic *models.TopicValue
-	var belongs bool
-	var err error
-
-	topic = &models.TopicValue{&models.Topic{Name: "Frotz", RepositoryID: "1"}, view}
-
-	topicResolver := (&resolvers.Resolver{DB: testDB}).Topic()
-
-	if belongs, err = topicResolver.BelongsToCurrentRepository(ctx, topic); err != nil {
-		t.Fatal(err)
-	}
-
-	if !belongs {
-		t.Fatal("Expected topic to belong to the current repository")
-	}
-
-	topic = &models.TopicValue{&models.Topic{Name: "Frotz", RepositoryID: "2"}, view}
-
-	if belongs, err = topicResolver.BelongsToCurrentRepository(ctx, topic); err != nil {
-		t.Fatal(err)
-	}
-
-	if belongs {
-		t.Fatal("Expected topic to not belong to the current repository")
-	}
-}

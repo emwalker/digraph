@@ -28,6 +28,14 @@ class AddLink extends Component<Props, State> {
       this.createLink()
   }
 
+  get selectedRepo(): Object {
+    return this.props.viewer.selectedRepository
+  }
+
+  get orgLogin(): string {
+    return this.selectedRepo.organization.login
+  }
+
   get relayConfigs() {
     return [{
       type: 'RANGE_ADD',
@@ -50,8 +58,8 @@ class AddLink extends Component<Props, State> {
       this.relayConfigs,
       {
         addParentTopicIds: [this.props.topic.id],
-        organizationLogin: this.props.orgLogin,
-        repositoryName: 'system:default',
+        organizationLogin: this.orgLogin,
+        repositoryName: this.selectedRepo.name,
         url: this.state.url,
       },
     )
@@ -80,6 +88,17 @@ class AddLink extends Component<Props, State> {
 }
 
 export default createFragmentContainer(AddLink, graphql`
+  fragment AddLink_viewer on User {
+    selectedRepository {
+      id
+      name
+
+      organization {
+        login
+      }
+    }
+  }
+
   fragment AddLink_topic on Topic {
     id
   }

@@ -35,6 +35,7 @@ class TopicSearchPage extends Component<Props> {
           key={item.id}
           orgLogin={this.props.orgLogin}
           link={item}
+          view={this.props.view}
         />
       )
     }
@@ -44,6 +45,7 @@ class TopicSearchPage extends Component<Props> {
         key={item.id}
         orgLogin={this.props.orgLogin}
         topic={item}
+        view={this.props.view}
       />
     )
   }
@@ -108,6 +110,9 @@ query TopicSearchPage_query_Query(
     currentRepository {
       ...Breadcrumbs_repository
     }
+
+    ...Link_view
+    ...Topic_view
 
     topic(id: $topicId) {
       ...TopicSearchPage_topic @arguments(searchString: $searchString)

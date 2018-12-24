@@ -71,11 +71,15 @@ func (r *linkResolver) CreatedAt(_ context.Context, link *models.Link) (string, 
 }
 
 // Organization returns the organization for a link.
-func (r *linkResolver) Organization(
-	ctx context.Context, link *models.Link,
-) (models.Organization, error) {
+func (r *linkResolver) Organization(ctx context.Context, link *models.Link) (models.Organization, error) {
 	org, err := linkOrganization(ctx, link)
 	return *org, err
+}
+
+// Repository returns the repository of the link.
+func (r *linkResolver) Repository(ctx context.Context, link *models.Link) (models.Repository, error) {
+	repo, err := linkRepository(ctx, link)
+	return *repo, err
 }
 
 // ResourcePath returns a path to the item.

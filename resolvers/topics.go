@@ -73,12 +73,6 @@ func (r *topicResolver) AvailableParentTopics(
 	return topicConnection(topic.View, topics, err)
 }
 
-func (r *topicResolver) BelongsToCurrentRepository(
-	ctx context.Context, topic *models.TopicValue,
-) (bool, error) {
-	return topic.View.CurrentRepository.ID == topic.RepositoryID, nil
-}
-
 // ChildTopics returns a set of topics.
 func (r *topicResolver) ChildTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
@@ -105,14 +99,6 @@ func (r *topicResolver) CreatedAt(_ context.Context, topic *models.TopicValue) (
 // Description returns a description of the topic.
 func (r *topicResolver) Description(_ context.Context, topic *models.TopicValue) (*string, error) {
 	return topic.Description.Ptr(), nil
-}
-
-// DisplayColor returns a color by which to display the topic.
-func (r *topicResolver) DisplayColor(
-	ctx context.Context, topic *models.TopicValue,
-) (string, error) {
-	color := topic.DisplayColor()
-	return color, nil
 }
 
 func (r *topicResolver) ID(_ context.Context, topic *models.TopicValue) (string, error) {

@@ -28,14 +28,15 @@ type Link implements ResourceIdentifiable & Namespaceable {
   createdAt: DateTime!
   id: ID!
   organization: Organization!
-  resourcePath: String!
-  sha1: String!
   parentTopics(
     first: Int,
     after: String,
     last: Int,
     before: String
   ): TopicConnection!
+  repository: Repository!
+  resourcePath: String!
+  sha1: String!
   title: String!
   updatedAt: DateTime!
   url: String!
@@ -67,6 +68,7 @@ interface Namespaceable {
 type Organization implements ResourceIdentifiable {
   createdAt: DateTime!
   id: ID
+  login: String!
   name: String!
   resourcePath: String!
   updatedAt: DateTime!
@@ -90,6 +92,7 @@ type Query {
 }
 
 type Repository {
+  displayColor: Color!
   displayName: String!
   fullName: String!
   id: ID
@@ -141,7 +144,6 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection!
-  belongsToCurrentRepository: Boolean!
   childTopics(
     searchString: String,
     first: Int,
@@ -151,7 +153,6 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   ): TopicConnection!
   createdAt: DateTime!
   description: String
-  displayColor: Color!
   id: ID!
   links(
     searchString: String,

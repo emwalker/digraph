@@ -87,13 +87,13 @@ class TopicPage extends Component<Props> {
           />
           <AddTopic
             topic={topic}
+            view={this.props.view}
             viewer={this.props.viewer}
-            {...props}
           />
           <AddLink
             topic={topic}
+            view={this.props.view}
             viewer={this.props.viewer}
-            {...props}
           />
         </div>
       </div>
@@ -113,6 +113,8 @@ query TopicPage_query_Query(
     id
     ...Subhead_viewer
     ...SelectRepository_viewer
+    ...AddTopic_viewer
+    ...AddLink_viewer
   }
 
   view(
@@ -123,6 +125,9 @@ query TopicPage_query_Query(
     currentRepository {
       ...Breadcrumbs_repository
     }
+
+    ...Link_view
+    ...Topic_view
 
     topic(id: $topicId) {
       ...TopicPage_topic @arguments(searchString: $searchString)

@@ -11,7 +11,9 @@ type Props = {
   organization: OrganizationType,
   orgLogin: string,
   topic: TopicType,
-  viewer: Object,
+  view: {
+    currentRepository: Object,
+  },
 }
 
 type State = {
@@ -23,10 +25,14 @@ class Topic extends Component<Props, State> {
     formIsOpen: false,
   }
 
+  get topicBelongsToCurrentRepository(): boolean {
+    return this.props.topic.repository.id === this.props.view.currentRepository.id
+  }
+
   get displayColor(): string {
-    return this.props.topic.belongsToCurrentRepository
+    return this.topicBelongsToCurrentRepository
       ? 'transparent'
-      : this.props.topic.displayColor
+      : this.props.topic.repository.displayColor
   }
 
   get parentTopics(): TopicType[] {
@@ -54,7 +60,6 @@ class Topic extends Component<Props, State> {
           orgLogin={this.props.orgLogin}
           toggleForm={this.toggleForm}
           topic={this.props.topic}
-          viewer={this.props.viewer}
           {...this.props}
         />
       </Item>
@@ -63,13 +68,22 @@ class Topic extends Component<Props, State> {
 }
 
 export default createFragmentContainer(Topic, graphql`
+  fragment Topic_view on View {
+    currentRepository {
+      id
+    }
+  }
+
   fragment Topic_topic on Topic {
-    belongsToCurrentRepository
     description
-    displayColor
     id
     name
     resourcePath
+
+    repository {
+      displayColor
+      id
+    }
 
     parentTopics(first: 10) {
       edges {

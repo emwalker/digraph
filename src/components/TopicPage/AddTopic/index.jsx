@@ -12,9 +12,14 @@ type State = {
 }
 
 type Props = RelayProps & {
-  orgLogin: string,
   viewer: {
     id: ID,
+    selectedRepository: {
+      name: string,
+      organization: {
+        login: string,
+      },
+    },
   },
 }
 
@@ -26,6 +31,14 @@ class AddTopic extends Component<Props, State> {
   onKeyPress = (event: Object) => {
     if (event.key === 'Enter')
       this.createTopic()
+  }
+
+  get selectedRepo(): Object {
+    return this.props.viewer.selectedRepository
+  }
+
+  get orgLogin(): string {
+    return this.selectedRepo.organization.login
   }
 
   get relayConfigs() {
@@ -50,8 +63,8 @@ class AddTopic extends Component<Props, State> {
       this.relayConfigs,
       {
         name: this.state.name,
-        repositoryName: 'system:default',
-        organizationLogin: this.props.orgLogin,
+        repositoryName: this.selectedRepo.name,
+        organizationLogin: this.orgLogin,
         topicIds: [this.props.topic.id],
       },
     )
@@ -80,6 +93,15 @@ class AddTopic extends Component<Props, State> {
 }
 
 export default createFragmentContainer(AddTopic, graphql`
+  fragment AddTopic_viewer on User {
+    selectedRepository {
+      name
+      organization {
+        login
+      }
+    }
+  }
+
   fragment AddTopic_topic on Topic {
     id
   }

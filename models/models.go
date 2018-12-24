@@ -69,6 +69,6 @@ func (r *Repository) IsPrivate() bool {
 }
 
 // DisplayColor returns a string of the hex color to use for the topic.
-func (t *TopicValue) DisplayColor() string {
+func (t *Repository) DisplayColor() string {
 	return "#dbedff"
 }

@@ -25,9 +25,13 @@ func fetchRepository(ctx context.Context, repoId string) (models.Repository, err
 	return *repo, nil
 }
 
-func (r *repositoryResolver) DisplayName(
-	ctx context.Context, repo *models.Repository,
-) (string, error) {
+// DisplayColor returns a color by which to display the topic.
+func (r *repositoryResolver) DisplayColor(ctx context.Context, repo *models.Repository) (string, error) {
+	color := repo.DisplayColor()
+	return color, nil
+}
+
+func (r *repositoryResolver) DisplayName(ctx context.Context, repo *models.Repository) (string, error) {
 	if repo.IsPrivate() {
 		return "Private collection", nil
 	}
