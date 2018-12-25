@@ -106,6 +106,7 @@ const homepageTemplate = `<!doctype html>
     <meta charset="utf-8">
     <meta http-equiv="Content-Language" content="en">
     <title>Digraph</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     {{ asset "main.css" }}
   </head>
 
