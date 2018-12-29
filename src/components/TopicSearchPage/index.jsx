@@ -56,6 +56,7 @@ class TopicSearchPage extends Component<Props> {
       searchResults,
       name,
       parentTopics,
+      resourcePath,
     } = topic
     const rows = liftNodes(searchResults)
 
@@ -67,6 +68,7 @@ class TopicSearchPage extends Component<Props> {
         />
         <Subhead
           heading={name}
+          headingLink={resourcePath}
           location={location}
           router={router}
           viewer={viewer}
@@ -125,6 +127,7 @@ export default createFragmentContainer(TopicSearchPage, graphql`
     searchString: {type: "String!", defaultValue: ""},
   ) {
     name
+    resourcePath
 
     parentTopics(first: 100) {
       edges {

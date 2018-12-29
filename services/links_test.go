@@ -7,28 +7,48 @@ import (
 )
 
 func TestNormalizeURL(t *testing.T) {
-	var url URL
-	var err error
-
-	if url, err = services.NormalizeURL("http://some.url.com"); err != nil {
-		t.Fatal(err)
+	testCases := []struct {
+		name          string
+		inputURL      string
+		canonicalURL  string
+		expectedError bool
+	}{
+		{
+			name:          "A basic case",
+			inputURL:      "http://some.url.com",
+			canonicalURL:  "http://some.url.com",
+			expectedError: false,
+		},
+		{
+			name:          "Y Combinator comment section",
+			inputURL:      "https://news.ycombinator.com/item?id=18504300",
+			canonicalURL:  "https://news.ycombinator.com/item?id=18504300",
+			expectedError: false,
+		},
+		{
+			name:          "A bugfix",
+			inputURL:      "https://quaderno.io/stripe-vat-subscriptions/",
+			canonicalURL:  "https://quaderno.io/stripe-vat-subscriptions/",
+			expectedError: false,
+		},
 	}
 
-	if url.CanonicalURL != "http://some.url.com" {
-		t.Fatalf("Unexpected url: %s", url.CanonicalURL)
-	}
-
-	if url, err = services.NormalizeURL("https://news.ycombinator.com/item?id=18504300"); err != nil {
-		t.Fatal(err)
-	}
-
-	if url.CanonicalURL != "https://news.ycombinator.com/item?id=18504300" {
-		t.Fatalf("Unexpected url: %s", url.CanonicalURL)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			url, err := services.NormalizeURL(testCase.inputURL)
+			if err == nil {
+				if url.CanonicalURL != testCase.canonicalURL {
+					t.Fatalf("Unexpected url: %s, expected: %s", url.CanonicalURL, testCase.canonicalURL)
+				}
+			} else if !testCase.expectedError {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 
 func TestSha1Value(t *testing.T) {
-	var url URL
+	var url *services.URL
 	var err error
 
 	if url, err = services.NormalizeURL("http://some.url.com"); err != nil {

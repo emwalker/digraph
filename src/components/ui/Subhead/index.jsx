@@ -1,7 +1,8 @@
 // @flow
-import React, { Component } from 'react'
+import React, { Component, type Node } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { pathOr } from 'ramda'
+import { Link } from 'found'
 
 import SearchBox from 'components/ui/SearchBox'
 
@@ -9,6 +10,7 @@ const resourcePath = pathOr('/', ['defaultRepository', 'rootTopic', 'resourcePat
 
 type Props = {
   heading: string,
+  headingLink: ?string,
   location: {
     pathname: string,
     query: Object,
@@ -27,6 +29,10 @@ type Props = {
 }
 
 class Subhead extends Component<Props> {
+  static defaultProps = {
+    headingLink: null,
+  }
+
   onSearch = (query) => {
     if (query === '') {
       this.props.router.push({ pathname: this.pathname })
@@ -34,6 +40,20 @@ class Subhead extends Component<Props> {
     }
 
     this.props.router.push({ pathname: this.pathname, query: { q: query } })
+  }
+
+  get heading(): Node {
+    if (!this.props.headingLink)
+      return this.props.heading
+
+    return (
+      <Link
+        className="link-gray-dark"
+        to={this.props.headingLink}
+      >
+        {this.props.heading}
+      </Link>
+    )
   }
 
   get pathname(): string {
@@ -48,7 +68,9 @@ class Subhead extends Component<Props> {
 
   render = () => (
     <div className="Subhead">
-      <div className="Subhead-heading">{this.props.heading}</div>
+      <div className="Subhead-heading">
+        {this.heading}
+      </div>
       <SearchBox onEnter={this.onSearch} value={this.searchString} />
     </div>
   )

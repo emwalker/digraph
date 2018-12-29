@@ -16,9 +16,9 @@ func getOrganizationLoader(ctx context.Context) *loaders.OrganizationLoader {
 	return ctx.Value(loaders.OrganizationLoaderKey).(*loaders.OrganizationLoader)
 }
 
-func fetchOrganization(ctx context.Context, organizationId string) (models.Organization, error) {
+func fetchOrganization(ctx context.Context, organizationID string) (models.Organization, error) {
 	loader := getOrganizationLoader(ctx)
-	org, err := loader.Load(organizationId)
+	org, err := loader.Load(organizationID)
 	if err != nil {
 		return models.Organization{}, err
 	}

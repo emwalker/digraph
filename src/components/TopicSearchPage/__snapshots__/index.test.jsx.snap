@@ -5,6 +5,7 @@ exports[`<TopicPage /> renders 1`] = `
   <Breadcrumbs />
   <Subhead
     heading="Frotz"
+    headingLink={null}
   />
   <div
     className="two-thirds column pl-0"

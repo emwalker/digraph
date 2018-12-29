@@ -40,7 +40,7 @@ class TopicPage extends Component<Props> {
 
   render = () => {
     const { location, topic, ...props } = this.props
-    const { name, parentTopics } = topic
+    const { name, parentTopics, resourcePath } = topic
     const { topics, links } = this
 
     return (
@@ -51,6 +51,7 @@ class TopicPage extends Component<Props> {
         />
         <Subhead
           heading={name}
+          headingLink={resourcePath}
           location={this.props.location}
           router={this.props.router}
           viewer={this.props.viewer}
@@ -140,6 +141,7 @@ export default createFragmentContainer(TopicPage, graphql`
     searchString: {type: "String", defaultValue: ""},
   ) {
     name
+    resourcePath
     ...AddTopic_topic
     ...AddLink_topic
 

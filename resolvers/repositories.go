@@ -16,9 +16,9 @@ func getRepositoryLoader(ctx context.Context) *loaders.RepositoryLoader {
 	return ctx.Value(loaders.RepositoryLoaderKey).(*loaders.RepositoryLoader)
 }
 
-func fetchRepository(ctx context.Context, repoId string) (models.Repository, error) {
+func fetchRepository(ctx context.Context, repoID string) (models.Repository, error) {
 	loader := getRepositoryLoader(ctx)
-	repo, err := loader.Load(repoId)
+	repo, err := loader.Load(repoID)
 	if err != nil {
 		return models.Repository{}, err
 	}

@@ -27,8 +27,8 @@ start-debug: kill
 	@go run server.go --dev --log 2
 
 lint:
-	golint models server resolvers
-	yarn run eslint
+	golint models resolvers server services
+	yarn eslint
 
 install:
 	@yarn install
@@ -52,16 +52,15 @@ test-integration:
 	go test ./test/integration/...
 
 test: .PHONY
-	go test ./models ./resolvers ./server
+	go test ./models ./resolvers ./server ./services
 	yarn jest
 
 format:
-	yarn eslint
 	yarn flow
 	go fmt ./...
 	git diff-index --quiet HEAD --
 
-check: format test test-integration
+check: lint format test test-integration
 
 load:
 	dropdb $(DBNAME)

@@ -66,11 +66,11 @@ func (r *userResolver) Repositories(
 func (r *userResolver) SelectedRepository(
 	ctx context.Context, user *models.User,
 ) (*models.Repository, error) {
-	repoId := user.SelectedRepositoryID.Ptr()
-	if repoId == nil {
+	repoID := user.SelectedRepositoryID.Ptr()
+	if repoID == nil {
 		return nil, nil
 	}
-	repo, err := fetchRepository(ctx, *repoId)
+	repo, err := fetchRepository(ctx, *repoID)
 	return &repo, err
 }
 
