@@ -66,10 +66,10 @@ func TestQueryView(t *testing.T) {
 func TestSearchTopics(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	topic, cleanup := m.createTopic("Agriculture")
+	topic, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
 	defer cleanup()
 
-	childTopic, cleanup := m.createTopic("Crop rotation")
+	childTopic, cleanup := m.createTopic(m.defaultRepo(), "Crop rotation")
 	defer cleanup()
 
 	m.addParentTopicToTopic(childTopic, topic)
@@ -132,10 +132,10 @@ func TestSearchTopics(t *testing.T) {
 func TestSearchLinks(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	topic, cleanup := m.createTopic("News organizations")
+	topic, cleanup := m.createTopic(m.defaultRepo(), "News organizations")
 	defer cleanup()
 
-	link, cleanup := m.createLink("New York Times", "https://www.nytimes.com")
+	link, cleanup := m.createLink(m.defaultRepo(), "New York Times", "https://www.nytimes.com")
 	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
@@ -230,10 +230,10 @@ func TestTopicVisibility(t *testing.T) {
 	m1 := newMutator(t, r1.User)
 	m2 := newMutator(t, r2.User)
 
-	t1, cleanup := m1.createTopic("News organizations")
+	t1, cleanup := m1.createTopic(m1.defaultRepo(), "News organizations")
 	defer cleanup()
 
-	t2, cleanup := m2.createTopic("News organizations")
+	t2, cleanup := m2.createTopic(m2.defaultRepo(), "News organizations")
 	defer cleanup()
 
 	if t1.ID == t2.ID {

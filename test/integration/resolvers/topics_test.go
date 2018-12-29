@@ -12,7 +12,7 @@ import (
 func TestUpsertTopic(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	t1, cleanup := m.createTopic("Agriculture")
+	t1, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
 	defer cleanup()
 
 	parent, err := t1.ParentTopics().One(m.ctx, testDB)
@@ -53,10 +53,10 @@ func TestUpsertTopic(t *testing.T) {
 func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	t1, cleanup := m.createTopic("Agriculture")
+	t1, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
 	defer cleanup()
 
-	t2, cleanup := m.createTopic("Husbandry")
+	t2, cleanup := m.createTopic(m.defaultRepo(), "Husbandry")
 	defer cleanup()
 
 	m.addParentTopicToTopic(t2, t1)
@@ -112,13 +112,13 @@ func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
 func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	t1, cleanup := m.createTopic("Grandparent")
+	t1, cleanup := m.createTopic(m.defaultRepo(), "Grandparent")
 	defer cleanup()
 
-	t2, cleanup := m.createTopic("Parent")
+	t2, cleanup := m.createTopic(m.defaultRepo(), "Parent")
 	defer cleanup()
 
-	t3, cleanup := m.createTopic("Child")
+	t3, cleanup := m.createTopic(m.defaultRepo(), "Child")
 	defer cleanup()
 
 	m.addParentTopicToTopic(t2, t1)
@@ -142,7 +142,7 @@ func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
 func TestUpdateTopic(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	topic, cleanup := m.createTopic("Agriculture")
+	topic, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
 	defer cleanup()
 
 	assert.Equal(t, "Agriculture", topic.Name)
@@ -178,10 +178,10 @@ func TestUpdateTopic(t *testing.T) {
 func TestTopicParentTopics(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	topic1, cleanup := m.createTopic("Agriculture")
+	topic1, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
 	defer cleanup()
 
-	topic2, cleanup := m.createTopic("Crop rotation")
+	topic2, cleanup := m.createTopic(m.defaultRepo(), "Crop rotation")
 	defer cleanup()
 
 	parentTopics, err := topic2.ParentTopics().All(m.ctx, m.db)
@@ -199,10 +199,10 @@ func TestTopicParentTopics(t *testing.T) {
 func TestSearchChildTopics(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	topic, cleanup := m.createTopic("Agriculture")
+	topic, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
 	defer cleanup()
 
-	childTopic, cleanup := m.createTopic("Crop rotation")
+	childTopic, cleanup := m.createTopic(m.defaultRepo(), "Crop rotation")
 	defer cleanup()
 
 	m.addParentTopicToTopic(childTopic, topic)
@@ -258,10 +258,10 @@ func TestSearchChildTopics(t *testing.T) {
 func TestSearchLinksInTopic(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	topic, cleanup := m.createTopic("News organizations")
+	topic, cleanup := m.createTopic(m.defaultRepo(), "News organizations")
 	defer cleanup()
 
-	link, cleanup := m.createLink("New York Times", "https://www.nytimes.com")
+	link, cleanup := m.createLink(m.defaultRepo(), "New York Times", "https://www.nytimes.com")
 	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
@@ -317,18 +317,18 @@ func TestSearchLinksInTopic(t *testing.T) {
 func TestSearchInTopic(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	t1, cleanup := m.createTopic("News organizations")
+	t1, cleanup := m.createTopic(m.defaultRepo(), "News organizations")
 	defer cleanup()
 
-	l1, cleanup := m.createLink("News", "https://en.wikipedia.org/wiki/News")
+	l1, cleanup := m.createLink(m.defaultRepo(), "News", "https://en.wikipedia.org/wiki/News")
 	defer cleanup()
 	m.addParentTopicToLink(l1, t1)
 
-	t2, cleanup := m.createTopic("New York Times")
+	t2, cleanup := m.createTopic(m.defaultRepo(), "New York Times")
 	defer cleanup()
 	m.addParentTopicToTopic(t2, t1)
 
-	l2, cleanup := m.createLink("New York Times", "https://www.nytimes.com")
+	l2, cleanup := m.createLink(m.defaultRepo(), "New York Times", "https://www.nytimes.com")
 	defer cleanup()
 	m.addParentTopicToLink(l2, t2)
 
@@ -426,10 +426,10 @@ func TestParentTopicPreloading(t *testing.T) {
 	r := (&resolvers.Resolver{DB: testDB}).Topic()
 	m := newMutator(t, testActor)
 
-	t1, cleanup := m.createTopic("News organizations")
+	t1, cleanup := m.createTopic(m.defaultRepo(), "News organizations")
 	defer cleanup()
 
-	t2, cleanup := m.createTopic("New York Times")
+	t2, cleanup := m.createTopic(m.defaultRepo(), "New York Times")
 	defer cleanup()
 	m.addParentTopicToTopic(t2, t1)
 

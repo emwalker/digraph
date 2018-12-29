@@ -77,7 +77,7 @@ func TestUpsertLink(t *testing.T) {
 func TestUpdateParentTopics(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	link, cleanup := m.createLink("Gnusto's Blog", "https://gnusto.blog")
+	link, cleanup := m.createLink(m.defaultRepo(), "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
 	var topics []*models.Topic
@@ -126,10 +126,10 @@ func TestUpdateParentTopics(t *testing.T) {
 func TestAvailableTopics(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	_, cleanup := m.createTopic("Something")
+	_, cleanup := m.createTopic(m.defaultRepo(), "Something")
 	defer cleanup()
 
-	link, cleanup := m.createLink("Gnusto's Blog", "https://gnusto.blog")
+	link, cleanup := m.createLink(m.defaultRepo(), "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
 	query := (&resolvers.Resolver{DB: m.db}).Link()
