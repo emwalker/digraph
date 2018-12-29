@@ -19,9 +19,6 @@ type Props = {
   orgLogin: string,
   router: Object,
   topic: TopicType,
-  viewer: {
-    defaultRepository: Object,
-  },
   view: {
     currentRepository: Object,
   },
@@ -51,7 +48,7 @@ class TopicSearchPage extends Component<Props> {
   }
 
   render = () => {
-    const { location, orgLogin, router, topic, view, viewer } = this.props
+    const { location, orgLogin, router, topic, view } = this.props
     const {
       searchResults,
       name,
@@ -71,7 +68,7 @@ class TopicSearchPage extends Component<Props> {
           headingLink={resourcePath}
           location={location}
           router={router}
-          viewer={viewer}
+          view={view}
         />
         <div className="two-thirds column pl-0">
           <List
@@ -100,10 +97,6 @@ query TopicSearchPage_query_Query(
   $topicId: ID!,
   $searchString: String!,
 ) {
-  viewer {
-    ...Subhead_viewer
-  }
-
   view(
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,
@@ -115,6 +108,7 @@ query TopicSearchPage_query_Query(
 
     ...Link_view
     ...Topic_view
+    ...Subhead_view
 
     topic(id: $topicId) {
       ...TopicSearchPage_topic @arguments(searchString: $searchString)

@@ -54,7 +54,7 @@ class TopicPage extends Component<Props> {
           headingLink={resourcePath}
           location={this.props.location}
           router={this.props.router}
-          viewer={this.props.viewer}
+          view={this.props.view}
         />
         <div className="two-thirds column pl-0">
           <List
@@ -112,7 +112,6 @@ query TopicPage_query_Query(
 ) {
   viewer {
     id
-    ...Subhead_viewer
     ...SelectRepository_viewer
     ...AddTopic_viewer
     ...AddLink_viewer
@@ -129,6 +128,7 @@ query TopicPage_query_Query(
 
     ...Link_view
     ...Topic_view
+    ...Subhead_view
 
     topic(id: $topicId) {
       ...TopicPage_topic @arguments(searchString: $searchString)

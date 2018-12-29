@@ -6,6 +6,14 @@ exports[`<TopicPage /> renders 1`] = `
   <Subhead
     heading="Frotz"
     headingLink={null}
+    view={
+      Object {
+        "repository": Object {
+          "displayName": "Private collection",
+          "isPrivate": true,
+        },
+      }
+    }
   />
   <div
     className="two-thirds column pl-0"

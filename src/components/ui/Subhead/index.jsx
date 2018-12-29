@@ -6,7 +6,7 @@ import { Link } from 'found'
 
 import SearchBox from 'components/ui/SearchBox'
 
-const resourcePath = pathOr('/', ['defaultRepository', 'rootTopic', 'resourcePath'])
+const resourcePath = pathOr('/', ['currentRepository', 'rootTopic', 'resourcePath'])
 
 type Props = {
   heading: string,
@@ -19,8 +19,8 @@ type Props = {
   router: {
     push: Function,
   },
-  viewer: {
-    defaultRepository: {
+  view: {
+    currentRepository: {
       rootTopic: {
         resourcePath: string,
       },
@@ -57,7 +57,7 @@ class Subhead extends Component<Props> {
   }
 
   get pathname(): string {
-    return resourcePath(this.props.viewer)
+    return resourcePath(this.props.view)
   }
 
   get searchString(): string {
@@ -77,8 +77,8 @@ class Subhead extends Component<Props> {
 }
 
 export default createFragmentContainer(Subhead, graphql`
-  fragment Subhead_viewer on User {
-    defaultRepository {
+  fragment Subhead_view on View {
+    currentRepository {
       rootTopic {
         resourcePath
       }
