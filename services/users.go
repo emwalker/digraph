@@ -9,14 +9,17 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
+// CreateUserResult holds the result of a CreateUser call.
 type CreateUserResult struct {
 	Alerts       []models.Alert
+	Cleanup      CleanupFunc
 	User         *models.User
 	Repository   *models.Repository
 	Organization *models.Organization
 	RootTopic    *models.Topic
 }
 
+// CreateUser creates a new user and provides a default organization and repo for him/her.
 func (c Connection) CreateUser(
 	ctx context.Context, name, email, githubUsername, githubAvatarURL string,
 ) (*CreateUserResult, error) {
@@ -82,10 +85,24 @@ func (c Connection) CreateUser(
 		return nil, err
 	}
 
+	cleanup := func() error {
+		if _, err := repo.Delete(ctx, c.Exec); err != nil {
+			return err
+		}
+		if _, err := org.Delete(ctx, c.Exec); err != nil {
+			return err
+		}
+		if _, err := user.Delete(ctx, c.Exec); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	return &CreateUserResult{
-		User:         &user,
+		Cleanup:      cleanup,
 		Organization: &org,
 		Repository:   &repo,
 		RootTopic:    &topic,
+		User:         &user,
 	}, nil
 }

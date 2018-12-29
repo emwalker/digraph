@@ -13,12 +13,11 @@ import (
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/emwalker/digraph/services"
 	"github.com/emwalker/digraph/services/pageinfo"
-	helpers "github.com/emwalker/digraph/testing"
 	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-const orgId = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
+const orgID = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
 var (
 	testDB    *sql.DB
@@ -35,15 +34,19 @@ type mutator struct {
 	t        *testing.T
 }
 
-func (m mutator) defaultRepo() *models.Repository {
+func (m mutator) repo(login string) *models.Repository {
 	repo, err := m.actor.OwnerRepositories(
 		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
-		qm.Where("repositories.system and o.login = ?", m.actor.Login),
+		qm.Where("repositories.system and o.login = ?", login),
 	).One(m.ctx, testDB)
 	if err != nil {
 		panic(err)
 	}
 	return repo
+}
+
+func (m mutator) defaultRepo() *models.Repository {
+	return m.repo(m.actor.Login)
 }
 
 func TestMain(m *testing.M) {
@@ -132,7 +135,7 @@ func (m mutator) deleteTopic(topic models.TopicValue) {
 	}
 }
 
-func (m mutator) createTopic(name string) (*models.TopicValue, helpers.CleanupFunc) {
+func (m mutator) createTopic(name string) (*models.TopicValue, services.CleanupFunc) {
 	parentTopic, err := models.Topics(qm.Where("name like 'Everything'")).One(m.ctx, m.db)
 	if err != nil {
 		m.t.Fatal(err)
@@ -160,7 +163,7 @@ func (m mutator) createTopic(name string) (*models.TopicValue, helpers.CleanupFu
 	return &topic, cleanup
 }
 
-func (m mutator) createLink(title, url string) (*models.Link, helpers.CleanupFunc) {
+func (m mutator) createLink(title, url string) (*models.Link, services.CleanupFunc) {
 	payload1, err := m.resolver.UpsertLink(m.ctx, models.UpsertLinkInput{
 		AddParentTopicIds: []string{},
 		OrganizationLogin: testActor.Login,

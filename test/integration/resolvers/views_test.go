@@ -7,7 +7,6 @@ import (
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/emwalker/digraph/services"
-	helpers "github.com/emwalker/digraph/testing"
 )
 
 var (
@@ -41,8 +40,8 @@ func TestQueryView(t *testing.T) {
 	}
 
 	// When the repo is not in the db
-	fakeId := "542d7ecc-f378-11e8-8eb2-f2801f1b9fd1"
-	v2 := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{fakeId}}
+	fakeID := "542d7ecc-f378-11e8-8eb2-f2801f1b9fd1"
+	v2 := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{fakeID}}
 	connection, err = query.Topics(ctx, v2, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -200,8 +199,7 @@ func TestTopicVisibility(t *testing.T) {
 	ctx := context.Background()
 	c := services.Connection{Exec: testDB, Actor: testActor}
 
-	r1, cleanup, err := helpers.CreateUser(
-		c,
+	r1, err := c.CreateUser(
 		ctx,
 		"Gnusto",
 		"gnusto@gnusto.com",
@@ -211,10 +209,9 @@ func TestTopicVisibility(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup()
+	defer r1.Cleanup()
 
-	r2, cleanup, err := helpers.CreateUser(
-		c,
+	r2, err := c.CreateUser(
 		ctx,
 		"Frotz",
 		"frotz@frotz.com",
@@ -224,7 +221,7 @@ func TestTopicVisibility(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup()
+	defer r2.Cleanup()
 
 	if r1.User.ID == r2.User.ID {
 		t.Fatal("Two users should have been created")

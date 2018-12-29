@@ -6,7 +6,6 @@ import (
 
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/services"
-	helpers "github.com/emwalker/digraph/testing"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -14,19 +13,17 @@ func TestCreateUser(t *testing.T) {
 	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
 
-	result, cleanup, err := helpers.CreateUser(
-		c,
+	result, err := c.CreateUser(
 		ctx,
 		"Gnusto Frotz",
 		"gnusto@gnusto.com",
 		"gnusto",
 		"http://some-long-url",
 	)
-	defer cleanup()
-
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer result.Cleanup()
 
 	if result.User == nil {
 		t.Fatal("Expected a user to be present")
