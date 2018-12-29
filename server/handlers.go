@@ -123,7 +123,15 @@ func (s *Server) handleRoot() http.Handler {
 	template.Must(t.Parse(homepageTemplate))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Execute(w, nil)
+		switch r.URL.Path[1:] {
+		case "robots.txt":
+			http.ServeFile(w, r, "public/webpack/robots.txt")
+			return
+		case "":
+			t.Execute(w, nil)
+		default:
+			http.NotFound(w, r)
+		}
 	})
 }
 
