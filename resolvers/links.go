@@ -46,23 +46,7 @@ func linkOrganization(ctx context.Context, link *models.Link) (*models.Organizat
 func (r *linkResolver) AvailableParentTopics(
 	ctx context.Context, link *models.Link, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
-	existingTopics, err := link.ParentTopics(qm.Select("id")).All(ctx, r.DB)
-	if err != nil {
-		return models.TopicConnection{}, err
-	}
-
-	var existingIds []interface{}
-	for _, topic := range existingTopics {
-		existingIds = append(existingIds, topic.ID)
-	}
-
-	org, err := fetchOrganization(ctx, link.OrganizationID)
-	if err != nil {
-		return models.TopicConnection{}, err
-	}
-
-	topics, err := org.Topics().All(ctx, r.DB)
-	return topicConnection(nil, topics, err)
+	return availableTopics(ctx, r.DB, r.Actor, first)
 }
 
 // CreatedAt returns the time at which the link was first added.

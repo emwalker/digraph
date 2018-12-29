@@ -14,6 +14,7 @@ import (
 
 const rowNotFound = "sql: no rows in result set"
 
+// FetchOrMakeSessionSessionResult holds the result of a FetchOrMakeSessionSession service call.
 type FetchOrMakeSessionSessionResult struct {
 	Session        *models.Session
 	SessionCreated bool
@@ -21,6 +22,7 @@ type FetchOrMakeSessionSessionResult struct {
 	UserCreated    bool
 }
 
+// FetchOrMakeSession obtains the current session if it exists.
 func (c Connection) FetchOrMakeSession(
 	ctx context.Context, gothUser goth.User,
 ) (*FetchOrMakeSessionSessionResult, error) {

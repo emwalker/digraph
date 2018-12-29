@@ -191,9 +191,8 @@ func (r *MutationResolver) UpsertLink(
 			return err
 		}
 
-		c := services.Connection{Exec: tx, Actor: r.Actor}
-
-		result, err = c.UpsertLink(
+		s := services.New(tx, r.Actor)
+		result, err = s.UpsertLink(
 			ctx,
 			repo,
 			input.URL,

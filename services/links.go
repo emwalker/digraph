@@ -15,6 +15,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// UpsertLinkResult holds the result of an UpsertLink call.
 type UpsertLinkResult struct {
 	Alerts      []models.Alert
 	Cleanup     CleanupFunc
@@ -22,6 +23,7 @@ type UpsertLinkResult struct {
 	LinkCreated bool
 }
 
+// URL holds information about a URL that has been upserted.
 type URL struct {
 	CanonicalURL string
 	Input        string
@@ -40,9 +42,11 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 	pl.FlagEncodeNecessaryEscapes |
 	pl.FlagSortQuery
 
+// Fetcher holds the default title fetcher.
 var Fetcher pageinfo.Fetcher = &pageinfo.HtmlFetcher{}
 
-func NormalizeUrl(url string) (*URL, error) {
+// NormalizeURL normalizes a url before it is stored in the database.
+func NormalizeURL(url string) (*URL, error) {
 	canonical, err := pl.NormalizeURLString(url, normalizationFlags)
 	if err != nil {
 		return nil, err
@@ -119,13 +123,15 @@ func (c Connection) addParentTopicsToLink(
 	return link.AddParentTopics(ctx, c.Exec, false, topics...)
 }
 
+// UpsertLink adds a link if it does not yet exist in the database or updates information about
+// the link if it is found.
 func (c Connection) UpsertLink(
-	ctx context.Context, repo *models.Repository, providedUrl string, providedTitle *string,
+	ctx context.Context, repo *models.Repository, providedURL string, providedTitle *string,
 	parentTopicIds []string,
 ) (*UpsertLinkResult, error) {
 	var alerts []models.Alert
 
-	url, err := NormalizeUrl(providedUrl)
+	url, err := NormalizeURL(providedURL)
 	if err != nil {
 		return nil, err
 	}
@@ -133,9 +139,12 @@ func (c Connection) UpsertLink(
 	title, err := providedOrFetchedTitle(url.CanonicalURL, providedTitle)
 	if err != nil {
 		alerts = append(alerts,
-			*models.NewAlert(models.AlertTypeWarn, fmt.Sprintf("Not a valid link: %s", providedUrl)),
+			*models.NewAlert(models.AlertTypeWarn, fmt.Sprintf("Not a valid link: %s", providedURL)),
 		)
-		return &UpsertLinkResult{Alerts: alerts, Cleanup: func() error { return nil }}, nil
+		return &UpsertLinkResult{
+			Alerts:  alerts,
+			Cleanup: func() error { return nil },
+		}, nil
 	}
 
 	link := models.Link{
@@ -178,7 +187,7 @@ func (c Connection) UpsertLink(
 
 	if existing > 0 {
 		alerts = []models.Alert{
-			*models.NewAlert(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", providedUrl)),
+			*models.NewAlert(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", providedURL)),
 		}
 	}
 

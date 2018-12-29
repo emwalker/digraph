@@ -21,7 +21,7 @@ var (
 
 func TestQueryView(t *testing.T) {
 	ctx := context.Background()
-	query := (&resolvers.Resolver{DB: testDB}).View()
+	query := resolvers.New(testDB, testActor).View()
 
 	// When the repository is in the db
 	repo, err := testActor.DefaultRepo(ctx, testDB)
@@ -65,11 +65,12 @@ func TestQueryView(t *testing.T) {
 
 func TestSearchTopics(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	topic, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "Agriculture")
 	defer cleanup()
 
-	childTopic, cleanup := m.createTopic(m.defaultRepo(), "Crop rotation")
+	childTopic, cleanup := m.createTopic(testActor.Login, repoName, "Crop rotation")
 	defer cleanup()
 
 	m.addParentTopicToTopic(childTopic, topic)
@@ -113,7 +114,7 @@ func TestSearchTopics(t *testing.T) {
 	}
 
 	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
-	viewResolver := (&resolvers.Resolver{DB: testDB}).View()
+	viewResolver := resolvers.New(testDB, testActor).View()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -131,11 +132,12 @@ func TestSearchTopics(t *testing.T) {
 
 func TestSearchLinks(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	topic, cleanup := m.createTopic(m.defaultRepo(), "News organizations")
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "News organizations")
 	defer cleanup()
 
-	link, cleanup := m.createLink(m.defaultRepo(), "New York Times", "https://www.nytimes.com")
+	link, cleanup := m.createLink(testActor.Login, repoName, "New York Times", "https://www.nytimes.com")
 	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
@@ -179,7 +181,7 @@ func TestSearchLinks(t *testing.T) {
 	}
 
 	view := &models.View{RepositoryIds: []string{m.defaultRepo().ID}}
-	viewResolver := (&resolvers.Resolver{DB: testDB}).View()
+	viewResolver := resolvers.New(testDB, testActor).View()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -230,17 +232,17 @@ func TestTopicVisibility(t *testing.T) {
 	m1 := newMutator(t, r1.User)
 	m2 := newMutator(t, r2.User)
 
-	t1, cleanup := m1.createTopic(m1.defaultRepo(), "News organizations")
+	t1, cleanup := m1.createTopic(r1.User.Login, m1.defaultRepo().Name, "News organizations")
 	defer cleanup()
 
-	t2, cleanup := m2.createTopic(m2.defaultRepo(), "News organizations")
+	t2, cleanup := m2.createTopic(r2.User.Login, m2.defaultRepo().Name, "News organizations")
 	defer cleanup()
 
 	if t1.ID == t2.ID {
 		t.Fatal("Topics should not be de-duped between repos")
 	}
 
-	r := (&resolvers.Resolver{DB: testDB}).View()
+	r := resolvers.New(testDB, testActor).View()
 	v1 := &models.View{ViewerID: r1.User.ID, RepositoryIds: []string{r1.Repository.ID}}
 	v2 := &models.View{ViewerID: r2.User.ID, RepositoryIds: []string{r2.Repository.ID}}
 	var topic *models.TopicValue

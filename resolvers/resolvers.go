@@ -9,12 +9,18 @@ import (
 	"github.com/emwalker/digraph/models"
 )
 
+// CurrentUserKey is the key used for storing the current user in the session.
 const CurrentUserKey = "currentUserKey"
 
 // Resolver is the abstract base class for resolvers.
 type Resolver struct {
 	DB    *sql.DB
 	Actor *models.User
+}
+
+// New returns a new resolver.
+func New(db *sql.DB, actor *models.User) *Resolver {
+	return &Resolver{db, actor}
 }
 
 // Mutation returns a resolver that can be used for issuing mutations.
@@ -37,7 +43,7 @@ func (r *Resolver) Organization() models.OrganizationResolver {
 	return &organizationResolver{r}
 }
 
-// Link returns an instance of models.LinkResolver.
+// Repository returns an instance of models.LinkResolver.
 func (r *Resolver) Repository() models.RepositoryResolver {
 	return &repositoryResolver{r}
 }
@@ -63,4 +69,11 @@ func getCurrentUser(ctx context.Context) *models.User {
 		return user
 	}
 	return nil
+}
+
+func limitFrom(first *int) int {
+	if first == nil {
+		return 100
+	}
+	return *first
 }

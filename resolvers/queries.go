@@ -24,15 +24,16 @@ func (r *queryResolver) fetchCurrentRepo(
 		return nil, errors.New("No current organization login provided")
 	}
 
-	log.Printf("Fetching repository for %s/%v", orgLogin, repoName)
 	mods := []qm.QueryMod{
 		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
 		qm.Where("o.login = ?", orgLogin),
 	}
 
 	if repoName == nil {
+		log.Printf("Fetching repository for %s/<system>", orgLogin)
 		mods = append(mods, qm.Where("repositories.system"))
 	} else {
+		log.Printf("Fetching repository for %s/%s", orgLogin, *repoName)
 		mods = append(mods, qm.Where("repositories.name = ?", repoName))
 	}
 

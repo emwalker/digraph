@@ -135,7 +135,7 @@ func (m mutator) deleteTopic(topic models.TopicValue) {
 	}
 }
 
-func (m mutator) createTopic(repo *models.Repository, name string) (*models.TopicValue, services.CleanupFunc) {
+func (m mutator) createTopic(orgLogin, repoName, name string) (*models.TopicValue, services.CleanupFunc) {
 	parentTopic, err := models.Topics(qm.Where("name like 'Everything'")).One(m.ctx, m.db)
 	if err != nil {
 		m.t.Fatal(err)
@@ -143,8 +143,8 @@ func (m mutator) createTopic(repo *models.Repository, name string) (*models.Topi
 
 	input := models.UpsertTopicInput{
 		Name:              name,
-		OrganizationLogin: m.actor.Login,
-		RepositoryName:    repo.Name,
+		OrganizationLogin: orgLogin,
+		RepositoryName:    repoName,
 		TopicIds:          []string{parentTopic.ID},
 	}
 
@@ -163,11 +163,11 @@ func (m mutator) createTopic(repo *models.Repository, name string) (*models.Topi
 	return &topic, cleanup
 }
 
-func (m mutator) createLink(repo *models.Repository, title, url string) (*models.Link, services.CleanupFunc) {
+func (m mutator) createLink(orgLogin, repoName, title, url string) (*models.Link, services.CleanupFunc) {
 	payload1, err := m.resolver.UpsertLink(m.ctx, models.UpsertLinkInput{
 		AddParentTopicIds: []string{},
-		OrganizationLogin: testActor.Login,
-		RepositoryName:    repo.Name,
+		OrganizationLogin: orgLogin,
+		RepositoryName:    repoName,
 		Title:             &title,
 		URL:               url,
 	})

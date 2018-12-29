@@ -5,6 +5,7 @@ import (
 
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
+	"github.com/emwalker/digraph/services"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -76,8 +77,9 @@ func TestUpsertLink(t *testing.T) {
 
 func TestUpdateParentTopics(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	link, cleanup := m.createLink(m.defaultRepo(), "Gnusto's Blog", "https://gnusto.blog")
+	link, cleanup := m.createLink(testActor.Login, repoName, "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
 	var topics []*models.Topic
@@ -123,23 +125,62 @@ func TestUpdateParentTopics(t *testing.T) {
 	}
 }
 
-func TestAvailableTopics(t *testing.T) {
+func TestAvailableTopicsForLinks(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	_, cleanup := m.createTopic(m.defaultRepo(), "Something")
+	_, cleanup := m.createTopic(testActor.Login, m.defaultRepo().Name, "Something")
 	defer cleanup()
 
-	link, cleanup := m.createLink(m.defaultRepo(), "Gnusto's Blog", "https://gnusto.blog")
+	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
-	query := (&resolvers.Resolver{DB: m.db}).Link()
+	query := resolvers.New(m.db, testActor).Link()
 
 	connection, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(connection.Edges) < 1 {
+	if len(connection.Edges) < 2 {
+		t.Fatal("Expected at least one topic edge")
+	}
+}
+
+func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
+	m := newMutator(t, testActor)
+	s := services.New(testDB, testActor)
+
+	org, err := models.Organizations(qm.Where("login = ?", testActor.Login)).One(m.ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r1, err := s.CreateRepository(m.ctx, org, "r1", testActor, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r1.Cleanup()
+
+	r2, err := s.CreateRepository(m.ctx, org, "r2", testActor, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r2.Cleanup()
+
+	_, cleanup := m.createTopic(testActor.Login, r1.Repository.Name, "Something")
+	defer cleanup()
+
+	link, cleanup := m.createLink(testActor.Login, r2.Repository.Name, "Gnusto's Blog", "https://gnusto.blog")
+	defer cleanup()
+
+	query := resolvers.New(m.db, testActor).Link()
+
+	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(conn.Edges) < 2 {
 		t.Fatal("Expected at least one topic edge")
 	}
 }

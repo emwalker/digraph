@@ -6,11 +6,11 @@ import (
 	"github.com/emwalker/digraph/services"
 )
 
-func TestNormalizeUrl(t *testing.T) {
+func TestNormalizeURL(t *testing.T) {
 	var url URL
 	var err error
 
-	if url, err = services.NormalizeUrl("http://some.url.com"); err != nil {
+	if url, err = services.NormalizeURL("http://some.url.com"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -18,7 +18,7 @@ func TestNormalizeUrl(t *testing.T) {
 		t.Fatalf("Unexpected url: %s", url.CanonicalURL)
 	}
 
-	if url, err = services.NormalizeUrl("https://news.ycombinator.com/item?id=18504300"); err != nil {
+	if url, err = services.NormalizeURL("https://news.ycombinator.com/item?id=18504300"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -31,7 +31,7 @@ func TestSha1Value(t *testing.T) {
 	var url URL
 	var err error
 
-	if url, err = services.NormalizeUrl("http://some.url.com"); err != nil {
+	if url, err = services.NormalizeURL("http://some.url.com"); err != nil {
 		t.Fatal(err)
 	}
 

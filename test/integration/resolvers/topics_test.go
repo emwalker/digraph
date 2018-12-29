@@ -6,13 +6,16 @@ import (
 
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/resolvers"
+	"github.com/emwalker/digraph/services"
 	"github.com/stretchr/testify/assert"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func TestUpsertTopic(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	t1, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
+	t1, cleanup := m.createTopic(testActor.Login, repoName, "Agriculture")
 	defer cleanup()
 
 	parent, err := t1.ParentTopics().One(m.ctx, testDB)
@@ -28,7 +31,7 @@ func TestUpsertTopic(t *testing.T) {
 	input := models.UpsertTopicInput{
 		Name:              "Agriculture",
 		OrganizationLogin: testActor.Login,
-		RepositoryName:    m.defaultRepo().Name,
+		RepositoryName:    repoName,
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
@@ -52,11 +55,12 @@ func TestUpsertTopic(t *testing.T) {
 
 func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	t1, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
+	t1, cleanup := m.createTopic(testActor.Login, repoName, "Agriculture")
 	defer cleanup()
 
-	t2, cleanup := m.createTopic(m.defaultRepo(), "Husbandry")
+	t2, cleanup := m.createTopic(testActor.Login, repoName, "Husbandry")
 	defer cleanup()
 
 	m.addParentTopicToTopic(t2, t1)
@@ -64,7 +68,7 @@ func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
 	input := models.UpsertTopicInput{
 		Name:              "Agriculture",
 		OrganizationLogin: testActor.Login,
-		RepositoryName:    m.defaultRepo().Name,
+		RepositoryName:    repoName,
 		TopicIds:          []string{t2.ID},
 	}
 
@@ -111,14 +115,15 @@ func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
 
 func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	t1, cleanup := m.createTopic(m.defaultRepo(), "Grandparent")
+	t1, cleanup := m.createTopic(testActor.Login, repoName, "Grandparent")
 	defer cleanup()
 
-	t2, cleanup := m.createTopic(m.defaultRepo(), "Parent")
+	t2, cleanup := m.createTopic(testActor.Login, repoName, "Parent")
 	defer cleanup()
 
-	t3, cleanup := m.createTopic(m.defaultRepo(), "Child")
+	t3, cleanup := m.createTopic(testActor.Login, repoName, "Child")
 	defer cleanup()
 
 	m.addParentTopicToTopic(t2, t1)
@@ -142,7 +147,7 @@ func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
 func TestUpdateTopic(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	topic, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
+	topic, cleanup := m.createTopic(testActor.Login, m.defaultRepo().Name, "Agriculture")
 	defer cleanup()
 
 	assert.Equal(t, "Agriculture", topic.Name)
@@ -177,11 +182,12 @@ func TestUpdateTopic(t *testing.T) {
 
 func TestTopicParentTopics(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	topic1, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
+	topic1, cleanup := m.createTopic(testActor.Login, repoName, "Agriculture")
 	defer cleanup()
 
-	topic2, cleanup := m.createTopic(m.defaultRepo(), "Crop rotation")
+	topic2, cleanup := m.createTopic(testActor.Login, repoName, "Crop rotation")
 	defer cleanup()
 
 	parentTopics, err := topic2.ParentTopics().All(m.ctx, m.db)
@@ -198,11 +204,12 @@ func TestTopicParentTopics(t *testing.T) {
 
 func TestSearchChildTopics(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	topic, cleanup := m.createTopic(m.defaultRepo(), "Agriculture")
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "Agriculture")
 	defer cleanup()
 
-	childTopic, cleanup := m.createTopic(m.defaultRepo(), "Crop rotation")
+	childTopic, cleanup := m.createTopic(testActor.Login, repoName, "Crop rotation")
 	defer cleanup()
 
 	m.addParentTopicToTopic(childTopic, topic)
@@ -239,7 +246,7 @@ func TestSearchChildTopics(t *testing.T) {
 		},
 	}
 
-	topicResolver := (&resolvers.Resolver{DB: testDB}).Topic()
+	topicResolver := resolvers.New(testDB, testActor).Topic()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -257,11 +264,12 @@ func TestSearchChildTopics(t *testing.T) {
 
 func TestSearchLinksInTopic(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	topic, cleanup := m.createTopic(m.defaultRepo(), "News organizations")
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "News organizations")
 	defer cleanup()
 
-	link, cleanup := m.createLink(m.defaultRepo(), "New York Times", "https://www.nytimes.com")
+	link, cleanup := m.createLink(testActor.Login, repoName, "New York Times", "https://www.nytimes.com")
 	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
@@ -298,7 +306,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 		},
 	}
 
-	topicResolver := (&resolvers.Resolver{DB: testDB}).Topic()
+	topicResolver := resolvers.New(testDB, testActor).Topic()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -316,19 +324,20 @@ func TestSearchLinksInTopic(t *testing.T) {
 
 func TestSearchInTopic(t *testing.T) {
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	t1, cleanup := m.createTopic(m.defaultRepo(), "News organizations")
+	t1, cleanup := m.createTopic(testActor.Login, repoName, "News organizations")
 	defer cleanup()
 
-	l1, cleanup := m.createLink(m.defaultRepo(), "News", "https://en.wikipedia.org/wiki/News")
+	l1, cleanup := m.createLink(testActor.Login, repoName, "News", "https://en.wikipedia.org/wiki/News")
 	defer cleanup()
 	m.addParentTopicToLink(l1, t1)
 
-	t2, cleanup := m.createTopic(m.defaultRepo(), "New York Times")
+	t2, cleanup := m.createTopic(testActor.Login, repoName, "New York Times")
 	defer cleanup()
 	m.addParentTopicToTopic(t2, t1)
 
-	l2, cleanup := m.createLink(m.defaultRepo(), "New York Times", "https://www.nytimes.com")
+	l2, cleanup := m.createLink(testActor.Login, repoName, "New York Times", "https://www.nytimes.com")
 	defer cleanup()
 	m.addParentTopicToLink(l2, t2)
 
@@ -369,7 +378,7 @@ func TestSearchInTopic(t *testing.T) {
 		},
 	}
 
-	topicResolver := (&resolvers.Resolver{DB: testDB}).Topic()
+	topicResolver := resolvers.New(testDB, testActor).Topic()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -395,7 +404,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	topicResolver := (&resolvers.Resolver{DB: testDB}).Topic()
+	topicResolver := resolvers.New(testDB, testActor).Topic()
 
 	var conn models.SearchResultItemConnection
 	if conn, err = topicResolver.Search(ctx, root, root.Name, nil, nil, nil, nil); err != nil {
@@ -423,13 +432,14 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 }
 
 func TestParentTopicPreloading(t *testing.T) {
-	r := (&resolvers.Resolver{DB: testDB}).Topic()
+	r := resolvers.New(testDB, testActor).Topic()
 	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
 
-	t1, cleanup := m.createTopic(m.defaultRepo(), "News organizations")
+	t1, cleanup := m.createTopic(testActor.Login, repoName, "News organizations")
 	defer cleanup()
 
-	t2, cleanup := m.createTopic(m.defaultRepo(), "New York Times")
+	t2, cleanup := m.createTopic(testActor.Login, repoName, "New York Times")
 	defer cleanup()
 	m.addParentTopicToTopic(t2, t1)
 
@@ -447,5 +457,49 @@ func TestParentTopicPreloading(t *testing.T) {
 	child := connection.Edges[0].Node
 	if child.R == nil || child.R.ParentTopics == nil {
 		t.Fatal("Parent topics not preloaded")
+	}
+}
+
+func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
+	m := newMutator(t, testActor)
+	s := services.New(testDB, testActor)
+
+	org1, err := models.Organizations(qm.Where("login = ?", testActor.Login)).One(m.ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org2, err := models.Organizations(qm.Where("login = ?", "wiki")).One(m.ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r1, err := s.CreateRepository(m.ctx, org1, "r1", testActor, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r1.Cleanup()
+
+	r2, err := s.CreateRepository(m.ctx, org2, "r2", testActor, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r2.Cleanup()
+
+	_, cleanup := m.createTopic(testActor.Login, r1.Repository.Name, "Topic 1")
+	defer cleanup()
+
+	topic2, cleanup := m.createTopic("wiki", r2.Repository.Name, "Topic 2")
+	defer cleanup()
+
+	query := resolvers.New(m.db, testActor).Topic()
+
+	conn, err := query.AvailableParentTopics(m.ctx, topic2, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(conn.Edges) < 2 {
+		t.Fatal("Expected at least one topic edge")
 	}
 }

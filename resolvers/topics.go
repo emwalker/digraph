@@ -9,6 +9,7 @@ import (
 
 	"github.com/emwalker/digraph/loaders"
 	"github.com/emwalker/digraph/models"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -50,27 +51,32 @@ func topicOrganization(ctx context.Context, topic *models.TopicValue) (*models.O
 	return &org, err
 }
 
+func availableTopics(
+	ctx context.Context, exec boil.ContextExecutor, actor *models.User, first *int,
+) (models.TopicConnection, error) {
+	var topics []*models.Topic
+	err := queries.Raw(`
+	select t.* from topics t
+	inner join organizations o on o.id = t.organization_id
+	inner join organization_members om on om.organization_id = o.id
+	inner join users u on om.user_id = u.id
+	where u.id = $1
+	order by t.name
+	limit $2
+	`, actor.ID, limitFrom(first)).Bind(ctx, exec, &topics)
+
+	if err != nil {
+		return models.TopicConnection{}, err
+	}
+
+	return topicConnection(nil, topics, err)
+}
+
 // AvailableParentTopics returns the topics that can be added to the link.
 func (r *topicResolver) AvailableParentTopics(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
-	existingTopics, err := topic.ParentTopics(qm.Select("id")).All(ctx, r.DB)
-	if err != nil {
-		return models.TopicConnection{}, err
-	}
-
-	var existingIds []interface{}
-	for _, topic := range existingTopics {
-		existingIds = append(existingIds, topic.ID)
-	}
-
-	org, err := topicOrganization(ctx, topic)
-	if err != nil {
-		return models.TopicConnection{}, err
-	}
-
-	topics, err := org.Topics().All(ctx, r.DB)
-	return topicConnection(topic.View, topics, err)
+	return availableTopics(ctx, r.DB, r.Actor, first)
 }
 
 // ChildTopics returns a set of topics.

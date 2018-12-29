@@ -17,7 +17,7 @@ func TestResolveView(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queryResolver := (&resolvers.Resolver{DB: testDB}).Query()
+	queryResolver := resolvers.New(testDB, testActor).Query()
 
 	cases := []struct {
 		Name     string
