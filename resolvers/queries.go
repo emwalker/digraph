@@ -12,6 +12,15 @@ import (
 
 type queryResolver struct{ *Resolver }
 
+// DefaultOrganization returns the main repository that people are directed to.
+func (r *queryResolver) DefaultOrganization(ctx context.Context) (models.Organization, error) {
+	org, err := models.Organizations(qm.Where("public and login = 'wiki'")).One(ctx, r.DB)
+	if err != nil {
+		return models.Organization{}, err
+	}
+	return *org, nil
+}
+
 // Viewer returns the logged-in user.
 func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
 	return getCurrentUser(ctx), nil

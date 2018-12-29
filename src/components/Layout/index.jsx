@@ -7,15 +7,19 @@ import FlashMessages from '../FlashMessages'
 
 type Props = {
   children?: Node,
+  defaultOrganization: Object,
   viewer: Object,
 }
 
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 
-const Layout = ({ children, viewer }: Props) => (
+const Layout = ({ children, defaultOrganization, viewer }: Props) => (
   <div>
     <div className="container">
-      <Header viewer={viewer} />
+      <Header
+        viewer={viewer}
+        defaultOrganization={defaultOrganization}
+      />
       <FlashMessages />
       { children }
     </div>

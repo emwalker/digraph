@@ -15,7 +15,7 @@ exports[`<Header /> renders 1`] = `
       >
         <Link
           className="text-gray-dark n-link no-underline"
-          to="/some-repo/topics/123"
+          to="/"
         >
           <span
             className="mr-2 d-inline-block"

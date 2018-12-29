@@ -91,6 +91,7 @@ type ComplexityRoot struct {
 		Id                func(childComplexity int) int
 		Login             func(childComplexity int) int
 		Name              func(childComplexity int) int
+		Public            func(childComplexity int) int
 		ResourcePath      func(childComplexity int) int
 		UpdatedAt         func(childComplexity int) int
 	}
@@ -103,8 +104,9 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Viewer func(childComplexity int) int
-		View   func(childComplexity int, currentOrganizationLogin string, currentRepositoryName *string, repositoryIds []string, viewerId *string) int
+		DefaultOrganization func(childComplexity int) int
+		Viewer              func(childComplexity int) int
+		View                func(childComplexity int, currentOrganizationLogin string, currentRepositoryName *string, repositoryIds []string, viewerId *string) int
 	}
 
 	Repository struct {
@@ -239,6 +241,7 @@ type OrganizationResolver interface {
 	UpdatedAt(ctx context.Context, obj *Organization) (string, error)
 }
 type QueryResolver interface {
+	DefaultOrganization(ctx context.Context) (Organization, error)
 	Viewer(ctx context.Context) (*User, error)
 	View(ctx context.Context, currentOrganizationLogin string, currentRepositoryName *string, repositoryIds []string, viewerId *string) (View, error)
 }
@@ -1451,6 +1454,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Organization.Name(childComplexity), true
 
+	case "Organization.public":
+		if e.complexity.Organization.Public == nil {
+			break
+		}
+
+		return e.complexity.Organization.Public(childComplexity), true
+
 	case "Organization.resourcePath":
 		if e.complexity.Organization.ResourcePath == nil {
 			break
@@ -1492,6 +1502,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PageInfo.EndCursor(childComplexity), true
+
+	case "Query.defaultOrganization":
+		if e.complexity.Query.DefaultOrganization == nil {
+			break
+		}
+
+		return e.complexity.Query.DefaultOrganization(childComplexity), true
 
 	case "Query.viewer":
 		if e.complexity.Query.Viewer == nil {
@@ -3050,6 +3067,11 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "public":
+			out.Values[i] = ec._Organization_public(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "resourcePath":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -3210,6 +3232,33 @@ func (ec *executionContext) _Organization_name(ctx context.Context, field graphq
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Organization_public(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Organization",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Public, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
 }
 
 // nolint: vetshadow
@@ -3434,6 +3483,15 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "defaultOrganization":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_defaultOrganization(ctx, field)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "viewer":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -3462,6 +3520,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_defaultOrganization(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().DefaultOrganization(rctx)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Organization)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Organization(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -8087,6 +8173,7 @@ type Organization implements ResourceIdentifiable {
   id: ID
   login: String!
   name: String!
+  public: Boolean!
   resourcePath: String!
   updatedAt: DateTime!
 }
@@ -8099,6 +8186,7 @@ type PageInfo {
 }
 
 type Query {
+  defaultOrganization: Organization!
   viewer: User
   view(
     currentOrganizationLogin: String!,

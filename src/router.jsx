@@ -66,15 +66,17 @@ export const routeConfig = makeRouteConfig(
     query={
       graphql`
       query router_Query {
-        viewer {
-          name
-          avatarUrl
-
+        defaultOrganization {
           defaultRepository {
             rootTopic {
               resourcePath
             }
           }
+        }
+
+        viewer {
+          name
+          avatarUrl
         }
       }`
     }

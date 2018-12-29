@@ -127,10 +127,8 @@ func (s *Server) handleRoot() http.Handler {
 		case "robots.txt":
 			http.ServeFile(w, r, "public/webpack/robots.txt")
 			return
-		case "":
-			t.Execute(w, nil)
 		default:
-			http.NotFound(w, r)
+			t.Execute(w, nil)
 		}
 	})
 }

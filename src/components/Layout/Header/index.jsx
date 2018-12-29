@@ -10,22 +10,23 @@ import GithubLogin from './GithubLogin'
 const rootPath = pathOr('/', ['defaultRepository', 'rootTopic', 'resourcePath'])
 
 type Props = {
-  viewer: ?{
+  defaultOrganization: {
     defaultRepository: {
       rootTopic: {
         resourcePath: string,
       },
     },
   },
+  viewer: ?Object,
 }
 
-const Header = ({ viewer }: Props) => (
+const Header = ({ defaultOrganization, viewer }: Props) => (
   <header className="Header pagehead pb-3">
     <div className="container-lg clearfix">
       <nav className="d-lg-flex float-left">
         <h1 className="h3 mt-2 text-normal">
           <Link
-            to={viewer ? rootPath(viewer) : '/'}
+            to={defaultOrganization ? rootPath(defaultOrganization) : '/'}
             className="text-gray-dark n-link no-underline"
           >
             <span className="mr-2 d-inline-block">

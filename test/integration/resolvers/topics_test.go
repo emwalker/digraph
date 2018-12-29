@@ -404,6 +404,10 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	topic, cleanup := m.createTopic(testActor.Login, m.defaultRepo().Name, "News organizations")
+	defer cleanup()
+	m.addParentTopicToTopic(topic, root)
+
 	topicResolver := resolvers.New(testDB, testActor).Topic()
 
 	var conn models.SearchResultItemConnection

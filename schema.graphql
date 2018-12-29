@@ -71,6 +71,7 @@ type Organization implements ResourceIdentifiable {
   id: ID
   login: String!
   name: String!
+  public: Boolean!
   resourcePath: String!
   updatedAt: DateTime!
 }
@@ -83,6 +84,7 @@ type PageInfo {
 }
 
 type Query {
+  defaultOrganization: Organization!
   viewer: User
   view(
     currentOrganizationLogin: String!,

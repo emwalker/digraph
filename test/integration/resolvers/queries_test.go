@@ -57,3 +57,17 @@ func TestResolveView(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultOrganization(t *testing.T) {
+	ctx := context.Background()
+	resolver := resolvers.New(testDB, testActor).Query()
+
+	org, err := resolver.DefaultOrganization(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !org.Public || org.Login != "wiki" {
+		t.Fatal("Expected the public organization")
+	}
+}
