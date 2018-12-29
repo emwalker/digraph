@@ -67,6 +67,7 @@ interface Namespaceable {
 
 type Organization implements ResourceIdentifiable {
   createdAt: DateTime!
+  defaultRepository: Repository!
   id: ID
   login: String!
   name: String!

@@ -6,6 +6,7 @@ import (
 
 	"github.com/emwalker/digraph/loaders"
 	"github.com/emwalker/digraph/models"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type organizationResolver struct {
@@ -26,10 +27,17 @@ func fetchOrganization(ctx context.Context, organizationID string) (models.Organ
 }
 
 // CreatedAt returns the time of the organization's creation.
-func (r *organizationResolver) CreatedAt(
-	_ context.Context, org *models.Organization,
-) (string, error) {
+func (r *organizationResolver) CreatedAt(_ context.Context, org *models.Organization) (string, error) {
 	return org.CreatedAt.Format(time.RFC3339), nil
+}
+
+// DefaultRepository returns the default repository for the organization.
+func (r *organizationResolver) DefaultRepository(ctx context.Context, org *models.Organization) (models.Repository, error) {
+	repo, err := org.Repositories(qm.Where("system")).One(ctx, r.DB)
+	if err != nil {
+		return models.Repository{}, err
+	}
+	return *repo, nil
 }
 
 // ResourcePath returns a path to the item.

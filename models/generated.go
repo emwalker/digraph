@@ -86,12 +86,13 @@ type ComplexityRoot struct {
 	}
 
 	Organization struct {
-		CreatedAt    func(childComplexity int) int
-		Id           func(childComplexity int) int
-		Login        func(childComplexity int) int
-		Name         func(childComplexity int) int
-		ResourcePath func(childComplexity int) int
-		UpdatedAt    func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		DefaultRepository func(childComplexity int) int
+		Id                func(childComplexity int) int
+		Login             func(childComplexity int) int
+		Name              func(childComplexity int) int
+		ResourcePath      func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
 	}
 
 	PageInfo struct {
@@ -232,6 +233,7 @@ type MutationResolver interface {
 }
 type OrganizationResolver interface {
 	CreatedAt(ctx context.Context, obj *Organization) (string, error)
+	DefaultRepository(ctx context.Context, obj *Organization) (Repository, error)
 
 	ResourcePath(ctx context.Context, obj *Organization) (string, error)
 	UpdatedAt(ctx context.Context, obj *Organization) (string, error)
@@ -1420,6 +1422,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Organization.CreatedAt(childComplexity), true
+
+	case "Organization.defaultRepository":
+		if e.complexity.Organization.DefaultRepository == nil {
+			break
+		}
+
+		return e.complexity.Organization.DefaultRepository(childComplexity), true
 
 	case "Organization.id":
 		if e.complexity.Organization.Id == nil {
@@ -3020,6 +3029,15 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 				}
 				wg.Done()
 			}(i, field)
+		case "defaultRepository":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Organization_defaultRepository(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "id":
 			out.Values[i] = ec._Organization_id(ctx, field, obj)
 		case "login":
@@ -3086,6 +3104,34 @@ func (ec *executionContext) _Organization_createdAt(ctx context.Context, field g
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Organization_defaultRepository(ctx context.Context, field graphql.CollectedField, obj *Organization) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Organization",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Organization().DefaultRepository(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Repository)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Repository(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -8037,6 +8083,7 @@ interface Namespaceable {
 
 type Organization implements ResourceIdentifiable {
   createdAt: DateTime!
+  defaultRepository: Repository!
   id: ID
   login: String!
   name: String!
