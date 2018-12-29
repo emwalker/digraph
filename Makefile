@@ -82,3 +82,6 @@ build: clean
 
 deploy: build
 	gcloud app deploy
+
+proxy:
+	cloud_sql_proxy -instances=digraph-223518:us-central1:postgres=tcp:5433
