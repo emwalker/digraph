@@ -37,16 +37,6 @@ class SelectRepository extends Component<Props> {
     return this.props.viewer.repositories.edges
   }
 
-  get style(): string {
-    const repo = this.props.viewer.selectedRepository
-    if (repo && repo.isPrivate)
-      return {}
-
-    return {
-      color: '#86181d',
-    }
-  }
-
   get selectedId(): ?string {
     const repo = this.props.viewer.selectedRepository
     return repo ? repo.id : null

@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<AddForm /> renders 1`] = `
+<ContainerConstructor
+  componentRef={null}
+  topic={
+    Object {
+      "id": "1234",
+    }
+  }
+  viewer={
+    Object {
+      "selectedRepository": Object {
+        "name": null,
+        "organization": Object {
+          "login": "gnusto",
+        },
+      },
+    }
+  }
+/>
+`;

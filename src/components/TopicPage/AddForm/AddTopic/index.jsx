@@ -2,8 +2,8 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
+import { TopicType, RelayProps } from 'components/types'
 import upsertTopicMutation from 'mutations/upsertTopicMutation'
-import type { RelayProps } from '../../types'
 
 /* eslint jsx-a11y/label-has-for: 0 */
 
@@ -12,6 +12,7 @@ type State = {
 }
 
 type Props = RelayProps & {
+  topic: TopicType,
   viewer: {
     id: ID,
     selectedRepository: {
@@ -72,23 +73,21 @@ class AddTopic extends Component<Props, State> {
   }
 
   render = () => (
-    <div>
-      <dl className="form-group">
-        <dt>
-          <label htmlFor="create-topic-name">Add subtopic</label>
-        </dt>
-        <dd>
-          <input
-            className="form-control test-topic-name input-sm"
-            id="create-topic-name"
-            onChange={this.updateName}
-            onKeyPress={this.onKeyPress}
-            placeholder="Name or description"
-            value={this.state.name}
-          />
-        </dd>
-      </dl>
-    </div>
+    <dl className="form-group">
+      <dt>
+        <label htmlFor="create-topic-name">Add subtopic</label>
+      </dt>
+      <dd>
+        <input
+          className="form-control test-topic-name input-sm"
+          id="create-topic-name"
+          onChange={this.updateName}
+          onKeyPress={this.onKeyPress}
+          placeholder="Name or description"
+          value={this.state.name}
+        />
+      </dd>
+    </dl>
   )
 }
 

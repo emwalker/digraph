@@ -3,17 +3,15 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
+import { liftNodes } from 'utils'
+import type { TopicType } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
 import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
 import Breadcrumbs from 'components/ui/Breadcrumbs'
-import SelectRepository from 'components/ui/SelectRepository'
-import type { TopicType } from '../types'
-import AddTopic from './AddTopic'
-import AddLink from './AddLink'
-import { liftNodes } from '../../utils'
+import AddForm from './AddForm'
 
 type Props = {
   location: Object,
@@ -83,17 +81,8 @@ class TopicPage extends Component<Props> {
             title="Parent topics"
             items={liftNodes(parentTopics)}
           />
-          <SelectRepository
-            viewer={this.props.viewer}
-          />
-          <AddTopic
+          <AddForm
             topic={topic}
-            view={this.props.view}
-            viewer={this.props.viewer}
-          />
-          <AddLink
-            topic={topic}
-            view={this.props.view}
             viewer={this.props.viewer}
           />
         </div>
@@ -112,9 +101,7 @@ query TopicPage_query_Query(
 ) {
   viewer {
     id
-    ...SelectRepository_viewer
-    ...AddTopic_viewer
-    ...AddLink_viewer
+    ...AddForm_viewer
   }
 
   view(
@@ -142,8 +129,7 @@ export default createFragmentContainer(TopicPage, graphql`
   ) {
     name
     resourcePath
-    ...AddTopic_topic
-    ...AddLink_topic
+    ...AddForm_topic
 
     parentTopics(first: 100) {
       edges {

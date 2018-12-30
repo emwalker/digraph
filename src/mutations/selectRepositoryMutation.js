@@ -8,9 +8,7 @@ export default defaultMutation(graphql`
   ) {
     selectRepository(input: $input) {
       viewer {
-        ...AddLink_viewer
-        ...AddTopic_viewer
-        ...SelectRepository_viewer
+        ...AddForm_viewer
       }
 
       repository {

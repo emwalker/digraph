@@ -197,7 +197,7 @@
       "jsx"
     ],
     "moduleNameMapper": {
-      "\\.(css|less)$": "<rootDir>/src/__mock__/styleMock.js"
+      "\\.(css|less)$": "identity-obj-proxy"
     },
     "setupFiles": [
       "<rootDir>/src/__mock__/jestSetup.js"

@@ -2,8 +2,8 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
+import type { RelayProps } from 'components/types'
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
-import type { RelayProps } from '../../types'
 
 /* eslint jsx-a11y/label-has-for: 0 */
 
@@ -67,23 +67,21 @@ class AddLink extends Component<Props, State> {
   }
 
   render = () => (
-    <div>
-      <dl className="form-group">
-        <dt>
-          <label htmlFor="create-link-url">Add link</label>
-        </dt>
-        <dd>
-          <input
-            className="form-control test-link-url input-sm"
-            id="create-link-url"
-            onChange={this.updateUrl}
-            onKeyPress={this.onKeyPress}
-            placeholder="Url"
-            value={this.state.url}
-          />
-        </dd>
-      </dl>
-    </div>
+    <dl className="form-group">
+      <dt>
+        <label htmlFor="create-link-url">Add link</label>
+      </dt>
+      <dd>
+        <input
+          className="form-control test-link-url input-sm"
+          id="create-link-url"
+          onChange={this.updateUrl}
+          onKeyPress={this.onKeyPress}
+          placeholder="Url"
+          value={this.state.url}
+        />
+      </dd>
+    </dl>
   )
 }
 

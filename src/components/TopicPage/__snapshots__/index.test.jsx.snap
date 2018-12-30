@@ -30,34 +30,10 @@ exports[`<TopicPage /> renders 1`] = `
       items={Array []}
       title="Parent topics"
     />
-    <SelectRepository />
-    <AddTopic
+    <AddForm
       topic={
         Object {
           "name": "Frotz",
-        }
-      }
-      view={
-        Object {
-          "repository": Object {
-            "displayName": "Private collection",
-            "isPrivate": true,
-          },
-        }
-      }
-    />
-    <AddLink
-      topic={
-        Object {
-          "name": "Frotz",
-        }
-      }
-      view={
-        Object {
-          "repository": Object {
-            "displayName": "Private collection",
-            "isPrivate": true,
-          },
         }
       }
     />
