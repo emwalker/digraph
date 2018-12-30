@@ -8,12 +8,10 @@ type Props = {
   id: string,
   label: string,
   onChange: Function,
-  value: string,
+  value: ?string,
 }
 
-export default ({
-  className, id, label, onChange, value,
-}: Props) => (
+export default ({ className, id, label, onChange, value }: Props) => (
   <div className={className}>
     <dl className="form-group">
       <dt>
@@ -22,7 +20,7 @@ export default ({
       <dd>
         <input
           className="form-control input-sm"
-          defaultValue={value}
+          defaultValue={value || ''}
           id={id}
           onChange={onChange}
           type="text"

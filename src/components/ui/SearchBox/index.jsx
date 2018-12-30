@@ -18,22 +18,25 @@ class SearchBox extends Component<Props, State> {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
+  componentWillReceiveProps(nextProps: Props) {
     this.setState({ value: nextProps.value })
   }
 
-  onChange = (event) => {
-    this.setState({ value: event.target.value })
+  onChange = (event: SyntheticEvent<HTMLButtonElement>) => {
+    const { value } = (event.target: window.HTMLInputElement)
+    this.setState({ value })
   }
 
-  onEnter = (string) => {
+  onEnter = (string: string) => {
     if (this.props.onEnter)
       this.props.onEnter(string)
   }
 
-  onKeyPress = (event) => {
-    if (event.key === 'Enter')
-      this.onEnter(event.target.value)
+  onKeyPress = (event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'Enter') {
+      const { value } = (event.target: window.HTMLInputElement)
+      this.onEnter(value)
+    }
   }
 
   render = () => (

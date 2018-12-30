@@ -13,9 +13,19 @@ exports[`<TopicsPage /> renders 1`] = `
         "resourcePath": "/topics/1234",
       }
     }
-    viewer={
+    view={
       Object {
-        "name": "Rezrov",
+        "resourceId": "organization:tyrell",
+        "topics": Object {
+          "edges": Array [
+            Object {
+              "node": Object {
+                "name": "Frotz",
+                "resourcePath": "/topics/1234",
+              },
+            },
+          ],
+        },
       }
     }
   />

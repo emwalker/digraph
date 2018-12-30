@@ -4,14 +4,15 @@ import update from 'immutability-helper'
 
 // https://medium.com/@veelenga/displaying-rails-flash-messages-with-react-5f82982f241c
 
+import type { AlertType } from 'components/types'
 import Alert from './Alert'
 
 type Props = {
-  message: ?string,
+  message: ?AlertType,
 }
 
 type State = {
-  messages: string[],
+  messages: AlertType[],
 }
 
 class FlashMessages extends Component<Props, State> {
@@ -27,7 +28,7 @@ class FlashMessages extends Component<Props, State> {
     window.flashMessages = this
   }
 
-  get alerts() {
+  get alerts(): Iterable<React$Node> {
     return this.state.messages.map(message => (
       <Alert
         key={message.id}
@@ -37,13 +38,13 @@ class FlashMessages extends Component<Props, State> {
     ))
   }
 
-  removeMessage = (message) => {
+  removeMessage = (message: AlertType) => {
     const index = this.state.messages.indexOf(message)
     const messages = update(this.state.messages, { $splice: [[index, 1]] })
     this.setState({ messages })
   }
 
-  addMessage = (message: string) => {
+  addMessage = (message: AlertType) => {
     const messages = update(this.state.messages, { $push: [message] })
     this.setState({ messages })
   }

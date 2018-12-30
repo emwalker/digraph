@@ -11,7 +11,6 @@ import EditTopicList from 'components/ui/EditTopicList'
 import { liftNodes } from 'utils'
 
 type Props = {
-  id: string,
   isOpen: boolean,
   relay: {
     environment: Object,
@@ -21,7 +20,7 @@ type Props = {
 }
 
 type State = {
-  description: string,
+  description: ?string,
   name: string,
 }
 
@@ -57,8 +56,12 @@ class EditTopicForm extends Component<Props, State> {
     return liftNodes(this.props.topic.availableTopics)
   }
 
-  get selectedTopics(): string[] {
+  get selectedTopics(): TopicType[] {
     return liftNodes(this.props.topic.selectedTopics)
+  }
+
+  get topicId(): string {
+    return this.props.topic.id
   }
 
   updateParentTopics = (parentTopicIds: string[]) => {
@@ -89,14 +92,14 @@ class EditTopicForm extends Component<Props, State> {
         <div className="d-flex col-12">
           <Input
             className="col-5 mr-3"
-            id={`edit-link-title-${this.props.id}`}
+            id={`edit-link-title-${this.topicId}`}
             label="Name"
             onChange={this.updateName}
             value={this.state.name}
           />
           <Input
             className="col-6"
-            id={`edit-topic-description-${this.props.id}`}
+            id={`edit-topic-description-${this.topicId}`}
             label="Description"
             onChange={this.updateDescription}
             value={this.state.description}

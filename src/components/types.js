@@ -1,27 +1,96 @@
 // @flow
 
-export type OrganizationType = {
+/* eslint no-use-before-define: 0 */
+
+export type AlertType = {
   id: string,
 }
 
-export type TopicType = {
-  id: string,
-  name: string,
-  newlyAdded: boolean,
-  resourcePath: string,
+export type LinkConnection = {
+  edges: LinkEdge[],
+}
+
+export type LinkEdge = {
+  node: LinkType,
 }
 
 export type LinkType = {
+  availableTopics?: TopicConnection,
   id: string,
   newlyAdded: boolean,
+  parentTopics: TopicConnection,
+  repository: RepositoryType,
+  selectedTopics?: TopicConnection,
   title: string,
   url: string,
 }
 
+export type OrganizationType = {
+  id: string,
+  login: string,
+}
+
+export type Relay = {
+  environment: Object,
+}
+
 export type RelayProps = {
   organization: OrganizationType,
-  relay: {
-    environment: Object,
-  },
+  relay: Relay,
   topic: TopicType,
+}
+
+export type RepositoryConnection = {
+  edges: RepositoryEdge[],
+}
+
+export type RepositoryEdge = {
+  node: RepositoryType,
+}
+
+export type RepositoryType = {
+  displayColor: string,
+  displayName: string,
+  id: string,
+  isPrivate: boolean,
+  name: string,
+  organization: OrganizationType,
+}
+
+export type SearchResultItemConnection = {}
+
+export type TopicConnection = {
+  edges: TopicEdge[],
+}
+
+export type TopicEdge = {
+  node: TopicType,
+}
+
+export type TopicType = {
+  availableTopics: TopicConnection,
+  childTopics: TopicConnection,
+  description: ?string,
+  id: string,
+  links: LinkConnection,
+  name: string,
+  newlyAdded: boolean,
+  parentTopics: TopicConnection,
+  repository: RepositoryType,
+  resourcePath: string,
+  search: SearchResultItemConnection,
+  selectedTopics?: TopicConnection,
+}
+
+export type UserType = {
+  avatarUrl: string,
+  name: string,
+  repositories: RepositoryConnection,
+  selectedRepository: ?RepositoryType,
+}
+
+export type ViewType = {
+  currentRepository: RepositoryType,
+  topic?: TopicType,
+  topics?: TopicConnection,
 }

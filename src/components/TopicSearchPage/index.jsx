@@ -3,25 +3,24 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
+import type { Relay, TopicType, ViewType } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
 import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
 import Breadcrumbs from 'components/ui/Breadcrumbs'
-import type { TopicType } from '../types'
-import { liftNodes } from '../../utils'
+import { liftNodes } from 'utils'
 
 /* eslint no-underscore-dangle: 0 */
 
 type Props = {
   location: Object,
   orgLogin: string,
+  relay: Relay,
   router: Object,
   topic: TopicType,
-  view: {
-    currentRepository: Object,
-  },
+  view: ViewType,
 }
 
 class TopicSearchPage extends Component<Props> {
@@ -30,8 +29,9 @@ class TopicSearchPage extends Component<Props> {
       return (
         <Link
           key={item.id}
-          orgLogin={this.props.orgLogin}
           link={item}
+          orgLogin={this.props.orgLogin}
+          relay={this.props.relay}
           view={this.props.view}
         />
       )
@@ -41,6 +41,7 @@ class TopicSearchPage extends Component<Props> {
       <Topic
         key={item.id}
         orgLogin={this.props.orgLogin}
+        relay={this.props.relay}
         topic={item}
         view={this.props.view}
       />
@@ -50,7 +51,7 @@ class TopicSearchPage extends Component<Props> {
   render = () => {
     const { location, orgLogin, router, topic, view } = this.props
     const {
-      searchResults,
+      search: searchResults,
       name,
       parentTopics,
       resourcePath,
@@ -132,7 +133,7 @@ export default createFragmentContainer(TopicSearchPage, graphql`
       }
     }
 
-    searchResults: search(first: 100, searchString: $searchString) {
+    search(first: 100, searchString: $searchString) {
       edges {
         node {
           __typename

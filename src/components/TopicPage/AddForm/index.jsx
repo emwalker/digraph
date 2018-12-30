@@ -3,15 +3,16 @@ import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import classNames from 'classnames'
 
-import { TopicType } from 'components/types'
+import type { Relay, TopicType, UserType } from 'components/types'
 import AddTopic from './AddTopic'
 import AddLink from './AddLink'
 import SelectRepository from './SelectRepository'
 import './index.css'
 
 type Props = {
+  relay: Relay,
   topic: TopicType,
-  viewer: Object,
+  viewer: UserType,
 }
 
 class AddForm extends Component<Props> {
@@ -27,19 +28,24 @@ class AddForm extends Component<Props> {
 
   get isPrivateRepo(): boolean {
     const repo = this.props.viewer.selectedRepository
-    return repo && repo.isPrivate
+    if (!repo)
+      return true
+    return repo.isPrivate
   }
 
   render = () => (
     <form className={this.className}>
       <SelectRepository
+        relay={this.props.relay}
         viewer={this.props.viewer}
       />
       <AddTopic
+        relay={this.props.relay}
         topic={this.props.topic}
         viewer={this.props.viewer}
       />
       <AddLink
+        relay={this.props.relay}
         topic={this.props.topic}
         viewer={this.props.viewer}
       />

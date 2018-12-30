@@ -4,6 +4,7 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import { pathOr } from 'ramda'
 import { Link } from 'found'
 
+import type { ViewType } from 'components/types'
 import SearchBox from 'components/ui/SearchBox'
 
 const resourcePath = pathOr('/', ['currentRepository', 'rootTopic', 'resourcePath'])
@@ -19,13 +20,7 @@ type Props = {
   router: {
     push: Function,
   },
-  view: {
-    currentRepository: {
-      rootTopic: {
-        resourcePath: string,
-      },
-    },
-  },
+  view: ViewType,
 }
 
 class Subhead extends Component<Props> {

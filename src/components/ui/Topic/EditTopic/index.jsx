@@ -2,17 +2,16 @@
 import React from 'react'
 import { QueryRenderer, graphql } from 'react-relay'
 
-import type { TopicType } from 'components/types'
+import type { Relay, TopicType, ViewType, UserType } from 'components/types'
 import EditTopicForm from './EditTopicForm'
 
 type RendererProps = {
   error: ?Object,
   props: ?{
     orgLogin: string,
-    view: {
-      link: LinkType,
-    },
-    viewer: Oobject,
+    relay: Relay,
+    view: ViewType,
+    viewer: UserType,
   },
 }
 
@@ -23,27 +22,29 @@ const renderer = ({ isOpen, orgLogin, toggleForm }) => ({ error, props }: Render
   if (error)
     return <div>{error.message}</div>
 
-  if (!props || !props.view)
+  if (!props || !props.view || !props.view.topic)
     return null
 
   return (
     <EditTopicForm
       isOpen={isOpen}
       orgLogin={orgLogin}
+      relay={props.relay}
+      toggleForm={toggleForm}
       topic={props.view.topic}
       viewer={props.viewer}
-      toggleForm={toggleForm}
     />
   )
 }
 
 type Props = {
   isOpen: boolean,
-  topic: TopicType,
+  orgLogin: string,
   relay: {
     environment: Object,
   },
   toggleForm: Function,
+  topic: TopicType,
   view: Object,
 }
 

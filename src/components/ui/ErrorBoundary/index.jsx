@@ -5,7 +5,11 @@ type Props = {
   children: Node,
 }
 
-class ErrorBoundary extends Component<Props> {
+type State = {
+  hasError: boolean,
+}
+
+class ErrorBoundary extends Component<Props, State> {
   static getDerivedStateFromError() {
     return {
       hasError: true,
@@ -17,7 +21,7 @@ class ErrorBoundary extends Component<Props> {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  componentDidCatch(error, info) {
+  componentDidCatch(error: Error, info: Object) {
     // eslint-disable-next-line no-console
     console.log(error, info)
   }

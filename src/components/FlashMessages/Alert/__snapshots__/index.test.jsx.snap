@@ -2,7 +2,7 @@
 
 exports[`<Alert /> renders 1`] = `
 <div
-  className="flash fade in mt-3 mb-3"
+  className="flash fade in mt-3 mb-3 flash-success"
 >
   <button
     className="flash-close"

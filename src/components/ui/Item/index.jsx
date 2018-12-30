@@ -2,8 +2,8 @@
 import React, { Component, type Node } from 'react'
 import classNames from 'classnames'
 
+import type { TopicType } from 'components/types'
 import LinkOrA from './LinkOrA'
-import type { Topic } from '../../types'
 import TopicBadge from '../TopicBadge'
 
 /* eslint no-underscore-dangle: 0 */
@@ -17,7 +17,7 @@ type Props = {
   newlyAdded: boolean,
   title: string,
   toggleForm: Function,
-  topics: Topic[],
+  topics: TopicType[],
   url: ?string,
 }
 
@@ -27,7 +27,7 @@ class Item extends Component<Props> {
     displayColor: '#fff',
   }
 
-  get className() {
+  get className(): string {
     return classNames(
       'Item-row',
       'Box-row',
@@ -37,6 +37,9 @@ class Item extends Component<Props> {
   }
 
   get style(): Object {
+    if (!this.props.displayColor)
+      return {}
+
     return {
       borderLeft: `5px solid ${this.props.displayColor}`,
     }
@@ -58,11 +61,12 @@ class Item extends Component<Props> {
   get titleLink(): Node {
     if (!this.props.url) {
       return (
+        // eslint-disable-next-line jsx-a11y/anchor-is-valid
         <a
           className="Box-row-link"
           href="#"
         >
-        {this.props.title}
+          {this.props.title}
         </a>
       )
     }

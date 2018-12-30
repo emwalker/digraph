@@ -4,12 +4,18 @@ import type { Node } from 'react'
 
 type Props = {
   children: Node,
-  title: string,
+  title?: ?string,
 }
 
-export default ({ children, title }: Props) => (
+const Blankslate = ({ children, title }: Props) => (
   <div className="blankslate">
-    <h3>{title}</h3>
+    {title && <h3>{title}</h3>}
     { children }
   </div>
 )
+
+Blankslate.defaultProps = {
+  title: null,
+}
+
+export default Blankslate

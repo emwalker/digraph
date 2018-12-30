@@ -2,18 +2,16 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import type { OrganizationType, TopicType } from '../../types'
+import type { Relay, TopicType, ViewType } from '../../types'
 import { liftNodes } from '../../../utils'
 import Item from '../Item'
 import EditTopic from './EditTopic'
 
 type Props = {
-  organization: OrganizationType,
   orgLogin: string,
+  relay: Relay,
   topic: TopicType,
-  view: {
-    currentRepository: Object,
-  },
+  view: ViewType,
 }
 
 type State = {
@@ -69,9 +67,10 @@ class Topic extends Component<Props, State> {
         <EditTopic
           isOpen={this.state.formIsOpen}
           orgLogin={this.props.orgLogin}
+          relay={this.props.relay}
           toggleForm={this.toggleForm}
           topic={this.props.topic}
-          {...this.props}
+          view={this.props.view}
         />
       </Item>
     )

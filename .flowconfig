@@ -1,5 +1,4 @@
 [ignore]
-.*/node_modules/.*
 .*/__generated__/.*
 .*/vendor/.*
 
@@ -15,6 +14,11 @@ src/flow-typed
 experimental.strict_call_arity=true
 esproposal.decorators=ignore
 module.file_ext=.scss
-module.system.node.resolve_dirname=src
+module.file_ext=.js
+module.file_ext=.jsx
+module.file_ext=.mjs
+module.file_ext=.json
+module.system.node.resolve_dirname=node_modules
+module.system.node.resolve_dirname=./src
 
 [strict]

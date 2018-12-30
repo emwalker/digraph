@@ -2,17 +2,28 @@
 import React, { Component } from 'react'
 import Select from 'react-select'
 
+import type { TopicType } from 'components/types'
 import colourStyles from './colourStyles'
 
-type Props = {
-  availableTopics: Object[],
-  selectedTopics: Object[],
-  updateTopics: Function,
+type Option = {
+  value: string,
+  label: string,
+  color: string,
 }
 
 const color = '#0366d6'
 
-class EditTopicList extends Component<Props> {
+type Props = {
+  availableTopics: TopicType[],
+  selectedTopics: TopicType[],
+  updateTopics: Function,
+}
+
+type State = {
+  selectedTopics: ?Option[],
+}
+
+class EditTopicList extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
@@ -21,13 +32,13 @@ class EditTopicList extends Component<Props> {
     }
   }
 
-  get options() {
+  get options(): Option[] {
     return this.props.availableTopics.map(topic => (
       { value: topic.id, label: topic.name, color }
     ))
   }
 
-  handleChange = (selectedTopics) => {
+  handleChange = (selectedTopics: Option[]) => {
     this.setState({ selectedTopics }, () => {
       this.props.updateTopics(selectedTopics.map(option => option.value))
     })

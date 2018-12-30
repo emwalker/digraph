@@ -5,20 +5,13 @@ import Octicon from 'react-component-octicons'
 import { Link } from 'found'
 import { pathOr } from 'ramda'
 
+import type { RepositoryType } from 'components/types'
+
 const defaultRepoPath = pathOr(null, ['organization', 'defaultRepository', 'rootTopic', 'resourcePath'])
 
 type Props = {
   orgLogin: string,
-  repository: {
-    isPrivate: boolean,
-    organization: {
-      defaultRepository: {
-        rootTopic: {
-          resourcePath: string,
-        },
-      },
-    },
-  },
+  repository: RepositoryType,
 }
 
 class Breadcrumbs extends Component<Props> {

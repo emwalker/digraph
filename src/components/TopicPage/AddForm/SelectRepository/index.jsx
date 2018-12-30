@@ -2,25 +2,14 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
+import type { Relay, UserType } from 'components/types'
 import selectRepositoryMutation from 'mutations/selectRepositoryMutation'
 
 /* eslint jsx-a11y/label-has-for: 0 */
 
 type Props = {
-  relay: {
-    environment: Object,
-  },
-  viewer: {
-    selectedRepository: {
-      private: boolean,
-    },
-    repositories: {
-      edges: Array<{
-        selected: boolean,
-        node: Object,
-      }>,
-    },
-  },
+  relay: Relay,
+  viewer: UserType,
 }
 
 class SelectRepository extends Component<Props> {
@@ -52,7 +41,7 @@ class SelectRepository extends Component<Props> {
   )
 
   render = () => (
-    <dl className="form-group" style={this.style}>
+    <dl className="form-group">
       <dt>
         <label htmlFor="select-repo">New links and topics added to</label>
       </dt>

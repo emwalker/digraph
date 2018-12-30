@@ -4,7 +4,7 @@ import { Link } from 'found'
 import isExternal from 'is-url-external'
 
 type Props = {
-  children: Node,
+  children: Iterable<React$Node> | string,
   className: string,
   to: string,
 }

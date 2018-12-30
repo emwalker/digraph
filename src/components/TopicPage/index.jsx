@@ -4,7 +4,7 @@ import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
 import { liftNodes } from 'utils'
-import type { TopicType } from 'components/types'
+import type { LinkType, Relay, TopicType, UserType, ViewType } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
 import List from 'components/ui/List'
@@ -16,28 +16,24 @@ import AddForm from './AddForm'
 type Props = {
   location: Object,
   orgLogin: string,
-  repoName: ?string,
+  relay: Relay,
   router: Object,
   topic: TopicType,
-  view: {
-    currentRepository: Object,
-  },
-  viewer: {
-    id: string,
-  },
+  view: ViewType,
+  viewer: UserType,
 }
 
 class TopicPage extends Component<Props> {
-  get links(): Object[] {
+  get links(): LinkType[] {
     return liftNodes(this.props.topic.links)
   }
 
-  get topics(): Object[] {
+  get topics(): TopicType[] {
     return liftNodes(this.props.topic.childTopics)
   }
 
   render = () => {
-    const { location, topic, ...props } = this.props
+    const { topic } = this.props
     const { name, parentTopics, resourcePath } = topic
     const { topics, links } = this
 
@@ -62,8 +58,10 @@ class TopicPage extends Component<Props> {
             { topics.map(childTopic => (
               <Topic
                 key={childTopic.id}
+                orgLogin={this.props.orgLogin}
+                relay={this.props.relay}
                 topic={childTopic}
-                {...props}
+                view={this.props.view}
               />
             )) }
 
@@ -71,7 +69,9 @@ class TopicPage extends Component<Props> {
               <Link
                 key={link.id}
                 link={link}
-                {...props}
+                orgLogin={this.props.orgLogin}
+                relay={this.props.relay}
+                view={this.props.view}
               />
             )) }
           </List>
@@ -82,6 +82,7 @@ class TopicPage extends Component<Props> {
             items={liftNodes(parentTopics)}
           />
           <AddForm
+            relay={this.props.relay}
             topic={topic}
             viewer={this.props.viewer}
           />

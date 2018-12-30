@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import type { LinkType } from 'components/types'
+import type { LinkType, Relay, TopicType } from 'components/types'
 import Input from 'components/ui/Input'
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
 import updateLinkTopicsMutation from 'mutations/updateLinkTopicsMutation'
@@ -11,13 +11,10 @@ import SaveOrCancel from 'components/ui/SaveOrCancel'
 import { liftNodes } from 'utils'
 
 type Props = {
-  id: string,
   isOpen: boolean,
-  orgLogin: string,
-  relay: {
-    environment: Object,
-  },
   link: LinkType,
+  orgLogin: string,
+  relay: Relay,
   toggleForm: Function,
 }
 
@@ -51,11 +48,15 @@ class EditLinkForm extends Component<Props, State> {
     this.props.toggleForm()
   }
 
-  get availableTopics(): Object[] {
+  get availableTopics(): TopicType[] {
     return liftNodes(this.props.link.availableTopics)
   }
 
-  get selectedTopics(): string[] {
+  get linkId(): string {
+    return this.props.link.id
+  }
+
+  get selectedTopics(): TopicType[] {
     return liftNodes(this.props.link.selectedTopics)
   }
 
@@ -68,7 +69,7 @@ class EditLinkForm extends Component<Props, State> {
       this.props.relay.environment,
       [],
       {
-        linkId: this.props.link.id,
+        linkId: this.linkId,
         parentTopicIds,
       },
     )
@@ -87,14 +88,14 @@ class EditLinkForm extends Component<Props, State> {
         <div className="d-flex col-12">
           <Input
             className="col-5 mr-3"
-            id={`edit-link-title-${this.props.id}`}
+            id={`edit-link-title-${this.linkId}`}
             label="Page title"
             onChange={this.updateTitle}
             value={this.state.title}
           />
           <Input
             className="col-6"
-            id={`edit-link-url-${this.props.id}`}
+            id={`edit-link-url-${this.linkId}`}
             label="Url"
             onChange={this.updateUrl}
             value={this.state.url}
@@ -115,12 +116,6 @@ class EditLinkForm extends Component<Props, State> {
 }
 
 export default createFragmentContainer(EditLinkForm, graphql`
-  fragment EditLinkForm_viewer on User {
-    defaultRepository {
-      id
-    }
-  }
-
   fragment EditLinkForm_link on Link {
     id
     title

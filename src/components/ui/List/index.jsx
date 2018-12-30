@@ -14,7 +14,7 @@ const Blankslate = ({ message }: BlankslateProps) => (
 )
 
 type Props = {
-  children: Object[],
+  children: Iterable<React$Node>,
   placeholder: string,
   hasItems: boolean,
 }

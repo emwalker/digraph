@@ -1,10 +1,10 @@
 // @flow
 import React from 'react'
 
+import type { UserType } from 'components/types'
+
 type Props = {
-  viewer: {
-    name: string,
-  },
+  viewer: UserType,
 }
 
 const ViewerDropdown = ({ viewer: { name, avatarUrl } }: Props) => (

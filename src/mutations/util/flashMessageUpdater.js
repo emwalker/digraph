@@ -1,6 +1,6 @@
 // @flow
 
-export default rootField => (store) => {
+export default (rootField: string) => (store: any) => {
   const payload = store.getRootField(rootField)
   if (!payload)
     return

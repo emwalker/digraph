@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import { TopicType, RelayProps } from 'components/types'
+import type { Relay, RepositoryType, TopicType, UserType } from 'components/types'
 import upsertTopicMutation from 'mutations/upsertTopicMutation'
 
 /* eslint jsx-a11y/label-has-for: 0 */
@@ -11,17 +11,10 @@ type State = {
   name: string,
 }
 
-type Props = RelayProps & {
+type Props = {
+  relay: Relay,
   topic: TopicType,
-  viewer: {
-    id: ID,
-    selectedRepository: {
-      name: string,
-      organization: {
-        login: string,
-      },
-    },
-  },
+  viewer: UserType,
 }
 
 class AddTopic extends Component<Props, State> {
@@ -34,12 +27,15 @@ class AddTopic extends Component<Props, State> {
       this.createTopic()
   }
 
-  get selectedRepo(): Object {
+  get selectedRepo(): ?RepositoryType {
     return this.props.viewer.selectedRepository
   }
 
-  get orgLogin(): string {
-    return this.selectedRepo.organization.login
+  get orgLogin(): ?string {
+    const repo = this.selectedRepo
+    if (!repo)
+      return null
+    return repo.organization.login
   }
 
   get relayConfigs() {
@@ -59,12 +55,15 @@ class AddTopic extends Component<Props, State> {
   }
 
   createTopic() {
+    const repo = this.selectedRepo
+    const repoName = repo ? repo.name : null
+
     upsertTopicMutation(
       this.props.relay.environment,
       this.relayConfigs,
       {
         name: this.state.name,
-        repositoryName: this.selectedRepo.name,
+        repositoryName: repoName,
         organizationLogin: this.orgLogin,
         topicIds: [this.props.topic.id],
       },

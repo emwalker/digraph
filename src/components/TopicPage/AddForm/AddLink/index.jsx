@@ -2,16 +2,15 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import type { RelayProps } from 'components/types'
+import type { Relay, RepositoryType, TopicType, UserType } from 'components/types'
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
 
 /* eslint jsx-a11y/label-has-for: 0 */
 
-type Props = RelayProps & {
-  orgLogin: string,
-  viewer: {
-    id: ID,
-  },
+type Props = {
+  relay: Relay,
+  topic: TopicType,
+  viewer: UserType,
 }
 
 type State = {
@@ -28,12 +27,15 @@ class AddLink extends Component<Props, State> {
       this.createLink()
   }
 
-  get selectedRepo(): Object {
+  get selectedRepo(): ?RepositoryType {
     return this.props.viewer.selectedRepository
   }
 
-  get orgLogin(): string {
-    return this.selectedRepo.organization.login
+  get orgLogin(): ?string {
+    const repo = this.selectedRepo
+    if (!repo)
+      return null
+    return repo.organization.login
   }
 
   get relayConfigs() {
@@ -53,13 +55,16 @@ class AddLink extends Component<Props, State> {
   }
 
   createLink() {
+    const repo = this.selectedRepo
+    const repoName = repo ? repo.name : null
+
     upsertLinkMutation(
       this.props.relay.environment,
       this.relayConfigs,
       {
         addParentTopicIds: [this.props.topic.id],
         organizationLogin: this.orgLogin,
-        repositoryName: this.selectedRepo.name,
+        repositoryName: repoName,
         url: this.state.url,
       },
     )

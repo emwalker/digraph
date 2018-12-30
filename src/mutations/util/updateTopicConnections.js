@@ -1,9 +1,12 @@
 // @flow
+import { type Node } from 'react'
 import { ConnectionHandler } from 'relay-runtime'
 
 let tmpId = 0
 
-export default (store, node, edgeType, topicIds, connectionName) => {
+export default (
+  store: any, node: Node, edgeType: Object, topicIds: string[], connectionName: string,
+) => {
   tmpId += 1
 
   const newEdge = store.create(`client:newEdge:${tmpId}`, edgeType)

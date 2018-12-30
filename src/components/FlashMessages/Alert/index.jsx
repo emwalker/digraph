@@ -18,13 +18,13 @@ class Alert extends Component<Props> {
     )
   }
 
-  alertClass = (type) => {
+  alertClass = (type: string) => {
     const classes = {
       ERROR: 'flash-error',
       WARN: 'flash-warn',
       SUCCESS: 'flash-success',
     }
-    return classes[type] || classes.success
+    return classes[type] || 'flash-success'
   }
 
   render = () => (

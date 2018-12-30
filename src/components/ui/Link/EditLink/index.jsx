@@ -2,16 +2,17 @@
 import React from 'react'
 import { QueryRenderer, graphql } from 'react-relay'
 
-import type { LinkType } from 'components/types'
+import type { LinkType, Relay } from 'components/types'
 import EditLinkForm from './EditLinkForm'
 
 type RendererProps = {
   error: ?Object,
   props: ?{
+    orgLogin: string,
+    relay: Relay,
     view: {
       link: LinkType,
     },
-    orgLogin: string,
   },
 }
 
@@ -29,8 +30,8 @@ const renderer = ({ isOpen, orgLogin, toggleForm }) => ({ error, props }: Render
       isOpen={isOpen}
       link={props.view.link}
       orgLogin={orgLogin}
+      relay={props.relay}
       toggleForm={toggleForm}
-      viewer={props.viewer}
     />
   )
 }
@@ -38,9 +39,8 @@ const renderer = ({ isOpen, orgLogin, toggleForm }) => ({ error, props }: Render
 type Props = {
   isOpen: boolean,
   link: LinkType,
-  relay: {
-    environment: Object,
-  },
+  orgLogin: string,
+  relay: Relay,
   toggleForm: Function,
 }
 
@@ -54,10 +54,6 @@ const EditLink = ({ isOpen, link, orgLogin, relay, toggleForm }: Props) => (
         $repoIds: [ID!],
         $linkId: ID!,
       ) {
-        viewer {
-          ...EditLinkForm_viewer
-        }
-
         view(
           currentOrganizationLogin: $orgLogin,
           currentRepositoryName: $repoName,

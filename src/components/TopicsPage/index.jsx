@@ -3,14 +3,15 @@ import React from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
-import List from '../ui/List'
-import Topic from '../ui/Topic'
-import { liftNodes } from '../../utils'
+import type { Relay, ViewType } from 'components/types'
+import List from 'components/ui/List'
+import Topic from 'components/ui/Topic'
+import { liftNodes } from 'utils'
 
 type Props = {
-  view: {
-    topics: Object,
-  },
+  orgLogin: string,
+  relay: Relay,
+  view: ViewType,
 }
 
 const TopicsPage = ({ view, ...props }: Props) => {
@@ -23,8 +24,10 @@ const TopicsPage = ({ view, ...props }: Props) => {
       { topics.map(topic => (
         <Topic
           key={topic.resourcePath}
+          orgLogin={props.orgLogin}
+          relay={props.relay}
           topic={topic}
-          {...props}
+          view={view}
         />
       )) }
     </List>

@@ -2,27 +2,18 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import { liftNodes } from '../../../utils'
+import type { LinkType, Relay, ViewType } from 'components/types'
+import { liftNodes } from 'utils'
 import EditLink from './EditLink'
 import Item from '../Item'
 
 /* eslint no-underscore-dangle: 0 */
 
 type Props = {
-  link: {
-    newlyAdded: boolean,
-    parentTopics: Object,
-    repository: {
-      id: string,
-    },
-    title: string,
-    url: string,
-  },
-  view: {
-    currentRepository: {
-      id: string,
-    },
-  },
+  link: LinkType,
+  orgLogin: string,
+  relay: Relay,
+  view: ViewType,
 }
 
 type State = {
@@ -53,6 +44,9 @@ class Link extends Component<Props, State> {
   }
 
   get displayColor(): string {
+    if (!this.repo)
+      return 'transparent'
+
     return this.linkBelongsToCurrentRepo
       ? 'transparent'
       : this.repo.displayColor
@@ -75,10 +69,11 @@ class Link extends Component<Props, State> {
         url={this.props.link.url}
       >
         <EditLink
-          link={this.props.link}
-          toggleForm={this.toggleForm}
           isOpen={this.state.formIsOpen}
-          {...this.props}
+          link={this.props.link}
+          orgLogin={this.props.orgLogin}
+          relay={this.props.relay}
+          toggleForm={this.toggleForm}
         />
       </Item>
     )
