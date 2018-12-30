@@ -17,6 +17,7 @@ export type LinkEdge = {
 export type LinkType = {
   availableTopics?: TopicConnection,
   id: string,
+  loading: ?boolean,
   newlyAdded: boolean,
   parentTopics: TopicConnection,
   repository: RepositoryType,
@@ -73,6 +74,7 @@ export type TopicType = {
   description: ?string,
   id: string,
   links: LinkConnection,
+  loading: ?boolean,
   name: string,
   newlyAdded: boolean,
   parentTopics: TopicConnection,

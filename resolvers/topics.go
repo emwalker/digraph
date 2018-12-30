@@ -129,6 +129,11 @@ func (r *topicResolver) Links(
 	return linkConnection(scope.All(ctx, r.DB))
 }
 
+// Loading is true if the topic is being loaded.  Only used on the client.
+func (r *topicResolver) Loading(_ context.Context, topic *models.TopicValue) (bool, error) {
+	return false, nil
+}
+
 func (r *topicResolver) Name(_ context.Context, topic *models.TopicValue) (string, error) {
 	return topic.Name, nil
 }

@@ -15,6 +15,7 @@ type Props = {
   displayColor: ?string,
   formIsOpen: boolean,
   newlyAdded: boolean,
+  loading: ?boolean,
   title: string,
   toggleForm: Function,
   topics: TopicType[],
@@ -25,6 +26,7 @@ class Item extends Component<Props> {
   static defaultProps = {
     description: null,
     displayColor: '#fff',
+    loading: false,
   }
 
   get className(): string {
@@ -34,6 +36,10 @@ class Item extends Component<Props> {
       this.props.className,
       { 'anim-fade-in': this.props.newlyAdded },
     )
+  }
+
+  get showEditButton(): boolean {
+    return !this.props.formIsOpen && !this.props.loading
   }
 
   get style(): Object {
@@ -79,7 +85,7 @@ class Item extends Component<Props> {
   }
 
   render() {
-    const { formIsOpen, url } = this.props
+    const { url } = this.props
 
     return (
       <li
@@ -105,13 +111,13 @@ class Item extends Component<Props> {
             </div>
           </div>
           <div className="one-fifth text-center">
-            { !formIsOpen &&
+            { this.showEditButton &&
               <button onClick={this.props.toggleForm} className="btn-link">Edit</button>
             }
           </div>
         </div>
         <div>
-          { formIsOpen && this.props.children }
+          { this.props.formIsOpen && this.props.children }
         </div>
       </li>
     )

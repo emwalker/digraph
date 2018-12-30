@@ -34,6 +34,7 @@ export default (environment, configs, input) => {
     node.setValue(id, 'id')
     node.setValue(input.title || 'Adding link to repo ...', 'title')
     node.setValue(input.url, 'url')
+    node.setValue(true, 'loading')
     updateTopicConnections(store, node, 'LinkEdge', input.addParentTopicIds || [], 'Topic_links')
   }
 

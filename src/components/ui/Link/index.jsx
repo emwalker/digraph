@@ -62,6 +62,7 @@ class Link extends Component<Props, State> {
         className="Box-row--link"
         displayColor={this.displayColor}
         formIsOpen={this.state.formIsOpen}
+        loading={this.props.link.loading}
         newlyAdded={this.props.link.newlyAdded}
         title={this.props.link.title}
         toggleForm={this.toggleForm}
@@ -89,6 +90,7 @@ export default createFragmentContainer(Link, graphql`
 
   fragment Link_link on Link {
     id
+    loading
     newlyAdded
     title
     url

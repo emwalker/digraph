@@ -1,0 +1,43 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Item /> renders 1`] = `
+<li
+  className="Item-row Box-row"
+  key="null"
+  style={
+    Object {
+      "borderLeft": "5px solid #fff",
+    }
+  }
+>
+  <div
+    className="d-flex flex-items-center"
+  >
+    <div
+      className="four-fifths"
+    >
+      <div>
+        <a
+          className="Box-row-link"
+          href="#"
+        >
+          title
+        </a>
+        <div />
+      </div>
+      <div />
+    </div>
+    <div
+      className="one-fifth text-center"
+    >
+      <button
+        className="btn-link"
+        onClick={[MockFunction]}
+      >
+        Edit
+      </button>
+    </div>
+  </div>
+  <div />
+</li>
+`;

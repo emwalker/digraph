@@ -58,6 +58,7 @@ class Topic extends Component<Props, State> {
         description={this.props.topic.description}
         displayColor={this.displayColor}
         formIsOpen={this.state.formIsOpen}
+        loading={this.props.topic.loading}
         newlyAdded={this.props.topic.newlyAdded}
         title={this.props.topic.name}
         toggleForm={this.toggleForm}
@@ -87,6 +88,7 @@ export default createFragmentContainer(Topic, graphql`
   fragment Topic_topic on Topic {
     description
     id
+    loading
     name
     newlyAdded
     resourcePath

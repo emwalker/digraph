@@ -56,6 +56,11 @@ func (r *linkResolver) CreatedAt(_ context.Context, link *models.LinkValue) (str
 	return link.CreatedAt.Format(time.RFC3339), nil
 }
 
+// Loading is true if the link is being loaded.  Only used on the client.
+func (r *linkResolver) Loading(_ context.Context, link *models.LinkValue) (bool, error) {
+	return false, nil
+}
+
 // Organization returns the organization for a link.
 func (r *linkResolver) Organization(ctx context.Context, link *models.LinkValue) (models.Organization, error) {
 	org, err := linkOrganization(ctx, link)
