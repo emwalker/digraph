@@ -1,6 +1,6 @@
 import { graphql } from 'react-relay'
 
-import defaultMutation from './defaultMutation'
+import defaultMutation from './util/defaultMutation'
 
 export default defaultMutation(graphql`
   mutation updateLinkTopicsMutation(

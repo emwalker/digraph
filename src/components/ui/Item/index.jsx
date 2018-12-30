@@ -1,6 +1,5 @@
 // @flow
-import React, { Component } from 'react'
-import type { Node } from 'react'
+import React, { Component, type Node } from 'react'
 import classNames from 'classnames'
 
 import LinkOrA from './LinkOrA'
@@ -19,7 +18,7 @@ type Props = {
   title: string,
   toggleForm: Function,
   topics: Topic[],
-  url: string,
+  url: ?string,
 }
 
 class Item extends Component<Props> {
@@ -43,6 +42,38 @@ class Item extends Component<Props> {
     }
   }
 
+  get url(): ?Node {
+    if (!this.props.url)
+      return null
+
+    return (
+      <div
+        className="mt-1 link-url branch-name css-truncate css-truncate-target"
+      >
+        { this.props.url }
+      </div>
+    )
+  }
+
+  get titleLink(): Node {
+    if (!this.props.url) {
+      return (
+        <a
+          className="Box-row-link"
+          href="#"
+        >
+        {this.props.title}
+        </a>
+      )
+    }
+
+    return (
+      <LinkOrA to={this.props.url} className="Box-row-link">
+        { this.props.title }
+      </LinkOrA>
+    )
+  }
+
   render() {
     const { formIsOpen, url } = this.props
 
@@ -55,16 +86,10 @@ class Item extends Component<Props> {
         <div className="d-flex flex-items-center">
           <div className="four-fifths">
             <div>
-              <LinkOrA to={url} className="Box-row-link">
-                { this.props.title }
-              </LinkOrA>
+              {this.titleLink}
               <div>{ this.props.description }</div>
             </div>
-            <div
-              className="mt-1 link-url branch-name css-truncate css-truncate-target"
-            >
-              { url }
-            </div>
+            {this.url}
             <div>
               { this.props.topics.map(({ name, resourcePath }) => (
                 <TopicBadge

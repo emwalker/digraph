@@ -34,12 +34,18 @@ class Link extends Component<Props, State> {
     formIsOpen: false,
   }
 
-  get repo(): Object {
+  get repo(): ?Object {
     return this.props.link.repository
   }
 
-  get linkBelongsToCurrentRepository(): boolean {
-    return this.repo.id === this.props.view.currentRepository.id
+  get currentRepo(): Object {
+    return this.props.view.currentRepository
+  }
+
+  get linkBelongsToCurrentRepo(): boolean {
+    if (!this.repo)
+      return true
+    return this.repo.id === this.currentRepo.id
   }
 
   get parentTopics() {
@@ -47,7 +53,7 @@ class Link extends Component<Props, State> {
   }
 
   get displayColor(): string {
-    return this.linkBelongsToCurrentRepository
+    return this.linkBelongsToCurrentRepo
       ? 'transparent'
       : this.repo.displayColor
   }

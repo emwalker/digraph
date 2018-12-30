@@ -25,12 +25,22 @@ class Topic extends Component<Props, State> {
     formIsOpen: false,
   }
 
-  get topicBelongsToCurrentRepository(): boolean {
-    return this.props.topic.repository.id === this.props.view.currentRepository.id
+  get repo(): ?Object {
+    return this.props.topic.repository
+  }
+
+  get currentRepo(): Object {
+    return this.props.view.currentRepository
+  }
+
+  get topicBelongsToCurrentRepo(): boolean {
+    if (!this.repo)
+      return true
+    return this.repo.id === this.currentRepo.id
   }
 
   get displayColor(): string {
-    return this.topicBelongsToCurrentRepository
+    return this.topicBelongsToCurrentRepo
       ? 'transparent'
       : this.props.topic.repository.displayColor
   }

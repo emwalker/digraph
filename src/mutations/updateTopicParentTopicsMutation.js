@@ -1,7 +1,7 @@
 import { graphql } from 'react-relay'
 
-import defaultMutation from './defaultMutation'
-import flashMessageUpdater from './flashMessageUpdater'
+import defaultMutation from './util/defaultMutation'
+import flashMessageUpdater from './util/flashMessageUpdater'
 
 export default defaultMutation(graphql`
   mutation updateTopicParentTopicsMutation(
