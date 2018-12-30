@@ -24,8 +24,8 @@ type LinkConnection struct {
 }
 
 type LinkEdge struct {
-	Cursor string `json:"cursor"`
-	Node   Link   `json:"node"`
+	Cursor string    `json:"cursor"`
+	Node   LinkValue `json:"node"`
 }
 
 type Namespaceable interface {
@@ -92,7 +92,7 @@ type UpdateLinkTopicsInput struct {
 }
 
 type UpdateLinkTopicsPayload struct {
-	Link Link `json:"link"`
+	Link LinkValue `json:"link"`
 }
 
 type UpdateTopicInput struct {

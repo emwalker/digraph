@@ -66,13 +66,14 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 // Link returns a specific link.
 func (r *viewResolver) Link(
 	ctx context.Context, view *models.View, linkID string,
-) (*models.Link, error) {
+) (*models.LinkValue, error) {
 	mods := []qm.QueryMod{
 		qm.Where("links.id = ?", linkID),
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
 	}
 	mods = addRepos(mods, view)
-	return models.Links(mods...).One(ctx, r.DB)
+	link, err := models.Links(mods...).One(ctx, r.DB)
+	return &models.LinkValue{link, false}, err
 }
 
 // Links returns a set of links.
@@ -108,7 +109,7 @@ func (r *viewResolver) Topic(
 	log.Printf("Fetching topic %s", topicID)
 	scope := models.Topics(topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil, nil)...)
 	topic, err := scope.One(ctx, r.DB)
-	return &models.TopicValue{topic, view}, err
+	return &models.TopicValue{topic, false}, err
 }
 
 // Topics returns a set of topics.
@@ -117,5 +118,5 @@ func (r *viewResolver) Topics(
 	last *int, before *string,
 ) (models.TopicConnection, error) {
 	topics, err := models.Topics(topicQueryMods(view, nil, searchString, first)...).All(ctx, r.DB)
-	return topicConnection(view, topics, err)
+	return topicConnection(topics, err)
 }

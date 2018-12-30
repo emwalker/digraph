@@ -136,12 +136,12 @@ func TestAvailableTopicsForLinks(t *testing.T) {
 
 	query := resolvers.New(m.db, testActor).Link()
 
-	connection, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil)
+	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(connection.Edges) < 2 {
+	if len(conn.Edges) < 2 {
 		t.Fatal("Expected at least one topic edge")
 	}
 }

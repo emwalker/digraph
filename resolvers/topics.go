@@ -22,14 +22,14 @@ func getTopicLoader(ctx context.Context) *loaders.TopicLoader {
 	return ctx.Value(loaders.TopicLoaderKey).(*loaders.TopicLoader)
 }
 
-func topicConnection(view *models.View, rows []*models.Topic, err error) (models.TopicConnection, error) {
+func topicConnection(rows []*models.Topic, err error) (models.TopicConnection, error) {
 	if err != nil {
 		return models.TopicConnection{}, err
 	}
 
 	var edges []*models.TopicEdge
 	for _, topic := range rows {
-		edges = append(edges, &models.TopicEdge{Node: models.TopicValue{topic, view}})
+		edges = append(edges, &models.TopicEdge{Node: models.TopicValue{topic, false}})
 	}
 
 	return models.TopicConnection{Edges: edges}, nil
@@ -69,7 +69,7 @@ func availableTopics(
 		return models.TopicConnection{}, err
 	}
 
-	return topicConnection(nil, topics, err)
+	return topicConnection(topics, err)
 }
 
 // AvailableParentTopics returns the topics that can be added to the link.
@@ -94,7 +94,7 @@ func (r *topicResolver) ChildTopics(
 	}
 
 	topics, err := topic.ChildTopics(mods...).All(ctx, r.DB)
-	return topicConnection(topic.View, topics, err)
+	return topicConnection(topics, err)
 }
 
 // CreatedAt returns the time of the topic's creation.
@@ -133,6 +133,11 @@ func (r *topicResolver) Name(_ context.Context, topic *models.TopicValue) (strin
 	return topic.Name, nil
 }
 
+// NewlyAdded returns true if the topic was just added.
+func (r *topicResolver) NewlyAdded(_ context.Context, topic *models.TopicValue) (bool, error) {
+	return topic.NewlyAdded, nil
+}
+
 // Organization returns an organization.
 func (r *topicResolver) Organization(
 	ctx context.Context, topic *models.TopicValue,
@@ -146,7 +151,7 @@ func (r *topicResolver) ParentTopics(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
 	if topic.R != nil && topic.R.ParentTopics != nil {
-		return topicConnection(topic.View, topic.R.ParentTopics, nil)
+		return topicConnection(topic.R.ParentTopics, nil)
 	}
 
 	log.Printf("Fetching parent topics for topic %s", topic.ID)
@@ -155,7 +160,7 @@ func (r *topicResolver) ParentTopics(
 	}
 
 	topics, err := topic.ParentTopics(mods...).All(ctx, r.DB)
-	return topicConnection(topic.View, topics, err)
+	return topicConnection(topics, err)
 }
 
 // Repository returns the repostory of the topic.
@@ -226,7 +231,7 @@ func (r *topicResolver) matchingDescendantTopics(
 
 	var topicValues []*models.TopicValue
 	for _, t := range topics {
-		topicValues = append(topicValues, &models.TopicValue{t, topic.View})
+		topicValues = append(topicValues, &models.TopicValue{t, false})
 	}
 
 	return topicValues, nil

@@ -113,7 +113,7 @@ func (m mutator) addParentTopicToTopic(child, parent *models.TopicValue) {
 	}
 }
 
-func (m mutator) addParentTopicToLink(link *models.Link, topic *models.TopicValue) {
+func (m mutator) addParentTopicToLink(link *models.LinkValue, topic *models.TopicValue) {
 	input := models.UpdateLinkTopicsInput{
 		LinkID:         link.ID,
 		ParentTopicIds: []string{topic.ID},
@@ -163,7 +163,7 @@ func (m mutator) createTopic(orgLogin, repoName, name string) (*models.TopicValu
 	return &topic, cleanup
 }
 
-func (m mutator) createLink(orgLogin, repoName, title, url string) (*models.Link, services.CleanupFunc) {
+func (m mutator) createLink(orgLogin, repoName, title, url string) (*models.LinkValue, services.CleanupFunc) {
 	payload1, err := m.resolver.UpsertLink(m.ctx, models.UpsertLinkInput{
 		AddParentTopicIds: []string{},
 		OrganizationLogin: orgLogin,

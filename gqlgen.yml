@@ -13,7 +13,7 @@ model:
   package: models
 models:
   Link:
-    model: github.com/emwalker/digraph/models.Link
+    model: github.com/emwalker/digraph/models.LinkValue
   Organization:
     model: github.com/emwalker/digraph/models.Organization
   Repository:

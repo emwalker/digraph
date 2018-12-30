@@ -135,15 +135,9 @@ func (r *MutationResolver) UpsertTopic(
 		return &models.UpsertTopicPayload{Alerts: result.Alerts}, nil
 	}
 
-	view := &models.View{
-		CurrentOrganizationLogin: input.OrganizationLogin,
-		CurrentRepositoryName:    &input.RepositoryName,
-		CurrentRepository:        repo,
-	}
-
 	return &models.UpsertTopicPayload{
 		Alerts:    result.Alerts,
-		TopicEdge: &models.TopicEdge{Node: models.TopicValue{result.Topic, view}},
+		TopicEdge: &models.TopicEdge{Node: models.TopicValue{result.Topic, result.TopicCreated}},
 	}, nil
 }
 
@@ -168,14 +162,7 @@ func (r *MutationResolver) UpdateTopic(
 		return nil, err
 	}
 
-	view, err := newViewFromTopic(ctx, r.DB, topic)
-	if err != nil {
-		return nil, err
-	}
-
-	return &models.UpdateTopicPayload{
-		Topic: models.TopicValue{topic, view},
-	}, nil
+	return &models.UpdateTopicPayload{Topic: models.TopicValue{topic, false}}, nil
 }
 
 // UpsertLink adds a new link to the database.
@@ -213,7 +200,7 @@ func (r *MutationResolver) UpsertLink(
 
 	return &models.UpsertLinkPayload{
 		Alerts:   result.Alerts,
-		LinkEdge: &models.LinkEdge{Node: *result.Link},
+		LinkEdge: &models.LinkEdge{Node: models.LinkValue{result.Link, result.LinkCreated}},
 	}, nil
 }
 
@@ -236,7 +223,7 @@ func (r *MutationResolver) UpdateLinkTopics(
 	}
 
 	return &models.UpdateLinkTopicsPayload{
-		Link: *link,
+		Link: models.LinkValue{link, false},
 	}, nil
 }
 
@@ -263,13 +250,8 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 		return nil, err
 	}
 
-	view, err := newViewFromTopic(ctx, r.DB, topic)
-	if err != nil {
-		return nil, err
-	}
-
 	return &models.UpdateTopicParentTopicsPayload{
 		Alerts: result.Alerts,
-		Topic:  models.TopicValue{result.Topic, view},
+		Topic:  models.TopicValue{result.Topic, false},
 	}, nil
 }

@@ -27,6 +27,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
   ): TopicConnection!
   createdAt: DateTime!
   id: ID!
+  newlyAdded: Boolean!
   organization: Organization!
   parentTopics(
     first: Int,
@@ -165,6 +166,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     before: String
   ): LinkConnection!
   name: String!
+  newlyAdded: Boolean!
   organization: Organization!
   parentTopics(
     first: Int,

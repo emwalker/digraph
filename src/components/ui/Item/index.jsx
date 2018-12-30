@@ -15,6 +15,7 @@ type Props = {
   description?: ?string,
   displayColor: ?string,
   formIsOpen: boolean,
+  newlyAdded: boolean,
   title: string,
   toggleForm: Function,
   topics: Topic[],
@@ -32,6 +33,7 @@ class Item extends Component<Props> {
       'Item-row',
       'Box-row',
       this.props.className,
+      { 'anim-fade-in': this.props.newlyAdded },
     )
   }
 

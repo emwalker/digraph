@@ -47,10 +47,11 @@ class Topic extends Component<Props, State> {
     return (
       <Item
         className="Box-row--topic"
+        description={this.props.topic.description}
         displayColor={this.displayColor}
         formIsOpen={this.state.formIsOpen}
+        newlyAdded={this.props.topic.newlyAdded}
         title={this.props.topic.name}
-        description={this.props.topic.description}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}
         url={this.props.topic.resourcePath}
@@ -78,6 +79,7 @@ export default createFragmentContainer(Topic, graphql`
     description
     id
     name
+    newlyAdded
     resourcePath
 
     repository {

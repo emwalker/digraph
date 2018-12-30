@@ -56,6 +56,7 @@ type ComplexityRoot struct {
 		AvailableParentTopics func(childComplexity int, first *int, after *string, last *int, before *string) int
 		CreatedAt             func(childComplexity int) int
 		Id                    func(childComplexity int) int
+		NewlyAdded            func(childComplexity int) int
 		Organization          func(childComplexity int) int
 		ParentTopics          func(childComplexity int, first *int, after *string, last *int, before *string) int
 		Repository            func(childComplexity int) int
@@ -152,6 +153,7 @@ type ComplexityRoot struct {
 		Id                    func(childComplexity int) int
 		Links                 func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 		Name                  func(childComplexity int) int
+		NewlyAdded            func(childComplexity int) int
 		Organization          func(childComplexity int) int
 		ParentTopics          func(childComplexity int, first *int, after *string, last *int, before *string) int
 		Repository            func(childComplexity int) int
@@ -215,15 +217,15 @@ type ComplexityRoot struct {
 }
 
 type LinkResolver interface {
-	AvailableParentTopics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (TopicConnection, error)
-	CreatedAt(ctx context.Context, obj *Link) (string, error)
+	AvailableParentTopics(ctx context.Context, obj *LinkValue, first *int, after *string, last *int, before *string) (TopicConnection, error)
+	CreatedAt(ctx context.Context, obj *LinkValue) (string, error)
 
-	Organization(ctx context.Context, obj *Link) (Organization, error)
-	ParentTopics(ctx context.Context, obj *Link, first *int, after *string, last *int, before *string) (TopicConnection, error)
-	Repository(ctx context.Context, obj *Link) (Repository, error)
-	ResourcePath(ctx context.Context, obj *Link) (string, error)
+	Organization(ctx context.Context, obj *LinkValue) (Organization, error)
+	ParentTopics(ctx context.Context, obj *LinkValue, first *int, after *string, last *int, before *string) (TopicConnection, error)
+	Repository(ctx context.Context, obj *LinkValue) (Repository, error)
+	ResourcePath(ctx context.Context, obj *LinkValue) (string, error)
 
-	UpdatedAt(ctx context.Context, obj *Link) (string, error)
+	UpdatedAt(ctx context.Context, obj *LinkValue) (string, error)
 }
 type MutationResolver interface {
 	SelectRepository(ctx context.Context, input SelectRepositoryInput) (*SelectRepositoryPayload, error)
@@ -278,7 +280,7 @@ type UserResolver interface {
 	UpdatedAt(ctx context.Context, obj *User) (string, error)
 }
 type ViewResolver interface {
-	Link(ctx context.Context, obj *View, id string) (*Link, error)
+	Link(ctx context.Context, obj *View, id string) (*LinkValue, error)
 	Links(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (LinkConnection, error)
 
 	Topic(ctx context.Context, obj *View, id string) (*TopicValue, error)
@@ -1258,6 +1260,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Link.Id(childComplexity), true
 
+	case "Link.newlyAdded":
+		if e.complexity.Link.NewlyAdded == nil {
+			break
+		}
+
+		return e.complexity.Link.NewlyAdded(childComplexity), true
+
 	case "Link.organization":
 		if e.complexity.Link.Organization == nil {
 			break
@@ -1712,6 +1721,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Topic.Name(childComplexity), true
 
+	case "Topic.newlyAdded":
+		if e.complexity.Topic.NewlyAdded == nil {
+			break
+		}
+
+		return e.complexity.Topic.NewlyAdded(childComplexity), true
+
 	case "Topic.organization":
 		if e.complexity.Topic.Organization == nil {
 			break
@@ -2141,7 +2157,7 @@ func (ec *executionContext) _Alert_id(ctx context.Context, field graphql.Collect
 var linkImplementors = []string{"Link", "ResourceIdentifiable", "Namespaceable"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj *LinkValue) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, linkImplementors)
 
 	var wg sync.WaitGroup
@@ -2173,6 +2189,11 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 			}(i, field)
 		case "id":
 			out.Values[i] = ec._Link_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "newlyAdded":
+			out.Values[i] = ec._Link_newlyAdded(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -2248,7 +2269,7 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_availableParentTopics(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_availableParentTopics(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -2282,7 +2303,7 @@ func (ec *executionContext) _Link_availableParentTopics(ctx context.Context, fie
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_createdAt(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_createdAt(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2309,7 +2330,7 @@ func (ec *executionContext) _Link_createdAt(ctx context.Context, field graphql.C
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_id(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_id(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2336,7 +2357,34 @@ func (ec *executionContext) _Link_id(ctx context.Context, field graphql.Collecte
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_organization(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_newlyAdded(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Link",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NewlyAdded, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Link_organization(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2364,7 +2412,7 @@ func (ec *executionContext) _Link_organization(ctx context.Context, field graphq
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_parentTopics(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_parentTopics(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -2398,7 +2446,7 @@ func (ec *executionContext) _Link_parentTopics(ctx context.Context, field graphq
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_repository(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_repository(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2426,7 +2474,7 @@ func (ec *executionContext) _Link_repository(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_resourcePath(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_resourcePath(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2453,7 +2501,7 @@ func (ec *executionContext) _Link_resourcePath(ctx context.Context, field graphq
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_sha1(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_sha1(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2480,7 +2528,7 @@ func (ec *executionContext) _Link_sha1(ctx context.Context, field graphql.Collec
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_title(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_title(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2507,7 +2555,7 @@ func (ec *executionContext) _Link_title(ctx context.Context, field graphql.Colle
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_updatedAt(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_updatedAt(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2534,7 +2582,7 @@ func (ec *executionContext) _Link_updatedAt(ctx context.Context, field graphql.C
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Link_url(ctx context.Context, field graphql.CollectedField, obj *Link) graphql.Marshaler {
+func (ec *executionContext) _Link_url(ctx context.Context, field graphql.CollectedField, obj *LinkValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2764,7 +2812,7 @@ func (ec *executionContext) _LinkEdge_node(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(Link)
+	res := resTmp.(LinkValue)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -4514,6 +4562,11 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "newlyAdded":
+			out.Values[i] = ec._Topic_newlyAdded(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "organization":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -4788,6 +4841,33 @@ func (ec *executionContext) _Topic_name(ctx context.Context, field graphql.Colle
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Topic_newlyAdded(ctx context.Context, field graphql.CollectedField, obj *TopicValue) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Topic",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NewlyAdded, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
 }
 
 // nolint: vetshadow
@@ -5230,7 +5310,7 @@ func (ec *executionContext) _UpdateLinkTopicsPayload_link(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(Link)
+	res := resTmp.(LinkValue)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -6079,7 +6159,7 @@ func (ec *executionContext) _View_link(ctx context.Context, field graphql.Collec
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Link)
+	res := resTmp.(*LinkValue)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -7692,9 +7772,9 @@ func (ec *executionContext) _Namespaceable(ctx context.Context, sel ast.Selectio
 	switch obj := (*obj).(type) {
 	case nil:
 		return graphql.Null
-	case Link:
+	case LinkValue:
 		return ec._Link(ctx, sel, &obj)
-	case *Link:
+	case *LinkValue:
 		return ec._Link(ctx, sel, obj)
 	case TopicValue:
 		return ec._Topic(ctx, sel, &obj)
@@ -7709,9 +7789,9 @@ func (ec *executionContext) _ResourceIdentifiable(ctx context.Context, sel ast.S
 	switch obj := (*obj).(type) {
 	case nil:
 		return graphql.Null
-	case Link:
+	case LinkValue:
 		return ec._Link(ctx, sel, &obj)
-	case *Link:
+	case *LinkValue:
 		return ec._Link(ctx, sel, obj)
 	case Organization:
 		return ec._Organization(ctx, sel, &obj)
@@ -7734,9 +7814,9 @@ func (ec *executionContext) _SearchResultItem(ctx context.Context, sel ast.Selec
 		return ec._Topic(ctx, sel, &obj)
 	case *TopicValue:
 		return ec._Topic(ctx, sel, obj)
-	case Link:
+	case LinkValue:
 		return ec._Link(ctx, sel, &obj)
-	case *Link:
+	case *LinkValue:
 		return ec._Link(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
@@ -8129,6 +8209,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
   ): TopicConnection!
   createdAt: DateTime!
   id: ID!
+  newlyAdded: Boolean!
   organization: Organization!
   parentTopics(
     first: Int,
@@ -8267,6 +8348,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     before: String
   ): LinkConnection!
   name: String!
+  newlyAdded: Boolean!
   organization: Organization!
   parentTopics(
     first: Int,

@@ -8,11 +8,16 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-// TopicValue wraps a topic with a view in order to be able to answer questions like
-// "is this topic from this repo?"
+// LinkValue wraps a link with additional fields that are not obtained from the database.
+type LinkValue struct {
+	*Link
+	NewlyAdded bool
+}
+
+// TopicValue wraps a topic with additional fields that are not obtained from the database.
 type TopicValue struct {
 	*Topic
-	View *View
+	NewlyAdded bool
 }
 
 // IsNamespaceable tags Link as implementing the Namespaceable interface.

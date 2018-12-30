@@ -5,15 +5,17 @@ export type OrganizationType = {
 }
 
 export type TopicType = {
-  name: string,
   id: string,
+  name: string,
+  newlyAdded: boolean,
   resourcePath: string,
 }
 
 export type LinkType = {
+  id: string,
+  newlyAdded: boolean,
   title: string,
   url: string,
-  id: string,
 }
 
 export type RelayProps = {

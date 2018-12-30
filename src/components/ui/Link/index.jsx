@@ -10,6 +10,7 @@ import Item from '../Item'
 
 type Props = {
   link: {
+    newlyAdded: boolean,
     parentTopics: Object,
     repository: {
       id: string,
@@ -61,6 +62,7 @@ class Link extends Component<Props, State> {
         className="Box-row--link"
         displayColor={this.displayColor}
         formIsOpen={this.state.formIsOpen}
+        newlyAdded={this.props.link.newlyAdded}
         title={this.props.link.title}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}
@@ -86,6 +88,7 @@ export default createFragmentContainer(Link, graphql`
 
   fragment Link_link on Link {
     id
+    newlyAdded
     title
     url
 
