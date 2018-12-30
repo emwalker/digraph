@@ -239,7 +239,7 @@ func (r *topicResolver) matchingDescendantTopics(
 
 func (r *topicResolver) matchingDescendantLinks(
 	ctx context.Context, topic *models.TopicValue, searchString string, limit int,
-) ([]*models.Link, error) {
+) ([]*models.LinkValue, error) {
 	var rows []struct {
 		ID string
 	}
@@ -273,10 +273,20 @@ func (r *topicResolver) matchingDescendantLinks(
 		ids = append(ids, row.ID)
 	}
 
-	return models.Links(
+	links, err := models.Links(
 		qm.Load("ParentTopics"),
 		qm.WhereIn("id in ?", ids...),
 	).All(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	var linkValues []*models.LinkValue
+	for _, l := range links {
+		linkValues = append(linkValues, &models.LinkValue{l, false})
+	}
+
+	return linkValues, nil
 }
 
 func (r *topicResolver) Search(
@@ -288,7 +298,7 @@ func (r *topicResolver) Search(
 	var (
 		err    error
 		topics []*models.TopicValue
-		links  []*models.Link
+		links  []*models.LinkValue
 		edges  []*models.SearchResultItemEdge
 	)
 
