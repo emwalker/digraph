@@ -1,4 +1,4 @@
-# digraph
+# Digraph
 Find articles, blog posts and documents you've skimmed in the past and wanted to read later on by associating them with topics of arbitrary specificity.
 
 ![Screenshot](https://user-images.githubusercontent.com/760949/50575106-9fa1d100-0db3-11e9-9fa4-08659c83dde9.png)
