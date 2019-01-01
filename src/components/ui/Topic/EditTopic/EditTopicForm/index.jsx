@@ -8,13 +8,14 @@ import SaveOrCancel from 'components/ui/SaveOrCancel'
 import updateTopicMutation from 'mutations/updateTopicMutation'
 import updateTopicTopicsMutation from 'mutations/updateTopicParentTopicsMutation'
 import EditTopicList from 'components/ui/EditTopicList'
-import { liftNodes } from 'utils'
 
 type Props = {
+  availableTopics: TopicType[],
   isOpen: boolean,
   relay: {
     environment: Object,
   },
+  selectedTopics: TopicType[],
   toggleForm: Function,
   topic: TopicType,
 }
@@ -50,14 +51,6 @@ class EditTopicForm extends Component<Props, State> {
   // eslint-disable-next-line class-methods-use-this
   get addTopicIds(): string[] {
     return []
-  }
-
-  get availableTopics(): Object[] {
-    return liftNodes(this.props.topic.availableTopics)
-  }
-
-  get selectedTopics(): TopicType[] {
-    return liftNodes(this.props.topic.selectedTopics)
   }
 
   get topicId(): string {
@@ -110,8 +103,8 @@ class EditTopicForm extends Component<Props, State> {
           onCancel={this.props.toggleForm}
         />
         <EditTopicList
-          availableTopics={this.availableTopics}
-          selectedTopics={this.selectedTopics}
+          availableTopics={this.props.availableTopics}
+          selectedTopics={this.props.selectedTopics}
           updateTopics={this.updateParentTopics}
         />
       </div>
@@ -130,23 +123,5 @@ export default createFragmentContainer(EditTopicForm, graphql`
     description
     id
     name
-
-    selectedTopics: parentTopics(first: 1000) {
-      edges {
-        node {
-          id
-          name
-        }
-      }
-    }
-
-    availableTopics: availableParentTopics(first: 1000) {
-      edges {
-        node {
-          id
-          name
-        }
-      }
-    }
   }
 `)

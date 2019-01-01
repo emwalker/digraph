@@ -3,6 +3,7 @@ import React from 'react'
 import { QueryRenderer, graphql } from 'react-relay'
 
 import type { Relay, TopicType, ViewType, UserType } from 'components/types'
+import { liftNodes } from 'utils'
 import EditTopicForm from './EditTopicForm'
 
 type RendererProps = {
@@ -25,13 +26,17 @@ const renderer = ({ isOpen, orgLogin, toggleForm }) => ({ error, props }: Render
   if (!props || !props.view || !props.view.topic)
     return null
 
+  const { view: { topic } } = props
+
   return (
     <EditTopicForm
+      availableTopics={liftNodes(topic.availableTopics)}
       isOpen={isOpen}
       orgLogin={orgLogin}
       relay={props.relay}
+      selectedTopics={liftNodes(topic.selectedTopics)}
       toggleForm={toggleForm}
-      topic={props.view.topic}
+      topic={topic}
       viewer={props.viewer}
     />
   )
@@ -68,6 +73,24 @@ const EditTopic = ({ isOpen, orgLogin, topic, relay, toggleForm }: Props) => (
           repositoryIds: $repoIds,
         ) {
           topic(id: $topicId) {
+            selectedTopics: parentTopics(first: 1000) {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+
+            availableTopics: availableParentTopics(first: 1000) {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+
             ...EditTopicForm_topic
           }
         }

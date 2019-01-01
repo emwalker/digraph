@@ -3,6 +3,7 @@ import React from 'react'
 import { QueryRenderer, graphql } from 'react-relay'
 
 import type { LinkType, Relay } from 'components/types'
+import { liftNodes } from 'utils'
 import EditLinkForm from './EditLinkForm'
 
 type RendererProps = {
@@ -25,12 +26,16 @@ const renderer = ({ isOpen, orgLogin, toggleForm }) => ({ error, props }: Render
   if (!props || !props.view)
     return null
 
+  const { view: { link } } = props
+
   return (
     <EditLinkForm
+      availableTopics={liftNodes(link.availableTopics)}
       isOpen={isOpen}
-      link={props.view.link}
+      link={link}
       orgLogin={orgLogin}
       relay={props.relay}
+      selectedTopics={liftNodes(link.selectedTopics)}
       toggleForm={toggleForm}
     />
   )
@@ -60,6 +65,24 @@ const EditLink = ({ isOpen, link, orgLogin, relay, toggleForm }: Props) => (
           repositoryIds: $repoIds,
         ) {
           link(id: $linkId) {
+            selectedTopics: parentTopics(first: 1000) {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+
+            availableTopics: availableParentTopics(first: 1000) {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+
             ...EditLinkForm_link
           }
         }

@@ -48,11 +48,12 @@ func findRepo(
 ) (*models.Repository, error) {
 	mods := []qm.QueryMod{
 		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
+		qm.InnerJoin("organization_members om on o.id = om.organization_id"),
 		qm.Where(`
-			o.login = ? and repositories.name = ? and repositories.owner_id = ?
+			o.login = ? and repositories.name = ? and om.user_id = ?
 		`, orgLogin, repoName, actor.ID),
 	}
-	return actor.OwnerRepositories(mods...).One(ctx, exec)
+	return models.Repositories(mods...).One(ctx, exec)
 }
 
 // SelectRepository selects the repository for the current user.
@@ -175,6 +176,7 @@ func (r *MutationResolver) UpsertLink(
 	err = transact(r.DB, func(tx *sql.Tx) error {
 		repo, err := findRepo(ctx, tx, r.Actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
+			log.Printf("Repo not found for link: %s/%s", input.OrganizationLogin, input.RepositoryName)
 			return err
 		}
 

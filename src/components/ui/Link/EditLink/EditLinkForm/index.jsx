@@ -8,13 +8,13 @@ import upsertLinkMutation from 'mutations/upsertLinkMutation'
 import updateLinkTopicsMutation from 'mutations/updateLinkTopicsMutation'
 import EditTopicList from 'components/ui/EditTopicList'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
-import { liftNodes } from 'utils'
 
 type Props = {
+  availableTopics: TopicType[],
   isOpen: boolean,
   link: LinkType,
-  orgLogin: string,
   relay: Relay,
+  selectedTopics: TopicType[],
   toggleForm: Function,
 }
 
@@ -34,13 +34,15 @@ class EditLinkForm extends Component<Props, State> {
 
   onSave = () => {
     const configs = []
+    const { name, organization: { login } } = this.props.link.repository
+
     upsertLinkMutation(
       this.props.relay.environment,
       configs,
       {
         addParentTopicIds: [],
-        organizationLogin: this.props.orgLogin,
-        repositoryName: 'system:default',
+        organizationLogin: login,
+        repositoryName: name,
         title: this.state.title,
         url: this.state.url,
       },
@@ -48,16 +50,8 @@ class EditLinkForm extends Component<Props, State> {
     this.props.toggleForm()
   }
 
-  get availableTopics(): TopicType[] {
-    return liftNodes(this.props.link.availableTopics)
-  }
-
   get linkId(): string {
     return this.props.link.id
-  }
-
-  get selectedTopics(): TopicType[] {
-    return liftNodes(this.props.link.selectedTopics)
   }
 
   updateTitle = (event: Object) => {
@@ -106,8 +100,8 @@ class EditLinkForm extends Component<Props, State> {
           onCancel={this.props.toggleForm}
         />
         <EditTopicList
-          availableTopics={this.availableTopics}
-          selectedTopics={this.selectedTopics}
+          availableTopics={this.props.availableTopics}
+          selectedTopics={this.props.selectedTopics}
           updateTopics={this.updateTopics}
         />
       </div>
@@ -121,21 +115,11 @@ export default createFragmentContainer(EditLinkForm, graphql`
     title
     url
 
-    selectedTopics: parentTopics(first: 1000) {
-      edges {
-        node {
-          id
-          name
-        }
-      }
-    }
+    repository {
+      name
 
-    availableTopics: availableParentTopics(first: 1000) {
-      edges {
-        node {
-          id
-          name
-        }
+      organization {
+        login
       }
     }
   }
