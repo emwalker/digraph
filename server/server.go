@@ -30,7 +30,6 @@ func New(
 ) *Server {
 	db, err := sql.Open("postgres", connectionString)
 	must(err)
-	must(db.Ping())
 
 	resolver := &resolvers.Resolver{DB: db}
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})
@@ -60,6 +59,8 @@ func (s *Server) Routes() {
 
 // Run starts up the http server.
 func (s *Server) Run() {
+	must(s.db.Ping())
+
 	log.Printf("Running server with log level %d", s.LogLevel)
 	if s.LogLevel > 1 {
 		boil.DebugMode = true
