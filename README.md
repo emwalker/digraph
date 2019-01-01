@@ -14,7 +14,7 @@ The current roadmap:
 * Make it easy for others to set up a dev environment.
 
 ## Technical details
-* GraphQL backend written on Golang
+* GraphQL backend written in Golang
 * Postgres
 * React/Relay client
 * Webpack 4
