@@ -33,7 +33,11 @@ class TopicPage extends Component<Props> {
   }
 
   render = () => {
-    const { topic } = this.props
+    const { location, topic } = this.props
+
+    if (!topic)
+      return <div>Topic not found: {location.pathname}</div>
+
     const { name, parentTopics, resourcePath } = topic
     const { topics, links } = this
 
