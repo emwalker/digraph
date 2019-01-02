@@ -152,6 +152,12 @@ func (s *Server) handleHealthCheck() http.Handler {
 	})
 }
 
+func (s *Server) handleMock500() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "There was a problem", 500)
+	})
+}
+
 func (s *Server) handleStaticFiles() http.Handler {
 	fs := http.FileServer(http.Dir("public/webpack"))
 	return http.StripPrefix("/static", fs)

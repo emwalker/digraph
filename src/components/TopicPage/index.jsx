@@ -32,6 +32,12 @@ class TopicPage extends Component<Props> {
     return liftNodes(this.props.topic.childTopics)
   }
 
+  getDerivedStateFromProps = (nextProps) => {
+    if (!window.flashMessages || !nextProps.alerts || nextProps.alerts.length < 1)
+      return
+    nextProps.alerts.forEach(window.flashMessages.addMessage)
+  }
+
   render = () => {
     const { location, topic } = this.props
 
@@ -104,6 +110,12 @@ query TopicPage_query_Query(
   $topicId: ID!,
   $searchString: String,
 ) {
+  alerts {
+    id
+    text
+    type
+  }
+
   viewer {
     id
     ...AddForm_viewer

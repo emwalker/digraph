@@ -8,7 +8,7 @@ import type { AlertType } from 'components/types'
 import Alert from './Alert'
 
 type Props = {
-  message: ?AlertType,
+  initialAlerts: ?AlertType[],
 }
 
 type State = {
@@ -17,13 +17,13 @@ type State = {
 
 class FlashMessages extends Component<Props, State> {
   static defaultProps = {
-    message: null,
+    initialAlerts: [],
   }
 
   constructor(props: Props) {
     super(props)
     this.state = {
-      messages: props.message ? [props.message] : [],
+      messages: props.initialAlerts || [],
     }
     window.flashMessages = this
   }

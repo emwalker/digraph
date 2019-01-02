@@ -106,7 +106,9 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		Alerts              func(childComplexity int) int
 		DefaultOrganization func(childComplexity int) int
+		FakeError           func(childComplexity int) int
 		Viewer              func(childComplexity int) int
 		View                func(childComplexity int, currentOrganizationLogin string, currentRepositoryName *string, repositoryIds []string, viewerId *string) int
 	}
@@ -248,7 +250,9 @@ type OrganizationResolver interface {
 	UpdatedAt(ctx context.Context, obj *Organization) (string, error)
 }
 type QueryResolver interface {
+	Alerts(ctx context.Context) ([]Alert, error)
 	DefaultOrganization(ctx context.Context) (Organization, error)
+	FakeError(ctx context.Context) (*string, error)
 	Viewer(ctx context.Context) (*User, error)
 	View(ctx context.Context, currentOrganizationLogin string, currentRepositoryName *string, repositoryIds []string, viewerId *string) (View, error)
 }
@@ -1525,12 +1529,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.EndCursor(childComplexity), true
 
+	case "Query.alerts":
+		if e.complexity.Query.Alerts == nil {
+			break
+		}
+
+		return e.complexity.Query.Alerts(childComplexity), true
+
 	case "Query.defaultOrganization":
 		if e.complexity.Query.DefaultOrganization == nil {
 			break
 		}
 
 		return e.complexity.Query.DefaultOrganization(childComplexity), true
+
+	case "Query.fakeError":
+		if e.complexity.Query.FakeError == nil {
+			break
+		}
+
+		return e.complexity.Query.FakeError(childComplexity), true
 
 	case "Query.viewer":
 		if e.complexity.Query.Viewer == nil {
@@ -3594,6 +3612,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "alerts":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_alerts(ctx, field)
+				wg.Done()
+			}(i, field)
 		case "defaultOrganization":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -3601,6 +3625,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if out.Values[i] == graphql.Null {
 					invalid = true
 				}
+				wg.Done()
+			}(i, field)
+		case "fakeError":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_fakeError(ctx, field)
 				wg.Done()
 			}(i, field)
 		case "viewer":
@@ -3634,6 +3664,63 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _Query_alerts(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Alerts(rctx)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]Alert)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Alert(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _Query_defaultOrganization(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -3659,6 +3746,34 @@ func (ec *executionContext) _Query_defaultOrganization(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
 	return ec._Organization(ctx, field.Selections, &res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_fakeError(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().FakeError(rctx)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 // nolint: vetshadow
@@ -8432,7 +8547,12 @@ type PageInfo {
 }
 
 type Query {
+  # Workaround for Relay Modern weirdness
+  # - https://github.com/facebook/relay/issues/1913
+  # - https://github.com/facebook/relay/issues/1913#issuecomment-358636018
+  alerts: [Alert!]
   defaultOrganization: Organization!
+  fakeError: String
   viewer: User
   view(
     currentOrganizationLogin: String!,

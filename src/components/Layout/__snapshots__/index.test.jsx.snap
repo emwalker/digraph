@@ -7,7 +7,7 @@ exports[`<Layout /> renders 1`] = `
   >
     <Header />
     <FlashMessages
-      message={null}
+      initialAlerts={Array []}
     />
     <div>
       some view

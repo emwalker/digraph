@@ -86,7 +86,10 @@ type PageInfo {
 }
 
 type Query {
+  # Workaround for Relay Modern weirdness
+  alerts: [Alert!]
   defaultOrganization: Organization!
+  fakeError: String
   viewer: User
   view(
     currentOrganizationLogin: String!,

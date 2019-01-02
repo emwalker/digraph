@@ -66,6 +66,12 @@ export const routeConfig = makeRouteConfig(
     query={
       graphql`
       query router_Query {
+        alerts {
+          id
+          text
+          type
+        }
+
         defaultOrganization {
           defaultRepository {
             rootTopic {

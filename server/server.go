@@ -53,6 +53,7 @@ func (s *Server) Routes() {
 	http.Handle("/graphql", s.withSession(s.withBasicAuth(s.handleGraphqlRequest())))
 	http.Handle("/playground", s.withBasicAuth(s.handleGraphqlPlayground()))
 	http.Handle("/_ah/health", s.handleHealthCheck())
+	http.Handle("/500", s.handleMock500())
 	http.Handle("/", s.withBasicAuth(s.handleRoot()))
 	s.RegisterOauth2Routes()
 }

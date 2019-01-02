@@ -12,6 +12,16 @@ import (
 
 type queryResolver struct{ *Resolver }
 
+// Alerts is a no-op implementation provided as part of a workaround for Relay Modern weirdness
+// relating to the swallowing of GraphQL errors.  If the client finds errors in the normal GraphQL
+// error field, it will copy them to this field so that components know about them.
+//
+// - https://github.com/facebook/relay/issues/1913
+// - https://github.com/facebook/relay/issues/1913#issuecomment-358636018
+func (r *queryResolver) Alerts(ctx context.Context) ([]models.Alert, error) {
+	return []models.Alert{}, nil
+}
+
 // DefaultOrganization returns the main repository that people are directed to.
 func (r *queryResolver) DefaultOrganization(ctx context.Context) (models.Organization, error) {
 	org, err := models.Organizations(qm.Where("public and login = 'wiki'")).One(ctx, r.DB)
@@ -19,6 +29,12 @@ func (r *queryResolver) DefaultOrganization(ctx context.Context) (models.Organiz
 		return models.Organization{}, err
 	}
 	return *org, nil
+}
+
+// FakeError returns an error on demand in order to facilitate the debugging of error handling in
+// the client.
+func (r *queryResolver) FakeError(ctx context.Context) (*string, error) {
+	return nil, errors.New("there was a problem")
 }
 
 // Viewer returns the logged-in user.

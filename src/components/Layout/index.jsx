@@ -2,10 +2,12 @@
 import React from 'react'
 import type { Node } from 'react'
 
+import type { AlertType } from 'components/types'
 import Header from './Header'
 import FlashMessages from '../FlashMessages'
 
 type Props = {
+  alerts: ?AlertType[],
   children?: Node,
   defaultOrganization: Object,
   viewer: Object,
@@ -13,14 +15,14 @@ type Props = {
 
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 
-const Layout = ({ children, defaultOrganization, viewer }: Props) => (
+const Layout = ({ alerts, children, defaultOrganization, viewer }: Props) => (
   <div>
     <div className="container">
       <Header
         viewer={viewer}
         defaultOrganization={defaultOrganization}
       />
-      <FlashMessages />
+      <FlashMessages initialAlerts={alerts} />
       { children }
     </div>
     <div className="container">

@@ -71,3 +71,16 @@ func TestDefaultOrganization(t *testing.T) {
 		t.Fatal("Expected the public organization")
 	}
 }
+
+func TestFakeError(t *testing.T) {
+	queryResolver := resolvers.New(testDB, testActor).Query()
+
+	str, err := queryResolver.FakeError(context.Background())
+	if err == nil {
+		t.Fatal("Expected a fake error")
+	}
+
+	if str != nil {
+		t.Fatal("Did not expect a return value")
+	}
+}
