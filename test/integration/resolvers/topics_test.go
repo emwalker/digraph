@@ -180,6 +180,35 @@ func TestUpdateTopic(t *testing.T) {
 	}
 }
 
+func TestPreventingUpdateTopicFromCreatingADuplicate(t *testing.T) {
+	m := newMutator(t, testActor)
+
+	topic, cleanup := m.createTopic(testActor.Login, m.defaultRepo().Name, "Agriculture")
+	defer cleanup()
+
+	if topic.Name != "Agriculture" {
+		t.Fatalf("Expected new topic to have the name 'Agriculture': %s", topic.Name)
+	}
+
+	_, cleanup = m.createTopic(testActor.Login, m.defaultRepo().Name, "Agricultura")
+	defer cleanup()
+
+	// Try to give our first topic the same name as the second topic
+	input := models.UpdateTopicInput{
+		Name: "Agricultura",
+		ID:   topic.ID,
+	}
+
+	payload, err := m.resolver.UpdateTopic(m.ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(payload.Alerts) < 1 {
+		t.Fatal("Expected an alert")
+	}
+}
+
 func TestTopicParentTopics(t *testing.T) {
 	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name

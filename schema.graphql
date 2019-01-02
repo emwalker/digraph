@@ -224,6 +224,7 @@ input UpdateTopicInput {
 }
 
 type UpdateTopicPayload {
+  alerts: [Alert!]!
   topic: Topic!
 }
 

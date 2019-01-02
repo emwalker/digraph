@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/emwalker/digraph/common"
 	"github.com/emwalker/digraph/models"
@@ -12,6 +13,12 @@ import (
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
+
+// UpdateTopicResult holds the result of an UpdateTopic call.
+type UpdateTopicResult struct {
+	Alerts []models.Alert
+	Topic  *models.Topic
+}
 
 // UpdateTopicParentTopicsResult holds the result of an UpdateTopicParentTopics call.
 type UpdateTopicParentTopicsResult struct {
@@ -25,6 +32,52 @@ type UpsertTopicResult struct {
 	Topic        *models.Topic
 	TopicCreated bool
 	Cleanup      CleanupFunc
+}
+
+func cycleWarning(descendant, ancestor *models.Topic) *models.Alert {
+	return models.NewAlert(
+		models.AlertTypeWarn,
+		fmt.Sprintf(
+			`"%s" is a descendant of "%s" and cannot be added as a parent topic`,
+			descendant.Name,
+			ancestor.Name,
+		),
+	)
+}
+
+func invalidNameWarning(name string) *models.Alert {
+	return models.NewAlert(
+		models.AlertTypeWarn,
+		fmt.Sprintf("Not a valid topic name: %s", name),
+	)
+}
+
+func nameAlreadyExists(name string) *models.Alert {
+	return models.NewAlert(
+		models.AlertTypeWarn,
+		fmt.Sprintf("There is already a topic with the name '%s' in the same repository", name),
+	)
+}
+
+// UpdateTopic updates fields on the topic.
+func (c Connection) UpdateTopic(
+	ctx context.Context, topic *models.Topic, name string, description *string,
+) (*UpdateTopicResult, error) {
+	topic.Name = name
+	topic.Description = null.StringFromPtr(description)
+
+	if _, err := topic.Update(ctx, c.Exec, boil.Infer()); err != nil {
+		// Does sqlboiler provide a way to get to the pq error?
+		if strings.Contains(err.Error(), "pq: duplicate key value violates unique constraint") {
+			return &UpdateTopicResult{
+				Alerts: []models.Alert{*nameAlreadyExists(name)},
+			}, nil
+		}
+		log.Printf("services.UpdateTopic: %s (type %T)", err, err)
+		return nil, fmt.Errorf("there was a problem updating topic %s", topic.ID)
+	}
+
+	return &UpdateTopicResult{Topic: topic}, nil
 }
 
 // UpdateTopicParentTopics updates the parent topics of a topic.
@@ -123,24 +176,6 @@ func (c Connection) UpsertTopic(
 		Topic:        topic,
 		TopicCreated: created,
 	}, nil
-}
-
-func cycleWarning(descendant, ancestor *models.Topic) *models.Alert {
-	return models.NewAlert(
-		models.AlertTypeWarn,
-		fmt.Sprintf(
-			`"%s" is a descendant of "%s" and cannot be added as a parent topic`,
-			descendant.Name,
-			ancestor.Name,
-		),
-	)
-}
-
-func invalidNameWarning(name string) *models.Alert {
-	return models.NewAlert(
-		models.AlertTypeWarn,
-		fmt.Sprintf("Not a valid topic name: %s", name),
-	)
 }
 
 func (c Connection) isDescendantOf(

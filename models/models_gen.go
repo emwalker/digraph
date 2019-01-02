@@ -117,7 +117,8 @@ type UpdateTopicParentTopicsPayload struct {
 func (UpdateTopicParentTopicsPayload) IsAlertable() {}
 
 type UpdateTopicPayload struct {
-	Topic TopicValue `json:"topic"`
+	Alerts []Alert    `json:"alerts"`
+	Topic  TopicValue `json:"topic"`
 }
 
 type UpsertLinkInput struct {

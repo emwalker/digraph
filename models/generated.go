@@ -184,7 +184,8 @@ type ComplexityRoot struct {
 	}
 
 	UpdateTopicPayload struct {
-		Topic func(childComplexity int) int
+		Alerts func(childComplexity int) int
+		Topic  func(childComplexity int) int
 	}
 
 	UpsertLinkPayload struct {
@@ -1847,6 +1848,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateTopicParentTopicsPayload.Topic(childComplexity), true
+
+	case "UpdateTopicPayload.alerts":
+		if e.complexity.UpdateTopicPayload.Alerts == nil {
+			break
+		}
+
+		return e.complexity.UpdateTopicPayload.Alerts(childComplexity), true
 
 	case "UpdateTopicPayload.topic":
 		if e.complexity.UpdateTopicPayload.Topic == nil {
@@ -5545,6 +5553,11 @@ func (ec *executionContext) _UpdateTopicPayload(ctx context.Context, sel ast.Sel
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UpdateTopicPayload")
+		case "alerts":
+			out.Values[i] = ec._UpdateTopicPayload_alerts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "topic":
 			out.Values[i] = ec._UpdateTopicPayload_topic(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5559,6 +5572,66 @@ func (ec *executionContext) _UpdateTopicPayload(ctx context.Context, sel ast.Sel
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UpdateTopicPayload_alerts(ctx context.Context, field graphql.CollectedField, obj *UpdateTopicPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UpdateTopicPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Alerts, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]Alert)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Alert(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
 }
 
 // nolint: vetshadow
@@ -8497,6 +8570,7 @@ input UpdateTopicInput {
 }
 
 type UpdateTopicPayload {
+  alerts: [Alert!]!
   topic: Topic!
 }
 

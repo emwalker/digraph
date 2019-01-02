@@ -9,7 +9,6 @@ import (
 	"github.com/emwalker/digraph/common"
 	"github.com/emwalker/digraph/models"
 	"github.com/emwalker/digraph/services"
-	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -137,8 +136,10 @@ func (r *MutationResolver) UpsertTopic(
 	}
 
 	return &models.UpsertTopicPayload{
-		Alerts:    result.Alerts,
-		TopicEdge: &models.TopicEdge{Node: models.TopicValue{result.Topic, result.TopicCreated}},
+		Alerts: result.Alerts,
+		TopicEdge: &models.TopicEdge{
+			Node: models.TopicValue{result.Topic, result.TopicCreated},
+		},
 	}, nil
 }
 
@@ -146,24 +147,25 @@ func (r *MutationResolver) UpsertTopic(
 func (r *MutationResolver) UpdateTopic(
 	ctx context.Context, input models.UpdateTopicInput,
 ) (*models.UpdateTopicPayload, error) {
+	s := services.Connection{Exec: r.DB, Actor: r.Actor}
+
 	topic, err := models.Topics(
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.Where("topics.id = ? and r.owner_id = ?", input.ID, r.Actor.ID),
 	).One(ctx, r.DB)
-
 	if err != nil {
 		return nil, err
 	}
 
-	topic.Name = input.Name
-	topic.Description = null.StringFromPtr(input.Description)
-
-	_, err = topic.Update(ctx, r.DB, boil.Infer())
+	result, err := s.UpdateTopic(ctx, topic, input.Name, input.Description)
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.UpdateTopicPayload{Topic: models.TopicValue{topic, false}}, nil
+	return &models.UpdateTopicPayload{
+		Alerts: result.Alerts,
+		Topic:  models.TopicValue{topic, false},
+	}, nil
 }
 
 // UpsertLink adds a new link to the database.
