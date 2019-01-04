@@ -11,7 +11,7 @@ describe('<TopicPage />', () => {
   }
 
   const view = {
-    repository: {
+    currentRepository: {
       displayName: 'Private collection',
       isPrivate: true,
     },

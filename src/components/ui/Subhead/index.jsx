@@ -17,6 +17,7 @@ type Props = {
     query: Object,
     search: string,
   },
+  orgLogin: string,
   router: {
     push: Function,
   },
@@ -41,10 +42,16 @@ class Subhead extends Component<Props> {
     if (!this.props.headingLink)
       return this.props.heading
 
+    const to = {
+      pathname: this.props.headingLink,
+      orgLogin: this.props.orgLogin,
+      repoName: 'Loading ...',
+    }
+
     return (
       <Link
         className="link-gray-dark"
-        to={this.props.headingLink}
+        to={to}
       >
         {this.props.heading}
       </Link>

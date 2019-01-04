@@ -6,11 +6,11 @@ import { isEmpty } from 'ramda'
 import { liftNodes } from 'utils'
 import type { LinkType, Relay, TopicType, UserType, ViewType } from 'components/types'
 import Subhead from 'components/ui/Subhead'
+import Breadcrumbs from 'components/ui/Breadcrumbs'
 import SidebarList from 'components/ui/SidebarList'
 import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
-import Breadcrumbs from 'components/ui/Breadcrumbs'
 import AddForm from './AddForm'
 
 type Props = {
@@ -23,7 +23,17 @@ type Props = {
   viewer: UserType,
 }
 
-class TopicPage extends Component<Props> {
+type State = {}
+
+class TopicPage extends Component<Props, State> {
+  static getDerivedStateFromProps = (nextProps) => {
+    if (window.flashMessages && nextProps.alerts && nextProps.alerts.length > 0)
+      nextProps.alerts.forEach(window.flashMessages.addMessage)
+    return {}
+  }
+
+  state = {}
+
   get links(): LinkType[] {
     return liftNodes(this.props.topic.links)
   }
@@ -32,31 +42,47 @@ class TopicPage extends Component<Props> {
     return liftNodes(this.props.topic.childTopics)
   }
 
-  getDerivedStateFromProps = (nextProps) => {
-    if (!window.flashMessages || !nextProps.alerts || nextProps.alerts.length < 1)
-      return
-    nextProps.alerts.forEach(window.flashMessages.addMessage)
-  }
+  renderLink = link => (
+    <Link
+      key={link.id}
+      link={link}
+      orgLogin={this.props.orgLogin}
+      relay={this.props.relay}
+      view={this.props.view}
+    />
+  )
+
+  renderTopic = topic => (
+    <Topic
+      key={topic.id}
+      orgLogin={this.props.orgLogin}
+      relay={this.props.relay}
+      topic={topic}
+      view={this.props.view}
+    />
+  )
 
   render = () => {
-    const { location, topic } = this.props
+    const { location, topic, view } = this.props
 
     if (!topic)
       return <div>Topic not found: {location.pathname}</div>
 
     const { name, parentTopics, resourcePath } = topic
     const { topics, links } = this
+    const { currentRepository } = view
 
     return (
       <div>
         <Breadcrumbs
           orgLogin={this.props.orgLogin}
-          repository={this.props.view.currentRepository}
+          repository={currentRepository}
         />
         <Subhead
           heading={name}
           headingLink={resourcePath}
           location={this.props.location}
+          orgLogin={this.props.orgLogin}
           router={this.props.router}
           view={this.props.view}
         />
@@ -65,30 +91,15 @@ class TopicPage extends Component<Props> {
             placeholder="There are no items in this list."
             hasItems={!isEmpty(topics) || !isEmpty(links)}
           >
-            { topics.map(childTopic => (
-              <Topic
-                key={childTopic.id}
-                orgLogin={this.props.orgLogin}
-                relay={this.props.relay}
-                topic={childTopic}
-                view={this.props.view}
-              />
-            )) }
-
-            { links.map(link => (
-              <Link
-                key={link.id}
-                link={link}
-                orgLogin={this.props.orgLogin}
-                relay={this.props.relay}
-                view={this.props.view}
-              />
-            )) }
+            { topics.map(this.renderTopic) }
+            { links.map(this.renderLink) }
           </List>
         </div>
         <div className="one-third column pr-0">
           <SidebarList
             title="Parent topics"
+            orgLogin={this.props.orgLogin}
+            repoName={currentRepository.displayName}
             items={liftNodes(parentTopics)}
           />
           <AddForm
@@ -127,6 +138,7 @@ query TopicPage_query_Query(
     repositoryIds: $repoIds,
   ) {
     currentRepository {
+      displayName
       ...Breadcrumbs_repository
     }
 

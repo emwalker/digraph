@@ -2,13 +2,20 @@
 
 exports[`<TopicPage /> renders 1`] = `
 <div>
-  <Breadcrumbs />
+  <Breadcrumbs
+    repository={
+      Object {
+        "displayName": "Private collection",
+        "isPrivate": true,
+      }
+    }
+  />
   <Subhead
     heading="Frotz"
     headingLink={null}
     view={
       Object {
-        "repository": Object {
+        "currentRepository": Object {
           "displayName": "Private collection",
           "isPrivate": true,
         },
@@ -28,6 +35,7 @@ exports[`<TopicPage /> renders 1`] = `
   >
     <Component
       items={Array []}
+      repoName="Private collection"
       title="Parent topics"
     />
   </div>

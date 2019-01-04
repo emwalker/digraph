@@ -57,17 +57,19 @@ class TopicSearchPage extends Component<Props> {
       resourcePath,
     } = topic
     const rows = liftNodes(searchResults)
+    const { currentRepository: repo } = view
 
     return (
       <div>
         <Breadcrumbs
           orgLogin={orgLogin}
-          repository={view.currentRepository}
+          repository={repo}
         />
         <Subhead
           heading={name}
           headingLink={resourcePath}
           location={location}
+          orgLogin={orgLogin}
           router={router}
           view={view}
         />
@@ -81,8 +83,10 @@ class TopicSearchPage extends Component<Props> {
         </div>
         <div className="one-third column pr-0">
           <SidebarList
-            title="Parent topics"
             items={liftNodes(parentTopics)}
+            orgLogin={this.props.orgLogin}
+            repoName={repo.displayName}
+            title="Parent topics"
           />
         </div>
       </div>
@@ -104,6 +108,7 @@ query TopicSearchPage_query_Query(
     repositoryIds: $repoIds,
   ) {
     currentRepository {
+      displayName
       ...Breadcrumbs_repository
     }
 

@@ -52,6 +52,8 @@ class Topic extends Component<Props, State> {
   }
 
   render() {
+    const { topic } = this.props
+
     return (
       <Item
         className="Box-row--topic"
@@ -60,17 +62,19 @@ class Topic extends Component<Props, State> {
         formIsOpen={this.state.formIsOpen}
         loading={this.props.topic.loading}
         newlyAdded={this.props.topic.newlyAdded}
-        title={this.props.topic.name}
+        orgLogin={this.props.orgLogin}
+        repoName={topic.repository.name}
+        title={topic.name}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}
-        url={this.props.topic.resourcePath}
+        url={topic.resourcePath}
       >
         <EditTopic
           isOpen={this.state.formIsOpen}
           orgLogin={this.props.orgLogin}
           relay={this.props.relay}
           toggleForm={this.toggleForm}
-          topic={this.props.topic}
+          topic={topic}
           view={this.props.view}
         />
       </Item>
@@ -94,6 +98,7 @@ export default createFragmentContainer(Topic, graphql`
     resourcePath
 
     repository {
+      name
       displayColor
       id
     }

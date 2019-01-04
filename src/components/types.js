@@ -26,6 +26,15 @@ export type LinkType = {
   url: string,
 }
 
+export type LocationDescriptor = {
+  pathname: string,
+  state: {
+    orgLogin: string,
+    repoName: string,
+    itemTitle: string,
+  },
+}
+
 export type OrganizationType = {
   id: string,
   login: string,

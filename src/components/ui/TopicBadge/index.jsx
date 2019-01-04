@@ -4,11 +4,13 @@ import { Link } from 'found'
 
 type Props = {
   name: string,
-  resourcePath: string,
+  to: {
+    pathname: string,
+  },
 }
 
-export default ({ name, resourcePath }: Props) => (
-  <Link to={resourcePath} className="Box-row-link" key={resourcePath}>
+export default ({ name, to }: Props) => (
+  <Link to={to} className="Box-row-link" key={to.pathname}>
     <span
       className="Label Label--outline Label--outline-gray"
     >

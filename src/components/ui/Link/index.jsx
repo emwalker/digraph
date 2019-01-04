@@ -64,6 +64,8 @@ class Link extends Component<Props, State> {
         formIsOpen={this.state.formIsOpen}
         loading={this.props.link.loading}
         newlyAdded={this.props.link.newlyAdded}
+        orgLogin={this.props.orgLogin}
+        repoName={this.currentRepo.name}
         title={this.props.link.title}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}
@@ -84,6 +86,7 @@ class Link extends Component<Props, State> {
 export default createFragmentContainer(Link, graphql`
   fragment Link_view on View {
     currentRepository {
+      name
       id
     }
   }

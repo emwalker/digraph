@@ -18,36 +18,56 @@ type ItemType = {
 
 type ItemListProps = {
   items: ItemType[],
+  orgLogin: string,
+  repoName: string,
 }
 
-const ItemList = ({ items }: ItemListProps) => (
-  <ul>
-    {items.map(({ resourcePath, display }) => (
-      <li
-        className="Box-row"
-        key={resourcePath}
-      >
-        <Link to={resourcePath} className="Box-row-link">
-          { display }
-        </Link>
-      </li>
-    ))}
-  </ul>
-)
+const renderItem = (orgLogin, repoName) => ({ resourcePath, display }: ItemType) => {
+  const to = {
+    pathname: resourcePath,
+    state: {
+      itemTitle: display,
+      orgLogin,
+      repoName,
+    },
+  }
+
+  return (
+    <li
+      className="Box-row"
+      key={resourcePath}
+    >
+      <Link to={to} className="Box-row-link">
+        { display }
+      </Link>
+    </li>
+  )
+}
+
+const ItemList = ({ items, orgLogin, repoName }: ItemListProps) => {
+  const render = renderItem(orgLogin, repoName)
+  return (
+    <ul>
+      { items.map(render) }
+    </ul>
+  )
+}
 
 type Props = {
   items: ItemType[],
+  orgLogin: string,
+  repoName: string,
   title: string,
 }
 
-export default ({ items, title }: Props) => (
+export default ({ items, orgLogin, repoName, title }: Props) => (
   <div className="Box Box--condensed">
     <div className="Box-header">
       <span className="Box-title">{title}</span>
     </div>
     { isEmpty(items)
       ? <Blankslate />
-      : <ItemList items={items} />
+      : <ItemList items={items} orgLogin={orgLogin} repoName={repoName} />
     }
   </div>
 )

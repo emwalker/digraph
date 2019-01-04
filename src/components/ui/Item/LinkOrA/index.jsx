@@ -3,10 +3,12 @@ import React from 'react'
 import { Link } from 'found'
 import isExternal from 'is-url-external'
 
+import type { LocationDescriptor } from 'components/types'
+
 type Props = {
   children: Iterable<React$Node> | string,
   className: string,
-  to: string,
+  to: LocationDescriptor,
 }
 
 const LinkOrA = ({ children, className, to }: Props) => {

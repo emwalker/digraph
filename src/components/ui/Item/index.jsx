@@ -16,6 +16,8 @@ type Props = {
   formIsOpen: boolean,
   newlyAdded: boolean,
   loading: ?boolean,
+  orgLogin: string,
+  repoName: string,
   title: string,
   toggleForm: Function,
   topics: TopicType[],
@@ -77,12 +79,34 @@ class Item extends Component<Props> {
       )
     }
 
+    const to = this.locationDescriptor(this.props.url, this.props.title)
+
     return (
-      <LinkOrA to={this.props.url} className="Box-row-link">
+      <LinkOrA to={to} className="Box-row-link">
         { this.props.title }
       </LinkOrA>
     )
   }
+
+  locationDescriptor = (pathname: string, itemTitle: string) => (
+    {
+      pathname,
+      state: {
+        orgLogin: this.props.orgLogin,
+        repoName: this.props.repoName,
+        itemTitle,
+      },
+    }
+  )
+
+  // eslint-disable-next-line react/no-unused-prop-types
+  renderTopicBadge = ({ name, resourcePath }: {name: string, resourcePath: string}) => (
+    <TopicBadge
+      key={resourcePath}
+      name={name}
+      to={this.locationDescriptor(resourcePath, name)}
+    />
+  )
 
   render() {
     const { url } = this.props
@@ -101,13 +125,7 @@ class Item extends Component<Props> {
             </div>
             {this.url}
             <div>
-              { this.props.topics.map(({ name, resourcePath }) => (
-                <TopicBadge
-                  key={resourcePath}
-                  name={name}
-                  resourcePath={resourcePath}
-                />
-              )) }
+              { this.props.topics.map(this.renderTopicBadge) }
             </div>
           </div>
           <div className="one-fifth text-center">

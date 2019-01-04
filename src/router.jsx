@@ -9,6 +9,7 @@ import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
 import Homepage, { query as homepageQuery } from './components/Homepage'
 import TopicPage, { query as topicPageQuery } from './components/TopicPage'
+import LoadingPage from './components/LoadingPage'
 import TopicSearchPage, { query as topicSearchPageQuery } from './components/TopicSearchPage'
 import Layout from './components/Layout'
 import withErrorBoundary from './components/withErrorBoundary'
@@ -23,17 +24,17 @@ export function createResolver(fetcher) {
   return new Resolver(environment)
 }
 
-const renderTopicPage = ({ props, error }: any) => {
+const renderTopicPage = ({ props, error, match: { location } }: any) => {
   if (error)
     return <div>There was a problem.</div>
 
   if (!props)
-    return null
+    return <LoadingPage location={location} />
 
   if (!props.view)
     return <div>You must log in and select an organization first.</div>
 
-  const { location, params, view } = props
+  const { params, view } = props
 
   if (location.query.q) {
     return (
