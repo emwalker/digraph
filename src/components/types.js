@@ -30,7 +30,7 @@ export type LocationDescriptor = {
   pathname: string,
   state: {
     orgLogin: string,
-    repoName: string,
+    repoName: ?string,
     itemTitle: string,
   },
 }

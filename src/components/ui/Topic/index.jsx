@@ -63,7 +63,7 @@ class Topic extends Component<Props, State> {
         loading={this.props.topic.loading}
         newlyAdded={this.props.topic.newlyAdded}
         orgLogin={this.props.orgLogin}
-        repoName={topic.repository.name}
+        repoName={topic.repository && topic.repository.name}
         title={topic.name}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}

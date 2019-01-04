@@ -17,7 +17,7 @@ type Props = {
   newlyAdded: boolean,
   loading: ?boolean,
   orgLogin: string,
-  repoName: string,
+  repoName: ?string,
   title: string,
   toggleForm: Function,
   topics: TopicType[],
