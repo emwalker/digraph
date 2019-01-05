@@ -79,7 +79,7 @@ func (r *MutationResolver) SelectRepository(
 				return nil, err
 			}
 		}
-		return &models.SelectRepositoryPayload{nil, *user}, nil
+		return &models.SelectRepositoryPayload{nil, user}, nil
 	}
 
 	repo = &models.Repository{ID: *repoID}
@@ -98,7 +98,7 @@ func (r *MutationResolver) SelectRepository(
 		return nil, err
 	}
 
-	return &models.SelectRepositoryPayload{repo, *user}, nil
+	return &models.SelectRepositoryPayload{repo, user}, nil
 }
 
 // UpsertTopic creates a new topic.

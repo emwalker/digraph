@@ -4,6 +4,7 @@ import { Link } from 'found'
 import Octicon from 'react-component-octicons'
 import { pathOr } from 'ramda'
 
+import type { UserType } from 'components/types'
 import ViewerDropdown from './ViewerDropdown'
 import GithubLogin from './GithubLogin'
 
@@ -17,7 +18,7 @@ type Props = {
       },
     },
   },
-  viewer: ?Object,
+  viewer: UserType,
 }
 
 const Header = ({ defaultOrganization, viewer }: Props) => (
@@ -39,9 +40,9 @@ const Header = ({ defaultOrganization, viewer }: Props) => (
       <div className="d-lg-flex float-right mt-1">
         <ul className="user-nav d-lg-flex list-style-none">
           <li className="dropdown">
-            {viewer
-              ? <ViewerDropdown viewer={viewer} />
-              : <GithubLogin />
+            {viewer.isGuest
+              ? <GithubLogin />
+              : <ViewerDropdown viewer={viewer} />
             }
           </li>
         </ul>

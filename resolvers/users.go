@@ -25,10 +25,15 @@ func (r *userResolver) CreatedAt(_ context.Context, user *models.User) (string, 
 	return user.CreatedAt.Format(time.RFC3339), nil
 }
 
-func (r *userResolver) DefaultRepository(
-	ctx context.Context, user *models.User,
-) (*models.Repository, error) {
+func (r *userResolver) DefaultRepository(ctx context.Context, user *models.User) (*models.Repository, error) {
+	if user.IsGuest() {
+		return nil, nil
+	}
 	return user.DefaultRepo(ctx, r.DB)
+}
+
+func (r *userResolver) IsGuest(ctx context.Context, user *models.User) (bool, error) {
+	return user.IsGuest(), nil
 }
 
 // Email returns the email of a user.
@@ -40,6 +45,10 @@ func (r *userResolver) PrimaryEmail(_ context.Context, user *models.User) (strin
 func (r *userResolver) Repositories(
 	ctx context.Context, user *models.User, first *int, after *string, last *int, before *string,
 ) (models.RepositoryConnection, error) {
+	if user.IsGuest() {
+		return models.RepositoryConnection{}, nil
+	}
+
 	var edges []*models.RepositoryEdge
 	var err error
 	var repos []*models.Repository

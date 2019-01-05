@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import type { LinkType, Relay, ViewType } from 'components/types'
+import type { LinkType, Relay, UserType, ViewType } from 'components/types'
 import { liftNodes } from 'utils'
 import EditLink from './EditLink'
 import Item from '../Item'
@@ -14,6 +14,7 @@ type Props = {
   orgLogin: string,
   relay: Relay,
   view: ViewType,
+  viewer: UserType,
 }
 
 type State = {
@@ -52,35 +53,37 @@ class Link extends Component<Props, State> {
       : this.repo.displayColor
   }
 
+  get showEditButton(): boolean {
+    return !this.props.link.loading && !this.props.viewer.isGuest
+  }
+
   toggleForm = () => {
     this.setState(({ formIsOpen }) => ({ formIsOpen: !formIsOpen }))
   }
 
-  render() {
-    return (
-      <Item
-        className="Box-row--link"
-        displayColor={this.displayColor}
-        formIsOpen={this.state.formIsOpen}
-        loading={this.props.link.loading}
-        newlyAdded={this.props.link.newlyAdded}
+  render = () => (
+    <Item
+      className="Box-row--link"
+      displayColor={this.displayColor}
+      formIsOpen={this.state.formIsOpen}
+      newlyAdded={this.props.link.newlyAdded}
+      orgLogin={this.props.orgLogin}
+      repoName={this.currentRepo.name}
+      showEditButton={this.showEditButton}
+      title={this.props.link.title}
+      toggleForm={this.toggleForm}
+      topics={this.parentTopics}
+      url={this.props.link.url}
+    >
+      <EditLink
+        isOpen={this.state.formIsOpen}
+        link={this.props.link}
         orgLogin={this.props.orgLogin}
-        repoName={this.currentRepo.name}
-        title={this.props.link.title}
+        relay={this.props.relay}
         toggleForm={this.toggleForm}
-        topics={this.parentTopics}
-        url={this.props.link.url}
-      >
-        <EditLink
-          isOpen={this.state.formIsOpen}
-          link={this.props.link}
-          orgLogin={this.props.orgLogin}
-          relay={this.props.relay}
-          toggleForm={this.toggleForm}
-        />
-      </Item>
-    )
-  }
+      />
+    </Item>
+  )
 }
 
 export default createFragmentContainer(Link, graphql`
@@ -89,6 +92,10 @@ export default createFragmentContainer(Link, graphql`
       name
       id
     }
+  }
+
+  fragment Link_viewer on User {
+    isGuest
   }
 
   fragment Link_link on Link {

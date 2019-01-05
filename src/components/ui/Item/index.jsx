@@ -15,7 +15,7 @@ type Props = {
   displayColor: ?string,
   formIsOpen: boolean,
   newlyAdded: boolean,
-  loading: ?boolean,
+  showEditButton: ?boolean,
   orgLogin: string,
   repoName: ?string,
   title: string,
@@ -28,7 +28,7 @@ class Item extends Component<Props> {
   static defaultProps = {
     description: null,
     displayColor: '#fff',
-    loading: false,
+    showEditButton: false,
   }
 
   get className(): string {
@@ -41,7 +41,7 @@ class Item extends Component<Props> {
   }
 
   get showEditButton(): boolean {
-    return !this.props.formIsOpen && !this.props.loading
+    return !this.props.formIsOpen && this.props.showEditButton === true
   }
 
   get style(): Object {

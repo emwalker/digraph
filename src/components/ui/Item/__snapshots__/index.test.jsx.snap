@@ -29,14 +29,7 @@ exports[`<Item /> renders 1`] = `
     </div>
     <div
       className="one-fifth text-center"
-    >
-      <button
-        className="btn-link"
-        onClick={[MockFunction]}
-      >
-        Edit
-      </button>
-    </div>
+    />
   </div>
   <div />
 </li>

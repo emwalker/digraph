@@ -84,3 +84,17 @@ func TestFakeError(t *testing.T) {
 		t.Fatal("Did not expect a return value")
 	}
 }
+
+func TestGuestViewer(t *testing.T) {
+	ctx := context.Background()
+	resolver := resolvers.New(testDB, testActor).Query()
+
+	viewer, err := resolver.Viewer(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !viewer.IsGuest() {
+		t.Fatal("Expected the guest user")
+	}
+}

@@ -49,6 +49,7 @@ class TopicPage extends Component<Props, State> {
       orgLogin={this.props.orgLogin}
       relay={this.props.relay}
       view={this.props.view}
+      viewer={this.props.viewer}
     />
   )
 
@@ -59,6 +60,15 @@ class TopicPage extends Component<Props, State> {
       relay={this.props.relay}
       topic={topic}
       view={this.props.view}
+      viewer={this.props.viewer}
+    />
+  )
+
+  renderAddForm = () => (
+    <AddForm
+      relay={this.props.relay}
+      topic={this.props.topic}
+      viewer={this.props.viewer}
     />
   )
 
@@ -102,11 +112,7 @@ class TopicPage extends Component<Props, State> {
             repoName={currentRepository.displayName}
             items={liftNodes(parentTopics)}
           />
-          <AddForm
-            relay={this.props.relay}
-            topic={topic}
-            viewer={this.props.viewer}
-          />
+          { !this.props.viewer.isGuest && this.renderAddForm() }
         </div>
       </div>
     )
@@ -129,7 +135,10 @@ query TopicPage_query_Query(
 
   viewer {
     id
+    isGuest
     ...AddForm_viewer
+    ...Link_viewer
+    ...Topic_viewer
   }
 
   view(

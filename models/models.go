@@ -77,3 +77,8 @@ func (r *Repository) IsPrivate() bool {
 func (r *Repository) DisplayColor() string {
 	return "#dbedff"
 }
+
+// IsGuest returns true if the user is not backed by a row in the database.
+func (u User) IsGuest() bool {
+	return u.ID == ""
+}

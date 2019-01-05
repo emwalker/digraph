@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import type { Relay, TopicType, ViewType } from '../../types'
+import type { Relay, TopicType, UserType, ViewType } from '../../types'
 import { liftNodes } from '../../../utils'
 import Item from '../Item'
 import EditTopic from './EditTopic'
@@ -12,6 +12,7 @@ type Props = {
   relay: Relay,
   topic: TopicType,
   view: ViewType,
+  viewer: UserType,
 }
 
 type State = {
@@ -47,11 +48,15 @@ class Topic extends Component<Props, State> {
     return liftNodes(this.props.topic.parentTopics)
   }
 
+  get showEditButton(): boolean {
+    return !this.props.topic.loading && !this.props.viewer.isGuest
+  }
+
   toggleForm = () => {
     this.setState(({ formIsOpen }) => ({ formIsOpen: !formIsOpen }))
   }
 
-  render() {
+  render = () => {
     const { topic } = this.props
 
     return (
@@ -60,10 +65,10 @@ class Topic extends Component<Props, State> {
         description={this.props.topic.description}
         displayColor={this.displayColor}
         formIsOpen={this.state.formIsOpen}
-        loading={this.props.topic.loading}
         newlyAdded={this.props.topic.newlyAdded}
         orgLogin={this.props.orgLogin}
         repoName={topic.repository && topic.repository.name}
+        showEditButton={this.showEditButton}
         title={topic.name}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}
@@ -87,6 +92,10 @@ export default createFragmentContainer(Topic, graphql`
     currentRepository {
       id
     }
+  }
+
+  fragment Topic_viewer on User {
+    isGuest
   }
 
   fragment Topic_topic on Topic {

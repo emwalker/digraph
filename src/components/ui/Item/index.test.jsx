@@ -7,7 +7,7 @@ const props = {
   children: 'child',
   className: '',
   formIsOpen: false,
-  newlyAdded: false,
+  showEditButton: false,
   loading: false,
   title: 'title',
   toggleForm: jest.fn(),
@@ -22,26 +22,26 @@ describe('<Item />', () => {
     expect(wrapper).toMatchSnapshot()
   })
 
-  describe('loading', () => {
-    const editLink = () => wrapper.find('button.btn-link')
+  describe('showEditButton', () => {
+    const editButton = () => wrapper.find('button.btn-link')
 
-    describe('when loading: true', () => {
+    describe('when showEditButton: true', () => {
       beforeEach(() => {
-        wrapper.setProps({ loading: true })
+        wrapper.setProps({ showEditButton: true })
       })
 
       it('hides the edit link', () => {
-        expect(editLink().exists()).toBeFalsy()
+        expect(editButton().exists()).toBeTruthy()
       })
     })
 
-    describe('when loading: false', () => {
+    describe('when showEditButton: false', () => {
       beforeEach(() => {
-        wrapper.setProps({ loading: false })
+        wrapper.setProps({ showEditButton: false })
       })
 
       it('hides the edit link', () => {
-        expect(editLink().exists()).toBeTruthy()
+        expect(editButton().exists()).toBeFalsy()
       })
     })
   })

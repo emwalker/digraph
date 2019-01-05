@@ -1,6 +1,7 @@
 // @flow
 import React from 'react'
 import type { Node } from 'react'
+import { graphql } from 'react-relay'
 
 import type { AlertType } from 'components/types'
 import Header from './Header'
@@ -12,6 +13,29 @@ type Props = {
   defaultOrganization: Object,
   viewer: Object,
 }
+
+export const query = graphql`
+query LayoutQuery {
+  alerts {
+    id
+    text
+    type
+  }
+
+  defaultOrganization {
+    defaultRepository {
+      rootTopic {
+        resourcePath
+      }
+    }
+  }
+
+  viewer {
+    avatarUrl
+    name
+    isGuest
+  }
+}`
 
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 

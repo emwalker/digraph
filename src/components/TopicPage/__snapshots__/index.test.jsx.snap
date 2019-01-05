@@ -44,6 +44,11 @@ exports[`<TopicPage /> renders 1`] = `
           "name": "Frotz",
         }
       }
+      viewer={
+        Object {
+          "isGuest": false,
+        }
+      }
     />
   </div>
 </div>

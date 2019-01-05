@@ -95,6 +95,7 @@ export type TopicType = {
 
 export type UserType = {
   avatarUrl: string,
+  isGuest: boolean,
   name: string,
   repositories: RepositoryConnection,
   selectedRepository: ?RepositoryType,

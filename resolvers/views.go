@@ -39,6 +39,11 @@ func pageSizeOrDefault(first *int) int {
 func addRepos(mods []qm.QueryMod, view *models.View) []qm.QueryMod {
 	if view.RepositoriesSelected() {
 		mods = append(mods, qm.WhereIn("r.id in ?", view.RepositoryIdsForQuery()...))
+	} else if view.ViewerID == "" {
+		mods = append(mods,
+			qm.InnerJoin("organizations o on o.id = r.organization_id"),
+			qm.Where("r.system and o.public"),
+		)
 	} else {
 		mods = append(mods, qm.Where("r.system and r.owner_id = ?", view.ViewerID))
 	}

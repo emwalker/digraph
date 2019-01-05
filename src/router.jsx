@@ -4,14 +4,13 @@ import makeRouteConfig from 'found/lib/makeRouteConfig'
 import Route from 'found/lib/Route'
 import { Resolver } from 'found-relay'
 import React from 'react'
-import { graphql } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
 import Homepage, { query as homepageQuery } from './components/Homepage'
-import TopicPage, { query as topicPageQuery } from './components/TopicPage'
-import LoadingPage from './components/LoadingPage'
-import TopicSearchPage, { query as topicSearchPageQuery } from './components/TopicSearchPage'
-import Layout from './components/Layout'
+import { query as topicPageQuery } from './components/TopicPage'
+import renderTopicPage from './components/renderTopicPage'
+import { query as topicSearchPageQuery } from './components/TopicSearchPage'
+import Layout, { query as layoutQuery } from './components/Layout'
 import withErrorBoundary from './components/withErrorBoundary'
 
 export const historyMiddlewares = [queryMiddleware]
@@ -24,69 +23,12 @@ export function createResolver(fetcher) {
   return new Resolver(environment)
 }
 
-const renderTopicPage = ({ props, error, match: { location } }: any) => {
-  if (error)
-    return <div>There was a problem.</div>
-
-  if (!props)
-    return <LoadingPage location={location} />
-
-  if (!props.view)
-    return <div>You must log in and select an organization first.</div>
-
-  const { params, view } = props
-
-  if (location.query.q) {
-    return (
-      <TopicSearchPage
-        orgLogin={params.orgLogin}
-        repoName={params.repoName}
-        topic={view.topic}
-        location={location}
-        {...props}
-      />
-    )
-  }
-
-  return (
-    <TopicPage
-      location={location}
-      orgLogin={params.orgLogin}
-      repoName={params.repoName}
-      topic={view.topic}
-      {...props}
-    />
-  )
-}
-
 /* eslint function-paren-newline: 0 */
 export const routeConfig = makeRouteConfig(
   <Route
     Component={Layout}
     path="/"
-    query={
-      graphql`
-      query router_Query {
-        alerts {
-          id
-          text
-          type
-        }
-
-        defaultOrganization {
-          defaultRepository {
-            rootTopic {
-              resourcePath
-            }
-          }
-        }
-
-        viewer {
-          name
-          avatarUrl
-        }
-      }`
-    }
+    query={layoutQuery}
     prepareVariables={(params, { location }) => {
       const { q } = location.query
       return {

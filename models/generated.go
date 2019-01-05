@@ -205,6 +205,7 @@ type ComplexityRoot struct {
 		CreatedAt          func(childComplexity int) int
 		DefaultRepository  func(childComplexity int) int
 		Id                 func(childComplexity int) int
+		IsGuest            func(childComplexity int) int
 		Name               func(childComplexity int) int
 		PrimaryEmail       func(childComplexity int) int
 		Repositories       func(childComplexity int, first *int, after *string, last *int, before *string) int
@@ -253,7 +254,7 @@ type QueryResolver interface {
 	Alerts(ctx context.Context) ([]Alert, error)
 	DefaultOrganization(ctx context.Context) (Organization, error)
 	FakeError(ctx context.Context) (*string, error)
-	Viewer(ctx context.Context) (*User, error)
+	Viewer(ctx context.Context) (User, error)
 	View(ctx context.Context, currentOrganizationLogin string, currentRepositoryName *string, repositoryIds []string, viewerId *string) (View, error)
 }
 type RepositoryResolver interface {
@@ -284,6 +285,8 @@ type UserResolver interface {
 	AvatarURL(ctx context.Context, obj *User) (string, error)
 	CreatedAt(ctx context.Context, obj *User) (string, error)
 	DefaultRepository(ctx context.Context, obj *User) (*Repository, error)
+
+	IsGuest(ctx context.Context, obj *User) (bool, error)
 
 	Repositories(ctx context.Context, obj *User, first *int, after *string, last *int, before *string) (RepositoryConnection, error)
 	SelectedRepository(ctx context.Context, obj *User) (*Repository, error)
@@ -1936,6 +1939,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.Id(childComplexity), true
+
+	case "User.isGuest":
+		if e.complexity.User.IsGuest == nil {
+			break
+		}
+
+		return e.complexity.User.IsGuest(childComplexity), true
 
 	case "User.name":
 		if e.complexity.User.Name == nil {
@@ -3637,6 +3647,9 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Query_viewer(ctx, field)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "view":
@@ -3792,17 +3805,16 @@ func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.Col
 		return ec.resolvers.Query().Viewer(rctx)
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*User)
+	res := resTmp.(User)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	if res == nil {
-		return graphql.Null
-	}
-
-	return ec._User(ctx, field.Selections, res)
+	return ec._User(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -6060,6 +6072,15 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}(i, field)
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
+		case "isGuest":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_isGuest(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "name":
 			out.Values[i] = ec._User_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6210,6 +6231,33 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalID(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_isGuest(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().IsGuest(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
 }
 
 // nolint: vetshadow
@@ -8548,12 +8596,10 @@ type PageInfo {
 
 type Query {
   # Workaround for Relay Modern weirdness
-  # - https://github.com/facebook/relay/issues/1913
-  # - https://github.com/facebook/relay/issues/1913#issuecomment-358636018
   alerts: [Alert!]
   defaultOrganization: Organization!
   fakeError: String
-  viewer: User
+  viewer: User!
   view(
     currentOrganizationLogin: String!,
     currentRepositoryName: String,
@@ -8669,6 +8715,7 @@ type User {
   createdAt: DateTime!
   defaultRepository: Repository
   id: ID
+  isGuest: Boolean!
   name: String!
   primaryEmail: String!
   repositories(

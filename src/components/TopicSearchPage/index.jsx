@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
-import type { Relay, TopicType, ViewType } from 'components/types'
+import type { Relay, TopicType, UserType, ViewType } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
 import List from 'components/ui/List'
@@ -21,6 +21,7 @@ type Props = {
   router: Object,
   topic: TopicType,
   view: ViewType,
+  viewer: UserType,
 }
 
 class TopicSearchPage extends Component<Props> {
@@ -33,6 +34,7 @@ class TopicSearchPage extends Component<Props> {
           orgLogin={this.props.orgLogin}
           relay={this.props.relay}
           view={this.props.view}
+          viewer={this.props.viewer}
         />
       )
     }
@@ -44,6 +46,7 @@ class TopicSearchPage extends Component<Props> {
         relay={this.props.relay}
         topic={item}
         view={this.props.view}
+        viewer={this.props.viewer}
       />
     )
   }
@@ -102,6 +105,11 @@ query TopicSearchPage_query_Query(
   $topicId: ID!,
   $searchString: String!,
 ) {
+  viewer {
+    ...Link_viewer
+    ...Topic_viewer
+  }
+
   view(
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,

@@ -90,7 +90,7 @@ type Query {
   alerts: [Alert!]
   defaultOrganization: Organization!
   fakeError: String
-  viewer: User
+  viewer: User!
   view(
     currentOrganizationLogin: String!,
     currentRepositoryName: String,
@@ -206,6 +206,7 @@ type User {
   createdAt: DateTime!
   defaultRepository: Repository
   id: ID
+  isGuest: Boolean!
   name: String!
   primaryEmail: String!
   repositories(

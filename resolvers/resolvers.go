@@ -12,6 +12,12 @@ import (
 // CurrentUserKey is the key used for storing the current user in the session.
 const CurrentUserKey = "currentUserKey"
 
+var guestUser models.User
+
+func init() {
+	guestUser = models.User{}
+}
+
 // Resolver is the abstract base class for resolvers.
 type Resolver struct {
 	DB    *sql.DB
@@ -63,12 +69,12 @@ func (r *Resolver) View() models.ViewResolver {
 	return &viewResolver{r}
 }
 
-func getCurrentUser(ctx context.Context) *models.User {
+func getCurrentUser(ctx context.Context) models.User {
 	value := ctx.Value(CurrentUserKey)
 	if user, ok := value.(*models.User); ok {
-		return user
+		return *user
 	}
-	return nil
+	return guestUser
 }
 
 func limitFrom(first *int) int {
