@@ -1,0 +1,55 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  ports:
+  - name: frontend
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: digraph
+    tier: frontend
+  type: NodePort
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: digraph
+    tier: frontend
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: digraph
+      tier: frontend
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: digraph
+        tier: frontend
+    spec:
+      containers:
+      - name: frontend
+        command:
+        - ./frontend
+        envFrom:
+        - secretRef:
+            name: digraph-secrets
+        image: emwalker/digraph:v3
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      restartPolicy: Always

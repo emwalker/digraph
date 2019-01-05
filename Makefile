@@ -76,8 +76,23 @@ fixtures: dump
 clean:
 	rm -f public/webpack/*.js* public/webpack/*.css*
 
-build: clean
+build-client: clean
 	yarn build
+
+build-frontend:
+	GOOS=linux GARCH=amd64 CGO_ENABLED=0 go install -v -a
+	mkdir -p tmp/stage
+	cp $(shell go env GOPATH)/bin/linux_amd64/digraph tmp/stage/
+	docker build . -t digraph:latest -f k8s/docker/Dockerfile
+	docker tag digraph:latest emwalker/digraph:$(shell cat k8s/release)
+
+build: build-client build-frontend
+
+up:
+	docker run -p 5432:5432 -p 8080:8080 --env-file tmp/env.list --rm -it digraph
+
+push:
+	docker push emwalker/digraph:$(shell cat k8s/release)
 
 deploy: build
 	gcloud app deploy
