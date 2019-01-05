@@ -23,3 +23,17 @@ $ export PGPASSWORD=$(kubectl get secret --namespace default postgres-postgresql
 $ psql --host 127.0.0.1 -U postgres -p 5433
 $ psql --host 127.0.0.1 -U postgres -p 5433 -d digraph_dev < data.dump
 ```
+
+Setting up ingress:
+```
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/mandatory.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/provider/cloud-generic.yaml
+$ kubectl get svc --namespace=ingress-nginx
+```
+
+More information [here](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nginx-ingress-with-cert-manager-on-digitalocean-kubernetes).
+
+Setting up SSL termination:
+```
+$ helm install --name cert-manager --namespace kube-system stable/cert-manager
+```
