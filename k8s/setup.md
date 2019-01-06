@@ -19,6 +19,7 @@ $ helm install --name postgres stable/postgresql
 Loading data into postgres:
 ```
 $ export PGPASSWORD=$(kubectl get secret --namespace default postgres-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
+$ kubectl port-forward --namespace default svc/postgres-postgresql 5433:5432
 # Create a database called "digraph_dev" from the sql prompt
 $ psql --host 127.0.0.1 -U postgres -p 5433
 $ psql --host 127.0.0.1 -U postgres -p 5433 -d digraph_dev < data.dump

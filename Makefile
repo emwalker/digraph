@@ -95,7 +95,7 @@ push:
 	docker push emwalker/digraph:$(shell cat k8s/release)
 
 deploy: build
-	gcloud app deploy
+	kubectl apply -f k8s/cluster
 
 proxy:
-	cloud_sql_proxy -instances=digraph-223518:us-central1:postgres=tcp:5433
+	kubectl port-forward --namespace default svc/postgres-postgresql 5433:5432
