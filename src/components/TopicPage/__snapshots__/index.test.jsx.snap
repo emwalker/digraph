@@ -23,33 +23,37 @@ exports[`<TopicPage /> renders 1`] = `
     }
   />
   <div
-    className="two-thirds column pl-0"
+    className="anim-fade-in"
   >
-    <Component
-      hasItems={false}
-      placeholder="There are no items in this list."
-    />
-  </div>
-  <div
-    className="one-third column pr-0"
-  >
-    <Component
-      items={Array []}
-      repoName="Private collection"
-      title="Parent topics"
-    />
-    <AddForm
-      topic={
-        Object {
-          "name": "Frotz",
+    <div
+      className="two-thirds column pl-0"
+    >
+      <Component
+        hasItems={false}
+        placeholder="There are no items in this list."
+      />
+    </div>
+    <div
+      className="one-third column pr-0"
+    >
+      <Component
+        items={Array []}
+        repoName="Private collection"
+        title="Parent topics"
+      />
+      <AddForm
+        topic={
+          Object {
+            "name": "Frotz",
+          }
         }
-      }
-      viewer={
-        Object {
-          "isGuest": false,
+        viewer={
+          Object {
+            "isGuest": false,
+          }
         }
-      }
-    />
+      />
+    </div>
   </div>
 </div>
 `;

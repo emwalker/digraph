@@ -96,23 +96,25 @@ class TopicPage extends Component<Props, State> {
           router={this.props.router}
           view={this.props.view}
         />
-        <div className="two-thirds column pl-0">
-          <List
-            placeholder="There are no items in this list."
-            hasItems={!isEmpty(topics) || !isEmpty(links)}
-          >
-            { topics.map(this.renderTopic) }
-            { links.map(this.renderLink) }
-          </List>
-        </div>
-        <div className="one-third column pr-0">
-          <SidebarList
-            title="Parent topics"
-            orgLogin={this.props.orgLogin}
-            repoName={currentRepository.displayName}
-            items={liftNodes(parentTopics)}
-          />
-          { !this.props.viewer.isGuest && this.renderAddForm() }
+        <div className="anim-fade-in">
+          <div className="two-thirds column pl-0">
+            <List
+              placeholder="There are no items in this list."
+              hasItems={!isEmpty(topics) || !isEmpty(links)}
+            >
+              { topics.map(this.renderTopic) }
+              { links.map(this.renderLink) }
+            </List>
+          </div>
+          <div className="one-third column pr-0">
+            <SidebarList
+              title="Parent topics"
+              orgLogin={this.props.orgLogin}
+              repoName={currentRepository.displayName}
+              items={liftNodes(parentTopics)}
+            />
+            { !this.props.viewer.isGuest && this.renderAddForm() }
+          </div>
         </div>
       </div>
     )

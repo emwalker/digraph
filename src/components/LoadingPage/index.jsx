@@ -2,6 +2,10 @@
 import React from 'react'
 import Octicon from 'react-component-octicons'
 
+import SearchBox from 'components/ui/SearchBox'
+
+/* eslint jsx-a11y/anchor-is-valid: 0 */
+
 type Props = {
   location: {
     pathname: string,
@@ -20,7 +24,7 @@ const LoadingPage = ({ location }: Props) => {
           <li className="breadcrumb-item">
             <Octicon name="repo" className="mr-1" />
             {' '}
-            { orgLogin }
+            <a href="#">{orgLogin}</a>
           </li>
           <li
             className="breadcrumb-item breadcrumb-item-selected text-gray"
@@ -34,7 +38,9 @@ const LoadingPage = ({ location }: Props) => {
         <div className="Subhead-heading">
           { itemTitle }
         </div>
+        <SearchBox value="" />
       </div>
+      <div className="page-placeholder" />
     </div>
   )
 }

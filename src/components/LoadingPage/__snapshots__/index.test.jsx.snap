@@ -1,0 +1,48 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<LoadingPage /> renders 1`] = `
+<div>
+  <nav
+    aria-label="Breadcrumb"
+    className="mb-1"
+  >
+    <ol>
+      <li
+        className="breadcrumb-item"
+      >
+        <Octicon
+          className="mr-1"
+          name="repo"
+        />
+         
+        <a
+          href="#"
+        >
+          Gnusto
+        </a>
+      </li>
+      <li
+        aria-current="page"
+        className="breadcrumb-item breadcrumb-item-selected text-gray"
+      >
+        General collection
+      </li>
+    </ol>
+  </nav>
+  <div
+    className="Subhead"
+  >
+    <div
+      className="Subhead-heading"
+    >
+      Some title
+    </div>
+    <SearchBox
+      value=""
+    />
+  </div>
+  <div
+    className="page-placeholder"
+  />
+</div>
+`;

@@ -6,6 +6,8 @@ import (
 
 	"github.com/emwalker/digraph/server"
 	"github.com/go-webpack/webpack"
+	// Load the PQ drivers
+	_ "github.com/lib/pq"
 )
 
 const defaultPort = "8080"
