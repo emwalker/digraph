@@ -23,7 +23,7 @@ exports[`<TopicPage /> renders 1`] = `
     }
   />
   <div
-    className="anim-fade-in"
+    className="digraph-anim-fade-in"
   >
     <div
       className="two-thirds column pl-0"

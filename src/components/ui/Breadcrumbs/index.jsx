@@ -7,7 +7,7 @@ import { pathOr } from 'ramda'
 
 import type { RepositoryType } from 'components/types'
 
-const defaultRepoPath = pathOr(null, ['organization', 'defaultRepository', 'rootTopic', 'resourcePath'])
+const orgFrom = pathOr(null, ['organization'])
 
 type Props = {
   orgLogin: string,
@@ -16,12 +16,24 @@ type Props = {
 
 class Breadcrumbs extends Component<Props> {
   get repoLink(): Node {
-    const repoLink = defaultRepoPath(this.props.repository)
-    if (!repoLink)
+    const org = orgFrom(this.props.repository)
+    if (!org)
       return this.props.orgLogin
 
+    const { defaultRepository: repo } = org
+    const { rootTopic: topic } = repo
+
+    const to = {
+      pathname: topic.resourcePath,
+      state: {
+        orgLogin: org.login,
+        repoName: repo.displayName,
+        itemTitle: topic.name,
+      },
+    }
+
     return (
-      <Link to={repoLink}>
+      <Link to={to}>
         {this.props.orgLogin}
       </Link>
     )
@@ -62,8 +74,13 @@ export default createFragmentContainer(Breadcrumbs, graphql`
     isPrivate
 
     organization {
+      login
+
       defaultRepository {
+        displayName
+
         rootTopic {
+          name
           resourcePath
         }
       }

@@ -1,7 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<Layout /> renders 1`] = `
-<div>
+<div
+  className="layout"
+>
   <div
     className="container"
   >
@@ -13,11 +15,9 @@ exports[`<Layout /> renders 1`] = `
       some view
     </div>
   </div>
-  <div
-    className="container"
-  >
-    <footer
-      className="my-6 pt-4 border-top"
+  <footer>
+    <div
+      className="container my-6 pt-2 border-top"
     >
       <p
         className="mb-2"
@@ -31,7 +31,7 @@ exports[`<Layout /> renders 1`] = `
         </a>
         . © Eric Walker.
       </p>
-    </footer>
-  </div>
+    </div>
+  </footer>
 </div>
 `;
