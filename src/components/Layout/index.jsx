@@ -40,7 +40,7 @@ query LayoutQuery {
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 
 const Layout = ({ alerts, children, defaultOrganization, viewer }: Props) => (
-  <div>
+  <div className="layout">
     <div className="container">
       <Header
         viewer={viewer}
@@ -49,15 +49,15 @@ const Layout = ({ alerts, children, defaultOrganization, viewer }: Props) => (
       <FlashMessages initialAlerts={alerts} />
       { children }
     </div>
-    <div className="container">
-      <footer className="my-6 pt-4 border-top">
+    <footer>
+      <div className="container my-6 pt-2 border-top">
         <p className="mb-2">
           Available for use under the MIT{' '}
           <a href="https://github.com/emwalker/digraph/blob/master/LICENSE.md">license</a>.
           © Eric Walker.
         </p>
-      </footer>
-    </div>
+      </div>
+    </footer>
   </div>
 )
 

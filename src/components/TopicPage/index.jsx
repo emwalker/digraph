@@ -96,7 +96,7 @@ class TopicPage extends Component<Props, State> {
           router={this.props.router}
           view={this.props.view}
         />
-        <div className="anim-fade-in">
+        <div className="digraph-anim-fade-in">
           <div className="two-thirds column pl-0">
             <List
               placeholder="There are no items in this list."

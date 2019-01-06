@@ -1,8 +1,34 @@
 @import 'primer/index.scss';
 
+$footer-height: 140px;
+
+html, body {
+  height: 100%;
+  position: relative;
+}
+
+.layout {
+  min-height: 100vh;
+  overflow: hidden;
+  display: block;
+  position: relative;
+  padding-bottom: $footer-height;
+}
+
+footer {
+ position: absolute;
+ bottom: 0;
+ width: 100%;
+}
+
 select {
   -moz-appearance: window;
   -webkit-appearance: none;
+}
+
+.digraph-anim-fade-in {
+  @extend .anim-fade-in;
+  animation-duration: 0.15s;
 }
 
 .link-url {

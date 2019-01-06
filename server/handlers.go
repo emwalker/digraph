@@ -16,8 +16,6 @@ import (
 	"github.com/emwalker/digraph/resolvers"
 	"github.com/go-webpack/webpack"
 	"github.com/gorilla/handlers"
-	// Load the PQ drivers
-	_ "github.com/lib/pq"
 	"github.com/markbates/goth/gothic"
 	"github.com/rs/cors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
