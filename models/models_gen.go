@@ -18,6 +18,26 @@ type Alertable interface {
 	IsAlertable()
 }
 
+type DeleteLinkInput struct {
+	ClientMutationID *string `json:"clientMutationId"`
+	LinkID           string  `json:"linkId"`
+}
+
+type DeleteLinkPayload struct {
+	ClientMutationID *string `json:"clientMutationId"`
+	DeletedLinkID    string  `json:"deletedLinkId"`
+}
+
+type DeleteTopicInput struct {
+	ClientMutationID *string `json:"clientMutationId"`
+	TopicID          string  `json:"topicId"`
+}
+
+type DeleteTopicPayload struct {
+	ClientMutationID *string `json:"clientMutationId"`
+	DeletedTopicID   string  `json:"deletedTopicId"`
+}
+
 type LinkConnection struct {
 	Edges    []*LinkEdge `json:"edges"`
 	PageInfo PageInfo    `json:"pageInfo"`

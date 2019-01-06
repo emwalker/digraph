@@ -133,6 +133,7 @@ func (c Connection) UpsertLink(
 
 	url, err := NormalizeURL(providedURL)
 	if err != nil {
+		log.Printf("Unable to normalize url: %s", err)
 		return nil, err
 	}
 
@@ -157,6 +158,7 @@ func (c Connection) UpsertLink(
 
 	existing, err := repo.Links(qm.Where("sha1 like ?", url.Sha1)).Count(ctx, c.Exec)
 	if err != nil {
+		log.Printf("Failed to query for existing link with sha1 %s: %s", url.Sha1, err)
 		return nil, err
 	}
 
@@ -170,18 +172,21 @@ func (c Connection) UpsertLink(
 	)
 
 	if err != nil {
+		log.Printf("Failed to upsert link: %#v", link)
 		return nil, err
 	}
 
 	if len(parentTopicIds) < 1 {
 		var rootTopic *models.Topic
 		if rootTopic, err = repo.Topics(qm.Where("root")).One(ctx, c.Exec); err != nil {
+			log.Printf("Could not find root topic for repo %s", repo.Name)
 			return nil, err
 		}
 		parentTopicIds = append(parentTopicIds, rootTopic.ID)
 	}
 
 	if err = c.addParentTopicsToLink(ctx, link, parentTopicIds); err != nil {
+		log.Printf("Failed to add parent topics to link %#v", link)
 		return nil, err
 	}
 

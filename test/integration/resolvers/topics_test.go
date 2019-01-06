@@ -536,3 +536,29 @@ func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 		t.Fatal("Expected at least one topic edge")
 	}
 }
+
+func TestDeleteTopic(t *testing.T) {
+	m := newMutator(t, testActor)
+
+	topic, _ := m.createTopic(testActor.Login, m.defaultRepo().Name, "A new topic")
+
+	payload, err := m.resolver.DeleteTopic(m.ctx, models.DeleteTopicInput{
+		TopicID: topic.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if payload == nil {
+		t.Fatal("Expected a payload")
+	}
+
+	count, err := models.Topics(qm.Where("id = ?", topic.ID)).Count(m.ctx, m.db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count > 0 {
+		t.Fatal("Failed to delete topic")
+	}
+}

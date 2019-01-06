@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"os"
 
@@ -17,6 +18,10 @@ import (
 type MutationResolver struct {
 	*Resolver
 }
+
+var (
+	errNoAnonymousMutations = errors.New("anonymous users cannot make updates or deletions")
+)
 
 func init() {
 	log.SetOutput(os.Stdout)
@@ -53,6 +58,64 @@ func findRepo(
 		`, orgLogin, repoName, actor.ID),
 	}
 	return models.Repositories(mods...).One(ctx, exec)
+}
+
+// DeleteLink sets the parent topics on a topic.
+func (r *MutationResolver) DeleteLink(
+	ctx context.Context, input models.DeleteLinkInput,
+) (*models.DeleteLinkPayload, error) {
+	user := getCurrentUser(ctx)
+	if user.IsGuest() {
+		return nil, errNoAnonymousMutations
+	}
+
+	link, err := models.Links(
+		qm.InnerJoin("organization_members om on links.organization_id = om.organization_id"),
+		qm.Where("links.id = ? and om.user_id = ?", input.LinkID, user.ID),
+	).One(ctx, r.DB)
+	if err != nil {
+		log.Printf("There was a problem looking up link: %s", input.LinkID)
+		return nil, err
+	}
+
+	if _, err = link.Delete(ctx, r.DB); err != nil {
+		log.Printf("There was a problem deleting link: %#v", link)
+		return nil, err
+	}
+
+	return &models.DeleteLinkPayload{
+		ClientMutationID: input.ClientMutationID,
+		DeletedLinkID:    input.LinkID,
+	}, nil
+}
+
+// DeleteTopic sets the parent topics on a topic.
+func (r *MutationResolver) DeleteTopic(
+	ctx context.Context, input models.DeleteTopicInput,
+) (*models.DeleteTopicPayload, error) {
+	user := getCurrentUser(ctx)
+	if user.IsGuest() {
+		return nil, errNoAnonymousMutations
+	}
+
+	topic, err := models.Topics(
+		qm.InnerJoin("organization_members om on topics.organization_id = om.organization_id"),
+		qm.Where("topics.id = ? and om.user_id = ?", input.TopicID, user.ID),
+	).One(ctx, r.DB)
+	if err != nil {
+		log.Printf("There was a problem looking up topic: %s", input.TopicID)
+		return nil, err
+	}
+
+	if _, err = topic.Delete(ctx, r.DB); err != nil {
+		log.Printf("There was a problem deleting topic: %#v", topic)
+		return nil, err
+	}
+
+	return &models.DeleteTopicPayload{
+		ClientMutationID: input.ClientMutationID,
+		DeletedTopicID:   input.TopicID,
+	}, nil
 }
 
 // SelectRepository selects the repository for the current user.

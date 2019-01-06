@@ -5,9 +5,11 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import type { TopicType } from 'components/types'
 import Input from 'components/ui/Input'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
+import deleteTopicMutation from 'mutations/deleteTopicMutation'
 import updateTopicMutation from 'mutations/updateTopicMutation'
 import updateTopicTopicsMutation from 'mutations/updateTopicParentTopicsMutation'
 import EditTopicList from 'components/ui/EditTopicList'
+import DeleteButton from 'components/ui/DeleteButton'
 
 type Props = {
   availableTopics: TopicType[],
@@ -46,6 +48,19 @@ class EditTopicForm extends Component<Props, State> {
       },
     )
     this.props.toggleForm()
+  }
+
+  onDelete = () => {
+    deleteTopicMutation(
+      this.props.relay.environment,
+      [{
+        type: 'NODE_DELETE',
+        deletedIDFieldName: 'deletedTopicId',
+      }],
+      {
+        topicId: this.props.topic.id,
+      },
+    )
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -98,10 +113,16 @@ class EditTopicForm extends Component<Props, State> {
             value={this.state.description}
           />
         </div>
-        <SaveOrCancel
-          onSave={this.onSave}
-          onCancel={this.props.toggleForm}
-        />
+        <div>
+          <SaveOrCancel
+            onSave={this.onSave}
+            onCancel={this.props.toggleForm}
+          />
+          <DeleteButton
+            className="float-right"
+            onDelete={this.onDelete}
+          />
+        </div>
         <EditTopicList
           availableTopics={this.props.availableTopics}
           selectedTopics={this.props.selectedTopics}

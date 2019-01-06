@@ -18,6 +18,26 @@ scalar Color
 
 scalar DateTime
 
+input DeleteLinkInput {
+  clientMutationId: String
+  linkId: ID!
+}
+
+type DeleteLinkPayload {
+  clientMutationId: String
+  deletedLinkId: ID!
+}
+
+input DeleteTopicInput {
+  clientMutationId: String
+  topicId: ID!
+}
+
+type DeleteTopicPayload {
+  clientMutationId: String
+  deletedTopicId: ID!
+}
+
 type Link implements ResourceIdentifiable & Namespaceable {
   availableParentTopics(
     first: Int,
@@ -55,6 +75,8 @@ type LinkConnection {
 }
 
 type Mutation {
+  deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
+  deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload

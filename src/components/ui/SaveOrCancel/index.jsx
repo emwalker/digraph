@@ -7,9 +7,9 @@ type Props = {
 }
 
 export default ({ onSave, onCancel }: Props) => (
-  <div>
+  <span>
     <button onClick={onSave} className="btn-primary">Save</button>
     {' '} or {' '}
     <button onClick={onCancel} className="btn-link">close</button>
-  </div>
+  </span>
 )

@@ -78,6 +78,7 @@ func newMutator(t *testing.T, actor *models.User) mutator {
 	}
 
 	ctx := context.Background()
+	ctx = context.WithValue(ctx, resolvers.CurrentUserKey, actor)
 	ctx = loaders.AddToContext(ctx, testDB, 1*time.Millisecond)
 
 	return mutator{

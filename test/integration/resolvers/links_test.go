@@ -184,3 +184,29 @@ func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 		t.Fatal("Expected at least one topic edge")
 	}
 }
+
+func TestDeleteLink(t *testing.T) {
+	m := newMutator(t, testActor)
+
+	link, _ := m.createLink(testActor.Login, m.defaultRepo().Name, "Some link", "http://some.com/link")
+
+	payload, err := m.resolver.DeleteLink(m.ctx, models.DeleteLinkInput{
+		LinkID: link.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if payload == nil {
+		t.Fatal("Expected a payload")
+	}
+
+	count, err := models.Links(qm.Where("id = ?", link.ID)).Count(m.ctx, m.db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count > 0 {
+		t.Fatal("Failed to delete link")
+	}
+}

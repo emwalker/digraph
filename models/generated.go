@@ -52,6 +52,16 @@ type ComplexityRoot struct {
 		Id   func(childComplexity int) int
 	}
 
+	DeleteLinkPayload struct {
+		ClientMutationId func(childComplexity int) int
+		DeletedLinkId    func(childComplexity int) int
+	}
+
+	DeleteTopicPayload struct {
+		ClientMutationId func(childComplexity int) int
+		DeletedTopicId   func(childComplexity int) int
+	}
+
 	Link struct {
 		AvailableParentTopics func(childComplexity int, first *int, after *string, last *int, before *string) int
 		CreatedAt             func(childComplexity int) int
@@ -79,6 +89,8 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		DeleteLink              func(childComplexity int, input DeleteLinkInput) int
+		DeleteTopic             func(childComplexity int, input DeleteTopicInput) int
 		SelectRepository        func(childComplexity int, input SelectRepositoryInput) int
 		UpdateLinkTopics        func(childComplexity int, input UpdateLinkTopicsInput) int
 		UpdateTopic             func(childComplexity int, input UpdateTopicInput) int
@@ -236,6 +248,8 @@ type LinkResolver interface {
 	UpdatedAt(ctx context.Context, obj *LinkValue) (string, error)
 }
 type MutationResolver interface {
+	DeleteLink(ctx context.Context, input DeleteLinkInput) (*DeleteLinkPayload, error)
+	DeleteTopic(ctx context.Context, input DeleteTopicInput) (*DeleteTopicPayload, error)
 	SelectRepository(ctx context.Context, input SelectRepositoryInput) (*SelectRepositoryPayload, error)
 	UpdateLinkTopics(ctx context.Context, input UpdateLinkTopicsInput) (*UpdateLinkTopicsPayload, error)
 	UpdateTopic(ctx context.Context, input UpdateTopicInput) (*UpdateTopicPayload, error)
@@ -285,8 +299,6 @@ type UserResolver interface {
 	AvatarURL(ctx context.Context, obj *User) (string, error)
 	CreatedAt(ctx context.Context, obj *User) (string, error)
 	DefaultRepository(ctx context.Context, obj *User) (*Repository, error)
-
-	IsGuest(ctx context.Context, obj *User) (bool, error)
 
 	Repositories(ctx context.Context, obj *User, first *int, after *string, last *int, before *string) (RepositoryConnection, error)
 	SelectedRepository(ctx context.Context, obj *User) (*Repository, error)
@@ -420,6 +432,36 @@ func field_Link_parentTopics_args(rawArgs map[string]interface{}) (map[string]in
 		}
 	}
 	args["before"] = arg3
+	return args, nil
+
+}
+
+func field_Mutation_deleteLink_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 DeleteLinkInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalDeleteLinkInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_deleteTopic_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 DeleteTopicInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalDeleteTopicInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 
 }
@@ -1247,6 +1289,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Alert.Id(childComplexity), true
 
+	case "DeleteLinkPayload.clientMutationId":
+		if e.complexity.DeleteLinkPayload.ClientMutationId == nil {
+			break
+		}
+
+		return e.complexity.DeleteLinkPayload.ClientMutationId(childComplexity), true
+
+	case "DeleteLinkPayload.deletedLinkId":
+		if e.complexity.DeleteLinkPayload.DeletedLinkId == nil {
+			break
+		}
+
+		return e.complexity.DeleteLinkPayload.DeletedLinkId(childComplexity), true
+
+	case "DeleteTopicPayload.clientMutationId":
+		if e.complexity.DeleteTopicPayload.ClientMutationId == nil {
+			break
+		}
+
+		return e.complexity.DeleteTopicPayload.ClientMutationId(childComplexity), true
+
+	case "DeleteTopicPayload.deletedTopicId":
+		if e.complexity.DeleteTopicPayload.DeletedTopicId == nil {
+			break
+		}
+
+		return e.complexity.DeleteTopicPayload.DeletedTopicId(childComplexity), true
+
 	case "Link.availableParentTopics":
 		if e.complexity.Link.AvailableParentTopics == nil {
 			break
@@ -1375,6 +1445,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LinkEdge.Node(childComplexity), true
+
+	case "Mutation.deleteLink":
+		if e.complexity.Mutation.DeleteLink == nil {
+			break
+		}
+
+		args, err := field_Mutation_deleteLink_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteLink(childComplexity, args["input"].(DeleteLinkInput)), true
+
+	case "Mutation.deleteTopic":
+		if e.complexity.Mutation.DeleteTopic == nil {
+			break
+		}
+
+		args, err := field_Mutation_deleteTopic_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteTopic(childComplexity, args["input"].(DeleteTopicInput)), true
 
 	case "Mutation.selectRepository":
 		if e.complexity.Mutation.SelectRepository == nil {
@@ -2209,6 +2303,180 @@ func (ec *executionContext) _Alert_id(ctx context.Context, field graphql.Collect
 	return graphql.MarshalString(res)
 }
 
+var deleteLinkPayloadImplementors = []string{"DeleteLinkPayload"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _DeleteLinkPayload(ctx context.Context, sel ast.SelectionSet, obj *DeleteLinkPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, deleteLinkPayloadImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeleteLinkPayload")
+		case "clientMutationId":
+			out.Values[i] = ec._DeleteLinkPayload_clientMutationId(ctx, field, obj)
+		case "deletedLinkId":
+			out.Values[i] = ec._DeleteLinkPayload_deletedLinkId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _DeleteLinkPayload_clientMutationId(ctx context.Context, field graphql.CollectedField, obj *DeleteLinkPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DeleteLinkPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientMutationID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _DeleteLinkPayload_deletedLinkId(ctx context.Context, field graphql.CollectedField, obj *DeleteLinkPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DeleteLinkPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedLinkID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalID(res)
+}
+
+var deleteTopicPayloadImplementors = []string{"DeleteTopicPayload"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _DeleteTopicPayload(ctx context.Context, sel ast.SelectionSet, obj *DeleteTopicPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, deleteTopicPayloadImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeleteTopicPayload")
+		case "clientMutationId":
+			out.Values[i] = ec._DeleteTopicPayload_clientMutationId(ctx, field, obj)
+		case "deletedTopicId":
+			out.Values[i] = ec._DeleteTopicPayload_deletedTopicId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _DeleteTopicPayload_clientMutationId(ctx context.Context, field graphql.CollectedField, obj *DeleteTopicPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DeleteTopicPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientMutationID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _DeleteTopicPayload_deletedTopicId(ctx context.Context, field graphql.CollectedField, obj *DeleteTopicPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DeleteTopicPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedTopicID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalID(res)
+}
+
 var linkImplementors = []string{"Link", "ResourceIdentifiable", "Namespaceable"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -2928,6 +3196,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "deleteLink":
+			out.Values[i] = ec._Mutation_deleteLink(ctx, field)
+		case "deleteTopic":
+			out.Values[i] = ec._Mutation_deleteTopic(ctx, field)
 		case "selectRepository":
 			out.Values[i] = ec._Mutation_selectRepository(ctx, field)
 		case "updateLinkTopics":
@@ -2949,6 +3221,76 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_deleteLink(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_deleteLink_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteLink(rctx, args["input"].(DeleteLinkInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DeleteLinkPayload)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._DeleteLinkPayload(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_deleteTopic(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_deleteTopic_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteTopic(rctx, args["input"].(DeleteTopicInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DeleteTopicPayload)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._DeleteTopicPayload(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -6073,14 +6415,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
 		case "isGuest":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._User_isGuest(ctx, field, obj)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
-				wg.Done()
-			}(i, field)
+			out.Values[i] = ec._User_isGuest(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "name":
 			out.Values[i] = ec._User_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6246,7 +6584,7 @@ func (ec *executionContext) _User_isGuest(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().IsGuest(rctx, obj)
+		return obj.IsGuest(), nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8150,6 +8488,64 @@ func (ec *executionContext) _SearchResultItem(ctx context.Context, sel ast.Selec
 	}
 }
 
+func UnmarshalDeleteLinkInput(v interface{}) (DeleteLinkInput, error) {
+	var it DeleteLinkInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "clientMutationId":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.ClientMutationID = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "linkId":
+			var err error
+			it.LinkID, err = graphql.UnmarshalID(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalDeleteTopicInput(v interface{}) (DeleteTopicInput, error) {
+	var it DeleteTopicInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "clientMutationId":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.ClientMutationID = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "topicId":
+			var err error
+			it.TopicID, err = graphql.UnmarshalID(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalSelectRepositoryInput(v interface{}) (SelectRepositoryInput, error) {
 	var it SelectRepositoryInput
 	var asMap = v.(map[string]interface{})
@@ -8527,6 +8923,26 @@ scalar Color
 
 scalar DateTime
 
+input DeleteLinkInput {
+  clientMutationId: String
+  linkId: ID!
+}
+
+type DeleteLinkPayload {
+  clientMutationId: String
+  deletedLinkId: ID!
+}
+
+input DeleteTopicInput {
+  clientMutationId: String
+  topicId: ID!
+}
+
+type DeleteTopicPayload {
+  clientMutationId: String
+  deletedTopicId: ID!
+}
+
 type Link implements ResourceIdentifiable & Namespaceable {
   availableParentTopics(
     first: Int,
@@ -8564,6 +8980,8 @@ type LinkConnection {
 }
 
 type Mutation {
+  deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
+  deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload

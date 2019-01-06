@@ -4,10 +4,12 @@ import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { LinkType, Relay, TopicType } from 'components/types'
 import Input from 'components/ui/Input'
+import deleteLinkMutation from 'mutations/deleteLinkMutation'
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
 import updateLinkTopicsMutation from 'mutations/updateLinkTopicsMutation'
 import EditTopicList from 'components/ui/EditTopicList'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
+import DeleteButton from 'components/ui/DeleteButton'
 
 type Props = {
   availableTopics: TopicType[],
@@ -48,6 +50,19 @@ class EditLinkForm extends Component<Props, State> {
       },
     )
     this.props.toggleForm()
+  }
+
+  onDelete = () => {
+    deleteLinkMutation(
+      this.props.relay.environment,
+      [{
+        type: 'NODE_DELETE',
+        deletedIDFieldName: 'deletedLinkId',
+      }],
+      {
+        linkId: this.props.link.id,
+      },
+    )
   }
 
   get linkId(): string {
@@ -95,10 +110,16 @@ class EditLinkForm extends Component<Props, State> {
             value={this.state.url}
           />
         </div>
-        <SaveOrCancel
-          onSave={this.onSave}
-          onCancel={this.props.toggleForm}
-        />
+        <div>
+          <SaveOrCancel
+            onSave={this.onSave}
+            onCancel={this.props.toggleForm}
+          />
+          <DeleteButton
+            className="float-right"
+            onDelete={this.onDelete}
+          />
+        </div>
         <EditTopicList
           availableTopics={this.props.availableTopics}
           selectedTopics={this.props.selectedTopics}
