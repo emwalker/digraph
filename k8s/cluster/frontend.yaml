@@ -5,14 +5,18 @@ metadata:
   name: frontend
 spec:
   ports:
-  - name: frontend
+  - name: frontend-http
     port: 80
+    protocol: TCP
+    targetPort: 8080
+  - name: frontend-https
+    port: 443
     protocol: TCP
     targetPort: 8080
   selector:
     app: digraph
     tier: frontend
-  type: NodePort
+  type: LoadBalancer
 
 ---
 apiVersion: extensions/v1beta1
@@ -46,7 +50,7 @@ spec:
         envFrom:
         - secretRef:
             name: digraph-secrets
-        image: emwalker/digraph:v3
+        image: emwalker/digraph:v4
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
