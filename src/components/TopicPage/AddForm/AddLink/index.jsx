@@ -8,6 +8,7 @@ import upsertLinkMutation from 'mutations/upsertLinkMutation'
 /* eslint jsx-a11y/label-has-for: 0 */
 
 type Props = {
+  disabled?: boolean,
   relay: Relay,
   topic: TopicType,
   viewer: UserType,
@@ -19,6 +20,7 @@ type State = {
 
 class AddLink extends Component<Props, State> {
   state = {
+    disabled: true,
     url: '',
   }
 
@@ -79,6 +81,7 @@ class AddLink extends Component<Props, State> {
       <dd>
         <input
           className="form-control test-link-url input-sm"
+          disabled={this.props.disabled}
           id="create-link-url"
           onChange={this.updateUrl}
           onKeyPress={this.onKeyPress}

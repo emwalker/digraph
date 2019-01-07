@@ -7,18 +7,20 @@ import upsertTopicMutation from 'mutations/upsertTopicMutation'
 
 /* eslint jsx-a11y/label-has-for: 0 */
 
-type State = {
-  name: string,
-}
-
 type Props = {
+  disabled?: boolean,
   relay: Relay,
   topic: TopicType,
   viewer: UserType,
 }
 
+type State = {
+  name: string,
+}
+
 class AddTopic extends Component<Props, State> {
   state = {
+    disabled: true,
     name: '',
   }
 
@@ -79,6 +81,7 @@ class AddTopic extends Component<Props, State> {
       <dd>
         <input
           className="form-control test-topic-name input-sm"
+          disabled={this.props.disabled}
           id="create-topic-name"
           onChange={this.updateName}
           onKeyPress={this.onKeyPress}

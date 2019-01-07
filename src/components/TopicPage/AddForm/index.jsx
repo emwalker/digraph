@@ -1,5 +1,5 @@
 // @flow
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import classNames from 'classnames'
 
@@ -29,9 +29,30 @@ class AddForm extends Component<Props> {
   get isPrivateRepo(): boolean {
     const repo = this.props.viewer.selectedRepository
     if (!repo)
-      return true
+      return false
     return repo.isPrivate
   }
+
+  get repoSelected(): boolean {
+    return !!this.props.viewer.selectedRepository
+  }
+
+  renderInputFields = () => (
+    <Fragment>
+      <AddTopic
+        disabled={!this.repoSelected}
+        relay={this.props.relay}
+        topic={this.props.topic}
+        viewer={this.props.viewer}
+      />
+      <AddLink
+        disabled={!this.repoSelected}
+        relay={this.props.relay}
+        topic={this.props.topic}
+        viewer={this.props.viewer}
+      />
+    </Fragment>
+  )
 
   render = () => (
     <form className={this.className}>
@@ -39,16 +60,7 @@ class AddForm extends Component<Props> {
         relay={this.props.relay}
         viewer={this.props.viewer}
       />
-      <AddTopic
-        relay={this.props.relay}
-        topic={this.props.topic}
-        viewer={this.props.viewer}
-      />
-      <AddLink
-        relay={this.props.relay}
-        topic={this.props.topic}
-        viewer={this.props.viewer}
-      />
+      { this.repoSelected && this.renderInputFields() }
     </form>
   )
 }

@@ -1,22 +1,56 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<AddForm /> renders 1`] = `
-<ContainerConstructor
-  componentRef={null}
-  topic={
-    Object {
-      "id": "1234",
-    }
-  }
-  viewer={
-    Object {
-      "selectedRepository": Object {
-        "name": null,
-        "organization": Object {
-          "login": "gnusto",
+<form
+  className="border rounded-1 p-2 mt-3"
+>
+  <SelectRepository
+    viewer={
+      Object {
+        "selectedRepository": Object {
+          "name": null,
+          "organization": Object {
+            "login": "gnusto",
+          },
         },
-      },
+      }
     }
-  }
-/>
+  />
+  <AddTopic
+    disabled={false}
+    topic={
+      Object {
+        "id": "1234",
+      }
+    }
+    viewer={
+      Object {
+        "selectedRepository": Object {
+          "name": null,
+          "organization": Object {
+            "login": "gnusto",
+          },
+        },
+      }
+    }
+  />
+  <AddLink
+    disabled={false}
+    topic={
+      Object {
+        "id": "1234",
+      }
+    }
+    viewer={
+      Object {
+        "selectedRepository": Object {
+          "name": null,
+          "organization": Object {
+            "login": "gnusto",
+          },
+        },
+      }
+    }
+  />
+</form>
 `;
