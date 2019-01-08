@@ -19,8 +19,11 @@ type State = {
 }
 
 class AddLink extends Component<Props, State> {
-  state = {
+  static defaultProps = {
     disabled: true,
+  }
+
+  state = {
     url: '',
   }
 

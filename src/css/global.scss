@@ -26,6 +26,16 @@ select {
   -webkit-appearance: none;
 }
 
+.homepage {
+  width: 630px;
+  margin: auto;
+
+  p {
+    font-size: 16px;
+    margin-top: 16px;
+  }
+}
+
 .digraph-anim-fade-in {
   @extend .anim-fade-in;
   animation-duration: 0.05s;

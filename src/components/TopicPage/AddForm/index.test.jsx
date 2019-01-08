@@ -6,8 +6,7 @@ import AddForm from './index'
 jest.mock('react-relay', () =>
   ({
     createFragmentContainer: component => component,
-  }),
-)
+  }))
 
 const defaultViewer = {
   selectedRepository: {
@@ -38,20 +37,22 @@ describe('<AddForm />', () => {
 
     describe('when a repository has been selected', () => {
       beforeEach(() => {
-        wrapper.setProps({viewer: defaultViewer})
+        wrapper.setProps({ viewer: defaultViewer })
       })
 
       it('enables the input fields', () => {
+        expect(addLink().exists()).toBeTruthy()
         expect(addTopic().exists()).toBeTruthy()
       })
     })
 
     describe('when a repository has not yet been selected', () => {
       beforeEach(() => {
-        wrapper.setProps({viewer: {selectedRepository: null}})
+        wrapper.setProps({ viewer: { selectedRepository: null } })
       })
 
       it('disables the input fields', () => {
+        expect(addLink().exists()).toBeFalsy()
         expect(addTopic().exists()).toBeFalsy()
       })
     })

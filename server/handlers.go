@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -98,7 +99,7 @@ func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 	})
 }
 
-const homepageTemplate = `<!doctype html>
+const appTemplateString = `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -117,16 +118,27 @@ const homepageTemplate = `<!doctype html>
 
 func (s *Server) handleRoot() http.Handler {
 	funcMap := map[string]interface{}{"asset": webpack.AssetHelper}
-	t := template.New("homepage").Funcs(funcMap)
-	template.Must(t.Parse(homepageTemplate))
+
+	appTemplate := template.New("appTemplate").Funcs(funcMap)
+	template.Must(appTemplate.Parse(appTemplateString))
+
+	io, err := ioutil.ReadFile("public/webpack/homepage.html")
+	if err != nil {
+		panic(err)
+	}
+	homepageTemplate := template.New("homepageTemplate").Funcs(funcMap)
+	template.Must(homepageTemplate.Parse(string(io)))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path[1:] {
 		case "robots.txt":
 			http.ServeFile(w, r, "public/webpack/robots.txt")
 			return
+		case "":
+			homepageTemplate.Execute(w, nil)
+			return
 		default:
-			t.Execute(w, nil)
+			appTemplate.Execute(w, nil)
 		}
 	})
 }

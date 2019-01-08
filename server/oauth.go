@@ -12,22 +12,26 @@ import (
 	"github.com/markbates/goth/providers/github"
 )
 
-var indexTemplate = `{{range $key,$value:=.Providers}}
-    <p><a href="/auth/{{$value}}">Log in with {{index $.ProvidersMap $value}}</a></p>
-{{end}}`
+const defaultTopicPath = "/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8"
 
-var userTemplate = `
-<p><a href="/logout/{{.Provider}}">logout</a></p>
-<p>Name: {{.Name}} [{{.LastName}}, {{.FirstName}}]</p>
-<p>Email: {{.Email}}</p>
-<p>NickName: {{.NickName}}</p>
-<p>Location: {{.Location}}</p>
-<p>AvatarURL: {{.AvatarURL}} <img src="{{.AvatarURL}}"></p>
-<p>Description: {{.Description}}</p>
-<p>UserID: {{.UserID}}</p>
-<p>AccessToken: {{.AccessToken}}</p>
-<p>ExpiresAt: {{.ExpiresAt}}</p>
-<p>RefreshToken: {{.RefreshToken}}</p>`
+var (
+	indexTemplate = `{{range $key,$value:=.Providers}}
+	    <p><a href="/auth/{{$value}}">Log in with {{index $.ProvidersMap $value}}</a></p>
+	{{end}}`
+
+	userTemplate = `
+	<p><a href="/logout/{{.Provider}}">logout</a></p>
+	<p>Name: {{.Name}} [{{.LastName}}, {{.FirstName}}]</p>
+	<p>Email: {{.Email}}</p>
+	<p>NickName: {{.NickName}}</p>
+	<p>Location: {{.Location}}</p>
+	<p>AvatarURL: {{.AvatarURL}} <img src="{{.AvatarURL}}"></p>
+	<p>Description: {{.Description}}</p>
+	<p>UserID: {{.UserID}}</p>
+	<p>AccessToken: {{.AccessToken}}</p>
+	<p>ExpiresAt: {{.ExpiresAt}}</p>
+	<p>RefreshToken: {{.RefreshToken}}</p>`
+)
 
 // RegisterOauth2Routes adds Oauth 2 handlers to the server.
 func (s *Server) RegisterOauth2Routes() {
@@ -100,8 +104,8 @@ func (s *Server) oauthCallbackRoute(provider string) (string, http.Handler) {
 			return
 		}
 
-		log.Print("Redirecting to homepage")
-		redirectTo(w, "/")
+		log.Printf("Redirecting to %s", defaultTopicPath)
+		redirectTo(w, defaultTopicPath)
 	})
 }
 

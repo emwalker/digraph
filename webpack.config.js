@@ -58,7 +58,7 @@ const modules = {
       include: /node_modules/,
       type: 'javascript/auto',
     },
-  ]
+  ],
 }
 
 const config  = {
@@ -71,9 +71,9 @@ const config  = {
     proxy: {
       '/graphql': {
         target: 'http://localhost:8080/',
-        secure: false
+        secure: false,
       },
-    }
+    },
   },
 
   entry: [
@@ -88,8 +88,8 @@ const config  = {
         commonjs2: 'isomorphic-fetch',
         commonjs: 'isomorphic-fetch',
         amd: 'isomorphic-fetch'
-      }
-    }
+      },
+    },
   ],
 
   mode: process.env.NODE_ENV,
@@ -108,9 +108,9 @@ const config  = {
           test: /[\\/]node_modules[\\/]/,
           name: "vendors",
           chunks: "all"
-        }
-      }
-    }
+        },
+      },
+    },
   },
 
   output: {
@@ -128,7 +128,7 @@ const config  = {
       mutations: path.resolve('src/mutations'),
       utils: path.resolve('src/utils'),
     },
-  }
+  },
 }
 
 module.exports = config

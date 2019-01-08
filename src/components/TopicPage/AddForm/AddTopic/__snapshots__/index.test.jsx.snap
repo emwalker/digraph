@@ -14,6 +14,7 @@ exports[`<AddTopic /> renders 1`] = `
   <dd>
     <input
       className="form-control test-topic-name input-sm"
+      disabled={true}
       id="create-topic-name"
       onChange={[Function]}
       onKeyPress={[Function]}
