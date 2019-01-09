@@ -95,6 +95,7 @@ push:
 	docker push emwalker/digraph:$(shell cat k8s/release)
 
 deploy:
+	kubectl config use-context do-default
 	kubectl apply -f k8s/cluster
 
 proxy:
