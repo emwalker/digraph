@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/models"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type userResolver struct {
@@ -58,7 +59,12 @@ func (r *userResolver) Repositories(
 		selectedID = *id
 	}
 
-	if repos, err = user.OwnerRepositories().All(ctx, r.DB); err != nil {
+	repos, err = models.Repositories(
+		qm.InnerJoin("organizations o on repositories.organization_id = o.id"),
+		qm.InnerJoin("organization_members om on o.id = om.organization_id"),
+		qm.Where("om.user_id = ?", user.ID),
+	).All(ctx, r.DB)
+	if err != nil {
 		return models.RepositoryConnection{}, err
 	}
 

@@ -39,7 +39,7 @@ func (r *queryResolver) FakeError(ctx context.Context) (*string, error) {
 
 // Viewer returns the logged-in user.
 func (r *queryResolver) Viewer(ctx context.Context) (models.User, error) {
-	return getCurrentUser(ctx), nil
+	return getCurrentUser(ctx, r.DB), nil
 }
 
 func (r *queryResolver) fetchCurrentRepo(
@@ -75,21 +75,17 @@ func (r *queryResolver) fetchCurrentRepo(
 func (r *queryResolver) View(
 	ctx context.Context, orgLogin string, repoName *string, repositoryIds []string, viewerID *string,
 ) (models.View, error) {
+	viewer := getCurrentUser(ctx, r.DB)
 	repo, err := r.fetchCurrentRepo(ctx, orgLogin, repoName)
 	if err != nil {
 		return models.View{}, err
-	}
-
-	if viewerID == nil {
-		guestID := ""
-		viewerID = &guestID
 	}
 
 	view := models.View{
 		CurrentOrganizationLogin: orgLogin,
 		CurrentRepositoryName:    repoName,
 		CurrentRepository:        repo,
-		ViewerID:                 *viewerID,
+		ViewerID:                 viewer.ID,
 		RepositoryIds:            repositoryIds,
 	}
 

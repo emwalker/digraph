@@ -76,7 +76,8 @@ func availableTopics(
 func (r *topicResolver) AvailableParentTopics(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
-	return availableTopics(ctx, r.DB, r.Actor, first)
+	actor := getCurrentUser(ctx, r.DB)
+	return availableTopics(ctx, r.DB, &actor, first)
 }
 
 // ChildTopics returns a set of topics.

@@ -50,6 +50,7 @@ func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
 func findRepo(
 	ctx context.Context, exec boil.ContextExecutor, actor *models.User, orgLogin, repoName string,
 ) (*models.Repository, error) {
+	log.Printf("Looking for repo %s/%s as user %v", orgLogin, repoName, actor)
 	mods := []qm.QueryMod{
 		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
 		qm.InnerJoin("organization_members om on o.id = om.organization_id"),
@@ -64,7 +65,7 @@ func findRepo(
 func (r *MutationResolver) DeleteLink(
 	ctx context.Context, input models.DeleteLinkInput,
 ) (*models.DeleteLinkPayload, error) {
-	user := getCurrentUser(ctx)
+	user := getCurrentUser(ctx, r.DB)
 	if user.IsGuest() {
 		return nil, errNoAnonymousMutations
 	}
@@ -93,7 +94,7 @@ func (r *MutationResolver) DeleteLink(
 func (r *MutationResolver) DeleteTopic(
 	ctx context.Context, input models.DeleteTopicInput,
 ) (*models.DeleteTopicPayload, error) {
-	user := getCurrentUser(ctx)
+	user := getCurrentUser(ctx, r.DB)
 	if user.IsGuest() {
 		return nil, errNoAnonymousMutations
 	}
@@ -123,7 +124,8 @@ func (r *MutationResolver) SelectRepository(
 	ctx context.Context, input models.SelectRepositoryInput,
 ) (*models.SelectRepositoryPayload, error) {
 	repoID := input.RepositoryID
-	user := getCurrentUser(ctx)
+	user := getCurrentUser(ctx, r.DB)
+	log.Printf("Atempting to select repository %v for %#v", repoID, user)
 
 	var err error
 	var repo *models.Repository
@@ -171,14 +173,15 @@ func (r *MutationResolver) UpsertTopic(
 	var result *services.UpsertTopicResult
 	var err error
 	var repo *models.Repository
+	actor := getCurrentUser(ctx, r.DB)
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		repo, err = findRepo(ctx, tx, r.Actor, input.OrganizationLogin, input.RepositoryName)
+		repo, err = findRepo(ctx, tx, &actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			return err
 		}
 
-		c := services.Connection{Exec: tx, Actor: r.Actor}
+		c := services.Connection{Exec: tx, Actor: &actor}
 		result, err = c.UpsertTopic(
 			ctx,
 			repo,
@@ -210,11 +213,12 @@ func (r *MutationResolver) UpsertTopic(
 func (r *MutationResolver) UpdateTopic(
 	ctx context.Context, input models.UpdateTopicInput,
 ) (*models.UpdateTopicPayload, error) {
-	s := services.Connection{Exec: r.DB, Actor: r.Actor}
+	actor := getCurrentUser(ctx, r.DB)
+	s := services.Connection{Exec: r.DB, Actor: &actor}
 
 	topic, err := models.Topics(
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
-		qm.Where("topics.id = ? and r.owner_id = ?", input.ID, r.Actor.ID),
+		qm.Where("topics.id = ? and r.owner_id = ?", input.ID, actor.ID),
 	).One(ctx, r.DB)
 	if err != nil {
 		return nil, err
@@ -235,17 +239,18 @@ func (r *MutationResolver) UpdateTopic(
 func (r *MutationResolver) UpsertLink(
 	ctx context.Context, input models.UpsertLinkInput,
 ) (*models.UpsertLinkPayload, error) {
+	actor := getCurrentUser(ctx, r.DB)
 	var result *services.UpsertLinkResult
 	var err error
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		repo, err := findRepo(ctx, tx, r.Actor, input.OrganizationLogin, input.RepositoryName)
+		repo, err := findRepo(ctx, tx, &actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			log.Printf("Repo not found for link: %s/%s", input.OrganizationLogin, input.RepositoryName)
 			return err
 		}
 
-		s := services.New(tx, r.Actor)
+		s := services.New(tx, &actor)
 		result, err = s.UpsertLink(
 			ctx,
 			repo,
@@ -298,12 +303,13 @@ func (r *MutationResolver) UpdateLinkTopics(
 func (r *MutationResolver) UpdateTopicParentTopics(
 	ctx context.Context, input models.UpdateTopicParentTopicsInput,
 ) (*models.UpdateTopicParentTopicsPayload, error) {
+	actor := getCurrentUser(ctx, r.DB)
 	var result *services.UpdateTopicParentTopicsResult
 	var topic *models.Topic
 	var err error
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		c := services.Connection{Exec: tx, Actor: r.Actor}
+		c := services.Connection{Exec: tx, Actor: &actor}
 
 		if topic, err = models.FindTopic(ctx, tx, input.TopicID); err != nil {
 			return err

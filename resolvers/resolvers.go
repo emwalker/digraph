@@ -7,6 +7,7 @@ import (
 	"database/sql"
 
 	"github.com/emwalker/digraph/models"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 // CurrentUserKey is the key used for storing the current user in the session.
@@ -69,7 +70,15 @@ func (r *Resolver) View() models.ViewResolver {
 	return &viewResolver{r}
 }
 
-func getCurrentUser(ctx context.Context) models.User {
+func getCurrentUser(ctx context.Context, exec boil.ContextExecutor) models.User {
+	if false {
+		user, err := models.FindUser(ctx, exec, "some-user-id")
+		if err != nil {
+			panic(err)
+		}
+		return *user
+	}
+
 	value := ctx.Value(CurrentUserKey)
 	if user, ok := value.(*models.User); ok {
 		return *user

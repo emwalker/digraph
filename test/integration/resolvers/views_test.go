@@ -174,7 +174,7 @@ func TestSearchLinks(t *testing.T) {
 		},
 		{
 			Name:         "When there is no match",
-			SearchString: "astronomy",
+			SearchString: "gastronomy",
 			Count:        0,
 			Success:      eq,
 		},

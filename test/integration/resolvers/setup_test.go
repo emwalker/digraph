@@ -56,7 +56,10 @@ func TestMain(m *testing.M) {
 
 	var err error
 
-	testActor, err = models.Users(qm.Load("SelectedRepository")).One(context.Background(), testDB)
+	testActor, err = models.Users(
+		qm.Load("SelectedRepository"),
+		qm.Where("users.selected_repository_id is not null"),
+	).One(context.Background(), testDB)
 	if err != nil {
 		panic(err)
 	}
