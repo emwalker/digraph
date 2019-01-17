@@ -37,8 +37,8 @@ func (r *userResolver) IsGuest(ctx context.Context, user *models.User) (bool, er
 }
 
 // Email returns the email of a user.
-func (r *userResolver) PrimaryEmail(_ context.Context, user *models.User) (string, error) {
-	return user.PrimaryEmail, nil
+func (r *userResolver) PrimaryEmail(_ context.Context, user *models.User) (*string, error) {
+	return user.PrimaryEmail.Ptr(), nil
 }
 
 // Repositories returns the repositories to which the user has access
