@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/emwalker/digraph/loaders"
-	"github.com/emwalker/digraph/models"
-	"github.com/emwalker/digraph/resolvers"
-	"github.com/emwalker/digraph/services"
-	"github.com/emwalker/digraph/services/pageinfo"
+	"github.com/emwalker/digraph/internal/loaders"
+	"github.com/emwalker/digraph/internal/models"
+	"github.com/emwalker/digraph/internal/resolvers"
+	"github.com/emwalker/digraph/internal/services"
+	"github.com/emwalker/digraph/internal/services/pageinfo"
 	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )

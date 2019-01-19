@@ -1,16 +1,17 @@
-BIN           = $(GOPATH)/bin
-ON            = $(BIN)/on
-NODE_BIN      = $(shell npm bin)
-PID           = .pid
-BUNDLE        = src/static/build/bundle.js
-APP           = $(shell find src -type f)
-IMPORT_PATH   = $(shell pwd | sed "s|^$(GOPATH)/src/||g")
-APP_NAME      = $(shell pwd | sed 's:.*/::')
-GIT_HASH      = $(shell git rev-parse HEAD)
-LDFLAGS       = -w -X main.commitHash=$(GIT_HASH)
-GLIDE         := $(shell command -v glide 2> /dev/null)
-TIMESTAMP     = $(shell date -u +%s)
-DBNAME        = digraph_dev
+BIN              = $(GOPATH)/bin
+ON               = $(BIN)/on
+NODE_BIN         = $(shell npm bin)
+PID              = .pid
+BUNDLE           = src/static/build/bundle.js
+APP              = $(shell find src -type f)
+IMPORT_PATH      = $(shell pwd | sed "s|^$(GOPATH)/src/||g")
+APP_NAME         = $(shell pwd | sed 's:.*/::')
+GIT_HASH         = $(shell git rev-parse HEAD)
+LDFLAGS          = -w -X main.commitHash=$(GIT_HASH)
+GLIDE            := $(shell command -v glide 2> /dev/null)
+TIMESTAMP        = $(shell date -u +%s)
+DBNAME           = digraph_dev
+LINT_DIRECTORIES = $(shell find internal/ -type d ! -name "loaders")
 
 kill:
 	@killall server 2>/dev/null || true
@@ -27,7 +28,7 @@ start-debug: kill
 	@go run server.go --dev --log 2
 
 lint:
-	golint models resolvers server services
+	golint $(LINT_DIRECTORIES)
 	yarn eslint
 
 install:
@@ -48,11 +49,11 @@ migrate-down:
 
 .PHONY:
 
-test-integration:
+test-integration: .PHONY
 	go test ./test/integration/...
 
 test: .PHONY
-	go test ./models ./resolvers ./server ./services
+	go test ./internal/...
 	yarn jest
 
 format:

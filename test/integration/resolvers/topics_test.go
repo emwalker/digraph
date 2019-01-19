@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/emwalker/digraph/models"
-	"github.com/emwalker/digraph/resolvers"
-	"github.com/emwalker/digraph/services"
+	"github.com/emwalker/digraph/internal/models"
+	"github.com/emwalker/digraph/internal/resolvers"
+	"github.com/emwalker/digraph/internal/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )

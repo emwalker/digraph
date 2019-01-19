@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/emwalker/digraph/models"
-	"github.com/emwalker/digraph/services"
+	"github.com/emwalker/digraph/internal/models"
+	"github.com/emwalker/digraph/internal/services"
 	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )

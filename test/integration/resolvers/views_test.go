@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/emwalker/digraph/models"
-	"github.com/emwalker/digraph/resolvers"
-	"github.com/emwalker/digraph/services"
+	"github.com/emwalker/digraph/internal/models"
+	"github.com/emwalker/digraph/internal/resolvers"
+	"github.com/emwalker/digraph/internal/services"
 )
 
 var (
@@ -36,7 +36,7 @@ func TestQueryView(t *testing.T) {
 	}
 
 	if len(connection.Edges) < 1 {
-		t.Fatal("Expected a result")
+		t.Fatal("Expected at least a root topic")
 	}
 
 	// When the repo is not in the db

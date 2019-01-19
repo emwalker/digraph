@@ -1,10 +1,12 @@
 package main
 
+//go:generate sqlboiler psql --output internal/models
+
 import (
 	"flag"
 	"os"
 
-	"github.com/emwalker/digraph/server"
+	"github.com/emwalker/digraph/internal/server"
 	"github.com/go-webpack/webpack"
 	// Load the PQ drivers
 	_ "github.com/lib/pq"

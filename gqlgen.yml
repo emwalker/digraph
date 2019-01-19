@@ -6,25 +6,25 @@
 schema:
 - schema.graphql
 exec:
-  filename: models/generated.go
+  filename: internal/models/generated.go
   package: models
 model:
-  filename: models/models_gen.go
+  filename: internal/models/models_gen.go
   package: models
 models:
   Link:
-    model: github.com/emwalker/digraph/models.LinkValue
+    model: github.com/emwalker/digraph/internal/models.LinkValue
   Organization:
-    model: github.com/emwalker/digraph/models.Organization
+    model: github.com/emwalker/digraph/internal/models.Organization
   Repository:
-    model: github.com/emwalker/digraph/models.Repository
+    model: github.com/emwalker/digraph/internal/models.Repository
   Topic:
-    model: github.com/emwalker/digraph/models.TopicValue
+    model: github.com/emwalker/digraph/internal/models.TopicValue
   User:
-    model: github.com/emwalker/digraph/models.User
+    model: github.com/emwalker/digraph/internal/models.User
   View:
-    model: github.com/emwalker/digraph/models.View
+    model: github.com/emwalker/digraph/internal/models.View
 resolver:
-  filename: resolvers/resolver.go
+  filename: internal/resolvers/resolver.go
   type: Resolver
   package: resolvers
