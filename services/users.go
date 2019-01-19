@@ -18,6 +18,21 @@ type CreateUserResult struct {
 	Organization *models.Organization
 }
 
+func addMember(ctx context.Context, exec boil.ContextExecutor, orgID, userID string, owner bool) error {
+	log.Printf("Making user %s a member of organization %s (owner: %s)", orgID, userID, owner)
+	member := models.OrganizationMember{
+		OrganizationID: orgID,
+		UserID:         userID,
+		Owner:          owner,
+	}
+
+	if err := member.Insert(ctx, exec, boil.Infer()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CreateUser creates a new user and provides a default organization and repo for him/her.
 func (c Connection) CreateUser(
 	ctx context.Context, name, email, githubUsername, githubAvatarURL string,
@@ -49,14 +64,11 @@ func (c Connection) CreateUser(
 		return nil, err
 	}
 
-	log.Printf("Making %s an owner of the new default organization", githubUsername)
-	member := models.OrganizationMember{
-		OrganizationID: org.ID,
-		UserID:         user.ID,
-		Owner:          true,
+	if err = addMember(ctx, c.Exec, org.ID, user.ID, true); err != nil {
+		return nil, err
 	}
 
-	if err = member.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+	if err = addMember(ctx, c.Exec, PublicOrgID, user.ID, false); err != nil {
 		return nil, err
 	}
 

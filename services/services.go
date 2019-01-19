@@ -5,6 +5,8 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
+const PublicOrgID = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
+
 // Connection holds fields used by service calls.
 type Connection struct {
 	Exec  boil.ContextExecutor

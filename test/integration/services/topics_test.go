@@ -11,9 +11,9 @@ func TestUpsertTopicEnsuresATopic(t *testing.T) {
 	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
 
-	result, err := c.UpsertTopic(ctx, defaultRepo, "New topic", nil, []string{})
+	result, err := c.UpsertTopic(ctx, defaultRepo, "62ce187241e", nil, []string{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("There was a problem upserting the topic: %s", err)
 	}
 	defer result.Cleanup()
 
@@ -23,7 +23,7 @@ func TestUpsertTopicEnsuresATopic(t *testing.T) {
 
 	topics, err := result.Topic.ParentTopics().All(ctx, c.Exec)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Unable to fetch parent topics: %s", err)
 	}
 
 	if len(topics) < 1 {

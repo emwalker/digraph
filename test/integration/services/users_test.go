@@ -51,4 +51,12 @@ func TestCreateUser(t *testing.T) {
 	if !membership.Owner {
 		t.Fatal("Expected the user to be made owner of the new organization")
 	}
+
+	// It adds the new user as a member to the public org
+	_, err = models.OrganizationMembers(
+		qm.Where("organization_id = ? and user_id = ?", services.PublicOrgID, result.User.ID),
+	).One(ctx, testDB)
+	if err != nil {
+		t.Fatalf("User was not added to the public org: %s", err)
+	}
 }

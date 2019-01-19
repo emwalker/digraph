@@ -8,11 +8,10 @@ import (
 	"testing"
 
 	"github.com/emwalker/digraph/models"
+	"github.com/emwalker/digraph/services"
 	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
-
-const orgId = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
 var (
 	testActor   *models.User
@@ -27,7 +26,7 @@ func TestMain(m *testing.M) {
 	var err error
 	ctx := context.Background()
 
-	scope := models.Repositories(qm.Where("organization_id = ? and system", orgId))
+	scope := models.Repositories(qm.Where("organization_id = ? and system", services.PublicOrgID))
 	if defaultRepo, err = scope.One(ctx, testDB); err != nil {
 		panic(err)
 	}
