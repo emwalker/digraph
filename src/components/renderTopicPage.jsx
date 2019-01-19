@@ -4,6 +4,7 @@ import React from 'react'
 import LoadingPage from 'components/LoadingPage'
 import TopicPage from './TopicPage'
 import TopicSearchPage from './TopicSearchPage'
+import { defaultOrganizationLogin } from 'components/constants'
 
 export default ({ props, error, match: { location } }: any) => {
   if (error)
@@ -20,7 +21,7 @@ export default ({ props, error, match: { location } }: any) => {
   if (location.query.q) {
     return (
       <TopicSearchPage
-        orgLogin={params.orgLogin}
+        orgLogin={params.orgLogin || defaultOrganizationLogin}
         repoName={params.repoName}
         topic={view.topic}
         location={location}
@@ -32,7 +33,7 @@ export default ({ props, error, match: { location } }: any) => {
   return (
     <TopicPage
       location={location}
-      orgLogin={params.orgLogin}
+      orgLogin={params.orgLogin || defaultOrganizationLogin}
       repoName={params.repoName}
       topic={view.topic}
       {...props}

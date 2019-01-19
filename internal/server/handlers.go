@@ -122,20 +122,20 @@ func (s *Server) handleRoot() http.Handler {
 	appTemplate := template.New("appTemplate").Funcs(funcMap)
 	template.Must(appTemplate.Parse(appTemplateString))
 
-	io, err := ioutil.ReadFile("public/webpack/homepage.html")
+	io, err := ioutil.ReadFile("public/webpack/about.html")
 	if err != nil {
 		panic(err)
 	}
-	homepageTemplate := template.New("homepageTemplate").Funcs(funcMap)
-	template.Must(homepageTemplate.Parse(string(io)))
+	aboutPageTemplate := template.New("aboutPageTemplate").Funcs(funcMap)
+	template.Must(aboutPageTemplate.Parse(string(io)))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path[1:] {
 		case "robots.txt":
 			http.ServeFile(w, r, "public/webpack/robots.txt")
 			return
-		case "":
-			homepageTemplate.Execute(w, nil)
+		case "about":
+			aboutPageTemplate.Execute(w, nil)
 			return
 		default:
 			appTemplate.Execute(w, nil)

@@ -39,6 +39,9 @@ const Header = ({ defaultOrganization, viewer }: Props) => (
       </nav>
       <div className="d-lg-flex float-right mt-1">
         <ul className="user-nav d-lg-flex list-style-none">
+          <li>
+            <summary className="p-2 d-inline"><a href="/about">About</a></summary>
+          </li>
           <li className="dropdown">
             {viewer.isGuest
               ? <GithubLogin />
