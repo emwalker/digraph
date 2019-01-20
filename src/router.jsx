@@ -11,6 +11,9 @@ import { query as topicPageQuery } from 'components/TopicPage'
 import renderTopicPage from 'components/renderTopicPage'
 import { query as topicSearchPageQuery } from 'components/TopicSearchPage'
 import Layout, { query as layoutQuery } from 'components/Layout'
+import withErrorBoundary from 'components/withErrorBoundary'
+import SignInPage from 'components/SignInPage'
+import SignUpPage from 'components/SignUpPage'
 
 export const historyMiddlewares = [queryMiddleware]
 
@@ -46,6 +49,14 @@ export const routeConfig = makeRouteConfig(
         topicId: defaultRootTopicId,
         orgLogin: defaultOrganizationLogin,
       })}
+    />
+    <Route
+      render={withErrorBoundary(SignInPage)}
+      path="/login"
+    />
+    <Route
+      render={withErrorBoundary(SignUpPage)}
+      path="/join"
     />
     <Route path=":orgLogin">
       <Route path="topics">

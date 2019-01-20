@@ -15,11 +15,39 @@ html, body {
   padding-bottom: $footer-height;
 }
 
+.SignUpPage {
+  h1 {
+    font-size: 45px;
+    font-weight: 400;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+}
+
+.GithubLogin {
+  > div {
+    margin: 0 !important;
+  }
+}
+
 .Header {
   background: #fafbfc;
 
   .user-nav {
     margin-left: auto;
+  }
+}
+
+.SignUp {
+  border-color: #4043467d !important;
+
+  &:hover {
+    border-color: #404346 !important;
+    color: #000;
+    background: #80808014;
+    transition-duration: 150ms;
   }
 }
 
