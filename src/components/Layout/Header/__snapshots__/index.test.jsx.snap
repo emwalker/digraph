@@ -2,61 +2,55 @@
 
 exports[`<Header /> renders 1`] = `
 <header
-  className="Header pagehead pb-3"
+  className="Header clearfix mb-3 d-flex px-4 py-2 box-shadow"
 >
-  <div
-    className="container-lg clearfix"
+  <nav
+    className="flex-self-center"
   >
-    <nav
-      className="d-lg-flex float-left"
+    <h1
+      className="h3 text-normal"
     >
-      <h1
-        className="h3 mt-2 text-normal"
+      <Link
+        className="text-white n-link no-underline"
+        to="/"
       >
-        <Link
-          className="text-gray-dark n-link no-underline"
-          to="/"
+        <span
+          className="mr-2 d-inline-block"
         >
-          <span
-            className="mr-2 d-inline-block"
-          >
-            <Octicon
-              name="git-branch"
-              style={
-                Object {
-                  "verticalAlign": "middle",
-                }
-              }
-            />
-          </span>
-          Digraph
-        </Link>
-      </h1>
-    </nav>
-    <div
-      className="d-lg-flex float-right mt-1"
-    >
-      <ul
-        className="user-nav d-lg-flex list-style-none"
-      >
-        <li
-          className="dropdown"
-        >
-          <ViewerDropdown
-            viewer={
+          <Octicon
+            name="git-branch"
+            style={
               Object {
-                "defaultRepository": Object {
-                  "rootTopic": Object {
-                    "resourcePath": "/some-repo/topics/123",
-                  },
-                },
-                "name": "Frotz",
+                "verticalAlign": "middle",
               }
             }
           />
-        </li>
-      </ul>
-    </div>
-  </div>
+        </span>
+        Digraph
+      </Link>
+    </h1>
+  </nav>
+  <nav
+    className="user-nav flex-self-center text-white"
+  >
+    <a
+      className="text-white px-2"
+      href="/about"
+    >
+      About
+    </a>
+    <ViewerDropdown
+      viewer={
+        Object {
+          "defaultRepository": Object {
+            "rootTopic": Object {
+              "resourcePath": "/some-repo/topics/123",
+            },
+          },
+          "name": "Frotz",
+        }
+      }
+    />
+  </nav>
 </header>
 `;

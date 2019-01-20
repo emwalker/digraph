@@ -2,9 +2,9 @@
 import React from 'react'
 
 import LoadingPage from 'components/LoadingPage'
+import { defaultOrganizationLogin } from 'components/constants'
 import TopicPage from './TopicPage'
 import TopicSearchPage from './TopicSearchPage'
-import { defaultOrganizationLogin } from 'components/constants'
 
 export default ({ props, error, match: { location } }: any) => {
   if (error)

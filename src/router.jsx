@@ -6,13 +6,11 @@ import { Resolver } from 'found-relay'
 import React from 'react'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
-import Homepage, { query as homepageQuery } from 'components/Homepage'
 import { defaultRootTopicId, defaultOrganizationLogin } from 'components/constants'
 import { query as topicPageQuery } from 'components/TopicPage'
 import renderTopicPage from 'components/renderTopicPage'
 import { query as topicSearchPageQuery } from 'components/TopicSearchPage'
 import Layout, { query as layoutQuery } from 'components/Layout'
-import withErrorBoundary from 'components/withErrorBoundary'
 
 export const historyMiddlewares = [queryMiddleware]
 
@@ -43,13 +41,11 @@ export const routeConfig = makeRouteConfig(
       render={renderTopicPage}
       query={topicPageQuery}
       path="/"
-      prepareVariables={(params) => {
-        return {
-          ...params,
-          topicId: defaultRootTopicId,
-          orgLogin: defaultOrganizationLogin,
-        }
-      }}
+      prepareVariables={params => ({
+        ...params,
+        topicId: defaultRootTopicId,
+        orgLogin: defaultOrganizationLogin,
+      })}
     />
     <Route path=":orgLogin">
       <Route path="topics">

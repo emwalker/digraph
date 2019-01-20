@@ -15,6 +15,14 @@ html, body {
   padding-bottom: $footer-height;
 }
 
+.Header {
+  background: #20476b;
+
+  .user-nav {
+    margin-left: auto;
+  }
+}
+
 footer {
  position: absolute;
  bottom: 0;

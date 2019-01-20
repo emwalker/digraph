@@ -2,9 +2,7 @@
 import React from 'react'
 
 const GithubLogin = () => (
-  <summary className="p-2 d-inline">
-    <a href="/auth/github" className="mt-1">Log in with GitHub</a>
-  </summary>
+  <a href="/auth/github" className="px-3 text-white">Log in with GitHub</a>
 )
 
 export default GithubLogin

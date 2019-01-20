@@ -4,10 +4,10 @@ exports[`<Layout /> renders 1`] = `
 <div
   className="layout"
 >
+  <Header />
   <div
     className="container"
   >
-    <Header />
     <FlashMessages
       initialAlerts={Array []}
     />

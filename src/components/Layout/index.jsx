@@ -41,11 +41,11 @@ query LayoutQuery {
 
 const Layout = ({ alerts, children, defaultOrganization, viewer }: Props) => (
   <div className="layout">
+    <Header
+      viewer={viewer}
+      defaultOrganization={defaultOrganization}
+    />
     <div className="container">
-      <Header
-        viewer={viewer}
-        defaultOrganization={defaultOrganization}
-      />
       <FlashMessages initialAlerts={alerts} />
       { children }
     </div>
