@@ -89,6 +89,7 @@ class AddLink extends Component<Props, State> {
           onChange={this.updateUrl}
           onKeyPress={this.onKeyPress}
           placeholder="Url"
+          type="url"
           value={this.state.url}
         />
       </dd>

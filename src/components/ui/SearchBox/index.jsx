@@ -48,7 +48,7 @@ class SearchBox extends Component<Props, State> {
         onKeyPress={this.onKeyPress}
         placeholder="Search"
         size="20"
-        type="text"
+        type="search"
         value={this.state.value}
       />
     </div>

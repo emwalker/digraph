@@ -16,7 +16,7 @@ exports[`<FilterInput /> renders 1`] = `
     onKeyPress={[Function]}
     placeholder="Search"
     size="20"
-    type="text"
+    type="search"
     value="some search phrase"
   />
 </div>
