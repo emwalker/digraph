@@ -230,7 +230,10 @@ func (r *topicResolver) matchingDescendantTopics(
 		ids = append(ids, row.ID)
 	}
 
-	topics, err := models.Topics(qm.WhereIn("id in ?", ids...)).All(ctx, r.DB)
+	topics, err := models.Topics(
+		qm.Load("ParentTopics"),
+		qm.WhereIn("id in ?", ids...),
+	).All(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}

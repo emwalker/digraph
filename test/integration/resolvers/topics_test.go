@@ -284,7 +284,8 @@ func TestSearchChildTopics(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if count := len(conn.Edges); td.Count != count {
+			var count int
+			if count = len(conn.Edges); td.Count != count {
 				t.Fatalf("Expected %d results, got %d", td.Count, count)
 			}
 		})
@@ -416,8 +417,20 @@ func TestSearchInTopic(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if count := len(conn.Edges); td.Count != count {
+			var count int
+			if count = len(conn.Edges); td.Count != count {
 				t.Fatalf("Expected %d results, got %d", td.Count, count)
+			}
+
+			if count > 0 {
+				topic, ok := conn.Edges[0].Node.(models.TopicValue)
+				if !ok {
+					t.Fatalf("Unable to cast %#v to a topic", conn.Edges[0].Node)
+				}
+
+				if topic.R == nil || topic.R.ParentTopics == nil {
+					t.Fatal("Expected parent topics to be preloaded")
+				}
 			}
 		})
 	}
