@@ -11,7 +11,7 @@ exports[`<Header /> renders 1`] = `
       className="h3 text-normal"
     >
       <Link
-        className="text-white n-link no-underline"
+        className="text-gray-dark n-link no-underline"
         to="/"
       >
         <span
@@ -31,10 +31,10 @@ exports[`<Header /> renders 1`] = `
     </h1>
   </nav>
   <nav
-    className="user-nav flex-self-center text-white"
+    className="user-nav flex-self-center"
   >
     <a
-      className="text-white px-2"
+      className="text-gray-dark px-2"
       href="/about"
     >
       About

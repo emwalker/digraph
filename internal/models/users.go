@@ -25,7 +25,7 @@ import (
 type User struct {
 	ID                   string      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name                 string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	PrimaryEmail         null.String `boil:"primary_email" json:"primary_email,omitempty" toml:"primary_email" yaml:"primary_email,omitempty"`
+	PrimaryEmail         string      `boil:"primary_email" json:"primary_email" toml:"primary_email" yaml:"primary_email"`
 	CreatedAt            time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt            time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	GithubUsername       null.String `boil:"github_username" json:"github_username,omitempty" toml:"github_username" yaml:"github_username,omitempty"`

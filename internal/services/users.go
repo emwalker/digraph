@@ -45,7 +45,7 @@ func (c Connection) CreateUser(
 		GithubUsername:  null.StringFromPtr(&githubUsername),
 		Login:           githubUsername,
 		Name:            name,
-		PrimaryEmail:    null.NewString(email, email != ""),
+		PrimaryEmail:    email,
 	}
 
 	if err = user.Insert(ctx, c.Exec, boil.Infer()); err != nil {

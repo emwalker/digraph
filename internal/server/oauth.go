@@ -40,6 +40,8 @@ func (s *Server) RegisterOauth2Routes() {
 			os.Getenv("DIGRAPH_GITHUB_CLIENT_ID"),
 			os.Getenv("DIGRAPH_GITHUB_CLIENT_SECRET"),
 			callbackPath(s.DevMode, s.Port, "github"),
+			// Strictly for deduping with other OAuth providers
+			"user:email",
 		),
 	)
 
