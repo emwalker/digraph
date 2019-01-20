@@ -9,7 +9,7 @@ type Props = {
 
 const ViewerDropdown = ({ viewer: { name, avatarUrl } }: Props) => (
   <summary className="d-inline">
-    <a className="text-white pl-3 pr-2" href="/logout/github">Sign out</a>
+    <a className="text-gray-dark pl-3 pr-2" href="/logout/github">Sign out</a>
     <img
       alt={name}
       className="avatar"

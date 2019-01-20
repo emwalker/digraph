@@ -29,7 +29,7 @@ const Header = ({ defaultOrganization, viewer }: Props) => (
       <h1 className="h3 text-normal">
         <Link
           to={defaultOrganization ? rootPath(defaultOrganization) : '/'}
-          className="text-white n-link no-underline"
+          className="text-gray-dark n-link no-underline"
         >
           <span className="mr-2 d-inline-block">
             <Octicon name="git-branch" style={{ verticalAlign: 'middle' }} />
@@ -38,8 +38,8 @@ const Header = ({ defaultOrganization, viewer }: Props) => (
         </Link>
       </h1>
     </nav>
-    <nav className="user-nav flex-self-center text-white">
-      <a className="text-white px-2" href="/about">About</a>
+    <nav className="user-nav flex-self-center">
+      <a className="text-gray-dark px-2" href="/about">About</a>
       {viewer.isGuest
         ? <GithubLogin />
         : <ViewerDropdown viewer={viewer} />
