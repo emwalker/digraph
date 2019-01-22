@@ -7,7 +7,6 @@ import { pathOr } from 'ramda'
 import type { UserType } from 'components/types'
 import ViewerDropdown from './ViewerDropdown'
 import SignIn from './SignIn'
-import SignUp from './SignUp'
 
 const rootPath = pathOr('/', ['defaultRepository', 'rootTopic', 'resourcePath'])
 
@@ -26,7 +25,6 @@ class Header extends Component<Props> {
   renderGuestUserNav = () => (
     <Fragment>
       <SignIn />
-      <SignUp />
     </Fragment>
   )
 

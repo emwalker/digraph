@@ -26,29 +26,6 @@ class SignInPage extends Component<Props> {
         <GithubLogin className="mb-5">
           Log in with GitHub
         </GithubLogin>
-
-        <p className="mb-2">Or sign in with your email address and password:</p>
-
-        <form>
-          <dl className="form-group required">
-            <dt>
-              <label htmlFor="email">Email address</label>
-            </dt>
-            <dd>
-              <input id="email" className="form-control" type="text" />
-            </dd>
-          </dl>
-          <dl className="form-group required">
-            <dt>
-              <label htmlFor="password">Password</label>
-            </dt>
-            <dd>
-              <input id="password" className="form-control" type="password" />
-            </dd>
-          </dl>
-        </form>
-
-        {this.renderSignInButton()}
       </div>
     </div>
   )

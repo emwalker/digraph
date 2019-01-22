@@ -22,55 +22,6 @@ exports[`<SignInPage /> renders 1`] = `
     >
       Log in with GitHub
     </GithubLogin>
-    <p
-      className="mb-2"
-    >
-      Or sign in with your email address and password:
-    </p>
-    <form>
-      <dl
-        className="form-group required"
-      >
-        <dt>
-          <label
-            htmlFor="email"
-          >
-            Email address
-          </label>
-        </dt>
-        <dd>
-          <input
-            className="form-control"
-            id="email"
-            type="text"
-          />
-        </dd>
-      </dl>
-      <dl
-        className="form-group required"
-      >
-        <dt>
-          <label
-            htmlFor="password"
-          >
-            Password
-          </label>
-        </dt>
-        <dd>
-          <input
-            className="form-control"
-            id="password"
-            type="password"
-          />
-        </dd>
-      </dl>
-    </form>
-    <button
-      className="btn btn-primary"
-      disabled={false}
-    >
-      Sign in
-    </button>
   </div>
 </div>
 `;
