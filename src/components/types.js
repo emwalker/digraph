@@ -42,6 +42,7 @@ export type OrganizationType = {
 
 export type Relay = {
   environment: Object,
+  refetch?: ?Function,
 }
 
 export type RelayProps = {
@@ -103,6 +104,6 @@ export type UserType = {
 
 export type ViewType = {
   currentRepository: RepositoryType,
-  topic?: TopicType,
+  topic: TopicType,
   topics?: TopicConnection,
 }

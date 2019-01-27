@@ -5,7 +5,7 @@ import { graphql, createFragmentContainer } from 'react-relay'
 import type { Relay, TopicType, UserType, ViewType } from '../../types'
 import { liftNodes } from '../../../utils'
 import Item from '../Item'
-import EditTopic from './EditTopic'
+import EditTopic from './EditTopicContainer'
 
 type Props = {
   orgLogin: string,
