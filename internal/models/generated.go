@@ -161,7 +161,7 @@ type ComplexityRoot struct {
 	}
 
 	Topic struct {
-		AvailableParentTopics func(childComplexity int, first *int, after *string, last *int, before *string) int
+		AvailableParentTopics func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 		ChildTopics           func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 		CreatedAt             func(childComplexity int) int
 		Description           func(childComplexity int) int
@@ -280,7 +280,7 @@ type RepositoryResolver interface {
 	RootTopic(ctx context.Context, obj *Repository) (TopicValue, error)
 }
 type TopicResolver interface {
-	AvailableParentTopics(ctx context.Context, obj *TopicValue, first *int, after *string, last *int, before *string) (TopicConnection, error)
+	AvailableParentTopics(ctx context.Context, obj *TopicValue, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
 	ChildTopics(ctx context.Context, obj *TopicValue, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
 	CreatedAt(ctx context.Context, obj *TopicValue) (string, error)
 	Description(ctx context.Context, obj *TopicValue) (*string, error)
@@ -300,7 +300,6 @@ type UserResolver interface {
 	CreatedAt(ctx context.Context, obj *User) (string, error)
 	DefaultRepository(ctx context.Context, obj *User) (*Repository, error)
 
-	PrimaryEmail(ctx context.Context, obj *User) (string, error)
 	Repositories(ctx context.Context, obj *User, first *int, after *string, last *int, before *string) (RepositoryConnection, error)
 	SelectedRepository(ctx context.Context, obj *User) (*Repository, error)
 	UpdatedAt(ctx context.Context, obj *User) (string, error)
@@ -637,12 +636,12 @@ func field_Query___type_args(rawArgs map[string]interface{}) (map[string]interfa
 
 func field_Topic_availableParentTopics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	var arg0 *string
+	if tmp, ok := rawArgs["searchString"]; ok {
 		var err error
-		var ptr1 int
+		var ptr1 string
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
+			ptr1, err = graphql.UnmarshalString(tmp)
 			arg0 = &ptr1
 		}
 
@@ -650,13 +649,13 @@ func field_Topic_availableParentTopics_args(rawArgs map[string]interface{}) (map
 			return nil, err
 		}
 	}
-	args["first"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
+	args["searchString"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
 		var err error
-		var ptr1 string
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg1 = &ptr1
 		}
 
@@ -664,13 +663,13 @@ func field_Topic_availableParentTopics_args(rawArgs map[string]interface{}) (map
 			return nil, err
 		}
 	}
-	args["after"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["last"]; ok {
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
 		var err error
-		var ptr1 int
+		var ptr1 string
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
+			ptr1, err = graphql.UnmarshalString(tmp)
 			arg2 = &ptr1
 		}
 
@@ -678,13 +677,13 @@ func field_Topic_availableParentTopics_args(rawArgs map[string]interface{}) (map
 			return nil, err
 		}
 	}
-	args["last"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["before"]; ok {
+	args["after"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
 		var err error
-		var ptr1 string
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg3 = &ptr1
 		}
 
@@ -692,7 +691,21 @@ func field_Topic_availableParentTopics_args(rawArgs map[string]interface{}) (map
 			return nil, err
 		}
 	}
-	args["before"] = arg3
+	args["last"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg4
 	return args, nil
 
 }
@@ -1796,7 +1809,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Topic.AvailableParentTopics(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+		return e.complexity.Topic.AvailableParentTopics(childComplexity, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
 	case "Topic.childTopics":
 		if e.complexity.Topic.ChildTopics == nil {
@@ -5193,7 +5206,7 @@ func (ec *executionContext) _Topic_availableParentTopics(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Topic().AvailableParentTopics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+		return ec.resolvers.Topic().AvailableParentTopics(rctx, obj, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -6426,14 +6439,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				invalid = true
 			}
 		case "primaryEmail":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._User_primaryEmail(ctx, field, obj)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
-				wg.Done()
-			}(i, field)
+			out.Values[i] = ec._User_primaryEmail(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "repositories":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -6643,7 +6652,7 @@ func (ec *executionContext) _User_primaryEmail(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().PrimaryEmail(rctx, obj)
+		return obj.PrimaryEmail, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9079,6 +9088,7 @@ type SelectRepositoryPayload {
 
 type Topic implements ResourceIdentifiable & Namespaceable {
   availableParentTopics(
+    searchString: String,
     first: Int,
     after: String,
     last: Int,

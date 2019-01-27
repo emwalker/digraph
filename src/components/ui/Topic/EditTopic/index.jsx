@@ -82,7 +82,7 @@ const EditTopic = ({ isOpen, orgLogin, topic, relay, toggleForm }: Props) => (
               }
             }
 
-            availableTopics: availableParentTopics(first: 1000) {
+            availableTopics: availableParentTopics(first: 10) {
               edges {
                 node {
                   id

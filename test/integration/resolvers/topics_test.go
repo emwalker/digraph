@@ -372,54 +372,54 @@ func TestSearchInTopic(t *testing.T) {
 	m.addParentTopicToLink(l2, t2)
 
 	cases := []struct {
-		Name         string
-		SearchString string
-		Count        int
+		name         string
+		searchString string
+		count        int
 	}{
 		{
-			Name:         "Everything is returned when an empty string is provided",
-			SearchString: "",
-			Count:        4,
+			name:         "Everything is returned when an empty string is provided",
+			searchString: "",
+			count:        4,
 		},
 		{
-			Name:         "Links directly under the topic are returned",
-			SearchString: "News",
-			Count:        2,
+			name:         "Links directly under the topic are returned",
+			searchString: "News",
+			count:        2,
 		},
 		{
-			Name:         "Descendant links and topics are returned",
-			SearchString: "New York Times",
-			Count:        2,
+			name:         "Descendant links and topics are returned",
+			searchString: "New York Times",
+			count:        2,
 		},
 		{
-			Name:         "Prefix matches work",
-			SearchString: "New Yor",
-			Count:        2,
+			name:         "Prefix matches work",
+			searchString: "New Yor",
+			count:        2,
 		},
 		{
-			Name:         "Suffix matches work",
-			SearchString: "York Times",
-			Count:        2,
+			name:         "Suffix matches work",
+			searchString: "York Times",
+			count:        2,
 		},
 		{
-			Name:         "No results are returned when there is no match",
-			SearchString: "astronomy",
-			Count:        0,
+			name:         "No results are returned when there is no match",
+			searchString: "astronomy",
+			count:        0,
 		},
 	}
 
 	topicResolver := resolvers.New(testDB, testActor).Topic()
 
 	for _, td := range cases {
-		t.Run(td.Name, func(t *testing.T) {
-			conn, err := topicResolver.Search(m.ctx, t1, td.SearchString, nil, nil, nil, nil)
+		t.Run(td.name, func(t *testing.T) {
+			conn, err := topicResolver.Search(m.ctx, t1, td.searchString, nil, nil, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			var count int
-			if count = len(conn.Edges); td.Count != count {
-				t.Fatalf("Expected %d results, got %d", td.Count, count)
+			if count = len(conn.Edges); td.count != count {
+				t.Fatalf("Expected %d results, got %d", td.count, count)
 			}
 
 			if count > 0 {
@@ -540,13 +540,75 @@ func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 
 	query := resolvers.New(m.db, testActor).Topic()
 
-	conn, err := query.AvailableParentTopics(m.ctx, topic2, nil, nil, nil, nil)
+	conn, err := query.AvailableParentTopics(m.ctx, topic2, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if len(conn.Edges) < 2 {
 		t.Fatal("Expected at least one topic edge")
+	}
+}
+
+func TestAvailableTopicsForTopicWithFilter(t *testing.T) {
+	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
+	matchingString := "695be58"
+	nonMatchingString := "doesn't match"
+
+	t1, cleanup := m.createTopic(testActor.Login, repoName, "Topic 1")
+	defer cleanup()
+
+	t2, cleanup := m.createTopic(testActor.Login, repoName, matchingString)
+	defer cleanup()
+
+	m.addParentTopicToTopic(t2, t1)
+
+	query := resolvers.New(m.db, testActor).Topic()
+
+	cases := []struct {
+		name         string
+		searchString *string
+		count        int
+		atLeast      bool
+	}{
+		{
+			name:         "Everything is returned when there is no search string",
+			searchString: nil,
+			count:        1,
+			atLeast:      true,
+		},
+		{
+			name:         "The matching topic is returned if the search string matches it",
+			searchString: &matchingString,
+			count:        1,
+			atLeast:      false,
+		},
+		{
+			name:         "The matching topic is not returned if the search does not match it",
+			searchString: &nonMatchingString,
+			count:        0,
+			atLeast:      false,
+		},
+	}
+
+	for _, td := range cases {
+		t.Run(td.name, func(t *testing.T) {
+			conn, err := query.AvailableParentTopics(m.ctx, t1, td.searchString, nil, nil, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			count := len(conn.Edges)
+
+			if td.atLeast {
+				if td.count > count {
+					t.Fatalf("Expected at least %d results, got %d", td.count, count)
+				}
+			} else if td.count != count {
+				t.Fatalf("Expected %d results, got %d", td.count, count)
+			}
+		})
 	}
 }
 
