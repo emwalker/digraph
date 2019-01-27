@@ -99,35 +99,26 @@ func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 	})
 }
 
-const appTemplateString = `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Language" content="en">
-    <title>Digraph</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    {{ asset "main.css" }}
-  </head>
-
-  <body>
-    <div id="root"></div>
-    {{ asset "vendors.js" }}
-    {{ asset "main.js" }}
-  </body>
-</html>`
-
-func (s *Server) handleRoot() http.Handler {
+func parseTemplate(name, path string) *template.Template {
 	funcMap := map[string]interface{}{"asset": webpack.AssetHelper}
-
-	appTemplate := template.New("appTemplate").Funcs(funcMap)
-	template.Must(appTemplate.Parse(appTemplateString))
-
-	io, err := ioutil.ReadFile("public/webpack/about.html")
+	io, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
-	aboutPageTemplate := template.New("aboutPageTemplate").Funcs(funcMap)
-	template.Must(aboutPageTemplate.Parse(string(io)))
+	t := template.New(name).Funcs(funcMap)
+	template.Must(t.Parse(string(io)))
+	return t
+}
+
+func (s *Server) handleRoot() http.Handler {
+	variables := struct {
+		GAID string
+	}{
+		GAID: os.Getenv("DIGRAPH_GOOGLE_ANALYTICS_ID"),
+	}
+
+	appTemplate := parseTemplate("appTemplate", "public/webpack/layout.html")
+	aboutPageTemplate := parseTemplate("aboutPageTemplate", "public/webpack/about.html")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path[1:] {
@@ -135,10 +126,10 @@ func (s *Server) handleRoot() http.Handler {
 			http.ServeFile(w, r, "public/webpack/robots.txt")
 			return
 		case "about":
-			aboutPageTemplate.Execute(w, nil)
+			aboutPageTemplate.Execute(w, variables)
 			return
 		default:
-			appTemplate.Execute(w, nil)
+			appTemplate.Execute(w, variables)
 		}
 	})
 }
