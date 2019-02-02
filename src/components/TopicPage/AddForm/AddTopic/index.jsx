@@ -7,6 +7,10 @@ import upsertTopicMutation from 'mutations/upsertTopicMutation'
 
 /* eslint jsx-a11y/label-has-for: 0 */
 
+const tooltipText =
+  'Add a subtopic to this topic. You can click "Edit"\n' +
+  'afterwards if it also belongs under another topic.'
+
 type Props = {
   disabled?: boolean,
   relay: Relay,
@@ -79,7 +83,12 @@ class AddTopic extends Component<Props, State> {
   render = () => (
     <dl className="form-group">
       <dt>
-        <label htmlFor="create-topic-name">Add subtopic</label>
+        <span
+          className="tooltipped tooltipped-w"
+          aria-label={tooltipText}
+        >
+          <label htmlFor="create-topic-name">Add subtopic</label>
+        </span>
       </dt>
       <dd>
         <input

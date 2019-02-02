@@ -1,23 +1,25 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-import AddTopic from './index'
+
+import AddLink from './index'
 
 jest.mock('react-relay', () => ({ createFragmentContainer: component => component }))
 
-describe('<AddTopic />', () => {
-  const wrapper = shallow(
-    <AddTopic />,
-  )
+const props = {
+  disabled: false,
+  relay: { environment: {} },
+  topic: {},
+  viewer: {},
+}
+
+describe('<AddLink />', () => {
+  const wrapper = shallow(<AddLink {...props} />)
 
   it('renders', () => {
     expect(wrapper).toMatchSnapshot()
   })
 
-  it('includes an input for the name', () => {
-    expect(wrapper.find('input').hasClass('test-topic-name')).toBeTruthy()
-  })
-
-  it('includes a tooltip', () => {
+  it('has a tooltip', () => {
     expect(wrapper.find('.tooltipped').exists()).toBeTruthy()
   })
 })

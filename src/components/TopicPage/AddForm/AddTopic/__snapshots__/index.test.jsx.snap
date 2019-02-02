@@ -5,11 +5,17 @@ exports[`<AddTopic /> renders 1`] = `
   className="form-group"
 >
   <dt>
-    <label
-      htmlFor="create-topic-name"
+    <span
+      aria-label="Add a subtopic to this topic. You can click \\"Edit\\"
+afterwards if it also belongs under another topic."
+      className="tooltipped tooltipped-w"
     >
-      Add subtopic
-    </label>
+      <label
+        htmlFor="create-topic-name"
+      >
+        Add subtopic
+      </label>
+    </span>
   </dt>
   <dd>
     <input

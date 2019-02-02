@@ -79,7 +79,12 @@ class AddLink extends Component<Props, State> {
   render = () => (
     <dl className="form-group">
       <dt>
-        <label htmlFor="create-link-url">Add link</label>
+        <span
+          className="tooltipped tooltipped-w"
+          aria-label="Add a link to this topic."
+        >
+          <label htmlFor="create-link-url">Add link</label>
+        </span>
       </dt>
       <dd>
         <input
