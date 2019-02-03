@@ -29,14 +29,14 @@ func getTopicLoader(ctx context.Context) *loaders.TopicLoader {
 	return ctx.Value(loaders.TopicLoaderKey).(*loaders.TopicLoader)
 }
 
-func topicConnection(rows []*models.Topic, err error) (models.TopicConnection, error) {
+func topicConnection(view *models.View, rows []*models.Topic, err error) (models.TopicConnection, error) {
 	if err != nil {
 		return models.TopicConnection{}, err
 	}
 
 	var edges []*models.TopicEdge
 	for _, topic := range rows {
-		edges = append(edges, &models.TopicEdge{Node: models.TopicValue{topic, false}})
+		edges = append(edges, &models.TopicEdge{Node: models.TopicValue{topic, false, view}})
 	}
 
 	return models.TopicConnection{Edges: edges}, nil
@@ -59,7 +59,7 @@ func topicOrganization(ctx context.Context, topic *models.TopicValue) (*models.O
 }
 
 func availableTopics(
-	ctx context.Context, exec boil.ContextExecutor, actor *models.User, searchString *string, first *int,
+	ctx context.Context, exec boil.ContextExecutor, view *models.View, searchString *string, first *int,
 ) (models.TopicConnection, error) {
 	var topics []*models.Topic
 	var err error
@@ -73,7 +73,7 @@ func availableTopics(
 		where u.id = $1
 		order by t.name
 		limit $2
-		`, actor.ID, limitFrom(first)).Bind(ctx, exec, &topics)
+		`, view.ViewerID, limitFrom(first)).Bind(ctx, exec, &topics)
 	} else {
 		err = queries.Raw(`
 		select t.* from topics t
@@ -83,14 +83,14 @@ func availableTopics(
 		where u.id = $1 and t.name like '%%' || $2 || '%%'
 		order by t.name
 		limit $3
-		`, actor.ID, *searchString, limitFrom(first)).Bind(ctx, exec, &topics)
+		`, view.ViewerID, *searchString, limitFrom(first)).Bind(ctx, exec, &topics)
 	}
 
 	if err != nil {
 		return models.TopicConnection{}, err
 	}
 
-	return topicConnection(topics, err)
+	return topicConnection(view, topics, err)
 }
 
 // AvailableParentTopics returns the topics that can be added to the link.
@@ -98,8 +98,7 @@ func (r *topicResolver) AvailableParentTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.TopicConnection, error) {
-	actor := getCurrentUser(ctx)
-	return availableTopics(ctx, r.DB, &actor, searchString, first)
+	return availableTopics(ctx, r.DB, topic.View, searchString, first)
 }
 
 // ChildTopics returns a set of topics.
@@ -114,7 +113,7 @@ func (r *topicResolver) ChildTopics(
 
 	mods = addTopicFilter(mods, searchString)
 	topics, err := topic.ChildTopics(mods...).All(ctx, r.DB)
-	return topicConnection(topics, err)
+	return topicConnection(topic.View, topics, err)
 }
 
 // CreatedAt returns the time of the topic's creation.
@@ -146,7 +145,8 @@ func (r *topicResolver) Links(
 	}
 
 	scope := topic.ChildLinks(mods...)
-	return linkConnection(scope.All(ctx, r.DB))
+	conn, err := scope.All(ctx, r.DB)
+	return linkConnection(topic.View, conn, err)
 }
 
 // Loading is true if the topic is being loaded.  Only used on the client.
@@ -176,7 +176,7 @@ func (r *topicResolver) ParentTopics(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
 	if topic.R != nil && topic.R.ParentTopics != nil {
-		return topicConnection(topic.R.ParentTopics, nil)
+		return topicConnection(topic.View, topic.R.ParentTopics, nil)
 	}
 
 	log.Printf("Fetching parent topics for topic %s", topic.ID)
@@ -185,7 +185,7 @@ func (r *topicResolver) ParentTopics(
 	}
 
 	topics, err := topic.ParentTopics(mods...).All(ctx, r.DB)
-	return topicConnection(topics, err)
+	return topicConnection(topic.View, topics, err)
 }
 
 // Repository returns the repostory of the topic.
@@ -261,7 +261,7 @@ func (r *topicResolver) matchingDescendantTopics(
 
 	var topicValues []*models.TopicValue
 	for _, t := range topics {
-		topicValues = append(topicValues, &models.TopicValue{t, false})
+		topicValues = append(topicValues, &models.TopicValue{t, false, topic.View})
 	}
 
 	return topicValues, nil
@@ -315,7 +315,7 @@ func (r *topicResolver) matchingDescendantLinks(
 
 	var linkValues []*models.LinkValue
 	for _, l := range links {
-		linkValues = append(linkValues, &models.LinkValue{l, false})
+		linkValues = append(linkValues, &models.LinkValue{l, false, topic.View})
 	}
 
 	return linkValues, nil

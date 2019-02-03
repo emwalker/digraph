@@ -200,7 +200,7 @@ func (r *MutationResolver) UpsertTopic(
 	return &models.UpsertTopicPayload{
 		Alerts: result.Alerts,
 		TopicEdge: &models.TopicEdge{
-			Node: models.TopicValue{result.Topic, result.TopicCreated},
+			Node: models.TopicValue{result.Topic, result.TopicCreated, r.Actor.DefaultView()},
 		},
 	}, nil
 }
@@ -230,7 +230,7 @@ func (r *MutationResolver) UpdateTopic(
 
 	return &models.UpdateTopicPayload{
 		Alerts: result.Alerts,
-		Topic:  models.TopicValue{topic, false},
+		Topic:  models.TopicValue{topic, false, r.Actor.DefaultView()},
 	}, nil
 }
 
@@ -270,7 +270,9 @@ func (r *MutationResolver) UpsertLink(
 
 	return &models.UpsertLinkPayload{
 		Alerts:   result.Alerts,
-		LinkEdge: &models.LinkEdge{Node: models.LinkValue{result.Link, result.LinkCreated}},
+		LinkEdge: &models.LinkEdge{
+			Node: models.LinkValue{result.Link, result.LinkCreated, r.Actor.DefaultView()},
+		},
 	}, nil
 }
 
@@ -293,7 +295,7 @@ func (r *MutationResolver) UpdateLinkTopics(
 	}
 
 	return &models.UpdateLinkTopicsPayload{
-		Link: models.LinkValue{link, false},
+		Link: models.LinkValue{link, false, r.Actor.DefaultView()},
 	}, nil
 }
 
@@ -322,6 +324,6 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 
 	return &models.UpdateTopicParentTopicsPayload{
 		Alerts: result.Alerts,
-		Topic:  models.TopicValue{result.Topic, false},
+		Topic:  models.TopicValue{result.Topic, false, r.Actor.DefaultView()},
 	}, nil
 }

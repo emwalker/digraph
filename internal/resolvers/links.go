@@ -13,7 +13,7 @@ type linkResolver struct {
 	*Resolver
 }
 
-func linkConnection(rows []*models.Link, err error) (models.LinkConnection, error) {
+func linkConnection(view *models.View, rows []*models.Link, err error) (models.LinkConnection, error) {
 	if err != nil {
 		return models.LinkConnection{}, err
 	}
@@ -21,7 +21,7 @@ func linkConnection(rows []*models.Link, err error) (models.LinkConnection, erro
 	var edges []*models.LinkEdge
 	for _, link := range rows {
 		edges = append(edges, &models.LinkEdge{
-			Node: models.LinkValue{link, false},
+			Node: models.LinkValue{link, false, view},
 		})
 	}
 
@@ -48,7 +48,7 @@ func linkOrganization(ctx context.Context, link *models.LinkValue) (*models.Orga
 func (r *linkResolver) AvailableParentTopics(
 	ctx context.Context, link *models.LinkValue, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
-	return availableTopics(ctx, r.DB, r.Actor, nil, first)
+	return availableTopics(ctx, r.DB, link.View, nil, first)
 }
 
 // CreatedAt returns the time at which the link was first added.
@@ -72,14 +72,14 @@ func (r *linkResolver) ParentTopics(
 	ctx context.Context, link *models.LinkValue, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
 	if link.R != nil && link.R.ParentTopics != nil {
-		return topicConnection(link.R.ParentTopics, nil)
+		return topicConnection(link.View, link.R.ParentTopics, nil)
 	}
 
 	log.Print("Fetching parent topics for link")
 	mods := []qm.QueryMod{}
 
 	topics, err := link.ParentTopics(mods...).All(ctx, r.DB)
-	return topicConnection(topics, err)
+	return topicConnection(link.View, topics, err)
 }
 
 // Repository returns the repository of the link.

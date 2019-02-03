@@ -79,7 +79,7 @@ func (r *viewResolver) Link(
 	}
 	mods = addRepos(mods, view)
 	link, err := models.Links(mods...).One(ctx, r.DB)
-	return &models.LinkValue{link, false}, err
+	return &models.LinkValue{link, false, view}, err
 }
 
 // Links returns a set of links.
@@ -99,7 +99,8 @@ func (r *viewResolver) Links(
 	}
 
 	scope := models.Links(mods...)
-	return linkConnection(scope.All(ctx, r.DB))
+	conn, err := scope.All(ctx, r.DB)
+	return linkConnection(view, conn, err)
 }
 
 func (r *viewResolver) CurrentRepository(
@@ -115,7 +116,7 @@ func (r *viewResolver) Topic(
 	log.Printf("Fetching topic %s", topicID)
 	scope := models.Topics(topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil, nil)...)
 	topic, err := scope.One(ctx, r.DB)
-	return &models.TopicValue{topic, false}, err
+	return &models.TopicValue{topic, false, view}, err
 }
 
 // Topics returns a set of topics.
@@ -124,5 +125,5 @@ func (r *viewResolver) Topics(
 	last *int, before *string,
 ) (models.TopicConnection, error) {
 	topics, err := models.Topics(topicQueryMods(view, nil, searchString, first)...).All(ctx, r.DB)
-	return topicConnection(topics, err)
+	return topicConnection(view, topics, err)
 }

@@ -13,12 +13,14 @@ import (
 type LinkValue struct {
 	*Link
 	NewlyAdded bool
+	View       *View
 }
 
 // TopicValue wraps a topic with additional fields that are not obtained from the database.
 type TopicValue struct {
 	*Topic
 	NewlyAdded bool
+	View       *View
 }
 
 // IsNamespaceable tags Link as implementing the Namespaceable interface.
@@ -95,4 +97,9 @@ func (u User) Summary() string {
 		return fmt.Sprintf("user no name (%s)", u.PrimaryEmail)
 	}
 	return fmt.Sprintf("user %s (%s)", u.Name, u.PrimaryEmail)
+}
+
+// DeafultView returns a view that can be used in return values for mutations and similar situations
+func (u User) DefaultView() *View {
+	return &View{ViewerID: u.ID}
 }
