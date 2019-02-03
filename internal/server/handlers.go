@@ -68,6 +68,8 @@ func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 
 func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.resolver.Actor = &resolvers.GuestUser
+
 		sessionID, err := gothic.GetFromSession(userSessionKey, r)
 		if err != nil {
 			log.Printf("No user session found: %s", err)
@@ -90,11 +92,20 @@ func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 		}
 
 		// Figure out a way to avoid mutating the resolver after the fact
-		user := session.R.User
-		s.resolver.Actor = user
+		var actor *models.User
+		if s.ImpersonateUserID == nil {
+			actor = session.R.User
+		} else {
+			actor, err = models.Users(qm.Where("id = ?", s.ImpersonateUserID)).One(ctx, s.db)
+			if err != nil {
+				panic(err)
+			}
+			log.Printf("Impersonating %s", actor.Summary())
+		}
+		s.resolver.Actor = actor
 
-		log.Printf("Adding user %s to context", user.Name)
-		ctx = context.WithValue(ctx, resolvers.CurrentUserKey, user)
+		log.Printf("Adding %s to context", actor.Summary())
+		ctx = context.WithValue(ctx, resolvers.CurrentUserKey, actor)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

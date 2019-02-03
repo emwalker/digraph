@@ -48,8 +48,7 @@ func linkOrganization(ctx context.Context, link *models.LinkValue) (*models.Orga
 func (r *linkResolver) AvailableParentTopics(
 	ctx context.Context, link *models.LinkValue, first *int, after *string, last *int, before *string,
 ) (models.TopicConnection, error) {
-	actor := getCurrentUser(ctx, r.DB)
-	return availableTopics(ctx, r.DB, &actor, nil, first)
+	return availableTopics(ctx, r.DB, r.Actor, nil, first)
 }
 
 // CreatedAt returns the time at which the link was first added.

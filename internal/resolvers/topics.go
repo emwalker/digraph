@@ -98,7 +98,7 @@ func (r *topicResolver) AvailableParentTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.TopicConnection, error) {
-	actor := getCurrentUser(ctx, r.DB)
+	actor := getCurrentUser(ctx)
 	return availableTopics(ctx, r.DB, &actor, searchString, first)
 }
 
@@ -232,9 +232,11 @@ func (r *topicResolver) matchingDescendantTopics(
 	)
 	select t.id from topics t
 	inner join child_topics ct on ct.child_id = t.id
-	where t.name ilike '%%' || $2 || '%%'
-	limit $3
-	`, topic.ID, searchString, limit).Bind(ctx, r.DB, &rows)
+	inner join repositories r on r.id = t.repository_id
+	inner join organization_members om on r.organization_id = om.organization_id
+	where om.user_id = $2 and t.name ilike '%%' || $3 || '%%'
+	limit $4
+	`, topic.ID, r.Actor.ID, searchString, limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err
@@ -271,7 +273,6 @@ func (r *topicResolver) matchingDescendantLinks(
 	var rows []struct {
 		ID string
 	}
-
 	err := queries.Raw(`
 	with recursive child_topics as (
 	  select parent_id, parent_id as child_id
@@ -284,9 +285,12 @@ func (r *topicResolver) matchingDescendantLinks(
 	select l.id from links l
 	inner join link_topics lt on l.id = lt.child_id
 	inner join child_topics ct on ct.child_id = lt.parent_id
-	where l.title ilike '%%' || $2 || '%%'
-	limit $3
-	`, topic.ID, searchString, limit).Bind(ctx, r.DB, &rows)
+	inner join topics t on t.id = lt.parent_id
+	inner join repositories r on t.repository_id = r.id
+	inner join organization_members om on r.organization_id = om.organization_id
+	where om.user_id = $2 and l.title ilike '%%' || $3 || '%%'
+	limit $4
+	`, topic.ID, r.Actor.ID, searchString, limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err

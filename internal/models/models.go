@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -40,6 +41,11 @@ func (Topic) IsResourceIdentifiable() {}
 
 // IsSearchResultItem tags Topic as being in the SearchResultItem union.
 func (Topic) IsSearchResultItem() {}
+
+// Summary returns info on a user that can be printed to the log
+func (t Topic) Summary() string {
+	return fmt.Sprintf("topic %s (%s)", t.Name, t.ID)
+}
 
 // IsResourceIdentifiable tags Organization as implementing the ResourceIdentifiable interface.
 func (Organization) IsResourceIdentifiable() {}
@@ -81,4 +87,12 @@ func (r *Repository) DisplayColor() string {
 // IsGuest returns true if the user is not backed by a row in the database.
 func (u User) IsGuest() bool {
 	return u.ID == ""
+}
+
+// Summary returns info on a user that can be printed to the log
+func (u User) Summary() string {
+	if u.Name == "" {
+		return fmt.Sprintf("user no name (%s)", u.PrimaryEmail)
+	}
+	return fmt.Sprintf("user %s (%s)", u.Name, u.PrimaryEmail)
 }

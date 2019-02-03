@@ -438,11 +438,10 @@ func TestSearchInTopic(t *testing.T) {
 
 func TestRootTopicIncludedInResults(t *testing.T) {
 	m := newMutator(t, testActor)
-	ctx := context.Background()
 
 	var err error
 	var root *models.TopicValue
-	if root, err = m.defaultRepo().RootTopic(ctx, testDB); err != nil {
+	if root, err = m.defaultRepo().RootTopic(m.ctx, testDB); err != nil {
 		t.Fatal(err)
 	}
 
@@ -453,7 +452,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 	topicResolver := resolvers.New(testDB, testActor).Topic()
 
 	var conn models.SearchResultItemConnection
-	if conn, err = topicResolver.Search(ctx, root, root.Name, nil, nil, nil, nil); err != nil {
+	if conn, err = topicResolver.Search(m.ctx, root, root.Name, nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -635,5 +634,47 @@ func TestDeleteTopic(t *testing.T) {
 
 	if count > 0 {
 		t.Fatal("Failed to delete topic")
+	}
+}
+
+func TestChildTopicAndLinkVisibility(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	repoName := m.defaultRepo().Name
+
+	var err error
+	var root *models.TopicValue
+	if root, err = m.defaultRepo().RootTopic(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "Child topic")
+	defer cleanup()
+
+	m.addParentTopicToTopic(topic, root)
+
+	link, cleanup := m.createLink(testActor.Login, repoName, "Private link", "https://www.nytimes.com")
+	defer cleanup()
+	m.addParentTopicToLink(link, root)
+
+	query := resolvers.New(m.db, testActor2).Topic()
+
+	var conn models.SearchResultItemConnection
+	if conn, err = query.Search(m.ctx, root, "Child topic", nil, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(conn.Edges) > 0 {
+		topic := conn.Edges[0].Node.(models.TopicValue)
+		t.Fatalf("Child topic should be omitted from result for second user: %#v", topic.Name)
+	}
+
+	if conn, err = query.Search(m.ctx, root, "Private link", nil, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(conn.Edges) > 0 {
+		link := conn.Edges[0].Node.(models.LinkValue)
+		t.Fatalf("Private link should be omitted from result for second user: %#v", link.Title)
 	}
 }

@@ -87,7 +87,7 @@ func TestFakeError(t *testing.T) {
 
 func TestGuestViewer(t *testing.T) {
 	ctx := context.Background()
-	resolver := resolvers.New(testDB, testActor).Query()
+	resolver := resolvers.New(testDB, &resolvers.GuestUser).Query()
 
 	viewer, err := resolver.Viewer(ctx)
 	if err != nil {

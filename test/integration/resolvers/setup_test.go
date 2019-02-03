@@ -20,8 +20,9 @@ import (
 const orgID = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
 var (
-	testDB    *sql.DB
-	testActor *models.User
+	testDB     *sql.DB
+	testActor  *models.User
+	testActor2 *models.User
 )
 
 type testFetcher struct{}
@@ -59,6 +60,13 @@ func TestMain(m *testing.M) {
 	testActor, err = models.Users(
 		qm.Load("SelectedRepository"),
 		qm.Where("users.selected_repository_id is not null"),
+	).One(context.Background(), testDB)
+	if err != nil {
+		panic(err)
+	}
+
+	testActor2, err = models.Users(
+		qm.Where("users.id != ?", testActor.ID),
 	).One(context.Background(), testDB)
 	if err != nil {
 		panic(err)

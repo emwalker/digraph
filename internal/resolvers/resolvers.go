@@ -7,16 +7,15 @@ import (
 	"database/sql"
 
 	"github.com/emwalker/digraph/internal/models"
-	"github.com/volatiletech/sqlboiler/boil"
 )
 
 // CurrentUserKey is the key used for storing the current user in the session.
 const CurrentUserKey = "currentUserKey"
 
-var guestUser models.User
+var GuestUser models.User
 
 func init() {
-	guestUser = models.User{}
+	GuestUser = models.User{}
 }
 
 // Resolver is the abstract base class for resolvers.
@@ -70,20 +69,12 @@ func (r *Resolver) View() models.ViewResolver {
 	return &viewResolver{r}
 }
 
-func getCurrentUser(ctx context.Context, exec boil.ContextExecutor) models.User {
-	if false {
-		user, err := models.FindUser(ctx, exec, "some-user-id")
-		if err != nil {
-			panic(err)
-		}
-		return *user
-	}
-
+func getCurrentUser(ctx context.Context) models.User {
 	value := ctx.Value(CurrentUserKey)
 	if user, ok := value.(*models.User); ok {
 		return *user
 	}
-	return guestUser
+	return GuestUser
 }
 
 func limitFrom(first *int) int {

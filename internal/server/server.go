@@ -18,6 +18,7 @@ type Server struct {
 	ConnectionString  string
 	db                *sql.DB
 	DevMode           bool
+	ImpersonateUserID *string
 	LogLevel          int
 	Port              string
 	resolver          *resolvers.Resolver

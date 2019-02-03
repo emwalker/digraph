@@ -44,6 +44,11 @@ func main() {
 		*logLevel,
 		connectionString,
 	)
+
+	if id := os.Getenv("DIGRAPH_IMPERSONATE_USER"); id != "" {
+		s.ImpersonateUserID = &id
+	}
+
 	s.Routes()
 	s.Run()
 }
