@@ -441,8 +441,12 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 
 	var err error
 	var root *models.TopicValue
-	if root, err = m.defaultRepo().RootTopic(m.ctx, testDB); err != nil {
+
+	if root, err = m.defaultRepo().RootTopic(m.ctx, testDB, testActor.DefaultView()); err != nil {
 		t.Fatal(err)
+	}
+	if root.View == nil {
+		t.Fatal("Expected a view")
 	}
 
 	topic, cleanup := m.createTopic(testActor.Login, m.defaultRepo().Name, "News organizations")
@@ -452,6 +456,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 	topicResolver := resolvers.New(testDB, testActor).Topic()
 
 	var conn models.SearchResultItemConnection
+
 	if conn, err = topicResolver.Search(m.ctx, root, root.Name, nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -644,7 +649,7 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 
 	var err error
 	var root *models.TopicValue
-	if root, err = m.defaultRepo().RootTopic(ctx, testDB); err != nil {
+	if root, err = m.defaultRepo().RootTopic(ctx, testDB, testActor.DefaultView()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -659,8 +664,13 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 
 	query := resolvers.New(m.db, testActor2).Topic()
 
+	var root2 *models.TopicValue
+	if root2, err = m.defaultRepo().RootTopic(ctx, testDB, testActor2.DefaultView()); err != nil {
+		t.Fatal(err)
+	}
+
 	var conn models.SearchResultItemConnection
-	if conn, err = query.Search(m.ctx, root, "Child topic", nil, nil, nil, nil); err != nil {
+	if conn, err = query.Search(m.ctx, root2, "Child topic", nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -669,7 +679,7 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 		t.Fatalf("Child topic should be omitted from result for second user: %#v", topic.Name)
 	}
 
-	if conn, err = query.Search(m.ctx, root, "Private link", nil, nil, nil, nil); err != nil {
+	if conn, err = query.Search(m.ctx, root2, "Private link", nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 

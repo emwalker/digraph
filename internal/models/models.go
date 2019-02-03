@@ -71,9 +71,11 @@ func (u *User) DefaultRepo(ctx context.Context, exec boil.ContextExecutor) (*Rep
 }
 
 // RootTopic returns the root topic of the repository.
-func (r *Repository) RootTopic(ctx context.Context, exec boil.ContextExecutor) (*TopicValue, error) {
+func (r *Repository) RootTopic(
+	ctx context.Context, exec boil.ContextExecutor, view *View,
+) (*TopicValue, error) {
 	topic, err := r.Topics(qm.Where("root")).One(ctx, exec)
-	return &TopicValue{Topic: topic}, err
+	return &TopicValue{Topic: topic, View: view}, err
 }
 
 // IsPrivate is true if the repository is a private repo.
@@ -102,4 +104,23 @@ func (u User) Summary() string {
 // DeafultView returns a view that can be used in return values for mutations and similar situations
 func (u User) DefaultView() *View {
 	return &View{ViewerID: u.ID}
+}
+
+func (v View) Filter(mods []qm.QueryMod) []qm.QueryMod {
+	if v.ViewerID == "" {
+		return append(mods,
+			qm.InnerJoin("organizations o on o.id = r.organization_id"),
+			qm.Where("r.system and o.public"),
+		)
+	}
+
+	if len(v.RepositoryIds) > 0 {
+		ids := v.RepositoryIdsForQuery()
+		return append(mods, qm.WhereIn("r.id in ?", ids...))
+	}
+
+	return append(mods,
+		qm.InnerJoin("organization_members om on r.organization_id = om.organization_id"),
+		qm.WhereIn("om.user_id = ? ", v.ViewerID),
+	)
 }

@@ -36,27 +36,11 @@ func pageSizeOrDefault(first *int) int {
 	return *first
 }
 
-func addRepos(mods []qm.QueryMod, view *models.View) []qm.QueryMod {
-	if view.ViewerID == "" {
-		mods = append(mods,
-			qm.InnerJoin("organizations o on o.id = r.organization_id"),
-			qm.Where("r.system and o.public"),
-		)
-	} else {
-		ids := view.RepositoryIdsForQuery()
-		if len(ids) > 0 {
-			mods = append(mods, qm.WhereIn("r.id in ?", view.RepositoryIdsForQuery()...))
-		}
-	}
-	return mods
-}
-
 func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string, first *int) []qm.QueryMod {
-	mods := []qm.QueryMod{
+	mods := view.Filter([]qm.QueryMod{
 		qm.Limit(pageSizeOrDefault(first)),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
-	}
-	mods = addRepos(mods, view)
+	})
 
 	if filter != nil {
 		mods = append(mods, filter)
@@ -73,11 +57,11 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 func (r *viewResolver) Link(
 	ctx context.Context, view *models.View, linkID string,
 ) (*models.LinkValue, error) {
-	mods := []qm.QueryMod{
+	mods := view.Filter([]qm.QueryMod{
 		qm.Where("links.id = ?", linkID),
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
-	}
-	mods = addRepos(mods, view)
+	})
+
 	link, err := models.Links(mods...).One(ctx, r.DB)
 	return &models.LinkValue{link, false, view}, err
 }
@@ -87,12 +71,11 @@ func (r *viewResolver) Links(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.LinkConnection, error) {
-	mods := []qm.QueryMod{
+	mods := view.Filter([]qm.QueryMod{
 		qm.OrderBy("created_at desc"),
 		qm.Limit(pageSizeOrDefault(first)),
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
-	}
-	mods = addRepos(mods, view)
+	})
 
 	if searchString != nil && *searchString != "" {
 		mods = append(mods, qm.Where("title ilike '%%' || ? || '%%'", searchString))

@@ -269,7 +269,7 @@ func (r *MutationResolver) UpsertLink(
 	}
 
 	return &models.UpsertLinkPayload{
-		Alerts:   result.Alerts,
+		Alerts: result.Alerts,
 		LinkEdge: &models.LinkEdge{
 			Node: models.LinkValue{result.Link, result.LinkCreated, r.Actor.DefaultView()},
 		},

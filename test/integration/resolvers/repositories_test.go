@@ -11,14 +11,14 @@ import (
 
 func TestRootTopic(t *testing.T) {
 	m := newMutator(t, testActor)
-	resolver := &resolvers.Resolver{DB: testDB}
+	resolver := resolvers.New(testDB, testActor)
 
 	defaultRepo, err := testActor.DefaultRepo(m.ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	rootTopic, err := defaultRepo.RootTopic(m.ctx, testDB)
+	rootTopic, err := defaultRepo.RootTopic(m.ctx, testDB, m.actor.DefaultView())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,16 +14,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-type topicResolver struct {
-	*Resolver
-}
-
-func addTopicFilter(mods []qm.QueryMod, searchString *string) []qm.QueryMod {
-	if searchString != nil && *searchString != "" {
-		mods = append(mods, qm.Where("name ilike '%%' || ? || '%%'", *searchString))
-	}
-	return mods
-}
+type topicResolver struct{ *Resolver }
 
 func getTopicLoader(ctx context.Context) *loaders.TopicLoader {
 	return ctx.Value(loaders.TopicLoaderKey).(*loaders.TopicLoader)
@@ -106,12 +97,16 @@ func (r *topicResolver) ChildTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.TopicConnection, error) {
-	mods := []qm.QueryMod{
+	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
-		qm.OrderBy("name"),
+		qm.OrderBy("topics.name"),
+		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+	})
+
+	if searchString != nil && *searchString != "" {
+		mods = append(mods, qm.Where("topics.name ilike '%%' || ? || '%%'", *searchString))
 	}
 
-	mods = addTopicFilter(mods, searchString)
 	topics, err := topic.ChildTopics(mods...).All(ctx, r.DB)
 	return topicConnection(topic.View, topics, err)
 }
@@ -135,13 +130,14 @@ func (r *topicResolver) Links(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.LinkConnection, error) {
-	mods := []qm.QueryMod{
+	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
 		qm.OrderBy("created_at desc"),
-	}
+		qm.InnerJoin("repositories r on links.repository_id = r.id"),
+	})
 
 	if searchString != nil && *searchString != "" {
-		mods = append(mods, qm.Where("title ilike '%%' || ? || '%%'", searchString))
+		mods = append(mods, qm.Where("links.title ilike '%%' || ? || '%%'", searchString))
 	}
 
 	scope := topic.ChildLinks(mods...)
@@ -180,9 +176,10 @@ func (r *topicResolver) ParentTopics(
 	}
 
 	log.Printf("Fetching parent topics for topic %s", topic.ID)
-	mods := []qm.QueryMod{
-		qm.OrderBy("name"),
-	}
+	mods := topic.View.Filter([]qm.QueryMod{
+		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+		qm.OrderBy("topics.name"),
+	})
 
 	topics, err := topic.ParentTopics(mods...).All(ctx, r.DB)
 	return topicConnection(topic.View, topics, err)
@@ -232,11 +229,9 @@ func (r *topicResolver) matchingDescendantTopics(
 	)
 	select t.id from topics t
 	inner join child_topics ct on ct.child_id = t.id
-	inner join repositories r on r.id = t.repository_id
-	inner join organization_members om on r.organization_id = om.organization_id
-	where om.user_id = $2 and t.name ilike '%%' || $3 || '%%'
-	limit $4
-	`, topic.ID, r.Actor.ID, searchString, limit).Bind(ctx, r.DB, &rows)
+	where t.name ilike '%%' || $2 || '%%'
+	limit $3
+	`, topic.ID, searchString, limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err
@@ -251,10 +246,13 @@ func (r *topicResolver) matchingDescendantTopics(
 		ids = append(ids, row.ID)
 	}
 
-	topics, err := models.Topics(
+	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
-		qm.WhereIn("id in ?", ids...),
-	).All(ctx, r.DB)
+		qm.WhereIn("topics.id in ?", ids...),
+		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+	})
+
+	topics, err := models.Topics(mods...).All(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -285,12 +283,9 @@ func (r *topicResolver) matchingDescendantLinks(
 	select l.id from links l
 	inner join link_topics lt on l.id = lt.child_id
 	inner join child_topics ct on ct.child_id = lt.parent_id
-	inner join topics t on t.id = lt.parent_id
-	inner join repositories r on t.repository_id = r.id
-	inner join organization_members om on r.organization_id = om.organization_id
-	where om.user_id = $2 and l.title ilike '%%' || $3 || '%%'
-	limit $4
-	`, topic.ID, r.Actor.ID, searchString, limit).Bind(ctx, r.DB, &rows)
+	where l.title ilike '%%' || $2 || '%%'
+	limit $3
+	`, topic.ID, searchString, limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err
@@ -305,10 +300,13 @@ func (r *topicResolver) matchingDescendantLinks(
 		ids = append(ids, row.ID)
 	}
 
-	links, err := models.Links(
+	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
-		qm.WhereIn("id in ?", ids...),
-	).All(ctx, r.DB)
+		qm.WhereIn("links.id in ?", ids...),
+		qm.InnerJoin("repositories r on links.repository_id = r.id"),
+	})
+
+	links, err := models.Links(mods...).All(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}
