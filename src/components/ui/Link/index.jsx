@@ -4,7 +4,7 @@ import { graphql, createFragmentContainer } from 'react-relay'
 
 import type { LinkType, Relay, UserType, ViewType } from 'components/types'
 import { liftNodes } from 'utils'
-import EditLink from './EditLink'
+import EditLink from './EditLinkContainer'
 import Item from '../Item'
 
 /* eslint no-underscore-dangle: 0 */

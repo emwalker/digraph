@@ -104,6 +104,7 @@ export type UserType = {
 
 export type ViewType = {
   currentRepository: RepositoryType,
+  link: LinkType,
   topic: TopicType,
-  topics?: TopicConnection,
+  topics: TopicConnection,
 }
