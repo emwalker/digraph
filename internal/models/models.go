@@ -32,8 +32,17 @@ func (Link) IsResourceIdentifiable() {}
 // IsSearchResultItem tags Link as being in the SearchResultItem union.
 func (Link) IsSearchResultItem() {}
 
+// Summary returns info on a user that can be printed to the log
+func (l Link) Summary() string {
+	return fmt.Sprintf("link %s (%s)", l.URL, l.ID)
+}
+
 // IsResourceIdentifiable tags Repository as implementing the ResourceIdentifiable interface.
 func (Repository) IsResourceIdentifiable() {}
+
+func (r Repository) Summary() string {
+	return fmt.Sprintf("repo %s (%s)", r.Name, r.ID)
+}
 
 // IsNamespaceable tags Topic as implementing the Namespaceable interface.
 func (Topic) IsNamespaceable() {}

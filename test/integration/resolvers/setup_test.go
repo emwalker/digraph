@@ -190,13 +190,18 @@ func (m mutator) createLink(orgLogin, repoName, title, url string) (*models.Link
 	link := payload1.LinkEdge.Node
 
 	cleanup := func() error {
+		_, err := models.UserLinks(qm.Where("link_id = ?", link.ID)).DeleteAll(m.ctx, testDB)
+		if err != nil {
+			m.t.Fatal(err)
+		}
+
 		count, err := link.Delete(m.ctx, testDB)
 		if err != nil {
 			m.t.Fatal(err)
 		}
 
 		if count != int64(1) {
-			m.t.Fatal("Expected at least one updated record")
+			log.Printf("Expected at least one updated record, but none was updated")
 		}
 		return nil
 	}

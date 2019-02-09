@@ -13,6 +13,7 @@ var TableNames = struct {
 	Sessions            string
 	TopicTopics         string
 	Topics              string
+	UserLinks           string
 	Users               string
 }{
 	LinkTopics:          "link_topics",
@@ -24,5 +25,6 @@ var TableNames = struct {
 	Sessions:            "sessions",
 	TopicTopics:         "topic_topics",
 	Topics:              "topics",
+	UserLinks:           "user_links",
 	Users:               "users",
 }

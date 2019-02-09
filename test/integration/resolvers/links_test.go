@@ -33,6 +33,13 @@ func TestUpsertLink(t *testing.T) {
 	link := payload1.LinkEdge.Node
 
 	defer func() {
+		_, err = models.UserLinks(
+			qm.Where("link_id = ? and user_id = ?", link.ID, testActor.ID),
+		).DeleteAll(m.ctx, m.db)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		count, err := link.Delete(m.ctx, m.db)
 		if err != nil {
 			t.Fatal(err)
@@ -188,11 +195,10 @@ func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 func TestDeleteLink(t *testing.T) {
 	m := newMutator(t, testActor)
 
-	link, _ := m.createLink(testActor.Login, m.defaultRepo().Name, "Some link", "http://some.com/link")
+	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "Some link", "http://some.com/link")
+	defer cleanup()
 
-	payload, err := m.resolver.DeleteLink(m.ctx, models.DeleteLinkInput{
-		LinkID: link.ID,
-	})
+	payload, err := m.resolver.DeleteLink(m.ctx, models.DeleteLinkInput{LinkID: link.ID})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,6 +15,12 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// DeleteLinkResult holds the result of a DeleteLink call.
+type DeleteLinkResult struct {
+	Cleanup       CleanupFunc
+	DeletedLinkID string
+}
+
 // UpsertLinkResult holds the result of an UpsertLink call.
 type UpsertLinkResult struct {
 	Alerts      []models.Alert
@@ -123,6 +129,57 @@ func (c Connection) addParentTopicsToLink(
 	return link.AddParentTopics(ctx, c.Exec, false, topics...)
 }
 
+func (c Connection) logUserLinkAction(
+	ctx context.Context, repo *models.Repository, actor *models.User, link *models.Link, action string,
+) (*models.UserLink, error) {
+	// Log the upsert
+	userLink := models.UserLink{
+		OrganizationID: repo.OrganizationID,
+		RepositoryID:   repo.ID,
+		LinkID:         link.ID,
+		UserID:         actor.ID,
+		Action:         action,
+	}
+
+	if err := userLink.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+		log.Printf("Failed to add a row to user_links: %s", err)
+		return nil, err
+	}
+
+	return &userLink, nil
+}
+
+// DeleteLink removes a link from a repo.
+func (c Connection) DeleteLink(
+	ctx context.Context, repo *models.Repository, link *models.Link,
+) (*DeleteLinkResult, error) {
+	var err error
+
+	if _, err = link.Delete(ctx, c.Exec); err != nil {
+		log.Printf("There was a problem deleting link: %#v", link)
+		return nil, err
+	}
+
+	userLink, err := c.logUserLinkAction(ctx, repo, c.Actor, link, models.ActionDeleteLink)
+	if err != nil {
+		return nil, err
+	}
+
+	cleanup := func() error {
+		_, err = userLink.Delete(ctx, c.Exec)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return &DeleteLinkResult{
+		Cleanup:       cleanup,
+		DeletedLinkID: link.ID,
+	}, nil
+}
+
 // UpsertLink adds a link if it does not yet exist in the database or updates information about
 // the link if it is found.
 func (c Connection) UpsertLink(
@@ -196,6 +253,11 @@ func (c Connection) UpsertLink(
 		}
 	}
 
+	userLink, err := c.logUserLinkAction(ctx, repo, c.Actor, &link, models.ActionUpsertLink)
+	if err != nil {
+		return nil, err
+	}
+
 	cleanup := func() error {
 		if existing < 1 {
 			log.Printf("Deleteing link %s", link.ID)
@@ -203,6 +265,12 @@ func (c Connection) UpsertLink(
 				return err
 			}
 		}
+
+		_, err := userLink.Delete(ctx, c.Exec)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}
 

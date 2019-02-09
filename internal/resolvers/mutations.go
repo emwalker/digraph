@@ -72,15 +72,30 @@ func (r *MutationResolver) DeleteLink(
 	link, err := models.Links(
 		qm.InnerJoin("organization_members om on links.organization_id = om.organization_id"),
 		qm.Where("links.id = ? and om.user_id = ?", input.LinkID, r.Actor.ID),
+		qm.Load("Repository"),
 	).One(ctx, r.DB)
 	if err != nil {
 		log.Printf("There was a problem looking up link: %s", input.LinkID)
 		return nil, err
 	}
+	repo := link.R.Repository
 
-	if _, err = link.Delete(ctx, r.DB); err != nil {
-		log.Printf("There was a problem deleting link: %#v", link)
-		return nil, err
+	err = transact(r.DB, func(tx *sql.Tx) error {
+		c := services.Connection{Exec: tx, Actor: r.Actor}
+
+		_, err := c.DeleteLink(ctx, repo, link)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Printf(
+			"%s failed to delete link %s from repo %s: %s", r.Actor.Summary(), link.Summary(),
+			repo.Summary(), err,
+		)
 	}
 
 	return &models.DeleteLinkPayload{

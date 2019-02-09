@@ -50,3 +50,9 @@ func makeCacheKey(cols boil.Columns, nzDefaults []string) string {
 	strmangle.PutBuffer(buf)
 	return str
 }
+
+// Enum values for action
+const (
+	ActionUpsertLink = "upsert_link"
+	ActionDeleteLink = "delete_link"
+)

@@ -650,6 +650,84 @@ func testRepositoryToManyTopics(t *testing.T) {
 	}
 }
 
+func testRepositoryToManyUserLinks(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Repository
+	var b, c UserLink
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, repositoryDBTypes, true, repositoryColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Repository struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, userLinkDBTypes, false, userLinkColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, userLinkDBTypes, false, userLinkColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.RepositoryID = a.ID
+	c.RepositoryID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	userLink, err := a.UserLinks().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range userLink {
+		if v.RepositoryID == b.RepositoryID {
+			bFound = true
+		}
+		if v.RepositoryID == c.RepositoryID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := RepositorySlice{&a}
+	if err = a.L.LoadUserLinks(ctx, tx, false, (*[]*Repository)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.UserLinks); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.UserLinks = nil
+	if err = a.L.LoadUserLinks(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.UserLinks); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", userLink)
+	}
+}
+
 func testRepositoryToManySelectedRepositoryUsers(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -869,6 +947,81 @@ func testRepositoryToManyAddOpTopics(t *testing.T) {
 		}
 
 		count, err := a.Topics().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testRepositoryToManyAddOpUserLinks(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Repository
+	var b, c, d, e UserLink
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, repositoryDBTypes, false, strmangle.SetComplement(repositoryPrimaryKeyColumns, repositoryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*UserLink{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, userLinkDBTypes, false, strmangle.SetComplement(userLinkPrimaryKeyColumns, userLinkColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*UserLink{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddUserLinks(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.RepositoryID {
+			t.Error("foreign key was wrong value", a.ID, first.RepositoryID)
+		}
+		if a.ID != second.RepositoryID {
+			t.Error("foreign key was wrong value", a.ID, second.RepositoryID)
+		}
+
+		if first.R.Repository != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Repository != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.UserLinks[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.UserLinks[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.UserLinks().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}

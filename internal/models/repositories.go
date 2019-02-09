@@ -52,12 +52,14 @@ var RepositoryRels = struct {
 	Owner                   string
 	Links                   string
 	Topics                  string
+	UserLinks               string
 	SelectedRepositoryUsers string
 }{
 	Organization:            "Organization",
 	Owner:                   "Owner",
 	Links:                   "Links",
 	Topics:                  "Topics",
+	UserLinks:               "UserLinks",
 	SelectedRepositoryUsers: "SelectedRepositoryUsers",
 }
 
@@ -67,6 +69,7 @@ type repositoryR struct {
 	Owner                   *User
 	Links                   LinkSlice
 	Topics                  TopicSlice
+	UserLinks               UserLinkSlice
 	SelectedRepositoryUsers UserSlice
 }
 
@@ -386,6 +389,27 @@ func (o *Repository) Topics(mods ...qm.QueryMod) topicQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"topics\".*"})
+	}
+
+	return query
+}
+
+// UserLinks retrieves all the user_link's UserLinks with an executor.
+func (o *Repository) UserLinks(mods ...qm.QueryMod) userLinkQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"user_links\".\"repository_id\"=?", o.ID),
+	)
+
+	query := UserLinks(queryMods...)
+	queries.SetFrom(query.Query, "\"user_links\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"user_links\".*"})
 	}
 
 	return query
@@ -788,6 +812,97 @@ func (repositoryL) LoadTopics(ctx context.Context, e boil.ContextExecutor, singu
 	return nil
 }
 
+// LoadUserLinks allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (repositoryL) LoadUserLinks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRepository interface{}, mods queries.Applicator) error {
+	var slice []*Repository
+	var object *Repository
+
+	if singular {
+		object = maybeRepository.(*Repository)
+	} else {
+		slice = *maybeRepository.(*[]*Repository)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &repositoryR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &repositoryR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(qm.From(`user_links`), qm.WhereIn(`repository_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load user_links")
+	}
+
+	var resultSlice []*UserLink
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice user_links")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on user_links")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for user_links")
+	}
+
+	if len(userLinkAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.UserLinks = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &userLinkR{}
+			}
+			foreign.R.Repository = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.RepositoryID {
+				local.R.UserLinks = append(local.R.UserLinks, foreign)
+				if foreign.R == nil {
+					foreign.R = &userLinkR{}
+				}
+				foreign.R.Repository = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadSelectedRepositoryUsers allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (repositoryL) LoadSelectedRepositoryUsers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRepository interface{}, mods queries.Applicator) error {
@@ -1070,6 +1185,59 @@ func (o *Repository) AddTopics(ctx context.Context, exec boil.ContextExecutor, i
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &topicR{
+				Repository: o,
+			}
+		} else {
+			rel.R.Repository = o
+		}
+	}
+	return nil
+}
+
+// AddUserLinks adds the given related objects to the existing relationships
+// of the repository, optionally inserting them as new records.
+// Appends related to o.R.UserLinks.
+// Sets related.R.Repository appropriately.
+func (o *Repository) AddUserLinks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*UserLink) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.RepositoryID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"user_links\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"repository_id"}),
+				strmangle.WhereClause("\"", "\"", 2, userLinkPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.RepositoryID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &repositoryR{
+			UserLinks: related,
+		}
+	} else {
+		o.R.UserLinks = append(o.R.UserLinks, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &userLinkR{
 				Repository: o,
 			}
 		} else {

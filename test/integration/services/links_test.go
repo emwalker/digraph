@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/emwalker/digraph/internal/models"
 	"github.com/emwalker/digraph/internal/services"
 )
 
@@ -47,5 +48,38 @@ func TestLinkHasATopic(t *testing.T) {
 
 	if len(topics) < 1 {
 		t.Fatal("Expected the link to be added to the root topic")
+	}
+}
+
+func TestUserLinkHistory(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	prevCount, _ := models.UserLinks().Count(ctx, testDB)
+	var nextCount int64
+
+	// A log is added for an upsert
+	title := "A title"
+	upsertResult, err := c.UpsertLink(ctx, defaultRepo, "http://frotz.com/", &title, []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer upsertResult.Cleanup()
+
+	nextCount, _ = models.UserLinks().Count(ctx, testDB)
+	if (prevCount + 1) != nextCount {
+		t.Fatal("Expected a new user link record to be created for the upsert")
+	}
+
+	// A log is added for a delete
+	deleteResult, err := c.DeleteLink(ctx, defaultRepo, upsertResult.Link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer deleteResult.Cleanup()
+
+	nextCount, _ = models.UserLinks().Count(ctx, testDB)
+	if (prevCount + 2) != nextCount {
+		t.Fatal("Expected a new user link record to be created for the delete")
 	}
 }
