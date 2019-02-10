@@ -69,6 +69,7 @@ class Topic extends Component<Props, State> {
         orgLogin={this.props.orgLogin}
         repoName={topic.repository && topic.repository.name}
         showEditButton={this.showEditButton}
+        showLink={false}
         title={topic.name}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}

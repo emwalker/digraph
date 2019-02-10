@@ -16,6 +16,7 @@ type Props = {
   formIsOpen: boolean,
   newlyAdded: boolean,
   showEditButton: ?boolean,
+  showLink: ?boolean,
   orgLogin: string,
   repoName: ?string,
   title: string,
@@ -29,6 +30,7 @@ class Item extends Component<Props> {
     description: null,
     displayColor: '#fff',
     showEditButton: false,
+    showLink: true,
   }
 
   get className(): string {
@@ -54,7 +56,7 @@ class Item extends Component<Props> {
   }
 
   get url(): ?Node {
-    if (!this.props.url)
+    if (!this.props.url || !this.props.showLink)
       return null
 
     return (
@@ -123,7 +125,7 @@ class Item extends Component<Props> {
               {this.titleLink}
               <div>{ this.props.description }</div>
             </div>
-            {this.url}
+            { this.url }
             <div>
               { this.props.topics.map(this.renderTopicBadge) }
             </div>
