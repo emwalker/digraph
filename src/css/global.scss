@@ -13,6 +13,18 @@ html, body {
   display: block;
   position: relative;
   padding-bottom: $footer-height;
+
+  .primary-logo {
+    position: relative;
+    top: 7px;
+  }
+
+  &.homepage {
+    .primary-logo {
+      margin-right: 5px;
+      top: 9px;
+    }
+  }
 }
 
 .SignUpPage {
