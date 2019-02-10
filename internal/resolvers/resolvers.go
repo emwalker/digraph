@@ -12,6 +12,7 @@ import (
 // CurrentUserKey is the key used for storing the current user in the session.
 const CurrentUserKey = "currentUserKey"
 
+// GuestUser is a placeholder user that is used when someone visits the app without a session.
 var GuestUser models.User
 
 func init() {

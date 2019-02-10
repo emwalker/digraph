@@ -40,6 +40,7 @@ func (l Link) Summary() string {
 // IsResourceIdentifiable tags Repository as implementing the ResourceIdentifiable interface.
 func (Repository) IsResourceIdentifiable() {}
 
+// Summary returns a string that can be included in logs.
 func (r Repository) Summary() string {
 	return fmt.Sprintf("repo %s (%s)", r.Name, r.ID)
 }
@@ -110,11 +111,13 @@ func (u User) Summary() string {
 	return fmt.Sprintf("user %s (%s)", u.Name, u.PrimaryEmail)
 }
 
-// DeafultView returns a view that can be used in return values for mutations and similar situations
+// DefaultView returns a view that can be used in return values for mutations and similar situations
 func (u User) DefaultView() *View {
 	return &View{ViewerID: u.ID}
 }
 
+// Filter filters a query according to the repos that have been selected and that the user can
+// access.
 func (v View) Filter(mods []qm.QueryMod) []qm.QueryMod {
 	if v.ViewerID == "" {
 		return append(mods,
