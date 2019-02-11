@@ -72,6 +72,12 @@ class TopicPage extends Component<Props, State> {
     />
   )
 
+  renderNotification = () => (
+    <div className="Box p-3 mt-3">
+      You must be <a href="/login">signed in</a> to add and move topics and links.
+    </div>
+  )
+
   render = () => {
     const { location, topic, view } = this.props
 
@@ -113,7 +119,10 @@ class TopicPage extends Component<Props, State> {
               repoName={currentRepository.displayName}
               items={liftNodes(parentTopics)}
             />
-            { !this.props.viewer.isGuest && this.renderAddForm() }
+            { this.props.viewer.isGuest
+              ? this.renderNotification()
+              : this.renderAddForm()
+            }
           </div>
         </div>
       </div>
