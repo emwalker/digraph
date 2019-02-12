@@ -1,22 +1,12 @@
 // @flow
 import React, { Component, Fragment } from 'react'
 import { Link } from 'found'
-import { pathOr } from 'ramda'
 
 import type { UserType } from 'components/types'
 import ViewerDropdown from './ViewerDropdown'
 import SignIn from './SignIn'
 
-const rootPath = pathOr('/', ['defaultRepository', 'rootTopic', 'resourcePath'])
-
 type Props = {
-  defaultOrganization: {
-    defaultRepository: {
-      rootTopic: {
-        resourcePath: string,
-      },
-    },
-  },
   viewer: UserType,
 }
 
@@ -31,7 +21,7 @@ class Header extends Component<Props> {
     <ViewerDropdown viewer={viewer} />
 
   render = () => {
-    const { defaultOrganization, viewer } = this.props
+    const { viewer } = this.props
 
     return (
       <header
@@ -40,7 +30,7 @@ class Header extends Component<Props> {
         <nav className="flex-self-center">
           <h1 className="h3 text-normal">
             <Link
-              to={defaultOrganization ? rootPath(defaultOrganization) : '/'}
+              to="/"
               className="text-gray-dark n-link no-underline"
             >
               <div className="mr-2 d-inline-block primary-logo">
