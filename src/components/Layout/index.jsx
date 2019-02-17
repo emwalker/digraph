@@ -42,6 +42,7 @@ query LayoutQuery {
 const Layout = ({ alerts, children, defaultOrganization, viewer }: Props) => (
   <div className="layout">
     <Header
+      className="clearfix mb-3 d-flex px-3 px-md-6 px-lg-4 py-2 box-shadow"
       viewer={viewer}
       defaultOrganization={defaultOrganization}
     />

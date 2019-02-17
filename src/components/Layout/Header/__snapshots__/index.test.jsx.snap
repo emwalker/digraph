@@ -2,7 +2,7 @@
 
 exports[`<Header /> renders 1`] = `
 <header
-  className="Header clearfix mb-3 d-flex px-4 py-2 box-shadow"
+  className="Header"
 >
   <nav
     className="flex-self-center"

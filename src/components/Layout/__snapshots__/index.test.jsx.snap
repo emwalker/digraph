@@ -4,7 +4,9 @@ exports[`<Layout /> renders 1`] = `
 <div
   className="layout"
 >
-  <Header />
+  <Header
+    className="clearfix mb-3 d-flex px-3 px-md-6 px-lg-4 py-2 box-shadow"
+  />
   <div
     className="container-lg clearfix"
   >

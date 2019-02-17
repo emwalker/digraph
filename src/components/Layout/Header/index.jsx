@@ -1,16 +1,26 @@
 // @flow
 import React, { Component, Fragment } from 'react'
 import { Link } from 'found'
+import classNames from 'classnames'
 
 import type { UserType } from 'components/types'
 import ViewerDropdown from './ViewerDropdown'
 import SignIn from './SignIn'
 
 type Props = {
+  className?: ?string,
   viewer: UserType,
 }
 
 class Header extends Component<Props> {
+  static defaultProps = {
+    className: '',
+  }
+
+  get className(): string {
+    return classNames('Header', this.props.className)
+  }
+
   renderGuestUserNav = () => (
     <Fragment>
       <SignIn />
@@ -25,7 +35,7 @@ class Header extends Component<Props> {
 
     return (
       <header
-        className="Header clearfix mb-3 d-flex px-4 py-2 box-shadow"
+        className={this.className}
       >
         <nav className="flex-self-center">
           <h1 className="h3 text-normal">
