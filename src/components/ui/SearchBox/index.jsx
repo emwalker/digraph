@@ -1,7 +1,9 @@
 // @flow
 import React, { Component } from 'react'
+import classNames from 'classnames'
 
 type Props = {
+  className?: ?string,
   onEnter?: ?Function,
   value: string,
 }
@@ -11,6 +13,10 @@ type State = {
 }
 
 class SearchBox extends Component<Props, State> {
+  static defaultProps = {
+    className: '',
+  }
+
   constructor(props: Props) {
     super(props)
     this.state = {
@@ -39,15 +45,18 @@ class SearchBox extends Component<Props, State> {
     }
   }
 
+  get className(): string {
+    return classNames('form-group mb-1 mt-1', this.props.className)
+  }
+
   render = () => (
-    <div className="form-group mb-1 mt-1" style={{ width: '317px' }}>
+    <div className={this.className}>
       <input
         aria-label="Search"
         className="form-control"
         onChange={this.onChange}
         onKeyPress={this.onKeyPress}
         placeholder="Search"
-        size="20"
         type="search"
         value={this.state.value}
       />

@@ -38,6 +38,7 @@ exports[`<LoadingPage /> renders 1`] = `
       Some title
     </div>
     <SearchBox
+      className=""
       value=""
     />
   </div>

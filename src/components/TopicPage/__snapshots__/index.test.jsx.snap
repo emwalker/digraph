@@ -1,7 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<TopicPage /> renders 1`] = `
-<div>
+<div
+  className="px-3 px-md-6 px-lg-0"
+>
   <Breadcrumbs
     repository={
       Object {
@@ -22,20 +24,8 @@ exports[`<TopicPage /> renders 1`] = `
       }
     }
   />
-  <div
-    className="digraph-anim-fade-in"
-  >
-    <div
-      className="two-thirds column pl-0"
-    >
-      <Component
-        hasItems={false}
-        placeholder="There are no items in this list."
-      />
-    </div>
-    <div
-      className="one-third column pr-0"
-    >
+  <Columns>
+    <RightColumn>
       <Component
         items={Array []}
         repoName="Private collection"
@@ -53,7 +43,13 @@ exports[`<TopicPage /> renders 1`] = `
           }
         }
       />
-    </div>
-  </div>
+    </RightColumn>
+    <LeftColumn>
+      <Component
+        hasItems={false}
+        placeholder="There are no items in this list."
+      />
+    </LeftColumn>
+  </Columns>
 </div>
 `;

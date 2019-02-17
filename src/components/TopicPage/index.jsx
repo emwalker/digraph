@@ -8,6 +8,9 @@ import type { LinkType, Relay, TopicType, UserType, ViewType } from 'components/
 import Subhead from 'components/ui/Subhead'
 import Breadcrumbs from 'components/ui/Breadcrumbs'
 import SidebarList from 'components/ui/SidebarList'
+import Columns from 'components/ui/Columns'
+import LeftColumn from 'components/ui/LeftColumn'
+import RightColumn from 'components/ui/RightColumn'
 import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
@@ -89,7 +92,7 @@ class TopicPage extends Component<Props, State> {
     const { currentRepository } = view
 
     return (
-      <div>
+      <div className="px-3 px-md-6 px-lg-0">
         <Breadcrumbs
           orgLogin={this.props.orgLogin}
           repository={currentRepository}
@@ -102,17 +105,8 @@ class TopicPage extends Component<Props, State> {
           router={this.props.router}
           view={this.props.view}
         />
-        <div className="digraph-anim-fade-in">
-          <div className="two-thirds column pl-0">
-            <List
-              placeholder="There are no items in this list."
-              hasItems={!isEmpty(topics) || !isEmpty(links)}
-            >
-              { topics.map(this.renderTopic) }
-              { links.map(this.renderLink) }
-            </List>
-          </div>
-          <div className="one-third column pr-0">
+        <Columns>
+          <RightColumn>
             <SidebarList
               title="Parent topics"
               orgLogin={this.props.orgLogin}
@@ -123,8 +117,17 @@ class TopicPage extends Component<Props, State> {
               ? this.renderNotification()
               : this.renderAddForm()
             }
-          </div>
-        </div>
+          </RightColumn>
+          <LeftColumn>
+            <List
+              placeholder="There are no items in this list."
+              hasItems={!isEmpty(topics) || !isEmpty(links)}
+            >
+              { topics.map(this.renderTopic) }
+              { links.map(this.renderLink) }
+            </List>
+          </LeftColumn>
+        </Columns>
       </div>
     )
   }

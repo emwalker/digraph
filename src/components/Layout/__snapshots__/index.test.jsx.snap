@@ -6,7 +6,7 @@ exports[`<Layout /> renders 1`] = `
 >
   <Header />
   <div
-    className="container"
+    className="container-lg clearfix"
   >
     <FlashMessages
       initialAlerts={Array []}
@@ -17,7 +17,7 @@ exports[`<Layout /> renders 1`] = `
   </div>
   <footer>
     <div
-      className="container my-6 pt-2 border-top"
+      className="container-lg px-3 px-md-6 px-lg-0 my-6 pt-2 border-top"
     >
       <p
         className="mb-2"

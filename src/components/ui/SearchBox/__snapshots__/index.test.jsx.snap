@@ -3,11 +3,6 @@
 exports[`<FilterInput /> renders 1`] = `
 <div
   className="form-group mb-1 mt-1"
-  style={
-    Object {
-      "width": "317px",
-    }
-  }
 >
   <input
     aria-label="Search"
@@ -15,7 +10,6 @@ exports[`<FilterInput /> renders 1`] = `
     onChange={[Function]}
     onKeyPress={[Function]}
     placeholder="Search"
-    size="20"
     type="search"
     value="some search phrase"
   />

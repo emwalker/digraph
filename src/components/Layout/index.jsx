@@ -45,12 +45,12 @@ const Layout = ({ alerts, children, defaultOrganization, viewer }: Props) => (
       viewer={viewer}
       defaultOrganization={defaultOrganization}
     />
-    <div className="container">
+    <div className="container-lg clearfix">
       <FlashMessages initialAlerts={alerts} />
       { children }
     </div>
     <footer>
-      <div className="container my-6 pt-2 border-top">
+      <div className="container-lg px-3 px-md-6 px-lg-0 my-6 pt-2 border-top">
         <p className="mb-2">
           Available for use under the MIT{' '}
           <a href="https://github.com/emwalker/digraph/blob/master/LICENSE.md">license</a>.

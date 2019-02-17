@@ -64,9 +64,9 @@ html, body {
 }
 
 footer {
- position: absolute;
- bottom: 0;
- width: 100%;
+  position: absolute;
+  width: 100%;
+  bottom: 0;
 }
 
 select {
@@ -74,9 +74,8 @@ select {
   -webkit-appearance: none;
 }
 
-.homepage {
-  width: 630px;
-  margin: auto;
+.about {
+  max-width: 630px;
 
   p {
     font-size: 16px;

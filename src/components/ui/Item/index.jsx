@@ -122,7 +122,7 @@ class Item extends Component<Props> {
         <div className="d-flex flex-items-center">
           <div className="four-fifths">
             <div>
-              {this.titleLink}
+              { this.titleLink }
               <div>{ this.props.description }</div>
             </div>
             { this.url }

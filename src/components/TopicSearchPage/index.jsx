@@ -6,6 +6,9 @@ import { isEmpty } from 'ramda'
 import type { Relay, TopicType, UserType, ViewType } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
+import Columns from 'components/ui/Columns'
+import LeftColumn from 'components/ui/LeftColumn'
+import RightColumn from 'components/ui/RightColumn'
 import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
@@ -63,7 +66,7 @@ class TopicSearchPage extends Component<Props> {
     const { currentRepository: repo } = view
 
     return (
-      <div>
+      <div className="px-3 px-md-6 px-lg-0">
         <Breadcrumbs
           orgLogin={orgLogin}
           repository={repo}
@@ -76,22 +79,24 @@ class TopicSearchPage extends Component<Props> {
           router={router}
           view={view}
         />
-        <div className="two-thirds column pl-0">
-          <List
-            placeholder="There are no items in this list."
-            hasItems={!isEmpty(rows)}
-          >
-            { rows.map(this.renderSearchResultItem) }
-          </List>
-        </div>
-        <div className="one-third column pr-0">
-          <SidebarList
-            items={liftNodes(parentTopics)}
-            orgLogin={this.props.orgLogin}
-            repoName={repo.displayName}
-            title="Parent topics"
-          />
-        </div>
+        <Columns>
+          <RightColumn>
+            <SidebarList
+              items={liftNodes(parentTopics)}
+              orgLogin={this.props.orgLogin}
+              repoName={repo.displayName}
+              title="Parent topics"
+            />
+          </RightColumn>
+          <LeftColumn>
+            <List
+              placeholder="There are no items in this list."
+              hasItems={!isEmpty(rows)}
+            >
+              { rows.map(this.renderSearchResultItem) }
+            </List>
+          </LeftColumn>
+        </Columns>
       </div>
     )
   }
