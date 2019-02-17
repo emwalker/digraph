@@ -34,11 +34,14 @@ const LoadingPage = ({ location }: Props) => {
           </li>
         </ol>
       </nav>
-      <div className="Subhead">
-        <div className="Subhead-heading">
+      <div className="Subhead clearfix gutter">
+        <div className="Subhead-heading col-lg-8 col-12">
           { itemTitle }
         </div>
-        <SearchBox value="" />
+        <SearchBox
+          className="col-lg-4 col-12"
+          value=""
+        />
       </div>
       <div className="page-placeholder" />
     </div>

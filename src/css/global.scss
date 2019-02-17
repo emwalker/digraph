@@ -14,6 +14,9 @@ html, body {
   position: relative;
   padding-bottom: $footer-height;
 
+  @include breakpoint(lg) { font-size: inherit; }
+  font-size: 22px;
+
   .primary-logo {
     position: relative;
     top: 7px;

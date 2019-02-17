@@ -70,8 +70,8 @@ class Subhead extends Component<Props> {
 
   render = () => (
     <div className="Subhead clearfix gutter">
-      <div className="col-lg-8 col-12 Subhead-heading">
-        {this.heading}
+      <div className="Subhead-heading col-lg-8 col-12">
+        { this.heading }
       </div>
       <SearchBox
         className="col-lg-4 col-12"
