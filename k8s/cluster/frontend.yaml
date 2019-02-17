@@ -27,7 +27,7 @@ metadata:
     tier: frontend
   name: frontend
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: digraph
@@ -50,7 +50,7 @@ spec:
         envFrom:
         - secretRef:
             name: digraph-secrets
-        image: emwalker/digraph:v43
+        image: emwalker/digraph:v44
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
