@@ -194,8 +194,7 @@ func (c Connection) UpsertLink(
 		return nil, err
 	}
 
-	title, err := providedOrFetchedTitle(url.CanonicalURL, providedTitle)
-	if err != nil {
+	if !isURL(url.CanonicalURL) {
 		alerts = append(alerts,
 			*models.NewAlert(models.AlertTypeWarn, fmt.Sprintf("Not a valid link: %s", providedURL)),
 		)
@@ -203,6 +202,11 @@ func (c Connection) UpsertLink(
 			Alerts:  alerts,
 			Cleanup: func() error { return nil },
 		}, nil
+	}
+
+	title, err := providedOrFetchedTitle(url.CanonicalURL, providedTitle)
+	if err != nil {
+		return nil, err
 	}
 
 	link := models.Link{
