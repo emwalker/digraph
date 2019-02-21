@@ -36,7 +36,7 @@ class EditLink extends Component<PropsType> {
       setTimeout(() => {
         refetch({
           orgLogin: this.props.orgLogin,
-          count: 1000,
+          count: 3000,
         })
       }, 100)
     }
