@@ -70,7 +70,7 @@ const Wrapped = createRefetchContainer(EditTopic, graphql`
   fragment EditTopic_topic on Topic @argumentDefinitions(
     count: {type: "Int!", defaultValue: 10}
   ) {
-    selectedTopics: parentTopics(first: 1000) {
+    selectedTopics: parentTopics(first: 3000) {
       edges {
         node {
           id
