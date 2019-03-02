@@ -402,6 +402,11 @@ func TestSearchInTopic(t *testing.T) {
 			count:        2,
 		},
 		{
+			name:         "Token matches work",
+			searchString: "Times York",
+			count:        2,
+		},
+		{
 			name:         "No results are returned when there is no match",
 			searchString: "astronomy",
 			count:        0,
