@@ -51,6 +51,48 @@ func TestLinkHasATopic(t *testing.T) {
 	}
 }
 
+func TestUpsertExistingLinkWithTopic(t *testing.T) {
+	// https://github.com/emwalker/digraph/issues/13
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	topicResult, err := c.UpsertTopic(ctx, defaultRepo, "62ce187241e", nil, []string{})
+	if err != nil {
+		t.Fatalf("There was a problem upserting the topic: %s", err)
+	}
+	defer topicResult.Cleanup()
+
+	// Initial creation
+	title := "A title"
+	linkResult, err := c.UpsertLink(ctx, defaultRepo, "http://some.url.com/", &title, []string{topicResult.Topic.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer linkResult.Cleanup()
+
+	if !linkResult.LinkCreated {
+		t.Fatal("Expected link to be a new one")
+	}
+
+	// A second upsert
+	linkResult, err = c.UpsertLink(ctx, defaultRepo, "http://some.url.com/", &title, []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer linkResult.Cleanup()
+
+	topics, err := linkResult.Link.ParentTopics().All(ctx, c.Exec)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, topic := range topics {
+		if topic.Root {
+			t.Fatal("The root topic should not be automatically added to a link that already has a topic")
+		}
+	}
+}
+
 func TestUserLinkHistory(t *testing.T) {
 	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()

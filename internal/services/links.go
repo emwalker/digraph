@@ -237,7 +237,13 @@ func (c Connection) UpsertLink(
 		return nil, err
 	}
 
-	if len(parentTopicIds) < 1 {
+	existingTopicCount, err := link.ParentTopics().Count(ctx, c.Exec)
+	if err != nil {
+		log.Printf("Failed to query parent topic count for link: %#v", link)
+		return nil, err
+	}
+
+	if len(parentTopicIds) < 1 && existingTopicCount < 1 {
 		var rootTopic *models.Topic
 		if rootTopic, err = repo.Topics(qm.Where("root")).One(ctx, c.Exec); err != nil {
 			log.Printf("Could not find root topic for repo %s", repo.ID)
