@@ -4,7 +4,8 @@ kind: CronJob
 metadata:
   name: take-snapshot
 spec:
-  schedule: "*/5 * * * *"
+  # Every 12 hours
+  schedule: "0 */12 * * *"
   suspend: false
   concurrencyPolicy: Forbid
   jobTemplate:
