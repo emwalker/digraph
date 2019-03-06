@@ -82,20 +82,26 @@ build-client: clean
 
 build-executables:
 	GOOS=linux GARCH=amd64 CGO_ENABLED=0 go install ./...
-
-build-frontend-container:
 	mkdir -p tmp/stage
 	cp $(shell go env GOPATH)/bin/linux_amd64/frontend tmp/stage/
+	cp $(shell go env GOPATH)/bin/linux_amd64/cron tmp/stage/
+
+build-frontend-container:
 	docker build . -t digraph:latest -f k8s/docker/frontend/Dockerfile
 	docker tag digraph:latest emwalker/digraph:$(shell cat k8s/release)
 
-build: build-executables build-frontend-container build-client
+build-cron-container:
+	docker build . -t digraph-cron:latest -f k8s/docker/cron/Dockerfile
+	docker tag digraph-cron:latest emwalker/digraph-cron:$(shell cat k8s/release)
+
+build: build-executables build-frontend-container build-cron-container build-client
 
 up:
 	docker run -p 5432:5432 -p 8080:8080 --env-file tmp/env.list --rm -it digraph
 
 push:
 	docker push emwalker/digraph:$(shell cat k8s/release)
+	docker push emwalker/digraph-cron:$(shell cat k8s/release)
 
 deploy:
 	kubectl config use-context do-default

@@ -6,7 +6,6 @@ import (
 	"os"
 
 	// Load the PQ drivers
-	"github.com/jasonlvhit/gocron"
 	_ "github.com/lib/pq"
 )
 
@@ -56,7 +55,5 @@ func takeSnapshot() {
 }
 
 func main() {
-	s := gocron.NewScheduler()
-	s.Every(2).Seconds().Do(takeSnapshot)
-	<-s.Start()
+	takeSnapshot()
 }
