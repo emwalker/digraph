@@ -50,7 +50,7 @@ spec:
         envFrom:
         - secretRef:
             name: digraph-secrets
-        image: emwalker/digraph:v54
+        image: emwalker/digraph:v55
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
