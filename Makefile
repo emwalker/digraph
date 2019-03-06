@@ -94,7 +94,7 @@ build-cron-container:
 	docker build . -t digraph-cron:latest -f k8s/docker/cron/Dockerfile
 	docker tag digraph-cron:latest emwalker/digraph-cron:$(shell cat k8s/release)
 
-build: build-executables build-frontend-container build-cron-container build-client
+build: build-client build-executables build-frontend-container build-cron-container
 
 up:
 	docker run -p 5432:5432 -p 8080:8080 --env-file tmp/env.list --rm -it digraph
