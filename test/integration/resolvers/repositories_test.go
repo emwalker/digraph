@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/emwalker/digraph/internal/models"
-	"github.com/emwalker/digraph/internal/resolvers"
+	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 )
 
 func TestRootTopic(t *testing.T) {

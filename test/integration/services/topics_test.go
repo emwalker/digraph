@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/emwalker/digraph/internal/services"
+	"github.com/emwalker/digraph/cmd/frontend/services"
 )
 
 func TestUpsertTopicEnsuresATopic(t *testing.T) {

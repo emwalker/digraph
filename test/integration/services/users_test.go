@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/emwalker/digraph/internal/models"
-	"github.com/emwalker/digraph/internal/services"
+	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 

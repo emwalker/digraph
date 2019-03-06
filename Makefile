@@ -11,7 +11,7 @@ LDFLAGS          = -w -X main.commitHash=$(GIT_HASH)
 GLIDE            := $(shell command -v glide 2> /dev/null)
 TIMESTAMP        = $(shell date -u +%s)
 DBNAME           = digraph_dev
-LINT_DIRECTORIES = $(shell find internal/ -type d ! -name "loaders")
+LINT_DIRECTORIES = $(shell find cmd/ -type d ! -name "loaders")
 
 kill:
 	@killall server 2>/dev/null || true
@@ -53,7 +53,7 @@ test-integration: .PHONY
 	go test ./test/integration/...
 
 test: .PHONY
-	go test ./internal/...
+	go test ./cmd/frontend/...
 	yarn jest
 
 format:
@@ -80,14 +80,16 @@ clean:
 build-client: clean
 	yarn build
 
-build-frontend:
-	GOOS=linux GARCH=amd64 CGO_ENABLED=0 go install -v -a
+build-executables:
+	GOOS=linux GARCH=amd64 CGO_ENABLED=0 go install ./...
+
+build-frontend-container:
 	mkdir -p tmp/stage
-	cp $(shell go env GOPATH)/bin/linux_amd64/digraph tmp/stage/
-	docker build . -t digraph:latest -f k8s/docker/Dockerfile
+	cp $(shell go env GOPATH)/bin/linux_amd64/frontend tmp/stage/
+	docker build . -t digraph:latest -f k8s/docker/frontend/Dockerfile
 	docker tag digraph:latest emwalker/digraph:$(shell cat k8s/release)
 
-build: build-client build-frontend
+build: build-executables build-frontend-container build-client
 
 up:
 	docker run -p 5432:5432 -p 8080:8080 --env-file tmp/env.list --rm -it digraph

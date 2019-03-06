@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/emwalker/digraph/internal/resolvers"
+	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 )
 
 func TestResolveView(t *testing.T) {
