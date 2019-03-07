@@ -66,8 +66,6 @@ func availableTopics(
 		limit $2
 		`, view.ViewerID, limitFrom(first)).Bind(ctx, exec, &topics)
 	} else {
-		q := SearchQuery{*searchString}
-
 		err = queries.Raw(`
 		select t.* from topics t
 		inner join organizations o on o.id = t.organization_id
@@ -76,7 +74,7 @@ func availableTopics(
 		where u.id = $1 and t.name ~~* all($2)
 		order by t.name
 		limit $3
-		`, view.ViewerID, q.ArrayLikeParameter(), limitFrom(first)).Bind(ctx, exec, &topics)
+		`, view.ViewerID, wildcardStringArray(*searchString), limitFrom(first)).Bind(ctx, exec, &topics)
 	}
 
 	if err != nil {
@@ -106,8 +104,7 @@ func (r *topicResolver) ChildTopics(
 	})
 
 	if searchString != nil && *searchString != "" {
-		q := SearchQuery{*searchString}
-		mods = append(mods, qm.Where("topics.name ~~* all(?)", q.ArrayLikeParameter()))
+		mods = append(mods, qm.Where("topics.name ~~* all(?)", wildcardStringArray(*searchString)))
 	}
 
 	topics, err := topic.ChildTopics(mods...).All(ctx, r.DB)
@@ -140,8 +137,7 @@ func (r *topicResolver) Links(
 	})
 
 	if searchString != nil && *searchString != "" {
-		q := SearchQuery{*searchString}
-		mods = append(mods, qm.Where("links.title ~~* all(?)", q.ArrayLikeParameter()))
+		mods = append(mods, qm.Where("links.title ~~* all(?)", wildcardStringArray(*searchString)))
 	}
 
 	scope := topic.ChildLinks(mods...)
@@ -222,8 +218,6 @@ func (r *topicResolver) matchingDescendantTopics(
 		ID string
 	}
 
-	q := SearchQuery{searchString}
-
 	err := queries.Raw(`
 	with recursive child_topics as (
 	  select parent_id, parent_id as child_id
@@ -237,7 +231,7 @@ func (r *topicResolver) matchingDescendantTopics(
 	inner join child_topics ct on ct.child_id = t.id
 	where t.name ~~* all($2)
 	limit $3
-	`, topic.ID, q.ArrayLikeParameter(), limit).Bind(ctx, r.DB, &rows)
+	`, topic.ID, wildcardStringArray(searchString), limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err
@@ -278,8 +272,6 @@ func (r *topicResolver) matchingDescendantLinks(
 		ID string
 	}
 
-	q := SearchQuery{searchString}
-
 	err := queries.Raw(`
 	with recursive child_topics as (
 	  select parent_id, parent_id as child_id
@@ -294,7 +286,7 @@ func (r *topicResolver) matchingDescendantLinks(
 	inner join child_topics ct on ct.child_id = lt.parent_id
 	where l.title ~~* all($2)
 	limit $3
-	`, topic.ID, q.ArrayLikeParameter(), limit).Bind(ctx, r.DB, &rows)
+	`, topic.ID, wildcardStringArray(searchString), limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err

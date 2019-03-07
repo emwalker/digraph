@@ -1,12 +1,12 @@
-package resolvers_test
+package resolvers
 
 import (
 	"testing"
 
-	"github.com/emwalker/digraph/cmd/frontend/resolvers"
+	"github.com/volatiletech/sqlboiler/types"
 )
 
-func TestArrayLikeParameter(t *testing.T) {
+func TestWildcardStringArray(t *testing.T) {
 	testData := []struct {
 		name   string
 		input  string
@@ -15,36 +15,44 @@ func TestArrayLikeParameter(t *testing.T) {
 		{
 			name:   "A simple case",
 			input:  "York New",
-			output: "{%York%,%New%}",
+			output: `{"%York%","%New%"}`,
 		},
 		{
 			name:   "When there is a comma",
 			input:  "York New,",
-			output: "{%York%,%New\\,%}",
+			output: `{"%York%","%New,%"}`,
 		},
 		{
 			name:   "When there is a {",
 			input:  "{York New",
-			output: "{%\\{York%,%New%}",
+			output: `{"%{York%","%New%"}`,
 		},
 		{
 			name:   "When there is a }",
 			input:  "York} New",
-			output: "{%York\\}%,%New%}",
+			output: `{"%York}%","%New%"}`,
 		},
 		{
 			name:   "When there is a %",
 			input:  "York% New",
-			output: "{%York\\%%,%New%}",
+			output: `{"%York%%","%New%"}`,
 		},
 	}
 
 	for _, td := range testData {
 		t.Run(td.name, func(t *testing.T) {
-			q := resolvers.SearchQuery{td.input}
-			actual := q.ArrayLikeParameter()
-			if actual != td.output {
-				t.Fatalf("Expected %s, got %s", td.output, actual)
+			actual, ok := wildcardStringArray(td.input).(*types.StringArray)
+			if !ok {
+				t.Fatalf("Expected a StringArray, got: %#v", actual)
+			}
+
+			value, err := actual.Value()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if value != td.output {
+				t.Fatalf("Expected %#v, got %#v", td.output, value)
 			}
 		})
 	}
