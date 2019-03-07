@@ -14,7 +14,7 @@ spec:
         spec:
           containers:
           - name: cron
-            image: emwalker/digraph-cron:v56
+            image: emwalker/digraph-cron:v57
             args:
             - /bin/sh
             - -c

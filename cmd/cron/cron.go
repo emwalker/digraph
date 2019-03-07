@@ -38,13 +38,24 @@ func takeSnapshot() {
 
 	user_stats as (
 		select count(*) count from users
+	),
+
+	active_user_stats as (
+		select count(*) count
+		from (
+			select distinct user_id
+			from user_links where created_at > now() - interval '7 days'
+			group by user_id
+			having count(link_id) > 5
+		) a
 	)
 
-	insert into daily_snapshot (topic_count, link_count, user_count)
-		select sum(t.count), sum(l.count), sum(u.count)
+	insert into daily_snapshot (topic_count, link_count, user_count, active_user_count)
+		select sum(t.count), sum(l.count), sum(u.count), sum(au.count)
 		from topic_stats t
 		cross join link_stats l
 		cross join user_stats u
+		cross join active_user_stats au
 	`)
 	if err != nil {
 		log.Printf("Failed to create a new snapshot: %s", err)
