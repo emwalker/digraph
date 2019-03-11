@@ -85,6 +85,12 @@ class Header extends Component<Props> {
           </h1>
         </nav>
         <nav className="user-nav flex-self-center">
+          <a
+            className="text-gray-dark px-2"
+            href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8"
+          >
+            Everything
+          </a>
           <a className="text-gray-dark px-2" href="/about">About</a>
           {viewer.isGuest
             ? this.renderGuestUserNav()

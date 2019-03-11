@@ -1,6 +1,7 @@
 [ignore]
 .*/__generated__/.*
 .*/vendor/.*
+.*/node_modules/polished/**/.*
 
 [include]
 src/

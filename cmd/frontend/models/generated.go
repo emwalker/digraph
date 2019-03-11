@@ -230,6 +230,7 @@ type ComplexityRoot struct {
 		Links             func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 		CurrentRepository func(childComplexity int) int
 		Topic             func(childComplexity int, id string) int
+		TopicGraph        func(childComplexity int) int
 		Topics            func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 	}
 }
@@ -309,6 +310,7 @@ type ViewResolver interface {
 	Links(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (LinkConnection, error)
 
 	Topic(ctx context.Context, obj *View, id string) (*TopicValue, error)
+	TopicGraph(ctx context.Context, obj *View) (*string, error)
 	Topics(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
 }
 
@@ -2137,6 +2139,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.View.Topic(childComplexity, args["id"].(string)), true
+
+	case "View.topicGraph":
+		if e.complexity.View.TopicGraph == nil {
+			break
+		}
+
+		return e.complexity.View.TopicGraph(childComplexity), true
 
 	case "View.topics":
 		if e.complexity.View.Topics == nil {
@@ -6794,6 +6803,12 @@ func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj
 				out.Values[i] = ec._View_topic(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "topicGraph":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._View_topicGraph(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "topics":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -6945,6 +6960,34 @@ func (ec *executionContext) _View_topic(ctx context.Context, field graphql.Colle
 	}
 
 	return ec._Topic(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _View_topicGraph(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "View",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.View().TopicGraph(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 // nolint: vetshadow
@@ -9234,6 +9277,7 @@ type View {
   ): LinkConnection!
   currentRepository: Repository
   topic(id: ID!): Topic
+  topicGraph: String
   topics(
     searchString: String,
     first: Int,

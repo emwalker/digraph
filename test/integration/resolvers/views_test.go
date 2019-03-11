@@ -2,6 +2,7 @@ package resolvers_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
@@ -269,5 +270,38 @@ func TestTopicVisibility(t *testing.T) {
 
 	if topic, err = r.Topic(ctx, v2, t1.ID); err == nil {
 		t.Fatal("User 2 able to see topic in private repo of user 1")
+	}
+}
+
+func TestTopicGraph(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	r := resolvers.New(testDB, testActor).View()
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+
+	str, err := r.TopicGraph(ctx, view)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if str == nil {
+		t.Fatal("Expected a string result")
+	}
+
+	result := struct {
+		Nodes []interface{} `json:"nodes"`
+		Links []interface{} `json:"links"`
+	}{}
+
+	if err = json.Unmarshal([]byte(*str), &result); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(result.Nodes) < 1 {
+		t.Fatalf("Expected at least one node: %s", *str)
+	}
+
+	if len(result.Links) < 1 {
+		t.Fatalf("Expected at least one link: %s", *str)
 	}
 }

@@ -1,7 +1,5 @@
 package main
 
-//go:generate sqlboiler psql --output models
-
 import (
 	"flag"
 	"os"

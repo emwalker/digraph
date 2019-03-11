@@ -1,21 +1,29 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<Homepage /> renders 1`] = `
-<div>
+<div
+  className="topic-chart"
+>
   <div
-    className="Subhead Subhead--spacious"
+    className="Subhead"
   >
     <div
       className="Subhead-heading"
     >
-      Hello 
-      Gnusto
+      Topics in the general collection
     </div>
   </div>
   <p
-    className="lead"
+    className="mb-3"
   >
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel erat rutrum, egestas ipsum vitae, aliquam nisl. Nunc sodales mollis ex eu ultricies. Donec vestibulum augue in erat tristique, eu viverra orci mattis. Praesent ac euismod ligula. Nunc commodo nec justo nec lacinia. Phasellus metus dolor, varius sit amet turpis et, semper elementum massa. Nam venenatis tempor ante id aliquet. Curabitur cursus est a fringilla semper. Aliquam eget urna erat. Nullam eget vehicula neque.
+    These are the topics in the
+     
+    <a
+      href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8"
+    >
+      general collection
+    </a>
+    . Rotate and zoom in to explore.  Hover over a topic to see the label.  Click on the topic to visit its page.
   </p>
 </div>
 `;

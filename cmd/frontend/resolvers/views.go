@@ -6,6 +6,7 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -100,6 +101,46 @@ func (r *viewResolver) Topic(
 	scope := models.Topics(topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil, nil)...)
 	topic, err := scope.One(ctx, r.DB)
 	return &models.TopicValue{topic, false, view}, err
+}
+
+// TopicGraph returns a json string that can be used for building a visual representation of the graph.
+func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*string, error) {
+	result := struct {
+		Payload string
+	}{}
+
+	// TODO - search within the repositories specified in view.RepositoryIds
+	err := queries.Raw(`
+	select jsonb_build_object('links', (
+	  select jsonb_agg(a) from (
+	    select tt.parent_id source, tt.child_id target, count(distinct lt.child_id) "linkCount"
+	    from topic_topics tt
+	    join topics t on tt.parent_id = t.id
+	    join topics t2 on tt.child_id = t2.id
+	    left join link_topics lt on tt.child_id = lt.parent_id
+	    where t.repository_id = $1 and t2.repository_id = $1
+	    group by tt.parent_id, tt.child_id
+	  ) a
+	)) ||
+	jsonb_build_object('nodes', (
+	  select jsonb_agg(b) from (
+	    select t.id, t.name, count(distinct lt.child_id) "linkCount",
+	      count(distinct tt.child_id) "topicCount"
+	    from topics t
+	    left join topic_topics tt on t.id = tt.parent_id
+	    left join link_topics lt on t.id = lt.parent_id
+	    where t.repository_id = $1
+	    group by t.id, t.name
+	  ) b
+	)) payload
+	`, generalRepositoryID).Bind(ctx, r.DB, &result)
+
+	if err != nil {
+		log.Printf("There was a problem fetching topic graph: %s", err)
+		return nil, err
+	}
+
+	return &result.Payload, nil
 }
 
 // Topics returns a set of topics.

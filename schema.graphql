@@ -315,6 +315,7 @@ type View {
   ): LinkConnection!
   currentRepository: Repository
   topic(id: ID!): Topic
+  topicGraph: String
   topics(
     searchString: String,
     first: Int,

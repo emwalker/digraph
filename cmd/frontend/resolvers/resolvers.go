@@ -10,7 +10,10 @@ import (
 )
 
 // CurrentUserKey is the key used for storing the current user in the session.
-const CurrentUserKey = "currentUserKey"
+const (
+	CurrentUserKey      = "currentUserKey"
+	generalRepositoryID = "32212616-fc1b-11e8-8eda-b70af6d8d09f"
+)
 
 // GuestUser is a placeholder user that is used when someone visits the app without a session.
 var GuestUser models.User
