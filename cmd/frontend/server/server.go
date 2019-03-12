@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/emwalker/digraph/cmd/frontend/models"
@@ -23,6 +24,7 @@ type Server struct {
 	Port              string
 	resolver          *resolvers.Resolver
 	schema            graphql.ExecutableSchema
+	server            *http.Server
 }
 
 // New returns a new *Server configured with the parameters passed in.
@@ -35,6 +37,12 @@ func New(
 	resolver := &resolvers.Resolver{DB: db}
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})
 
+	server := &http.Server{
+		Addr:         ":" + port,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+	}
+
 	return &Server{
 		BasicAuthPassword: password,
 		BasicAuthUsername: username,
@@ -45,6 +53,7 @@ func New(
 		Port:              port,
 		resolver:          resolver,
 		schema:            schema,
+		server:            server,
 	}
 }
 
@@ -70,5 +79,5 @@ func (s *Server) Run() {
 
 	log.Printf("Connect to http://localhost:%s/playground for the GraphQL playground", s.Port)
 	log.Printf("Listening on port %s", s.Port)
-	log.Fatal(http.ListenAndServe(":"+s.Port, nil))
+	log.Fatal(s.server.ListenAndServe())
 }
