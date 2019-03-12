@@ -10,8 +10,8 @@ type Props = {
 }
 
 const nodeLabel = d =>
-  `<div style="text-align: center; padding: 8px; color: black; border-radius: 5px; background:
-    rgba(239, 243, 255, 0.80); font-size: 28">${d.name}</div>`
+  `<div style="text-align: center; padding: 8px; color: black; border-radius:
+    5px; background: rgba(239, 243, 255, 0.80); font-size: 28">${d.name}</div>`
 
 const onNodeClick = (node) => {
   const url = `/wiki/topics/${node.id}`
@@ -34,9 +34,8 @@ class Homepage extends Component<Props, State> {
   }
 
   componentDidMount = () => {
-    if (this.graphRef) {
+    if (this.graphRef)
       this.graphRef.d3Force('charge').strength(-100)
-    }
 
     if (this.containerRef) {
       const rect = this.containerRef.getBoundingClientRect()
@@ -68,8 +67,8 @@ class Homepage extends Component<Props, State> {
       <p className="mb-3">
         These are the topics in the{' '}
         <a href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8">general collection</a>.
-        Rotate and zoom in to explore.  Hover over a topic to see the label.  Click on the topic to visit
-        its page.
+        Rotate and zoom in to explore.  Hover over a topic to see the label.  Click on the topic to
+        visit its page.
       </p>
       {this.graphData && (
         <ForceGraph3D

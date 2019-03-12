@@ -4,13 +4,17 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
+	"github.com/gorilla/handlers"
 	"github.com/volatiletech/sqlboiler/boil"
 )
+
+const requestTimeout = 5
 
 // Server holds config information for running the API server.
 type Server struct {
@@ -39,8 +43,8 @@ func New(
 
 	server := &http.Server{
 		Addr:         ":" + port,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  (requestTimeout + 1) * time.Second,
+		WriteTimeout: (requestTimeout + 1) * time.Second,
 	}
 
 	return &Server{
@@ -57,14 +61,23 @@ func New(
 	}
 }
 
+// https://forum.golangbridge.org/t/how-to-create-custom-timeout-handler-based-on-request-path/7135/2
+func logAndTimeout(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		timeoutHandler := http.TimeoutHandler(h, requestTimeout*time.Second, "Your request has timed out.")
+		loggingHandler := handlers.LoggingHandler(os.Stdout, timeoutHandler)
+		loggingHandler.ServeHTTP(w, r)
+	}
+}
+
 // Routes registers route handlers with the http server.
 func (s *Server) Routes() {
-	http.Handle("/static/", s.withBasicAuth(s.handleStaticFiles()))
-	http.Handle("/graphql", s.withSession(s.withBasicAuth(s.handleGraphqlRequest())))
-	http.Handle("/playground", s.withBasicAuth(s.handleGraphqlPlayground()))
-	http.Handle("/_ah/health", s.handleHealthCheck())
-	http.Handle("/500", s.handleMock500())
-	http.Handle("/", s.withBasicAuth(s.handleRoot()))
+	http.Handle("/static/", logAndTimeout(s.withBasicAuth(s.handleStaticFiles())))
+	http.Handle("/graphql", logAndTimeout(s.withSession(s.withBasicAuth(s.handleGraphqlRequest()))))
+	http.Handle("/playground", logAndTimeout(s.withBasicAuth(s.handleGraphqlPlayground())))
+	http.Handle("/_ah/health", logAndTimeout(s.handleHealthCheck()))
+	http.Handle("/500", logAndTimeout(s.handleMock500()))
+	http.Handle("/", logAndTimeout(http.HandlerFunc(s.withBasicAuth(s.handleRoot()))))
 	s.RegisterOauth2Routes()
 }
 
