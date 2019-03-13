@@ -49,6 +49,7 @@
     "ramda": "~>0.25.0",
     "react": "~>16",
     "react-component-octicons": "~>1.8.0",
+    "react-device-detect": "^1.6.2",
     "react-dom": "~>16",
     "react-force-graph": "^1.20.3",
     "react-google-recaptcha": "^1.0.5",
