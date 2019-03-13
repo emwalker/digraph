@@ -14,12 +14,14 @@ html, body {
   position: relative;
   padding-bottom: $footer-height;
 
-  // @include breakpoint(lg) { font-size: inherit; }
-  // font-size: 22px;
-
   .primary-logo {
     position: relative;
-    top: 7px;
+    top: 8px;
+
+  }
+
+  h1.h3 {
+    margin-top: -11px;
   }
 
   &.homepage {
@@ -114,7 +116,7 @@ select {
   margin-right: 0.5rem;
 }
 
-.topic-chart {
+.topic-chart-container {
   height: 700px;
   max-height: 700px;
 }

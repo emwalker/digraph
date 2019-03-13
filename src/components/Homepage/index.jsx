@@ -24,12 +24,14 @@ const onNodeClick = (node) => {
 
 type State = {
   height: number,
+  showChart: boolean,
   width: number,
 }
 
 class Homepage extends Component<Props, State> {
   state = {
     height: 150,
+    showChart: false,
     width: 150,
   }
 
@@ -39,7 +41,7 @@ class Homepage extends Component<Props, State> {
 
     if (this.containerRef) {
       const rect = this.containerRef.getBoundingClientRect()
-      this.setState({ height: rect.height, width: rect.width })
+      this.setState({ showChart: true, height: 700, width: rect.width })
     }
   }
 
@@ -52,6 +54,10 @@ class Homepage extends Component<Props, State> {
     return this.cachedGraphData
   }
 
+  get showChart(): boolean {
+    return !!this.graphData && this.state.showChart
+  }
+
   cachedGraphData: ?string = null
   containerRef: React$ElementRef<*> | null
   graphRef: ?any
@@ -59,7 +65,7 @@ class Homepage extends Component<Props, State> {
   render = () => (
     <div
       ref={(ref) => { this.containerRef = ref }}
-      className="topic-chart"
+      className="px-3 px-md-6 px-lg-0 topic-chart"
     >
       <div className="Subhead">
         <div className="Subhead-heading">Topics in the general collection</div>
@@ -67,29 +73,39 @@ class Homepage extends Component<Props, State> {
       <p className="mb-3">
         These are the topics in the{' '}
         <a href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8">general collection</a>.
-        Rotate and zoom in to explore.  Hover over a topic to see the label.  Click on the topic to
+        Rotate and zoom in to explore.  Hover over a topic to see the label.  Click on a topic to
         visit its page.
       </p>
-      {this.graphData && (
-        <ForceGraph3D
-          backgroundColor="white"
-          dagLevelDistance={70}
-          dagMode="td"
-          graphData={this.graphData}
-          height={this.state.height}
-          linkColor={() => 'rgba(49, 83, 160, 0.3)'}
-          linkWidth={3}
-          nodeColor={() => 'rgb(82, 97, 140)'}
-          nodeLabel={nodeLabel}
-          nodeOpacity={1}
-          nodeResolution={15}
-          nodeVal={d => d.topicCount}
-          onNodeClick={onNodeClick}
-          ref={(ref) => { this.graphRef = ref }}
-          showNavInfo={false}
-          width={this.state.width}
-        />
-      )}
+
+      <div className="mb-3 topic-chart-container">
+        {this.showChart && (
+          <ForceGraph3D
+            backgroundColor="white"
+            dagLevelDistance={70}
+            dagMode="td"
+            graphData={this.graphData}
+            height={this.state.height}
+            linkColor={() => 'rgba(49, 83, 160, 0.3)'}
+            linkWidth={3}
+            nodeColor={() => 'rgb(82, 97, 140)'}
+            nodeLabel={nodeLabel}
+            nodeOpacity={1}
+            nodeResolution={15}
+            nodeVal={d => d.topicCount}
+            onNodeClick={onNodeClick}
+            ref={(ref) => { this.graphRef = ref }}
+            showNavInfo={false}
+            width={this.state.width}
+          />
+        )}
+      </div>
+
+      <p className="mb-3">
+        Many of the topics above have subtopics and links associated with them. Making it easy to
+        create and manage a network of topics facilitates keeping track of thousands of links.  Once
+        a topic becomes too crowded, it can be cleaned up by moving links into one or more
+        subtopics.
+      </p>
     </div>
   )
 }
