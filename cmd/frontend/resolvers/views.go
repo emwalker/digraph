@@ -111,26 +111,34 @@ func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*stri
 
 	// TODO - search within the repositories specified in view.RepositoryIds
 	err := queries.Raw(`
+	with topic_ids as (
+	  select (row_number() over (order by id) - 1) integer_id, id
+	  from topics
+	  where repository_id = $1
+	)
+
 	select jsonb_build_object('links', (
 	  select jsonb_agg(a) from (
-	    select tt.parent_id source, tt.child_id target, count(distinct lt.child_id) "linkCount"
+	    select tp.integer_id source, tc.integer_id target, count(distinct lt.child_id) "linkCount"
 	    from topic_topics tt
-	    join topics t on tt.parent_id = t.id
+	    join topics t1 on tt.parent_id = t1.id
 	    join topics t2 on tt.child_id = t2.id
+	    join topic_ids tp on tt.parent_id = tp.id
+	    join topic_ids tc on tt.child_id = tc.id
 	    left join link_topics lt on tt.child_id = lt.parent_id
-	    where t.repository_id = $1 and t2.repository_id = $1
-	    group by tt.parent_id, tt.child_id
+	    where t1.repository_id = $1 and t2.repository_id = $1
+	    group by tp.integer_id, tc.integer_id
 	  ) a
 	)) ||
 	jsonb_build_object('nodes', (
 	  select jsonb_agg(b) from (
-	    select t.id, t.name, count(distinct lt.child_id) "linkCount",
-	      count(distinct tt.child_id) "topicCount"
+	    select tid.integer_id id, t.name, count(distinct lt.child_id) "linkCount", count(distinct tt.child_id) "topicCount"
 	    from topics t
-	    left join topic_topics tt on t.id = tt.parent_id
+	    join topic_ids tid on t.id = tid.id
 	    left join link_topics lt on t.id = lt.parent_id
+	    left join topic_topics tt on t.id = tt.parent_id
 	    where t.repository_id = $1
-	    group by t.id, t.name
+	    group by tid.integer_id, t.name
 	  ) b
 	)) payload
 	`, generalRepositoryID).Bind(ctx, r.DB, &result)
