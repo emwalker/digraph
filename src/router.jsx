@@ -7,10 +7,9 @@ import React from 'react'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
 import { defaultRootTopicId, defaultOrganizationLogin } from 'components/constants'
+import Homepage, { query as homepageQuery } from 'components/Homepage'
 import { query as topicPageQuery } from 'components/TopicPage'
-import { query as homepageQuery } from 'components/Homepage'
 import renderTopicPage from 'components/renderTopicPage'
-import renderHomepage from 'components/renderHomepage'
 import { query as topicSearchPageQuery } from 'components/TopicSearchPage'
 import Layout, { query as layoutQuery } from 'components/Layout'
 import withErrorBoundary from 'components/withErrorBoundary'
@@ -43,6 +42,7 @@ export const routeConfig = makeRouteConfig(
     }}
   >
     <Route
+      Component={Homepage}
       query={homepageQuery}
       path="/"
       prepareVariables={params => ({
@@ -50,7 +50,6 @@ export const routeConfig = makeRouteConfig(
         topicId: defaultRootTopicId,
         orgLogin: defaultOrganizationLogin,
       })}
-      render={renderHomepage}
     />
     <Route
       render={withErrorBoundary(SignInPage)}

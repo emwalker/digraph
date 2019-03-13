@@ -117,5 +117,6 @@ select {
 }
 
 .topic-chart-container {
-  height: 700px;
+  height: 600px;
+  @include breakpoint(md) { height: 700px; }
 }
