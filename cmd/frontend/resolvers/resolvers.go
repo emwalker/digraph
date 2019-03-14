@@ -12,6 +12,7 @@ import (
 // CurrentUserKey is the key used for storing the current user in the session.
 const (
 	CurrentUserKey      = "currentUserKey"
+	EverythingTopicPath = "/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8"
 	generalRepositoryID = "32212616-fc1b-11e8-8eda-b70af6d8d09f"
 )
 

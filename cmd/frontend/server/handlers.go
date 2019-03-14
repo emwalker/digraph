@@ -132,6 +132,8 @@ func (s *Server) handleRoot() http.Handler {
 	aboutPageTemplate := parseTemplate("aboutPageTemplate", "public/webpack/about.html")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ua := newUserAgent(r.Header.Get("User-Agent"))
+
 		switch r.URL.Path[1:] {
 		case "robots.txt":
 			http.ServeFile(w, r, "public/webpack/robots.txt")
@@ -139,6 +141,13 @@ func (s *Server) handleRoot() http.Handler {
 		case "about":
 			aboutPageTemplate.Execute(w, variables)
 			return
+		case "":
+			// Workaround for a bug in which iOS Chrome cannot load the page with the graphic.
+			if ua.isChrome() && ua.isPhone() {
+				http.Redirect(w, r, resolvers.EverythingTopicPath, 301)
+			} else {
+				appTemplate.Execute(w, variables)
+			}
 		default:
 			appTemplate.Execute(w, variables)
 		}
