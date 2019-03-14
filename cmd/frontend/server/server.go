@@ -64,6 +64,8 @@ func New(
 // https://forum.golangbridge.org/t/how-to-create-custom-timeout-handler-based-on-request-path/7135/2
 func logAndTimeout(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ua := r.Header.Get("User-Agent")
+		log.Printf("User-Agent: %s", ua)
 		timeoutHandler := http.TimeoutHandler(h, requestTimeout*time.Second, "Your request has timed out.")
 		loggingHandler := handlers.LoggingHandler(os.Stdout, timeoutHandler)
 		loggingHandler.ServeHTTP(w, r)
