@@ -1,25 +1,10 @@
-// @flow
-import React, { Component } from 'react'
+import React, { Component, Suspense } from 'react'
 import { graphql } from 'react-relay'
-import { ForceGraph3D } from 'react-force-graph'
+
+const TreeGraph = React.lazy(() => import('./TreeGraph'))
 
 type Props = {
-  view: {
-    topicGraph: string,
-  }
-}
-
-const nodeLabel = d =>
-  `<div style="text-align: center; padding: 8px; color: black; border-radius:
-    5px; background: rgba(239, 243, 255, 0.80); font-size: 28">${d.name}</div>`
-
-const onNodeClick = (node) => {
-  const url = `/wiki/topics/${node.id}`
-  try {
-    window.open(url)
-  } catch (e) {
-    window.location.href = url
-  }
+  view: Object,
 }
 
 type State = {
@@ -30,37 +15,23 @@ type State = {
 
 class Homepage extends Component<Props, State> {
   state = {
-    height: 150,
     showChart: false,
+    height: 150,
     width: 150,
   }
 
   componentDidMount = () => {
-    if (this.graphRef)
-      this.graphRef.d3Force('charge').strength(-100)
-
     if (this.containerRef) {
       const rect = this.containerRef.getBoundingClientRect()
       this.setState({ showChart: true, height: 700, width: rect.width })
     }
   }
 
-  get graphData(): ?string {
-    if (!this.props.view)
-      return null
-    if (!this.cachedGraphData)
-      this.cachedGraphData = JSON.parse(this.props.view.topicGraph)
-
-    return this.cachedGraphData
-  }
-
   get showChart(): boolean {
-    return !!this.graphData && this.state.showChart
+    return Boolean(this.props.view.topicGraph) && this.state.showChart
   }
 
-  cachedGraphData: ?string = null
   containerRef: React$ElementRef<*> | null
-  graphRef: ?any
 
   render = () => (
     <div
@@ -78,25 +49,14 @@ class Homepage extends Component<Props, State> {
       </p>
 
       <div className="mb-3 topic-chart-container">
-        {this.showChart && (
-          <ForceGraph3D
-            backgroundColor="white"
-            dagLevelDistance={70}
-            dagMode="td"
-            graphData={this.graphData}
-            height={this.state.height}
-            linkColor={() => 'rgba(49, 83, 160, 0.3)'}
-            linkWidth={3}
-            nodeColor={() => 'rgb(82, 97, 140)'}
-            nodeLabel={nodeLabel}
-            nodeOpacity={1}
-            nodeResolution={15}
-            nodeVal={d => d.topicCount}
-            onNodeClick={onNodeClick}
-            ref={(ref) => { this.graphRef = ref }}
-            showNavInfo={false}
-            width={this.state.width}
-          />
+        { this.showChart && (
+          <Suspense fallback={<div>Loading graphic ...</div>}>
+            <TreeGraph
+              height={this.state.height}
+              topicGraph={this.props.view.topicGraph}
+              width={this.state.width}
+            />
+          </Suspense>
         )}
       </div>
 

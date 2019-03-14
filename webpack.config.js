@@ -9,6 +9,7 @@ const prodMode = process.env.NODE_ENV === 'production'
 
 var plugins = [
   new ManifestPlugin({
+    writeToFileEmit: true,
     publicPath: '/static/',
   }),
   new webpack.NoEmitOnErrorsPlugin(),
@@ -22,7 +23,11 @@ var plugins = [
   }),
   new webpack.HotModuleReplacementPlugin({
     multiStep: true
-  })
+  }),
+  new webpack.SourceMapDevToolPlugin({
+    filename: '[name].js.map',
+    exclude: ['vendor.js'],
+  }),
 ]
 
 if (prodMode) {
@@ -62,6 +67,8 @@ const modules = {
 }
 
 const config  = {
+  devtool: false,
+
   devServer: {
     historyApiFallback: true,
     hot: true,
@@ -76,10 +83,12 @@ const config  = {
     },
   },
 
-  entry: [
-    'babel-polyfill',
-    path.join(__dirname, 'src/client'),
-  ],
+  entry: {
+    main: [
+      'babel-polyfill',
+      path.join(__dirname, 'src/client.jsx'),
+    ],
+  },
 
   externals: [
     {
@@ -99,18 +108,6 @@ const config  = {
   node: {
     fs: 'empty',
     module: 'empty'
-  },
-
-  optimization: {
-    splitChunks: {
-      cacheGroups: {
-        commons: {
-          test: /[\\/]node_modules[\\/]/,
-          name: "vendors",
-          chunks: "all"
-        },
-      },
-    },
   },
 
   output: {

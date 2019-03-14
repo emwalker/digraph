@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"text/template"
 	"time"
 
@@ -121,6 +122,8 @@ func parseTemplate(name, path string) *template.Template {
 	return t
 }
 
+var chunkFilePattern = regexp.MustCompile(`^[0-9]+\.`)
+
 func (s *Server) handleRoot() http.Handler {
 	variables := struct {
 		GAID string
@@ -132,9 +135,9 @@ func (s *Server) handleRoot() http.Handler {
 	aboutPageTemplate := parseTemplate("aboutPageTemplate", "public/webpack/about.html")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ua := newUserAgent(r.Header.Get("User-Agent"))
+		relpath := r.URL.Path[1:]
 
-		switch r.URL.Path[1:] {
+		switch relpath {
 		case "robots.txt":
 			http.ServeFile(w, r, "public/webpack/robots.txt")
 			return
@@ -142,6 +145,7 @@ func (s *Server) handleRoot() http.Handler {
 			aboutPageTemplate.Execute(w, variables)
 			return
 		case "":
+			ua := newUserAgent(r.Header.Get("User-Agent"))
 			// Workaround for a bug in which iOS Chrome cannot load the page with the graphic.
 			if ua.isChrome() && ua.isPhone() {
 				http.Redirect(w, r, resolvers.EverythingTopicPath, 301)
@@ -149,7 +153,12 @@ func (s *Server) handleRoot() http.Handler {
 				appTemplate.Execute(w, variables)
 			}
 		default:
-			appTemplate.Execute(w, variables)
+			if chunkFilePattern.MatchString(relpath) {
+				path := fmt.Sprintf("public/webpack/%s", r.URL.Path[1:])
+				http.ServeFile(w, r, path)
+			} else {
+				appTemplate.Execute(w, variables)
+			}
 		}
 	})
 }
