@@ -116,6 +116,25 @@ select {
   margin-right: 0.5rem;
 }
 
-.topic-chart-container {
+.topic-chart-container,
+.topic-chart-placeholder {
   height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader {
+  margin: auto;
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #a0a0a0;
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

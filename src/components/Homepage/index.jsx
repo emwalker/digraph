@@ -3,6 +3,12 @@ import { graphql } from 'react-relay'
 
 const TreeGraph = React.lazy(() => import('./TreeGraph'))
 
+const placeholder = (
+  <div className="topic-chart-placeholder">
+    <div className="loader" />
+  </div>
+)
+
 type Props = {
   view: Object,
 }
@@ -50,7 +56,7 @@ class Homepage extends Component<Props, State> {
 
       <div className="mb-3 topic-chart-container">
         { this.showChart && (
-          <Suspense fallback={<div>Loading graphic ...</div>}>
+          <Suspense fallback={placeholder}>
             <TreeGraph
               height={this.state.height}
               topicGraph={this.props.view.topicGraph}

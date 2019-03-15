@@ -42,7 +42,7 @@ class TreeGraph extends Component<Props> {
   render = () => (
     <ForceGraph3D
       backgroundColor="white"
-      dagLevelDistance={70}
+      dagLevelDistance={90}
       dagMode="td"
       graphData={this.graphData}
       height={this.props.height}
