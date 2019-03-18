@@ -227,9 +227,11 @@ type ComplexityRoot struct {
 
 	View struct {
 		Link              func(childComplexity int, id string) int
+		LinkCount         func(childComplexity int) int
 		Links             func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 		CurrentRepository func(childComplexity int) int
 		Topic             func(childComplexity int, id string) int
+		TopicCount        func(childComplexity int) int
 		TopicGraph        func(childComplexity int) int
 		Topics            func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 	}
@@ -307,9 +309,11 @@ type UserResolver interface {
 }
 type ViewResolver interface {
 	Link(ctx context.Context, obj *View, id string) (*LinkValue, error)
+	LinkCount(ctx context.Context, obj *View) (int, error)
 	Links(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (LinkConnection, error)
 
 	Topic(ctx context.Context, obj *View, id string) (*TopicValue, error)
+	TopicCount(ctx context.Context, obj *View) (int, error)
 	TopicGraph(ctx context.Context, obj *View) (*string, error)
 	Topics(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
 }
@@ -2109,6 +2113,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.View.Link(childComplexity, args["id"].(string)), true
 
+	case "View.linkCount":
+		if e.complexity.View.LinkCount == nil {
+			break
+		}
+
+		return e.complexity.View.LinkCount(childComplexity), true
+
 	case "View.links":
 		if e.complexity.View.Links == nil {
 			break
@@ -2139,6 +2150,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.View.Topic(childComplexity, args["id"].(string)), true
+
+	case "View.topicCount":
+		if e.complexity.View.TopicCount == nil {
+			break
+		}
+
+		return e.complexity.View.TopicCount(childComplexity), true
 
 	case "View.topicGraph":
 		if e.complexity.View.TopicGraph == nil {
@@ -6786,6 +6804,15 @@ func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj
 				out.Values[i] = ec._View_link(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "linkCount":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._View_linkCount(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "links":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -6801,6 +6828,15 @@ func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._View_topic(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "topicCount":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._View_topicCount(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "topicGraph":
@@ -6862,6 +6898,33 @@ func (ec *executionContext) _View_link(ctx context.Context, field graphql.Collec
 	}
 
 	return ec._Link(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _View_linkCount(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "View",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.View().LinkCount(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalInt(res)
 }
 
 // nolint: vetshadow
@@ -6960,6 +7023,33 @@ func (ec *executionContext) _View_topic(ctx context.Context, field graphql.Colle
 	}
 
 	return ec._Topic(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _View_topicCount(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "View",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.View().TopicCount(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalInt(res)
 }
 
 // nolint: vetshadow
@@ -9268,6 +9358,7 @@ type UpsertTopicPayload implements Alertable {
 
 type View {
   link(id: ID!): Link
+  linkCount: Int!
   links(
     searchString: String,
     first: Int,
@@ -9277,6 +9368,7 @@ type View {
   ): LinkConnection!
   currentRepository: Repository
   topic(id: ID!): Topic
+  topicCount: Int!
   topicGraph: String
   topics(
     searchString: String,

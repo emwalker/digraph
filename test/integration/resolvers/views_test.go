@@ -305,3 +305,35 @@ func TestTopicGraph(t *testing.T) {
 		t.Fatalf("Expected at least one link: %s", *str)
 	}
 }
+
+func TestTopicCount(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	r := resolvers.New(testDB, testActor).View()
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+
+	count, err := r.TopicCount(ctx, view)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count < 1 {
+		t.Fatal("Expected at least one topic")
+	}
+}
+
+func TestLinkCount(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	r := resolvers.New(testDB, testActor).View()
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+
+	count, err := r.LinkCount(ctx, view)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count < 1 {
+		t.Fatal("Expected at least one link")
+	}
+}

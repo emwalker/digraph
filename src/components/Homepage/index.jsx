@@ -10,7 +10,11 @@ const placeholder = (
 )
 
 type Props = {
-  view: Object,
+  view: {
+    linkCount: number,
+    topicCount: number,
+    topicGraph: ?string,
+  },
 }
 
 type State = {
@@ -50,8 +54,9 @@ class Homepage extends Component<Props, State> {
       <p className="mb-3">
         These are the topics in the{' '}
         <a href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8">general collection</a>.
-        Rotate and zoom in to explore.  Hover over a topic to see the label.  Click on a topic to
-        visit its page.
+        There are {this.props.view.topicCount} topics in this collection, categorizing{' '}
+        {this.props.view.linkCount} links between them. Rotate and zoom in to explore.  Hover over
+        a topic to see the label. Click on a topic to visit its page.
       </p>
 
       <div className="mb-3 topic-chart-container">
@@ -87,6 +92,8 @@ query Homepage_homepage_Query(
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
+    linkCount
+    topicCount
     topicGraph
   }
 }`

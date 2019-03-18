@@ -67,6 +67,13 @@ func (r *viewResolver) Link(
 	return &models.LinkValue{link, false, view}, err
 }
 
+// LinkCount returns the number of links the general collection.  Eventually it wll return the
+// number of links in the view.
+func (r *viewResolver) LinkCount(ctx context.Context, view *models.View) (int, error) {
+	count, err := models.Links(qm.Where("links.repository_id = ?", generalRepositoryID)).Count(ctx, r.DB)
+	return int(count), err
+}
+
 // Links returns a set of links.
 func (r *viewResolver) Links(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
@@ -101,6 +108,13 @@ func (r *viewResolver) Topic(
 	scope := models.Topics(topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil, nil)...)
 	topic, err := scope.One(ctx, r.DB)
 	return &models.TopicValue{topic, false, view}, err
+}
+
+// TopicCount returns the number of topics the general collection.  Eventually it wll return the
+// number of topics in the view.
+func (r *viewResolver) TopicCount(ctx context.Context, view *models.View) (int, error) {
+	count, err := models.Topics(qm.Where("topics.repository_id = ?", generalRepositoryID)).Count(ctx, r.DB)
+	return int(count), err
 }
 
 // TopicGraph returns a json string that can be used for building a visual representation of the graph.

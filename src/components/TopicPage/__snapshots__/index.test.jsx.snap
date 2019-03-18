@@ -26,7 +26,7 @@ exports[`<TopicPage /> renders 1`] = `
   />
   <Columns>
     <RightColumn>
-      <Component
+      <_default
         items={Array []}
         repoName="Private collection"
         title="Parent topics"
@@ -45,7 +45,7 @@ exports[`<TopicPage /> renders 1`] = `
       />
     </RightColumn>
     <LeftColumn>
-      <Component
+      <_default
         hasItems={false}
         placeholder="There are no items in this list."
       />

@@ -306,6 +306,7 @@ type UpsertTopicPayload implements Alertable {
 
 type View {
   link(id: ID!): Link
+  linkCount: Int!
   links(
     searchString: String,
     first: Int,
@@ -315,6 +316,7 @@ type View {
   ): LinkConnection!
   currentRepository: Repository
   topic(id: ID!): Topic
+  topicCount: Int!
   topicGraph: String
   topics(
     searchString: String,
