@@ -11,7 +11,7 @@ import (
 
 func TestRootTopic(t *testing.T) {
 	m := newMutator(t, testActor)
-	resolver := resolvers.New(testDB, testActor)
+	resolver := resolvers.New(testDB, testActor, testFetcher)
 
 	defaultRepo, err := testActor.DefaultRepo(m.ctx, testDB)
 	if err != nil {

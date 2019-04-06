@@ -141,7 +141,7 @@ func TestAvailableTopicsForLinks(t *testing.T) {
 	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
-	query := resolvers.New(m.db, testActor).Link()
+	query := resolvers.New(m.db, testActor, testFetcher).Link()
 
 	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil)
 	if err != nil {
@@ -155,7 +155,7 @@ func TestAvailableTopicsForLinks(t *testing.T) {
 
 func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 	m := newMutator(t, testActor)
-	s := services.New(testDB, testActor)
+	s := services.New(testDB, testActor, testFetcher)
 
 	org, err := models.Organizations(qm.Where("login = ?", testActor.Login)).One(m.ctx, testDB)
 	if err != nil {
@@ -180,7 +180,7 @@ func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 	link, cleanup := m.createLink(testActor.Login, r2.Repository.Name, "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
-	query := resolvers.New(m.db, testActor).Link()
+	query := resolvers.New(m.db, testActor, testFetcher).Link()
 
 	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil)
 	if err != nil {

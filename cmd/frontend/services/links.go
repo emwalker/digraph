@@ -9,7 +9,6 @@ import (
 
 	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -48,9 +47,6 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 	pl.FlagEncodeNecessaryEscapes |
 	pl.FlagSortQuery
 
-// Fetcher holds the default title fetcher.
-var Fetcher pageinfo.Fetcher = &pageinfo.HTMLFetcher{}
-
 // NormalizeURL normalizes a url before it is stored in the database.
 func NormalizeURL(url string) (*URL, error) {
 	canonical, err := pl.NormalizeURLString(url, normalizationFlags)
@@ -62,13 +58,13 @@ func NormalizeURL(url string) (*URL, error) {
 	return &URL{canonical, url, sha1}, nil
 }
 
-func providedOrFetchedTitle(url string, providedTitle *string) (string, error) {
+func (c Connection) providedOrFetchedTitle(url string, providedTitle *string) (string, error) {
 	if providedTitle != nil && *providedTitle != "" {
 		return *providedTitle, nil
 	}
 
 	log.Print("Fetching title of ", url)
-	pageInfo, err := Fetcher.FetchPage(url)
+	pageInfo, err := c.Fetcher.FetchPage(url)
 	if err != nil {
 		return "", err
 	}
@@ -204,7 +200,7 @@ func (c Connection) UpsertLink(
 		}, nil
 	}
 
-	title, err := providedOrFetchedTitle(url.CanonicalURL, providedTitle)
+	title, err := c.providedOrFetchedTitle(url.CanonicalURL, providedTitle)
 	if err != nil {
 		return nil, err
 	}

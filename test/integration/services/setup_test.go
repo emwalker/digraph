@@ -9,7 +9,6 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
-	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -19,13 +18,6 @@ var (
 	testDB      *sql.DB
 	defaultRepo *models.Repository
 )
-
-type testFetcher struct{}
-
-func (f testFetcher) FetchPage(url string) (*pageinfo.PageInfo, error) {
-	title := "Title"
-	return &pageinfo.PageInfo{url, &title}, nil
-}
 
 func TestMain(m *testing.M) {
 	testDB = newTestDb()
@@ -42,8 +34,6 @@ func TestMain(m *testing.M) {
 	if testActor, err = models.Users().One(ctx, testDB); err != nil {
 		panic(err)
 	}
-
-	services.Fetcher = testFetcher{}
 
 	os.Exit(m.Run())
 }

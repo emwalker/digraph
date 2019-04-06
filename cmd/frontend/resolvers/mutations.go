@@ -263,7 +263,7 @@ func (r *MutationResolver) UpsertLink(
 			return err
 		}
 
-		s := services.New(tx, r.Actor)
+		s := services.New(tx, r.Actor, r.Fetcher)
 		result, err = s.UpsertLink(
 			ctx,
 			repo,

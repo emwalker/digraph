@@ -11,7 +11,7 @@ LDFLAGS          = -w -X main.commitHash=$(GIT_HASH)
 GLIDE            := $(shell command -v glide 2> /dev/null)
 TIMESTAMP        = $(shell date -u +%s)
 DBNAME           = digraph_dev
-LINT_DIRECTORIES = $(shell find cmd/ -type d ! -name "loaders")
+LINT_DIRECTORIES = $(shell find cmd/ -type d ! -name "loaders" ! -name "server")
 
 kill:
 	@killall server 2>/dev/null || true

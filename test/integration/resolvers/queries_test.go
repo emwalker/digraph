@@ -17,7 +17,7 @@ func TestResolveView(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queryResolver := resolvers.New(testDB, testActor).Query()
+	queryResolver := resolvers.New(testDB, testActor, testFetcher).Query()
 
 	cases := []struct {
 		Name     string
@@ -60,7 +60,7 @@ func TestResolveView(t *testing.T) {
 
 func TestDefaultOrganization(t *testing.T) {
 	ctx := context.Background()
-	resolver := resolvers.New(testDB, testActor).Query()
+	resolver := resolvers.New(testDB, testActor, testFetcher).Query()
 
 	org, err := resolver.DefaultOrganization(ctx)
 	if err != nil {
@@ -73,7 +73,7 @@ func TestDefaultOrganization(t *testing.T) {
 }
 
 func TestFakeError(t *testing.T) {
-	queryResolver := resolvers.New(testDB, testActor).Query()
+	queryResolver := resolvers.New(testDB, testActor, testFetcher).Query()
 
 	str, err := queryResolver.FakeError(context.Background())
 	if err == nil {
@@ -87,7 +87,7 @@ func TestFakeError(t *testing.T) {
 
 func TestGuestViewer(t *testing.T) {
 	ctx := context.Background()
-	resolver := resolvers.New(testDB, &resolvers.GuestUser).Query()
+	resolver := resolvers.New(testDB, &resolvers.GuestUser, testFetcher).Query()
 
 	viewer, err := resolver.Viewer(ctx)
 	if err != nil {

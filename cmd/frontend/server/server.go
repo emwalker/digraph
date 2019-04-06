@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
+	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	"github.com/gorilla/handlers"
 	"github.com/volatiletech/sqlboiler/boil"
 )
@@ -38,7 +40,18 @@ func New(
 	db, err := sql.Open("postgres", connectionString)
 	must(err)
 
-	resolver := &resolvers.Resolver{DB: db}
+	client := &http.Client{
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout: 40 * time.Second,
+			}).DialContext,
+			TLSHandshakeTimeout: 5 * time.Second,
+		},
+	}
+
+	fetcher := pageinfo.New(client)
+
+	resolver := &resolvers.Resolver{DB: db, Fetcher: fetcher}
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})
 
 	server := &http.Server{

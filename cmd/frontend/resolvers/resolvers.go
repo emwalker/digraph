@@ -7,6 +7,7 @@ import (
 	"database/sql"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 )
 
 // CurrentUserKey is the key used for storing the current user in the session.
@@ -25,13 +26,14 @@ func init() {
 
 // Resolver is the abstract base class for resolvers.
 type Resolver struct {
-	DB    *sql.DB
-	Actor *models.User
+	DB      *sql.DB
+	Actor   *models.User
+	Fetcher pageinfo.Fetcher
 }
 
 // New returns a new resolver.
-func New(db *sql.DB, actor *models.User) *Resolver {
-	return &Resolver{db, actor}
+func New(db *sql.DB, actor *models.User, fetcher pageinfo.Fetcher) *Resolver {
+	return &Resolver{db, actor, fetcher}
 }
 
 // Mutation returns a resolver that can be used for issuing mutations.

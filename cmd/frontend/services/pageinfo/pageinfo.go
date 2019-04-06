@@ -3,11 +3,9 @@ package pageinfo
 import (
 	"errors"
 	"log"
-	"net"
 	"net/http"
-	"time"
 
-	"github.com/gocolly/colly"
+	"golang.org/x/net/html"
 )
 
 var (
@@ -27,50 +25,69 @@ type Fetcher interface {
 }
 
 // HTMLFetcher is the default fetcher.
-type HTMLFetcher struct{}
+type HTMLFetcher struct {
+	client *http.Client
+}
+
+// New returns an HTMLFetcher initialized with the http.Client passed in.
+func New(client *http.Client) *HTMLFetcher {
+	return &HTMLFetcher{client}
+}
+
+func isTitleElement(n *html.Node) bool {
+	return n.Type == html.ElementNode &&
+		n.Data == "title" &&
+		n.FirstChild != nil
+}
+
+func traverse(n *html.Node) (string, error) {
+	if isTitleElement(n) {
+		return n.FirstChild.Data, nil
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if c.Type != html.ElementNode {
+			continue
+		}
+
+		result, err := traverse(c)
+		if err != nil {
+			return "", err
+		}
+
+		if result != "" {
+			return result, nil
+		}
+	}
+
+	return "", nil
+}
+
+// GetHTMLTitle extracts the title from a parsed document.
+func GetHTMLTitle(doc *html.Node) (string, error) {
+	return traverse(doc)
+}
 
 // FetchPage satisfies the Fetcher interface.
 func (f *HTMLFetcher) FetchPage(url string) (*PageInfo, error) {
 	log.Println("Attempting to fetch url:", url)
 
-	c := colly.NewCollector(
-		colly.UserAgent(userAgentString),
-	)
+	resp, err := f.client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-	c.SetRequestTimeout(40 * time.Second)
-
-	c.WithTransport(&http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout: 40 * time.Second,
-		}).DialContext,
-	})
-
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Accept", "*/*")
-	})
-
-	c.OnResponse(func(r *colly.Response) {
-		log.Println("Success:", r.Request.URL)
-	})
-
-	var err error
-	var title string
-
-	c.OnError(func(r *colly.Response, err error) {
-		log.Println("Error:", r.Request.URL, err)
-		err = errPageFetch
-	})
-
-	c.OnHTML("html", func(e *colly.HTMLElement) {
-		title = e.ChildText("title")
-	})
-
-	c.Visit(url)
-	c.Wait()
-
+	doc, err := html.Parse(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
+	title, err := GetHTMLTitle(doc)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("Found title:", title)
 	return &PageInfo{URL: url, Title: &title}, nil
 }

@@ -275,7 +275,7 @@ func TestSearchChildTopics(t *testing.T) {
 		},
 	}
 
-	topicResolver := resolvers.New(testDB, testActor).Topic()
+	topicResolver := resolvers.New(testDB, testActor, testFetcher).Topic()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -336,7 +336,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 		},
 	}
 
-	topicResolver := resolvers.New(testDB, testActor).Topic()
+	topicResolver := resolvers.New(testDB, testActor, testFetcher).Topic()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -413,7 +413,7 @@ func TestSearchInTopic(t *testing.T) {
 		},
 	}
 
-	topicResolver := resolvers.New(testDB, testActor).Topic()
+	topicResolver := resolvers.New(testDB, testActor, testFetcher).Topic()
 
 	for _, td := range cases {
 		t.Run(td.name, func(t *testing.T) {
@@ -458,7 +458,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 	defer cleanup()
 	m.addParentTopicToTopic(topic, root)
 
-	topicResolver := resolvers.New(testDB, testActor).Topic()
+	topicResolver := resolvers.New(testDB, testActor, testFetcher).Topic()
 
 	var conn models.SearchResultItemConnection
 
@@ -487,7 +487,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 }
 
 func TestParentTopicPreloading(t *testing.T) {
-	r := resolvers.New(testDB, testActor).Topic()
+	r := resolvers.New(testDB, testActor, testFetcher).Topic()
 	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
@@ -517,7 +517,7 @@ func TestParentTopicPreloading(t *testing.T) {
 
 func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 	m := newMutator(t, testActor)
-	s := services.New(testDB, testActor)
+	s := services.New(testDB, testActor, testFetcher)
 
 	org1, err := models.Organizations(qm.Where("login = ?", testActor.Login)).One(m.ctx, testDB)
 	if err != nil {
@@ -547,7 +547,7 @@ func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 	topic2, cleanup := m.createTopic("wiki", r2.Repository.Name, "Topic 2")
 	defer cleanup()
 
-	query := resolvers.New(m.db, testActor).Topic()
+	query := resolvers.New(m.db, testActor, testFetcher).Topic()
 
 	conn, err := query.AvailableParentTopics(m.ctx, topic2, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -573,7 +573,7 @@ func TestAvailableTopicsForTopicWithFilter(t *testing.T) {
 
 	m.addParentTopicToTopic(t2, t1)
 
-	query := resolvers.New(m.db, testActor).Topic()
+	query := resolvers.New(m.db, testActor, testFetcher).Topic()
 
 	cases := []struct {
 		name         string
@@ -667,7 +667,7 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 	defer cleanup()
 	m.addParentTopicToLink(link, root)
 
-	query := resolvers.New(m.db, testActor2).Topic()
+	query := resolvers.New(m.db, testActor2, testFetcher).Topic()
 
 	var root2 *models.TopicValue
 	if root2, err = m.defaultRepo().RootTopic(ctx, testDB, testActor2.DefaultView()); err != nil {

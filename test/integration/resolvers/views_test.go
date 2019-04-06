@@ -22,7 +22,7 @@ var (
 
 func TestQueryView(t *testing.T) {
 	ctx := context.Background()
-	query := resolvers.New(testDB, testActor).View()
+	query := resolvers.New(testDB, testActor, testFetcher).View()
 
 	// When the repository is in the db
 	repo, err := testActor.DefaultRepo(ctx, testDB)
@@ -115,7 +115,7 @@ func TestSearchTopics(t *testing.T) {
 	}
 
 	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
-	viewResolver := resolvers.New(testDB, testActor).View()
+	viewResolver := resolvers.New(testDB, testActor, testFetcher).View()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -182,7 +182,7 @@ func TestSearchLinks(t *testing.T) {
 	}
 
 	view := &models.View{RepositoryIds: []string{m.defaultRepo().ID}}
-	viewResolver := resolvers.New(testDB, testActor).View()
+	viewResolver := resolvers.New(testDB, testActor, testFetcher).View()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -243,7 +243,7 @@ func TestTopicVisibility(t *testing.T) {
 		t.Fatal("Topics should not be de-duped between repos")
 	}
 
-	r := resolvers.New(testDB, testActor).View()
+	r := resolvers.New(testDB, testActor, testFetcher).View()
 	v1 := &models.View{ViewerID: r1.User.ID, RepositoryIds: []string{r1.Repository.ID}}
 	v2 := &models.View{ViewerID: r2.User.ID, RepositoryIds: []string{r2.Repository.ID}}
 	var topic *models.TopicValue
@@ -276,7 +276,7 @@ func TestTopicVisibility(t *testing.T) {
 func TestTopicGraph(t *testing.T) {
 	m := newMutator(t, testActor)
 	ctx := context.Background()
-	r := resolvers.New(testDB, testActor).View()
+	r := resolvers.New(testDB, testActor, testFetcher).View()
 	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 
 	str, err := r.TopicGraph(ctx, view)
@@ -309,7 +309,7 @@ func TestTopicGraph(t *testing.T) {
 func TestTopicCount(t *testing.T) {
 	m := newMutator(t, testActor)
 	ctx := context.Background()
-	r := resolvers.New(testDB, testActor).View()
+	r := resolvers.New(testDB, testActor, testFetcher).View()
 	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 
 	count, err := r.TopicCount(ctx, view)
@@ -325,7 +325,7 @@ func TestTopicCount(t *testing.T) {
 func TestLinkCount(t *testing.T) {
 	m := newMutator(t, testActor)
 	ctx := context.Background()
-	r := resolvers.New(testDB, testActor).View()
+	r := resolvers.New(testDB, testActor, testFetcher).View()
 	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 
 	count, err := r.LinkCount(ctx, view)

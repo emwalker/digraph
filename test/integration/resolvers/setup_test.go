@@ -19,13 +19,14 @@ import (
 
 const orgID = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 
-var (
-	testDB     *sql.DB
-	testActor  *models.User
-	testActor2 *models.User
-)
+type testFetcherT struct{}
 
-type testFetcher struct{}
+var (
+	testDB      *sql.DB
+	testActor   *models.User
+	testActor2  *models.User
+	testFetcher *testFetcherT
+)
 
 type mutator struct {
 	actor    *models.User
@@ -51,7 +52,6 @@ func (m mutator) defaultRepo() *models.Repository {
 }
 
 func TestMain(m *testing.M) {
-	services.Fetcher = &testFetcher{}
 	testDB = newTestDb()
 	defer testDB.Close()
 
@@ -85,7 +85,7 @@ func newTestDb() *sql.DB {
 
 func newMutator(t *testing.T, actor *models.User) mutator {
 	resolver := &resolvers.MutationResolver{
-		&resolvers.Resolver{DB: testDB, Actor: actor},
+		&resolvers.Resolver{DB: testDB, Actor: actor, Fetcher: testFetcher},
 	}
 
 	ctx := context.Background()
@@ -101,7 +101,7 @@ func newMutator(t *testing.T, actor *models.User) mutator {
 	}
 }
 
-func (f *testFetcher) FetchPage(url string) (*pageinfo.PageInfo, error) {
+func (f *testFetcherT) FetchPage(url string) (*pageinfo.PageInfo, error) {
 	title := "Gnusto's blog"
 	return &pageinfo.PageInfo{
 		URL:   url,
