@@ -47,6 +47,11 @@ func TestTitle(t *testing.T) {
 			`,
 			title: "Title 3",
 		},
+		{
+			name:  "Removing html from title contents",
+			body:  "<html><head><title><em>Candida auris</em> in Healthcare Facilities</title></head></html>",
+			title: "Candida auris in Healthcare Facilities",
+		},
 	}
 
 	for _, testCase := range testCases {
