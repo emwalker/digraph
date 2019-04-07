@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/microcosm-cc/bluemonday"
+	strip "github.com/grokify/html-strip-tags-go"
 	"golang.org/x/net/html"
 )
 
@@ -77,8 +77,7 @@ func GetHTMLTitle(doc *html.Node) (string, error) {
 	}
 
 	// Remove html elements from title
-	p := bluemonday.StrictPolicy()
-	return p.Sanitize(string), nil
+	return strip.StripTags(string), nil
 }
 
 const browserUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"

@@ -15,11 +15,8 @@ func TestTitle(t *testing.T) {
 		title string
 	}{
 		{
-			name: "Simple case",
-			body: `
-			<html><head>
-				<title>Title 1</title>
-			</head></html>`,
+			name:  "Simple case",
+			body:  "<html><head><title>Title 1</title></head></html>",
 			title: "Title 1",
 		},
 		{
@@ -49,8 +46,13 @@ func TestTitle(t *testing.T) {
 		},
 		{
 			name:  "Removing html from title contents",
-			body:  "<html><head><title><em>Candida auris</em> in Healthcare Facilities</title></head></html>",
+			body:  "<title><em>Candida auris</em> in Healthcare Facilities</title>",
 			title: "Candida auris in Healthcare Facilities",
+		},
+		{
+			name:  "Handling of single quotes",
+			body:  "<title>This title's text includes a 'quote'</title>",
+			title: "This title's text includes a 'quote'",
 		},
 	}
 
