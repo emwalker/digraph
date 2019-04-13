@@ -143,7 +143,7 @@ func TestAvailableTopicsForLinks(t *testing.T) {
 
 	query := resolvers.New(m.db, testActor, testFetcher).Link()
 
-	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil)
+	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 
 	query := resolvers.New(m.db, testActor, testFetcher).Link()
 
-	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil)
+	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

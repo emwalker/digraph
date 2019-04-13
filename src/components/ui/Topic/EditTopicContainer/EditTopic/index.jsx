@@ -1,6 +1,6 @@
 // @flow
-import React, { Component } from 'react'
-import { createRefetchContainer, graphql } from 'react-relay'
+import React from 'react'
+import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { Relay, TopicType, UserType, ViewType } from 'components/types'
 import { liftNodes } from 'utils'
@@ -29,84 +29,32 @@ type RenderProps = {
 /* eslint react/prop-types: 0 */
 /* eslint react/no-unused-prop-types: 0 */
 
-class EditTopic extends Component<PropsType> {
-  componentDidMount = () => {
-    const { refetch } = this.props.relay
-    if (refetch) {
-      setTimeout(() => {
-        refetch({
-          orgLogin: this.props.orgLogin,
-          count: 3000,
-        })
-      }, 100)
-    }
-  }
+const EditTopic = (props: PropsType) => {
+  const { error, isOpen, orgLogin, relay, toggleForm, topic, viewer } = props
 
-  render = () => {
-    const { error, isOpen, orgLogin, relay, toggleForm, topic, viewer } = this.props
+  if (error)
+    return <div>{error.message}</div>
 
-    if (error)
-      return <div>{error.message}</div>
+  if (!topic)
+    return null
 
-    if (!topic)
-      return null
-
-    return (
-      <EditTopicForm
-        availableTopics={liftNodes(topic.availableTopics)}
-        isOpen={isOpen}
-        orgLogin={orgLogin}
-        relay={relay}
-        selectedTopics={liftNodes(topic.selectedTopics)}
-        toggleForm={toggleForm}
-        topic={topic}
-        viewer={viewer}
-      />
-    )
-  }
+  return (
+    <EditTopicForm
+      availableTopics={liftNodes(topic.availableTopics)}
+      isOpen={isOpen}
+      orgLogin={orgLogin}
+      relay={relay}
+      selectedTopics={liftNodes(topic.selectedTopics)}
+      toggleForm={toggleForm}
+      topic={topic}
+      viewer={viewer}
+    />
+  )
 }
 
-const Wrapped = createRefetchContainer(EditTopic, graphql`
-  fragment EditTopic_topic on Topic @argumentDefinitions(
-    count: {type: "Int!", defaultValue: 10}
-  ) {
-    selectedTopics: parentTopics(first: 3000) {
-      edges {
-        node {
-          id
-          name
-        }
-      }
-    }
-
-    availableTopics: availableParentTopics(first: $count) {
-      edges {
-        node {
-          id
-          name
-        }
-      }
-    }
-
+const Wrapped = createFragmentContainer(EditTopic, graphql`
+  fragment EditTopic_topic on Topic {
     ...EditTopicForm_topic
-  }
-`, graphql`
-  query EditTopicRefetchQuery(
-    $orgLogin: String!,
-    $repoName: String,
-    $repoIds: [ID!],
-    $topicId: ID!,
-    $count: Int!,
-  ) {
-    view(
-      currentOrganizationLogin: $orgLogin,
-      currentRepositoryName: $repoName,
-      repositoryIds: $repoIds,
-    ) {
-      topic(id: $topicId) {
-        ...EditTopic_topic @arguments(count: $count)
-      }
-    }
   }
 `)
 

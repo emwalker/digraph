@@ -15,13 +15,13 @@ export type LinkEdge = {
 }
 
 export type LinkType = {
-  availableTopics?: TopicConnection,
+  availableTopics: TopicConnection,
   id: string,
   loading: ?boolean,
   newlyAdded: boolean,
   parentTopics: TopicConnection,
   repository: RepositoryType,
-  selectedTopics?: TopicConnection,
+  selectedTopics: TopicConnection,
   title: string,
   url: string,
 }
@@ -35,6 +35,12 @@ export type LocationDescriptor = {
   },
 }
 
+export type Option = {
+  value: string,
+  label: string,
+  color?: string,
+}
+
 export type OrganizationType = {
   id: string,
   login: string,
@@ -42,7 +48,7 @@ export type OrganizationType = {
 
 export type Relay = {
   environment: Object,
-  refetch?: ?Function,
+  refetch: Function,
 }
 
 export type RelayProps = {
@@ -91,7 +97,7 @@ export type TopicType = {
   repository: RepositoryType,
   resourcePath: string,
   search: SearchResultItemConnection,
-  selectedTopics?: TopicConnection,
+  selectedTopics: TopicConnection,
 }
 
 export type UserType = {

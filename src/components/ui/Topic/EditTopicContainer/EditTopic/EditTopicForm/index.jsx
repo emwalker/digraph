@@ -1,23 +1,23 @@
 // @flow
 import React, { Component } from 'react'
-import { createFragmentContainer, graphql } from 'react-relay'
+import { createRefetchContainer, graphql } from 'react-relay'
 
-import type { TopicType } from 'components/types'
+import type { Option, TopicType } from 'components/types'
 import Input from 'components/ui/Input'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
 import deleteTopicMutation from 'mutations/deleteTopicMutation'
 import updateTopicMutation from 'mutations/updateTopicMutation'
 import updateTopicTopicsMutation from 'mutations/updateTopicParentTopicsMutation'
-import EditTopicList from 'components/ui/EditTopicList'
+import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
 
 type Props = {
-  availableTopics: TopicType[],
   isOpen: boolean,
+  orgLogin: string,
   relay: {
     environment: Object,
+    refetch: Function,
   },
-  selectedTopics: TopicType[],
   toggleForm: Function,
   topic: TopicType,
 }
@@ -91,7 +91,25 @@ class EditTopicForm extends Component<Props, State> {
     this.setState({ name: event.currentTarget.value })
   }
 
-  render() {
+  loadOptions = (searchString: string): Promise<Option[]> => {
+    if (!this.props.relay)
+      return new Promise(() => [])
+
+    return new Promise((resolve) => {
+      const variables = {
+        orgLogin: this.props.orgLogin,
+        count: 20,
+        searchString,
+      }
+
+      this.props.relay.refetch(variables, null, () => {
+        const options = makeOptions(this.props.topic.availableTopics)
+        resolve(options)
+      })
+    })
+  }
+
+  render = () => {
     if (!this.props.isOpen)
       return null
 
@@ -124,8 +142,8 @@ class EditTopicForm extends Component<Props, State> {
           />
         </div>
         <EditTopicList
-          availableTopics={this.props.availableTopics}
-          selectedTopics={this.props.selectedTopics}
+          loadOptions={this.loadOptions}
+          selectedTopics={makeOptions(this.props.topic.selectedTopics)}
           updateTopics={this.updateParentTopics}
         />
       </div>
@@ -133,16 +151,56 @@ class EditTopicForm extends Component<Props, State> {
   }
 }
 
-export default createFragmentContainer(EditTopicForm, graphql`
+export default createRefetchContainer(EditTopicForm, graphql`
   fragment EditTopicForm_viewer on User {
     defaultRepository {
       id
     }
   }
 
-  fragment EditTopicForm_topic on Topic {
+  fragment EditTopicForm_topic on Topic @argumentDefinitions(
+    searchString: {type: "String", defaultValue: null},
+    count: {type: "Int!", defaultValue: 10}
+  ) {
     description
     id
     name
+
+    selectedTopics: parentTopics(first: 100) {
+      edges {
+        node {
+          value: id
+          label: name
+        }
+      }
+    }
+
+    availableTopics: availableParentTopics(first: $count, searchString: $searchString) {
+      edges {
+        node {
+          value: id
+          label: name
+        }
+      }
+    }
+  }
+`, graphql`
+  query EditTopicFormRefetchQuery(
+    $orgLogin: String!,
+    $repoName: String,
+    $repoIds: [ID!],
+    $topicId: ID!,
+    $count: Int!,
+    $searchString: String,
+  ) {
+    view(
+      currentOrganizationLogin: $orgLogin,
+      currentRepositoryName: $repoName,
+      repositoryIds: $repoIds,
+    ) {
+      topic(id: $topicId) {
+        ...EditTopicForm_topic @arguments(count: $count, searchString: $searchString)
+      }
+    }
   }
 `)

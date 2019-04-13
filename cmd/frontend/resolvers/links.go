@@ -46,9 +46,10 @@ func linkOrganization(ctx context.Context, link *models.LinkValue) (*models.Orga
 
 // AvailableParentTopics returns the topics that can be added to the link.
 func (r *linkResolver) AvailableParentTopics(
-	ctx context.Context, link *models.LinkValue, first *int, after *string, last *int, before *string,
+	ctx context.Context, link *models.LinkValue, searchString *string, first *int, after *string,
+	last *int, before *string,
 ) (models.TopicConnection, error) {
-	return availableTopics(ctx, r.DB, link.View, nil, first)
+	return availableTopics(ctx, r.DB, link.View, searchString, first)
 }
 
 // CreatedAt returns the time at which the link was first added.

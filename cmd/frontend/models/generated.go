@@ -63,7 +63,7 @@ type ComplexityRoot struct {
 	}
 
 	Link struct {
-		AvailableParentTopics func(childComplexity int, first *int, after *string, last *int, before *string) int
+		AvailableParentTopics func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
 		CreatedAt             func(childComplexity int) int
 		Id                    func(childComplexity int) int
 		Loading               func(childComplexity int) int
@@ -238,7 +238,7 @@ type ComplexityRoot struct {
 }
 
 type LinkResolver interface {
-	AvailableParentTopics(ctx context.Context, obj *LinkValue, first *int, after *string, last *int, before *string) (TopicConnection, error)
+	AvailableParentTopics(ctx context.Context, obj *LinkValue, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
 	CreatedAt(ctx context.Context, obj *LinkValue) (string, error)
 
 	Loading(ctx context.Context, obj *LinkValue) (bool, error)
@@ -320,12 +320,12 @@ type ViewResolver interface {
 
 func field_Link_availableParentTopics_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	var arg0 *string
+	if tmp, ok := rawArgs["searchString"]; ok {
 		var err error
-		var ptr1 int
+		var ptr1 string
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
+			ptr1, err = graphql.UnmarshalString(tmp)
 			arg0 = &ptr1
 		}
 
@@ -333,13 +333,13 @@ func field_Link_availableParentTopics_args(rawArgs map[string]interface{}) (map[
 			return nil, err
 		}
 	}
-	args["first"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
+	args["searchString"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
 		var err error
-		var ptr1 string
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg1 = &ptr1
 		}
 
@@ -347,13 +347,13 @@ func field_Link_availableParentTopics_args(rawArgs map[string]interface{}) (map[
 			return nil, err
 		}
 	}
-	args["after"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["last"]; ok {
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
 		var err error
-		var ptr1 int
+		var ptr1 string
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
+			ptr1, err = graphql.UnmarshalString(tmp)
 			arg2 = &ptr1
 		}
 
@@ -361,13 +361,13 @@ func field_Link_availableParentTopics_args(rawArgs map[string]interface{}) (map[
 			return nil, err
 		}
 	}
-	args["last"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["before"]; ok {
+	args["after"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
 		var err error
-		var ptr1 string
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg3 = &ptr1
 		}
 
@@ -375,7 +375,21 @@ func field_Link_availableParentTopics_args(rawArgs map[string]interface{}) (map[
 			return nil, err
 		}
 	}
-	args["before"] = arg3
+	args["last"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg4
 	return args, nil
 
 }
@@ -1347,7 +1361,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Link.AvailableParentTopics(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+		return e.complexity.Link.AvailableParentTopics(childComplexity, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
 	case "Link.createdAt":
 		if e.complexity.Link.CreatedAt == nil {
@@ -2660,7 +2674,7 @@ func (ec *executionContext) _Link_availableParentTopics(ctx context.Context, fie
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Link().AvailableParentTopics(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+		return ec.resolvers.Link().AvailableParentTopics(rctx, obj, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9092,6 +9106,7 @@ type DeleteTopicPayload {
 
 type Link implements ResourceIdentifiable & Namespaceable {
   availableParentTopics(
+    searchString: String,
     first: Int,
     after: String,
     last: Int,

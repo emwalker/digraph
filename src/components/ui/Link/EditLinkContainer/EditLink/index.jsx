@@ -1,6 +1,6 @@
 // @flow
-import React, { Component } from 'react'
-import { createRefetchContainer, graphql } from 'react-relay'
+import React from 'react'
+import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { LinkType, Relay, UserType, ViewType } from 'components/types'
 import { liftNodes } from 'utils'
@@ -29,84 +29,32 @@ type RenderProps = {
 /* eslint react/prop-types: 0 */
 /* eslint react/no-unused-prop-types: 0 */
 
-class EditLink extends Component<PropsType> {
-  componentDidMount = () => {
-    const { refetch } = this.props.relay
-    if (refetch) {
-      setTimeout(() => {
-        refetch({
-          orgLogin: this.props.orgLogin,
-          count: 3000,
-        })
-      }, 100)
-    }
-  }
+const EditLink = (props: PropsType) => {
+  const { error, isOpen, orgLogin, relay, toggleForm, link, viewer } = props
 
-  render = () => {
-    const { error, isOpen, orgLogin, relay, toggleForm, link, viewer } = this.props
+  if (error)
+    return <div>{error.message}</div>
 
-    if (error)
-      return <div>{error.message}</div>
+  if (!link)
+    return null
 
-    if (!link)
-      return null
-
-    return (
-      <EditLinkForm
-        availableTopics={liftNodes(link.availableTopics)}
-        isOpen={isOpen}
-        orgLogin={orgLogin}
-        relay={relay}
-        selectedTopics={liftNodes(link.selectedTopics)}
-        toggleForm={toggleForm}
-        link={link}
-        viewer={viewer}
-      />
-    )
-  }
+  return (
+    <EditLinkForm
+      availableTopics={liftNodes(link.availableTopics)}
+      isOpen={isOpen}
+      orgLogin={orgLogin}
+      relay={relay}
+      selectedTopics={liftNodes(link.selectedTopics)}
+      toggleForm={toggleForm}
+      link={link}
+      viewer={viewer}
+    />
+  )
 }
 
-const Wrapped = createRefetchContainer(EditLink, graphql`
-  fragment EditLink_link on Link @argumentDefinitions(
-    count: {type: "Int!", defaultValue: 10}
-  ) {
-    selectedTopics: parentTopics(first: 3000) {
-      edges {
-        node {
-          id
-          name
-        }
-      }
-    }
-
-    availableTopics: availableParentTopics(first: $count) {
-      edges {
-        node {
-          id
-          name
-        }
-      }
-    }
-
+const Wrapped = createFragmentContainer(EditLink, graphql`
+  fragment EditLink_link on Link {
     ...EditLinkForm_link
-  }
-`, graphql`
-  query EditLinkRefetchQuery(
-    $orgLogin: String!,
-    $repoName: String,
-    $repoIds: [ID!],
-    $linkId: ID!,
-    $count: Int!,
-  ) {
-    view(
-      currentOrganizationLogin: $orgLogin,
-      currentRepositoryName: $repoName,
-      repositoryIds: $repoIds,
-    ) {
-      link(id: $linkId) {
-        ...EditLink_link @arguments(count: $count)
-      }
-    }
   }
 `)
 
@@ -121,9 +69,9 @@ export default ({ isOpen, orgLogin, toggleForm }: Props) => ({ error, props }: R
       error={error}
       isOpen={isOpen}
       orgLogin={orgLogin}
-      relay={props.relay}
       toggleForm={toggleForm}
       link={view.link}
+      relay={props.relay}
       view={view}
       viewer={viewer}
     />

@@ -1,21 +1,20 @@
 // @flow
 import React, { Component } from 'react'
-import Select from 'react-select'
+import Select from 'react-select/lib/Async'
+import debounce from 'es6-promise-debounce'
 
-import type { TopicType } from 'components/types'
+import type { Option, TopicConnection } from 'components/types'
 import colourStyles from './colourStyles'
-
-type Option = {
-  value: string,
-  label: string,
-  color: string,
-}
 
 const color = '#0366d6'
 
+const makeOption = ({ node }) => ({ ...node, color })
+
+const makeOptions = (conn: TopicConnection): any => conn.edges.map(makeOption)
+
 type Props = {
-  availableTopics: TopicType[],
-  selectedTopics: TopicType[],
+  loadOptions: (string) => Promise<Option[]>,
+  selectedTopics: Option[],
   updateTopics: Function,
 }
 
@@ -27,15 +26,8 @@ class EditTopicList extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      selectedTopics: props.selectedTopics.map(topic =>
-        ({ value: topic.id, label: topic.name, color })),
+      selectedTopics: props.selectedTopics.map(option => ({ ...option, color })),
     }
-  }
-
-  get options(): Option[] {
-    return this.props.availableTopics.map(topic => (
-      { value: topic.id, label: topic.name, color }
-    ))
   }
 
   handleChange = (selectedTopics: Option[]) => {
@@ -49,7 +41,7 @@ class EditTopicList extends Component<Props, State> {
       <Select
         isMulti
         onChange={this.handleChange}
-        options={this.options}
+        loadOptions={debounce(this.props.loadOptions, 500)}
         placeholder="Add a topic"
         styles={colourStyles}
         value={this.state.selectedTopics}
@@ -59,3 +51,4 @@ class EditTopicList extends Component<Props, State> {
 }
 
 export default EditTopicList
+export { makeOptions }
