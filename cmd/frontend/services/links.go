@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strings"
 
 	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/cmd/frontend/models"
@@ -47,15 +48,32 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 	pl.FlagEncodeNecessaryEscapes |
 	pl.FlagSortQuery
 
+func removeQuery(parsed *url.URL) bool {
+	if strings.HasSuffix(parsed.Host, "nytimes.com") {
+		return true
+	}
+	return false
+}
+
 // NormalizeURL normalizes a url before it is stored in the database.
-func NormalizeURL(url string) (*URL, error) {
-	canonical, err := pl.NormalizeURLString(url, normalizationFlags)
+func NormalizeURL(rawURL string) (*URL, error) {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if removeQuery(parsed) {
+		parsed.RawQuery = ""
+		rawURL = parsed.String()
+	}
+
+	canonical, err := pl.NormalizeURLString(rawURL, normalizationFlags)
 	if err != nil {
 		return nil, err
 	}
 
 	sha1 := fmt.Sprintf("%x", sha1.Sum([]byte(canonical)))
-	return &URL{canonical, url, sha1}, nil
+	return &URL{canonical, rawURL, sha1}, nil
 }
 
 func (c Connection) providedOrFetchedTitle(url string, providedTitle *string) (string, error) {

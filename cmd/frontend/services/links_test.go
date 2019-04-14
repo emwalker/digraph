@@ -31,6 +31,12 @@ func TestNormalizeURL(t *testing.T) {
 			canonicalURL:  "https://quaderno.io/stripe-vat-subscriptions/",
 			expectedError: false,
 		},
+		{
+			name:          "A New York Times article",
+			inputURL:      "https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html?partner=rss&emc=rss",
+			canonicalURL:  "https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html",
+			expectedError: false,
+		},
 	}
 
 	for _, testCase := range testCases {
