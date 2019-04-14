@@ -90,7 +90,7 @@ class EditLinkForm extends Component<Props, State> {
     return new Promise((resolve) => {
       const variables = {
         orgLogin: this.props.orgLogin,
-        count: 20,
+        count: 40,
         searchString,
       }
 
