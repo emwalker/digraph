@@ -37,6 +37,18 @@ func TestNormalizeURL(t *testing.T) {
 			canonicalURL:  "https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html",
 			expectedError: false,
 		},
+		{
+			name:          "An article from the Independent",
+			inputURL:      "https://www.independent.co.uk/news/world/middle-east/saudi-arabia-born-babies-streets-abortion-marriage-wedlock-a8867571.html?utm_source=reddit.com",
+			canonicalURL:  "https://www.independent.co.uk/news/world/middle-east/saudi-arabia-born-babies-streets-abortion-marriage-wedlock-a8867571.html",
+			expectedError: false,
+		},
+		{
+			name:          "An article from Reuters",
+			inputURL:      "https://www.reuters.com/article/france-electricity-solarpower/sunny-spell-boosts-french-solar-generation-to-record-level-idUSL8N21U58M?utm_source=reddit.com",
+			canonicalURL:  "https://www.reuters.com/article/france-electricity-solarpower/sunny-spell-boosts-french-solar-generation-to-record-level-idUSL8N21U58M",
+			expectedError: false,
+		},
 	}
 
 	for _, testCase := range testCases {

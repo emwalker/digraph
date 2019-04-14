@@ -52,6 +52,12 @@ func removeQuery(parsed *url.URL) bool {
 	if strings.HasSuffix(parsed.Host, "nytimes.com") {
 		return true
 	}
+	if strings.HasSuffix(parsed.Host, "independent.co.uk") {
+		return true
+	}
+	if strings.HasSuffix(parsed.Host, "reuters.com") {
+		return true
+	}
 	return false
 }
 
