@@ -74,6 +74,16 @@ func NormalizeURL(rawURL string) (*URL, error) {
 	if removeQuery(parsed) {
 		parsed.RawQuery = ""
 		rawURL = parsed.String()
+	} else if strings.HasSuffix(parsed.Host, "youtube.com") {
+		query := parsed.Query()
+		for key := range query {
+			if key == "v" {
+				continue
+			}
+			query.Del(key)
+		}
+		parsed.RawQuery = query.Encode()
+		rawURL = parsed.String()
 	} else {
 		query := parsed.Query()
 		query.Del("utm_source")

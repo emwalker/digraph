@@ -55,6 +55,12 @@ func TestNormalizeURL(t *testing.T) {
 			canonicalURL:  "https://www.businessinsider.com/gnss-hacking-spoofing-jamming-russians-screwing-with-gps-2019-4",
 			expectedError: false,
 		},
+		{
+			name:          "A YouTube video",
+			inputURL:      "https://www.youtube.com/watch?v=Wx_2SVm9Jgo&list=PLJ8cMiYb3G5eYGt47YpJcNhILyYLmV-tW&index=3&t=0s",
+			canonicalURL:  "https://www.youtube.com/watch?v=Wx_2SVm9Jgo",
+			expectedError: false,
+		},
 	}
 
 	for _, testCase := range testCases {
