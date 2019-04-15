@@ -49,6 +49,12 @@ func TestNormalizeURL(t *testing.T) {
 			canonicalURL:  "https://www.reuters.com/article/france-electricity-solarpower/sunny-spell-boosts-french-solar-generation-to-record-level-idUSL8N21U58M",
 			expectedError: false,
 		},
+		{
+			name:          "A Business Insider article",
+			inputURL:      "https://www.businessinsider.com/gnss-hacking-spoofing-jamming-russians-screwing-with-gps-2019-4?utm_source=reddit.com",
+			canonicalURL:  "https://www.businessinsider.com/gnss-hacking-spoofing-jamming-russians-screwing-with-gps-2019-4",
+			expectedError: false,
+		},
 	}
 
 	for _, testCase := range testCases {

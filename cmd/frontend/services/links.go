@@ -48,15 +48,18 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 	pl.FlagEncodeNecessaryEscapes |
 	pl.FlagSortQuery
 
+var omitQuerySites = []string{
+	"businessinsider.com",
+	"independent.co.uk",
+	"nytimes.com",
+	"reuters.com",
+}
+
 func removeQuery(parsed *url.URL) bool {
-	if strings.HasSuffix(parsed.Host, "nytimes.com") {
-		return true
-	}
-	if strings.HasSuffix(parsed.Host, "independent.co.uk") {
-		return true
-	}
-	if strings.HasSuffix(parsed.Host, "reuters.com") {
-		return true
+	for _, host := range omitQuerySites {
+		if strings.HasSuffix(parsed.Host, host) {
+			return true
+		}
 	}
 	return false
 }
@@ -70,6 +73,11 @@ func NormalizeURL(rawURL string) (*URL, error) {
 
 	if removeQuery(parsed) {
 		parsed.RawQuery = ""
+		rawURL = parsed.String()
+	} else {
+		query := parsed.Query()
+		query.Del("utm_source")
+		parsed.RawQuery = query.Encode()
 		rawURL = parsed.String()
 	}
 
