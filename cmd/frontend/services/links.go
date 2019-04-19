@@ -48,20 +48,31 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 	pl.FlagEncodeNecessaryEscapes |
 	pl.FlagSortQuery
 
-var omitQuerySites = []string{
-	"businessinsider.com",
-	"independent.co.uk",
-	"nytimes.com",
-	"reuters.com",
-}
+var (
+	omitQuerySites = []string{
+		"businessinsider.com",
+		"independent.co.uk",
+		"nytimes.com",
+		"reuters.com",
+	}
 
-func removeQuery(parsed *url.URL) bool {
+	omitFields = []string{
+		"utm_term",
+		"utm_source",
+	}
+)
+
+func removeQueryAndAnchor(parsed *url.URL) bool {
 	for _, host := range omitQuerySites {
 		if strings.HasSuffix(parsed.Host, host) {
 			return true
 		}
 	}
 	return false
+}
+
+func stripFragment(parsed *url.URL) bool {
+	return !strings.HasSuffix(parsed.Host, "mail.google.com")
 }
 
 // NormalizeURL normalizes a url before it is stored in the database.
@@ -71,7 +82,7 @@ func NormalizeURL(rawURL string) (*URL, error) {
 		return nil, err
 	}
 
-	if removeQuery(parsed) {
+	if removeQueryAndAnchor(parsed) {
 		parsed.RawQuery = ""
 		rawURL = parsed.String()
 	} else if strings.HasSuffix(parsed.Host, "youtube.com") {
@@ -86,12 +97,20 @@ func NormalizeURL(rawURL string) (*URL, error) {
 		rawURL = parsed.String()
 	} else {
 		query := parsed.Query()
-		query.Del("utm_source")
-		parsed.RawQuery = query.Encode()
-		rawURL = parsed.String()
+		for _, key := range omitFields {
+			query.Del(key)
+			parsed.RawQuery = query.Encode()
+			rawURL = parsed.String()
+		}
 	}
 
-	canonical, err := pl.NormalizeURLString(rawURL, normalizationFlags)
+	flags := normalizationFlags
+
+	if stripFragment(parsed) {
+		flags |= pl.FlagRemoveFragment
+	}
+
+	canonical, err := pl.NormalizeURLString(rawURL, flags)
 	if err != nil {
 		return nil, err
 	}

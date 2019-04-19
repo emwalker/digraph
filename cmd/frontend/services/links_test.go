@@ -61,6 +61,18 @@ func TestNormalizeURL(t *testing.T) {
 			canonicalURL:  "https://www.youtube.com/watch?v=Wx_2SVm9Jgo",
 			expectedError: false,
 		},
+		{
+			name:          "A BuzzFeed article",
+			inputURL:      "https://www.buzzfeed.com/craigsilverman/fever-swamp-election?utm_term=.ug4NRgEQDe#.lszgG6PJZr",
+			canonicalURL:  "https://www.buzzfeed.com/craigsilverman/fever-swamp-election",
+			expectedError: false,
+		},
+		{
+			name:          "A Gmail link",
+			inputURL:      "https://mail.google.com/mail/u/0/#inbox",
+			canonicalURL:  "https://mail.google.com/mail/u/0/#inbox",
+			expectedError: false,
+		},
 	}
 
 	for _, testCase := range testCases {
