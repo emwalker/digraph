@@ -19,6 +19,7 @@ func TestParent(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrations)
 	t.Run("Sessions", testSessions)
 	t.Run("Topics", testTopics)
+	t.Run("UserLinkTopics", testUserLinkTopics)
 	t.Run("UserLinks", testUserLinks)
 	t.Run("Users", testUsers)
 }
@@ -31,6 +32,7 @@ func TestDelete(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsDelete)
 	t.Run("Sessions", testSessionsDelete)
 	t.Run("Topics", testTopicsDelete)
+	t.Run("UserLinkTopics", testUserLinkTopicsDelete)
 	t.Run("UserLinks", testUserLinksDelete)
 	t.Run("Users", testUsersDelete)
 }
@@ -43,6 +45,7 @@ func TestQueryDeleteAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsQueryDeleteAll)
 	t.Run("Sessions", testSessionsQueryDeleteAll)
 	t.Run("Topics", testTopicsQueryDeleteAll)
+	t.Run("UserLinkTopics", testUserLinkTopicsQueryDeleteAll)
 	t.Run("UserLinks", testUserLinksQueryDeleteAll)
 	t.Run("Users", testUsersQueryDeleteAll)
 }
@@ -55,6 +58,7 @@ func TestSliceDeleteAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsSliceDeleteAll)
 	t.Run("Sessions", testSessionsSliceDeleteAll)
 	t.Run("Topics", testTopicsSliceDeleteAll)
+	t.Run("UserLinkTopics", testUserLinkTopicsSliceDeleteAll)
 	t.Run("UserLinks", testUserLinksSliceDeleteAll)
 	t.Run("Users", testUsersSliceDeleteAll)
 }
@@ -67,6 +71,7 @@ func TestExists(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsExists)
 	t.Run("Sessions", testSessionsExists)
 	t.Run("Topics", testTopicsExists)
+	t.Run("UserLinkTopics", testUserLinkTopicsExists)
 	t.Run("UserLinks", testUserLinksExists)
 	t.Run("Users", testUsersExists)
 }
@@ -79,6 +84,7 @@ func TestFind(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsFind)
 	t.Run("Sessions", testSessionsFind)
 	t.Run("Topics", testTopicsFind)
+	t.Run("UserLinkTopics", testUserLinkTopicsFind)
 	t.Run("UserLinks", testUserLinksFind)
 	t.Run("Users", testUsersFind)
 }
@@ -91,6 +97,7 @@ func TestBind(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsBind)
 	t.Run("Sessions", testSessionsBind)
 	t.Run("Topics", testTopicsBind)
+	t.Run("UserLinkTopics", testUserLinkTopicsBind)
 	t.Run("UserLinks", testUserLinksBind)
 	t.Run("Users", testUsersBind)
 }
@@ -103,6 +110,7 @@ func TestOne(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsOne)
 	t.Run("Sessions", testSessionsOne)
 	t.Run("Topics", testTopicsOne)
+	t.Run("UserLinkTopics", testUserLinkTopicsOne)
 	t.Run("UserLinks", testUserLinksOne)
 	t.Run("Users", testUsersOne)
 }
@@ -115,6 +123,7 @@ func TestAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsAll)
 	t.Run("Sessions", testSessionsAll)
 	t.Run("Topics", testTopicsAll)
+	t.Run("UserLinkTopics", testUserLinkTopicsAll)
 	t.Run("UserLinks", testUserLinksAll)
 	t.Run("Users", testUsersAll)
 }
@@ -127,6 +136,7 @@ func TestCount(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsCount)
 	t.Run("Sessions", testSessionsCount)
 	t.Run("Topics", testTopicsCount)
+	t.Run("UserLinkTopics", testUserLinkTopicsCount)
 	t.Run("UserLinks", testUserLinksCount)
 	t.Run("Users", testUsersCount)
 }
@@ -139,6 +149,7 @@ func TestHooks(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsHooks)
 	t.Run("Sessions", testSessionsHooks)
 	t.Run("Topics", testTopicsHooks)
+	t.Run("UserLinkTopics", testUserLinkTopicsHooks)
 	t.Run("UserLinks", testUserLinksHooks)
 	t.Run("Users", testUsersHooks)
 }
@@ -158,6 +169,8 @@ func TestInsert(t *testing.T) {
 	t.Run("Sessions", testSessionsInsertWhitelist)
 	t.Run("Topics", testTopicsInsert)
 	t.Run("Topics", testTopicsInsertWhitelist)
+	t.Run("UserLinkTopics", testUserLinkTopicsInsert)
+	t.Run("UserLinkTopics", testUserLinkTopicsInsertWhitelist)
 	t.Run("UserLinks", testUserLinksInsert)
 	t.Run("UserLinks", testUserLinksInsertWhitelist)
 	t.Run("Users", testUsersInsert)
@@ -176,9 +189,12 @@ func TestToOne(t *testing.T) {
 	t.Run("SessionToUserUsingUser", testSessionToOneUserUsingUser)
 	t.Run("TopicToOrganizationUsingOrganization", testTopicToOneOrganizationUsingOrganization)
 	t.Run("TopicToRepositoryUsingRepository", testTopicToOneRepositoryUsingRepository)
+	t.Run("UserLinkTopicToUserLinkUsingUserLink", testUserLinkTopicToOneUserLinkUsingUserLink)
+	t.Run("UserLinkTopicToTopicUsingTopic", testUserLinkTopicToOneTopicUsingTopic)
 	t.Run("UserLinkToOrganizationUsingOrganization", testUserLinkToOneOrganizationUsingOrganization)
 	t.Run("UserLinkToRepositoryUsingRepository", testUserLinkToOneRepositoryUsingRepository)
 	t.Run("UserLinkToUserUsingUser", testUserLinkToOneUserUsingUser)
+	t.Run("UserLinkToLinkUsingLink", testUserLinkToOneLinkUsingLink)
 	t.Run("UserToRepositoryUsingSelectedRepository", testUserToOneRepositoryUsingSelectedRepository)
 }
 
@@ -190,6 +206,7 @@ func TestOneToOne(t *testing.T) {}
 // or deadlocks can occur.
 func TestToMany(t *testing.T) {
 	t.Run("LinkToParentTopics", testLinkToManyParentTopics)
+	t.Run("LinkToUserLinks", testLinkToManyUserLinks)
 	t.Run("OrganizationToLinks", testOrganizationToManyLinks)
 	t.Run("OrganizationToOrganizationMembers", testOrganizationToManyOrganizationMembers)
 	t.Run("OrganizationToRepositories", testOrganizationToManyRepositories)
@@ -202,6 +219,8 @@ func TestToMany(t *testing.T) {
 	t.Run("TopicToChildLinks", testTopicToManyChildLinks)
 	t.Run("TopicToParentTopics", testTopicToManyParentTopics)
 	t.Run("TopicToChildTopics", testTopicToManyChildTopics)
+	t.Run("TopicToUserLinkTopics", testTopicToManyUserLinkTopics)
+	t.Run("UserLinkToUserLinkTopics", testUserLinkToManyUserLinkTopics)
 	t.Run("UserToOrganizationMembers", testUserToManyOrganizationMembers)
 	t.Run("UserToOwnerRepositories", testUserToManyOwnerRepositories)
 	t.Run("UserToSessions", testUserToManySessions)
@@ -220,9 +239,12 @@ func TestToOneSet(t *testing.T) {
 	t.Run("SessionToUserUsingSessions", testSessionToOneSetOpUserUsingUser)
 	t.Run("TopicToOrganizationUsingTopics", testTopicToOneSetOpOrganizationUsingOrganization)
 	t.Run("TopicToRepositoryUsingTopics", testTopicToOneSetOpRepositoryUsingRepository)
+	t.Run("UserLinkTopicToUserLinkUsingUserLinkTopics", testUserLinkTopicToOneSetOpUserLinkUsingUserLink)
+	t.Run("UserLinkTopicToTopicUsingUserLinkTopics", testUserLinkTopicToOneSetOpTopicUsingTopic)
 	t.Run("UserLinkToOrganizationUsingUserLinks", testUserLinkToOneSetOpOrganizationUsingOrganization)
 	t.Run("UserLinkToRepositoryUsingUserLinks", testUserLinkToOneSetOpRepositoryUsingRepository)
 	t.Run("UserLinkToUserUsingUserLinks", testUserLinkToOneSetOpUserUsingUser)
+	t.Run("UserLinkToLinkUsingUserLinks", testUserLinkToOneSetOpLinkUsingLink)
 	t.Run("UserToRepositoryUsingSelectedRepositoryUsers", testUserToOneSetOpRepositoryUsingSelectedRepository)
 }
 
@@ -244,6 +266,7 @@ func TestOneToOneRemove(t *testing.T) {}
 // or deadlocks can occur.
 func TestToManyAdd(t *testing.T) {
 	t.Run("LinkToParentTopics", testLinkToManyAddOpParentTopics)
+	t.Run("LinkToUserLinks", testLinkToManyAddOpUserLinks)
 	t.Run("OrganizationToLinks", testOrganizationToManyAddOpLinks)
 	t.Run("OrganizationToOrganizationMembers", testOrganizationToManyAddOpOrganizationMembers)
 	t.Run("OrganizationToRepositories", testOrganizationToManyAddOpRepositories)
@@ -256,6 +279,8 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("TopicToChildLinks", testTopicToManyAddOpChildLinks)
 	t.Run("TopicToParentTopics", testTopicToManyAddOpParentTopics)
 	t.Run("TopicToChildTopics", testTopicToManyAddOpChildTopics)
+	t.Run("TopicToUserLinkTopics", testTopicToManyAddOpUserLinkTopics)
+	t.Run("UserLinkToUserLinkTopics", testUserLinkToManyAddOpUserLinkTopics)
 	t.Run("UserToOrganizationMembers", testUserToManyAddOpOrganizationMembers)
 	t.Run("UserToOwnerRepositories", testUserToManyAddOpOwnerRepositories)
 	t.Run("UserToSessions", testUserToManyAddOpSessions)
@@ -290,6 +315,7 @@ func TestReload(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsReload)
 	t.Run("Sessions", testSessionsReload)
 	t.Run("Topics", testTopicsReload)
+	t.Run("UserLinkTopics", testUserLinkTopicsReload)
 	t.Run("UserLinks", testUserLinksReload)
 	t.Run("Users", testUsersReload)
 }
@@ -302,6 +328,7 @@ func TestReloadAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsReloadAll)
 	t.Run("Sessions", testSessionsReloadAll)
 	t.Run("Topics", testTopicsReloadAll)
+	t.Run("UserLinkTopics", testUserLinkTopicsReloadAll)
 	t.Run("UserLinks", testUserLinksReloadAll)
 	t.Run("Users", testUsersReloadAll)
 }
@@ -314,6 +341,7 @@ func TestSelect(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsSelect)
 	t.Run("Sessions", testSessionsSelect)
 	t.Run("Topics", testTopicsSelect)
+	t.Run("UserLinkTopics", testUserLinkTopicsSelect)
 	t.Run("UserLinks", testUserLinksSelect)
 	t.Run("Users", testUsersSelect)
 }
@@ -326,6 +354,7 @@ func TestUpdate(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsUpdate)
 	t.Run("Sessions", testSessionsUpdate)
 	t.Run("Topics", testTopicsUpdate)
+	t.Run("UserLinkTopics", testUserLinkTopicsUpdate)
 	t.Run("UserLinks", testUserLinksUpdate)
 	t.Run("Users", testUsersUpdate)
 }
@@ -338,6 +367,7 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("SchemaMigrations", testSchemaMigrationsSliceUpdateAll)
 	t.Run("Sessions", testSessionsSliceUpdateAll)
 	t.Run("Topics", testTopicsSliceUpdateAll)
+	t.Run("UserLinkTopics", testUserLinkTopicsSliceUpdateAll)
 	t.Run("UserLinks", testUserLinksSliceUpdateAll)
 	t.Run("Users", testUsersSliceUpdateAll)
 }

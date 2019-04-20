@@ -46,6 +46,21 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ActivityLineItem struct {
+		Description func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+	}
+
+	ActivityLineItemConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	ActivityLineItemEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Alert struct {
 		Text func(childComplexity int) int
 		Type func(childComplexity int) int
@@ -226,6 +241,7 @@ type ComplexityRoot struct {
 	}
 
 	View struct {
+		Activity          func(childComplexity int, first *int, after *string, last *int, before *string) int
 		Link              func(childComplexity int, id string) int
 		LinkCount         func(childComplexity int) int
 		Links             func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
@@ -308,6 +324,7 @@ type UserResolver interface {
 	UpdatedAt(ctx context.Context, obj *User) (string, error)
 }
 type ViewResolver interface {
+	Activity(ctx context.Context, obj *View, first *int, after *string, last *int, before *string) (ActivityLineItemConnection, error)
 	Link(ctx context.Context, obj *View, id string) (*LinkValue, error)
 	LinkCount(ctx context.Context, obj *View) (int, error)
 	Links(ctx context.Context, obj *View, searchString *string, first *int, after *string, last *int, before *string) (LinkConnection, error)
@@ -1077,6 +1094,68 @@ func field_User_repositories_args(rawArgs map[string]interface{}) (map[string]in
 
 }
 
+func field_View_activity_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg3
+	return args, nil
+
+}
+
 func field_View_link_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1301,6 +1380,48 @@ func (e *executableSchema) Schema() *ast.Schema {
 
 func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]interface{}) (int, bool) {
 	switch typeName + "." + field {
+
+	case "ActivityLineItem.description":
+		if e.complexity.ActivityLineItem.Description == nil {
+			break
+		}
+
+		return e.complexity.ActivityLineItem.Description(childComplexity), true
+
+	case "ActivityLineItem.createdAt":
+		if e.complexity.ActivityLineItem.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ActivityLineItem.CreatedAt(childComplexity), true
+
+	case "ActivityLineItemConnection.edges":
+		if e.complexity.ActivityLineItemConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ActivityLineItemConnection.Edges(childComplexity), true
+
+	case "ActivityLineItemConnection.pageInfo":
+		if e.complexity.ActivityLineItemConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ActivityLineItemConnection.PageInfo(childComplexity), true
+
+	case "ActivityLineItemEdge.cursor":
+		if e.complexity.ActivityLineItemEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ActivityLineItemEdge.Cursor(childComplexity), true
+
+	case "ActivityLineItemEdge.node":
+		if e.complexity.ActivityLineItemEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ActivityLineItemEdge.Node(childComplexity), true
 
 	case "Alert.text":
 		if e.complexity.Alert.Text == nil {
@@ -2115,6 +2236,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.UpdatedAt(childComplexity), true
 
+	case "View.activity":
+		if e.complexity.View.Activity == nil {
+			break
+		}
+
+		args, err := field_View_activity_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.View.Activity(childComplexity, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+
 	case "View.link":
 		if e.complexity.View.Link == nil {
 			break
@@ -2235,6 +2368,306 @@ func (e *executableSchema) Subscription(ctx context.Context, op *ast.OperationDe
 type executionContext struct {
 	*graphql.RequestContext
 	*executableSchema
+}
+
+var activityLineItemImplementors = []string{"ActivityLineItem"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _ActivityLineItem(ctx context.Context, sel ast.SelectionSet, obj *ActivityLineItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, activityLineItemImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ActivityLineItem")
+		case "description":
+			out.Values[i] = ec._ActivityLineItem_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "createdAt":
+			out.Values[i] = ec._ActivityLineItem_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ActivityLineItem_description(ctx context.Context, field graphql.CollectedField, obj *ActivityLineItem) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ActivityLineItem",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ActivityLineItem_createdAt(ctx context.Context, field graphql.CollectedField, obj *ActivityLineItem) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ActivityLineItem",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+var activityLineItemConnectionImplementors = []string{"ActivityLineItemConnection"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _ActivityLineItemConnection(ctx context.Context, sel ast.SelectionSet, obj *ActivityLineItemConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, activityLineItemConnectionImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ActivityLineItemConnection")
+		case "edges":
+			out.Values[i] = ec._ActivityLineItemConnection_edges(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._ActivityLineItemConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ActivityLineItemConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ActivityLineItemConnection) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ActivityLineItemConnection",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ActivityLineItemEdge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+
+				return ec._ActivityLineItemEdge(ctx, field.Selections, res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ActivityLineItemConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ActivityLineItemConnection) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ActivityLineItemConnection",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._PageInfo(ctx, field.Selections, &res)
+}
+
+var activityLineItemEdgeImplementors = []string{"ActivityLineItemEdge"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _ActivityLineItemEdge(ctx context.Context, sel ast.SelectionSet, obj *ActivityLineItemEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, activityLineItemEdgeImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ActivityLineItemEdge")
+		case "cursor":
+			out.Values[i] = ec._ActivityLineItemEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "node":
+			out.Values[i] = ec._ActivityLineItemEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ActivityLineItemEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ActivityLineItemEdge) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ActivityLineItemEdge",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ActivityLineItemEdge_node(ctx context.Context, field graphql.CollectedField, obj *ActivityLineItemEdge) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ActivityLineItemEdge",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(ActivityLineItem)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._ActivityLineItem(ctx, field.Selections, &res)
 }
 
 var alertImplementors = []string{"Alert"}
@@ -6812,6 +7245,15 @@ func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("View")
+		case "activity":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._View_activity(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "link":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -6877,6 +7319,40 @@ func (ec *executionContext) _View(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _View_activity(ctx context.Context, field graphql.CollectedField, obj *View) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_View_activity_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "View",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.View().Activity(rctx, obj, args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(ActivityLineItemConnection)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._ActivityLineItemConnection(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -9064,7 +9540,22 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `type Alert {
+	&ast.Source{Name: "schema.graphql", Input: `type ActivityLineItem {
+  description: String!
+  createdAt: DateTime!
+}
+
+type ActivityLineItemEdge {
+  cursor: String!
+  node: ActivityLineItem!
+}
+
+type ActivityLineItemConnection {
+  edges: [ActivityLineItemEdge]
+  pageInfo: PageInfo!
+}
+
+type Alert {
   text: String!
   type: AlertType!
   id: String!
@@ -9372,6 +9863,12 @@ type UpsertTopicPayload implements Alertable {
 }
 
 type View {
+  activity(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): ActivityLineItemConnection!
   link(id: ID!): Link
   linkCount: Int!
   links(

@@ -337,3 +337,22 @@ func TestLinkCount(t *testing.T) {
 		t.Fatal("Expected at least one link")
 	}
 }
+
+func TestActivity(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	r := resolvers.New(testDB, testActor, testFetcher).View()
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+
+	_, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "New York Times", "https://www.nytimes.com")
+	defer cleanup()
+
+	connection, err := r.Activity(ctx, view, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(connection.Edges) < 1 {
+		t.Fatal("Expected at least one activity line item")
+	}
+}

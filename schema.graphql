@@ -1,3 +1,18 @@
+type ActivityLineItem {
+  description: String!
+  createdAt: DateTime!
+}
+
+type ActivityLineItemEdge {
+  cursor: String!
+  node: ActivityLineItem!
+}
+
+type ActivityLineItemConnection {
+  edges: [ActivityLineItemEdge]
+  pageInfo: PageInfo!
+}
+
 type Alert {
   text: String!
   type: AlertType!
@@ -306,6 +321,12 @@ type UpsertTopicPayload implements Alertable {
 }
 
 type View {
+  activity(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): ActivityLineItemConnection!
   link(id: ID!): Link
   linkCount: Int!
   links(

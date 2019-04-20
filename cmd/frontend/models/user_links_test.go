@@ -494,6 +494,159 @@ func testUserLinksInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testUserLinkToManyUserLinkTopics(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a UserLink
+	var b, c UserLinkTopic
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userLinkDBTypes, true, userLinkColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize UserLink struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, userLinkTopicDBTypes, false, userLinkTopicColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, userLinkTopicDBTypes, false, userLinkTopicColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.UserLinkID = a.ID
+	c.UserLinkID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.UserLinkTopics().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.UserLinkID == b.UserLinkID {
+			bFound = true
+		}
+		if v.UserLinkID == c.UserLinkID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := UserLinkSlice{&a}
+	if err = a.L.LoadUserLinkTopics(ctx, tx, false, (*[]*UserLink)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.UserLinkTopics); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.UserLinkTopics = nil
+	if err = a.L.LoadUserLinkTopics(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.UserLinkTopics); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testUserLinkToManyAddOpUserLinkTopics(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a UserLink
+	var b, c, d, e UserLinkTopic
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userLinkDBTypes, false, strmangle.SetComplement(userLinkPrimaryKeyColumns, userLinkColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*UserLinkTopic{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, userLinkTopicDBTypes, false, strmangle.SetComplement(userLinkTopicPrimaryKeyColumns, userLinkTopicColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*UserLinkTopic{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddUserLinkTopics(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.UserLinkID {
+			t.Error("foreign key was wrong value", a.ID, first.UserLinkID)
+		}
+		if a.ID != second.UserLinkID {
+			t.Error("foreign key was wrong value", a.ID, second.UserLinkID)
+		}
+
+		if first.R.UserLink != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.UserLink != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.UserLinkTopics[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.UserLinkTopics[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.UserLinkTopics().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testUserLinkToOneOrganizationUsingOrganization(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -643,6 +796,57 @@ func testUserLinkToOneUserUsingUser(t *testing.T) {
 		t.Fatal(err)
 	}
 	if local.R.User == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
+func testUserLinkToOneLinkUsingLink(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local UserLink
+	var foreign Link
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, userLinkDBTypes, false, userLinkColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize UserLink struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, linkDBTypes, false, linkColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Link struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	local.LinkID = foreign.ID
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.Link().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := UserLinkSlice{&local}
+	if err = local.L.LoadLink(ctx, tx, false, (*[]*UserLink)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Link == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.Link = nil
+	if err = local.L.LoadLink(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Link == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
@@ -815,6 +1019,63 @@ func testUserLinkToOneSetOpUserUsingUser(t *testing.T) {
 
 		if a.UserID != x.ID {
 			t.Error("foreign key was wrong value", a.UserID, x.ID)
+		}
+	}
+}
+func testUserLinkToOneSetOpLinkUsingLink(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a UserLink
+	var b, c Link
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userLinkDBTypes, false, strmangle.SetComplement(userLinkPrimaryKeyColumns, userLinkColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, linkDBTypes, false, strmangle.SetComplement(linkPrimaryKeyColumns, linkColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, linkDBTypes, false, strmangle.SetComplement(linkPrimaryKeyColumns, linkColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Link{&b, &c} {
+		err = a.SetLink(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Link != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.UserLinks[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.LinkID != x.ID {
+			t.Error("foreign key was wrong value", a.LinkID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.LinkID))
+		reflect.Indirect(reflect.ValueOf(&a.LinkID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.LinkID != x.ID {
+			t.Error("foreign key was wrong value", a.LinkID, x.ID)
 		}
 	}
 }

@@ -10,6 +10,7 @@ import (
 
 	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/text"
 	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -188,6 +189,7 @@ func (c Connection) addParentTopicsToLink(
 
 func (c Connection) logUserLinkAction(
 	ctx context.Context, repo *models.Repository, actor *models.User, link *models.Link, action string,
+	newTopicIds []string,
 ) (*models.UserLink, error) {
 	// Log the upsert
 	userLink := models.UserLink{
@@ -201,6 +203,19 @@ func (c Connection) logUserLinkAction(
 	if err := userLink.Insert(ctx, c.Exec, boil.Infer()); err != nil {
 		log.Printf("Failed to add a row to user_links: %s", err)
 		return nil, err
+	}
+
+	for _, topicID := range newTopicIds {
+		userLinkTopic := models.UserLinkTopic{
+			UserLinkID: userLink.ID,
+			Action:     models.TopicActionTopicAdded,
+			TopicID:    topicID,
+		}
+
+		if err := userLinkTopic.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+			log.Printf("Failed to add a row to user_link_topics (%s, %s): %s", userLink.ID, topicID, err)
+			return nil, err
+		}
 	}
 
 	return &userLink, nil
@@ -217,17 +232,7 @@ func (c Connection) DeleteLink(
 		return nil, err
 	}
 
-	userLink, err := c.logUserLinkAction(ctx, repo, c.Actor, link, models.ActionDeleteLink)
-	if err != nil {
-		return nil, err
-	}
-
 	cleanup := func() error {
-		_, err = userLink.Delete(ctx, c.Exec)
-		if err != nil {
-			return err
-		}
-
 		return nil
 	}
 
@@ -270,7 +275,7 @@ func (c Connection) UpsertLink(
 		OrganizationID: repo.OrganizationID,
 		RepositoryID:   repo.ID,
 		Sha1:           url.Sha1,
-		Title:          title,
+		Title:          text.Squash(title),
 		URL:            url.CanonicalURL,
 	}
 
@@ -320,7 +325,7 @@ func (c Connection) UpsertLink(
 		}
 	}
 
-	userLink, err := c.logUserLinkAction(ctx, repo, c.Actor, &link, models.ActionUpsertLink)
+	userLink, err := c.logUserLinkAction(ctx, repo, c.Actor, &link, models.ActionUpsertLink, parentTopicIds)
 	if err != nil {
 		return nil, err
 	}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func TestUpsertBadLink(t *testing.T) {
@@ -97,31 +97,48 @@ func TestUserLinkHistory(t *testing.T) {
 	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
 
-	prevCount, _ := models.UserLinks().Count(ctx, testDB)
+	result, err := c.UpsertTopic(ctx, defaultRepo, "62ce1872411", nil, []string{})
+	if err != nil {
+		t.Fatalf("There was a problem upserting the topic: %s", err)
+	}
+	defer result.Cleanup()
+
+	topic := result.Topic
+
+	prevCount, _ := testActor.UserLinks().Count(ctx, testDB)
 	var nextCount int64
 
 	// A log is added for an upsert
 	title := "A title"
-	upsertResult, err := c.UpsertLink(ctx, defaultRepo, "http://frotz.com/", &title, []string{})
+	upsertResult, err := c.UpsertLink(ctx, defaultRepo, "http://frotz.com/", &title, []string{topic.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer upsertResult.Cleanup()
 
-	nextCount, _ = models.UserLinks().Count(ctx, testDB)
+	nextCount, _ = testActor.UserLinks().Count(ctx, testDB)
 	if (prevCount + 1) != nextCount {
 		t.Fatal("Expected a new user link record to be created for the upsert")
 	}
 
-	// A log is added for a delete
+	userLink, err := testActor.UserLinks(qm.OrderBy("created_at desc")).One(ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	linkTopicCount, err := userLink.UserLinkTopics().Count(ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if linkTopicCount < 1 {
+		t.Fatal("Expected at least one row to be added to user_link_topics")
+	}
+
+	// A log is not added for a delete at this time
 	deleteResult, err := c.DeleteLink(ctx, defaultRepo, upsertResult.Link)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer deleteResult.Cleanup()
-
-	nextCount, _ = models.UserLinks().Count(ctx, testDB)
-	if (prevCount + 2) != nextCount {
-		t.Fatal("Expected a new user link record to be created for the delete")
-	}
 }

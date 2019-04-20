@@ -20,6 +20,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Topics", testTopicsUpsert)
 
+	t.Run("UserLinkTopics", testUserLinkTopicsUpsert)
+
 	t.Run("UserLinks", testUserLinksUpsert)
 
 	t.Run("Users", testUsersUpsert)

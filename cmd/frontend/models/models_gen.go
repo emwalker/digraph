@@ -8,6 +8,21 @@ import (
 	"strconv"
 )
 
+type ActivityLineItem struct {
+	Description string `json:"description"`
+	CreatedAt   string `json:"createdAt"`
+}
+
+type ActivityLineItemConnection struct {
+	Edges    []*ActivityLineItemEdge `json:"edges"`
+	PageInfo PageInfo                `json:"pageInfo"`
+}
+
+type ActivityLineItemEdge struct {
+	Cursor string           `json:"cursor"`
+	Node   ActivityLineItem `json:"node"`
+}
+
 type Alert struct {
 	Text string    `json:"text"`
 	Type AlertType `json:"type"`

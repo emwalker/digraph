@@ -81,26 +81,29 @@ var TopicWhere = struct {
 
 // TopicRels is where relationship names are stored.
 var TopicRels = struct {
-	Organization string
-	Repository   string
-	ChildLinks   string
-	ParentTopics string
-	ChildTopics  string
+	Organization   string
+	Repository     string
+	ChildLinks     string
+	ParentTopics   string
+	ChildTopics    string
+	UserLinkTopics string
 }{
-	Organization: "Organization",
-	Repository:   "Repository",
-	ChildLinks:   "ChildLinks",
-	ParentTopics: "ParentTopics",
-	ChildTopics:  "ChildTopics",
+	Organization:   "Organization",
+	Repository:     "Repository",
+	ChildLinks:     "ChildLinks",
+	ParentTopics:   "ParentTopics",
+	ChildTopics:    "ChildTopics",
+	UserLinkTopics: "UserLinkTopics",
 }
 
 // topicR is where relationships are stored.
 type topicR struct {
-	Organization *Organization
-	Repository   *Repository
-	ChildLinks   LinkSlice
-	ParentTopics TopicSlice
-	ChildTopics  TopicSlice
+	Organization   *Organization
+	Repository     *Repository
+	ChildLinks     LinkSlice
+	ParentTopics   TopicSlice
+	ChildTopics    TopicSlice
+	UserLinkTopics UserLinkTopicSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -482,6 +485,27 @@ func (o *Topic) ChildTopics(mods ...qm.QueryMod) topicQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"topics\".*"})
+	}
+
+	return query
+}
+
+// UserLinkTopics retrieves all the user_link_topic's UserLinkTopics with an executor.
+func (o *Topic) UserLinkTopics(mods ...qm.QueryMod) userLinkTopicQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"user_link_topics\".\"topic_id\"=?", o.ID),
+	)
+
+	query := UserLinkTopics(queryMods...)
+	queries.SetFrom(query.Query, "\"user_link_topics\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"user_link_topics\".*"})
 	}
 
 	return query
@@ -1034,6 +1058,101 @@ func (topicL) LoadChildTopics(ctx context.Context, e boil.ContextExecutor, singu
 	return nil
 }
 
+// LoadUserLinkTopics allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (topicL) LoadUserLinkTopics(ctx context.Context, e boil.ContextExecutor, singular bool, maybeTopic interface{}, mods queries.Applicator) error {
+	var slice []*Topic
+	var object *Topic
+
+	if singular {
+		object = maybeTopic.(*Topic)
+	} else {
+		slice = *maybeTopic.(*[]*Topic)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &topicR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &topicR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`user_link_topics`), qm.WhereIn(`topic_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load user_link_topics")
+	}
+
+	var resultSlice []*UserLinkTopic
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice user_link_topics")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on user_link_topics")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for user_link_topics")
+	}
+
+	if len(userLinkTopicAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.UserLinkTopics = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &userLinkTopicR{}
+			}
+			foreign.R.Topic = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.TopicID {
+				local.R.UserLinkTopics = append(local.R.UserLinkTopics, foreign)
+				if foreign.R == nil {
+					foreign.R = &userLinkTopicR{}
+				}
+				foreign.R.Topic = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetOrganization of the topic to the related item.
 // Sets o.R.Organization to related.
 // Adds o to related.R.Topics.
@@ -1546,6 +1665,59 @@ func removeChildTopicsFromParentTopicsSlice(o *Topic, related []*Topic) {
 			break
 		}
 	}
+}
+
+// AddUserLinkTopics adds the given related objects to the existing relationships
+// of the topic, optionally inserting them as new records.
+// Appends related to o.R.UserLinkTopics.
+// Sets related.R.Topic appropriately.
+func (o *Topic) AddUserLinkTopics(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*UserLinkTopic) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.TopicID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"user_link_topics\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"topic_id"}),
+				strmangle.WhereClause("\"", "\"", 2, userLinkTopicPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.TopicID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &topicR{
+			UserLinkTopics: related,
+		}
+	} else {
+		o.R.UserLinkTopics = append(o.R.UserLinkTopics, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &userLinkTopicR{
+				Topic: o,
+			}
+		} else {
+			rel.R.Topic = o
+		}
+	}
+	return nil
 }
 
 // Topics retrieves all the records using an executor.

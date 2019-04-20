@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -52,6 +53,42 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 	}
 
 	return mods
+}
+
+// Activity returns a feed of actions that have recently been taken.
+func (r *viewResolver) Activity(
+	ctx context.Context, view *models.View, first *int, after *string, last *int, before *string,
+) (models.ActivityLineItemConnection, error) {
+	userLinks, err := models.UserLinks(
+		qm.OrderBy("created_at desc"),
+		qm.Load("UserLinkTopics"),
+		qm.Load("UserLinkTopics.Topic"),
+		qm.Load("Link"),
+		qm.Load("User"),
+		qm.Limit(pageSizeOrDefault(first)),
+	).All(ctx, r.DB)
+
+	logData := make([]activity.UpsertLink, len(userLinks))
+
+	for i, userLink := range userLinks {
+		topics := make([]activity.Topic, len(userLink.R.UserLinkTopics))
+
+		for j, linkTopic := range userLink.R.UserLinkTopics {
+			topic := linkTopic.R.Topic
+			topics[j] = activity.Topic{topic.Name, topic.ID}
+		}
+
+		logData[i] = activity.UpsertLink{
+			CreatedAt: userLink.CreatedAt,
+			User:      activity.User{userLink.R.User.Name},
+			Link:      activity.Link{userLink.R.Link.Title, userLink.R.Link.URL},
+			Topics:    topics,
+		}
+	}
+
+	edges, err := activity.MakeEdges(logData)
+
+	return models.ActivityLineItemConnection{Edges: edges}, err
 }
 
 // Link returns a specific link.

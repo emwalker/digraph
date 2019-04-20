@@ -51,6 +51,12 @@ func makeCacheKey(cols boil.Columns, nzDefaults []string) string {
 	return str
 }
 
+// Enum values for topic_action
+const (
+	TopicActionTopicAdded   = "topic_added"
+	TopicActionTopicRemoved = "topic_removed"
+)
+
 // Enum values for action
 const (
 	ActionUpsertLink = "upsert_link"

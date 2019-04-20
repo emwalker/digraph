@@ -8,6 +8,7 @@ import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 
 import { defaultRootTopicId, defaultOrganizationLogin } from 'components/constants'
 import Homepage, { query as homepageQuery } from 'components/Homepage'
+import RecentPage, { query as recentPageQuery } from 'components/RecentPage'
 import { query as topicPageQuery } from 'components/TopicPage'
 import renderTopicPage from 'components/renderTopicPage'
 import { query as topicSearchPageQuery } from 'components/TopicSearchPage'
@@ -25,6 +26,12 @@ export function createResolver(fetcher) {
   })
   return new Resolver(environment)
 }
+
+const defaultParams = params => ({
+  ...params,
+  topicId: defaultRootTopicId,
+  orgLogin: defaultOrganizationLogin,
+})
 
 /* eslint function-paren-newline: 0 */
 export const routeConfig = makeRouteConfig(
@@ -45,11 +52,7 @@ export const routeConfig = makeRouteConfig(
       Component={Homepage}
       query={homepageQuery}
       path="/"
-      prepareVariables={params => ({
-        ...params,
-        topicId: defaultRootTopicId,
-        orgLogin: defaultOrganizationLogin,
-      })}
+      prepareVariables={defaultParams}
     />
     <Route
       render={withErrorBoundary(SignInPage)}
@@ -58,6 +61,12 @@ export const routeConfig = makeRouteConfig(
     <Route
       render={withErrorBoundary(SignUpPage)}
       path="/join"
+    />
+    <Route
+      path="/recent"
+      prepareVariables={defaultParams}
+      query={recentPageQuery}
+      render={withErrorBoundary(RecentPage)}
     />
     <Route path=":orgLogin">
       <Route path="topics">
