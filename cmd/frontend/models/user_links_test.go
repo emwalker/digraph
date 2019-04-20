@@ -893,7 +893,7 @@ func testUserLinksSelect(t *testing.T) {
 }
 
 var (
-	userLinkDBTypes = map[string]string{`Action`: `enum.action('upsert_link','delete_link')`, `CreatedAt`: `timestamp with time zone`, `ID`: `uuid`, `LinkID`: `uuid`, `OrganizationID`: `uuid`, `RepositoryID`: `uuid`, `UserID`: `uuid`}
+	userLinkDBTypes = map[string]string{`ID`: `uuid`, `OrganizationID`: `uuid`, `RepositoryID`: `uuid`, `UserID`: `uuid`, `LinkID`: `uuid`, `CreatedAt`: `timestamp with time zone`, `Action`: `enum.action('upsert_link','delete_link')`}
 	_               = bytes.MinRead
 )
 

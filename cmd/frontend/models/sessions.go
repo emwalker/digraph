@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -38,6 +39,36 @@ var SessionColumns = struct {
 	ID:        "id",
 	SessionID: "session_id",
 	UserID:    "user_id",
+}
+
+// Generated where
+
+type whereHelperint struct{ field string }
+
+func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelper__byte struct{ field string }
+
+func (w whereHelper__byte) EQ(x []byte) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelper__byte) NEQ(x []byte) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelper__byte) LT(x []byte) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelper__byte) LTE(x []byte) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelper__byte) GT(x []byte) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelper__byte) GTE(x []byte) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+var SessionWhere = struct {
+	ID        whereHelperint
+	SessionID whereHelper__byte
+	UserID    whereHelperstring
+}{
+	ID:        whereHelperint{field: `id`},
+	SessionID: whereHelper__byte{field: `session_id`},
+	UserID:    whereHelperstring{field: `user_id`},
 }
 
 // SessionRels is where relationship names are stored.
@@ -95,6 +126,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 var sessionBeforeInsertHooks []SessionHook
@@ -110,6 +144,10 @@ var sessionAfterUpsertHooks []SessionHook
 
 // doBeforeInsertHooks executes all "before insert" hooks.
 func (o *Session) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range sessionBeforeInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -121,6 +159,10 @@ func (o *Session) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExec
 
 // doBeforeUpdateHooks executes all "before Update" hooks.
 func (o *Session) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range sessionBeforeUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -132,6 +174,10 @@ func (o *Session) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExec
 
 // doBeforeDeleteHooks executes all "before Delete" hooks.
 func (o *Session) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range sessionBeforeDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -143,6 +189,10 @@ func (o *Session) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExec
 
 // doBeforeUpsertHooks executes all "before Upsert" hooks.
 func (o *Session) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range sessionBeforeUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -154,6 +204,10 @@ func (o *Session) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExec
 
 // doAfterInsertHooks executes all "after Insert" hooks.
 func (o *Session) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range sessionAfterInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -165,6 +219,10 @@ func (o *Session) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecu
 
 // doAfterSelectHooks executes all "after Select" hooks.
 func (o *Session) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range sessionAfterSelectHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -176,6 +234,10 @@ func (o *Session) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecu
 
 // doAfterUpdateHooks executes all "after Update" hooks.
 func (o *Session) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range sessionAfterUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -187,6 +249,10 @@ func (o *Session) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecu
 
 // doAfterDeleteHooks executes all "after Delete" hooks.
 func (o *Session) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range sessionAfterDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -198,6 +264,10 @@ func (o *Session) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecu
 
 // doAfterUpsertHooks executes all "after Upsert" hooks.
 func (o *Session) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range sessionAfterUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -352,6 +422,10 @@ func (sessionL) LoadUser(ctx context.Context, e boil.ContextExecutor, singular b
 			args = append(args, obj.UserID)
 
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`users`), qm.WhereIn(`id in ?`, args...))
@@ -758,7 +832,7 @@ func (o *Session) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 			sessionPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert sessions, could not build update column list")
 		}
 

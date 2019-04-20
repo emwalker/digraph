@@ -535,13 +535,13 @@ func testTopicToManyChildLinks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	link, err := a.ChildLinks().All(ctx, tx)
+	check, err := a.ChildLinks().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range link {
+	for _, v := range check {
 		if v.ID == b.ID {
 			bFound = true
 		}
@@ -574,7 +574,7 @@ func testTopicToManyChildLinks(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", link)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -619,13 +619,13 @@ func testTopicToManyParentTopics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	topic, err := a.ParentTopics().All(ctx, tx)
+	check, err := a.ParentTopics().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range topic {
+	for _, v := range check {
 		if v.ID == b.ID {
 			bFound = true
 		}
@@ -658,7 +658,7 @@ func testTopicToManyParentTopics(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", topic)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -703,13 +703,13 @@ func testTopicToManyChildTopics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	topic, err := a.ChildTopics().All(ctx, tx)
+	check, err := a.ChildTopics().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range topic {
+	for _, v := range check {
 		if v.ID == b.ID {
 			bFound = true
 		}
@@ -742,7 +742,7 @@ func testTopicToManyChildTopics(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", topic)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1721,7 +1721,7 @@ func testTopicsSelect(t *testing.T) {
 }
 
 var (
-	topicDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `Description`: `text`, `ID`: `uuid`, `Name`: `character varying`, `OrganizationID`: `uuid`, `RepositoryID`: `uuid`, `Root`: `boolean`, `UpdatedAt`: `timestamp with time zone`}
+	topicDBTypes = map[string]string{`OrganizationID`: `uuid`, `ID`: `uuid`, `Name`: `character varying`, `Description`: `text`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `RepositoryID`: `uuid`, `Root`: `boolean`}
 	_            = bytes.MinRead
 )
 

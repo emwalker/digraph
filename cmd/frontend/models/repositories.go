@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -44,6 +45,22 @@ var RepositoryColumns = struct {
 	Name:           "name",
 	OwnerID:        "owner_id",
 	System:         "system",
+}
+
+// Generated where
+
+var RepositoryWhere = struct {
+	ID             whereHelperstring
+	OrganizationID whereHelperstring
+	Name           whereHelperstring
+	OwnerID        whereHelperstring
+	System         whereHelperbool
+}{
+	ID:             whereHelperstring{field: `id`},
+	OrganizationID: whereHelperstring{field: `organization_id`},
+	Name:           whereHelperstring{field: `name`},
+	OwnerID:        whereHelperstring{field: `owner_id`},
+	System:         whereHelperbool{field: `system`},
 }
 
 // RepositoryRels is where relationship names are stored.
@@ -116,6 +133,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 var repositoryBeforeInsertHooks []RepositoryHook
@@ -131,6 +151,10 @@ var repositoryAfterUpsertHooks []RepositoryHook
 
 // doBeforeInsertHooks executes all "before insert" hooks.
 func (o *Repository) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range repositoryBeforeInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -142,6 +166,10 @@ func (o *Repository) doBeforeInsertHooks(ctx context.Context, exec boil.ContextE
 
 // doBeforeUpdateHooks executes all "before Update" hooks.
 func (o *Repository) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range repositoryBeforeUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -153,6 +181,10 @@ func (o *Repository) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextE
 
 // doBeforeDeleteHooks executes all "before Delete" hooks.
 func (o *Repository) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range repositoryBeforeDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -164,6 +196,10 @@ func (o *Repository) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextE
 
 // doBeforeUpsertHooks executes all "before Upsert" hooks.
 func (o *Repository) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range repositoryBeforeUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -175,6 +211,10 @@ func (o *Repository) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextE
 
 // doAfterInsertHooks executes all "after Insert" hooks.
 func (o *Repository) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range repositoryAfterInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -186,6 +226,10 @@ func (o *Repository) doAfterInsertHooks(ctx context.Context, exec boil.ContextEx
 
 // doAfterSelectHooks executes all "after Select" hooks.
 func (o *Repository) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range repositoryAfterSelectHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -197,6 +241,10 @@ func (o *Repository) doAfterSelectHooks(ctx context.Context, exec boil.ContextEx
 
 // doAfterUpdateHooks executes all "after Update" hooks.
 func (o *Repository) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range repositoryAfterUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -208,6 +256,10 @@ func (o *Repository) doAfterUpdateHooks(ctx context.Context, exec boil.ContextEx
 
 // doAfterDeleteHooks executes all "after Delete" hooks.
 func (o *Repository) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range repositoryAfterDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -219,6 +271,10 @@ func (o *Repository) doAfterDeleteHooks(ctx context.Context, exec boil.ContextEx
 
 // doAfterUpsertHooks executes all "after Upsert" hooks.
 func (o *Repository) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range repositoryAfterUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -473,6 +529,10 @@ func (repositoryL) LoadOrganization(ctx context.Context, e boil.ContextExecutor,
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`organizations`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -570,6 +630,10 @@ func (repositoryL) LoadOwner(ctx context.Context, e boil.ContextExecutor, singul
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`users`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -665,6 +729,10 @@ func (repositoryL) LoadLinks(ctx context.Context, e boil.ContextExecutor, singul
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`links`), qm.WhereIn(`repository_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -754,6 +822,10 @@ func (repositoryL) LoadTopics(ctx context.Context, e boil.ContextExecutor, singu
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`topics`), qm.WhereIn(`repository_id in ?`, args...))
@@ -847,6 +919,10 @@ func (repositoryL) LoadUserLinks(ctx context.Context, e boil.ContextExecutor, si
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`user_links`), qm.WhereIn(`repository_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -936,6 +1012,10 @@ func (repositoryL) LoadSelectedRepositoryUsers(ctx context.Context, e boil.Conte
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`users`), qm.WhereIn(`selected_repository_id in ?`, args...))
@@ -1667,7 +1747,7 @@ func (o *Repository) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 			repositoryPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert repositories, could not build update column list")
 		}
 

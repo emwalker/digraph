@@ -568,7 +568,7 @@ func testSchemaMigrationsSelect(t *testing.T) {
 }
 
 var (
-	schemaMigrationDBTypes = map[string]string{`Dirty`: `boolean`, `Version`: `bigint`}
+	schemaMigrationDBTypes = map[string]string{`Version`: `bigint`, `Dirty`: `boolean`}
 	_                      = bytes.MinRead
 )
 

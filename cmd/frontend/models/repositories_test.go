@@ -529,13 +529,13 @@ func testRepositoryToManyLinks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	link, err := a.Links().All(ctx, tx)
+	check, err := a.Links().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range link {
+	for _, v := range check {
 		if v.RepositoryID == b.RepositoryID {
 			bFound = true
 		}
@@ -568,7 +568,7 @@ func testRepositoryToManyLinks(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", link)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -607,13 +607,13 @@ func testRepositoryToManyTopics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	topic, err := a.Topics().All(ctx, tx)
+	check, err := a.Topics().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range topic {
+	for _, v := range check {
 		if v.RepositoryID == b.RepositoryID {
 			bFound = true
 		}
@@ -646,7 +646,7 @@ func testRepositoryToManyTopics(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", topic)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -685,13 +685,13 @@ func testRepositoryToManyUserLinks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userLink, err := a.UserLinks().All(ctx, tx)
+	check, err := a.UserLinks().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range userLink {
+	for _, v := range check {
 		if v.RepositoryID == b.RepositoryID {
 			bFound = true
 		}
@@ -724,7 +724,7 @@ func testRepositoryToManyUserLinks(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", userLink)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -762,13 +762,13 @@ func testRepositoryToManySelectedRepositoryUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	user, err := a.SelectedRepositoryUsers().All(ctx, tx)
+	check, err := a.SelectedRepositoryUsers().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range user {
+	for _, v := range check {
 		if queries.Equal(v.SelectedRepositoryID, b.SelectedRepositoryID) {
 			bFound = true
 		}
@@ -801,7 +801,7 @@ func testRepositoryToManySelectedRepositoryUsers(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", user)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1572,7 +1572,7 @@ func testRepositoriesSelect(t *testing.T) {
 }
 
 var (
-	repositoryDBTypes = map[string]string{`ID`: `uuid`, `Name`: `character varying`, `OrganizationID`: `uuid`, `OwnerID`: `uuid`, `System`: `boolean`}
+	repositoryDBTypes = map[string]string{`ID`: `uuid`, `OrganizationID`: `uuid`, `Name`: `character varying`, `OwnerID`: `uuid`, `System`: `boolean`}
 	_                 = bytes.MinRead
 )
 

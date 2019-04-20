@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -51,6 +52,49 @@ var UserLinkColumns = struct {
 	LinkID:         "link_id",
 	CreatedAt:      "created_at",
 	Action:         "action",
+}
+
+// Generated where
+
+type whereHelpernull_Time struct{ field string }
+
+func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var UserLinkWhere = struct {
+	ID             whereHelperstring
+	OrganizationID whereHelperstring
+	RepositoryID   whereHelperstring
+	UserID         whereHelperstring
+	LinkID         whereHelperstring
+	CreatedAt      whereHelpernull_Time
+	Action         whereHelperstring
+}{
+	ID:             whereHelperstring{field: `id`},
+	OrganizationID: whereHelperstring{field: `organization_id`},
+	RepositoryID:   whereHelperstring{field: `repository_id`},
+	UserID:         whereHelperstring{field: `user_id`},
+	LinkID:         whereHelperstring{field: `link_id`},
+	CreatedAt:      whereHelpernull_Time{field: `created_at`},
+	Action:         whereHelperstring{field: `action`},
 }
 
 // UserLinkRels is where relationship names are stored.
@@ -114,6 +158,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 var userLinkBeforeInsertHooks []UserLinkHook
@@ -129,6 +176,10 @@ var userLinkAfterUpsertHooks []UserLinkHook
 
 // doBeforeInsertHooks executes all "before insert" hooks.
 func (o *UserLink) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range userLinkBeforeInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -140,6 +191,10 @@ func (o *UserLink) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExe
 
 // doBeforeUpdateHooks executes all "before Update" hooks.
 func (o *UserLink) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range userLinkBeforeUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -151,6 +206,10 @@ func (o *UserLink) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExe
 
 // doBeforeDeleteHooks executes all "before Delete" hooks.
 func (o *UserLink) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range userLinkBeforeDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -162,6 +221,10 @@ func (o *UserLink) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExe
 
 // doBeforeUpsertHooks executes all "before Upsert" hooks.
 func (o *UserLink) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range userLinkBeforeUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -173,6 +236,10 @@ func (o *UserLink) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExe
 
 // doAfterInsertHooks executes all "after Insert" hooks.
 func (o *UserLink) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range userLinkAfterInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -184,6 +251,10 @@ func (o *UserLink) doAfterInsertHooks(ctx context.Context, exec boil.ContextExec
 
 // doAfterSelectHooks executes all "after Select" hooks.
 func (o *UserLink) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range userLinkAfterSelectHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -195,6 +266,10 @@ func (o *UserLink) doAfterSelectHooks(ctx context.Context, exec boil.ContextExec
 
 // doAfterUpdateHooks executes all "after Update" hooks.
 func (o *UserLink) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range userLinkAfterUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -206,6 +281,10 @@ func (o *UserLink) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExec
 
 // doAfterDeleteHooks executes all "after Delete" hooks.
 func (o *UserLink) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range userLinkAfterDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -217,6 +296,10 @@ func (o *UserLink) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExec
 
 // doAfterUpsertHooks executes all "after Upsert" hooks.
 func (o *UserLink) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range userLinkAfterUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -401,6 +484,10 @@ func (userLinkL) LoadOrganization(ctx context.Context, e boil.ContextExecutor, s
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`organizations`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -498,6 +585,10 @@ func (userLinkL) LoadRepository(ctx context.Context, e boil.ContextExecutor, sin
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`repositories`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -593,6 +684,10 @@ func (userLinkL) LoadUser(ctx context.Context, e boil.ContextExecutor, singular 
 			args = append(args, obj.UserID)
 
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`users`), qm.WhereIn(`id in ?`, args...))
@@ -836,10 +931,12 @@ func (o *UserLink) Insert(ctx context.Context, exec boil.ContextExecutor, column
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if queries.MustTime(o.CreatedAt).IsZero() {
-		queries.SetScanner(&o.CreatedAt, currTime)
+		if queries.MustTime(o.CreatedAt).IsZero() {
+			queries.SetScanner(&o.CreatedAt, currTime)
+		}
 	}
 
 	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
@@ -1045,10 +1142,12 @@ func (o *UserLink) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 	if o == nil {
 		return errors.New("models: no user_links provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if queries.MustTime(o.CreatedAt).IsZero() {
-		queries.SetScanner(&o.CreatedAt, currTime)
+		if queries.MustTime(o.CreatedAt).IsZero() {
+			queries.SetScanner(&o.CreatedAt, currTime)
+		}
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
@@ -1103,7 +1202,7 @@ func (o *UserLink) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 			userLinkPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert user_links, could not build update column list")
 		}
 

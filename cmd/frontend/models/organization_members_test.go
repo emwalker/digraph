@@ -777,7 +777,7 @@ func testOrganizationMembersSelect(t *testing.T) {
 }
 
 var (
-	organizationMemberDBTypes = map[string]string{`OrganizationID`: `uuid`, `Owner`: `boolean`, `UserID`: `uuid`}
+	organizationMemberDBTypes = map[string]string{`OrganizationID`: `uuid`, `UserID`: `uuid`, `Owner`: `boolean`}
 	_                         = bytes.MinRead
 )
 

@@ -535,13 +535,13 @@ func testLinkToManyParentTopics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	topic, err := a.ParentTopics().All(ctx, tx)
+	check, err := a.ParentTopics().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range topic {
+	for _, v := range check {
 		if v.ID == b.ID {
 			bFound = true
 		}
@@ -574,7 +574,7 @@ func testLinkToManyParentTopics(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", topic)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1097,7 +1097,7 @@ func testLinksSelect(t *testing.T) {
 }
 
 var (
-	linkDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `ID`: `uuid`, `OrganizationID`: `uuid`, `RepositoryID`: `uuid`, `Sha1`: `character varying`, `Title`: `text`, `URL`: `text`, `UpdatedAt`: `timestamp with time zone`}
+	linkDBTypes = map[string]string{`OrganizationID`: `uuid`, `ID`: `uuid`, `URL`: `text`, `Title`: `text`, `Sha1`: `character varying`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `RepositoryID`: `uuid`}
 	_           = bytes.MinRead
 )
 

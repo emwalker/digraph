@@ -529,13 +529,13 @@ func testUserToManyOrganizationMembers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	organizationMember, err := a.OrganizationMembers().All(ctx, tx)
+	check, err := a.OrganizationMembers().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range organizationMember {
+	for _, v := range check {
 		if v.UserID == b.UserID {
 			bFound = true
 		}
@@ -568,7 +568,7 @@ func testUserToManyOrganizationMembers(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", organizationMember)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -607,13 +607,13 @@ func testUserToManyOwnerRepositories(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repository, err := a.OwnerRepositories().All(ctx, tx)
+	check, err := a.OwnerRepositories().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range repository {
+	for _, v := range check {
 		if v.OwnerID == b.OwnerID {
 			bFound = true
 		}
@@ -646,7 +646,7 @@ func testUserToManyOwnerRepositories(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", repository)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -685,13 +685,13 @@ func testUserToManySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	session, err := a.Sessions().All(ctx, tx)
+	check, err := a.Sessions().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range session {
+	for _, v := range check {
 		if v.UserID == b.UserID {
 			bFound = true
 		}
@@ -724,7 +724,7 @@ func testUserToManySessions(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", session)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -763,13 +763,13 @@ func testUserToManyUserLinks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userLink, err := a.UserLinks().All(ctx, tx)
+	check, err := a.UserLinks().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range userLink {
+	for _, v := range check {
 		if v.UserID == b.UserID {
 			bFound = true
 		}
@@ -802,7 +802,7 @@ func testUserToManyUserLinks(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", userLink)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1340,7 +1340,7 @@ func testUsersSelect(t *testing.T) {
 }
 
 var (
-	userDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `GithubAvatarURL`: `character varying`, `GithubUsername`: `character varying`, `ID`: `uuid`, `Login`: `character varying`, `Name`: `character varying`, `PrimaryEmail`: `USER-DEFINED`, `SelectedRepositoryID`: `uuid`, `UpdatedAt`: `timestamp with time zone`}
+	userDBTypes = map[string]string{`ID`: `uuid`, `Name`: `character varying`, `PrimaryEmail`: `USER-DEFINED`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `GithubUsername`: `character varying`, `GithubAvatarURL`: `character varying`, `Login`: `character varying`, `SelectedRepositoryID`: `uuid`}
 	_           = bytes.MinRead
 )
 

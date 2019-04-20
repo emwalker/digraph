@@ -74,6 +74,9 @@ dump:
 fixtures: dump
 	cp data/digraph.sql data/fixtures.sql
 
+update-models:
+	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml
+
 clean:
 	rm -f public/webpack/*.js* public/webpack/*.css*
 

@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -38,6 +39,27 @@ var OrganizationMemberColumns = struct {
 	OrganizationID: "organization_id",
 	UserID:         "user_id",
 	Owner:          "owner",
+}
+
+// Generated where
+
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+var OrganizationMemberWhere = struct {
+	OrganizationID whereHelperstring
+	UserID         whereHelperstring
+	Owner          whereHelperbool
+}{
+	OrganizationID: whereHelperstring{field: `organization_id`},
+	UserID:         whereHelperstring{field: `user_id`},
+	Owner:          whereHelperbool{field: `owner`},
 }
 
 // OrganizationMemberRels is where relationship names are stored.
@@ -98,6 +120,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 var organizationMemberBeforeInsertHooks []OrganizationMemberHook
@@ -113,6 +138,10 @@ var organizationMemberAfterUpsertHooks []OrganizationMemberHook
 
 // doBeforeInsertHooks executes all "before insert" hooks.
 func (o *OrganizationMember) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range organizationMemberBeforeInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -124,6 +153,10 @@ func (o *OrganizationMember) doBeforeInsertHooks(ctx context.Context, exec boil.
 
 // doBeforeUpdateHooks executes all "before Update" hooks.
 func (o *OrganizationMember) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range organizationMemberBeforeUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -135,6 +168,10 @@ func (o *OrganizationMember) doBeforeUpdateHooks(ctx context.Context, exec boil.
 
 // doBeforeDeleteHooks executes all "before Delete" hooks.
 func (o *OrganizationMember) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range organizationMemberBeforeDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -146,6 +183,10 @@ func (o *OrganizationMember) doBeforeDeleteHooks(ctx context.Context, exec boil.
 
 // doBeforeUpsertHooks executes all "before Upsert" hooks.
 func (o *OrganizationMember) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range organizationMemberBeforeUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -157,6 +198,10 @@ func (o *OrganizationMember) doBeforeUpsertHooks(ctx context.Context, exec boil.
 
 // doAfterInsertHooks executes all "after Insert" hooks.
 func (o *OrganizationMember) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range organizationMemberAfterInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -168,6 +213,10 @@ func (o *OrganizationMember) doAfterInsertHooks(ctx context.Context, exec boil.C
 
 // doAfterSelectHooks executes all "after Select" hooks.
 func (o *OrganizationMember) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range organizationMemberAfterSelectHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -179,6 +228,10 @@ func (o *OrganizationMember) doAfterSelectHooks(ctx context.Context, exec boil.C
 
 // doAfterUpdateHooks executes all "after Update" hooks.
 func (o *OrganizationMember) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range organizationMemberAfterUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -190,6 +243,10 @@ func (o *OrganizationMember) doAfterUpdateHooks(ctx context.Context, exec boil.C
 
 // doAfterDeleteHooks executes all "after Delete" hooks.
 func (o *OrganizationMember) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range organizationMemberAfterDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -201,6 +258,10 @@ func (o *OrganizationMember) doAfterDeleteHooks(ctx context.Context, exec boil.C
 
 // doAfterUpsertHooks executes all "after Upsert" hooks.
 func (o *OrganizationMember) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range organizationMemberAfterUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -371,6 +432,10 @@ func (organizationMemberL) LoadOrganization(ctx context.Context, e boil.ContextE
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`organizations`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -466,6 +531,10 @@ func (organizationMemberL) LoadUser(ctx context.Context, e boil.ContextExecutor,
 			args = append(args, obj.UserID)
 
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`users`), qm.WhereIn(`id in ?`, args...))
@@ -919,7 +988,7 @@ func (o *OrganizationMember) Upsert(ctx context.Context, exec boil.ContextExecut
 			organizationMemberPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert organization_members, could not build update column list")
 		}
 

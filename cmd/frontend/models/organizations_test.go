@@ -529,13 +529,13 @@ func testOrganizationToManyLinks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	link, err := a.Links().All(ctx, tx)
+	check, err := a.Links().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range link {
+	for _, v := range check {
 		if v.OrganizationID == b.OrganizationID {
 			bFound = true
 		}
@@ -568,7 +568,7 @@ func testOrganizationToManyLinks(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", link)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -607,13 +607,13 @@ func testOrganizationToManyOrganizationMembers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	organizationMember, err := a.OrganizationMembers().All(ctx, tx)
+	check, err := a.OrganizationMembers().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range organizationMember {
+	for _, v := range check {
 		if v.OrganizationID == b.OrganizationID {
 			bFound = true
 		}
@@ -646,7 +646,7 @@ func testOrganizationToManyOrganizationMembers(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", organizationMember)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -685,13 +685,13 @@ func testOrganizationToManyRepositories(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repository, err := a.Repositories().All(ctx, tx)
+	check, err := a.Repositories().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range repository {
+	for _, v := range check {
 		if v.OrganizationID == b.OrganizationID {
 			bFound = true
 		}
@@ -724,7 +724,7 @@ func testOrganizationToManyRepositories(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", repository)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -763,13 +763,13 @@ func testOrganizationToManyTopics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	topic, err := a.Topics().All(ctx, tx)
+	check, err := a.Topics().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range topic {
+	for _, v := range check {
 		if v.OrganizationID == b.OrganizationID {
 			bFound = true
 		}
@@ -802,7 +802,7 @@ func testOrganizationToManyTopics(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", topic)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -841,13 +841,13 @@ func testOrganizationToManyUserLinks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userLink, err := a.UserLinks().All(ctx, tx)
+	check, err := a.UserLinks().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range userLink {
+	for _, v := range check {
 		if v.OrganizationID == b.OrganizationID {
 			bFound = true
 		}
@@ -880,7 +880,7 @@ func testOrganizationToManyUserLinks(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", userLink)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1334,7 +1334,7 @@ func testOrganizationsSelect(t *testing.T) {
 }
 
 var (
-	organizationDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `Description`: `character varying`, `ID`: `uuid`, `Login`: `character varying`, `Name`: `character varying`, `Public`: `boolean`, `System`: `boolean`, `UpdatedAt`: `timestamp with time zone`}
+	organizationDBTypes = map[string]string{`ID`: `uuid`, `Name`: `character varying`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `Login`: `character varying`, `Description`: `character varying`, `Public`: `boolean`, `System`: `boolean`}
 	_                   = bytes.MinRead
 )
 

@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -35,6 +36,25 @@ var SchemaMigrationColumns = struct {
 }{
 	Version: "version",
 	Dirty:   "dirty",
+}
+
+// Generated where
+
+type whereHelperint64 struct{ field string }
+
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+var SchemaMigrationWhere = struct {
+	Version whereHelperint64
+	Dirty   whereHelperbool
+}{
+	Version: whereHelperint64{field: `version`},
+	Dirty:   whereHelperbool{field: `dirty`},
 }
 
 // SchemaMigrationRels is where relationship names are stored.
@@ -88,6 +108,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 var schemaMigrationBeforeInsertHooks []SchemaMigrationHook
@@ -103,6 +126,10 @@ var schemaMigrationAfterUpsertHooks []SchemaMigrationHook
 
 // doBeforeInsertHooks executes all "before insert" hooks.
 func (o *SchemaMigration) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range schemaMigrationBeforeInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -114,6 +141,10 @@ func (o *SchemaMigration) doBeforeInsertHooks(ctx context.Context, exec boil.Con
 
 // doBeforeUpdateHooks executes all "before Update" hooks.
 func (o *SchemaMigration) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range schemaMigrationBeforeUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -125,6 +156,10 @@ func (o *SchemaMigration) doBeforeUpdateHooks(ctx context.Context, exec boil.Con
 
 // doBeforeDeleteHooks executes all "before Delete" hooks.
 func (o *SchemaMigration) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range schemaMigrationBeforeDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -136,6 +171,10 @@ func (o *SchemaMigration) doBeforeDeleteHooks(ctx context.Context, exec boil.Con
 
 // doBeforeUpsertHooks executes all "before Upsert" hooks.
 func (o *SchemaMigration) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range schemaMigrationBeforeUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -147,6 +186,10 @@ func (o *SchemaMigration) doBeforeUpsertHooks(ctx context.Context, exec boil.Con
 
 // doAfterInsertHooks executes all "after Insert" hooks.
 func (o *SchemaMigration) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range schemaMigrationAfterInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -158,6 +201,10 @@ func (o *SchemaMigration) doAfterInsertHooks(ctx context.Context, exec boil.Cont
 
 // doAfterSelectHooks executes all "after Select" hooks.
 func (o *SchemaMigration) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range schemaMigrationAfterSelectHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -169,6 +216,10 @@ func (o *SchemaMigration) doAfterSelectHooks(ctx context.Context, exec boil.Cont
 
 // doAfterUpdateHooks executes all "after Update" hooks.
 func (o *SchemaMigration) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range schemaMigrationAfterUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -180,6 +231,10 @@ func (o *SchemaMigration) doAfterUpdateHooks(ctx context.Context, exec boil.Cont
 
 // doAfterDeleteHooks executes all "after Delete" hooks.
 func (o *SchemaMigration) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range schemaMigrationAfterDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -191,6 +246,10 @@ func (o *SchemaMigration) doAfterDeleteHooks(ctx context.Context, exec boil.Cont
 
 // doAfterUpsertHooks executes all "after Upsert" hooks.
 func (o *SchemaMigration) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range schemaMigrationAfterUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -593,7 +652,7 @@ func (o *SchemaMigration) Upsert(ctx context.Context, exec boil.ContextExecutor,
 			schemaMigrationPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert schema_migrations, could not build update column list")
 		}
 

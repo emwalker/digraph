@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -53,6 +54,58 @@ var LinkColumns = struct {
 	CreatedAt:      "created_at",
 	UpdatedAt:      "updated_at",
 	RepositoryID:   "repository_id",
+}
+
+// Generated where
+
+type whereHelperstring struct{ field string }
+
+func (w whereHelperstring) EQ(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperstring) NEQ(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperstring) LT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperstring) LTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperstring) GT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelpertime_Time struct{ field string }
+
+func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var LinkWhere = struct {
+	OrganizationID whereHelperstring
+	ID             whereHelperstring
+	URL            whereHelperstring
+	Title          whereHelperstring
+	Sha1           whereHelperstring
+	CreatedAt      whereHelpertime_Time
+	UpdatedAt      whereHelpertime_Time
+	RepositoryID   whereHelperstring
+}{
+	OrganizationID: whereHelperstring{field: `organization_id`},
+	ID:             whereHelperstring{field: `id`},
+	URL:            whereHelperstring{field: `url`},
+	Title:          whereHelperstring{field: `title`},
+	Sha1:           whereHelperstring{field: `sha1`},
+	CreatedAt:      whereHelpertime_Time{field: `created_at`},
+	UpdatedAt:      whereHelpertime_Time{field: `updated_at`},
+	RepositoryID:   whereHelperstring{field: `repository_id`},
 }
 
 // LinkRels is where relationship names are stored.
@@ -116,6 +169,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 var linkBeforeInsertHooks []LinkHook
@@ -131,6 +187,10 @@ var linkAfterUpsertHooks []LinkHook
 
 // doBeforeInsertHooks executes all "before insert" hooks.
 func (o *Link) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range linkBeforeInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -142,6 +202,10 @@ func (o *Link) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecuto
 
 // doBeforeUpdateHooks executes all "before Update" hooks.
 func (o *Link) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range linkBeforeUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -153,6 +217,10 @@ func (o *Link) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecuto
 
 // doBeforeDeleteHooks executes all "before Delete" hooks.
 func (o *Link) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range linkBeforeDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -164,6 +232,10 @@ func (o *Link) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecuto
 
 // doBeforeUpsertHooks executes all "before Upsert" hooks.
 func (o *Link) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range linkBeforeUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -175,6 +247,10 @@ func (o *Link) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecuto
 
 // doAfterInsertHooks executes all "after Insert" hooks.
 func (o *Link) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range linkAfterInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -186,6 +262,10 @@ func (o *Link) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor
 
 // doAfterSelectHooks executes all "after Select" hooks.
 func (o *Link) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range linkAfterSelectHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -197,6 +277,10 @@ func (o *Link) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor
 
 // doAfterUpdateHooks executes all "after Update" hooks.
 func (o *Link) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range linkAfterUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -208,6 +292,10 @@ func (o *Link) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor
 
 // doAfterDeleteHooks executes all "after Delete" hooks.
 func (o *Link) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range linkAfterDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -219,6 +307,10 @@ func (o *Link) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor
 
 // doAfterUpsertHooks executes all "after Upsert" hooks.
 func (o *Link) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+	if boil.HooksAreSkipped(ctx) {
+		return nil
+	}
+
 	for _, hook := range linkAfterUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
@@ -411,6 +503,10 @@ func (linkL) LoadOrganization(ctx context.Context, e boil.ContextExecutor, singu
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`organizations`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -508,6 +604,10 @@ func (linkL) LoadRepository(ctx context.Context, e boil.ContextExecutor, singula
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`repositories`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -601,6 +701,10 @@ func (linkL) LoadParentTopics(ctx context.Context, e boil.ContextExecutor, singu
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(
@@ -953,13 +1057,15 @@ func (o *Link) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
-	}
-	if o.UpdatedAt.IsZero() {
-		o.UpdatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		if o.UpdatedAt.IsZero() {
+			o.UpdatedAt = currTime
+		}
 	}
 
 	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
@@ -1035,9 +1141,11 @@ func (o *Link) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Link) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	o.UpdatedAt = currTime
+		o.UpdatedAt = currTime
+	}
 
 	var err error
 	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
@@ -1169,12 +1277,14 @@ func (o *Link) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 	if o == nil {
 		return errors.New("models: no links provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		o.UpdatedAt = currTime
 	}
-	o.UpdatedAt = currTime
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
 		return err
@@ -1228,7 +1338,7 @@ func (o *Link) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 			linkPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert links, could not build update column list")
 		}
 
