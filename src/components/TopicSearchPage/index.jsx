@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
-import type { Relay, TopicType, UserType, ViewType } from 'components/types'
+import type { LinkType, Relay, TopicType, UserType, ViewType } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
 import Columns from 'components/ui/Columns'
@@ -28,12 +28,14 @@ type Props = {
 }
 
 class TopicSearchPage extends Component<Props> {
-  renderSearchResultItem = (item) => {
+  renderSearchResultItem = (item: any) => {
     if (item.__typename === 'Link') {
+      const link = (item: LinkType)
+
       return (
         <Link
-          key={item.id}
-          link={item}
+          key={link.id}
+          link={link}
           orgLogin={this.props.orgLogin}
           relay={this.props.relay}
           view={this.props.view}
@@ -42,12 +44,14 @@ class TopicSearchPage extends Component<Props> {
       )
     }
 
+    const topic = (item: TopicType)
+
     return (
       <Topic
-        key={item.id}
+        key={topic.id}
         orgLogin={this.props.orgLogin}
         relay={this.props.relay}
-        topic={item}
+        topic={topic}
         view={this.props.view}
         viewer={this.props.viewer}
       />

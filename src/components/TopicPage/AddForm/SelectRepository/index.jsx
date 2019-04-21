@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import type { Relay, UserType } from 'components/types'
+import type { Relay, RepositoryEdge, UserType } from 'components/types'
 import selectRepositoryMutation from 'mutations/selectRepositoryMutation'
 
 /* eslint jsx-a11y/label-has-for: 0 */
@@ -13,7 +13,7 @@ type Props = {
 }
 
 class SelectRepository extends Component<Props> {
-  onChange = (event) => {
+  onChange = (event: SyntheticInputEvent<HTMLInputElement>) => {
     const repositoryId = event ? event.target.value : null
     selectRepositoryMutation(
       this.props.relay.environment,
@@ -31,7 +31,7 @@ class SelectRepository extends Component<Props> {
     return repo ? repo.id : null
   }
 
-  renderOption = edge => (
+  renderOption = (edge: RepositoryEdge) => (
     <option
       key={edge.node.fullName}
       value={edge.node.id}

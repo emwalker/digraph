@@ -29,7 +29,7 @@ class Subhead extends Component<Props> {
     headingLink: null,
   }
 
-  onSearch = (query) => {
+  onSearch = (query: string) => {
     if (query === '') {
       this.props.router.push({ pathname: this.pathname })
       return

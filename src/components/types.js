@@ -68,6 +68,7 @@ export type RepositoryEdge = {
 export type RepositoryType = {
   displayColor: string,
   displayName: string,
+  fullName: string,
   id: string,
   isPrivate: boolean,
   name: string,

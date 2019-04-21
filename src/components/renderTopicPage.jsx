@@ -6,8 +6,8 @@ import { defaultOrganizationLogin } from 'components/constants'
 import TopicPage from './TopicPage'
 import TopicSearchPage from './TopicSearchPage'
 
-export default ({ props, error, match: { location } }: any) => {
-  if (error)
+export default ({ props, variables, error, match: { location } }: any) => {
+  if (error || !variables)
     return <div>There was a problem.</div>
 
   if (!props)
@@ -16,13 +16,14 @@ export default ({ props, error, match: { location } }: any) => {
   if (!props.view)
     return <div>You must log in and select an organization first.</div>
 
-  const { params, view } = props
+  const { view } = props
+
 
   if (location.query.q) {
     return (
       <TopicSearchPage
-        orgLogin={params.orgLogin || defaultOrganizationLogin}
-        repoName={params.repoName}
+        orgLogin={variables.orgLogin || defaultOrganizationLogin}
+        repoName={variables.repoName}
         topic={view.topic}
         location={location}
         {...props}
@@ -33,8 +34,8 @@ export default ({ props, error, match: { location } }: any) => {
   return (
     <TopicPage
       location={location}
-      orgLogin={params.orgLogin || defaultOrganizationLogin}
-      repoName={params.repoName}
+      orgLogin={variables.orgLogin || defaultOrganizationLogin}
+      repoName={variables.repoName}
       topic={view.topic}
       {...props}
     />

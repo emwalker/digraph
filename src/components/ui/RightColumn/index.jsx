@@ -1,8 +1,9 @@
 // @flow
 import React from 'react'
+import type { Node } from 'react'
 
 type Props = {
-  children: React$Node | Iterable<React$Node>,
+  children: Node,
 }
 
 const RightColumn = ({ children }: Props) => (

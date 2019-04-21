@@ -17,6 +17,8 @@ import Topic from 'components/ui/Topic'
 import AddForm from './AddForm'
 
 type Props = {
+  // eslint-disable-next-line react/no-unused-prop-types
+  alerts: Object[],
   location: Object,
   orgLogin: string,
   relay: Relay,
@@ -29,7 +31,7 @@ type Props = {
 type State = {}
 
 class TopicPage extends Component<Props, State> {
-  static getDerivedStateFromProps = (nextProps) => {
+  static getDerivedStateFromProps = (nextProps: Props) => {
     if (window.flashMessages && nextProps.alerts && nextProps.alerts.length > 0)
       nextProps.alerts.forEach(window.flashMessages.addMessage)
     return {}
@@ -45,7 +47,7 @@ class TopicPage extends Component<Props, State> {
     return liftNodes(this.props.topic.childTopics)
   }
 
-  renderLink = link => (
+  renderLink = (link: LinkType) => (
     <Link
       key={link.id}
       link={link}
@@ -56,7 +58,7 @@ class TopicPage extends Component<Props, State> {
     />
   )
 
-  renderTopic = topic => (
+  renderTopic = (topic: TopicType) => (
     <Topic
       key={topic.id}
       orgLogin={this.props.orgLogin}
