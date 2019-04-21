@@ -55,11 +55,15 @@ var (
 		"independent.co.uk",
 		"nytimes.com",
 		"reuters.com",
+		"theguardian.com",
 	}
 
 	omitFields = []string{
-		"utm_term",
+		"rss",
+		"utm_campaign",
+		"utm_medium",
 		"utm_source",
+		"utm_term",
 	}
 )
 

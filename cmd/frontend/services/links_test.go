@@ -73,6 +73,24 @@ func TestNormalizeURL(t *testing.T) {
 			canonicalURL:  "https://mail.google.com/mail/u/0/#inbox",
 			expectedError: false,
 		},
+		{
+			name:          "A link with several utm fields",
+			inputURL:      "https://apnews.com/e087076881f3449fa603e4434d164ac9?utm_campaign=Bundle&utm_medium=referral&utm_source=Bundle&",
+			canonicalURL:  "https://apnews.com/e087076881f3449fa603e4434d164ac9",
+			expectedError: false,
+		},
+		{
+			name:          "An article from the Guardian",
+			inputURL:      "https://www.theguardian.com/money/2019/apr/17/who-owns-england-thousand-secret-landowners-author?CMP=Share_AndroidApp_WhatsApp",
+			canonicalURL:  "https://www.theguardian.com/money/2019/apr/17/who-owns-england-thousand-secret-landowners-author",
+			expectedError: false,
+		},
+		{
+			name:          "An article with an rss parameter",
+			inputURL:      "https://www.ajicjournal.org/article/S0196-6553(19)30151-8/fulltext?rss=yes",
+			canonicalURL:  "https://www.ajicjournal.org/article/S0196-6553(19)30151-8/fulltext",
+			expectedError: false,
+		},
 	}
 
 	for _, testCase := range testCases {
