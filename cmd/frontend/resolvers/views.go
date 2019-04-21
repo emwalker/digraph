@@ -59,14 +59,21 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 func (r *viewResolver) Activity(
 	ctx context.Context, view *models.View, first *int, after *string, last *int, before *string,
 ) (models.ActivityLineItemConnection, error) {
-	userLinks, err := models.UserLinks(
+	mods := view.Filter([]qm.QueryMod{
 		qm.OrderBy("created_at desc"),
 		qm.Load("UserLinkTopics"),
 		qm.Load("UserLinkTopics.Topic"),
 		qm.Load("Link"),
 		qm.Load("User"),
 		qm.Limit(pageSizeOrDefault(first)),
-	).All(ctx, r.DB)
+		qm.InnerJoin("repositories r on user_links.repository_id = r.id"),
+	})
+
+	userLinks, err := models.UserLinks(mods...).All(ctx, r.DB)
+	if err != nil {
+		log.Printf("There was a problem fetching user link records: %s", err)
+		return models.ActivityLineItemConnection{}, nil
+	}
 
 	logData := make([]activity.UpsertLink, len(userLinks))
 
