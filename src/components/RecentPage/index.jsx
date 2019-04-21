@@ -4,6 +4,7 @@ import { graphql } from 'react-relay'
 
 import LineItems from './LineItems'
 import type { RecentPage_recent_QueryResponse as Response } from './__generated__/RecentPage_recent_Query.graphql'
+import Container from './Container'
 
 type View = $NonMaybeType<$PropertyType<Response, 'view'>>
 
@@ -13,7 +14,11 @@ type Props = {|
   },
 |}
 
-const Placeholder = () => <div>No recent activity</div>
+const Placeholder = () => (
+  <Container>
+    { 'No recent activity' }
+  </Container>
+)
 
 export default ({ props }: Props) => {
   // eslint-disable-next-line react/prop-types

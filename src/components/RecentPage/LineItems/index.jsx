@@ -4,12 +4,17 @@ import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { LineItems_view as View } from './__generated__/LineItems_view.graphql'
 import LineItem from './LineItem'
+import Container from '../Container'
 
 type Props = {|
   +view: View,
 |}
 
-const Placeholder = () => <div>No recent activity</div>
+const Placeholder = () => (
+  <Container>
+    { 'Loading ...' }
+  </Container>
+)
 
 const LineItems = ({ view }: Props) => {
   const edges = view ? view.activity.edges : null
@@ -18,18 +23,13 @@ const LineItems = ({ view }: Props) => {
     return <Placeholder />
 
   return (
-    <div className="px-3 py-4 px-md-6 px-lg-0">
-      <div className="Subhead clearfix gutter">
-        <div className="Subhead-heading col-lg-8 col-12">
-          Recent activity
-        </div>
-      </div>
+    <Container>
       <div className="Box">
         { edges.map(e => e && e.node && (
           <LineItem key={e.node.createdAt} item={e.node} />
         )) }
       </div>
-    </div>
+    </Container>
   )
 }
 
