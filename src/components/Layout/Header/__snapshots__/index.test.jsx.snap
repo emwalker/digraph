@@ -108,12 +108,21 @@ exports[`<Header /> renders 1`] = `
     >
       Recent
     </Link>
-    <a
+    <Link
       className="text-gray-dark px-2"
-      href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8"
+      to={
+        Object {
+          "pathname": "/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8",
+          "state": Object {
+            "itemTitle": "Everything",
+            "orgLogin": "wiki",
+            "repoName": "General collection",
+          },
+        }
+      }
     >
       Everything
-    </a>
+    </Link>
     <a
       className="text-gray-dark px-2"
       href="/about"

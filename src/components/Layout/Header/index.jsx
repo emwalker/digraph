@@ -7,6 +7,15 @@ import type { UserType } from 'components/types'
 import ViewerDropdown from './ViewerDropdown'
 import SignIn from './SignIn'
 
+const toEverything = {
+  pathname: '/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8',
+  state: {
+    orgLogin: 'wiki',
+    repoName: 'General collection',
+    itemTitle: 'Everything',
+  },
+}
+
 type Props = {
   className?: ?string,
   viewer: UserType,
@@ -92,12 +101,12 @@ class Header extends Component<Props> {
           >
             Recent
           </Link>
-          <a
+          <Link
             className="text-gray-dark px-2"
-            href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8"
+            to={toEverything}
           >
             Everything
-          </a>
+          </Link>
           <a className="text-gray-dark px-2" href="/about">About</a>
           {viewer.isGuest
             ? this.renderGuestUserNav()
