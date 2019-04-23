@@ -2,10 +2,10 @@
 
 exports[`<SignInPage /> renders 1`] = `
 <div
-  className="SignInPage"
+  className="SignInPage clearfix"
 >
   <div
-    className="one-half column"
+    className="col-6 column"
   >
     <h2
       className="mb-2"

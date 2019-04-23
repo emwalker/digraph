@@ -2,10 +2,10 @@
 
 exports[`<SignUpPage /> renders 1`] = `
 <div
-  className="SignUpPage"
+  className="SignUpPage clearfix"
 >
   <div
-    className="one-half column"
+    className="col-6"
   >
     <h1>
       Join Digraph

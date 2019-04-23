@@ -34,8 +34,8 @@ class SignUpPage extends Component<Props, State> {
   )
 
   render = () => (
-    <div className="SignUpPage">
-      <div className="one-half column">
+    <div className="SignUpPage clearfix">
+      <div className="col-6">
         <h1>Join Digraph</h1>
         <p className="lead">
           {'Keep track of everything you\'ve ever read on the Internet.'}

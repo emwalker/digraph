@@ -119,8 +119,8 @@ class Item extends Component<Props> {
         style={this.style}
         key={url}
       >
-        <div className="d-flex flex-items-center">
-          <div className="four-fifths">
+        <div className="clearfix d-flex flex-items-center">
+          <div className="col-10">
             <div>
               { this.titleLink }
               <div>{ this.props.description }</div>
@@ -130,7 +130,7 @@ class Item extends Component<Props> {
               { this.props.topics.map(this.renderTopicBadge) }
             </div>
           </div>
-          <div className="one-fifth text-center">
+          <div className="col-2 text-center">
             { this.showEditButton &&
               <button onClick={this.props.toggleForm} className="btn-link">Edit</button>
             }

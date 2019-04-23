@@ -11,10 +11,10 @@ exports[`<Item /> renders 1`] = `
   }
 >
   <div
-    className="d-flex flex-items-center"
+    className="clearfix d-flex flex-items-center"
   >
     <div
-      className="four-fifths"
+      className="col-10"
     >
       <div>
         <a
@@ -28,7 +28,7 @@ exports[`<Item /> renders 1`] = `
       <div />
     </div>
     <div
-      className="one-fifth text-center"
+      className="col-2 text-center"
     />
   </div>
   <div />
