@@ -192,7 +192,7 @@ func (c Connection) isDescendantOf(
 	err := queries.Raw(`
 	with recursive children as (
 	  select parent_id, child_id from topic_topics
-	  where parent_id = $1
+	  where child_id = $1
 	union
 	  select pt.child_id, ct.child_id
 	  from topic_topics ct

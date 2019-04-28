@@ -7,7 +7,6 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
-	"github.com/stretchr/testify/assert"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -144,13 +143,40 @@ func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
 	}
 }
 
+func TestUpdateTopicPreventsOwnTopic(t *testing.T) {
+	m := newMutator(t, testActor)
+
+	topic, cleanup := m.createTopic(testActor.Login, m.defaultRepo().Name, "Agriculture")
+	defer cleanup()
+
+	if topic.Name != "Agriculture" {
+		t.Fatal("Expected the name 'Agriculture'")
+	}
+
+	input := models.UpdateTopicParentTopicsInput{
+		TopicID:        topic.ID,
+		ParentTopicIds: []string{topic.ID},
+	}
+
+	result, err := m.resolver.UpdateTopicParentTopics(m.ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(result.Alerts) < 1 {
+		t.Fatal("Expected an alert")
+	}
+}
+
 func TestUpdateTopic(t *testing.T) {
 	m := newMutator(t, testActor)
 
 	topic, cleanup := m.createTopic(testActor.Login, m.defaultRepo().Name, "Agriculture")
 	defer cleanup()
 
-	assert.Equal(t, "Agriculture", topic.Name)
+	if topic.Name != "Agriculture" {
+		t.Fatal("Expected the name 'Agriculture'")
+	}
 
 	var err error
 	desc := "Cultivating"
@@ -220,15 +246,23 @@ func TestTopicParentTopics(t *testing.T) {
 	defer cleanup()
 
 	parentTopics, err := topic2.ParentTopics().All(m.ctx, m.db)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(parentTopics))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(parentTopics) != 1 {
+		t.Fatal("Expected one parent topic")
+	}
 
 	m.addParentTopicToTopic(topic2, topic1)
 
 	if parentTopics, err = topic2.ParentTopics().All(m.ctx, m.db); err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 2, len(parentTopics))
+
+	if len(parentTopics) != 2 {
+		t.Fatal("Expected 2 parent topics")
+	}
 }
 
 func TestSearchChildTopics(t *testing.T) {
