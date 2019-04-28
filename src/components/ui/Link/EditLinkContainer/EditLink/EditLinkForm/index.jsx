@@ -111,22 +111,20 @@ class EditLinkForm extends Component<Props, State> {
 
     return (
       <div>
-        <div className="d-flex col-12">
-          <Input
-            className="col-5 mr-3"
-            id={`edit-link-title-${this.linkId}`}
-            label="Page title"
-            onChange={this.updateTitle}
-            value={this.state.title}
-          />
-          <Input
-            className="col-6"
-            id={`edit-link-url-${this.linkId}`}
-            label="Url"
-            onChange={this.updateUrl}
-            value={this.state.url}
-          />
-        </div>
+        <Input
+          className="col-12"
+          id={`edit-link-title-${this.linkId}`}
+          label="Page title"
+          onChange={this.updateTitle}
+          value={this.state.title}
+        />
+        <Input
+          className="col-12"
+          id={`edit-link-url-${this.linkId}`}
+          label="Url"
+          onChange={this.updateUrl}
+          value={this.state.url}
+        />
         <div>
           <SaveOrCancel
             onSave={this.onSave}

@@ -115,22 +115,13 @@ class EditTopicForm extends Component<Props, State> {
 
     return (
       <div>
-        <div className="d-flex col-12">
-          <Input
-            className="col-5 mr-3"
-            id={`edit-link-title-${this.topicId}`}
-            label="Name"
-            onChange={this.updateName}
-            value={this.state.name}
-          />
-          <Input
-            className="col-6"
-            id={`edit-topic-description-${this.topicId}`}
-            label="Description"
-            onChange={this.updateDescription}
-            value={this.state.description}
-          />
-        </div>
+        <Input
+          className="col-12"
+          id={`edit-link-title-${this.topicId}`}
+          label="Name"
+          onChange={this.updateName}
+          value={this.state.name}
+        />
         <div>
           <SaveOrCancel
             onSave={this.onSave}

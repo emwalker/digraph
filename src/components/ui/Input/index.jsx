@@ -19,7 +19,7 @@ export default ({ className, id, label, onChange, value }: Props) => (
       </dt>
       <dd>
         <input
-          className="form-control input-sm"
+          className="form-control"
           defaultValue={value || ''}
           id={id}
           onChange={onChange}

@@ -147,3 +147,7 @@ select {
     @extend .text-underline;
   }
 }
+
+input[type=text].form-control {
+  width: 100%;
+}
