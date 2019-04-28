@@ -8,100 +8,91 @@ import (
 
 func TestNormalizeURL(t *testing.T) {
 	testCases := []struct {
-		name          string
-		inputURL      string
-		canonicalURL  string
-		expectedError bool
+		name         string
+		inputURL     string
+		canonicalURL string
 	}{
 		{
-			name:          "A basic case",
-			inputURL:      "http://some.url.com",
-			canonicalURL:  "http://some.url.com",
-			expectedError: false,
+			name:         "A basic case",
+			inputURL:     "http://some.url.com",
+			canonicalURL: "http://some.url.com",
 		},
 		{
-			name:          "Y Combinator comment section",
-			inputURL:      "https://news.ycombinator.com/item?id=18504300",
-			canonicalURL:  "https://news.ycombinator.com/item?id=18504300",
-			expectedError: false,
+			name:         "Y Combinator comment section",
+			inputURL:     "https://news.ycombinator.com/item?id=18504300",
+			canonicalURL: "https://news.ycombinator.com/item?id=18504300",
 		},
 		{
-			name:          "A bugfix",
-			inputURL:      "https://quaderno.io/stripe-vat-subscriptions/",
-			canonicalURL:  "https://quaderno.io/stripe-vat-subscriptions/",
-			expectedError: false,
+			name:         "A bugfix",
+			inputURL:     "https://quaderno.io/stripe-vat-subscriptions/",
+			canonicalURL: "https://quaderno.io/stripe-vat-subscriptions/",
 		},
 		{
-			name:          "A New York Times article",
-			inputURL:      "https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html?partner=rss&emc=rss",
-			canonicalURL:  "https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html",
-			expectedError: false,
+			name:         "A New York Times article",
+			inputURL:     "https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html?partner=rss&emc=rss",
+			canonicalURL: "https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html",
 		},
 		{
-			name:          "An article from the Independent",
-			inputURL:      "https://www.independent.co.uk/news/world/middle-east/saudi-arabia-born-babies-streets-abortion-marriage-wedlock-a8867571.html?utm_source=reddit.com",
-			canonicalURL:  "https://www.independent.co.uk/news/world/middle-east/saudi-arabia-born-babies-streets-abortion-marriage-wedlock-a8867571.html",
-			expectedError: false,
+			name:         "An article from the Independent",
+			inputURL:     "https://www.independent.co.uk/news/world/middle-east/saudi-arabia-born-babies-streets-abortion-marriage-wedlock-a8867571.html?utm_source=reddit.com",
+			canonicalURL: "https://www.independent.co.uk/news/world/middle-east/saudi-arabia-born-babies-streets-abortion-marriage-wedlock-a8867571.html",
 		},
 		{
-			name:          "An article from Reuters",
-			inputURL:      "https://www.reuters.com/article/france-electricity-solarpower/sunny-spell-boosts-french-solar-generation-to-record-level-idUSL8N21U58M?utm_source=reddit.com",
-			canonicalURL:  "https://www.reuters.com/article/france-electricity-solarpower/sunny-spell-boosts-french-solar-generation-to-record-level-idUSL8N21U58M",
-			expectedError: false,
+			name:         "An article from Reuters",
+			inputURL:     "https://www.reuters.com/article/france-electricity-solarpower/sunny-spell-boosts-french-solar-generation-to-record-level-idUSL8N21U58M?utm_source=reddit.com",
+			canonicalURL: "https://www.reuters.com/article/france-electricity-solarpower/sunny-spell-boosts-french-solar-generation-to-record-level-idUSL8N21U58M",
 		},
 		{
-			name:          "A Business Insider article",
-			inputURL:      "https://www.businessinsider.com/gnss-hacking-spoofing-jamming-russians-screwing-with-gps-2019-4?utm_source=reddit.com",
-			canonicalURL:  "https://www.businessinsider.com/gnss-hacking-spoofing-jamming-russians-screwing-with-gps-2019-4",
-			expectedError: false,
+			name:         "A Business Insider article",
+			inputURL:     "https://www.businessinsider.com/gnss-hacking-spoofing-jamming-russians-screwing-with-gps-2019-4?utm_source=reddit.com",
+			canonicalURL: "https://www.businessinsider.com/gnss-hacking-spoofing-jamming-russians-screwing-with-gps-2019-4",
 		},
 		{
-			name:          "A YouTube video",
-			inputURL:      "https://www.youtube.com/watch?v=Wx_2SVm9Jgo&list=PLJ8cMiYb3G5eYGt47YpJcNhILyYLmV-tW&index=3&t=0s",
-			canonicalURL:  "https://www.youtube.com/watch?v=Wx_2SVm9Jgo",
-			expectedError: false,
+			name:         "A YouTube video",
+			inputURL:     "https://www.youtube.com/watch?v=Wx_2SVm9Jgo&list=PLJ8cMiYb3G5eYGt47YpJcNhILyYLmV-tW&index=3&t=0s",
+			canonicalURL: "https://www.youtube.com/watch?v=Wx_2SVm9Jgo",
 		},
 		{
-			name:          "A BuzzFeed article",
-			inputURL:      "https://www.buzzfeed.com/craigsilverman/fever-swamp-election?utm_term=.ug4NRgEQDe#.lszgG6PJZr",
-			canonicalURL:  "https://www.buzzfeed.com/craigsilverman/fever-swamp-election",
-			expectedError: false,
+			name:         "A BuzzFeed article",
+			inputURL:     "https://www.buzzfeed.com/craigsilverman/fever-swamp-election?utm_term=.ug4NRgEQDe#.lszgG6PJZr",
+			canonicalURL: "https://www.buzzfeed.com/craigsilverman/fever-swamp-election",
 		},
 		{
-			name:          "A Gmail link",
-			inputURL:      "https://mail.google.com/mail/u/0/#inbox",
-			canonicalURL:  "https://mail.google.com/mail/u/0/#inbox",
-			expectedError: false,
+			name:         "A Gmail link",
+			inputURL:     "https://mail.google.com/mail/u/0/#inbox",
+			canonicalURL: "https://mail.google.com/mail/u/0/#inbox",
 		},
 		{
-			name:          "A link with several utm fields",
-			inputURL:      "https://apnews.com/e087076881f3449fa603e4434d164ac9?utm_campaign=Bundle&utm_medium=referral&utm_source=Bundle&",
-			canonicalURL:  "https://apnews.com/e087076881f3449fa603e4434d164ac9",
-			expectedError: false,
+			name:         "A link with several utm fields",
+			inputURL:     "https://apnews.com/e087076881f3449fa603e4434d164ac9?utm_campaign=Bundle&utm_medium=referral&utm_source=Bundle&",
+			canonicalURL: "https://apnews.com/e087076881f3449fa603e4434d164ac9",
 		},
 		{
-			name:          "An article from the Guardian",
-			inputURL:      "https://www.theguardian.com/money/2019/apr/17/who-owns-england-thousand-secret-landowners-author?CMP=Share_AndroidApp_WhatsApp",
-			canonicalURL:  "https://www.theguardian.com/money/2019/apr/17/who-owns-england-thousand-secret-landowners-author",
-			expectedError: false,
+			name:         "An article from the Guardian",
+			inputURL:     "https://www.theguardian.com/money/2019/apr/17/who-owns-england-thousand-secret-landowners-author?CMP=Share_AndroidApp_WhatsApp",
+			canonicalURL: "https://www.theguardian.com/money/2019/apr/17/who-owns-england-thousand-secret-landowners-author",
 		},
 		{
-			name:          "An article with an rss parameter",
-			inputURL:      "https://www.ajicjournal.org/article/S0196-6553(19)30151-8/fulltext?rss=yes",
-			canonicalURL:  "https://www.ajicjournal.org/article/S0196-6553(19)30151-8/fulltext",
-			expectedError: false,
+			name:         "An article with an rss parameter",
+			inputURL:     "https://www.ajicjournal.org/article/S0196-6553(19)30151-8/fulltext?rss=yes",
+			canonicalURL: "https://www.ajicjournal.org/article/S0196-6553(19)30151-8/fulltext",
+		},
+		{
+			name:         "An Indie Hackers article",
+			inputURL:     "https://www.indiehackers.com/interview/d2c4d6f8fa?utm_source=Indie+Hackers+Newsletter&utm_campaign=indie-hackers-newsletter-20190417&utm_medium=email",
+			canonicalURL: "https://www.indiehackers.com/interview/d2c4d6f8fa",
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			url, err := services.NormalizeURL(testCase.inputURL)
-			if err == nil {
-				if url.CanonicalURL != testCase.canonicalURL {
-					t.Fatalf("Unexpected url: %s, expected: %s", url.CanonicalURL, testCase.canonicalURL)
-				}
-			} else if !testCase.expectedError {
+			if err != nil {
 				t.Fatal(err)
+			}
+
+			if url.CanonicalURL != testCase.canonicalURL {
+				t.Fatalf("Unexpected url: %s, expected: %s", url.CanonicalURL, testCase.canonicalURL)
 			}
 		})
 	}
