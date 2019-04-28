@@ -49,7 +49,7 @@ func (r *linkResolver) AvailableParentTopics(
 	ctx context.Context, link *models.LinkValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.TopicConnection, error) {
-	return availableTopics(ctx, r.DB, link.View, searchString, first)
+	return availableTopics(ctx, r.DB, link.View, searchString, first, []string{})
 }
 
 // CreatedAt returns the time at which the link was first added.

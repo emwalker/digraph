@@ -12,6 +12,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/types"
 )
 
 type topicResolver struct{ *Resolver }
@@ -51,32 +52,26 @@ func topicOrganization(ctx context.Context, topic *models.TopicValue) (*models.O
 
 func availableTopics(
 	ctx context.Context, exec boil.ContextExecutor, view *models.View, searchString *string, first *int,
+	excludeTopicIds []string,
 ) (models.TopicConnection, error) {
-	var topics []*models.Topic
-	var err error
-
-	if searchString == nil {
-		err = queries.Raw(`
-		select t.* from topics t
-		inner join organizations o on o.id = t.organization_id
-		inner join organization_members om on om.organization_id = o.id
-		inner join users u on om.user_id = u.id
-		where u.id = $1
-		order by t.name
-		limit $2
-		`, view.ViewerID, limitFrom(first)).Bind(ctx, exec, &topics)
-	} else {
-		err = queries.Raw(`
-		select t.* from topics t
-		inner join organizations o on o.id = t.organization_id
-		inner join organization_members om on om.organization_id = o.id
-		inner join users u on om.user_id = u.id
-		where u.id = $1 and t.name ~~* all($2)
-		order by t.name
-		limit $3
-		`, view.ViewerID, wildcardStringArray(*searchString), limitFrom(first)).Bind(ctx, exec, &topics)
+	mods := []qm.QueryMod{
+		qm.InnerJoin("organizations o on o.id = topics.organization_id"),
+		qm.InnerJoin("organization_members om on om.organization_id = o.id"),
+		qm.InnerJoin("users u on om.user_id = u.id"),
+		qm.Where("u.id = ?", view.ViewerID),
+		qm.OrderBy("topics.name"),
+		qm.Limit(limitFrom(first)),
 	}
 
+	if searchString != nil {
+		mods = append(mods, qm.Where("topics.name ~~* all(?)", wildcardStringArray(*searchString)))
+	}
+
+	if len(excludeTopicIds) > 0 {
+		mods = append(mods, qm.Where("topics.id != all(?)", types.Array(excludeTopicIds)))
+	}
+
+	topics, err := models.Topics(mods...).All(ctx, exec)
 	if err != nil {
 		return models.TopicConnection{}, err
 	}
@@ -89,7 +84,7 @@ func (r *topicResolver) AvailableParentTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.TopicConnection, error) {
-	return availableTopics(ctx, r.DB, topic.View, searchString, first)
+	return availableTopics(ctx, r.DB, topic.View, searchString, first, []string{topic.ID})
 }
 
 // ChildTopics returns a set of topics.

@@ -621,6 +621,32 @@ func TestAvailableTopicsForTopicWithFilter(t *testing.T) {
 	}
 }
 
+func TestAvailableParentTopicsDoesNotIncludeSelf(t *testing.T) {
+	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
+	matchingString := "695be58"
+
+	t1, cleanup := m.createTopic(testActor.Login, repoName, "Topic 1")
+	defer cleanup()
+
+	t2, cleanup := m.createTopic(testActor.Login, repoName, matchingString)
+	defer cleanup()
+
+	m.addParentTopicToTopic(t2, t1)
+	query := resolvers.New(m.db, testActor, testFetcher).Topic()
+
+	conn, err := query.AvailableParentTopics(m.ctx, t2, &matchingString, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, edge := range conn.Edges {
+		if edge.Node.Name == matchingString {
+			t.Fatalf("Parent topics should not include self: %s", matchingString)
+		}
+	}
+}
+
 func TestDeleteTopic(t *testing.T) {
 	m := newMutator(t, testActor)
 
