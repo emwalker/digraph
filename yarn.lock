@@ -12,17 +12,17 @@
     aframe-forcegraph-component "^2.15.1"
     kapsule "^1.9.2"
 
-"3d-force-graph@^1.45.1":
-  version "1.45.4"
-  resolved "https://registry.yarnpkg.com/3d-force-graph/-/3d-force-graph-1.45.4.tgz#b7181ec9182a535a47bad836b3c8a50f21bd8ba6"
-  integrity sha512-9qfme2MGzGD8urA1N7YNbaDYiz/OWCGFw/F3M+CJPNtDJq+CKN57BoIJCQo6SJl+i7jgTqke4aRl7PO+/tw20g==
+"3d-force-graph@^1.45.6":
+  version "1.45.6"
+  resolved "https://registry.yarnpkg.com/3d-force-graph/-/3d-force-graph-1.45.6.tgz#4e643d685981d51fad25c29bffc3a97dc4861503"
+  integrity sha512-yFSqLdo9/tkcxSDFz/O/oiXeZtSIH/I8R/uUQq5GLfoNAHAYXIZXWhqXGIj21V8AhpImcfbsDojwoXQondd0Ww==
   dependencies:
     accessor-fn "^1.2.2"
     kapsule "^1.10.0"
     three "^0.102.1"
     three-dragcontrols "^0.88.2"
     three-forcegraph "^1.17.1"
-    three-render-objects "^1.4.3"
+    three-render-objects "^1.4.5"
 
 "@babel/cli@^7.0.0":
   version "7.2.3"
@@ -5115,10 +5115,10 @@ for-own@^1.0.0:
   dependencies:
     for-in "^1.0.1"
 
-force-graph@^1.14.3:
-  version "1.14.3"
-  resolved "https://registry.yarnpkg.com/force-graph/-/force-graph-1.14.3.tgz#7291d169985f258732a71f502e6694c444adfd55"
-  integrity sha512-WmhNCZqk4Bx0XoXWy0J0yN1g0uWxTv0U1tyC9mjt3bmqlHk6+jSRd0hl7sn5iGCa2FCbMfC2WOvV2ALIIMkMkg==
+force-graph@^1.14.4:
+  version "1.14.4"
+  resolved "https://registry.yarnpkg.com/force-graph/-/force-graph-1.14.4.tgz#5e99c0b822fe5b7ef569cfd1a542ddb6e20fae3a"
+  integrity sha512-PKhJgWl6Mx2OtbugzbcTCxViAs4cJD9aUy+gLsZhD6gV8CLoyUF9cERGo+1HXb9MCPA3SBUl/N4s2zS6VjHh9A==
   dependencies:
     "@tweenjs/tween.js" "^17.3.0"
     accessor-fn "^1.2.2"
@@ -9708,7 +9708,7 @@ prop-types@^15.5.0, prop-types@^15.5.10, prop-types@^15.5.8, prop-types@^15.6.0,
     loose-envify "^1.3.1"
     object-assign "^4.1.1"
 
-prop-types@^15.7.0, prop-types@^15.7.2:
+prop-types@^15.7.2:
   version "15.7.2"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.7.2.tgz#52c41e75b8c87e72b9d9360e0206b99dcbffa6c5"
   integrity sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==
@@ -9942,15 +9942,15 @@ react-dom@~>16:
     prop-types "^15.6.2"
     scheduler "^0.12.0"
 
-react-force-graph@^1.20.3:
-  version "1.20.3"
-  resolved "https://registry.yarnpkg.com/react-force-graph/-/react-force-graph-1.20.3.tgz#870a8c5bc36401b6c227bb15c217ad5ce80c1af4"
-  integrity sha512-lY5lyQSg1S4IybORZ1kyNA7S1kxicmKTu4oDJR1dCz5cTtoJrUDW//ZnaOTZrUIUZNs3Qjn5tKnVjz2PvTMpfA==
+react-force-graph@^1.20.6:
+  version "1.20.6"
+  resolved "https://registry.yarnpkg.com/react-force-graph/-/react-force-graph-1.20.6.tgz#395b6449b47ad0ee8bebb37dce8880337c417369"
+  integrity sha512-W+qPunlNATXX2ezHDSFhYRRvaV5HlzMSLl8jcPE+/VMtSWeJBdqIVSwxZAj3pkHpcPtCF0AoYwJ7FsPFT9qkNA==
   dependencies:
-    "3d-force-graph" "^1.45.1"
+    "3d-force-graph" "^1.45.6"
     "3d-force-graph-vr" "^1.23.1"
-    force-graph "^1.14.3"
-    prop-types "^15.7.0"
+    force-graph "^1.14.4"
+    prop-types "^15.7.2"
     react-kapsule "^1.4.1"
 
 react-google-recaptcha@^1.0.5:
@@ -11589,10 +11589,10 @@ three-pathfinding@^0.7.0:
   resolved "https://registry.yarnpkg.com/three-pathfinding/-/three-pathfinding-0.7.0.tgz#bf64ec409bee6e7d8e19be96c7b40ebd7ef6f10d"
   integrity sha512-UwWvzgio1UFe81n5jKHNzB4B+AG3wfZ54OKp7bTb1MHuC3cy6RTtr0dbbiPQQoqxzr+DRArR2DUwQSEknw5+nw==
 
-three-render-objects@^1.4.3:
-  version "1.4.3"
-  resolved "https://registry.yarnpkg.com/three-render-objects/-/three-render-objects-1.4.3.tgz#ed90206817cd0ef924d5103835d3f8058e1eb92d"
-  integrity sha512-462DhCcFq6gGlvtFUGk7NJvWQSNaansHMROYkoaVmhChtqaIYt8jxz3tW4iFeCuf2tvFi9lKPFfEXYx8hDpUbg==
+three-render-objects@^1.4.5:
+  version "1.4.5"
+  resolved "https://registry.yarnpkg.com/three-render-objects/-/three-render-objects-1.4.5.tgz#f45445c46ceae569cf02bb485378631202a8733f"
+  integrity sha512-dHsLG1MDofFvFfSdvAqnl9qn7qhWhymEcbK/f4DvzlvrBvJdO3YdOhHj35xfmK7KMlcLsDc7k5B4+154msKYyQ==
   dependencies:
     "@tweenjs/tween.js" "^17.3.0"
     accessor-fn "^1.2.2"

@@ -39,7 +39,7 @@
     "react": "~>16",
     "react-component-octicons": "~>1.8.0",
     "react-dom": "~>16",
-    "react-force-graph": "^1.20.3",
+    "react-force-graph": "^1.20.6",
     "react-google-recaptcha": "^1.0.5",
     "react-markdown": "^4.0.8",
     "react-relay": "~3.0.0",
