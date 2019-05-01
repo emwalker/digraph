@@ -82,6 +82,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.indiehackers.com/interview/d2c4d6f8fa?utm_source=Indie+Hackers+Newsletter&utm_campaign=indie-hackers-newsletter-20190417&utm_medium=email",
 			canonicalURL: "https://www.indiehackers.com/interview/d2c4d6f8fa",
 		},
+		{
+			name:         "A Vice article",
+			inputURL:     "https://news.vice.com/en_us/article/43jw79/how-pro-trump-grifters-used-medium-to-smear-pete-buttigieg?utm_medium=vicenewsfacebook&fbclid=IwAR1RQ7CVhzbpnkThsJiYS2P_xHvVF93y_Z92wUZgWiPu9sId0x3yQBjeA2Q&utm_source=reddit.com",
+			canonicalURL: "https://news.vice.com/en_us/article/43jw79/how-pro-trump-grifters-used-medium-to-smear-pete-buttigieg",
+		},
 	}
 
 	for _, testCase := range testCases {

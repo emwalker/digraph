@@ -59,6 +59,7 @@ var (
 	}
 
 	omitFields = []string{
+		"fbclid",
 		"rss",
 		"utm_campaign",
 		"utm_medium",
