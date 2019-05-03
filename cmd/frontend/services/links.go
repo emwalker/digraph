@@ -65,6 +65,7 @@ var (
 		"utm_medium",
 		"utm_source",
 		"utm_term",
+		"via",
 	}
 )
 

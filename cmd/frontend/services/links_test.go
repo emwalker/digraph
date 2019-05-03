@@ -87,6 +87,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://news.vice.com/en_us/article/43jw79/how-pro-trump-grifters-used-medium-to-smear-pete-buttigieg?utm_medium=vicenewsfacebook&fbclid=IwAR1RQ7CVhzbpnkThsJiYS2P_xHvVF93y_Z92wUZgWiPu9sId0x3yQBjeA2Q&utm_source=reddit.com",
 			canonicalURL: "https://news.vice.com/en_us/article/43jw79/how-pro-trump-grifters-used-medium-to-smear-pete-buttigieg",
 		},
+		{
+			name:         "A Slate article",
+			inputURL:     "https://slate.com/news-and-politics/2019/05/william-barr-donald-trump-calm-defense.html?via=homepage_taps_top",
+			canonicalURL: "https://slate.com/news-and-politics/2019/05/william-barr-donald-trump-calm-defense.html",
+		},
 	}
 
 	for _, testCase := range testCases {
