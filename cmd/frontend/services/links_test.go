@@ -92,6 +92,16 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://slate.com/news-and-politics/2019/05/william-barr-donald-trump-calm-defense.html?via=homepage_taps_top",
 			canonicalURL: "https://slate.com/news-and-politics/2019/05/william-barr-donald-trump-calm-defense.html",
 		},
+		{
+			name:         "A dictionary.com definition",
+			inputURL:     "https://www.dictionary.com/browse/temporize?s=t",
+			canonicalURL: "https://www.dictionary.com/browse/temporize",
+		},
+		{
+			name:         "A CNN article",
+			inputURL:     "https://www.cnn.com/2019/05/04/tech/trump-social-media-twitter-facebook/index.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+rss%2Fcnn_latest+%28RSS%3A+CNN+-+Most+Recent%29",
+			canonicalURL: "https://www.cnn.com/2019/05/04/tech/trump-social-media-twitter-facebook/index.html",
+		},
 	}
 
 	for _, testCase := range testCases {
