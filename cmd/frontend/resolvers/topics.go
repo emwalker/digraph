@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"sort"
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
@@ -14,6 +15,20 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
 )
+
+type ByName []*models.Topic
+
+func (a ByName) Len() int {
+	return len(a)
+}
+
+func (a ByName) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a ByName) Less(i, j int) bool {
+	return a[i].Name < a[j].Name
+}
 
 type topicResolver struct{ *Resolver }
 
@@ -26,9 +41,11 @@ func topicConnection(view *models.View, rows []*models.Topic, err error) (models
 		return models.TopicConnection{}, err
 	}
 
-	var edges []*models.TopicEdge
-	for _, topic := range rows {
-		edges = append(edges, &models.TopicEdge{Node: models.TopicValue{topic, false, view}})
+	sort.Sort(ByName(rows))
+
+	edges := make([]*models.TopicEdge, len(rows))
+	for i, topic := range rows {
+		edges[i] = &models.TopicEdge{Node: models.TopicValue{topic, false, view}}
 	}
 
 	return models.TopicConnection{Edges: edges}, nil

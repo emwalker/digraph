@@ -723,9 +723,8 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 
 	m.addParentTopicToTopic(topic, root)
 
-	link, cleanup := m.createLink(testActor.Login, repoName, "Private link", "https://www.nytimes.com")
+	_, cleanup = m.createLink(testActor.Login, repoName, "Private link", "https://www.nytimes.com")
 	defer cleanup()
-	m.addParentTopicToLink(link, root)
 
 	query := resolvers.New(m.db, testActor2, testFetcher).Topic()
 

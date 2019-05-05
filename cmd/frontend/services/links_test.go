@@ -102,6 +102,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.cnn.com/2019/05/04/tech/trump-social-media-twitter-facebook/index.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+rss%2Fcnn_latest+%28RSS%3A+CNN+-+Most+Recent%29",
 			canonicalURL: "https://www.cnn.com/2019/05/04/tech/trump-social-media-twitter-facebook/index.html",
 		},
+		{
+			name:         "A Washington Post article",
+			inputURL:     "https://www.washingtonpost.com/national/health-science/microbes-called-extremophiles-might-combat-superbugs-biowarfare-agents/2019/05/03/6e0277f4-6b81-11e9-8f44-e8d8bb1df986_story.html?utm_term=.0aa16c680491",
+			canonicalURL: "https://www.washingtonpost.com/national/health-science/microbes-called-extremophiles-might-combat-superbugs-biowarfare-agents/2019/05/03/6e0277f4-6b81-11e9-8f44-e8d8bb1df986_story.html",
+		},
 	}
 
 	for _, testCase := range testCases {

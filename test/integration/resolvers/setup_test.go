@@ -126,9 +126,20 @@ func (m mutator) addParentTopicToTopic(child, parent *models.TopicValue) {
 }
 
 func (m mutator) addParentTopicToLink(link *models.LinkValue, topic *models.TopicValue) {
+	parentTopics, err := link.ParentTopics().All(m.ctx, m.db)
+	if err != nil {
+		m.t.Fatal(err)
+	}
+
+	topicIds := make([]string, len(parentTopics)+1)
+	for i, parentTopic := range parentTopics {
+		topicIds[i] = parentTopic.ID
+	}
+	topicIds[len(parentTopics)] = topic.ID
+
 	input := models.UpdateLinkTopicsInput{
 		LinkID:         link.ID,
-		ParentTopicIds: []string{topic.ID},
+		ParentTopicIds: topicIds,
 	}
 
 	if _, err := m.resolver.UpdateLinkTopics(m.ctx, input); err != nil {

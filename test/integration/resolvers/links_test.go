@@ -1,6 +1,7 @@
 package resolvers_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
@@ -214,5 +215,44 @@ func TestDeleteLink(t *testing.T) {
 
 	if count > 0 {
 		t.Fatal("Failed to delete link")
+	}
+}
+
+func TestParentTopicsDefaultOrdering(t *testing.T) {
+	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
+
+	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "b64c9bf1c62e", "http://b64c9bf1c62e")
+	defer cleanup()
+
+	tC, cleanup := m.createTopic(testActor.Login, repoName, "C")
+	defer cleanup()
+	m.addParentTopicToLink(link, tC)
+
+	tA, cleanup := m.createTopic(testActor.Login, repoName, "A")
+	defer cleanup()
+	m.addParentTopicToLink(link, tA)
+
+	tB, cleanup := m.createTopic(testActor.Login, repoName, "B")
+	defer cleanup()
+	m.addParentTopicToLink(link, tB)
+
+	query := resolvers.New(m.db, testActor, testFetcher).Link()
+	topicConnection, err := query.ParentTopics(m.ctx, link, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(topicConnection.Edges) < 3 {
+		t.Fatalf("Expected 3 parent topics, got %d", len(topicConnection.Edges))
+	}
+
+	prevEdge := topicConnection.Edges[0]
+
+	for _, edge := range topicConnection.Edges[1:] {
+		if strings.Compare(prevEdge.Node.Name, edge.Node.Name) != -1 {
+			t.Fatalf("Expected topics to be sorted by name: %s <=> %s", prevEdge.Node.Name, edge.Node.Name)
+		}
+		prevEdge = edge
 	}
 }
