@@ -107,6 +107,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.washingtonpost.com/national/health-science/microbes-called-extremophiles-might-combat-superbugs-biowarfare-agents/2019/05/03/6e0277f4-6b81-11e9-8f44-e8d8bb1df986_story.html?utm_term=.0aa16c680491",
 			canonicalURL: "https://www.washingtonpost.com/national/health-science/microbes-called-extremophiles-might-combat-superbugs-biowarfare-agents/2019/05/03/6e0277f4-6b81-11e9-8f44-e8d8bb1df986_story.html",
 		},
+		{
+			name:         "Another New York Times article",
+			inputURL:     "https://www.nytimes.com/2013/10/14/world/to-ousted-boss-arms-watchdog-was-seen-as-an-obstacle-in-iraq.html?_r=1&",
+			canonicalURL: "https://www.nytimes.com/2013/10/14/world/to-ousted-boss-arms-watchdog-was-seen-as-an-obstacle-in-iraq.html",
+		},
 	}
 
 	for _, testCase := range testCases {
