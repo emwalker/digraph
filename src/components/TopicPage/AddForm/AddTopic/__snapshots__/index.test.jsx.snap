@@ -18,13 +18,14 @@ afterwards if it also belongs under another topic."
     </span>
   </dt>
   <dd>
-    <input
+    <textarea
       className="form-control test-topic-name input-sm"
       disabled={true}
       id="create-topic-name"
       onChange={[Function]}
       onKeyPress={[Function]}
       placeholder="Name or description"
+      rows={1}
       value=""
     />
   </dd>

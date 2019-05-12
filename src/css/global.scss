@@ -30,6 +30,11 @@ html, body {
       top: 9px;
     }
   }
+
+  .form-group textarea.form-control {
+    height: unset;
+    min-height: unset;
+  }
 }
 
 .SignUpPage {

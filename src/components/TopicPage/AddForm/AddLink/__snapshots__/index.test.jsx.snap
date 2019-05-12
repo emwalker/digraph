@@ -17,13 +17,14 @@ exports[`<AddLink /> renders 1`] = `
     </span>
   </dt>
   <dd>
-    <input
+    <textarea
       className="form-control test-link-url input-sm"
       disabled={false}
       id="create-link-url"
       onChange={[Function]}
       onKeyPress={[Function]}
       placeholder="Url"
+      rows={1}
       type="url"
       value=""
     />
