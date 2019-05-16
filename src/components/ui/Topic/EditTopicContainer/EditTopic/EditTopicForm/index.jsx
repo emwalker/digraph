@@ -98,7 +98,7 @@ class EditTopicForm extends Component<Props, State> {
     return new Promise((resolve) => {
       const variables = {
         orgLogin: this.props.orgLogin,
-        count: 40,
+        count: 60,
         searchString,
       }
 
