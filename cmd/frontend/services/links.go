@@ -51,6 +51,7 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 
 var (
 	omitQuerySites = []string{
+		"theatlantic.com",
 		"businessinsider.com",
 		"dictionary.com",
 		"independent.co.uk",

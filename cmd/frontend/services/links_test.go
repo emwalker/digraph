@@ -112,6 +112,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.nytimes.com/2013/10/14/world/to-ousted-boss-arms-watchdog-was-seen-as-an-obstacle-in-iraq.html?_r=1&",
 			canonicalURL: "https://www.nytimes.com/2013/10/14/world/to-ousted-boss-arms-watchdog-was-seen-as-an-obstacle-in-iraq.html",
 		},
+		{
+			name:         "An article in the Atlantic",
+			inputURL:     "https://www.theatlantic.com/ideas/archive/2019/05/coming-generation-war/588670/?te=1&nl=morning-briefing&emc=edit_NN_p_20190515&section=whatElse",
+			canonicalURL: "https://www.theatlantic.com/ideas/archive/2019/05/coming-generation-war/588670/",
+		},
 	}
 
 	for _, testCase := range testCases {
