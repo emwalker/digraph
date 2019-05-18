@@ -2,7 +2,7 @@
 
 exports[`<FilterInput /> renders 1`] = `
 <div
-  className="form-group mb-1 mt-1"
+  className="SearchBox form-group mb-1 mt-1"
 >
   <input
     aria-label="Search"

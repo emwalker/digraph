@@ -46,7 +46,7 @@ class SearchBox extends Component<Props, State> {
   }
 
   get className(): string {
-    return classNames('form-group mb-1 mt-1', this.props.className)
+    return classNames('SearchBox form-group mb-1 mt-1', this.props.className)
   }
 
   render = () => (

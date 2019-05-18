@@ -35,6 +35,18 @@ html, body {
     height: unset;
     min-height: unset;
   }
+
+  .Subhead {
+    margin-top: 0.5em;
+    line-height: 1.3;
+
+    .Subhead-heading {
+      display: flex;
+      flex-direction: column-reverse;
+      font-size: 22px;
+      font-weight: 400;
+    }
+  }
 }
 
 .SignUpPage {
