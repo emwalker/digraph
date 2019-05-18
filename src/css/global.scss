@@ -125,7 +125,7 @@ select {
 
 .Box-row--topic {
   .Box-row-link {
-    @extend .text-bold;
+    font-weight: 500;
   }
 }
 
