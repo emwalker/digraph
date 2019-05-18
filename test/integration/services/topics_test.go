@@ -30,3 +30,22 @@ func TestUpsertTopicEnsuresATopic(t *testing.T) {
 		t.Fatal("Expected the topic to be added to the root topic")
 	}
 }
+
+func TestDisallowEmptyTopic(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	result, err := c.UpsertTopic(ctx, defaultRepo, "  ", nil, []string{})
+	if err != nil {
+		t.Fatalf("There was a problem upserting the topic: %s", err)
+	}
+	defer result.Cleanup()
+
+	if result.TopicCreated {
+		t.Fatal("An empty topic should not be created")
+	}
+
+	if len(result.Alerts) < 1 {
+		t.Fatal("There should be an alert")
+	}
+}

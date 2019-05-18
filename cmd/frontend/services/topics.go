@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/text"
 	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -59,6 +60,20 @@ func nameAlreadyExists(name string) *models.Alert {
 	)
 }
 
+func NormalizeTopicName(name string) (string, bool) {
+	name = text.Squash(name)
+
+	if name == "" {
+		return "", false
+	}
+
+	if isURL(name) {
+		return name, false
+	}
+
+	return name, true
+}
+
 // UpdateTopic updates fields on the topic.
 func (c Connection) UpdateTopic(
 	ctx context.Context, topic *models.Topic, name string, description *string,
@@ -102,9 +117,16 @@ func (c Connection) UpsertTopic(
 	ctx context.Context, repo *models.Repository, name string, description *string,
 	parentTopicIds []string,
 ) (*UpsertTopicResult, error) {
-	if isURL(name) {
+	name, ok := NormalizeTopicName(name)
+
+	noopCleanup := func() error {
+		return nil
+	}
+
+	if !ok {
 		return &UpsertTopicResult{
-			Alerts: []models.Alert{*invalidNameWarning(name)},
+			Alerts:  []models.Alert{*invalidNameWarning(name)},
+			Cleanup: noopCleanup,
 		}, nil
 	}
 
