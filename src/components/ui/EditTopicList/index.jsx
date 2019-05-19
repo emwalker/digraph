@@ -39,9 +39,15 @@ class EditTopicList extends Component<Props, State> {
   render = () => (
     <div className="pt-3">
       <Select
+        backspaceRemovesValue={false}
+        components={{
+          ClearIndicator: null,
+        }}
+        escapeClearsValue={false}
+        isClearable={false}
         isMulti
-        onChange={this.handleChange}
         loadOptions={debounce(this.props.loadOptions, 500)}
+        onChange={this.handleChange}
         placeholder="Add a topic"
         styles={colourStyles}
         value={this.state.selectedTopics}

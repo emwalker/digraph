@@ -1,0 +1,35 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<EditTopicList /> renders 1`] = `
+<div
+  className="pt-3"
+>
+  <Async
+    backspaceRemovesValue={false}
+    cacheOptions={false}
+    components={
+      Object {
+        "ClearIndicator": null,
+      }
+    }
+    defaultOptions={false}
+    escapeClearsValue={false}
+    filterOption={null}
+    isClearable={false}
+    isMulti={true}
+    loadOptions={[Function]}
+    onChange={[Function]}
+    placeholder="Add a topic"
+    styles={
+      Object {
+        "control": [Function],
+        "multiValue": [Function],
+        "multiValueLabel": [Function],
+        "multiValueRemove": [Function],
+        "option": [Function],
+      }
+    }
+    value={Array []}
+  />
+</div>
+`;
