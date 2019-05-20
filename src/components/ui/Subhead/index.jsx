@@ -1,8 +1,7 @@
 // @flow
-import React, { Component, type Node } from 'react'
+import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { pathOr } from 'ramda'
-import { Link } from 'found'
 
 import type { ViewType } from 'components/types'
 import SearchBox from 'components/ui/SearchBox'
@@ -11,13 +10,11 @@ const resourcePath = pathOr('/', ['currentRepository', 'rootTopic', 'resourcePat
 
 type Props = {
   heading: string,
-  headingLink: ?string,
   location: {
     pathname: string,
     query: Object,
     search: string,
   },
-  orgLogin: string,
   router: {
     push: Function,
   },
@@ -25,10 +22,6 @@ type Props = {
 }
 
 class Subhead extends Component<Props> {
-  static defaultProps = {
-    headingLink: null,
-  }
-
   onSearch = (query: string) => {
     if (query === '') {
       this.props.router.push({ pathname: this.pathname })
@@ -36,26 +29,6 @@ class Subhead extends Component<Props> {
     }
 
     this.props.router.push({ pathname: this.pathname, query: { q: query } })
-  }
-
-  get heading(): Node {
-    if (!this.props.headingLink)
-      return this.props.heading
-
-    const to = {
-      pathname: this.props.headingLink,
-      orgLogin: this.props.orgLogin,
-      repoName: 'Loading ...',
-    }
-
-    return (
-      <Link
-        className="link-gray-dark"
-        to={to}
-      >
-        {this.props.heading}
-      </Link>
-    )
   }
 
   get pathname(): string {
@@ -71,7 +44,7 @@ class Subhead extends Component<Props> {
   render = () => (
     <div className="Subhead clearfix gutter">
       <div className="Subhead-heading col-lg-8 col-12">
-        { this.heading }
+        { this.props.heading }
       </div>
       <SearchBox
         className="col-lg-4 col-12"
