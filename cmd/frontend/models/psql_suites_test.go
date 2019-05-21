@@ -18,6 +18,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Sessions", testSessionsUpsert)
 
+	t.Run("Synonyms", testSynonymsUpsert)
+
 	t.Run("Topics", testTopicsUpsert)
 
 	t.Run("UserLinkTopics", testUserLinkTopicsUpsert)

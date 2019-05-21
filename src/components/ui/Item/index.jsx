@@ -101,8 +101,10 @@ class Item extends Component<Props> {
     }
   )
 
-  // eslint-disable-next-line react/no-unused-prop-types
-  renderTopicBadge = ({ name, resourcePath }: {name: string, resourcePath: string}) => (
+  renderTopicBadge = (
+    // eslint-disable-next-line react/no-unused-prop-types
+    { name, resourcePath }: {name: string, resourcePath: string},
+  ) => (
     <TopicBadge
       key={resourcePath}
       name={name}

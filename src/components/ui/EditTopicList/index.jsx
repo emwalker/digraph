@@ -6,6 +6,8 @@ import debounce from 'es6-promise-debounce'
 import type { Option, TopicConnection } from 'components/types'
 import colourStyles from './colourStyles'
 
+/* eslint jsx-a11y/label-has-for: 0 */
+
 const color = '#0366d6'
 
 const makeOption = ({ node }) => ({ ...node, color })
@@ -37,13 +39,18 @@ class EditTopicList extends Component<Props, State> {
   }
 
   render = () => (
-    <div className="pt-3">
+    <div className="form-group">
+      <label htmlFor="parent-topics">
+        Parent topics
+      </label>
       <Select
         backspaceRemovesValue={false}
+        className="mt-1"
         components={{
           ClearIndicator: null,
         }}
         escapeClearsValue={false}
+        id="parent-topics"
         isClearable={false}
         isMulti
         loadOptions={debounce(this.props.loadOptions, 500)}

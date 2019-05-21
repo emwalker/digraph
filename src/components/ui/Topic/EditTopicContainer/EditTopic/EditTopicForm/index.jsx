@@ -3,13 +3,12 @@ import React, { Component } from 'react'
 import { createRefetchContainer, graphql } from 'react-relay'
 
 import type { Option, TopicType } from 'components/types'
-import Input from 'components/ui/Input'
-import SaveOrCancel from 'components/ui/SaveOrCancel'
 import deleteTopicMutation from 'mutations/deleteTopicMutation'
 import updateTopicMutation from 'mutations/updateTopicMutation'
 import updateTopicTopicsMutation from 'mutations/updateTopicParentTopicsMutation'
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
+import Synonyms from './Synonyms'
 
 type Props = {
   isOpen: boolean,
@@ -19,6 +18,7 @@ type Props = {
     refetch: Function,
   },
   toggleForm: Function,
+  // $FlowFixMe
   topic: TopicType,
 }
 
@@ -114,29 +114,21 @@ class EditTopicForm extends Component<Props, State> {
       return null
 
     return (
-      <div>
-        <Input
-          className="col-12"
-          id={`edit-link-title-${this.topicId}`}
-          label="Name"
-          onChange={this.updateName}
-          value={this.state.name}
-        />
-        <div>
-          <SaveOrCancel
-            onSave={this.onSave}
-            onCancel={this.props.toggleForm}
-          />
-          <DeleteButton
-            className="float-right"
-            onDelete={this.onDelete}
-          />
-        </div>
+      <div className="my-4">
+        <Synonyms relay={this.props.relay} topic={this.props.topic} />
+
         <EditTopicList
           loadOptions={this.loadOptions}
           selectedTopics={makeOptions(this.props.topic.selectedTopics)}
           updateTopics={this.updateParentTopics}
         />
+
+        <dl className="form-group">
+          <DeleteButton
+            onDelete={this.onDelete}
+          />
+          <button onClick={this.props.toggleForm} className="btn-link float-right">Close</button>
+        </dl>
       </div>
     )
   }
@@ -174,6 +166,8 @@ export default createRefetchContainer(EditTopicForm, graphql`
         }
       }
     }
+
+    ...Synonyms_topic
   }
 `, graphql`
   query EditTopicFormRefetchQuery(

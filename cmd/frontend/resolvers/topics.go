@@ -16,6 +16,7 @@ import (
 	"github.com/volatiletech/sqlboiler/types"
 )
 
+// ByName provides a way to sort a topic by name.
 type ByName []*models.Topic
 
 func (a ByName) Len() int {
@@ -74,6 +75,7 @@ func availableTopics(
 	mods := []qm.QueryMod{
 		qm.InnerJoin("organizations o on o.id = topics.organization_id"),
 		qm.InnerJoin("organization_members om on om.organization_id = o.id"),
+		qm.InnerJoin("synonyms s on s.topic_id = topics.id"),
 		qm.InnerJoin("users u on om.user_id = u.id"),
 		qm.Where("u.id = ?", view.ViewerID),
 		qm.OrderBy("topics.name"),
@@ -81,7 +83,7 @@ func availableTopics(
 	}
 
 	if searchString != nil {
-		mods = append(mods, qm.Where("topics.name ~~* all(?)", wildcardStringArray(*searchString)))
+		mods = append(mods, qm.Where("s.name ~~* all(?)", wildcardStringArray(*searchString)))
 	}
 
 	if len(excludeTopicIds) > 0 {
@@ -109,14 +111,17 @@ func (r *topicResolver) ChildTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.TopicConnection, error) {
+	log.Printf("Fetching child topics for topic %s", topic.ID)
+
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
-		qm.OrderBy("topics.name"),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+		qm.InnerJoin("synonyms s on s.topic_id = topics.id"),
+		qm.OrderBy("topics.name"),
 	})
 
 	if searchString != nil && *searchString != "" {
-		mods = append(mods, qm.Where("topics.name ~~* all(?)", wildcardStringArray(*searchString)))
+		mods = append(mods, qm.Where("s.name ~~* all(?)", wildcardStringArray(*searchString)))
 	}
 
 	topics, err := topic.ChildTopics(mods...).All(ctx, r.DB)
@@ -162,7 +167,7 @@ func (r *topicResolver) Loading(_ context.Context, topic *models.TopicValue) (bo
 	return false, nil
 }
 
-func (r *topicResolver) Name(_ context.Context, topic *models.TopicValue) (string, error) {
+func (r *topicResolver) Name(ctx context.Context, topic *models.TopicValue) (string, error) {
 	return topic.Name, nil
 }
 
@@ -239,9 +244,11 @@ func (r *topicResolver) matchingDescendantTopics(
 	  from topic_topics ct
 	  inner join child_topics pt on pt.child_id = ct.parent_id
 	)
-	select t.id from topics t
+	select distinct t.id
+	from topics t
+	inner join synonyms s on t.id = s.topic_id
 	inner join child_topics ct on ct.child_id = t.id
-	where t.name ~~* all($2)
+	where s.name ~~* all($2)
 	limit $3
 	`, topic.ID, wildcardStringArray(searchString), limit).Bind(ctx, r.DB, &rows)
 
@@ -370,7 +377,48 @@ func (r *topicResolver) Search(
 	return models.SearchResultItemConnection{Edges: edges}, nil
 }
 
+// Synonyms return the synonyms for this topic.
+func (r *topicResolver) Synonyms(
+	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
+	last *int, before *string,
+) (models.SynonymConnection, error) {
+	log.Printf("Fetching synonyms for topic %s", topic.ID)
+	synonyms, err := topic.Synonyms(defaultSynonymSortOrder).All(ctx, r.DB)
+	if err != nil {
+		return models.SynonymConnection{}, err
+	}
+
+	conn := synonymConnection(synonyms)
+	return *conn, nil
+}
+
 // UpdatedAt returns the time of the most recent update.
 func (r *topicResolver) UpdatedAt(_ context.Context, topic *models.TopicValue) (string, error) {
 	return topic.UpdatedAt.Format(time.RFC3339), nil
+}
+
+// ViewerCanAddSynonym returns true if the viewer can add a synonym.
+func (r *topicResolver) ViewerCanAddSynonym(ctx context.Context, topic *models.TopicValue) (bool, error) {
+	log.Printf("Fetching value for ViewerCanAddSynonym for %s", topic.ID)
+	mods := topic.View.Filter([]qm.QueryMod{
+		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+		qm.Where("topics.id = ?", topic.ID),
+	})
+
+	count, err := models.Topics(mods...).Count(ctx, r.DB)
+	return count > 0, err
+}
+
+// ViewerCanAddSynonym returns true if the viewer can delete a synonym.
+func (r *topicResolver) ViewerCanDeleteSynonym(ctx context.Context, topic *models.TopicValue) (bool, error) {
+	count, err := topic.Synonyms().Count(ctx, r.DB)
+	if err != nil {
+		return false, err
+	}
+
+	if count < 2 {
+		return false, nil
+	}
+
+	return r.ViewerCanAddSynonym(ctx, topic)
 }

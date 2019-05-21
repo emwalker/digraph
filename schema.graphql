@@ -13,6 +13,20 @@ type ActivityLineItemConnection {
   pageInfo: PageInfo!
 }
 
+input AddSynonymInput {
+  clientMutationId: String
+  name: String!
+  locale: LocaleIdentifier!
+  topicId: ID!
+}
+
+type AddSynonymPayload {
+  alerts: [Alert!]!
+  clientMutationId: String
+  synonymEdge: SynonymEdge
+  topic: Topic
+}
+
 type Alert {
   text: String!
   type: AlertType!
@@ -41,6 +55,18 @@ input DeleteLinkInput {
 type DeleteLinkPayload {
   clientMutationId: String
   deletedLinkId: ID!
+}
+
+input DeleteSynonymInput {
+  clientMutationId: String
+  synonymId: ID!
+}
+
+type DeleteSynonymPayload {
+  alerts: [Alert!]!
+  clientMutationId: String
+  deletedSynonymId: ID
+  topic: Topic
 }
 
 input DeleteTopicInput {
@@ -90,8 +116,16 @@ type LinkConnection {
   pageInfo: PageInfo!
 }
 
+enum LocaleIdentifier {
+  en
+  es
+  fr
+}
+
 type Mutation {
+  addSynonym(input: AddSynonymInput!): AddSynonymPayload
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
+  deleteSynonym(input: DeleteSynonymInput!): DeleteSynonymPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
@@ -125,7 +159,7 @@ type PageInfo {
 
 type Query {
   # Workaround for Relay Modern weirdness
-  alerts: [Alert!]
+  alerts: [Alert!]!
   defaultOrganization: Organization!
   fakeError: String
   viewer: User!
@@ -166,7 +200,7 @@ interface ResourceIdentifiable {
 union SearchResultItem = Topic | Link
 
 type SearchResultItemEdge {
-  node: SearchResultItem
+  node: SearchResultItem!
 }
 
 type SearchResultItemConnection {
@@ -181,6 +215,23 @@ input SelectRepositoryInput {
 type SelectRepositoryPayload {
   repository: Repository
   viewer: User!
+}
+
+type Synonym {
+  id: ID!
+  locale: String!
+  name: String!
+  topic: Topic!
+}
+
+type SynonymEdge {
+  cursor: String!
+  node: Synonym!
+}
+
+type SynonymConnection {
+  edges: [SynonymEdge]
+  pageInfo: PageInfo!
 }
 
 type Topic implements ResourceIdentifiable & Namespaceable {
@@ -227,7 +278,16 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): SearchResultItemConnection!
+  synonyms(
+    searchString: String,
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): SynonymConnection!
   updatedAt: DateTime!
+  viewerCanAddSynonym: Boolean!
+  viewerCanDeleteSynonym: Boolean!
 }
 
 type TopicEdge {

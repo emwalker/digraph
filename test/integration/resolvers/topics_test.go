@@ -7,6 +7,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -750,5 +751,83 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 	if len(conn.Edges) > 0 {
 		link := conn.Edges[0].Node.(models.LinkValue)
 		t.Fatalf("Private link should be omitted from result for second user: %#v", link.Title)
+	}
+}
+
+func TestTopicNoSynonym(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	repoName := m.defaultRepo().Name
+	synonymName := "03953c748"
+
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "A topic")
+	defer cleanup()
+
+	synonym, err := topic.Synonyms().One(ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	synonym.Name = synonymName
+	synonym.Update(ctx, testDB, boil.Infer())
+
+	// Should never happen
+	count, err := topic.Synonyms().DeleteAll(ctx, testDB)
+	if count != 1 {
+		t.Fatalf("Expected to delete 1 synonym, deleted %d instead", count)
+	}
+}
+
+func TestViewerCanAddSynonym(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	repoName := m.defaultRepo().Name
+
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "A topic")
+	defer cleanup()
+
+	query := resolvers.New(testDB, testActor, testFetcher).Topic()
+
+	canAdd, err := query.ViewerCanAddSynonym(ctx, topic)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !canAdd {
+		t.Fatal("First viewer should be able to add a synonym")
+	}
+
+	query = resolvers.New(testDB, testActor2, testFetcher).Topic()
+
+	// Change out the viewer doing the query
+	topic.View.ViewerID = testActor2.ID
+
+	canAdd, err = query.ViewerCanAddSynonym(ctx, topic)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if canAdd {
+		t.Fatal("Second viewer should not be able to add a synonym")
+	}
+}
+
+func TestViewerCanDeleteSynonymWhenLessThanTwoExist(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	repoName := m.defaultRepo().Name
+
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "A topic")
+	defer cleanup()
+
+	query := resolvers.New(testDB, testActor, testFetcher).Topic()
+
+	canAdd, err := query.ViewerCanDeleteSynonym(ctx, topic)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if canAdd {
+		t.Fatal("Viewer should not be able to delete a synonym, because there is only one")
 	}
 }

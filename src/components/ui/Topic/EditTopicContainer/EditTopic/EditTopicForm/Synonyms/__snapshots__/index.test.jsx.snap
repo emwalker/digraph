@@ -1,0 +1,51 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Synonyms /> renders 1`] = `
+<dl
+  className="form-group"
+>
+  <label
+    htmlFor="names-and-synonyms"
+  >
+    Names and synonyms
+  </label>
+  <ul
+    className="Box list-style-none mt-1 mb-2"
+  >
+    <ForwardRef(Relay(Synonym))
+      key="1234"
+      onDelete={null}
+      synonym={
+        Object {
+          "id": "1234",
+          "name": "Gnusto",
+        }
+      }
+    />
+  </ul>
+  <div
+    className="clearfix"
+    id="names-and-synonym"
+  >
+    <input
+      className="form-control col-10 mr-2"
+      onChange={[Function]}
+      value=""
+    />
+    <select
+      className="form-select col-1 mr-2"
+      onChange={[Function]}
+    >
+      <option>
+        en
+      </option>
+      <option>
+        es
+      </option>
+      <option>
+        fr
+      </option>
+    </select>
+  </div>
+</dl>
+`;

@@ -60,6 +60,7 @@ func nameAlreadyExists(name string) *models.Alert {
 	)
 }
 
+// NormalizeTopicName returns a normalized topic name and indicates whether the name is valid.
 func NormalizeTopicName(name string) (string, bool) {
 	name = text.Squash(name)
 
@@ -118,10 +119,6 @@ func (c Connection) UpsertTopic(
 	parentTopicIds []string,
 ) (*UpsertTopicResult, error) {
 	name, ok := NormalizeTopicName(name)
-
-	noopCleanup := func() error {
-		return nil
-	}
 
 	if !ok {
 		return &UpsertTopicResult{
@@ -257,7 +254,11 @@ func (c Connection) parentTopicsAndAlerts(
 func (c Connection) upsertTopic(
 	ctx context.Context, repo *models.Repository, topic *models.Topic,
 ) (*models.Topic, bool, error) {
-	existing, _ := repo.Topics(qm.Where("name ilike ?", topic.Name)).One(ctx, c.Exec)
+	existing, _ := repo.Topics(
+		qm.InnerJoin("synonyms s on s.topic_id = topics.id"),
+		qm.Where("s.name ilike ?", topic.Name),
+	).One(ctx, c.Exec)
+
 	if existing != nil {
 		log.Printf("Topic %s already exists", topic.Name)
 		return existing, false, nil
@@ -265,6 +266,18 @@ func (c Connection) upsertTopic(
 
 	log.Printf("Creating new topic %s", topic.Name)
 	err := topic.Insert(ctx, c.Exec, boil.Infer())
+	if err != nil {
+		return nil, false, err
+	}
+
+	synonym := models.Synonym{
+		TopicID: topic.ID,
+		Name:    topic.Name,
+		Locale:  "en",
+	}
+
+	log.Printf("Creating searchable synonym %s", synonym.Name)
+	err = synonym.Insert(ctx, c.Exec, boil.Infer())
 	if err != nil {
 		return nil, false, err
 	}

@@ -4,7 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func TestUpsertTopicEnsuresATopic(t *testing.T) {
@@ -47,5 +49,28 @@ func TestDisallowEmptyTopic(t *testing.T) {
 
 	if len(result.Alerts) < 1 {
 		t.Fatal("There should be an alert")
+	}
+}
+
+func TestSynonymCreated(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+	name := "a0257068ede"
+
+	countBefore, _ := models.Synonyms(qm.Where("name like ?", name)).Count(ctx, testDB)
+	if countBefore != 0 {
+		t.Fatalf("Expected there to be no synonym, found %d", countBefore)
+	}
+
+	result, err := c.UpsertTopic(ctx, defaultRepo, name, nil, []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Cleanup()
+
+	countAfter, _ := models.Synonyms(qm.Where("name like ?", name)).Count(ctx, testDB)
+
+	if countAfter != 1 {
+		t.Fatalf("Expected a single synonym to be created, found %d", countAfter)
 	}
 }

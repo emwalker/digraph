@@ -25,7 +25,7 @@ start: kill
 start-debug: kill
 	@yarn relay --watch &
 	@yarn start &
-	@go run server.go --dev --log 2
+	@go run cmd/frontend/frontend.go --dev --log 2
 
 lint:
 	golint $(LINT_DIRECTORIES)

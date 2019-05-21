@@ -2,6 +2,8 @@
 
 /* eslint no-use-before-define: 0 */
 
+// Deprecated
+
 export type AlertType = {
   id: string,
 }
@@ -115,3 +117,11 @@ export type ViewType = {
   topic: TopicType,
   topics: TopicConnection,
 }
+
+// Good
+// @flow
+type Edges<ConnectionType> = $NonMaybeType<$PropertyType<$NonMaybeType<ConnectionType>, 'edges'>>
+type Edge<EdgesType> = $NonMaybeType<$ElementType<EdgesType, number>>
+type Node<EdgeType> = $NonMaybeType<$PropertyType<EdgeType, 'node'>>
+
+export type CollectionNode<ConnectionType> = Node<Edge<Edges<ConnectionType>>>

@@ -37,6 +37,7 @@ type ResolverRoot interface {
 	Organization() OrganizationResolver
 	Query() QueryResolver
 	Repository() RepositoryResolver
+	Synonym() SynonymResolver
 	Topic() TopicResolver
 	User() UserResolver
 	View() ViewResolver
@@ -61,6 +62,13 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	AddSynonymPayload struct {
+		Alerts           func(childComplexity int) int
+		ClientMutationId func(childComplexity int) int
+		SynonymEdge      func(childComplexity int) int
+		Topic            func(childComplexity int) int
+	}
+
 	Alert struct {
 		Text func(childComplexity int) int
 		Type func(childComplexity int) int
@@ -70,6 +78,13 @@ type ComplexityRoot struct {
 	DeleteLinkPayload struct {
 		ClientMutationId func(childComplexity int) int
 		DeletedLinkId    func(childComplexity int) int
+	}
+
+	DeleteSynonymPayload struct {
+		Alerts           func(childComplexity int) int
+		ClientMutationId func(childComplexity int) int
+		DeletedSynonymId func(childComplexity int) int
+		Topic            func(childComplexity int) int
 	}
 
 	DeleteTopicPayload struct {
@@ -104,7 +119,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		AddSynonym              func(childComplexity int, input AddSynonymInput) int
 		DeleteLink              func(childComplexity int, input DeleteLinkInput) int
+		DeleteSynonym           func(childComplexity int, input DeleteSynonymInput) int
 		DeleteTopic             func(childComplexity int, input DeleteTopicInput) int
 		SelectRepository        func(childComplexity int, input SelectRepositoryInput) int
 		UpdateLinkTopics        func(childComplexity int, input UpdateLinkTopicsInput) int
@@ -175,22 +192,42 @@ type ComplexityRoot struct {
 		Viewer     func(childComplexity int) int
 	}
 
+	Synonym struct {
+		Id     func(childComplexity int) int
+		Locale func(childComplexity int) int
+		Name   func(childComplexity int) int
+		Topic  func(childComplexity int) int
+	}
+
+	SynonymConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	SynonymEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Topic struct {
-		AvailableParentTopics func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
-		ChildTopics           func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
-		CreatedAt             func(childComplexity int) int
-		Description           func(childComplexity int) int
-		Id                    func(childComplexity int) int
-		Links                 func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
-		Loading               func(childComplexity int) int
-		Name                  func(childComplexity int) int
-		NewlyAdded            func(childComplexity int) int
-		Organization          func(childComplexity int) int
-		ParentTopics          func(childComplexity int, first *int, after *string, last *int, before *string) int
-		Repository            func(childComplexity int) int
-		ResourcePath          func(childComplexity int) int
-		Search                func(childComplexity int, searchString string, first *int, after *string, last *int, before *string) int
-		UpdatedAt             func(childComplexity int) int
+		AvailableParentTopics  func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
+		ChildTopics            func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
+		CreatedAt              func(childComplexity int) int
+		Description            func(childComplexity int) int
+		Id                     func(childComplexity int) int
+		Links                  func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
+		Loading                func(childComplexity int) int
+		Name                   func(childComplexity int) int
+		NewlyAdded             func(childComplexity int) int
+		Organization           func(childComplexity int) int
+		ParentTopics           func(childComplexity int, first *int, after *string, last *int, before *string) int
+		Repository             func(childComplexity int) int
+		ResourcePath           func(childComplexity int) int
+		Search                 func(childComplexity int, searchString string, first *int, after *string, last *int, before *string) int
+		Synonyms               func(childComplexity int, searchString *string, first *int, after *string, last *int, before *string) int
+		UpdatedAt              func(childComplexity int) int
+		ViewerCanAddSynonym    func(childComplexity int) int
+		ViewerCanDeleteSynonym func(childComplexity int) int
 	}
 
 	TopicConnection struct {
@@ -267,7 +304,9 @@ type LinkResolver interface {
 	UpdatedAt(ctx context.Context, obj *LinkValue) (string, error)
 }
 type MutationResolver interface {
+	AddSynonym(ctx context.Context, input AddSynonymInput) (*AddSynonymPayload, error)
 	DeleteLink(ctx context.Context, input DeleteLinkInput) (*DeleteLinkPayload, error)
+	DeleteSynonym(ctx context.Context, input DeleteSynonymInput) (*DeleteSynonymPayload, error)
 	DeleteTopic(ctx context.Context, input DeleteTopicInput) (*DeleteTopicPayload, error)
 	SelectRepository(ctx context.Context, input SelectRepositoryInput) (*SelectRepositoryPayload, error)
 	UpdateLinkTopics(ctx context.Context, input UpdateLinkTopicsInput) (*UpdateLinkTopicsPayload, error)
@@ -298,6 +337,9 @@ type RepositoryResolver interface {
 	Owner(ctx context.Context, obj *Repository) (User, error)
 	RootTopic(ctx context.Context, obj *Repository) (TopicValue, error)
 }
+type SynonymResolver interface {
+	Topic(ctx context.Context, obj *Synonym) (TopicValue, error)
+}
 type TopicResolver interface {
 	AvailableParentTopics(ctx context.Context, obj *TopicValue, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
 	ChildTopics(ctx context.Context, obj *TopicValue, searchString *string, first *int, after *string, last *int, before *string) (TopicConnection, error)
@@ -312,7 +354,10 @@ type TopicResolver interface {
 	Repository(ctx context.Context, obj *TopicValue) (Repository, error)
 	ResourcePath(ctx context.Context, obj *TopicValue) (string, error)
 	Search(ctx context.Context, obj *TopicValue, searchString string, first *int, after *string, last *int, before *string) (SearchResultItemConnection, error)
+	Synonyms(ctx context.Context, obj *TopicValue, searchString *string, first *int, after *string, last *int, before *string) (SynonymConnection, error)
 	UpdatedAt(ctx context.Context, obj *TopicValue) (string, error)
+	ViewerCanAddSynonym(ctx context.Context, obj *TopicValue) (bool, error)
+	ViewerCanDeleteSynonym(ctx context.Context, obj *TopicValue) (bool, error)
 }
 type UserResolver interface {
 	AvatarURL(ctx context.Context, obj *User) (string, error)
@@ -473,12 +518,42 @@ func field_Link_parentTopics_args(rawArgs map[string]interface{}) (map[string]in
 
 }
 
+func field_Mutation_addSynonym_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 AddSynonymInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalAddSynonymInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
 func field_Mutation_deleteLink_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 DeleteLinkInput
 	if tmp, ok := rawArgs["input"]; ok {
 		var err error
 		arg0, err = UnmarshalDeleteLinkInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_deleteSynonym_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 DeleteSynonymInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalDeleteSynonymInput(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1032,6 +1107,82 @@ func field_Topic_search_args(rawArgs map[string]interface{}) (map[string]interfa
 
 }
 
+func field_Topic_synonyms_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["searchString"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["searchString"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg4
+	return args, nil
+
+}
+
 func field_User_repositories_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -1423,6 +1574,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ActivityLineItemEdge.Node(childComplexity), true
 
+	case "AddSynonymPayload.alerts":
+		if e.complexity.AddSynonymPayload.Alerts == nil {
+			break
+		}
+
+		return e.complexity.AddSynonymPayload.Alerts(childComplexity), true
+
+	case "AddSynonymPayload.clientMutationId":
+		if e.complexity.AddSynonymPayload.ClientMutationId == nil {
+			break
+		}
+
+		return e.complexity.AddSynonymPayload.ClientMutationId(childComplexity), true
+
+	case "AddSynonymPayload.synonymEdge":
+		if e.complexity.AddSynonymPayload.SynonymEdge == nil {
+			break
+		}
+
+		return e.complexity.AddSynonymPayload.SynonymEdge(childComplexity), true
+
+	case "AddSynonymPayload.topic":
+		if e.complexity.AddSynonymPayload.Topic == nil {
+			break
+		}
+
+		return e.complexity.AddSynonymPayload.Topic(childComplexity), true
+
 	case "Alert.text":
 		if e.complexity.Alert.Text == nil {
 			break
@@ -1457,6 +1636,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DeleteLinkPayload.DeletedLinkId(childComplexity), true
+
+	case "DeleteSynonymPayload.alerts":
+		if e.complexity.DeleteSynonymPayload.Alerts == nil {
+			break
+		}
+
+		return e.complexity.DeleteSynonymPayload.Alerts(childComplexity), true
+
+	case "DeleteSynonymPayload.clientMutationId":
+		if e.complexity.DeleteSynonymPayload.ClientMutationId == nil {
+			break
+		}
+
+		return e.complexity.DeleteSynonymPayload.ClientMutationId(childComplexity), true
+
+	case "DeleteSynonymPayload.deletedSynonymId":
+		if e.complexity.DeleteSynonymPayload.DeletedSynonymId == nil {
+			break
+		}
+
+		return e.complexity.DeleteSynonymPayload.DeletedSynonymId(childComplexity), true
+
+	case "DeleteSynonymPayload.topic":
+		if e.complexity.DeleteSynonymPayload.Topic == nil {
+			break
+		}
+
+		return e.complexity.DeleteSynonymPayload.Topic(childComplexity), true
 
 	case "DeleteTopicPayload.clientMutationId":
 		if e.complexity.DeleteTopicPayload.ClientMutationId == nil {
@@ -1601,6 +1808,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LinkEdge.Node(childComplexity), true
 
+	case "Mutation.addSynonym":
+		if e.complexity.Mutation.AddSynonym == nil {
+			break
+		}
+
+		args, err := field_Mutation_addSynonym_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddSynonym(childComplexity, args["input"].(AddSynonymInput)), true
+
 	case "Mutation.deleteLink":
 		if e.complexity.Mutation.DeleteLink == nil {
 			break
@@ -1612,6 +1831,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteLink(childComplexity, args["input"].(DeleteLinkInput)), true
+
+	case "Mutation.deleteSynonym":
+		if e.complexity.Mutation.DeleteSynonym == nil {
+			break
+		}
+
+		args, err := field_Mutation_deleteSynonym_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteSynonym(childComplexity, args["input"].(DeleteSynonymInput)), true
 
 	case "Mutation.deleteTopic":
 		if e.complexity.Mutation.DeleteTopic == nil {
@@ -1940,6 +2171,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SelectRepositoryPayload.Viewer(childComplexity), true
 
+	case "Synonym.id":
+		if e.complexity.Synonym.Id == nil {
+			break
+		}
+
+		return e.complexity.Synonym.Id(childComplexity), true
+
+	case "Synonym.locale":
+		if e.complexity.Synonym.Locale == nil {
+			break
+		}
+
+		return e.complexity.Synonym.Locale(childComplexity), true
+
+	case "Synonym.name":
+		if e.complexity.Synonym.Name == nil {
+			break
+		}
+
+		return e.complexity.Synonym.Name(childComplexity), true
+
+	case "Synonym.topic":
+		if e.complexity.Synonym.Topic == nil {
+			break
+		}
+
+		return e.complexity.Synonym.Topic(childComplexity), true
+
+	case "SynonymConnection.edges":
+		if e.complexity.SynonymConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.SynonymConnection.Edges(childComplexity), true
+
+	case "SynonymConnection.pageInfo":
+		if e.complexity.SynonymConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.SynonymConnection.PageInfo(childComplexity), true
+
+	case "SynonymEdge.cursor":
+		if e.complexity.SynonymEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.SynonymEdge.Cursor(childComplexity), true
+
+	case "SynonymEdge.node":
+		if e.complexity.SynonymEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.SynonymEdge.Node(childComplexity), true
+
 	case "Topic.availableParentTopics":
 		if e.complexity.Topic.AvailableParentTopics == nil {
 			break
@@ -2063,12 +2350,38 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Topic.Search(childComplexity, args["searchString"].(string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 
+	case "Topic.synonyms":
+		if e.complexity.Topic.Synonyms == nil {
+			break
+		}
+
+		args, err := field_Topic_synonyms_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Topic.Synonyms(childComplexity, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+
 	case "Topic.updatedAt":
 		if e.complexity.Topic.UpdatedAt == nil {
 			break
 		}
 
 		return e.complexity.Topic.UpdatedAt(childComplexity), true
+
+	case "Topic.viewerCanAddSynonym":
+		if e.complexity.Topic.ViewerCanAddSynonym == nil {
+			break
+		}
+
+		return e.complexity.Topic.ViewerCanAddSynonym(childComplexity), true
+
+	case "Topic.viewerCanDeleteSynonym":
+		if e.complexity.Topic.ViewerCanDeleteSynonym == nil {
+			break
+		}
+
+		return e.complexity.Topic.ViewerCanDeleteSynonym(childComplexity), true
 
 	case "TopicConnection.edges":
 		if e.complexity.TopicConnection.Edges == nil {
@@ -2670,6 +2983,188 @@ func (ec *executionContext) _ActivityLineItemEdge_node(ctx context.Context, fiel
 	return ec._ActivityLineItem(ctx, field.Selections, &res)
 }
 
+var addSynonymPayloadImplementors = []string{"AddSynonymPayload"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _AddSynonymPayload(ctx context.Context, sel ast.SelectionSet, obj *AddSynonymPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, addSynonymPayloadImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AddSynonymPayload")
+		case "alerts":
+			out.Values[i] = ec._AddSynonymPayload_alerts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "clientMutationId":
+			out.Values[i] = ec._AddSynonymPayload_clientMutationId(ctx, field, obj)
+		case "synonymEdge":
+			out.Values[i] = ec._AddSynonymPayload_synonymEdge(ctx, field, obj)
+		case "topic":
+			out.Values[i] = ec._AddSynonymPayload_topic(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _AddSynonymPayload_alerts(ctx context.Context, field graphql.CollectedField, obj *AddSynonymPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "AddSynonymPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Alerts, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]Alert)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Alert(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _AddSynonymPayload_clientMutationId(ctx context.Context, field graphql.CollectedField, obj *AddSynonymPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "AddSynonymPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientMutationID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _AddSynonymPayload_synonymEdge(ctx context.Context, field graphql.CollectedField, obj *AddSynonymPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "AddSynonymPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SynonymEdge, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*SynonymEdge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._SynonymEdge(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _AddSynonymPayload_topic(ctx context.Context, field graphql.CollectedField, obj *AddSynonymPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "AddSynonymPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Topic, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*TopicValue)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Topic(ctx, field.Selections, res)
+}
+
 var alertImplementors = []string{"Alert"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -2876,6 +3371,187 @@ func (ec *executionContext) _DeleteLinkPayload_deletedLinkId(ctx context.Context
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalID(res)
+}
+
+var deleteSynonymPayloadImplementors = []string{"DeleteSynonymPayload"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _DeleteSynonymPayload(ctx context.Context, sel ast.SelectionSet, obj *DeleteSynonymPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, deleteSynonymPayloadImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeleteSynonymPayload")
+		case "alerts":
+			out.Values[i] = ec._DeleteSynonymPayload_alerts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "clientMutationId":
+			out.Values[i] = ec._DeleteSynonymPayload_clientMutationId(ctx, field, obj)
+		case "deletedSynonymId":
+			out.Values[i] = ec._DeleteSynonymPayload_deletedSynonymId(ctx, field, obj)
+		case "topic":
+			out.Values[i] = ec._DeleteSynonymPayload_topic(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _DeleteSynonymPayload_alerts(ctx context.Context, field graphql.CollectedField, obj *DeleteSynonymPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DeleteSynonymPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Alerts, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]Alert)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Alert(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _DeleteSynonymPayload_clientMutationId(ctx context.Context, field graphql.CollectedField, obj *DeleteSynonymPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DeleteSynonymPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientMutationID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _DeleteSynonymPayload_deletedSynonymId(ctx context.Context, field graphql.CollectedField, obj *DeleteSynonymPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DeleteSynonymPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedSynonymID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalID(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _DeleteSynonymPayload_topic(ctx context.Context, field graphql.CollectedField, obj *DeleteSynonymPayload) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DeleteSynonymPayload",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Topic, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*TopicValue)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Topic(ctx, field.Selections, res)
 }
 
 var deleteTopicPayloadImplementors = []string{"DeleteTopicPayload"}
@@ -3684,8 +4360,12 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "addSynonym":
+			out.Values[i] = ec._Mutation_addSynonym(ctx, field)
 		case "deleteLink":
 			out.Values[i] = ec._Mutation_deleteLink(ctx, field)
+		case "deleteSynonym":
+			out.Values[i] = ec._Mutation_deleteSynonym(ctx, field)
 		case "deleteTopic":
 			out.Values[i] = ec._Mutation_deleteTopic(ctx, field)
 		case "selectRepository":
@@ -3709,6 +4389,41 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_addSynonym(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_addSynonym_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddSynonym(rctx, args["input"].(AddSynonymInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*AddSynonymPayload)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._AddSynonymPayload(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -3744,6 +4459,41 @@ func (ec *executionContext) _Mutation_deleteLink(ctx context.Context, field grap
 	}
 
 	return ec._DeleteLinkPayload(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_deleteSynonym(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_deleteSynonym_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteSynonym(rctx, args["input"].(DeleteSynonymInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DeleteSynonymPayload)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._DeleteSynonymPayload(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -4456,6 +5206,9 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Query_alerts(ctx, field)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "defaultOrganization":
@@ -4522,6 +5275,9 @@ func (ec *executionContext) _Query_alerts(ctx context.Context, field graphql.Col
 		return ec.resolvers.Query().Alerts(rctx)
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]Alert)
@@ -5390,6 +6146,9 @@ func (ec *executionContext) _SearchResultItemEdge(ctx context.Context, sel ast.S
 			out.Values[i] = graphql.MarshalString("SearchResultItemEdge")
 		case "node":
 			out.Values[i] = ec._SearchResultItemEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5417,6 +6176,9 @@ func (ec *executionContext) _SearchResultItemEdge_node(ctx context.Context, fiel
 		return obj.Node, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(SearchResultItem)
@@ -5513,6 +6275,376 @@ func (ec *executionContext) _SelectRepositoryPayload_viewer(ctx context.Context,
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
 	return ec._User(ctx, field.Selections, &res)
+}
+
+var synonymImplementors = []string{"Synonym"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Synonym(ctx context.Context, sel ast.SelectionSet, obj *Synonym) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, synonymImplementors)
+
+	var wg sync.WaitGroup
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Synonym")
+		case "id":
+			out.Values[i] = ec._Synonym_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "locale":
+			out.Values[i] = ec._Synonym_locale(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "name":
+			out.Values[i] = ec._Synonym_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "topic":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Synonym_topic(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	wg.Wait()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Synonym_id(ctx context.Context, field graphql.CollectedField, obj *Synonym) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Synonym",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalID(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Synonym_locale(ctx context.Context, field graphql.CollectedField, obj *Synonym) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Synonym",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Locale, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Synonym_name(ctx context.Context, field graphql.CollectedField, obj *Synonym) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Synonym",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Synonym_topic(ctx context.Context, field graphql.CollectedField, obj *Synonym) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Synonym",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Synonym().Topic(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TopicValue)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Topic(ctx, field.Selections, &res)
+}
+
+var synonymConnectionImplementors = []string{"SynonymConnection"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _SynonymConnection(ctx context.Context, sel ast.SelectionSet, obj *SynonymConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, synonymConnectionImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SynonymConnection")
+		case "edges":
+			out.Values[i] = ec._SynonymConnection_edges(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._SynonymConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _SynonymConnection_edges(ctx context.Context, field graphql.CollectedField, obj *SynonymConnection) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "SynonymConnection",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*SynonymEdge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+
+				return ec._SynonymEdge(ctx, field.Selections, res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _SynonymConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *SynonymConnection) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "SynonymConnection",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._PageInfo(ctx, field.Selections, &res)
+}
+
+var synonymEdgeImplementors = []string{"SynonymEdge"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _SynonymEdge(ctx context.Context, sel ast.SelectionSet, obj *SynonymEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, synonymEdgeImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SynonymEdge")
+		case "cursor":
+			out.Values[i] = ec._SynonymEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "node":
+			out.Values[i] = ec._SynonymEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _SynonymEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *SynonymEdge) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "SynonymEdge",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _SynonymEdge_node(ctx context.Context, field graphql.CollectedField, obj *SynonymEdge) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "SynonymEdge",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Synonym)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Synonym(ctx, field.Selections, &res)
 }
 
 var topicImplementors = []string{"Topic", "ResourceIdentifiable", "Namespaceable"}
@@ -5641,10 +6773,37 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				wg.Done()
 			}(i, field)
+		case "synonyms":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Topic_synonyms(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "updatedAt":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Topic_updatedAt(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "viewerCanAddSynonym":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Topic_viewerCanAddSynonym(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "viewerCanDeleteSynonym":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Topic_viewerCanDeleteSynonym(ctx, field, obj)
 				if out.Values[i] == graphql.Null {
 					invalid = true
 				}
@@ -6078,6 +7237,40 @@ func (ec *executionContext) _Topic_search(ctx context.Context, field graphql.Col
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _Topic_synonyms(ctx context.Context, field graphql.CollectedField, obj *TopicValue) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Topic_synonyms_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Topic",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Topic().Synonyms(rctx, obj, args["searchString"].(*string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(SynonymConnection)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._SynonymConnection(ctx, field.Selections, &res)
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _Topic_updatedAt(ctx context.Context, field graphql.CollectedField, obj *TopicValue) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -6102,6 +7295,60 @@ func (ec *executionContext) _Topic_updatedAt(ctx context.Context, field graphql.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Topic_viewerCanAddSynonym(ctx context.Context, field graphql.CollectedField, obj *TopicValue) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Topic",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Topic().ViewerCanAddSynonym(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Topic_viewerCanDeleteSynonym(ctx context.Context, field graphql.CollectedField, obj *TopicValue) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Topic",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Topic().ViewerCanDeleteSynonym(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
 }
 
 var topicConnectionImplementors = []string{"TopicConnection"}
@@ -9125,6 +10372,47 @@ func (ec *executionContext) _SearchResultItem(ctx context.Context, sel ast.Selec
 	}
 }
 
+func UnmarshalAddSynonymInput(v interface{}) (AddSynonymInput, error) {
+	var it AddSynonymInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "clientMutationId":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.ClientMutationID = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "locale":
+			var err error
+			err = (&it.Locale).UnmarshalGQL(v)
+			if err != nil {
+				return it, err
+			}
+		case "topicId":
+			var err error
+			it.TopicID, err = graphql.UnmarshalID(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalDeleteLinkInput(v interface{}) (DeleteLinkInput, error) {
 	var it DeleteLinkInput
 	var asMap = v.(map[string]interface{})
@@ -9145,6 +10433,35 @@ func UnmarshalDeleteLinkInput(v interface{}) (DeleteLinkInput, error) {
 		case "linkId":
 			var err error
 			it.LinkID, err = graphql.UnmarshalID(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalDeleteSynonymInput(v interface{}) (DeleteSynonymInput, error) {
+	var it DeleteSynonymInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "clientMutationId":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.ClientMutationID = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "synonymId":
+			var err error
+			it.SynonymID, err = graphql.UnmarshalID(v)
 			if err != nil {
 				return it, err
 			}
@@ -9555,6 +10872,20 @@ type ActivityLineItemConnection {
   pageInfo: PageInfo!
 }
 
+input AddSynonymInput {
+  clientMutationId: String
+  name: String!
+  locale: LocaleIdentifier!
+  topicId: ID!
+}
+
+type AddSynonymPayload {
+  alerts: [Alert!]!
+  clientMutationId: String
+  synonymEdge: SynonymEdge
+  topic: Topic
+}
+
 type Alert {
   text: String!
   type: AlertType!
@@ -9583,6 +10914,18 @@ input DeleteLinkInput {
 type DeleteLinkPayload {
   clientMutationId: String
   deletedLinkId: ID!
+}
+
+input DeleteSynonymInput {
+  clientMutationId: String
+  synonymId: ID!
+}
+
+type DeleteSynonymPayload {
+  alerts: [Alert!]!
+  clientMutationId: String
+  deletedSynonymId: ID
+  topic: Topic
 }
 
 input DeleteTopicInput {
@@ -9632,8 +10975,16 @@ type LinkConnection {
   pageInfo: PageInfo!
 }
 
+enum LocaleIdentifier {
+  en
+  es
+  fr
+}
+
 type Mutation {
+  addSynonym(input: AddSynonymInput!): AddSynonymPayload
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
+  deleteSynonym(input: DeleteSynonymInput!): DeleteSynonymPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
@@ -9667,7 +11018,7 @@ type PageInfo {
 
 type Query {
   # Workaround for Relay Modern weirdness
-  alerts: [Alert!]
+  alerts: [Alert!]!
   defaultOrganization: Organization!
   fakeError: String
   viewer: User!
@@ -9708,7 +11059,7 @@ interface ResourceIdentifiable {
 union SearchResultItem = Topic | Link
 
 type SearchResultItemEdge {
-  node: SearchResultItem
+  node: SearchResultItem!
 }
 
 type SearchResultItemConnection {
@@ -9723,6 +11074,23 @@ input SelectRepositoryInput {
 type SelectRepositoryPayload {
   repository: Repository
   viewer: User!
+}
+
+type Synonym {
+  id: ID!
+  locale: String!
+  name: String!
+  topic: Topic!
+}
+
+type SynonymEdge {
+  cursor: String!
+  node: Synonym!
+}
+
+type SynonymConnection {
+  edges: [SynonymEdge]
+  pageInfo: PageInfo!
 }
 
 type Topic implements ResourceIdentifiable & Namespaceable {
@@ -9769,7 +11137,16 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): SearchResultItemConnection!
+  synonyms(
+    searchString: String,
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): SynonymConnection!
   updatedAt: DateTime!
+  viewerCanAddSynonym: Boolean!
+  viewerCanDeleteSynonym: Boolean!
 }
 
 type TopicEdge {

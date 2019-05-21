@@ -23,6 +23,20 @@ type ActivityLineItemEdge struct {
 	Node   ActivityLineItem `json:"node"`
 }
 
+type AddSynonymInput struct {
+	ClientMutationID *string          `json:"clientMutationId"`
+	Name             string           `json:"name"`
+	Locale           LocaleIdentifier `json:"locale"`
+	TopicID          string           `json:"topicId"`
+}
+
+type AddSynonymPayload struct {
+	Alerts           []Alert      `json:"alerts"`
+	ClientMutationID *string      `json:"clientMutationId"`
+	SynonymEdge      *SynonymEdge `json:"synonymEdge"`
+	Topic            *TopicValue  `json:"topic"`
+}
+
 type Alert struct {
 	Text string    `json:"text"`
 	Type AlertType `json:"type"`
@@ -41,6 +55,18 @@ type DeleteLinkInput struct {
 type DeleteLinkPayload struct {
 	ClientMutationID *string `json:"clientMutationId"`
 	DeletedLinkID    string  `json:"deletedLinkId"`
+}
+
+type DeleteSynonymInput struct {
+	ClientMutationID *string `json:"clientMutationId"`
+	SynonymID        string  `json:"synonymId"`
+}
+
+type DeleteSynonymPayload struct {
+	Alerts           []Alert     `json:"alerts"`
+	ClientMutationID *string     `json:"clientMutationId"`
+	DeletedSynonymID *string     `json:"deletedSynonymId"`
+	Topic            *TopicValue `json:"topic"`
 }
 
 type DeleteTopicInput struct {
@@ -108,6 +134,16 @@ type SelectRepositoryInput struct {
 type SelectRepositoryPayload struct {
 	Repository *Repository `json:"repository"`
 	Viewer     User        `json:"viewer"`
+}
+
+type SynonymConnection struct {
+	Edges    []*SynonymEdge `json:"edges"`
+	PageInfo PageInfo       `json:"pageInfo"`
+}
+
+type SynonymEdge struct {
+	Cursor string  `json:"cursor"`
+	Node   Synonym `json:"node"`
 }
 
 type TopicConnection struct {
@@ -222,5 +258,42 @@ func (e *AlertType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e AlertType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type LocaleIdentifier string
+
+const (
+	LocaleIdentifierEn LocaleIdentifier = "en"
+	LocaleIdentifierEs LocaleIdentifier = "es"
+	LocaleIdentifierFr LocaleIdentifier = "fr"
+)
+
+func (e LocaleIdentifier) IsValid() bool {
+	switch e {
+	case LocaleIdentifierEn, LocaleIdentifierEs, LocaleIdentifierFr:
+		return true
+	}
+	return false
+}
+
+func (e LocaleIdentifier) String() string {
+	return string(e)
+}
+
+func (e *LocaleIdentifier) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = LocaleIdentifier(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid LocaleIdentifier", str)
+	}
+	return nil
+}
+
+func (e LocaleIdentifier) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
