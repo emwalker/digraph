@@ -125,9 +125,9 @@ exports[`<Header /> renders 1`] = `
     </Link>
     <a
       className="text-gray-dark px-2"
-      href="/about"
+      href="https://blog.digraph.app"
     >
-      About
+      Blog
     </a>
     <ViewerDropdown
       viewer={

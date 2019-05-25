@@ -132,7 +132,6 @@ func (s *Server) handleRoot() http.Handler {
 	}
 
 	appTemplate := parseTemplate("appTemplate", "public/webpack/layout.html")
-	aboutPageTemplate := parseTemplate("aboutPageTemplate", "public/webpack/about.html")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		relpath := r.URL.Path[1:]
@@ -140,9 +139,6 @@ func (s *Server) handleRoot() http.Handler {
 		switch relpath {
 		case "robots.txt":
 			http.ServeFile(w, r, "public/webpack/robots.txt")
-			return
-		case "about":
-			aboutPageTemplate.Execute(w, variables)
 			return
 		case "":
 			ua := newUserAgent(r.Header.Get("User-Agent"))

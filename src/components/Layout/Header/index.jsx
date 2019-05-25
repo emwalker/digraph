@@ -107,7 +107,7 @@ class Header extends Component<Props> {
           >
             Everything
           </Link>
-          <a className="text-gray-dark px-2" href="/about">About</a>
+          <a className="text-gray-dark px-2" href="https://blog.digraph.app">Blog</a>
           {viewer.isGuest
             ? this.renderGuestUserNav()
             : this.renderUserNav(viewer)
