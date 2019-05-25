@@ -1,5 +1,5 @@
 create table synonyms (
-  id uuid primary key default uuid_generate_v1mc(),
+  id uuid primary key default gen_random_uuid(),
   topic_id uuid not null references topics(id) on delete cascade,
   locale varchar(8) not null,
   name varchar(256) not null,
