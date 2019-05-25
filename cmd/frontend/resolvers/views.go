@@ -41,6 +41,7 @@ func pageSizeOrDefault(first *int) int {
 func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string, first *int) []qm.QueryMod {
 	mods := view.Filter([]qm.QueryMod{
 		qm.Limit(pageSizeOrDefault(first)),
+		qm.Load("ParentTopics"),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 	})
 
@@ -182,13 +183,15 @@ func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*stri
 	)) ||
 	jsonb_build_object('nodes', (
 	  select jsonb_agg(b) from (
-	    select t.id, t.name, count(distinct lt.child_id) "linkCount",
+	    select
+	      t.id, t.name, count(distinct lt.child_id) "linkCount",
 	      count(distinct tt.child_id) "topicCount"
 	    from topics t
 	    left join topic_topics tt on t.id = tt.parent_id
 	    left join link_topics lt on t.id = lt.parent_id
 	    where t.repository_id = $1
 	    group by t.id, t.name
+	    order by t.id, t.name
 	  ) b
 	)) payload
 	`, generalRepositoryID).Bind(ctx, r.DB, &result)

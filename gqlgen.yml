@@ -1,8 +1,3 @@
-# .gqlgen.yml example
-#
-# Refer to https://gqlgen.com/config/
-# for detailed .gqlgen.yml documentation.
-
 schema:
 - schema.graphql
 exec:
@@ -18,6 +13,8 @@ models:
     model: github.com/emwalker/digraph/cmd/frontend/models.Organization
   Repository:
     model: github.com/emwalker/digraph/cmd/frontend/models.Repository
+  Synonym:
+    model: github.com/emwalker/digraph/cmd/frontend/models.Synonym
   Topic:
     model: github.com/emwalker/digraph/cmd/frontend/models.TopicValue
   User:

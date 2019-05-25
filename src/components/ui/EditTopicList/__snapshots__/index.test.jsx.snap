@@ -2,11 +2,17 @@
 
 exports[`<EditTopicList /> renders 1`] = `
 <div
-  className="pt-3"
+  className="form-group"
 >
+  <label
+    htmlFor="parent-topics"
+  >
+    Parent topics
+  </label>
   <Async
     backspaceRemovesValue={false}
     cacheOptions={false}
+    className="mt-1"
     components={
       Object {
         "ClearIndicator": null,
@@ -15,6 +21,7 @@ exports[`<EditTopicList /> renders 1`] = `
     defaultOptions={false}
     escapeClearsValue={false}
     filterOption={null}
+    id="parent-topics"
     isClearable={false}
     isMulti={true}
     loadOptions={[Function]}

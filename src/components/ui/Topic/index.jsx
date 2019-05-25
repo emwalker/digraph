@@ -113,7 +113,7 @@ export default createFragmentContainer(Topic, graphql`
       id
     }
 
-    parentTopics(first: 10) {
+    parentTopics(first: 100) {
       edges {
         node {
           name

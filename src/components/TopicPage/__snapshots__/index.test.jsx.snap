@@ -27,7 +27,6 @@ exports[`<TopicPage /> renders 1`] = `
     <RightColumn>
       <_default
         items={Array []}
-        repoName="Private collection"
         title="Parent topics"
       />
       <AddForm

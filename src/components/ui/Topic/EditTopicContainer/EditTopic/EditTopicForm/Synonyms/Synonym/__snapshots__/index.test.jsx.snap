@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Synonym /> renders 1`] = `
+<li
+  className="Box-row clearfix css-truncate p-2"
+>
+  <div
+    className="col-10 float-left"
+  >
+    Gnusto
+  </div>
+  <div
+    className="col-1 float-right remove-synonym"
+  >
+    <span
+      onClick={[Function]}
+      role="button"
+      tabIndex="0"
+    >
+      <Octicon
+        name="trashcan"
+      />
+    </span>
+  </div>
+  <div
+    className="col-1 float-right"
+  >
+    en
+  </div>
+</li>
+`;

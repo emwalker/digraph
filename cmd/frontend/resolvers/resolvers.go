@@ -66,6 +66,11 @@ func (r *Resolver) Topic() models.TopicResolver {
 	return &topicResolver{r}
 }
 
+// Synonym returns an instance of models.UserResolver.
+func (r *Resolver) Synonym() models.SynonymResolver {
+	return &synonymResolver{r}
+}
+
 // User returns an instance of models.UserResolver.
 func (r *Resolver) User() models.UserResolver {
 	return &userResolver{r}

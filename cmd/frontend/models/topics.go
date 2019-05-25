@@ -84,6 +84,7 @@ var TopicRels = struct {
 	Organization   string
 	Repository     string
 	ChildLinks     string
+	Synonyms       string
 	ParentTopics   string
 	ChildTopics    string
 	UserLinkTopics string
@@ -91,6 +92,7 @@ var TopicRels = struct {
 	Organization:   "Organization",
 	Repository:     "Repository",
 	ChildLinks:     "ChildLinks",
+	Synonyms:       "Synonyms",
 	ParentTopics:   "ParentTopics",
 	ChildTopics:    "ChildTopics",
 	UserLinkTopics: "UserLinkTopics",
@@ -101,6 +103,7 @@ type topicR struct {
 	Organization   *Organization
 	Repository     *Repository
 	ChildLinks     LinkSlice
+	Synonyms       SynonymSlice
 	ParentTopics   TopicSlice
 	ChildTopics    TopicSlice
 	UserLinkTopics UserLinkTopicSlice
@@ -441,6 +444,27 @@ func (o *Topic) ChildLinks(mods ...qm.QueryMod) linkQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"links\".*"})
+	}
+
+	return query
+}
+
+// Synonyms retrieves all the synonym's Synonyms with an executor.
+func (o *Topic) Synonyms(mods ...qm.QueryMod) synonymQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"synonyms\".\"topic_id\"=?", o.ID),
+	)
+
+	query := Synonyms(queryMods...)
+	queries.SetFrom(query.Query, "\"synonyms\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"synonyms\".*"})
 	}
 
 	return query
@@ -820,6 +844,101 @@ func (topicL) LoadChildLinks(ctx context.Context, e boil.ContextExecutor, singul
 					foreign.R = &linkR{}
 				}
 				foreign.R.ParentTopics = append(foreign.R.ParentTopics, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadSynonyms allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (topicL) LoadSynonyms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeTopic interface{}, mods queries.Applicator) error {
+	var slice []*Topic
+	var object *Topic
+
+	if singular {
+		object = maybeTopic.(*Topic)
+	} else {
+		slice = *maybeTopic.(*[]*Topic)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &topicR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &topicR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`synonyms`), qm.WhereIn(`topic_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load synonyms")
+	}
+
+	var resultSlice []*Synonym
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice synonyms")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on synonyms")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for synonyms")
+	}
+
+	if len(synonymAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Synonyms = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &synonymR{}
+			}
+			foreign.R.Topic = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.TopicID {
+				local.R.Synonyms = append(local.R.Synonyms, foreign)
+				if foreign.R == nil {
+					foreign.R = &synonymR{}
+				}
+				foreign.R.Topic = local
 				break
 			}
 		}
@@ -1385,6 +1504,59 @@ func removeChildLinksFromParentTopicsSlice(o *Topic, related []*Link) {
 			break
 		}
 	}
+}
+
+// AddSynonyms adds the given related objects to the existing relationships
+// of the topic, optionally inserting them as new records.
+// Appends related to o.R.Synonyms.
+// Sets related.R.Topic appropriately.
+func (o *Topic) AddSynonyms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Synonym) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.TopicID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"synonyms\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"topic_id"}),
+				strmangle.WhereClause("\"", "\"", 2, synonymPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.TopicID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &topicR{
+			Synonyms: related,
+		}
+	} else {
+		o.R.Synonyms = append(o.R.Synonyms, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &synonymR{
+				Topic: o,
+			}
+		} else {
+			rel.R.Topic = o
+		}
+	}
+	return nil
 }
 
 // AddParentTopics adds the given related objects to the existing relationships

@@ -112,7 +112,7 @@ class TopicPage extends Component<Props, State> {
             <SidebarList
               title="Parent topics"
               orgLogin={this.props.orgLogin}
-              repoName={currentRepository.displayName}
+              repoName={currentRepository.name}
               items={liftNodes(parentTopics)}
             />
             { this.props.viewer.isGuest
