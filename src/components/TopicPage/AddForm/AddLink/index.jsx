@@ -1,7 +1,6 @@
 // @flow
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
-import autosize from 'autosize'
 
 import type { Relay, RepositoryType, TopicType, UserType } from 'components/types'
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
@@ -26,10 +25,6 @@ class AddLink extends Component<Props, State> {
 
   state = {
     url: '',
-  }
-
-  componentDidMount() {
-    autosize(this.textarea)
   }
 
   onKeyPress = (event: Object) => {
@@ -59,8 +54,6 @@ class AddLink extends Component<Props, State> {
       edgeName: 'linkEdge',
     }]
   }
-
-  textarea: ?HTMLTextAreaElement
 
   updateUrl = (event: Object) => {
     this.setState({ url: event.currentTarget.value })
@@ -94,15 +87,13 @@ class AddLink extends Component<Props, State> {
         </span>
       </dt>
       <dd>
-        <textarea
+        <input
           className="form-control test-link-url input-sm"
           disabled={this.props.disabled}
           id="create-link-url"
           onChange={this.updateUrl}
           onKeyPress={this.onKeyPress}
           placeholder="Url"
-          ref={(r) => { this.textarea = r }}
-          rows={1}
           type="url"
           value={this.state.url}
         />

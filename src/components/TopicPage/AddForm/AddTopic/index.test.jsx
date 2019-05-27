@@ -14,7 +14,7 @@ describe('<AddTopic />', () => {
   })
 
   it('includes an input for the name', () => {
-    expect(wrapper.find('textarea').hasClass('test-topic-name')).toBeTruthy()
+    expect(wrapper.find('input').hasClass('test-topic-name')).toBeTruthy()
   })
 
   it('includes a tooltip', () => {

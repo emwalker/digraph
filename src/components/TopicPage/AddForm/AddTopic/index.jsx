@@ -1,7 +1,6 @@
 // @flow
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
-import autosize from 'autosize'
 
 import type { Relay, RepositoryType, TopicType, UserType } from 'components/types'
 import upsertTopicMutation from 'mutations/upsertTopicMutation'
@@ -32,10 +31,6 @@ class AddTopic extends Component<Props, State> {
     name: '',
   }
 
-  componentDidMount() {
-    autosize(this.textarea)
-  }
-
   onKeyPress = (event: Object) => {
     if (event.key === 'Enter')
       this.createTopic()
@@ -63,8 +58,6 @@ class AddTopic extends Component<Props, State> {
       edgeName: 'topicEdge',
     }]
   }
-
-  textarea: ?HTMLTextAreaElement
 
   updateName = (event: Object) => {
     this.setState({ name: event.currentTarget.value })
@@ -98,15 +91,13 @@ class AddTopic extends Component<Props, State> {
         </span>
       </dt>
       <dd>
-        <textarea
+        <input
           className="form-control test-topic-name input-sm"
           disabled={this.props.disabled}
           id="create-topic-name"
           onChange={this.updateName}
           onKeyPress={this.onKeyPress}
           placeholder="Name or description"
-          ref={(r) => { this.textarea = r }}
-          rows={1}
           value={this.state.name}
         />
       </dd>
