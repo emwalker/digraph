@@ -2,6 +2,7 @@
 
 Keep track of links in a mind-map like network of topics.
 
+* Public site [here](https://digraph.app)
 * Recent updates are covered [here](https://blog.digraph.app)
 * Some of the use cases that are contemplated are described [here](https://github.com/emwalker/digraph/wiki)
 
