@@ -21,4 +21,4 @@ the database. I'll be happy to put something together as a template database if 
 
 ## Screenshot
 
-![Screenshot](https://user-images.githubusercontent.com/760949/58448176-428d1b80-80c4-11e9-980f-674614e81b0a.png)
+![Screenshot](https://user-images.githubusercontent.com/760949/58448929-aca6c000-80c6-11e9-83b2-6fa408f2cced.png)
