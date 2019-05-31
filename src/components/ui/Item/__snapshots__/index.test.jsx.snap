@@ -29,7 +29,13 @@ exports[`<Item /> renders 1`] = `
     </div>
     <div
       className="col-2 text-center"
-    />
+    >
+      <span
+        className="disabled-link"
+      >
+        Edit
+      </span>
+    </div>
   </div>
   <div />
 </li>

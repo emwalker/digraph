@@ -127,8 +127,9 @@ class Item extends Component<Props> {
           </div>
         </div>
         <div className="col-2 text-center">
-          { this.showEditButton &&
-            <button onClick={this.props.toggleForm} className="btn-link">Edit</button>
+          { this.showEditButton
+            ? <button onClick={this.props.toggleForm} className="btn-link">Edit</button>
+            : <span className="disabled-link">Edit</span>
           }
         </div>
       </div>
