@@ -63,6 +63,7 @@ class Link extends Component<Props, State> {
 
   render = () => (
     <Item
+      canEdit={!this.props.viewer.isGuest}
       className="Box-row--link"
       displayColor={this.displayColor}
       formIsOpen={this.state.formIsOpen}

@@ -1,5 +1,5 @@
 // @flow
-import React, { Component, type Node } from 'react'
+import React, { Component, Fragment, type Node } from 'react'
 import classNames from 'classnames'
 
 import type { TopicType } from 'components/types'
@@ -9,6 +9,7 @@ import TopicBadge from '../TopicBadge'
 /* eslint no-underscore-dangle: 0 */
 
 type Props = {
+  canEdit: boolean,
   children: Node,
   className: string,
   description?: ?string,
@@ -112,7 +113,47 @@ class Item extends Component<Props> {
     />
   )
 
-  render() {
+  renderEditable = () => (
+    <Fragment>
+      <div className="clearfix d-flex flex-items-center">
+        <div className="col-10">
+          <div>
+            { this.titleLink }
+            <div>{ this.props.description }</div>
+          </div>
+          { this.url }
+          <div>
+            { this.props.topics.map(this.renderTopicBadge) }
+          </div>
+        </div>
+        <div className="col-2 text-center">
+          { this.showEditButton &&
+            <button onClick={this.props.toggleForm} className="btn-link">Edit</button>
+          }
+        </div>
+      </div>
+      <div>
+        { this.props.formIsOpen && this.props.children }
+      </div>
+    </Fragment>
+  )
+
+  renderWide = () => (
+    <div className="clearfix d-flex flex-items-center">
+      <div className="col-12">
+        <div>
+          { this.titleLink }
+          <div>{ this.props.description }</div>
+        </div>
+        { this.url }
+        <div>
+          { this.props.topics.map(this.renderTopicBadge) }
+        </div>
+      </div>
+    </div>
+  )
+
+  render = () => {
     const { url } = this.props
 
     return (
@@ -121,26 +162,10 @@ class Item extends Component<Props> {
         style={this.style}
         key={url}
       >
-        <div className="clearfix d-flex flex-items-center">
-          <div className="col-10">
-            <div>
-              { this.titleLink }
-              <div>{ this.props.description }</div>
-            </div>
-            { this.url }
-            <div>
-              { this.props.topics.map(this.renderTopicBadge) }
-            </div>
-          </div>
-          <div className="col-2 text-center">
-            { this.showEditButton &&
-              <button onClick={this.props.toggleForm} className="btn-link">Edit</button>
-            }
-          </div>
-        </div>
-        <div>
-          { this.props.formIsOpen && this.props.children }
-        </div>
+        { this.props.canEdit
+          ? this.renderEditable()
+          : this.renderWide()
+        }
       </li>
     )
   }

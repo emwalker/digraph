@@ -4,6 +4,7 @@ import { shallow } from 'enzyme'
 import Item from './index'
 
 const props = {
+  canEdit: true,
   children: 'child',
   className: '',
   formIsOpen: false,

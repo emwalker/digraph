@@ -61,6 +61,7 @@ class Topic extends Component<Props, State> {
 
     return (
       <Item
+        canEdit={!this.props.viewer.isGuest}
         className="Box-row--topic"
         description={this.props.topic.description}
         displayColor={this.displayColor}
