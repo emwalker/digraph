@@ -1,6 +1,7 @@
 // @flow
 import React from 'react'
 import { graphql } from 'react-relay'
+import DocumentTitle from 'react-document-title'
 
 import LineItems from './LineItems'
 import type { RecentPage_recent_QueryResponse as Response } from './__generated__/RecentPage_recent_Query.graphql'
@@ -9,9 +10,12 @@ import Container from './Container'
 type View = $NonMaybeType<$PropertyType<Response, 'view'>>
 
 type Props = {|
-  props: {
-    +view: View,
-  },
+  // $FlowFixMe
+  +view: View,
+|}
+
+type WrapperProps = {|
+  props: ?Props,
 |}
 
 const Placeholder = () => (
@@ -20,14 +24,18 @@ const Placeholder = () => (
   </Container>
 )
 
-export default ({ props }: Props) => {
-  // eslint-disable-next-line react/prop-types
-  if (!props || !props.view)
-    return <Placeholder />
+const Recents = ({ view }: Props) => (
+  <DocumentTitle title="Recent activity | Digraph">
+    <LineItems view={view} />
+  </DocumentTitle>
+)
 
-  // $FlowFixMe
-  return <LineItems view={props.view} />
-}
+export default ({ props }: WrapperProps) => (
+  // eslint-disable-next-line react/prop-types
+  props && props.view
+    ? <Recents view={props.view} />
+    : <Placeholder />
+)
 
 export const query = graphql`
 query RecentPage_recent_Query(

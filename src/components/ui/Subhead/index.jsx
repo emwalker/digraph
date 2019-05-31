@@ -2,6 +2,7 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { pathOr } from 'ramda'
+import DocumentTitle from 'react-document-title'
 
 import type { ViewType } from 'components/types'
 import SearchBox from 'components/ui/SearchBox'
@@ -41,17 +42,23 @@ class Subhead extends Component<Props> {
       : ''
   }
 
+  get title(): string {
+    return `${this.props.heading} | Digraph`
+  }
+
   render = () => (
-    <div className="Subhead clearfix gutter">
-      <div className="Subhead-heading col-lg-8 col-12">
-        { this.props.heading }
+    <DocumentTitle title={this.title}>
+      <div className="Subhead clearfix gutter">
+        <div className="Subhead-heading col-lg-8 col-12">
+          { this.props.heading }
+        </div>
+        <SearchBox
+          className="col-lg-4 col-12"
+          onEnter={this.onSearch}
+          value={this.searchString}
+        />
       </div>
-      <SearchBox
-        className="col-lg-4 col-12"
-        onEnter={this.onSearch}
-        value={this.searchString}
-      />
-    </div>
+    </DocumentTitle>
   )
 }
 
