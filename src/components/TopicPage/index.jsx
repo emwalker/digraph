@@ -28,6 +28,10 @@ type Props = {
   viewer: UserType,
 }
 
+type SynonymType = {
+  +name: string,
+}
+
 type State = {}
 
 class TopicPage extends Component<Props, State> {
@@ -45,6 +49,10 @@ class TopicPage extends Component<Props, State> {
 
   get topics(): TopicType[] {
     return liftNodes(this.props.topic.childTopics)
+  }
+
+  get synonyms(): SynonymType[] {
+    return liftNodes(this.props.topic.synonyms)
   }
 
   renderLink = (link: LinkType) => (
@@ -77,6 +85,20 @@ class TopicPage extends Component<Props, State> {
     />
   )
 
+  renderHeadingDetail = () => {
+    const { synonyms } = this
+    const { length } = synonyms
+
+    if (length < 2)
+      return null
+
+    return (
+      <div className="synonyms h6">
+        {synonyms.slice(1, length).map(({ name }) => <span className="synonym">{name}</span>)}
+      </div>
+    )
+  }
+
   renderNotification = () => (
     <div className="Box p-3 mt-3">
       You must be <a href="/login">signed in</a> to add and move topics and links.
@@ -104,6 +126,7 @@ class TopicPage extends Component<Props, State> {
           headingLink={resourcePath}
           location={this.props.location}
           orgLogin={this.props.orgLogin}
+          renderHeadingDetail={this.renderHeadingDetail}
           router={this.props.router}
           view={this.props.view}
         />
@@ -184,6 +207,14 @@ export default createFragmentContainer(TopicPage, graphql`
     name
     resourcePath
     ...AddForm_topic
+
+    synonyms(first: 100) {
+      edges {
+        node {
+          name
+        }
+      }
+    }
 
     parentTopics(first: 100) {
       edges {

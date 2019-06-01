@@ -16,6 +16,7 @@ type Props = {
     query: Object,
     search: string,
   },
+  renderHeadingDetail?: Function,
   router: {
     push: Function,
   },
@@ -46,11 +47,16 @@ class Subhead extends Component<Props> {
     return `${this.props.heading} | Digraph`
   }
 
+  renderHeadingDetail = () => (
+    this.props.renderHeadingDetail && this.props.renderHeadingDetail()
+  )
+
   render = () => (
     <DocumentTitle title={this.title}>
       <div className="Subhead clearfix gutter">
-        <div className="Subhead-heading col-lg-8 col-12">
-          { this.props.heading }
+        <div className="Subhead-heading col-lg-8 col-12 d-inline-flex">
+          { this.renderHeadingDetail() }
+          <div>{ this.props.heading }</div>
         </div>
         <SearchBox
           className="col-lg-4 col-12"

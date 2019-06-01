@@ -101,6 +101,7 @@ export type TopicType = {
   resourcePath: string,
   search: SearchResultItemConnection,
   selectedTopics: TopicConnection,
+  synonyms: any,
 }
 
 export type UserType = {

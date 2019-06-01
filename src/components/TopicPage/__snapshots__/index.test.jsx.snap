@@ -14,6 +14,7 @@ exports[`<TopicPage /> renders 1`] = `
   />
   <Subhead
     heading="Frotz"
+    renderHeadingDetail={[Function]}
     view={
       Object {
         "currentRepository": Object {
