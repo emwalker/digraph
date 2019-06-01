@@ -117,6 +117,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.theatlantic.com/ideas/archive/2019/05/coming-generation-war/588670/?te=1&nl=morning-briefing&emc=edit_NN_p_20190515&section=whatElse",
 			canonicalURL: "https://www.theatlantic.com/ideas/archive/2019/05/coming-generation-war/588670/",
 		},
+		{
+			name:         "A tweet",
+			inputURL:     "https://twitter.com/Marco_Langbroek/status/1132389022519762945?ref_src=twsrc%5Etfw%7Ctwcamp%5Etweetembed%7Ctwterm%5E1132389022519762945&ref_url=https%3A%2F%2Fwww.geekwire.com%2F2019%2Fsightings-spacexs-starlink-satellites-spark-awe-astronomical-angst%2F",
+			canonicalURL: "https://twitter.com/Marco_Langbroek/status/1132389022519762945",
+		},
 	}
 
 	for _, testCase := range testCases {

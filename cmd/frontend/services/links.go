@@ -58,6 +58,7 @@ var (
 		"nytimes.com",
 		"reuters.com",
 		"theguardian.com",
+		"twitter.com",
 	}
 
 	omitFields = []string{
