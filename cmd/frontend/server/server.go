@@ -12,6 +12,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
+	"github.com/go-redis/redis"
 	"github.com/gorilla/handlers"
 	"github.com/volatiletech/sqlboiler/boil"
 )
@@ -28,6 +29,7 @@ type Server struct {
 	ImpersonateUserID *string
 	LogLevel          int
 	Port              string
+	rd                *redis.Client
 	resolver          *resolvers.Resolver
 	schema            graphql.ExecutableSchema
 	server            *http.Server
@@ -35,7 +37,8 @@ type Server struct {
 
 // New returns a new *Server configured with the parameters passed in.
 func New(
-	port string, devMode bool, username, password string, logLevel int, connectionString string,
+	port string, devMode bool, username, password, redisHost, redisPassword string, logLevel int,
+	connectionString string,
 ) *Server {
 	db, err := sql.Open("postgres", connectionString)
 	must(err)
@@ -51,7 +54,13 @@ func New(
 
 	fetcher := pageinfo.New(client)
 
-	resolver := &resolvers.Resolver{DB: db, Fetcher: fetcher}
+	rd := redis.NewClient(&redis.Options{
+		Addr:     redisHost,
+		Password: redisPassword,
+		DB:       0,
+	})
+
+	resolver := resolvers.New(db, &resolvers.GuestUser, fetcher, rd)
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})
 
 	server := &http.Server{
@@ -69,6 +78,7 @@ func New(
 		LogLevel:          logLevel,
 		Port:              port,
 		resolver:          resolver,
+		rd:                rd,
 		schema:            schema,
 		server:            server,
 	}
@@ -98,12 +108,24 @@ func (s *Server) Routes() {
 
 // Run starts up the http server.
 func (s *Server) Run() {
-	must(s.db.Ping())
-
 	log.Printf("Running server with log level %d", s.LogLevel)
 	if s.LogLevel > 1 {
 		boil.DebugMode = true
 	}
+
+	err := s.db.Ping()
+	if err != nil {
+		log.Printf("Postgres is not available")
+		panic(err)
+	}
+	log.Printf("Postgres is available")
+
+	_, err = s.rd.Ping().Result()
+	if err != nil {
+		log.Printf("Redis is not available")
+		panic(err)
+	}
+	log.Printf("Redis is available")
 
 	log.Printf("Connect to http://localhost:%s/playground for the GraphQL playground", s.Port)
 	log.Printf("Listening on port %s", s.Port)

@@ -8,11 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis"
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
+	"github.com/go-redis/redis"
 	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -22,10 +24,10 @@ const orgID = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 type testFetcherT struct{}
 
 var (
-	testDB      *sql.DB
-	testActor   *models.User
-	testActor2  *models.User
-	testFetcher *testFetcherT
+	testDB       *sql.DB
+	testActor    *models.User
+	testActor2   *models.User
+	rootResolver *resolvers.Resolver
 )
 
 type mutator struct {
@@ -52,10 +54,17 @@ func (m mutator) defaultRepo() *models.Repository {
 }
 
 func TestMain(m *testing.M) {
+	mini, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+
+	testRD := redis.NewClient(&redis.Options{
+		Addr: mini.Addr(),
+	})
+
 	testDB = newTestDb()
 	defer testDB.Close()
-
-	var err error
 
 	testActor, err = models.Users(
 		qm.Load("SelectedRepository"),
@@ -72,6 +81,8 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	rootResolver = resolvers.New(testDB, testActor, &testFetcherT{}, testRD)
+
 	os.Exit(m.Run())
 }
 
@@ -85,7 +96,7 @@ func newTestDb() *sql.DB {
 
 func newMutator(t *testing.T, actor *models.User) mutator {
 	resolver := &resolvers.MutationResolver{
-		&resolvers.Resolver{DB: testDB, Actor: actor, Fetcher: testFetcher},
+		&resolvers.Resolver{DB: testDB, Actor: actor, Fetcher: rootResolver.Fetcher},
 	}
 
 	ctx := context.Background()

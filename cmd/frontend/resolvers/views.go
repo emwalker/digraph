@@ -3,12 +3,19 @@ package resolvers
 import (
 	"context"
 	"log"
+	"time"
+	"unicode/utf8"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
+	"github.com/go-redis/redis"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+)
+
+var (
+	topicGraphKey = "topicGraph"
 )
 
 type viewResolver struct{ *Resolver }
@@ -164,12 +171,24 @@ func (r *viewResolver) TopicCount(ctx context.Context, view *models.View) (int, 
 
 // TopicGraph returns a json string that can be used for building a visual representation of the graph.
 func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*string, error) {
+	cachedGraph, err := r.RD.Get(topicGraphKey).Result()
+	if err != nil && err != redis.Nil {
+		return nil, err
+	}
+
+	if err == nil {
+		log.Printf("Returning cached topic graph at '%s'", topicGraphKey)
+		return &cachedGraph, nil
+	}
+
+	log.Printf("Querying for topic graph and setting '%s' redis key", topicGraphKey)
+
 	result := struct {
 		Payload string
 	}{}
 
 	// TODO - search within the repositories specified in view.RepositoryIds
-	err := queries.Raw(`
+	err = queries.Raw(`
 	select jsonb_build_object('links', (
 	  select jsonb_agg(a) from (
 	    select tt.parent_id source, tt.child_id target, count(distinct lt.child_id) "linkCount"
@@ -198,6 +217,13 @@ func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*stri
 
 	if err != nil {
 		log.Printf("There was a problem fetching topic graph: %s", err)
+		return nil, err
+	}
+
+	log.Printf("Setting '%s' redis key with %d char payload", topicGraphKey, utf8.RuneCountInString(result.Payload))
+	_, err = r.RD.SetNX(topicGraphKey, result.Payload, 10*time.Minute).Result()
+	if err != nil {
+		log.Printf("There was a problem setting the '%s' redis key: %s", topicGraphKey, err)
 		return nil, err
 	}
 

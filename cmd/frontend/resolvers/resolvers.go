@@ -8,6 +8,7 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
+	"github.com/go-redis/redis"
 )
 
 // CurrentUserKey is the key used for storing the current user in the session.
@@ -29,11 +30,17 @@ type Resolver struct {
 	DB      *sql.DB
 	Actor   *models.User
 	Fetcher pageinfo.Fetcher
+	RD      *redis.Client
 }
 
 // New returns a new resolver.
-func New(db *sql.DB, actor *models.User, fetcher pageinfo.Fetcher) *Resolver {
-	return &Resolver{db, actor, fetcher}
+func New(db *sql.DB, actor *models.User, fetcher pageinfo.Fetcher, rd *redis.Client) *Resolver {
+	return &Resolver{
+		DB:      db,
+		Actor:   actor,
+		Fetcher: fetcher,
+		RD:      rd,
+	}
 }
 
 // Mutation returns a resolver that can be used for issuing mutations.

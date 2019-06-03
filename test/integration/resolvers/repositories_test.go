@@ -11,7 +11,6 @@ import (
 
 func TestRootTopic(t *testing.T) {
 	m := newMutator(t, testActor)
-	resolver := resolvers.New(testDB, testActor, testFetcher)
 
 	defaultRepo, err := testActor.DefaultRepo(m.ctx, testDB)
 	if err != nil {
@@ -24,14 +23,14 @@ func TestRootTopic(t *testing.T) {
 	}
 
 	path := fmt.Sprintf("/%s/topics/%s", testActor.Login, rootTopic.ID)
-	repoResolver := resolver.Repository()
+	repoResolver := rootResolver.Repository()
 
 	topic, err := repoResolver.RootTopic(context.Background(), defaultRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	topicResolver := resolver.Topic()
+	topicResolver := rootResolver.Topic()
 	var rootPath string
 
 	if rootPath, err = topicResolver.ResourcePath(m.ctx, &topic); err != nil {

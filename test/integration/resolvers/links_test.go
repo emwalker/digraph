@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -142,7 +141,7 @@ func TestAvailableTopicsForLinks(t *testing.T) {
 	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
-	query := resolvers.New(m.db, testActor, testFetcher).Link()
+	query := rootResolver.Link()
 
 	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -156,7 +155,7 @@ func TestAvailableTopicsForLinks(t *testing.T) {
 
 func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 	m := newMutator(t, testActor)
-	s := services.New(testDB, testActor, testFetcher)
+	s := services.New(testDB, testActor, rootResolver.Fetcher)
 
 	org, err := models.Organizations(qm.Where("login = ?", testActor.Login)).One(m.ctx, testDB)
 	if err != nil {
@@ -181,7 +180,7 @@ func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 	link, cleanup := m.createLink(testActor.Login, r2.Repository.Name, "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
-	query := resolvers.New(m.db, testActor, testFetcher).Link()
+	query := rootResolver.Link()
 
 	conn, err := query.AvailableParentTopics(m.ctx, link, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -237,7 +236,7 @@ func TestParentTopicsDefaultOrdering(t *testing.T) {
 	defer cleanup()
 	m.addParentTopicToLink(link, tB)
 
-	query := resolvers.New(m.db, testActor, testFetcher).Link()
+	query := rootResolver.Link()
 	topicConnection, err := query.ParentTopics(m.ctx, link, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)

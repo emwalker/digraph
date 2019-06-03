@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -310,7 +309,7 @@ func TestSearchChildTopics(t *testing.T) {
 		},
 	}
 
-	topicResolver := resolvers.New(testDB, testActor, testFetcher).Topic()
+	topicResolver := rootResolver.Topic()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -371,7 +370,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 		},
 	}
 
-	topicResolver := resolvers.New(testDB, testActor, testFetcher).Topic()
+	topicResolver := rootResolver.Topic()
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
@@ -448,7 +447,7 @@ func TestSearchInTopic(t *testing.T) {
 		},
 	}
 
-	topicResolver := resolvers.New(testDB, testActor, testFetcher).Topic()
+	topicResolver := rootResolver.Topic()
 
 	for _, td := range cases {
 		t.Run(td.name, func(t *testing.T) {
@@ -493,7 +492,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 	defer cleanup()
 	m.addParentTopicToTopic(topic, root)
 
-	topicResolver := resolvers.New(testDB, testActor, testFetcher).Topic()
+	topicResolver := rootResolver.Topic()
 
 	var conn models.SearchResultItemConnection
 
@@ -522,7 +521,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 }
 
 func TestParentTopicPreloading(t *testing.T) {
-	r := resolvers.New(testDB, testActor, testFetcher).Topic()
+	r := rootResolver.Topic()
 	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
@@ -552,7 +551,7 @@ func TestParentTopicPreloading(t *testing.T) {
 
 func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 	m := newMutator(t, testActor)
-	s := services.New(testDB, testActor, testFetcher)
+	s := services.New(testDB, testActor, rootResolver.Fetcher)
 
 	org1, err := models.Organizations(qm.Where("login = ?", testActor.Login)).One(m.ctx, testDB)
 	if err != nil {
@@ -582,7 +581,7 @@ func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 	topic2, cleanup := m.createTopic("wiki", r2.Repository.Name, "Topic 2")
 	defer cleanup()
 
-	query := resolvers.New(m.db, testActor, testFetcher).Topic()
+	query := rootResolver.Topic()
 
 	conn, err := query.AvailableParentTopics(m.ctx, topic2, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -608,7 +607,7 @@ func TestAvailableTopicsForTopicWithFilter(t *testing.T) {
 
 	m.addParentTopicToTopic(t2, t1)
 
-	query := resolvers.New(m.db, testActor, testFetcher).Topic()
+	query := rootResolver.Topic()
 
 	cases := []struct {
 		name         string
@@ -668,7 +667,7 @@ func TestAvailableParentTopicsDoesNotIncludeSelf(t *testing.T) {
 	defer cleanup()
 
 	m.addParentTopicToTopic(t2, t1)
-	query := resolvers.New(m.db, testActor, testFetcher).Topic()
+	query := rootResolver.Topic()
 
 	conn, err := query.AvailableParentTopics(m.ctx, t2, &matchingString, nil, nil, nil, nil)
 	if err != nil {
@@ -727,7 +726,7 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 	_, cleanup = m.createLink(testActor.Login, repoName, "Private link", "https://www.nytimes.com")
 	defer cleanup()
 
-	query := resolvers.New(m.db, testActor2, testFetcher).Topic()
+	query := rootResolver.Topic()
 
 	var root2 *models.TopicValue
 	if root2, err = m.defaultRepo().RootTopic(ctx, testDB, testActor2.DefaultView()); err != nil {
@@ -786,7 +785,7 @@ func TestViewerCanAddSynonym(t *testing.T) {
 	topic, cleanup := m.createTopic(testActor.Login, repoName, "A topic")
 	defer cleanup()
 
-	query := resolvers.New(testDB, testActor, testFetcher).Topic()
+	query := rootResolver.Topic()
 
 	canAdd, err := query.ViewerCanAddSynonym(ctx, topic)
 	if err != nil {
@@ -797,7 +796,7 @@ func TestViewerCanAddSynonym(t *testing.T) {
 		t.Fatal("First viewer should be able to add a synonym")
 	}
 
-	query = resolvers.New(testDB, testActor2, testFetcher).Topic()
+	query = rootResolver.Topic()
 
 	// Change out the viewer doing the query
 	topic.View.ViewerID = testActor2.ID
@@ -820,7 +819,7 @@ func TestViewerCanDeleteSynonymWhenLessThanTwoExist(t *testing.T) {
 	topic, cleanup := m.createTopic(testActor.Login, repoName, "A topic")
 	defer cleanup()
 
-	query := resolvers.New(testDB, testActor, testFetcher).Topic()
+	query := rootResolver.Topic()
 
 	canAdd, err := query.ViewerCanDeleteSynonym(ctx, topic)
 	if err != nil {

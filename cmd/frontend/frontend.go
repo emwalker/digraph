@@ -34,11 +34,18 @@ func main() {
 		panic("POSTGRES_CONNECTION not set")
 	}
 
+	redisHost := os.Getenv("DIGRAPH_REDIS_HOST")
+	if redisHost == "" {
+		redisHost = "localhost:6379"
+	}
+
 	s := server.New(
 		getPlaygroundPort(),
 		*devMode,
 		os.Getenv("DIGRAPH_BASIC_AUTH_USERNAME"),
 		os.Getenv("DIGRAPH_BASIC_AUTH_PASSWORD"),
+		redisHost,
+		os.Getenv("DIGRAPH_REDIS_PASSWORD"),
 		*logLevel,
 		connectionString,
 	)
