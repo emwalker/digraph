@@ -55,6 +55,7 @@ var (
 		"businessinsider.com",
 		"dictionary.com",
 		"independent.co.uk",
+		"motherjones.com",
 		"nytimes.com",
 		"reuters.com",
 		"theguardian.com",

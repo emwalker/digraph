@@ -122,6 +122,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://twitter.com/Marco_Langbroek/status/1132389022519762945?ref_src=twsrc%5Etfw%7Ctwcamp%5Etweetembed%7Ctwterm%5E1132389022519762945&ref_url=https%3A%2F%2Fwww.geekwire.com%2F2019%2Fsightings-spacexs-starlink-satellites-spark-awe-astronomical-angst%2F",
 			canonicalURL: "https://twitter.com/Marco_Langbroek/status/1132389022519762945",
 		},
+		{
+			name:         "An article in Mother Jones",
+			inputURL:     "https://www.motherjones.com/kevin-drum/2019/06/nancy-pelosi-is-smart-part-895/?fbclid=IwAR0O-JdeFKAu8wBjUKrEZeqpY9zINW2N09MwsA-OeJHjEX4JliXg_ybt92Q",
+			canonicalURL: "https://www.motherjones.com/kevin-drum/2019/06/nancy-pelosi-is-smart-part-895/",
+		},
 	}
 
 	for _, testCase := range testCases {
