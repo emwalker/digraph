@@ -15,3 +15,4 @@
 /data/*backup.*
 sqlboiler.yaml
 app.yaml
+/cmd/frontend/models/*

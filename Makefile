@@ -49,6 +49,10 @@ migrate-down:
 			-source file://migrations down 1 ;\
 	)
 
+generate:
+	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml
+	go generate ./...
+
 .PHONY:
 
 test-integration: .PHONY
@@ -61,9 +65,9 @@ test: .PHONY
 format:
 	yarn flow
 	go fmt ./...
-	git diff-index --quiet HEAD --
+	git diff --quiet
 
-check: lint format test test-integration
+check: generate lint format test test-integration
 
 load:
 	dropdb $(DBNAME)
