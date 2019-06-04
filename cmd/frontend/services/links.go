@@ -59,6 +59,7 @@ var (
 		"nytimes.com",
 		"reuters.com",
 		"theguardian.com",
+		"thehill.com",
 		"twitter.com",
 	}
 
