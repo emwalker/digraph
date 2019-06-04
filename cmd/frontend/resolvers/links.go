@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -112,4 +113,45 @@ func (r *linkResolver) UpdatedAt(_ context.Context, link *models.LinkValue) (str
 // URL returns the title of the link.
 func (r *linkResolver) URL(_ context.Context, link *models.LinkValue) (string, error) {
 	return link.URL, nil
+}
+
+// ReviewedAt is the time at which the link was reviewed.
+func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue) (*models.LinkReview, error) {
+	var review *models.UserLinkReview
+	var err error
+
+	if link.R == nil {
+		log.Printf("Fetching reviewedAt for link %s", link.Summary())
+		review, err = link.UserLinkReviews(qm.Where("user_id = ?", r.Actor.ID)).One(ctx, r.DB)
+		if err != nil {
+			if err.Error() == "sql: no rows in result set" {
+				return nil, nil
+			}
+			return nil, err
+		}
+	} else if len(link.R.UserLinkReviews) == 0 {
+		return nil, nil
+	} else {
+		review = link.R.UserLinkReviews[0]
+	}
+
+	reviewedAt := review.ReviewedAt
+	if reviewedAt.IsZero() {
+		return &models.LinkReview{User: *r.Actor}, nil
+	}
+
+	value, err := reviewedAt.Value()
+	if err != nil {
+		log.Printf("Problem parsing timestamp: %s", err)
+		return nil, err
+	}
+
+	ts, ok := value.(time.Time)
+	if !ok {
+		log.Printf("Not a timestamp: %v", ts)
+		return nil, errors.New("Expected a timestamp")
+	}
+
+	str := ts.Format(time.RFC3339)
+	return &models.LinkReview{User: *r.Actor, ReviewedAt: &str}, nil
 }

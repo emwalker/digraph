@@ -8,6 +8,7 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var (
@@ -186,7 +187,7 @@ func TestSearchLinks(t *testing.T) {
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			conn, err := viewResolver.Links(m.ctx, view, &td.SearchString, nil, nil, nil, nil)
+			conn, err := viewResolver.Links(m.ctx, view, &td.SearchString, nil, nil, nil, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -394,5 +395,51 @@ func TestActivityVisibility(t *testing.T) {
 		if strings.Contains(node.Description, linkTitle) {
 			t.Fatalf("Activity feed contains a link submitted to a private repo: %v", link.URL)
 		}
+	}
+}
+
+func TestReviewNeeded(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+
+	linkTitle := "4b517480670"
+	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, linkTitle, "https://www.4b517480670.com")
+	defer cleanup()
+
+	count, err := link.UserLinkReviews(qm.Where("user_id = ?", testActor.ID)).Count(ctx, m.db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count < 1 {
+		t.Fatal("Expected a pending link review to have been created")
+	}
+
+	view := &models.View{ViewerID: testActor.Login, RepositoryIds: []string{m.defaultRepo().ID}}
+	resolver := rootResolver.View()
+
+	reviewed := false
+	conn, err := resolver.Links(ctx, view, nil, nil, nil, nil, nil, &reviewed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(conn.Edges) < 1 {
+		t.Fatal("There should at least one unreviewed link")
+	}
+
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	_, err = c.ReviewLink(ctx, link.Link, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	conn, err = resolver.Links(ctx, view, nil, nil, nil, nil, nil, &reviewed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(conn.Edges) > 0 {
+		t.Fatal("There should be no unreviewed links now")
 	}
 }

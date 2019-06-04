@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -120,6 +121,7 @@ func (u User) DefaultView() *View {
 // access.
 func (v View) Filter(mods []qm.QueryMod) []qm.QueryMod {
 	if v.ViewerID == "" {
+		log.Print("No viewer id provided, restricting results to the general repo")
 		return append(mods,
 			qm.InnerJoin("organizations o on o.id = r.organization_id"),
 			qm.Where("r.system and o.public"),

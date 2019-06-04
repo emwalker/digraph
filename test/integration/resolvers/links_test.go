@@ -255,3 +255,57 @@ func TestParentTopicsDefaultOrdering(t *testing.T) {
 		prevEdge = edge
 	}
 }
+
+func TestReviewLink(t *testing.T) {
+	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
+
+	link, cleanup := m.createLink(testActor.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
+	defer cleanup()
+
+	review, err := link.UserLinkReviews(qm.Where("user_id = ?", testActor.ID)).One(m.ctx, m.db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !review.ReviewedAt.IsZero() {
+		t.Fatal("Expected review to be pending")
+	}
+
+	resolver := rootResolver.Mutation()
+	_, err = resolver.ReviewLink(m.ctx, models.ReviewLinkInput{
+		LinkID:   link.ID,
+		Reviewed: true,
+	})
+
+	if err = review.Reload(m.ctx, m.db); err != nil {
+		t.Fatal(err)
+	}
+
+	if review.ReviewedAt.IsZero() {
+		t.Fatalf("Expected review to have been completed: %v", review.ReviewedAt)
+	}
+}
+
+func TestViewerReview(t *testing.T) {
+	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
+
+	link, cleanup := m.createLink(testActor.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
+	defer cleanup()
+
+	resolver := rootResolver.Link()
+
+	review, err := resolver.ViewerReview(m.ctx, link)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if review == nil {
+		t.Fatal("Expected a review to have been created")
+	}
+
+	if review.ReviewedAt != nil {
+		t.Fatal("Expected a nil reviewedAt")
+	}
+}

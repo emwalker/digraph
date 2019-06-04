@@ -9,6 +9,7 @@ import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 import { defaultRootTopicId, defaultOrganizationLogin } from 'components/constants'
 import Homepage, { query as homepageQuery } from 'components/Homepage'
 import RecentPage, { query as recentPageQuery } from 'components/RecentPage'
+import ReviewPage, { query as reviewPageQuery } from 'components/ReviewPage'
 import { query as topicPageQuery } from 'components/TopicPage'
 import renderTopicPage from 'components/renderTopicPage'
 import { query as topicSearchPageQuery } from 'components/TopicSearchPage'
@@ -67,6 +68,12 @@ export const routeConfig = makeRouteConfig(
       prepareVariables={defaultParams}
       query={recentPageQuery}
       render={withErrorBoundary(RecentPage)}
+    />
+    <Route
+      path="/review"
+      prepareVariables={defaultParams}
+      query={reviewPageQuery}
+      render={withErrorBoundary(ReviewPage)}
     />
     <Route path=":orgLogin">
       <Route path="topics">

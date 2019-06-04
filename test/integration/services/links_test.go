@@ -142,3 +142,55 @@ func TestUserLinkHistory(t *testing.T) {
 	}
 	defer deleteResult.Cleanup()
 }
+
+func TestUserLinkReviewAdded(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	prevCount, _ := testActor.UserLinkReviews().Count(ctx, testDB)
+
+	title := "A title"
+	upsertResult, err := c.UpsertLink(ctx, defaultRepo, "http://frotz.com/", &title, []string{})
+	if err != nil {
+		t.Fatalf("There was a problem upserting the topic: %s", err)
+	}
+	defer upsertResult.Cleanup()
+
+	nextCount, _ := testActor.UserLinkReviews().Count(ctx, testDB)
+
+	if prevCount+1 != nextCount {
+		t.Fatalf("Expected a user-link-review record to be created")
+	}
+}
+
+func TestReviewLink(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	title := "A title"
+	upsertResult, err := c.UpsertLink(ctx, defaultRepo, "http://frotz.com/", &title, []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	link := upsertResult.Link
+
+	reviews, err := testActor.UserLinkReviews(qm.Where("link_id = ?", link.ID)).All(ctx, c.Exec)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(reviews) != 1 {
+		t.Fatal("Expected there to be a single user-link-review")
+	}
+
+	review := reviews[0]
+	if !review.ReviewedAt.IsZero() {
+		t.Fatal("Expected the review to be pending")
+	}
+
+	result, err := c.ReviewLink(ctx, link, true)
+	if result.Review.ReviewedAt.IsZero() {
+		t.Fatal("Expected the review to be pending")
+	}
+}

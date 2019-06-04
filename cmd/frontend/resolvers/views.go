@@ -129,7 +129,7 @@ func (r *viewResolver) LinkCount(ctx context.Context, view *models.View) (int, e
 // Links returns a set of links.
 func (r *viewResolver) Links(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
-	last *int, before *string,
+	last *int, before *string, reviewed *bool,
 ) (models.LinkConnection, error) {
 	mods := view.Filter([]qm.QueryMod{
 		qm.OrderBy("created_at desc"),
@@ -139,6 +139,21 @@ func (r *viewResolver) Links(
 
 	if searchString != nil && *searchString != "" {
 		mods = append(mods, qm.Where("title ~~* all(?)", wildcardStringArray(*searchString)))
+	}
+
+	if reviewed != nil {
+		mods = append(
+			mods,
+			qm.Load(models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", r.Actor.ID), qm.Limit(1)),
+			qm.InnerJoin("user_link_reviews ulr on links.id = ulr.link_id"),
+			qm.Where("ulr.user_id = ?", r.Actor.ID),
+		)
+
+		if *reviewed {
+			mods = append(mods, qm.Where("ulr.reviewed_at is not null"))
+		} else {
+			mods = append(mods, qm.Where("ulr.reviewed_at is null"))
+		}
 	}
 
 	scope := models.Links(mods...)

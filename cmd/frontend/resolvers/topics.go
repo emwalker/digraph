@@ -147,9 +147,12 @@ func (r *topicResolver) Links(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (models.LinkConnection, error) {
+	log.Printf("Fetching links for topic %s", topic.Summary())
+
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
 		qm.OrderBy("created_at desc"),
+		qm.Load(models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", r.Actor.ID), qm.Limit(1)),
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
 	})
 

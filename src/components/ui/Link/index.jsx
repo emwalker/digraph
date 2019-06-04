@@ -7,8 +7,6 @@ import { liftNodes } from 'utils'
 import EditLink from './EditLinkContainer'
 import Item from '../Item'
 
-/* eslint no-underscore-dangle: 0 */
-
 type Props = {
   link: LinkType,
   orgLogin: string,
@@ -85,6 +83,7 @@ class Link extends Component<Props, State> {
     </Item>
   )
 }
+
 
 export const UnwrappedLink = Link
 

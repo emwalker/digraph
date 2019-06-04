@@ -50,7 +50,7 @@ migrate-down:
 	)
 
 generate:
-	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml
+	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml --no-hooks
 	go generate ./...
 
 .PHONY:

@@ -104,6 +104,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
   title: String!
   updatedAt: DateTime!
   url: String!
+  viewerReview: LinkReview
 }
 
 type LinkEdge {
@@ -122,11 +123,17 @@ enum LocaleIdentifier {
   fr
 }
 
+type LinkReview {
+  reviewedAt: DateTime
+  user: User!
+}
+
 type Mutation {
   addSynonym(input: AddSynonymInput!): AddSynonymPayload
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
   deleteSynonym(input: DeleteSynonymInput!): DeleteSynonymPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
+  reviewLink(input: ReviewLinkInput!): ReviewLinkPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
@@ -195,6 +202,16 @@ type RepositoryEdge {
 
 interface ResourceIdentifiable {
   resourcePath: String!
+}
+
+input ReviewLinkInput {
+  clientMutationId: String
+  linkId: ID!
+  reviewed: Boolean!
+}
+
+type ReviewLinkPayload {
+  link: Link!
 }
 
 union SearchResultItem = Topic | Link
@@ -394,7 +411,8 @@ type View {
     first: Int,
     after: String,
     last: Int,
-    before: String
+    before: String,
+    reviewed: Boolean,
   ): LinkConnection!
   currentRepository: Repository
   topic(id: ID!): Topic

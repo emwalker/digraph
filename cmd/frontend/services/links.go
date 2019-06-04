@@ -7,11 +7,13 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"time"
 
 	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/text"
 	"github.com/emwalker/digraph/cmd/frontend/util"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -20,6 +22,12 @@ import (
 type DeleteLinkResult struct {
 	Cleanup       CleanupFunc
 	DeletedLinkID string
+}
+
+// ReviewLinkResult holds the result of a ReviewLink call.
+type ReviewLinkResult struct {
+	Link   *models.Link
+	Review *models.UserLinkReview
 }
 
 // UpsertLinkResult holds the result of an UpsertLink call.
@@ -198,6 +206,51 @@ func (c Connection) addParentTopicsToLink(
 	return link.AddParentTopics(ctx, c.Exec, false, topics...)
 }
 
+func (c Connection) addTopics(
+	ctx context.Context, repo *models.Repository, link models.Link, parentTopicIds []string,
+) error {
+	existingTopicCount, err := link.ParentTopics().Count(ctx, c.Exec)
+	if err != nil {
+		log.Printf("Failed to query parent topic count for link: %#v", link)
+		return err
+	}
+
+	if len(parentTopicIds) < 1 && existingTopicCount < 1 {
+		var rootTopic *models.Topic
+		if rootTopic, err = repo.Topics(qm.Where("root")).One(ctx, c.Exec); err != nil {
+			log.Printf("Could not find root topic for repo %s", repo.ID)
+			return err
+		}
+		parentTopicIds = append(parentTopicIds, rootTopic.ID)
+	}
+
+	if err = c.addParentTopicsToLink(ctx, link, parentTopicIds); err != nil {
+		log.Printf("Failed to add parent topics to link %#v", link)
+		return err
+	}
+
+	return nil
+}
+
+func (c Connection) addUserLinkReview(
+	ctx context.Context, repo *models.Repository, link models.Link,
+) error {
+	review := models.UserLinkReview{
+		LinkID: link.ID,
+		UserID: c.Actor.ID,
+	}
+
+	err := review.Upsert(
+		ctx, c.Exec, true, []string{"link_id", "user_id"}, boil.Whitelist("reviewed_at"), boil.Infer(),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c Connection) logUserLinkAction(
 	ctx context.Context, repo *models.Repository, actor *models.User, link *models.Link, action string,
 	newTopicIds []string,
@@ -253,6 +306,31 @@ func (c Connection) DeleteLink(
 	}, nil
 }
 
+// ReviewLink toggles whether a link has been reviewed.
+func (c Connection) ReviewLink(
+	ctx context.Context, link *models.Link, reviewed bool,
+) (*ReviewLinkResult, error) {
+	reviewedAt := time.Now()
+
+	review := models.UserLinkReview{
+		LinkID:     link.ID,
+		UserID:     c.Actor.ID,
+		ReviewedAt: null.TimeFrom(reviewedAt),
+	}
+	log.Printf("Marking link %s as reviewed at %v", link.ID, reviewedAt)
+
+	err := review.Upsert(
+		ctx, c.Exec, true, []string{"user_id", "link_id"}, boil.Whitelist("reviewed_at"), boil.Infer(),
+	)
+
+	if err != nil {
+		log.Printf("Unable to upsert review: %s", err)
+		return nil, err
+	}
+
+	return &ReviewLinkResult{Link: link, Review: &review}, nil
+}
+
 // UpsertLink adds a link if it does not yet exist in the database or updates information about
 // the link if it is found.
 func (c Connection) UpsertLink(
@@ -296,6 +374,12 @@ func (c Connection) UpsertLink(
 		return nil, err
 	}
 
+	if existing > 0 {
+		alerts = []models.Alert{
+			*models.NewAlert(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", providedURL)),
+		}
+	}
+
 	err = link.Upsert(
 		ctx,
 		c.Exec,
@@ -310,34 +394,17 @@ func (c Connection) UpsertLink(
 		return nil, err
 	}
 
-	existingTopicCount, err := link.ParentTopics().Count(ctx, c.Exec)
-	if err != nil {
-		log.Printf("Failed to query parent topic count for link: %#v", link)
+	if err = c.addTopics(ctx, repo, link, parentTopicIds); err != nil {
 		return nil, err
-	}
-
-	if len(parentTopicIds) < 1 && existingTopicCount < 1 {
-		var rootTopic *models.Topic
-		if rootTopic, err = repo.Topics(qm.Where("root")).One(ctx, c.Exec); err != nil {
-			log.Printf("Could not find root topic for repo %s", repo.ID)
-			return nil, err
-		}
-		parentTopicIds = append(parentTopicIds, rootTopic.ID)
-	}
-
-	if err = c.addParentTopicsToLink(ctx, link, parentTopicIds); err != nil {
-		log.Printf("Failed to add parent topics to link %#v", link)
-		return nil, err
-	}
-
-	if existing > 0 {
-		alerts = []models.Alert{
-			*models.NewAlert(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", providedURL)),
-		}
 	}
 
 	userLink, err := c.logUserLinkAction(ctx, repo, c.Actor, &link, models.ActionUpsertLink, parentTopicIds)
 	if err != nil {
+		return nil, err
+	}
+
+	if err = c.addUserLinkReview(ctx, repo, link); err != nil {
+		log.Printf("There was a problem creating a user link review record: %s", err)
 		return nil, err
 	}
 

@@ -1,7 +1,7 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 
-import Header from './index'
+import { UnwrappedHeader as Header } from './index'
 
 const props = {
   viewer: {

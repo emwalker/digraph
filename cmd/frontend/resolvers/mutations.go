@@ -243,6 +243,36 @@ func (r *MutationResolver) DeleteTopic(
 	}, nil
 }
 
+// ReviewLink marks a link reviewed.
+func (r *MutationResolver) ReviewLink(
+	ctx context.Context, input models.ReviewLinkInput,
+) (*models.ReviewLinkPayload, error) {
+	log.Printf("Adding review to link %s", input.LinkID)
+
+	s := services.Connection{Exec: r.DB, Actor: r.Actor}
+
+	link, err := models.Links(
+		qm.InnerJoin("repositories r on r.id = links.repository_id"),
+		qm.InnerJoin("organization_members om on om.organization_id = r.organization_id"),
+		qm.Where("links.id = ?", input.LinkID),
+		qm.Where("om.user_id = ?", r.Actor.ID),
+	).One(ctx, r.DB)
+
+	if err != nil {
+		log.Printf("Did not find link %s in the repos visible to %s: %s", input.LinkID, r.Actor.Summary(), err)
+		return nil, err
+	}
+
+	result, err := s.ReviewLink(ctx, link, input.Reviewed)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.ReviewLinkPayload{
+		Link: models.LinkValue{result.Link, false, r.Actor.DefaultView()},
+	}, nil
+}
+
 // SelectRepository selects the repository for the current user.
 func (r *MutationResolver) SelectRepository(
 	ctx context.Context, input models.SelectRepositoryInput,

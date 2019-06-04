@@ -31,9 +31,7 @@ query LayoutQuery {
   }
 
   viewer {
-    avatarUrl
-    name
-    isGuest
+    ...Header_viewer
   }
 }`
 

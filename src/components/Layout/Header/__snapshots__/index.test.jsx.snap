@@ -129,7 +129,7 @@ exports[`<Header /> renders 1`] = `
     >
       Blog
     </a>
-    <ViewerDropdown
+    <ForwardRef(Relay(UserNav))
       viewer={
         Object {
           "defaultRepository": Object {

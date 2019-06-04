@@ -1,5 +1,6 @@
 // @flow
 import React from 'react'
+import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { UserType } from 'components/types'
 
@@ -7,7 +8,7 @@ type Props = {
   viewer: UserType,
 }
 
-const ViewerDropdown = ({ viewer: { name, avatarUrl } }: Props) => (
+const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => (
   <summary className="d-inline">
     <a className="text-gray-dark px-2" href="/logout/github">Sign out</a>
     <img
@@ -20,4 +21,13 @@ const ViewerDropdown = ({ viewer: { name, avatarUrl } }: Props) => (
   </summary>
 )
 
-export default ViewerDropdown
+export const UnwrappedUserDropdown = UserDropdown
+
+export default createFragmentContainer(UserDropdown, {
+  viewer: graphql`
+    fragment UserDropdown_viewer on User {
+      name
+      avatarUrl
+    }
+  `,
+})

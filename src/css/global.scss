@@ -191,3 +191,11 @@ input[type=text].form-control {
     margin: 0 3px;
   }
 }
+
+.Review {
+  .form-checkbox {
+    input {
+      margin: 2px 0 0 -20px;
+    }
+  }
+}

@@ -1,10 +1,11 @@
 // @flow
 import React, { Component, Fragment } from 'react'
+import { createFragmentContainer, graphql } from 'react-relay'
 import { Link } from 'found'
 import classNames from 'classnames'
 
 import type { UserType } from 'components/types'
-import ViewerDropdown from './ViewerDropdown'
+import UserNav from './UserNav'
 import SignIn from './SignIn'
 
 const toEverything = {
@@ -36,7 +37,7 @@ class Header extends Component<Props> {
     </Fragment>
   )
 
-  renderUserNav = (viewer: UserType) => <ViewerDropdown viewer={viewer} />
+  renderUserNav = (viewer: UserType) => <UserNav viewer={viewer} />
 
   render = () => {
     const { viewer } = this.props
@@ -117,4 +118,13 @@ class Header extends Component<Props> {
   }
 }
 
-export default Header
+export const UnwrappedHeader = Header
+
+export default createFragmentContainer(Header, {
+  viewer: graphql`
+    fragment Header_viewer on User {
+      isGuest
+      ...UserNav_viewer
+    }
+  `,
+})
