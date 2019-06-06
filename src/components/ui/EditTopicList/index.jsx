@@ -17,6 +17,7 @@ const makeOptions = (conn: TopicConnection): any => conn.edges.map(makeOption)
 type Props = {
   loadOptions: (string) => Promise<Option[]>,
   selectedTopics: Option[],
+  updateTopics: Function,
 }
 
 type State = {
@@ -41,6 +42,13 @@ class EditTopicList extends Component<Props, State> {
     this.setState({ inputValue })
   }
 
+  // $FlowFixMe
+  handleChange = (selectedTopics: Option[]) => {
+    this.setState({ selectedTopics }, () => {
+      this.props.updateTopics(selectedTopics.map(option => option.value))
+    })
+  }
+
   render = () => (
     <div className="form-group">
       <label htmlFor="parent-topics">
@@ -59,6 +67,7 @@ class EditTopicList extends Component<Props, State> {
         isClearable={false}
         isMulti
         loadOptions={this.loadOptions}
+        onChange={this.handleChange}
         onInputChange={this.handleInputChange}
         placeholder="Add a topic"
         styles={colourStyles}

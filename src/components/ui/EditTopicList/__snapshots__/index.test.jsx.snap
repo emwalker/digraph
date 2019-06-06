@@ -25,6 +25,7 @@ exports[`<EditTopicList /> renders 1`] = `
     isClearable={false}
     isMulti={true}
     loadOptions={[Function]}
+    onChange={[Function]}
     onInputChange={[Function]}
     placeholder="Add a topic"
     styles={
