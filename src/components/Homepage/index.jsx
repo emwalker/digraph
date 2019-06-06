@@ -56,6 +56,7 @@ class Homepage extends Component<Props, State> {
         {' '}
         <a href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8">general collection</a>
         . There are
+        {' '}
         {this.props.view.topicCount}
         {' '}
         topics in this collection, categorizing
