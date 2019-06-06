@@ -32,6 +32,7 @@ class Alert extends Component<Props> {
       <button
         className="flash-close"
         onClick={this.props.onClose}
+        type="button"
       >
         <Octicon name="x" />
       </button>

@@ -3,14 +3,13 @@ import { shallow } from 'enzyme'
 
 import TopicPage from './index'
 
-jest.mock('react-relay', () =>
-  ({
-    createFragmentContainer: component => component,
-    createRefetchContainer: Component => props => (
-      <Component {...props} relay={{ refetch: () => {} }} />
-    ),
-    QueryRenderer: () => null,
-  }))
+jest.mock('react-relay', () => ({
+  createFragmentContainer: component => component,
+  createRefetchContainer: Component => props => (
+    <Component {...props} relay={{ refetch: () => {} }} />
+  ),
+  QueryRenderer: () => null,
+}))
 
 describe('<TopicPage />', () => {
   const topic = {

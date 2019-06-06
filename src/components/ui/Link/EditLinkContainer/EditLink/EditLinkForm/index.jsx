@@ -84,8 +84,7 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   loadOptions = (searchString: string): Promise<Option[]> => {
-    if (!this.props.relay)
-      return new Promise(() => [])
+    if (!this.props.relay) return new Promise(() => [])
 
     return new Promise((resolve) => {
       const variables = {
@@ -106,8 +105,7 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   render() {
-    if (!this.props.isOpen)
-      return null
+    if (!this.props.isOpen) return null
 
     return (
       <div>
@@ -145,42 +143,45 @@ class EditLinkForm extends Component<Props, State> {
   }
 }
 
-export default createRefetchContainer(EditLinkForm, graphql`
-  fragment EditLinkForm_link on Link @argumentDefinitions(
-    searchString: {type: "String", defaultValue: null},
-    count: {type: "Int!", defaultValue: 10}
-  ) {
-    id
-    title
-    url
+export default createRefetchContainer(EditLinkForm, {
+  link: graphql`
+    fragment EditLinkForm_link on Link @argumentDefinitions(
+      searchString: {type: "String", defaultValue: null},
+      count: {type: "Int!", defaultValue: 10}
+    ) {
+      id
+      title
+      url
 
-    repository {
-      name
+      repository {
+        name
 
-      organization {
-        login
+        organization {
+          login
+        }
       }
-    }
 
-    selectedTopics: parentTopics(first: 10) {
-      edges {
-        node {
-          value: id
-          label: name
+      selectedTopics: parentTopics(first: 10) {
+        edges {
+          node {
+            value: id
+            label: name
+          }
+        }
+      }
+
+      availableTopics: availableParentTopics(searchString: $searchString, first: $count) {
+        edges {
+          node {
+            value: id
+            label: name
+          }
         }
       }
     }
-
-    availableTopics: availableParentTopics(searchString: $searchString, first: $count) {
-      edges {
-        node {
-          value: id
-          label: name
-        }
-      }
-    }
-  }
-`, graphql`
+  `,
+},
+graphql`
   query EditLinkFormRefetchQuery(
     $orgLogin: String!,
     $repoName: String,

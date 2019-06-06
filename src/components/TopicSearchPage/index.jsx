@@ -139,38 +139,40 @@ query TopicSearchPage_query_Query(
   }
 }`
 
-export default createFragmentContainer(TopicSearchPage, graphql`
-  fragment TopicSearchPage_topic on Topic @argumentDefinitions(
-    searchString: {type: "String!", defaultValue: ""},
-  ) {
-    name
-    resourcePath
+export default createFragmentContainer(TopicSearchPage, {
+  topic: graphql`
+    fragment TopicSearchPage_topic on Topic @argumentDefinitions(
+      searchString: {type: "String!", defaultValue: ""},
+    ) {
+      name
+      resourcePath
 
-    parentTopics(first: 100) {
-      edges {
-        node {
-          display: name
-          resourcePath
-        }
-      }
-    }
-
-    search(first: 100, searchString: $searchString) {
-      edges {
-        node {
-          __typename
-
-          ... on Topic {
-            id
-            ...Topic_topic
-          }
-
-          ... on Link {
-            id
-            ...Link_link
+      parentTopics(first: 100) {
+        edges {
+          node {
+            display: name
+            resourcePath
           }
         }
       }
+
+      search(first: 100, searchString: $searchString) {
+        edges {
+          node {
+            __typename
+
+            ... on Topic {
+              id
+              ...Topic_topic
+            }
+
+            ... on Link {
+              id
+              ...Link_link
+            }
+          }
+        }
+      }
     }
-  }
-`)
+  `,
+})

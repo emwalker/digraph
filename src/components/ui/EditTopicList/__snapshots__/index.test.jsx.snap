@@ -11,21 +11,21 @@ exports[`<EditTopicList /> renders 1`] = `
   </label>
   <Async
     backspaceRemovesValue={false}
-    cacheOptions={false}
+    cacheOptions={true}
     className="mt-1"
     components={
       Object {
         "ClearIndicator": null,
       }
     }
-    defaultOptions={false}
+    defaultOptions={Array []}
     escapeClearsValue={false}
     filterOption={null}
     id="parent-topics"
     isClearable={false}
     isMulti={true}
     loadOptions={[Function]}
-    onChange={[Function]}
+    onInputChange={[Function]}
     placeholder="Add a topic"
     styles={
       Object {

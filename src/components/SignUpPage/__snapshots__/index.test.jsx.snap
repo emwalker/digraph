@@ -112,6 +112,7 @@ exports[`<SignUpPage /> renders 1`] = `
     <button
       className="btn btn-primary"
       disabled={true}
+      type="submit"
     >
       Create an account
     </button>

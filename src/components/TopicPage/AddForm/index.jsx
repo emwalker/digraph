@@ -28,8 +28,7 @@ class AddForm extends Component<Props> {
 
   get isPrivateRepo(): boolean {
     const repo = this.props.viewer.selectedRepository
-    if (!repo)
-      return false
+    if (!repo) return false
     return repo.isPrivate
   }
 
@@ -65,19 +64,22 @@ class AddForm extends Component<Props> {
   )
 }
 
-export default createFragmentContainer(AddForm, graphql`
-  fragment AddForm_viewer on User {
-    selectedRepository {
-      isPrivate
+export default createFragmentContainer(AddForm, {
+  viewer: graphql`
+    fragment AddForm_viewer on User {
+      selectedRepository {
+        isPrivate
+      }
+
+      ...AddLink_viewer
+      ...AddTopic_viewer
+      ...SelectRepository_viewer
     }
-
-    ...AddLink_viewer
-    ...AddTopic_viewer
-    ...SelectRepository_viewer
-  }
-
-  fragment AddForm_topic on Topic {
-    ...AddLink_topic
-    ...AddTopic_topic
-  }
-`)
+  `,
+  topic: graphql`
+    fragment AddForm_topic on Topic {
+      ...AddLink_topic
+      ...AddTopic_topic
+    }
+  `,
+})

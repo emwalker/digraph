@@ -33,6 +33,7 @@ const Recents = ({ view }: Props) => (
 export default ({ props }: WrapperProps) => (
   // eslint-disable-next-line react/prop-types
   props && props.view
+    // eslint-disable-next-line react/prop-types
     ? <Recents view={props.view} />
     : <Placeholder />
 )

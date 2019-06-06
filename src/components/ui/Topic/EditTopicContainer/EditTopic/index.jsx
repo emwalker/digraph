@@ -32,11 +32,9 @@ type RenderProps = {
 const EditTopic = (props: PropsType) => {
   const { error, isOpen, orgLogin, relay, toggleForm, topic, viewer } = props
 
-  if (error)
-    return <div>{error.message}</div>
+  if (error) return <div>{error.message}</div>
 
-  if (!topic)
-    return null
+  if (!topic) return null
 
   return (
     <EditTopicForm
@@ -52,15 +50,16 @@ const EditTopic = (props: PropsType) => {
   )
 }
 
-const Wrapped = createFragmentContainer(EditTopic, graphql`
-  fragment EditTopic_topic on Topic {
-    ...EditTopicForm_topic
-  }
-`)
+const Wrapped = createFragmentContainer(EditTopic, {
+  topic: graphql`
+    fragment EditTopic_topic on Topic {
+      ...EditTopicForm_topic
+    }
+  `,
+})
 
 export default ({ isOpen, orgLogin, toggleForm }: Props) => ({ error, props }: RenderProps) => {
-  if (!props)
-    return null
+  if (!props) return null
 
   const { view, viewer } = props
 

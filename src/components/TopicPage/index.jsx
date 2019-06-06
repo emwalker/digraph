@@ -36,8 +36,8 @@ type State = {}
 
 class TopicPage extends Component<Props, State> {
   static getDerivedStateFromProps = (nextProps: Props) => {
-    if (window.flashMessages && nextProps.alerts && nextProps.alerts.length > 0)
-      nextProps.alerts.forEach(window.flashMessages.addMessage)
+    const shouldAppend = window.flashMessages && nextProps.alerts && nextProps.alerts.length > 0
+    if (shouldAppend) nextProps.alerts.forEach(window.flashMessages.addMessage)
     return {}
   }
 
@@ -89,8 +89,7 @@ class TopicPage extends Component<Props, State> {
     const { synonyms } = this
     const { length } = synonyms
 
-    if (length < 2)
-      return null
+    if (length < 2) return null
 
     return (
       <div className="synonyms h6">
@@ -101,15 +100,25 @@ class TopicPage extends Component<Props, State> {
 
   renderNotification = () => (
     <div className="Box p-3 mt-3">
-      You must be <a href="/login">signed in</a> to add and move topics and links.
+      You must be
+      {' '}
+      <a href="/login">signed in</a>
+      {' '}
+      to add and move topics and links.
     </div>
   )
 
   render = () => {
     const { location, topic, view } = this.props
 
-    if (!topic)
-      return <div>Topic not found: {location.pathname}</div>
+    if (!topic) {
+      return (
+        <div>
+          Topic not found:
+          {location.pathname}
+        </div>
+      )
+    }
 
     const { name, parentTopics, resourcePath } = topic
     const { topics, links } = this
@@ -200,47 +209,49 @@ query TopicPage_query_Query(
   }
 }`
 
-export default createFragmentContainer(TopicPage, graphql`
-  fragment TopicPage_topic on Topic @argumentDefinitions(
-    searchString: {type: "String", defaultValue: ""},
-  ) {
-    name
-    resourcePath
-    ...AddForm_topic
+export default createFragmentContainer(TopicPage, {
+  topic: graphql`
+    fragment TopicPage_topic on Topic @argumentDefinitions(
+      searchString: {type: "String", defaultValue: ""},
+    ) {
+      name
+      resourcePath
+      ...AddForm_topic
 
-    synonyms(first: 100) {
-      edges {
-        node {
-          name
+      synonyms(first: 100) {
+        edges {
+          node {
+            name
+          }
+        }
+      }
+
+      parentTopics(first: 100) {
+        edges {
+          node {
+            display: name
+            resourcePath
+          }
+        }
+      }
+
+      childTopics(first: 1000, searchString: $searchString) @connection(key: "Topic_childTopics") {
+        edges {
+          node {
+            id
+            ...Topic_topic
+          }
+        }
+      }
+
+      links(first: 1000, searchString: $searchString)  @connection(key: "Topic_links") {
+        edges {
+          node {
+            id
+            ...Link_link
+          }
         }
       }
     }
-
-    parentTopics(first: 100) {
-      edges {
-        node {
-          display: name
-          resourcePath
-        }
-      }
-    }
-
-    childTopics(first: 1000, searchString: $searchString) @connection(key: "Topic_childTopics") {
-      edges {
-        node {
-          id
-          ...Topic_topic
-        }
-      }
-    }
-
-    links(first: 1000, searchString: $searchString)  @connection(key: "Topic_links") {
-      edges {
-        node {
-          id
-          ...Link_link
-        }
-      }
-    }
-  }
-`)
+  `,
+})

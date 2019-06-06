@@ -1,12 +1,12 @@
 // @flow
 import React, { Component } from 'react'
-import Select from 'react-select/lib/Async'
+import AsyncSelect from 'react-select/async'
 import debounce from 'es6-promise-debounce'
 
 import type { Option, TopicConnection } from 'components/types'
 import colourStyles from './colourStyles'
 
-/* eslint jsx-a11y/label-has-for: 0 */
+/* eslint react/no-unused-state: 0 */
 
 const color = '#0366d6'
 
@@ -17,25 +17,28 @@ const makeOptions = (conn: TopicConnection): any => conn.edges.map(makeOption)
 type Props = {
   loadOptions: (string) => Promise<Option[]>,
   selectedTopics: Option[],
-  updateTopics: Function,
 }
 
 type State = {
-  selectedTopics: ?Option[],
+  inputValue: string,
+  selectedTopics: Option[],
 }
 
 class EditTopicList extends Component<Props, State> {
+  loadOptions: Function
+
   constructor(props: Props) {
     super(props)
     this.state = {
+      inputValue: '',
       selectedTopics: props.selectedTopics.map(option => ({ ...option, color })),
     }
+    this.loadOptions = debounce(this.props.loadOptions, 500)
   }
 
-  handleChange = (selectedTopics: Option[]) => {
-    this.setState({ selectedTopics }, () => {
-      this.props.updateTopics(selectedTopics.map(option => option.value))
-    })
+  handleInputChange = (newValue: string) => {
+    const inputValue = newValue.replace(/\W/g, '')
+    this.setState({ inputValue })
   }
 
   render = () => (
@@ -43,18 +46,20 @@ class EditTopicList extends Component<Props, State> {
       <label htmlFor="parent-topics">
         Parent topics
       </label>
-      <Select
+      <AsyncSelect
         backspaceRemovesValue={false}
+        cacheOptions
         className="mt-1"
         components={{
           ClearIndicator: null,
         }}
+        defaultOptions={this.state.selectedTopics}
         escapeClearsValue={false}
         id="parent-topics"
         isClearable={false}
         isMulti
-        loadOptions={debounce(this.props.loadOptions, 500)}
-        onChange={this.handleChange}
+        loadOptions={this.loadOptions}
+        onInputChange={this.handleInputChange}
         placeholder="Add a topic"
         styles={colourStyles}
         value={this.state.selectedTopics}

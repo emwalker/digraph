@@ -32,11 +32,9 @@ type RenderProps = {
 const EditLink = (props: PropsType) => {
   const { error, isOpen, orgLogin, relay, toggleForm, link, viewer } = props
 
-  if (error)
-    return <div>{error.message}</div>
+  if (error) return <div>{error.message}</div>
 
-  if (!link)
-    return null
+  if (!link) return null
 
   return (
     <EditLinkForm
@@ -52,15 +50,16 @@ const EditLink = (props: PropsType) => {
   )
 }
 
-const Wrapped = createFragmentContainer(EditLink, graphql`
-  fragment EditLink_link on Link {
-    ...EditLinkForm_link
-  }
-`)
+const Wrapped = createFragmentContainer(EditLink, {
+  link: graphql`
+    fragment EditLink_link on Link {
+      ...EditLinkForm_link
+    }
+  `,
+})
 
 export default ({ isOpen, orgLogin, toggleForm }: Props) => ({ error, props }: RenderProps) => {
-  if (!props)
-    return null
+  if (!props) return null
 
   const { view, viewer } = props
 

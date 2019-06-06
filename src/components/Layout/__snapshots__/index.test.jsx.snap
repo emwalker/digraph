@@ -10,9 +10,7 @@ exports[`<Layout /> renders 1`] = `
   <div
     className="container-lg clearfix"
   >
-    <FlashMessages
-      initialAlerts={Array []}
-    />
+    <FlashMessages />
     <div>
       some view
     </div>

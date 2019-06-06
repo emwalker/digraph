@@ -9,9 +9,6 @@ import { liftNodes } from 'utils'
 import type { Synonyms_topic as Topic } from './__generated__/Synonyms_topic.graphql'
 import Synonym from './Synonym'
 
-/* eslint jsx-a11y/label-has-for: 0 */
-/* eslint no-restricted-globals: 0 */
-
 type SynonymType = CollectionNode<$PropertyType<Topic, 'synonyms'>>
 
 type Props = {
@@ -35,8 +32,7 @@ class Synonyms extends Component<Props, State> {
 
   onDelete = (synonym: SynonymType) => {
     // eslint-disable-next-line no-alert
-    if (!confirm('Are you sure you want to delete this synonym?'))
-      return
+    if (!window.confirm('Are you sure you want to delete this synonym?')) return
 
     deleteSynonymMutation(
       this.props.relay.environment,
@@ -106,14 +102,19 @@ class Synonyms extends Component<Props, State> {
 
   render = () => (
     <dl className="form-group">
-      <label htmlFor="names-and-synonyms">Names and synonyms</label>
+      <label
+        htmlFor="names-and-synonyms"
+      >
+        Names and synonyms
+      </label>
       <ul className="Box list-style-none mt-1 mb-2">
         {this.synonyms.map(synonym => (
           <Synonym onDelete={this.deleteFn()} key={synonym.id} synonym={synonym} />
         ))}
       </ul>
-      <div id="names-and-synonym" className="clearfix">
+      <div className="clearfix">
         <input
+          id="names-and-synonyms"
           className="form-control col-10 mr-2"
           onChange={this.onNameChange}
           value={this.state.name}
@@ -133,21 +134,23 @@ class Synonyms extends Component<Props, State> {
 
 export const UnwrappedSynonyms = Synonyms
 
-export default createFragmentContainer(Synonyms, graphql`
-  fragment Synonyms_topic on Topic {
-    id
-    viewerCanDeleteSynonym
-    viewerCanAddSynonym
+export default createFragmentContainer(Synonyms, {
+  topic: graphql`
+    fragment Synonyms_topic on Topic {
+      id
+      viewerCanDeleteSynonym
+      viewerCanAddSynonym
 
-    synonyms(first: 100) @connection(key: "Synonyms_synonyms") {
-      edges {
-        node {
-          id
-          name
+      synonyms(first: 100) @connection(key: "Synonyms_synonyms") {
+        edges {
+          node {
+            id
+            name
 
-          ...Synonym_synonym
+            ...Synonym_synonym
+          }
         }
       }
     }
-  }
-`)
+  `,
+})

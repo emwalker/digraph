@@ -2,8 +2,7 @@
 import React, { Component } from 'react'
 import { ForceGraph3D } from 'react-force-graph'
 
-const nodeLabel = d =>
-  `<div style="text-align: center; padding: 8px; color: black; border-radius:
+const nodeLabel = d => `<div style="text-align: center; padding: 8px; color: black; border-radius:
     5px; background: rgba(239, 243, 255, 0.80); font-size: 28">${d.name}</div>`
 
 const onNodeClick = (node) => {
@@ -22,22 +21,20 @@ type Props = {
 }
 
 class TreeGraph extends Component<Props> {
+  cachedGraphData: ?string = null
+
+  graphRef: ?any
+
   componentDidMount = () => {
-    if (this.graphRef)
-      this.graphRef.d3Force('charge').strength(-100)
+    if (this.graphRef) this.graphRef.d3Force('charge').strength(-100)
   }
 
   get graphData(): ?string {
-    if (!this.props.topicGraph)
-      return null
-    if (!this.cachedGraphData)
-      this.cachedGraphData = JSON.parse(this.props.topicGraph)
+    if (!this.props.topicGraph) return null
+    if (!this.cachedGraphData) this.cachedGraphData = JSON.parse(this.props.topicGraph)
 
     return this.cachedGraphData
   }
-
-  cachedGraphData: ?string = null
-  graphRef: ?any
 
   render = () => (
     <ForceGraph3D

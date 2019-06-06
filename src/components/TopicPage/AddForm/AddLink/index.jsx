@@ -5,8 +5,6 @@ import { graphql, createFragmentContainer } from 'react-relay'
 import type { Relay, RepositoryType, TopicType, UserType } from 'components/types'
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
 
-/* eslint jsx-a11y/label-has-for: 0 */
-
 type Props = {
   disabled?: boolean,
   relay: Relay,
@@ -28,8 +26,7 @@ class AddLink extends Component<Props, State> {
   }
 
   onKeyPress = (event: Object) => {
-    if (event.key === 'Enter')
-      this.createLink()
+    if (event.key === 'Enter') this.createLink()
   }
 
   get selectedRepo(): ?RepositoryType {
@@ -38,8 +35,7 @@ class AddLink extends Component<Props, State> {
 
   get orgLogin(): ?string {
     const repo = this.selectedRepo
-    if (!repo)
-      return null
+    if (!repo) return null
     return repo.organization.login
   }
 
@@ -102,19 +98,22 @@ class AddLink extends Component<Props, State> {
   )
 }
 
-export default createFragmentContainer(AddLink, graphql`
-  fragment AddLink_viewer on User {
-    selectedRepository {
-      id
-      name
+export default createFragmentContainer(AddLink, {
+  viewer: graphql`
+    fragment AddLink_viewer on User {
+      selectedRepository {
+        id
+        name
 
-      organization {
-        login
+        organization {
+          login
+        }
       }
     }
-  }
-
-  fragment AddLink_topic on Topic {
-    id
-  }
-`)
+  `,
+  topic: graphql`
+    fragment AddLink_topic on Topic {
+      id
+    }
+  `,
+})

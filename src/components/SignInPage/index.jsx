@@ -3,15 +3,14 @@ import React, { Component } from 'react'
 
 import GithubLogin from 'components/ui/GithubLogin'
 
-/* eslint jsx-a11y/label-has-for: 0 */
-
 type Props = {}
 
 class SignInPage extends Component<Props> {
   renderSignInButton = () => (
     <button
-      disabled={false}
       className="btn btn-primary"
+      disabled={false}
+      type="button"
     >
       Sign in
     </button>

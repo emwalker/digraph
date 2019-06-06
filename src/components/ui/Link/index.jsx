@@ -35,8 +35,7 @@ class Link extends Component<Props, State> {
   }
 
   get linkBelongsToCurrentRepo(): boolean {
-    if (!this.repo)
-      return true
+    if (!this.repo) return true
     return this.repo.id === this.currentRepo.id
   }
 
@@ -45,8 +44,7 @@ class Link extends Component<Props, State> {
   }
 
   get displayColor(): string {
-    if (!this.repo)
-      return 'transparent'
+    if (!this.repo) return 'transparent'
 
     return this.linkBelongsToCurrentRepo
       ? 'transparent'
@@ -87,37 +85,41 @@ class Link extends Component<Props, State> {
   )
 }
 
-export default createFragmentContainer(Link, graphql`
-  fragment Link_view on View {
-    currentRepository {
-      name
-      id
+export default createFragmentContainer(Link, {
+  view: graphql`
+    fragment Link_view on View {
+      currentRepository {
+        name
+        id
+      }
     }
-  }
-
-  fragment Link_viewer on User {
-    isGuest
-  }
-
-  fragment Link_link on Link {
-    id
-    loading
-    newlyAdded
-    title
-    url
-
-    repository {
-      displayColor
-      id
+  `,
+  viewer: graphql`
+    fragment Link_viewer on User {
+      isGuest
     }
+  `,
+  link: graphql`
+    fragment Link_link on Link {
+      id
+      loading
+      newlyAdded
+      title
+      url
 
-    parentTopics(first: 10) {
-      edges {
-        node {
-          name
-          resourcePath
+      repository {
+        displayColor
+        id
+      }
+
+      parentTopics(first: 10) {
+        edges {
+          node {
+            name
+            resourcePath
+          }
         }
       }
     }
-  }
-`)
+  `,
+})

@@ -5,11 +5,8 @@ import { graphql, createFragmentContainer } from 'react-relay'
 import type { Relay, RepositoryType, TopicType, UserType } from 'components/types'
 import upsertTopicMutation from 'mutations/upsertTopicMutation'
 
-/* eslint jsx-a11y/label-has-for: 0 */
-
-const tooltipText =
-  'Add a subtopic to this topic. You can click "Edit"\n' +
-  'afterwards if it also belongs under another topic.'
+const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
+  + 'afterwards if it also belongs under another topic.'
 
 type Props = {
   disabled?: boolean,
@@ -32,8 +29,7 @@ class AddTopic extends Component<Props, State> {
   }
 
   onKeyPress = (event: Object) => {
-    if (event.key === 'Enter')
-      this.createTopic()
+    if (event.key === 'Enter') this.createTopic()
   }
 
   get selectedRepo(): ?RepositoryType {
@@ -42,8 +38,7 @@ class AddTopic extends Component<Props, State> {
 
   get orgLogin(): ?string {
     const repo = this.selectedRepo
-    if (!repo)
-      return null
+    if (!repo) return null
     return repo.organization.login
   }
 
@@ -105,17 +100,20 @@ class AddTopic extends Component<Props, State> {
   )
 }
 
-export default createFragmentContainer(AddTopic, graphql`
-  fragment AddTopic_viewer on User {
-    selectedRepository {
-      name
-      organization {
-        login
+export default createFragmentContainer(AddTopic, {
+  viewer: graphql`
+    fragment AddTopic_viewer on User {
+      selectedRepository {
+        name
+        organization {
+          login
+        }
       }
     }
-  }
-
-  fragment AddTopic_topic on Topic {
-    id
-  }
-`)
+  `,
+  topic: graphql`
+    fragment AddTopic_topic on Topic {
+      id
+    }
+  `,
+})

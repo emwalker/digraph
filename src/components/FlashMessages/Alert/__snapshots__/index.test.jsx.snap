@@ -6,6 +6,7 @@ exports[`<Alert /> renders 1`] = `
 >
   <button
     className="flash-close"
+    type="button"
   >
     <Octicon
       name="x"

@@ -20,8 +20,7 @@ type Props = {
 }
 
 export default ({ children, hasItems, placeholder }: Props) => {
-  if (!hasItems)
-    return <Blankslate message={placeholder} />
+  if (!hasItems) return <Blankslate message={placeholder} />
 
   return (
     <div className="Box">

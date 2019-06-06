@@ -92,8 +92,7 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   loadOptions = (searchString: string): Promise<Option[]> => {
-    if (!this.props.relay)
-      return new Promise(() => [])
+    if (!this.props.relay) return new Promise(() => [])
 
     return new Promise((resolve) => {
       const variables = {
@@ -110,8 +109,7 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   render = () => {
-    if (!this.props.isOpen)
-      return null
+    if (!this.props.isOpen) return null
 
     return (
       <div className="my-4">
@@ -127,49 +125,59 @@ class EditTopicForm extends Component<Props, State> {
           <DeleteButton
             onDelete={this.onDelete}
           />
-          <button onClick={this.props.toggleForm} className="btn-link float-right">Close</button>
+          <button
+            className="btn-link float-right"
+            onClick={this.props.toggleForm}
+            type="button"
+          >
+            Close
+          </button>
         </dl>
       </div>
     )
   }
 }
 
-export default createRefetchContainer(EditTopicForm, graphql`
-  fragment EditTopicForm_viewer on User {
-    defaultRepository {
+export default createRefetchContainer(EditTopicForm, {
+  viewer: graphql`
+    fragment EditTopicForm_viewer on User {
+      defaultRepository {
+        id
+      }
+    }
+  `,
+  topic: graphql`
+    fragment EditTopicForm_topic on Topic @argumentDefinitions(
+      searchString: {type: "String", defaultValue: null},
+      count: {type: "Int!", defaultValue: 10}
+    ) {
+      description
       id
-    }
-  }
+      name
 
-  fragment EditTopicForm_topic on Topic @argumentDefinitions(
-    searchString: {type: "String", defaultValue: null},
-    count: {type: "Int!", defaultValue: 10}
-  ) {
-    description
-    id
-    name
-
-    selectedTopics: parentTopics(first: 100) {
-      edges {
-        node {
-          value: id
-          label: name
+      selectedTopics: parentTopics(first: 100) {
+        edges {
+          node {
+            value: id
+            label: name
+          }
         }
       }
-    }
 
-    availableTopics: availableParentTopics(first: $count, searchString: $searchString) {
-      edges {
-        node {
-          value: id
-          label: name
+      availableTopics: availableParentTopics(first: $count, searchString: $searchString) {
+        edges {
+          node {
+            value: id
+            label: name
+          }
         }
       }
-    }
 
-    ...Synonyms_topic
-  }
-`, graphql`
+      ...Synonyms_topic
+    }
+  `,
+},
+graphql`
   query EditTopicFormRefetchQuery(
     $orgLogin: String!,
     $repoName: String,

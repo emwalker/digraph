@@ -17,8 +17,7 @@ type Operation = {
 let alertId = 0
 
 const addAlerts = (response: Response) => {
-  if (!response || !response.errors || response.errors.length < 1)
-    return response
+  if (!response || !response.errors || response.errors.length < 1) return response
 
   const alerts = []
   response.errors.forEach((error) => {
@@ -31,8 +30,7 @@ const addAlerts = (response: Response) => {
     })
   })
 
-  if (response.data)
-    response.data.alerts = alerts
+  if (response.data) response.data.alerts = alerts
   return response
 }
 

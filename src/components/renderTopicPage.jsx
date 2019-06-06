@@ -7,14 +7,11 @@ import TopicPage from './TopicPage'
 import TopicSearchPage from './TopicSearchPage'
 
 export default ({ props, variables, error, match: { location } }: any) => {
-  if (error || !variables)
-    return <div>There was a problem.</div>
+  if (error || !variables) return <div>There was a problem.</div>
 
-  if (!props)
-    return <LoadingPage location={location} />
+  if (!props) return <LoadingPage location={location} />
 
-  if (!props.view)
-    return <div>You must log in and select an organization first.</div>
+  if (!props.view) return <div>You must log in and select an organization first.</div>
 
   const { view } = props
 

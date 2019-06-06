@@ -4,7 +4,6 @@ import ReCAPTCHA from 'react-google-recaptcha'
 
 import GithubLogin from 'components/ui/GithubLogin'
 
-/* eslint jsx-a11y/label-has-for: 0 */
 /* eslint react/no-string-refs: 0 */
 
 type State = {
@@ -28,6 +27,7 @@ class SignUpPage extends Component<Props, State> {
     <button
       disabled={!this.state.gCaptchaResponse}
       className="btn btn-primary"
+      type="submit"
     >
       Create an account
     </button>

@@ -25,10 +25,10 @@ exports[`<Synonyms /> renders 1`] = `
   </ul>
   <div
     className="clearfix"
-    id="names-and-synonym"
   >
     <input
       className="form-control col-10 mr-2"
+      id="names-and-synonyms"
       onChange={[Function]}
       value=""
     />

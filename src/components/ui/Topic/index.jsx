@@ -33,8 +33,7 @@ class Topic extends Component<Props, State> {
   }
 
   get topicBelongsToCurrentRepo(): boolean {
-    if (!this.repo)
-      return true
+    if (!this.repo) return true
     return this.repo.id === this.currentRepo.id
   }
 
@@ -89,38 +88,42 @@ class Topic extends Component<Props, State> {
   }
 }
 
-export default createFragmentContainer(Topic, graphql`
-  fragment Topic_view on View {
-    currentRepository {
-      id
+export default createFragmentContainer(Topic, {
+  view: graphql`
+    fragment Topic_view on View {
+      currentRepository {
+        id
+      }
     }
-  }
-
-  fragment Topic_viewer on User {
-    isGuest
-  }
-
-  fragment Topic_topic on Topic {
-    description
-    id
-    loading
-    name
-    newlyAdded
-    resourcePath
-
-    repository {
+  `,
+  viewer: graphql`
+    fragment Topic_viewer on User {
+      isGuest
+    }
+  `,
+  topic: graphql`
+    fragment Topic_topic on Topic {
+      description
+      id
+      loading
       name
-      displayColor
-      id
-    }
+      newlyAdded
+      resourcePath
 
-    parentTopics(first: 100) {
-      edges {
-        node {
-          name
-          resourcePath
+      repository {
+        name
+        displayColor
+        id
+      }
+
+      parentTopics(first: 100) {
+        edges {
+          node {
+            name
+            resourcePath
+          }
         }
       }
     }
-  }
-`)
+  `,
+})

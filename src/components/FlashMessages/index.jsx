@@ -16,10 +16,6 @@ type State = {
 }
 
 class FlashMessages extends Component<Props, State> {
-  static defaultProps = {
-    initialAlerts: [],
-  }
-
   constructor(props: Props) {
     super(props)
     this.state = {
@@ -40,13 +36,15 @@ class FlashMessages extends Component<Props, State> {
 
   removeMessage = (message: AlertType) => {
     const index = this.state.messages.indexOf(message)
-    const messages = update(this.state.messages, { $splice: [[index, 1]] })
-    this.setState({ messages })
+    this.setState(prevState => ({
+      messages: update(prevState.messages, { $splice: [[index, 1]] }),
+    }))
   }
 
   addMessage = (message: AlertType) => {
-    const messages = update(this.state.messages, { $push: [message] })
-    this.setState({ messages })
+    this.setState(prevState => ({
+      messages: update(prevState.messages, { $push: [message] }),
+    }))
   }
 
   render = () => (

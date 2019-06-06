@@ -17,8 +17,7 @@ class Synonym extends Component<Props> {
   }
 
   onClick = () => {
-    if (!this.props.onDelete)
-      return
+    if (!this.props.onDelete) return
     this.props.onDelete(this.props.synonym)
   }
 
@@ -44,10 +43,12 @@ class Synonym extends Component<Props> {
 
 export const UnwrappedSynonym = Synonym
 
-export default createFragmentContainer(Synonym, graphql`
-  fragment Synonym_synonym on Synonym {
-    id
-    name
-    locale
-  }
-`)
+export default createFragmentContainer(Synonym, {
+  synonym: graphql`
+    fragment Synonym_synonym on Synonym {
+      id
+      name
+      locale
+    }
+  `,
+})

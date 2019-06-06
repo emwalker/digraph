@@ -19,8 +19,7 @@ const Placeholder = () => (
 const LineItems = ({ view }: Props) => {
   const edges = view ? view.activity.edges : null
 
-  if (!edges)
-    return <Placeholder />
+  if (!edges) return <Placeholder />
 
   return (
     <Container>
@@ -33,15 +32,17 @@ const LineItems = ({ view }: Props) => {
   )
 }
 
-export default createFragmentContainer(LineItems, graphql`
-  fragment LineItems_view on View {
-    activity(first: 50) {
-      edges {
-        node {
-          createdAt
-          description
+export default createFragmentContainer(LineItems, {
+  view: graphql`
+    fragment LineItems_view on View {
+      activity(first: 50) {
+        edges {
+          node {
+            createdAt
+            description
+          }
         }
       }
     }
-  }
-`)
+  `,
+})

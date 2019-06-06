@@ -17,7 +17,7 @@ type Props = {
   formIsOpen: boolean,
   newlyAdded: boolean,
   showEditButton: ?boolean,
-  showLink: ?boolean,
+  showLink?: boolean,
   orgLogin: string,
   repoName: ?string,
   title: string,
@@ -29,9 +29,7 @@ type Props = {
 class Item extends Component<Props> {
   static defaultProps = {
     description: null,
-    displayColor: '#fff',
-    showEditButton: false,
-    showLink: true,
+    showLink: false,
   }
 
   get className(): string {
@@ -48,8 +46,7 @@ class Item extends Component<Props> {
   }
 
   get style(): Object {
-    if (!this.props.displayColor)
-      return {}
+    if (!this.props.displayColor) return {}
 
     return {
       borderLeft: `5px solid ${this.props.displayColor}`,
@@ -57,8 +54,7 @@ class Item extends Component<Props> {
   }
 
   get url(): ?Node {
-    if (!this.props.url || !this.props.showLink)
-      return null
+    if (!this.props.url || !this.props.showLink) return null
 
     return (
       <div
@@ -128,7 +124,15 @@ class Item extends Component<Props> {
         </div>
         <div className="col-2 text-center">
           { this.showEditButton
-            ? <button onClick={this.props.toggleForm} className="btn-link">Edit</button>
+            ? (
+              <button
+                className="btn-link"
+                onClick={this.props.toggleForm}
+                type="button"
+              >
+                Edit
+              </button>
+            )
             : <span className="disabled-link">Edit</span>
           }
         </div>

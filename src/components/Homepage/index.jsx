@@ -30,6 +30,8 @@ class Homepage extends Component<Props, State> {
     width: 150,
   }
 
+  containerRef: React$ElementRef<*> | null
+
   componentDidMount = () => {
     if (this.containerRef) {
       const rect = this.containerRef.getBoundingClientRect()
@@ -41,8 +43,6 @@ class Homepage extends Component<Props, State> {
     return Boolean(this.props.view.topicGraph) && this.state.showChart
   }
 
-  containerRef: React$ElementRef<*> | null
-
   render = () => (
     <div
       ref={(ref) => { this.containerRef = ref }}
@@ -52,10 +52,17 @@ class Homepage extends Component<Props, State> {
         <div className="Subhead-heading">Topics in the general collection</div>
       </div>
       <p className="mb-3">
-        These are the topics in the{' '}
-        <a href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8">general collection</a>.
-        There are {this.props.view.topicCount} topics in this collection, categorizing{' '}
-        {this.props.view.linkCount} links between them. Rotate and zoom in to explore.  Hover over
+        These are the topics in the
+        {' '}
+        <a href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8">general collection</a>
+        . There are
+        {this.props.view.topicCount}
+        {' '}
+        topics in this collection, categorizing
+        {' '}
+        {this.props.view.linkCount}
+        {' '}
+        links between them. Rotate and zoom in to explore.  Hover over
         a topic to see the label. Click on a topic to visit its page.
       </p>
 

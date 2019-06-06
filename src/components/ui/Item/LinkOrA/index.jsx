@@ -12,8 +12,7 @@ type Props = {
 }
 
 const LinkOrA = ({ children, className, to }: Props) => {
-  if (isExternal(to.pathname))
-    return <a href={to.pathname} className={className}>{ children }</a>
+  if (isExternal(to.pathname)) return <a href={to.pathname} className={className}>{ children }</a>
   return <Link to={to} className={className}>{ children }</Link>
 }
 

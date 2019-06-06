@@ -24,6 +24,10 @@ type Props = {
 }
 
 class Subhead extends Component<Props> {
+  static defaultProps = {
+    renderHeadingDetail: null,
+  }
+
   onSearch = (query: string) => {
     if (query === '') {
       this.props.router.push({ pathname: this.pathname })
@@ -68,12 +72,14 @@ class Subhead extends Component<Props> {
   )
 }
 
-export default createFragmentContainer(Subhead, graphql`
-  fragment Subhead_view on View {
-    currentRepository {
-      rootTopic {
-        resourcePath
+export default createFragmentContainer(Subhead, {
+  view: graphql`
+    fragment Subhead_view on View {
+      currentRepository {
+        rootTopic {
+          resourcePath
+        }
       }
     }
-  }
-`)
+  `,
+})

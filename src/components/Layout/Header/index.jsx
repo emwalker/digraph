@@ -36,8 +36,7 @@ class Header extends Component<Props> {
     </Fragment>
   )
 
-  renderUserNav = (viewer: UserType) =>
-    <ViewerDropdown viewer={viewer} />
+  renderUserNav = (viewer: UserType) => <ViewerDropdown viewer={viewer} />
 
   render = () => {
     const { viewer } = this.props

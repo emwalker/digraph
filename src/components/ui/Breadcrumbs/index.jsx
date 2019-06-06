@@ -17,8 +17,7 @@ type Props = {
 class Breadcrumbs extends Component<Props> {
   get repoLink(): Node {
     const org = orgFrom(this.props.repository)
-    if (!org)
-      return this.props.orgLogin
+    if (!org) return this.props.orgLogin
 
     const { defaultRepository: repo } = org
     const { rootTopic: topic } = repo
@@ -68,22 +67,24 @@ class Breadcrumbs extends Component<Props> {
   }
 }
 
-export default createFragmentContainer(Breadcrumbs, graphql`
-  fragment Breadcrumbs_repository on Repository {
-    displayName
-    isPrivate
+export default createFragmentContainer(Breadcrumbs, {
+  repository: graphql`
+    fragment Breadcrumbs_repository on Repository {
+      displayName
+      isPrivate
 
-    organization {
-      login
+      organization {
+        login
 
-      defaultRepository {
-        displayName
+        defaultRepository {
+          displayName
 
-        rootTopic {
-          name
-          resourcePath
+          rootTopic {
+            name
+            resourcePath
+          }
         }
       }
     }
-  }
-`)
+  `,
+})

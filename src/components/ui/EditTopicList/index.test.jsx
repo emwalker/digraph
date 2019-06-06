@@ -1,6 +1,6 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-import Select from 'react-select/lib/Async'
+import Select from 'react-select/async'
 
 import EditTopicList from './index'
 

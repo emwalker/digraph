@@ -15,6 +15,7 @@ type State = {
 class SearchBox extends Component<Props, State> {
   static defaultProps = {
     className: '',
+    onEnter: null,
   }
 
   constructor(props: Props) {
@@ -34,8 +35,7 @@ class SearchBox extends Component<Props, State> {
   }
 
   onEnter = (string: string) => {
-    if (this.props.onEnter)
-      this.props.onEnter(string)
+    if (this.props.onEnter) this.props.onEnter(string)
   }
 
   onKeyPress = (event: SyntheticKeyboardEvent<HTMLButtonElement>) => {

@@ -5,8 +5,6 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import type { Relay, RepositoryEdge, UserType } from 'components/types'
 import selectRepositoryMutation from 'mutations/selectRepositoryMutation'
 
-/* eslint jsx-a11y/label-has-for: 0 */
-
 type Props = {
   relay: Relay,
   viewer: UserType,
@@ -62,22 +60,24 @@ class SelectRepository extends Component<Props> {
   )
 }
 
-export default createFragmentContainer(SelectRepository, graphql`
-  fragment SelectRepository_viewer on User {
-    selectedRepository {
-      id
-      isPrivate
-    }
+export default createFragmentContainer(SelectRepository, {
+  viewer: graphql`
+    fragment SelectRepository_viewer on User {
+      selectedRepository {
+        id
+        isPrivate
+      }
 
-    repositories(first: 100) {
-      edges {
-        isSelected
+      repositories(first: 100) {
+        edges {
+          isSelected
 
-        node {
-          fullName
-          id
+          node {
+            fullName
+            id
+          }
         }
       }
     }
-  }
-`)
+  `,
+})

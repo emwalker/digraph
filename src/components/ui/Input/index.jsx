@@ -1,8 +1,6 @@
 // @flow
 import React from 'react'
 
-/* eslint jsx-a11y/label-has-for: 0 */
-
 type Props = {
   className: string,
   id: string,
