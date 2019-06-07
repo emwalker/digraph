@@ -69,6 +69,7 @@ class Link extends Component<Props, State> {
       orgLogin={this.props.orgLogin}
       repoName={this.currentRepo.name}
       showEditButton={this.showEditButton}
+      showLink
       title={this.props.link.title}
       toggleForm={this.toggleForm}
       topics={this.parentTopics}
@@ -84,6 +85,8 @@ class Link extends Component<Props, State> {
     </Item>
   )
 }
+
+export const UnwrappedLink = Link
 
 export default createFragmentContainer(Link, {
   view: graphql`

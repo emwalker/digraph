@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Link /> renders 1`] = `
+<Item
+  canEdit={true}
+  className="Box-row--link"
+  description={null}
+  displayColor="transparent"
+  formIsOpen={false}
+  orgLogin="gnusto"
+  repoName="General collection"
+  showEditButton={true}
+  showLink={true}
+  title="title"
+  toggleForm={[Function]}
+  topics={Array []}
+  url="url"
+>
+  <EditLinkContainer
+    isOpen={false}
+    link={
+      Object {
+        "title": "title",
+        "url": "url",
+      }
+    }
+    orgLogin="gnusto"
+    relay={Object {}}
+    toggleForm={[Function]}
+  />
+</Item>
+`;
