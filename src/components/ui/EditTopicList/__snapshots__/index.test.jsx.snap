@@ -11,7 +11,7 @@ exports[`<EditTopicList /> renders 1`] = `
   </label>
   <Async
     backspaceRemovesValue={false}
-    cacheOptions={true}
+    cacheOptions={false}
     className="mt-1"
     components={
       Object {

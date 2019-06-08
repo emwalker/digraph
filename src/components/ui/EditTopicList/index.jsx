@@ -56,7 +56,7 @@ class EditTopicList extends Component<Props, State> {
       </label>
       <AsyncSelect
         backspaceRemovesValue={false}
-        cacheOptions
+        cacheOptions={false}
         className="mt-1"
         components={{
           ClearIndicator: null,
