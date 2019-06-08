@@ -85,7 +85,6 @@ const config  = {
 
   entry: {
     main: [
-      'babel-polyfill',
       path.join(__dirname, 'src/client.jsx'),
     ],
   },

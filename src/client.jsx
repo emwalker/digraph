@@ -1,3 +1,5 @@
+import 'core-js/'
+import 'regenerator-runtime/runtime'
 import BrowserProtocol from 'farce/lib/BrowserProtocol'
 import createFarceRouter from 'found/lib/createFarceRouter'
 import createRender from 'found/lib/createRender'
