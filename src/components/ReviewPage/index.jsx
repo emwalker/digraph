@@ -1,7 +1,6 @@
 // @flow
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
-import DocumentTitle from 'react-document-title'
 
 import { type CollectionNode } from 'components/types'
 import { type ReviewPage_view as View } from './__generated__/ReviewPage_view.graphql'
@@ -29,21 +28,24 @@ class ReviewPage extends Component<Props> {
     const { links } = this
 
     return (
-      <DocumentTitle title="Links for review">
-        <Container>
-          { links.length > 0
-            ? (
-              <div className="Box Box--condensed">
-                <ul>
-                  { links.map(this.renderReview) }
-                </ul>
+      <Container>
+        { links.length > 0
+          ? (
+            <div className="Box Box--condensed">
+              <div className="Box-header">
+                <h3 className="Box-title overflow-hidden flex-auto">
+                  Link
+                </h3>
               </div>
-            ) : (
-              <div>There are no links to review.</div>
-            )
-          }
-        </Container>
-      </DocumentTitle>
+              <ul>
+                { links.map(this.renderReview) }
+              </ul>
+            </div>
+          ) : (
+            <div>There are no links to review.</div>
+          )
+        }
+      </Container>
     )
   }
 }

@@ -42,12 +42,12 @@ class Review extends Component<Props, State> {
     )
   }
 
-  get linkClass(): string {
-    return this.state.reviewed ? 'link-gray' : 'link-gray-dark'
-  }
-
   get className(): string {
-    return classNames('Box-row clearfix Review', { 'Review--reviewed': this.state.reviewed })
+    return classNames(
+      'Box-row clearfix Review', 'd-flex', 'flex-items-center', {
+        'Review--reviewed': this.state.reviewed,
+      },
+    )
   }
 
   render = () => {
@@ -55,9 +55,9 @@ class Review extends Component<Props, State> {
 
     return (
       <li className={this.className}>
-        <div className="d-inline-block col-10">
+        <div className="overflow-hidden flex-auto pr-3">
           <div>
-            <a className={this.linkClass} href={url}>
+            <a className="link-gray-dark" href={url}>
               { title }
             </a>
           </div>
@@ -65,21 +65,19 @@ class Review extends Component<Props, State> {
             { url }
           </div>
         </div>
-        <div className="d-inline-block col-2">
-          <form>
-            <div className="form-checkbox">
-              <label>
-                <input
-                  checked={this.state.reviewed}
-                  className="input-lg"
-                  onChange={this.onChange}
-                  type="checkbox"
-                />
-                Reviewed
-              </label>
-            </div>
-          </form>
-        </div>
+        <form>
+          <div className="form-checkbox">
+            <label>
+              <input
+                checked={this.state.reviewed}
+                className="input-lg"
+                onChange={this.onChange}
+                type="checkbox"
+              />
+              Reviewed
+            </label>
+          </div>
+        </form>
       </li>
     )
   }
