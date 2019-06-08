@@ -132,6 +132,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://thehill.com/regulation/court-battles/445184-federal-judge-backs-trump-rules-emergency-declaration-on-wall-can?rnd=1559598882",
 			canonicalURL: "https://thehill.com/regulation/court-battles/445184-federal-judge-backs-trump-rules-emergency-declaration-on-wall-can",
 		},
+		{
+			name:         "A book on Amazon",
+			inputURL:     "https://www.amazon.com/gp/offer-listing/0743228383/ref=tmm_hrd_used_olp_sr?ie=UTF8&condition=used&qid=&sr=",
+			canonicalURL: "https://www.amazon.com/gp/offer-listing/0743228383/ref=tmm_hrd_used_olp_sr",
+		},
 	}
 
 	for _, testCase := range testCases {
