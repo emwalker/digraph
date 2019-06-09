@@ -67,6 +67,7 @@ var (
 		"motherjones.com",
 		"nytimes.com",
 		"reuters.com",
+		"scientificamerican.com",
 		"theguardian.com",
 		"thehill.com",
 		"twitter.com",

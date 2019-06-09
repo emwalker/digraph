@@ -137,6 +137,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.amazon.com/gp/offer-listing/0743228383/ref=tmm_hrd_used_olp_sr?ie=UTF8&condition=used&qid=&sr=",
 			canonicalURL: "https://www.amazon.com/gp/offer-listing/0743228383/ref=tmm_hrd_used_olp_sr",
 		},
+		{
+			name:         "An article in Scientific American",
+			inputURL:     "https://www.scientificamerican.com/article/atheism-is-inconsistent-with-the-scientific-method-prizewinning-physicist-says/?redirect=1",
+			canonicalURL: "https://www.scientificamerican.com/article/atheism-is-inconsistent-with-the-scientific-method-prizewinning-physicist-says/",
+		},
 	}
 
 	for _, testCase := range testCases {
