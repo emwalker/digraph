@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/NYTimes/gziphandler"
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
@@ -95,14 +96,19 @@ func logAndTimeout(h http.Handler) http.HandlerFunc {
 	}
 }
 
+func defaultHandling(h http.Handler) http.Handler {
+	withoutGz := logAndTimeout(h)
+	return gziphandler.GzipHandler(withoutGz)
+}
+
 // Routes registers route handlers with the http server.
 func (s *Server) Routes() {
-	http.Handle("/static/", logAndTimeout(s.withBasicAuth(s.handleStaticFiles())))
-	http.Handle("/graphql", logAndTimeout(s.withSession(s.withBasicAuth(s.handleGraphqlRequest()))))
-	http.Handle("/playground", logAndTimeout(s.withBasicAuth(s.handleGraphqlPlayground())))
-	http.Handle("/_ah/health", logAndTimeout(s.handleHealthCheck()))
-	http.Handle("/500", logAndTimeout(s.handleMock500()))
-	http.Handle("/", logAndTimeout(http.HandlerFunc(s.withBasicAuth(s.handleRoot()))))
+	http.Handle("/static/", defaultHandling(s.withBasicAuth(s.handleStaticFiles())))
+	http.Handle("/graphql", defaultHandling(s.withSession(s.withBasicAuth(s.handleGraphqlRequest()))))
+	http.Handle("/playground", defaultHandling(s.withBasicAuth(s.handleGraphqlPlayground())))
+	http.Handle("/_ah/health", defaultHandling(s.handleHealthCheck()))
+	http.Handle("/500", defaultHandling(s.handleMock500()))
+	http.Handle("/", defaultHandling(http.HandlerFunc(s.withBasicAuth(s.handleRoot()))))
 	s.RegisterOauth2Routes()
 }
 
