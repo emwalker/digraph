@@ -16,6 +16,7 @@ type linkResolver struct {
 
 func linkConnection(view *models.View, rows []*models.Link, err error) (models.LinkConnection, error) {
 	if err != nil {
+		log.Printf("There was a problem constructing link connection: %s", err)
 		return models.LinkConnection{}, err
 	}
 
@@ -119,6 +120,8 @@ func (r *linkResolver) URL(_ context.Context, link *models.LinkValue) (string, e
 func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue) (*models.LinkReview, error) {
 	var review *models.UserLinkReview
 	var err error
+
+	log.Printf("Fetching viewer review for %s", link.Summary())
 
 	if link.R == nil {
 		log.Printf("Fetching reviewedAt for link %s", link.Summary())

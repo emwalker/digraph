@@ -152,9 +152,17 @@ func (r *topicResolver) Links(
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
 		qm.OrderBy("created_at desc"),
-		qm.Load(models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", r.Actor.ID), qm.Limit(1)),
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
 	})
+
+	if !r.Actor.IsGuest() {
+		mods = append(
+			mods,
+			qm.Load(
+				models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", r.Actor.ID), qm.Limit(1),
+			),
+		)
+	}
 
 	if searchString != nil && *searchString != "" {
 		mods = append(mods, qm.Where("links.title ~~* all(?)", wildcardStringArray(*searchString)))
