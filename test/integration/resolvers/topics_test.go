@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -828,5 +829,34 @@ func TestViewerCanDeleteSynonymWhenLessThanTwoExist(t *testing.T) {
 
 	if canAdd {
 		t.Fatal("Viewer should not be able to delete a synonym, because there is only one")
+	}
+}
+
+func TestGuestViewTopic(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	repo := m.defaultRepo()
+
+	topic, cleanup := m.createTopic(testActor.Login, repo.Name, "A topic")
+	defer cleanup()
+
+	link, cleanup := m.createLink(testActor.Login, repo.Name, "Public topic", "https://www.nytimes.com")
+	defer cleanup()
+
+	m.addParentTopicToLink(link, topic)
+	if err := topic.Reload(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
+	resolver := resolvers.New(testDB, &resolvers.GuestUser, rootResolver.Fetcher, rootResolver.RD).Topic()
+
+	searchString := "topic"
+	conn, err := resolver.Links(ctx, topic, &searchString, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(conn.Edges) < 1 {
+		t.Fatal("Expected at least one result")
 	}
 }
