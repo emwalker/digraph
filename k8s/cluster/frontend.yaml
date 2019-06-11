@@ -6,17 +6,19 @@ metadata:
 spec:
   ports:
   - name: frontend-http
+    nodePort: 30723
     port: 80
     protocol: TCP
     targetPort: 8080
   - name: frontend-https
+    nodePort: 31583
     port: 443
     protocol: TCP
     targetPort: 8080
   selector:
     app: digraph
     tier: frontend
-  type: LoadBalancer
+  type: NodePort
 
 ---
 apiVersion: extensions/v1beta1
