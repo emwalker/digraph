@@ -246,6 +246,9 @@ func (r *topicResolver) matchingDescendantTopics(
 		ID string
 	}
 
+	query := wildcardStringQuery(searchString)
+	log.Printf("Looking for descendent topics with query: %s", query)
+
 	err := queries.Raw(`
 	with recursive child_topics as (
 	  select parent_id, parent_id as child_id
@@ -259,9 +262,14 @@ func (r *topicResolver) matchingDescendantTopics(
 	from topics t
 	inner join synonyms s on t.id = s.topic_id
 	inner join child_topics ct on ct.child_id = t.id
-	where s.name ~~* all($2)
+	where (
+		case $2
+		when '' then true
+		else to_tsvector('synonymsdict', s.name) @@ to_tsquery('synonymsdict', $2)
+		end
+	)
 	limit $3
-	`, topic.ID, wildcardStringArray(searchString), limit).Bind(ctx, r.DB, &rows)
+	`, topic.ID, query, limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err
