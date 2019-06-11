@@ -310,6 +310,9 @@ func (r *topicResolver) matchingDescendantLinks(
 		ID string
 	}
 
+	query := wildcardStringQuery(searchString)
+	log.Printf("Searching for links that match query: %s", query)
+
 	err := queries.Raw(`
 	with recursive child_topics as (
 	  select parent_id, parent_id as child_id
@@ -322,9 +325,14 @@ func (r *topicResolver) matchingDescendantLinks(
 	select l.id from links l
 	inner join link_topics lt on l.id = lt.child_id
 	inner join child_topics ct on ct.child_id = lt.parent_id
-	where l.title ~~* all($2)
+	where (
+		case $2
+		when '' then true
+		else to_tsvector('linksdict', l.title) @@ to_tsquery('linksdict', $2)
+		end
+	)
 	limit $3
-	`, topic.ID, wildcardStringArray(searchString), limit).Bind(ctx, r.DB, &rows)
+	`, topic.ID, query, limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err
