@@ -13,20 +13,6 @@ type ActivityLineItemConnection {
   pageInfo: PageInfo!
 }
 
-input AddSynonymInput {
-  clientMutationId: String
-  name: String!
-  locale: LocaleIdentifier!
-  topicId: ID!
-}
-
-type AddSynonymPayload {
-  alerts: [Alert!]!
-  clientMutationId: String
-  synonymEdge: SynonymEdge
-  topic: Topic
-}
-
 type Alert {
   text: String!
   type: AlertType!
@@ -55,18 +41,6 @@ input DeleteLinkInput {
 type DeleteLinkPayload {
   clientMutationId: String
   deletedLinkId: ID!
-}
-
-input DeleteSynonymInput {
-  clientMutationId: String
-  synonymId: ID!
-}
-
-type DeleteSynonymPayload {
-  alerts: [Alert!]!
-  clientMutationId: String
-  deletedSynonymId: ID
-  topic: Topic
 }
 
 input DeleteTopicInput {
@@ -129,13 +103,12 @@ type LinkReview {
 }
 
 type Mutation {
-  addSynonym(input: AddSynonymInput!): AddSynonymPayload
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
-  deleteSynonym(input: DeleteSynonymInput!): DeleteSynonymPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
   reviewLink(input: ReviewLinkInput!): ReviewLinkPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
+  updateSynonyms(input: UpdateSynonymsInput!): UpdateSynonymsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
@@ -176,6 +149,16 @@ type Query {
     repositoryIds: [ID!],
     viewerId: ID
   ): View!
+}
+
+input ReorderSynonymsInput {
+  clientMutationId: String
+  synonymIds: [ID!]!
+  topicId: ID!
+}
+
+type ReorderSynonymsPayload {
+  clientMutationId: String
 }
 
 type Repository {
@@ -235,20 +218,8 @@ type SelectRepositoryPayload {
 }
 
 type Synonym {
-  id: ID!
-  locale: String!
+  locale: LocaleIdentifier!
   name: String!
-  topic: Topic!
-}
-
-type SynonymEdge {
-  cursor: String!
-  node: Synonym!
-}
-
-type SynonymConnection {
-  edges: [SynonymEdge]
-  pageInfo: PageInfo!
 }
 
 type Topic implements ResourceIdentifiable & Namespaceable {
@@ -295,16 +266,10 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): SearchResultItemConnection!
-  synonyms(
-    searchString: String,
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): SynonymConnection!
+  synonyms: [Synonym!]!
   updatedAt: DateTime!
-  viewerCanAddSynonym: Boolean!
-  viewerCanDeleteSynonym: Boolean!
+  viewerCanDeleteSynonyms: Boolean!
+  viewerCanUpdate: Boolean!
 }
 
 type TopicEdge {
@@ -333,6 +298,23 @@ type User {
   ): RepositoryConnection!
   selectedRepository: Repository
   updatedAt: DateTime!
+}
+
+input SynonymInput {
+  name: String!
+  locale: String!
+}
+
+input UpdateSynonymsInput {
+  clientMutationId: String
+  synonyms: [SynonymInput!]!
+  topicId: ID!
+}
+
+type UpdateSynonymsPayload {
+  alerts: [Alert!]!
+  clientMutationId: String
+  topic: Topic
 }
 
 input UpdateTopicInput {

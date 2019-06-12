@@ -2,14 +2,11 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import type { CollectionNode, Relay } from 'components/types'
-import addSynonymMutation from 'mutations/addSynonymMutation'
-import deleteSynonymMutation from 'mutations/deleteSynonymMutation'
-import { liftNodes } from 'utils'
-import type { Synonyms_topic as Topic } from './__generated__/Synonyms_topic.graphql'
-import Synonym from './Synonym'
-
-type SynonymType = CollectionNode<$PropertyType<Topic, 'synonyms'>>
+import type { Relay } from 'components/types'
+import updateSynonymsMutation from 'mutations/updateSynonymsMutation'
+import SynonymList from './SynonymList'
+import { type Topic, type Synonym as SynonymType } from './types'
+import copySynonyms from './copySynonyms'
 
 type Props = {
   relay: Relay,
@@ -19,6 +16,7 @@ type Props = {
 type State = {
   locale: string,
   name: string,
+  synonyms: $ReadOnlyArray<SynonymType>,
 }
 
 class Synonyms extends Component<Props, State> {
@@ -27,18 +25,8 @@ class Synonyms extends Component<Props, State> {
     this.state = {
       locale: 'en',
       name: '',
+      synonyms: props.topic.synonyms,
     }
-  }
-
-  onDelete = (synonym: SynonymType) => {
-    // eslint-disable-next-line no-alert
-    if (!window.confirm('Are you sure you want to delete this synonym?')) return
-
-    deleteSynonymMutation(
-      this.props.relay.environment,
-      this.deleteConfigs,
-      { synonymId: synonym.id },
-    )
   }
 
   onLocaleChange = (event: SyntheticInputEvent<HTMLButtonElement>) => {
@@ -49,53 +37,50 @@ class Synonyms extends Component<Props, State> {
     this.setState({ name: event.target.value })
   }
 
-  get synonyms(): SynonymType[] {
-    return liftNodes(this.props.topic.synonyms)
+  onAdd = () => {
+    const update = copySynonyms(this.state.synonyms)
+    const synonym = ({ name: this.state.name, locale: this.state.locale }: any)
+    update.push(synonym)
+    this.updateSynonyms(update)
   }
 
-  get addConfigs(): Object[] {
-    return [
-      {
-        type: 'RANGE_ADD',
-        parentID: this.props.topic.id,
-        connectionInfo: [
-          {
-            key: 'Synonyms_synonyms',
-            rangeBehavior: 'append',
-          },
-        ],
-        edgeName: 'synonymEdge',
-      },
-    ]
+  onDelete = (idx: number) => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('Are you sure you want to delete this synonym?')) return
+
+    const update = copySynonyms(this.state.synonyms)
+    update.splice(idx, 1)
+    this.updateSynonyms((update: any))
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  get deleteConfigs(): Object[] {
-    return [
-      {
-        type: 'NODE_DELETE',
-        deletedIDFieldName: 'deletedSynonymId',
-      },
-    ]
+  get synonyms(): $ReadOnlyArray<SynonymType> {
+    return this.props.topic.synonyms
   }
 
-  deleteFn = () => (
-    this.props.topic.viewerCanDeleteSynonym
-      ? this.onDelete
-      : null
+  updateSynonyms = (synonyms: $ReadOnlyArray<SynonymType>) => {
+    this.setState({ synonyms, locale: 'en', name: '' }, () => {
+      updateSynonymsMutation(
+        this.props.relay.environment,
+        [],
+        { topicId: this.props.topic.id, synonyms },
+      )
+    })
+  }
+
+  renderSynonyms = () => (
+    <SynonymList
+      canUpdate={this.props.topic.viewerCanUpdate}
+      onAdd={this.onAdd}
+      onDelete={this.onDelete}
+      onUpdate={this.updateSynonyms}
+      relay={this.props.relay}
+      synonyms={this.synonyms}
+      topic={this.props.topic}
+    />
   )
 
-  addSynonym = () => {
-    addSynonymMutation(
-      this.props.relay.environment,
-      this.addConfigs,
-      { topicId: this.props.topic.id, name: this.state.name, locale: this.state.locale },
-    )
-    this.setState({ name: '', locale: 'en' })
-  }
-
   renderAddButton = () => (
-    <button type="button" onClick={this.addSynonym} className="btn col-1">
+    <button type="button" onClick={this.onAdd} className="btn col-1">
       Add
     </button>
   )
@@ -108,9 +93,7 @@ class Synonyms extends Component<Props, State> {
         Names and synonyms
       </label>
       <ul className="Box list-style-none mt-1 mb-2">
-        {this.synonyms.map(synonym => (
-          <Synonym onDelete={this.deleteFn()} key={synonym.id} synonym={synonym} />
-        ))}
+        { this.renderSynonyms() }
       </ul>
       <div className="clearfix">
         <input
@@ -126,7 +109,7 @@ class Synonyms extends Component<Props, State> {
           <option>fr</option>
         </select>
 
-        { this.props.topic.viewerCanAddSynonym && this.renderAddButton() }
+        { this.props.topic.viewerCanUpdate && this.renderAddButton() }
       </div>
     </dl>
   )
@@ -138,18 +121,14 @@ export default createFragmentContainer(Synonyms, {
   topic: graphql`
     fragment Synonyms_topic on Topic {
       id
-      viewerCanDeleteSynonym
-      viewerCanAddSynonym
+      viewerCanDeleteSynonyms
+      viewerCanUpdate
 
-      synonyms(first: 100) @connection(key: "Synonyms_synonyms") {
-        edges {
-          node {
-            id
-            name
+      synonyms {
+        name
+        locale
 
-            ...Synonym_synonym
-          }
-        }
+        ...Synonym_synonym
       }
     }
   `,

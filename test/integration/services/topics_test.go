@@ -2,11 +2,11 @@ package services_test
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func TestUpsertTopicEnsuresATopic(t *testing.T) {
@@ -57,20 +57,71 @@ func TestSynonymCreated(t *testing.T) {
 	ctx := context.Background()
 	name := "a0257068ede"
 
-	countBefore, _ := models.Synonyms(qm.Where("name like ?", name)).Count(ctx, testDB)
-	if countBefore != 0 {
-		t.Fatalf("Expected there to be no synonym, found %d", countBefore)
-	}
-
 	result, err := c.UpsertTopic(ctx, defaultRepo, name, nil, []string{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer result.Cleanup()
 
-	countAfter, _ := models.Synonyms(qm.Where("name like ?", name)).Count(ctx, testDB)
+	synonyms, err := result.Topic.SynonymList()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	if countAfter != 1 {
-		t.Fatalf("Expected a single synonym to be created, found %d", countAfter)
+	if len(synonyms.Values) != 1 {
+		t.Fatalf("Expected a single synonym to be created, found %v", synonyms)
+	}
+}
+
+func TestUpdateSynonyms(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	result, err := c.UpsertTopic(ctx, defaultRepo, "Backhoe", nil, []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Cleanup()
+
+	topic := result.Topic
+
+	initialExpected := &models.SynonymList{
+		Values: []models.Synonym{
+			{Locale: "en", Name: "Backhoe"},
+		},
+	}
+
+	initialActual, err := topic.SynonymList()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(initialActual, initialExpected) {
+		t.Fatalf("Expected %#v, got %#v", initialExpected, initialActual)
+	}
+
+	synonyms := []models.Synonym{
+		{Locale: "en", Name: "Backhoe"},
+		{Locale: "en", Name: "Excavator"},
+		{Locale: "en", Name: "Grader"},
+	}
+
+	finalExpected := &models.SynonymList{Values: synonyms}
+
+	if _, err = c.UpdateSynonyms(ctx, topic, synonyms); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = topic.Reload(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
+	finalActual, err := topic.SynonymList()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(finalActual, finalExpected) {
+		t.Fatalf("Expected %#v, got %#v", finalExpected, finalActual)
 	}
 }

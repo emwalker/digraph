@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 
@@ -61,52 +62,6 @@ func findRepo(
 	return models.Repositories(mods...).One(ctx, exec)
 }
 
-// AddSynonym adds a synonym to a topic.
-func (r *MutationResolver) AddSynonym(
-	ctx context.Context, input models.AddSynonymInput,
-) (*models.AddSynonymPayload, error) {
-	var result *services.AddSynonymResult
-	var err error
-
-	topic, err := models.Topics(
-		qm.InnerJoin("organization_members om on topics.organization_id = om.organization_id"),
-		qm.Where("topics.id = ? and om.user_id = ?", input.TopicID, r.Actor.ID),
-	).One(ctx, r.DB)
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = transact(r.DB, func(tx *sql.Tx) error {
-		c := services.Connection{Exec: tx, Actor: r.Actor}
-
-		result, err = c.AddSynonym(ctx, topic, input.Name, input.Locale)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		log.Printf(
-			"%s failed to create a synonym %s for topic %s: %s", r.Actor.Summary(), input.Name,
-			input.TopicID, err,
-		)
-	}
-
-	view, err := newViewFromTopic(ctx, r.DB, topic)
-	if err != nil {
-		return nil, err
-	}
-
-	return &models.AddSynonymPayload{
-		Alerts:      result.Alerts,
-		SynonymEdge: &models.SynonymEdge{Node: *result.Synonym},
-		Topic:       &models.TopicValue{Topic: topic, View: view},
-	}, nil
-}
-
 // DeleteLink sets the parent topics on a topic.
 func (r *MutationResolver) DeleteLink(
 	ctx context.Context, input models.DeleteLinkInput,
@@ -151,70 +106,6 @@ func (r *MutationResolver) DeleteLink(
 	}, nil
 }
 
-// DeleteSynonym deletes a topic synonym.
-func (r *MutationResolver) DeleteSynonym(
-	ctx context.Context, input models.DeleteSynonymInput,
-) (*models.DeleteSynonymPayload, error) {
-	if r.Actor.IsGuest() {
-		return nil, errNoAnonymousMutations
-	}
-
-	var result *services.DeleteSynonymResult
-
-	synonym, err := models.Synonyms(
-		qm.InnerJoin("topics t on synonyms.topic_id = t.id"),
-		qm.InnerJoin("organization_members om on t.organization_id = om.organization_id"),
-		qm.Where("synonyms.id = ? and om.user_id = ?", input.SynonymID, r.Actor.ID),
-	).One(ctx, r.DB)
-
-	if err != nil {
-		log.Printf("There was a problem looking up synonym %s: %s", input.SynonymID, err)
-		return nil, err
-	}
-
-	topic, err := synonym.Topic().One(ctx, r.DB)
-	if err != nil {
-		log.Printf("No topic found for synonym %s: %s", input.SynonymID, err)
-		return nil, err
-	}
-
-	err = transact(r.DB, func(tx *sql.Tx) error {
-		c := services.Connection{Exec: tx, Actor: r.Actor}
-		result, err = c.DeleteSynonym(ctx, synonym)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-
-	if err != nil {
-		log.Printf("There was a problem deleteting synonym %s: %s", input.SynonymID, err)
-		return nil, err
-	}
-
-	view, err := newViewFromTopic(ctx, r.DB, topic)
-	if err != nil {
-		log.Printf("Could not create a view for topic %s: %s", topic.ID, err)
-		return nil, err
-	}
-
-	if !result.Success {
-		return &models.DeleteSynonymPayload{
-			Alerts:           result.Alerts,
-			ClientMutationID: input.ClientMutationID,
-			DeletedSynonymID: nil,
-			Topic:            &models.TopicValue{Topic: result.Topic, View: view},
-		}, nil
-	}
-
-	return &models.DeleteSynonymPayload{
-		Alerts:           result.Alerts,
-		ClientMutationID: input.ClientMutationID,
-		DeletedSynonymID: &input.SynonymID,
-		Topic:            &models.TopicValue{Topic: result.Topic, View: view},
-	}, nil
-}
-
 // DeleteTopic deletes a topic.
 func (r *MutationResolver) DeleteTopic(
 	ctx context.Context, input models.DeleteTopicInput,
@@ -223,10 +114,7 @@ func (r *MutationResolver) DeleteTopic(
 		return nil, errNoAnonymousMutations
 	}
 
-	topic, err := models.Topics(
-		qm.InnerJoin("organization_members om on topics.organization_id = om.organization_id"),
-		qm.Where("topics.id = ? and om.user_id = ?", input.TopicID, r.Actor.ID),
-	).One(ctx, r.DB)
+	topic, err := fetchTopic(ctx, r.DB, input.TopicID, r.Actor)
 	if err != nil {
 		log.Printf("There was a problem looking up topic: %s", input.TopicID)
 		return nil, err
@@ -249,7 +137,7 @@ func (r *MutationResolver) ReviewLink(
 ) (*models.ReviewLinkPayload, error) {
 	log.Printf("Adding review to link %s", input.LinkID)
 
-	s := services.Connection{Exec: r.DB, Actor: r.Actor}
+	c := services.Connection{Exec: r.DB, Actor: r.Actor}
 
 	link, err := models.Links(
 		qm.InnerJoin("repositories r on r.id = links.repository_id"),
@@ -263,7 +151,7 @@ func (r *MutationResolver) ReviewLink(
 		return nil, err
 	}
 
-	result, err := s.ReviewLink(ctx, link, input.Reviewed)
+	result, err := c.ReviewLink(ctx, link, input.Reviewed)
 	if err != nil {
 		return nil, err
 	}
@@ -346,6 +234,7 @@ func (r *MutationResolver) UpsertTopic(
 	})
 
 	if err != nil {
+		log.Printf("There was an error upserting the topic: %s", err)
 		return nil, err
 	}
 
@@ -358,6 +247,55 @@ func (r *MutationResolver) UpsertTopic(
 		TopicEdge: &models.TopicEdge{
 			Node: models.TopicValue{result.Topic, result.TopicCreated, r.Actor.DefaultView()},
 		},
+	}, nil
+}
+
+// UpdateSynonyms updates the synonyms for a topic.
+func (r *MutationResolver) UpdateSynonyms(
+	ctx context.Context, input models.UpdateSynonymsInput,
+) (*models.UpdateSynonymsPayload, error) {
+	var result *services.UpdateSynonymsResult
+	var err error
+
+	topic, err := fetchTopic(ctx, r.DB, input.TopicID, r.Actor)
+	if err != nil {
+		return nil, err
+	}
+
+	synonyms := make([]models.Synonym, len(input.Synonyms))
+
+	for i, synonym := range input.Synonyms {
+		locale := models.LocaleIdentifier(synonym.Locale)
+		if !locale.IsValid() {
+			return nil, fmt.Errorf("not a valid locale: %s", synonym.Locale)
+		}
+
+		synonyms[i] = models.Synonym{
+			Locale: synonym.Locale,
+			Name:   synonym.Name,
+		}
+	}
+
+	err = transact(r.DB, func(tx *sql.Tx) error {
+		c := services.Connection{Exec: tx, Actor: r.Actor}
+
+		result, err = c.UpdateSynonyms(ctx, topic, synonyms)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Printf(
+			"%s failed update synonyms (%v) topic %s: %s", r.Actor.Summary(), synonyms, topic.ID, err,
+		)
+	}
+
+	return &models.UpdateSynonymsPayload{
+		Alerts: result.Alerts,
+		Topic:  &models.TopicValue{Topic: topic, View: r.Actor.DefaultView()},
 	}, nil
 }
 

@@ -52,7 +52,7 @@ class TopicPage extends Component<Props, State> {
   }
 
   get synonyms(): SynonymType[] {
-    return liftNodes(this.props.topic.synonyms)
+    return this.props.topic.synonyms
   }
 
   renderLink = (link: LinkType) => (
@@ -218,12 +218,8 @@ export default createFragmentContainer(TopicPage, {
       resourcePath
       ...AddForm_topic
 
-      synonyms(first: 100) {
-        edges {
-          node {
-            name
-          }
-        }
+      synonyms {
+        name
       }
 
       parentTopics(first: 100) {

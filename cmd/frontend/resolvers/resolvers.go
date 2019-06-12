@@ -68,14 +68,14 @@ func (r *Resolver) Repository() models.RepositoryResolver {
 	return &repositoryResolver{r}
 }
 
+// Synonym returns an instance of models.SynonymResolver.
+func (r *Resolver) Synonym() models.SynonymResolver {
+	return &synonymResolver{r}
+}
+
 // Topic returns an instance of models.TopicResolver.
 func (r *Resolver) Topic() models.TopicResolver {
 	return &topicResolver{r}
-}
-
-// Synonym returns an instance of models.UserResolver.
-func (r *Resolver) Synonym() models.SynonymResolver {
-	return &synonymResolver{r}
 }
 
 // User returns an instance of models.UserResolver.

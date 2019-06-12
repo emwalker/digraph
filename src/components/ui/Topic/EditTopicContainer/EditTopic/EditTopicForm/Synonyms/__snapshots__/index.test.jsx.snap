@@ -12,13 +12,35 @@ exports[`<Synonyms /> renders 1`] = `
   <ul
     className="Box list-style-none mt-1 mb-2"
   >
-    <ForwardRef(Relay(Synonym))
-      key="1234"
-      onDelete={null}
-      synonym={
+    <SynonymList
+      onAdd={[Function]}
+      onDelete={[Function]}
+      onUpdate={[Function]}
+      synonyms={
         Object {
-          "id": "1234",
-          "name": "Gnusto",
+          "edges": Array [
+            Object {
+              "node": Object {
+                "id": "1234",
+                "name": "Gnusto",
+              },
+            },
+          ],
+        }
+      }
+      topic={
+        Object {
+          "synonyms": Object {
+            "edges": Array [
+              Object {
+                "node": Object {
+                  "id": "1234",
+                  "name": "Gnusto",
+                },
+              },
+            ],
+          },
+          "viewerCanDeleteSynonyms": true,
         }
       }
     />

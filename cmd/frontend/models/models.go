@@ -24,6 +24,17 @@ type TopicValue struct {
 	View       *View
 }
 
+// Synonym holds a single synonym.
+type Synonym struct {
+	Locale string
+	Name   string
+}
+
+// SynonymList holds the set of synonyms for a topic.
+type SynonymList struct {
+	Values []Synonym
+}
+
 // IsNamespaceable tags Link as implementing the Namespaceable interface.
 func (Link) IsNamespaceable() {}
 
@@ -55,9 +66,18 @@ func (Topic) IsResourceIdentifiable() {}
 // IsSearchResultItem tags Topic as being in the SearchResultItem union.
 func (Topic) IsSearchResultItem() {}
 
-// Summary returns info on a user that can be printed to the log
+// Summary returns info on a user that can be printed to the log.
 func (t Topic) Summary() string {
 	return fmt.Sprintf("topic %s (%s)", t.Name, t.ID)
+}
+
+// SynonymList returns the synonyms json field.
+func (t Topic) SynonymList() (*SynonymList, error) {
+	var synonyms SynonymList
+	if err := t.Synonyms.Unmarshal(&synonyms.Values); err != nil {
+		return nil, err
+	}
+	return &synonyms, nil
 }
 
 // IsResourceIdentifiable tags Organization as implementing the ResourceIdentifiable interface.

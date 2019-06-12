@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -14,6 +15,12 @@ import (
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
+
+// UpdateSynonymsResult holds the result after updating the synonyms on a topic.
+type UpdateSynonymsResult struct {
+	Alerts []models.Alert
+	Topic  *models.Topic
+}
 
 // UpdateTopicResult holds the result of an UpdateTopic call.
 type UpdateTopicResult struct {
@@ -75,6 +82,24 @@ func NormalizeTopicName(name string) (string, bool) {
 	return name, true
 }
 
+// UpdateSynonyms updates the synonyms of the topic.
+func (c Connection) UpdateSynonyms(
+	ctx context.Context, topic *models.Topic, synonyms []models.Synonym,
+) (*UpdateSynonymsResult, error) {
+	log.Printf("Updating synonyms for topic %s", topic.Summary())
+
+	if err := topic.Synonyms.Marshal(&synonyms); err != nil {
+		return nil, err
+	}
+
+	if _, err := topic.Update(ctx, c.Exec, boil.Whitelist("synonyms")); err != nil {
+		log.Printf("Unable to update synonyms for topic %s", topic.Summary())
+		return nil, err
+	}
+
+	return &UpdateSynonymsResult{}, nil
+}
+
 // UpdateTopic updates fields on the topic.
 func (c Connection) UpdateTopic(
 	ctx context.Context, topic *models.Topic, name string, description *string,
@@ -127,16 +152,29 @@ func (c Connection) UpsertTopic(
 		}, nil
 	}
 
+	synonyms := models.SynonymList{
+		Values: []models.Synonym{
+			{Locale: "en", Name: name},
+		},
+	}
+
+	synonymJSON, err := json.Marshal(&synonyms.Values)
+	if err != nil {
+		log.Printf("Unable to encode json for synonym: %s", name)
+		return nil, err
+	}
+
 	topic := &models.Topic{
 		Description:    null.StringFromPtr(description),
 		Name:           name,
 		RepositoryID:   repo.ID,
+		Synonyms:       synonymJSON,
 		OrganizationID: repo.OrganizationID,
 	}
 	var created bool
-	var err error
 
 	if topic, created, err = c.upsertTopic(ctx, repo, topic); err != nil {
+		log.Printf("Problem upserting topic: %s", err)
 		return nil, err
 	}
 
@@ -254,10 +292,14 @@ func (c Connection) parentTopicsAndAlerts(
 func (c Connection) upsertTopic(
 	ctx context.Context, repo *models.Repository, topic *models.Topic,
 ) (*models.Topic, bool, error) {
-	existing, _ := repo.Topics(
-		qm.InnerJoin("synonyms s on s.topic_id = topics.id"),
-		qm.Where("s.name ilike ?", topic.Name),
+	existing, err := repo.Topics(
+		qm.Where(`topics.name like ?`, topic.Name),
 	).One(ctx, c.Exec)
+
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		log.Printf("Unable to search for synonyms for %s: %s", topic.Name, err)
+		return nil, false, err
+	}
 
 	if existing != nil {
 		log.Printf("Topic %s already exists", topic.Name)
@@ -265,20 +307,22 @@ func (c Connection) upsertTopic(
 	}
 
 	log.Printf("Creating new topic %s", topic.Name)
-	err := topic.Insert(ctx, c.Exec, boil.Infer())
-	if err != nil {
-		return nil, false, err
+
+	synonyms := []models.Synonym{
+		{Name: topic.Name, Locale: "en"},
 	}
 
-	synonym := models.Synonym{
-		TopicID: topic.ID,
-		Name:    topic.Name,
-		Locale:  "en",
+	jsonArray, err := json.Marshal(synonyms)
+	if err != nil {
+		log.Printf("Unable to marshal json for %v: %s", synonyms, err)
+		return topic, false, err
 	}
 
-	log.Printf("Creating searchable synonym %s", synonym.Name)
-	err = synonym.Insert(ctx, c.Exec, boil.Infer())
+	topic.Synonyms = jsonArray
+
+	err = topic.Insert(ctx, c.Exec, boil.Infer())
 	if err != nil {
+		log.Printf("Failed to insert topic %v: %s", topic, err)
 		return nil, false, err
 	}
 

@@ -1,19 +1,18 @@
 // @flow
 import { graphql } from 'react-relay'
 
-import type { DeleteSynonymInput } from './__generated__/deleteSynonymMutation.graphql'
+import type { UpdateSynonymsInput } from './__generated__/updateSynonymsMutation.graphql'
 import defaultMutation from './util/defaultMutation'
 import flashMessageUpdater from './util/flashMessageUpdater'
 
-export type Input = DeleteSynonymInput
+export type Input = UpdateSynonymsInput
 
 export default defaultMutation(graphql`
-  mutation deleteSynonymMutation(
-    $input: DeleteSynonymInput!
+  mutation updateSynonymsMutation(
+    $input: UpdateSynonymsInput!
   ) {
-    deleteSynonym(input: $input) {
+    updateSynonyms(input: $input) {
       clientMutationId
-      deletedSynonymId
 
       alerts {
         id
@@ -27,4 +26,4 @@ export default defaultMutation(graphql`
       }
     }
   }
-`, flashMessageUpdater('deleteSynonym'))
+`, flashMessageUpdater('updateSynonyms'))
