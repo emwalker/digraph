@@ -54,7 +54,7 @@ class Synonyms extends Component<Props, State> {
   }
 
   get synonyms(): $ReadOnlyArray<SynonymType> {
-    return this.props.topic.synonyms
+    return this.state.synonyms
   }
 
   updateSynonyms = (synonyms: $ReadOnlyArray<SynonymType>) => {
