@@ -16,7 +16,6 @@ type Props = {
 type State = {
   locale: string,
   name: string,
-  synonyms: $ReadOnlyArray<SynonymType>,
 }
 
 class Synonyms extends Component<Props, State> {
@@ -25,7 +24,6 @@ class Synonyms extends Component<Props, State> {
     this.state = {
       locale: 'en',
       name: '',
-      synonyms: props.topic.synonyms,
     }
   }
 
@@ -38,7 +36,7 @@ class Synonyms extends Component<Props, State> {
   }
 
   onAdd = () => {
-    const update = copySynonyms(this.state.synonyms)
+    const update = copySynonyms(this.synonyms)
     const synonym = ({ name: this.state.name, locale: this.state.locale }: any)
     update.push(synonym)
     this.updateSynonyms(update)
@@ -48,13 +46,13 @@ class Synonyms extends Component<Props, State> {
     // eslint-disable-next-line no-alert
     if (!window.confirm('Are you sure you want to delete this synonym?')) return
 
-    const update = copySynonyms(this.state.synonyms)
+    const update = copySynonyms(this.synonyms)
     update.splice(idx, 1)
     this.updateSynonyms((update: any))
   }
 
   get synonyms(): $ReadOnlyArray<SynonymType> {
-    return this.state.synonyms
+    return this.props.topic.synonyms
   }
 
   optimisticResponse = (synonyms: $ReadOnlyArray<SynonymType>) => (
