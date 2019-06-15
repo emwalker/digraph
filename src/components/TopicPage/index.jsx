@@ -93,7 +93,9 @@ class TopicPage extends Component<Props, State> {
 
     return (
       <div className="synonyms h6">
-        {synonyms.slice(1, length).map(({ name }) => <span className="synonym">{name}</span>)}
+        {synonyms.slice(1, length).map(({ name }) => (
+          <span key={name} className="synonym">{name}</span>
+        ))}
       </div>
     )
   }
@@ -120,7 +122,7 @@ class TopicPage extends Component<Props, State> {
       )
     }
 
-    const { name, parentTopics, resourcePath } = topic
+    const { displayName, parentTopics, resourcePath } = topic
     const { topics, links } = this
     const { currentRepository } = view
 
@@ -131,7 +133,7 @@ class TopicPage extends Component<Props, State> {
           repository={currentRepository}
         />
         <Subhead
-          heading={name}
+          heading={displayName}
           headingLink={resourcePath}
           location={this.props.location}
           orgLogin={this.props.orgLogin}
@@ -166,6 +168,8 @@ class TopicPage extends Component<Props, State> {
     )
   }
 }
+
+export const UnwrappedTopicPage = TopicPage
 
 export const query = graphql`
 query TopicPage_query_Query(
@@ -214,7 +218,7 @@ export default createFragmentContainer(TopicPage, {
     fragment TopicPage_topic on Topic @argumentDefinitions(
       searchString: {type: "String", defaultValue: ""},
     ) {
-      name
+      displayName
       resourcePath
       ...AddForm_topic
 

@@ -1,19 +1,12 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 
-import TopicPage from './index'
-
-jest.mock('react-relay', () => ({
-  createFragmentContainer: component => component,
-  createRefetchContainer: Component => props => (
-    <Component {...props} relay={{ refetch: () => {} }} />
-  ),
-  QueryRenderer: () => null,
-}))
+import { UnwrappedTopicPage as TopicPage } from './index'
+import AddForm from './AddForm'
 
 describe('<TopicPage />', () => {
   const topic = {
-    name: 'Frotz',
+    displayName: 'Frotz',
   }
 
   const view = {
@@ -44,9 +37,9 @@ describe('<TopicPage />', () => {
       wrapper.setProps({ viewer: { ...viewer, isGuest: false } })
     })
 
-    const form = () => wrapper.find('AddForm')
+    const form = () => wrapper.find(AddForm)
 
-    it('hides the topic/link form', () => {
+    it('shows the topic/link form', () => {
       expect(form().exists()).toBeTruthy()
     })
   })

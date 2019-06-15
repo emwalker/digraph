@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -149,6 +150,23 @@ func (r *topicResolver) CreatedAt(_ context.Context, topic *models.TopicValue) (
 // Description returns a description of the topic.
 func (r *topicResolver) Description(_ context.Context, topic *models.TopicValue) (*string, error) {
 	return topic.Description.Ptr(), nil
+}
+
+// DisplayName returns the name of the topic.  The name is obtained by finding the first synonym
+// in the current locale.  If there is no synonym in the current locale, the first English synonym
+// is returned.  If there is no English synonym, the first synonym is returned.
+func (r *topicResolver) DisplayName(_ context.Context, topic *models.TopicValue) (string, error) {
+	synonyms, err := topic.SynonymList()
+	if err != nil {
+		return "<name missing>", err
+	}
+
+	name, ok := synonyms.NameForLocale(models.LocaleIdentifierEn)
+	if !ok {
+		return "<name missing>", errors.New("name not found")
+	}
+
+	return name, nil
 }
 
 func (r *topicResolver) ID(_ context.Context, topic *models.TopicValue) (string, error) {

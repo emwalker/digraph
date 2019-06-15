@@ -21,7 +21,7 @@ export default defaultMutation(graphql`
       }
 
       topic {
-        ...Topic_topic
+        displayName
         ...Synonyms_topic
       }
     }

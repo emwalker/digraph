@@ -57,12 +57,27 @@ class Synonyms extends Component<Props, State> {
     return this.state.synonyms
   }
 
+  optimisticResponse = (synonyms: $ReadOnlyArray<SynonymType>) => (
+    {
+      updateSynonyms: {
+        alerts: [],
+        clientMutationId: null,
+        topic: {
+          ...this.props.topic,
+          displayName: synonyms[0].name,
+          synonyms,
+        },
+      },
+    }
+  )
+
   updateSynonyms = (synonyms: $ReadOnlyArray<SynonymType>) => {
-    this.setState({ synonyms, locale: 'en', name: '' }, () => {
+    this.setState({ locale: 'en', name: '' }, () => {
       updateSynonymsMutation(
         this.props.relay.environment,
         [],
         { topicId: this.props.topic.id, synonyms },
+        { optimisticResponse: this.optimisticResponse(synonyms) },
       )
     })
   }

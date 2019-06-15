@@ -91,6 +91,7 @@ export type TopicType = {
   availableTopics: TopicConnection,
   childTopics: TopicConnection,
   description: ?string,
+  displayName: string,
   id: string,
   links: LinkConnection,
   loading: ?boolean,

@@ -239,6 +239,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   ): TopicConnection!
   createdAt: DateTime!
   description: String
+  displayName: String!
   id: ID!
   links(
     searchString: String,

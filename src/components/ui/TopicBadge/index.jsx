@@ -3,18 +3,18 @@ import React from 'react'
 import { Link } from 'found'
 
 type Props = {
-  name: string,
+  displayName: string,
   to: {
     pathname: string,
   },
 }
 
-export default ({ name, to }: Props) => (
+export default ({ displayName, to }: Props) => (
   <Link to={to} className="Box-row-link" key={to.pathname}>
     <span
       className="Label Label--outline Label--outline-gray"
     >
-      {name}
+      {displayName}
     </span>
   </Link>
 )

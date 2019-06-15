@@ -4,7 +4,7 @@ exports[`<TopicPage /> renders 1`] = `
 <div
   className="px-3 px-md-6 px-lg-0"
 >
-  <Breadcrumbs
+  <ForwardRef(Relay(Breadcrumbs))
     repository={
       Object {
         "displayName": "Private collection",
@@ -12,7 +12,7 @@ exports[`<TopicPage /> renders 1`] = `
       }
     }
   />
-  <Subhead
+  <ForwardRef(Relay(Subhead))
     heading="Frotz"
     renderHeadingDetail={[Function]}
     view={
@@ -30,10 +30,10 @@ exports[`<TopicPage /> renders 1`] = `
         items={Array []}
         title="Parent topics"
       />
-      <AddForm
+      <ForwardRef(Relay(AddForm))
         topic={
           Object {
-            "name": "Frotz",
+            "displayName": "Frotz",
           }
         }
         viewer={

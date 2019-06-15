@@ -70,7 +70,7 @@ class Topic extends Component<Props, State> {
         repoName={topic.repository && topic.repository.name}
         showEditButton={this.showEditButton}
         showLink={false}
-        title={topic.name}
+        title={topic.displayName}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}
         url={topic.resourcePath}
@@ -104,9 +104,9 @@ export default createFragmentContainer(Topic, {
   topic: graphql`
     fragment Topic_topic on Topic {
       description
+      displayName
       id
       loading
-      name
       newlyAdded
       resourcePath
 
@@ -119,7 +119,7 @@ export default createFragmentContainer(Topic, {
       parentTopics(first: 100) {
         edges {
           node {
-            name
+            displayName
             resourcePath
           }
         }

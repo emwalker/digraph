@@ -165,7 +165,7 @@ export default createRefetchContainer(EditLinkForm, {
         edges {
           node {
             value: id
-            label: name
+            label: displayName
           }
         }
       }
@@ -174,7 +174,7 @@ export default createRefetchContainer(EditLinkForm, {
         edges {
           node {
             value: id
-            label: name
+            label: displayName
           }
         }
       }

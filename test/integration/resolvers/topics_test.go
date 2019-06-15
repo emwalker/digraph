@@ -917,3 +917,40 @@ func TestUpdateSynonyms(t *testing.T) {
 		t.Fatalf("Expected %v, got %v", expectedSynonyms, actualSynonyms)
 	}
 }
+
+func TestTopicNameFromSynonyms(t *testing.T) {
+	m := newMutator(t, testActor)
+	ctx := context.Background()
+	repoName := m.defaultRepo().Name
+
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "Backhoe")
+	defer cleanup()
+
+	input := models.UpdateSynonymsInput{
+		Synonyms: []models.SynonymInput{
+			{Locale: "fr", Name: "Pelle rétrocaveuse"},
+			{Locale: "en", Name: "Excavator"},
+			{Locale: "en", Name: "Backhoe"},
+		},
+		TopicID: topic.ID,
+	}
+
+	resolver := rootResolver.Mutation()
+	if _, err := resolver.UpdateSynonyms(ctx, input); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := topic.Reload(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
+	query := rootResolver.Topic()
+	name, err := query.DisplayName(ctx, topic)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if name != "Excavator" {
+		t.Fatalf("Expected display name to be 'Excavator', got '%s'", name)
+	}
+}

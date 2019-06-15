@@ -24,14 +24,14 @@ type Props = {
 
 type State = {
   description: ?string,
-  name: string,
+  displayName: string,
 }
 
 class EditTopicForm extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      name: props.topic.name,
+      displayName: props.topic.displayName,
       description: props.topic.description,
     }
   }
@@ -44,7 +44,7 @@ class EditTopicForm extends Component<Props, State> {
         topicIds: this.addTopicIds,
         description: this.state.description || '',
         id: this.props.topic.id,
-        name: this.state.name,
+        displayName: this.state.displayName,
       },
     )
     this.props.toggleForm()
@@ -88,7 +88,7 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   updateName = (event: Object) => {
-    this.setState({ name: event.currentTarget.value })
+    this.setState({ displayName: event.currentTarget.value })
   }
 
   loadOptions = (searchString: string): Promise<Option[]> => {
@@ -153,13 +153,13 @@ export default createRefetchContainer(EditTopicForm, {
     ) {
       description
       id
-      name
+      displayName
 
       selectedTopics: parentTopics(first: 100) {
         edges {
           node {
             value: id
-            label: name
+            label: displayName
           }
         }
       }
@@ -168,7 +168,7 @@ export default createRefetchContainer(EditTopicForm, {
         edges {
           node {
             value: id
-            label: name
+            label: displayName
           }
         }
       }

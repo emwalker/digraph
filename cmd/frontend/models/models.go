@@ -30,9 +30,47 @@ type Synonym struct {
 	Name   string
 }
 
+type synonymLookup struct {
+	locales map[LocaleIdentifier]Synonym
+}
+
 // SynonymList holds the set of synonyms for a topic.
 type SynonymList struct {
 	Values []Synonym
+	lookup *synonymLookup
+}
+
+func newLookup(s *SynonymList) *synonymLookup {
+	locales := map[LocaleIdentifier]Synonym{}
+
+	for _, synonym := range s.Values {
+		locale := synonym.LocaleIdentifier()
+
+		if !locale.IsValid() {
+			log.Printf("Invalid locale: %s", locale)
+			continue
+		}
+
+		if _, ok := locales[locale]; !ok {
+			locales[locale] = synonym
+		}
+	}
+
+	lookup := synonymLookup{locales: locales}
+	return &lookup
+}
+
+func (l *synonymLookup) nameInLocale(locale LocaleIdentifier) (Synonym, bool) {
+	synonym, ok := l.locales[locale]
+	if ok {
+		return synonym, ok
+	}
+	return Synonym{}, false
+}
+
+// LocaleIdentifier returns the locale of the synonym.
+func (s *Synonym) LocaleIdentifier() LocaleIdentifier {
+	return LocaleIdentifier(s.Locale)
 }
 
 // IsNamespaceable tags Link as implementing the Namespaceable interface.
@@ -78,6 +116,31 @@ func (t Topic) SynonymList() (*SynonymList, error) {
 		return nil, err
 	}
 	return &synonyms, nil
+}
+
+// NameForLocale chooses a suitable topic name from among the available synonyms in light of
+// the current locale.
+func (s *SynonymList) NameForLocale(locale LocaleIdentifier) (string, bool) {
+	if s.lookup == nil {
+		// compute indexes
+		s.lookup = newLookup(s)
+	}
+
+	synonym, ok := s.lookup.nameInLocale(locale)
+	if ok {
+		return synonym.Name, true
+	}
+
+	synonym, ok = s.lookup.nameInLocale(LocaleIdentifierEn)
+	if ok {
+		return synonym.Name, true
+	}
+
+	if len(s.Values) > 0 {
+		return s.Values[0].Name, true
+	}
+
+	return "<missing name>", false
 }
 
 // IsResourceIdentifiable tags Organization as implementing the ResourceIdentifiable interface.
