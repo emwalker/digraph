@@ -17,7 +17,7 @@ Keep track of links in a mind-map like network of topics.
 * [GitHub Primer](https://styleguide.github.com/primer/) CSS
 
 Right now it would be pretty difficult for someone other than me to get up and going without a snapshot of
-the database. I'll be happy to put something together as a template database if anyone is interested.
+the database. Just open an issue, and I'll be happy to put something together as a template database if anyone is interested.
 
 ## Screenshot
 
