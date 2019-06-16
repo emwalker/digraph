@@ -89,6 +89,7 @@ type LinkEdge {
 type LinkConnection {
   edges: [LinkEdge]
   pageInfo: PageInfo!
+  totalCount: Int!
 }
 
 enum LocaleIdentifier {

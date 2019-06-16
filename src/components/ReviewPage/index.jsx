@@ -31,10 +31,12 @@ class ReviewPage extends Component<Props> {
       <Container>
         { links.length > 0
           ? (
-            <div className="Box Box--condensed">
+            <div className="Box">
               <div className="Box-header">
                 <h3 className="Box-title overflow-hidden flex-auto">
-                  Link
+                  Links
+                  {' '}
+                  <span className="Counter Counter--light-gray">{ this.props.view.links.totalCount }</span>
                 </h3>
               </div>
               <ul>
@@ -75,6 +77,8 @@ const Wrapper = createFragmentContainer(ReviewPage, {
   view: graphql`
     fragment ReviewPage_view on View {
       links(first: 1000, reviewed: false) {
+        totalCount
+
         edges {
           node {
             id

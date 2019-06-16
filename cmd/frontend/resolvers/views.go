@@ -132,8 +132,6 @@ func (r *viewResolver) Links(
 	last *int, before *string, reviewed *bool,
 ) (models.LinkConnection, error) {
 	mods := view.Filter([]qm.QueryMod{
-		qm.OrderBy("created_at desc"),
-		qm.Limit(pageSizeOrDefault(first)),
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
 	})
 
@@ -156,9 +154,19 @@ func (r *viewResolver) Links(
 		}
 	}
 
-	scope := models.Links(mods...)
-	conn, err := scope.All(ctx, r.DB)
-	return linkConnection(view, conn, err)
+	totalCount, err := models.Links(mods...).Count(ctx, r.DB)
+	if err != nil {
+		return models.LinkConnection{}, err
+	}
+
+	mods = append(
+		mods,
+		qm.OrderBy("links.created_at desc"),
+		qm.Limit(pageSizeOrDefault(first)),
+	)
+
+	rows, err := models.Links(mods...).All(ctx, r.DB)
+	return linkConnection(view, rows, int(totalCount), err)
 }
 
 func (r *viewResolver) CurrentRepository(

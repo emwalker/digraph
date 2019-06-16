@@ -309,3 +309,27 @@ func TestViewerReview(t *testing.T) {
 		t.Fatal("Expected a nil reviewedAt")
 	}
 }
+
+func TestTotalCount(t *testing.T) {
+	m := newMutator(t, testActor)
+	repoName := m.defaultRepo().Name
+
+	link, cleanup := m.createLink(testActor.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
+	defer cleanup()
+
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "A")
+	defer cleanup()
+	m.addParentTopicToLink(link, topic)
+
+	query := rootResolver.Topic()
+
+	first := 100
+	connection, err := query.Links(m.ctx, topic, nil, &first, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if connection.TotalCount != 1 {
+		t.Fatalf("Expected a total count of 1, got %d", connection.TotalCount)
+	}
+}

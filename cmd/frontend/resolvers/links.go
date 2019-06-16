@@ -14,7 +14,7 @@ type linkResolver struct {
 	*Resolver
 }
 
-func linkConnection(view *models.View, rows []*models.Link, err error) (models.LinkConnection, error) {
+func linkConnection(view *models.View, rows []*models.Link, totalCount int, err error) (models.LinkConnection, error) {
 	if err != nil {
 		log.Printf("There was a problem constructing link connection: %s", err)
 		return models.LinkConnection{}, err
@@ -27,7 +27,7 @@ func linkConnection(view *models.View, rows []*models.Link, err error) (models.L
 		})
 	}
 
-	return models.LinkConnection{Edges: edges}, nil
+	return models.LinkConnection{Edges: edges, TotalCount: totalCount}, nil
 }
 
 func linkRepository(ctx context.Context, link *models.LinkValue) (*models.Repository, error) {

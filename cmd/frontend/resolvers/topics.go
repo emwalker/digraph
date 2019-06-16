@@ -182,7 +182,7 @@ func (r *topicResolver) Links(
 
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
-		qm.OrderBy("created_at desc"),
+		qm.OrderBy("links.created_at desc"),
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
 	})
 
@@ -199,9 +199,8 @@ func (r *topicResolver) Links(
 		mods = append(mods, qm.Where("links.title ~~* all(?)", wildcardStringArray(*searchString)))
 	}
 
-	scope := topic.ChildLinks(mods...)
-	conn, err := scope.All(ctx, r.DB)
-	return linkConnection(topic.View, conn, err)
+	rows, err := topic.ChildLinks(mods...).All(ctx, r.DB)
+	return linkConnection(topic.View, rows, len(rows), err)
 }
 
 // Loading is true if the topic is being loaded.  Only used on the client.
