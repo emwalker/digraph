@@ -121,8 +121,6 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 	var review *models.UserLinkReview
 	var err error
 
-	log.Printf("Fetching viewer review for %s", link.Summary())
-
 	if link.R == nil {
 		log.Printf("Fetching reviewedAt for link %s", link.Summary())
 		review, err = link.UserLinkReviews(qm.Where("user_id = ?", r.Actor.ID)).One(ctx, r.DB)
