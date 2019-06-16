@@ -1,5 +1,8 @@
 import React, { Component, Suspense } from 'react'
 import { graphql } from 'react-relay'
+import { Link } from 'found'
+
+import { toEverything } from 'components/navigation'
 
 const TreeGraph = React.lazy(() => import('./TreeGraph'))
 
@@ -54,7 +57,7 @@ class Homepage extends Component<Props, State> {
       <p className="mb-3">
         These are the topics in the
         {' '}
-        <a href="/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8">general collection</a>
+        <Link to={toEverything}>general collection</Link>
         . There are
         {' '}
         {this.props.view.topicCount}

@@ -5,17 +5,9 @@ import { Link } from 'found'
 import classNames from 'classnames'
 
 import type { UserType } from 'components/types'
+import { toEverything } from 'components/navigation'
 import UserNav from './UserNav'
 import SignIn from './SignIn'
-
-const toEverything = {
-  pathname: '/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8',
-  state: {
-    orgLogin: 'wiki',
-    repoName: 'General collection',
-    itemTitle: 'Everything',
-  },
-}
 
 type Props = {
   className?: ?string,
@@ -94,6 +86,12 @@ class Header extends Component<Props> {
           </h1>
         </nav>
         <nav className="user-nav flex-self-center">
+          <a
+            className="text-gray-dark px-2"
+            href="https://blog.digraph.app"
+          >
+            Blog
+          </a>
           <Link
             className="text-gray-dark px-2"
             id="recent-activity"
@@ -107,7 +105,6 @@ class Header extends Component<Props> {
           >
             Everything
           </Link>
-          <a className="text-gray-dark px-2" href="https://blog.digraph.app">Blog</a>
           {viewer.isGuest
             ? this.renderGuestUserNav()
             : this.renderUserNav(viewer)

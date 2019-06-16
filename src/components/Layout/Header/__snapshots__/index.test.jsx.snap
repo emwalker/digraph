@@ -101,6 +101,12 @@ exports[`<Header /> renders 1`] = `
   <nav
     className="user-nav flex-self-center"
   >
+    <a
+      className="text-gray-dark px-2"
+      href="https://blog.digraph.app"
+    >
+      Blog
+    </a>
     <Link
       className="text-gray-dark px-2"
       id="recent-activity"
@@ -123,12 +129,6 @@ exports[`<Header /> renders 1`] = `
     >
       Everything
     </Link>
-    <a
-      className="text-gray-dark px-2"
-      href="https://blog.digraph.app"
-    >
-      Blog
-    </a>
     <ForwardRef(Relay(UserNav))
       viewer={
         Object {
