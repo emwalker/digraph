@@ -24,6 +24,12 @@ const LineItems = ({ view }: Props) => {
   return (
     <Container>
       <div className="Box">
+        <div className="Box-header">
+          <h3 className="Box-title overflow-hidden flex-auto">
+            Activity
+          </h3>
+        </div>
+
         { edges.map(e => e && e.node && (
           <LineItem key={e.node.createdAt} item={e.node} />
         )) }
