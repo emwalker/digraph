@@ -13,7 +13,13 @@ type Props = {
   view: View,
 }
 
-const Placeholder = () => <div>Loading ...</div>
+const Placeholder = () => (
+  <Container totalCount={0}>
+    <div className="blankslate">
+      <p>Searching the computers for links to review ...</p>
+    </div>
+  </Container>
+)
 
 class ReviewPage extends Component<Props> {
   get links(): $ReadOnlyArray<?Link> {
@@ -24,28 +30,23 @@ class ReviewPage extends Component<Props> {
 
   renderReview = (link: ?Link) => link && <Review key={link.id} link={link} />
 
+  renderNoLinks = () => (
+    <div className="blankslate">
+      <p>There are no links to review.</p>
+    </div>
+  )
+
   render = () => {
-    const { links } = this
+    const {
+      links,
+      props: { view: { links: { totalCount } } },
+    } = this
 
     return (
-      <Container>
+      <Container totalCount={totalCount}>
         { links.length > 0
-          ? (
-            <div className="Box">
-              <div className="Box-header">
-                <h3 className="Box-title overflow-hidden flex-auto">
-                  Links
-                  {' '}
-                  <span className="Counter Counter--light-gray">{ this.props.view.links.totalCount }</span>
-                </h3>
-              </div>
-              <ul>
-                { links.map(this.renderReview) }
-              </ul>
-            </div>
-          ) : (
-            <div>There are no links to review.</div>
-          )
+          ? links.map(this.renderReview)
+          : this.renderNoLinks()
         }
       </Container>
     )

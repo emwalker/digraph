@@ -20,22 +20,22 @@ type WrapperProps = {|
 
 const Placeholder = () => (
   <Container>
-    { 'No recent activity' }
+    <div className="blankslate">
+      <p>Searching the servers for recent activity ...</p>
+    </div>
   </Container>
 )
 
-const Recents = ({ view }: Props) => (
-  <DocumentTitle title="Recent activity | Digraph">
-    <LineItems view={view} />
-  </DocumentTitle>
-)
-
 export default ({ props }: WrapperProps) => (
-  // eslint-disable-next-line react/prop-types
-  props && props.view
-    // eslint-disable-next-line react/prop-types
-    ? <Recents view={props.view} />
-    : <Placeholder />
+  <DocumentTitle title="Recent activity | Digraph">
+    {
+      // eslint-disable-next-line react/prop-types
+      props && props.view
+        // eslint-disable-next-line react/prop-types
+        ? <LineItems view={props.view} />
+        : <Placeholder />
+    }
+  </DocumentTitle>
 )
 
 export const query = graphql`

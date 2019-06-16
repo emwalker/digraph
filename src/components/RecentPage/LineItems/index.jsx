@@ -10,30 +10,24 @@ type Props = {|
   +view: View,
 |}
 
-const Placeholder = () => (
+const NoRecentActivity = () => (
   <Container>
-    { 'Loading ...' }
+    <div className="blankslate">
+      <p>No recent activity.</p>
+    </div>
   </Container>
 )
 
 const LineItems = ({ view }: Props) => {
   const edges = view ? view.activity.edges : null
 
-  if (!edges) return <Placeholder />
+  if (!edges) return <NoRecentActivity />
 
   return (
     <Container>
-      <div className="Box">
-        <div className="Box-header">
-          <h3 className="Box-title overflow-hidden flex-auto">
-            Activity
-          </h3>
-        </div>
-
-        { edges.map(e => e && e.node && (
-          <LineItem key={e.node.createdAt} item={e.node} />
-        )) }
-      </div>
+      { edges.map(e => e && e.node && (
+        <LineItem key={e.node.createdAt} item={e.node} />
+      )) }
     </Container>
   )
 }
