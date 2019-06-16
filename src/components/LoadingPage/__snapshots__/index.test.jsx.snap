@@ -10,9 +10,8 @@ exports[`<LoadingPage /> renders 1`] = `
       <li
         className="breadcrumb-item"
       >
-        <Octicon
+        <GoRepo
           className="mr-1"
-          name="repo"
         />
          
         <a

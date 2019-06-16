@@ -9193,11 +9193,6 @@ react-async-script@^1.0.0:
     hoist-non-react-statics "^3.0.1"
     prop-types "^15.5.0"
 
-react-component-octicons@~>1.8.0:
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/react-component-octicons/-/react-component-octicons-1.8.0.tgz#60bc7491a8529d98060ff85db8b69ed3417698dc"
-  integrity sha512-n+FEydQgups4UePqA7PoS0Hp4G9h9vjZKK3gSiooTF+dS94Rmh2LkGMpUjjf5WVoqA6ziFCg1G1C/9nJHqGo3g==
-
 react-document-title@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/react-document-title/-/react-document-title-2.0.3.tgz#bbf922a0d71412fc948245e4283b2412df70f2b9"
@@ -9234,6 +9229,13 @@ react-google-recaptcha@^1.0.5:
   dependencies:
     prop-types "^15.5.0"
     react-async-script "^1.0.0"
+
+react-icons@^3.7.0:
+  version "3.7.0"
+  resolved "https://registry.yarnpkg.com/react-icons/-/react-icons-3.7.0.tgz#64fe46231fabfeea27895edeae6c3b78114b8c8f"
+  integrity sha512-7MyPwjIhuyW0D2N3s4DEd0hGPGFf0sK+IIRKhc1FvSpZNVmnUoGvHbmAwzGJU+3my+fvihVWgwU5SDtlAri56Q==
+  dependencies:
+    camelcase "^5.0.0"
 
 react-input-autosize@^2.2.1:
   version "2.2.1"

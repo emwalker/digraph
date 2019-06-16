@@ -1,6 +1,6 @@
 // @flow
 import React, { Component, type Node } from 'react'
-import Octicon from 'react-component-octicons'
+import { GoTrashcan } from 'react-icons/go'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { Synonym_synonym as SynonymType } from './__generated__/Synonym_synonym.graphql'
@@ -26,7 +26,7 @@ class Synonym extends Component<Props> {
   renderDeleteButton = () => (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <span tabIndex="0" role="button" onClick={this.onClick}>
-      <Octicon name="trashcan" />
+      <GoTrashcan />
     </span>
   )
 

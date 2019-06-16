@@ -1,7 +1,7 @@
 // @flow
 import React, { Component } from 'react'
 import classNames from 'classnames'
-import Octicon from 'react-component-octicons'
+import { GoX } from 'react-icons/go'
 
 // https://medium.com/@veelenga/displaying-rails-flash-messages-with-react-5f82982f241c
 
@@ -34,7 +34,7 @@ class Alert extends Component<Props> {
         onClick={this.props.onClose}
         type="button"
       >
-        <Octicon name="x" />
+        <GoX />
       </button>
       { this.props.message.text }
     </div>

@@ -1,7 +1,7 @@
 // @flow
 import React, { Component, Fragment, type Node } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
-import Octicon from 'react-component-octicons'
+import { GoRepo } from 'react-icons/go'
 import { Link } from 'found'
 import { pathOr } from 'ramda'
 
@@ -45,7 +45,7 @@ class Breadcrumbs extends Component<Props> {
       <nav aria-label="Breadcrumb" className="mb-1">
         <ol>
           <li className="breadcrumb-item">
-            <Octicon name="repo" className="mr-1" />
+            <GoRepo className="mr-1" />
             {' '}
             {this.repoLink}
           </li>

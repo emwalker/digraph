@@ -8,9 +8,7 @@ exports[`<Alert /> renders 1`] = `
     className="flash-close"
     type="button"
   >
-    <Octicon
-      name="x"
-    />
+    <GoX />
   </button>
 </div>
 `;

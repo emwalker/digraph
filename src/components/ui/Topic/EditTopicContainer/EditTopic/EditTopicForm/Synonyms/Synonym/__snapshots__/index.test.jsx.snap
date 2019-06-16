@@ -22,9 +22,7 @@ exports[`<Synonym /> renders 1`] = `
       role="button"
       tabIndex="0"
     >
-      <Octicon
-        name="trashcan"
-      />
+      <GoTrashcan />
     </span>
   </div>
 </li>

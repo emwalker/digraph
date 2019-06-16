@@ -6,7 +6,7 @@ import {
   SortableHandle,
 } from 'react-sortable-hoc'
 import arrayMove from 'array-move'
-import Octicon from 'react-component-octicons'
+import { GoThreeBars } from 'react-icons/go'
 
 import Synonym from '../Synonym'
 import { type Synonym as SynonymType } from '../types'
@@ -20,9 +20,8 @@ type Props = {
 }
 
 const DragHandle = SortableHandle(() => (
-  <Octicon
+  <GoThreeBars
     className="synonym-drag-handle"
-    name="three-bars"
     style={{ width: '20px', height: '20px', color: '#d1d5da' }}
   />
 ))

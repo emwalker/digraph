@@ -16,7 +16,7 @@ const props = {
 
 describe('<Synonym />', () => {
   const wrapper = shallow(<Synonym {...props} />)
-  const octicon = () => wrapper.find('Octicon')
+  const octicon = () => wrapper.find('GoTrashcan')
 
   it('renders', () => {
     expect(wrapper).toMatchSnapshot()

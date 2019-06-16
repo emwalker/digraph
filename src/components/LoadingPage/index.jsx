@@ -1,6 +1,6 @@
 // @flow
 import React from 'react'
-import Octicon from 'react-component-octicons'
+import { GoRepo } from 'react-icons/go'
 
 import SearchBox from 'components/ui/SearchBox'
 
@@ -22,7 +22,7 @@ const LoadingPage = ({ location }: Props) => {
       <nav aria-label="Breadcrumb" className="mb-1">
         <ol>
           <li className="breadcrumb-item">
-            <Octicon name="repo" className="mr-1" />
+            <GoRepo className="mr-1" />
             {' '}
             <a href="#">{orgLogin}</a>
           </li>
