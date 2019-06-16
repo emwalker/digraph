@@ -88,7 +88,17 @@ func (c Connection) UpdateSynonyms(
 ) (*UpdateSynonymsResult, error) {
 	log.Printf("Updating synonyms for topic %s", topic.Summary())
 
-	if err := topic.Synonyms.Marshal(&synonyms); err != nil {
+	seen := make(map[models.Synonym]bool)
+	dedupedSynonyms := []models.Synonym{}
+
+	for _, synonym := range synonyms {
+		if _, ok := seen[synonym]; !ok {
+			seen[synonym] = true
+			dedupedSynonyms = append(dedupedSynonyms, synonym)
+		}
+	}
+
+	if err := topic.Synonyms.Marshal(&dedupedSynonyms); err != nil {
 		return nil, err
 	}
 

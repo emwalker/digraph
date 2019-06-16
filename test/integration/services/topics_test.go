@@ -125,3 +125,49 @@ func TestUpdateSynonyms(t *testing.T) {
 		t.Fatalf("Expected %#v, got %#v", finalExpected, finalActual)
 	}
 }
+
+func TestDeduplicationOfSynonyms(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	result, err := c.UpsertTopic(ctx, defaultRepo, "Backhoe", nil, []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Cleanup()
+
+	topic := result.Topic
+
+	synonyms := []models.Synonym{
+		{Locale: "en", Name: "Backhoe"},
+		{Locale: "en", Name: "Backhoe"},
+		{Locale: "fr", Name: "Backhoe"},
+		{Locale: "en", Name: "Excavator"},
+		{Locale: "en", Name: "Backhoe"},
+	}
+
+	dedupedSynonyms := []models.Synonym{
+		{Locale: "en", Name: "Backhoe"},
+		{Locale: "fr", Name: "Backhoe"},
+		{Locale: "en", Name: "Excavator"},
+	}
+
+	expected := &models.SynonymList{Values: dedupedSynonyms}
+
+	if _, err = c.UpdateSynonyms(ctx, topic, synonyms); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = topic.Reload(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
+	actual, err := topic.SynonymList()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("Expected %#v, got %#v", expected, actual)
+	}
+}
