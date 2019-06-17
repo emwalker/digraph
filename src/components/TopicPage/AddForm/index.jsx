@@ -20,7 +20,8 @@ class AddForm extends Component<Props> {
     return classNames(
       'border',
       'rounded-1',
-      'p-2',
+      'px-md-2',
+      'px-3',
       'mt-3',
       { 'private-repo': this.isPrivateRepo },
     )

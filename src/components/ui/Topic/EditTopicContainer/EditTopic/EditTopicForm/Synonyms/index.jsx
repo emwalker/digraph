@@ -92,10 +92,27 @@ class Synonyms extends Component<Props, State> {
     />
   )
 
-  renderAddButton = () => (
-    <button type="button" onClick={this.onAdd} className="btn col-1">
-      Add
-    </button>
+  renderAddForm = () => (
+    <div className="clearfix">
+      <input
+        id="names-and-synonyms"
+        className="form-control col-12 col-lg-10 mr-2"
+        onChange={this.onNameChange}
+        value={this.state.name}
+      />
+
+      <div className="col-12 col-lg-3 mt-2 d-inline-block">
+        <select onChange={this.onLocaleChange} className="form-select mr-2">
+          <option>en</option>
+          <option>es</option>
+          <option>fr</option>
+        </select>
+
+        <button type="button" onClick={this.onAdd} className="btn">
+          Add
+        </button>
+      </div>
+    </div>
   )
 
   render = () => (
@@ -108,22 +125,7 @@ class Synonyms extends Component<Props, State> {
       <ul className="Box list-style-none mt-1 mb-2">
         { this.renderSynonyms() }
       </ul>
-      <div className="clearfix">
-        <input
-          id="names-and-synonyms"
-          className="form-control col-10 mr-2"
-          onChange={this.onNameChange}
-          value={this.state.name}
-        />
-
-        <select onChange={this.onLocaleChange} className="form-select col-1 mr-2">
-          <option>en</option>
-          <option>es</option>
-          <option>fr</option>
-        </select>
-
-        { this.props.topic.viewerCanUpdate && this.renderAddButton() }
-      </div>
+      { this.props.topic.viewerCanUpdate && this.renderAddForm() }
     </dl>
   )
 }

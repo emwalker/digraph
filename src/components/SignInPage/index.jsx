@@ -18,7 +18,7 @@ class SignInPage extends Component<Props> {
 
   render = () => (
     <div className="SignInPage clearfix">
-      <div className="col-6 column">
+      <div className="col-10 col-md-6 column">
         <h2 className="mb-2">Sign in</h2>
         <p className="mb-2">Log in with your GitHub account:</p>
 

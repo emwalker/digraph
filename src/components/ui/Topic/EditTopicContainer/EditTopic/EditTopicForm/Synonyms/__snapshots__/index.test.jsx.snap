@@ -45,29 +45,5 @@ exports[`<Synonyms /> renders 1`] = `
       }
     />
   </ul>
-  <div
-    className="clearfix"
-  >
-    <input
-      className="form-control col-10 mr-2"
-      id="names-and-synonyms"
-      onChange={[Function]}
-      value=""
-    />
-    <select
-      className="form-select col-1 mr-2"
-      onChange={[Function]}
-    >
-      <option>
-        en
-      </option>
-      <option>
-        es
-      </option>
-      <option>
-        fr
-      </option>
-    </select>
-  </div>
 </dl>
 `;
