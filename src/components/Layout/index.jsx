@@ -31,7 +31,8 @@ query LayoutQuery {
   }
 
   viewer {
-    ...Header_viewer
+    ...DesktopNav_viewer
+    ...MobileNav_viewer
   }
 }`
 
@@ -40,7 +41,6 @@ query LayoutQuery {
 const Layout = ({ alerts, children, defaultOrganization, viewer }: Props) => (
   <div className="layout">
     <Header
-      className="clearfix mb-3 d-flex px-3 px-md-6 px-lg-4 py-2 box-shadow"
       viewer={viewer}
       defaultOrganization={defaultOrganization}
     />
@@ -54,8 +54,7 @@ const Layout = ({ alerts, children, defaultOrganization, viewer }: Props) => (
           Available for use under the MIT
           {' '}
           <a href="https://github.com/emwalker/digraph/blob/master/LICENSE.md">license</a>
-.
-          © Eric Walker.
+          . © Eric Walker.
         </p>
       </div>
     </footer>

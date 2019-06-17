@@ -18,7 +18,7 @@ const LoadingPage = ({ location }: Props) => {
   const { orgLogin, repoName, itemTitle } = state
 
   return (
-    <div>
+    <div className="px-3 px-md-6 px-lg-0">
       <nav aria-label="Breadcrumb" className="mb-1">
         <ol>
           <li className="breadcrumb-item">

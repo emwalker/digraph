@@ -1,7 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<LoadingPage /> renders 1`] = `
-<div>
+<div
+  className="px-3 px-md-6 px-lg-0"
+>
   <nav
     aria-label="Breadcrumb"
     className="mb-1"

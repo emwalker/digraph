@@ -2,6 +2,12 @@
 
 $footer-height: 140px;
 
+@mixin navbar-boxshadow {
+  -webkit-box-shadow: -2px 3px 3px -2px rgba(0,0,0,0.21);
+  -moz-box-shadow: -2px 3px 3px -2px rgba(0,0,0,0.21);
+  box-shadow: -2px 3px 3px -2px rgba(0,0,0,0.21);
+}
+
 html, body {
   height: 100%;
   position: relative;
@@ -68,6 +74,7 @@ html, body {
 
 .Header {
   background: #fafbfc;
+  @include navbar-boxshadow;
 
   .user-nav {
     margin-left: auto;
@@ -204,4 +211,34 @@ input[type=text].form-control {
 
 .synonym-drag-handle {
   margin-right: 1em;
+}
+
+.mobile-menu {
+  @include navbar-boxshadow;
+  background: #fafbfc;
+
+  .mobile-menu-header {
+    width: 100%;
+    display: flex;
+
+    .menu-logo {
+      display: flex !important;
+      align-items: center;
+      flex: 1;
+
+      svg {
+        display: inline-block;
+        margin-right: 7px;
+      }
+    }
+
+    .menu-three-bars {
+      display: inline-block;
+      color: #444d56;
+    }
+
+    .menu-btn {
+      color: #444d56;
+    }
+  }
 }

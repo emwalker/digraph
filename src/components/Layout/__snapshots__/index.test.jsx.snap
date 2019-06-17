@@ -4,9 +4,7 @@ exports[`<Layout /> renders 1`] = `
 <div
   className="layout"
 >
-  <ForwardRef(Relay(Header))
-    className="clearfix mb-3 d-flex px-3 px-md-6 px-lg-4 py-2 box-shadow"
-  />
+  <_default />
   <div
     className="container-lg clearfix"
   >
