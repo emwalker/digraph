@@ -65,7 +65,7 @@ class Review extends Component<Props, State> {
             { url }
           </div>
         </div>
-        <form>
+        <form className="review-checkbox">
           <div className="form-checkbox">
             <label>
               <input
