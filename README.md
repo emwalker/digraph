@@ -54,6 +54,8 @@ Run the app in development:
 $ make start
 ```
 
-## Screenshot
+## Screenshots
 
-![Screenshot](https://user-images.githubusercontent.com/760949/58448929-aca6c000-80c6-11e9-83b2-6fa408f2cced.png)
+![Screenshot](https://user-images.githubusercontent.com/760949/59727248-24619980-91f2-11e9-9067-62042fbda222.png)
+
+![Screenshot](https://user-images.githubusercontent.com/760949/59727250-275c8a00-91f2-11e9-87b8-3aed54ad0335.png)
