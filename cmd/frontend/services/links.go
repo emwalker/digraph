@@ -32,7 +32,7 @@ type ReviewLinkResult struct {
 
 // UpsertLinkResult holds the result of an UpsertLink call.
 type UpsertLinkResult struct {
-	Alerts      []models.Alert
+	Alerts      []*models.Alert
 	Cleanup     CleanupFunc
 	Link        *models.Link
 	LinkCreated bool
@@ -340,7 +340,7 @@ func (c Connection) UpsertLink(
 	ctx context.Context, repo *models.Repository, providedURL string, providedTitle *string,
 	parentTopicIds []string,
 ) (*UpsertLinkResult, error) {
-	var alerts []models.Alert
+	var alerts []*models.Alert
 
 	url, err := NormalizeURL(providedURL)
 	if err != nil {
@@ -350,7 +350,7 @@ func (c Connection) UpsertLink(
 
 	if !isURL(url.CanonicalURL) {
 		alerts = append(alerts,
-			*models.NewAlert(models.AlertTypeWarn, fmt.Sprintf("Not a valid link: %s", providedURL)),
+			models.NewAlert(models.AlertTypeWarn, fmt.Sprintf("Not a valid link: %s", providedURL)),
 		)
 		return &UpsertLinkResult{
 			Alerts:  alerts,
@@ -378,8 +378,8 @@ func (c Connection) UpsertLink(
 	}
 
 	if existing > 0 {
-		alerts = []models.Alert{
-			*models.NewAlert(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", providedURL)),
+		alerts = []*models.Alert{
+			models.NewAlert(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", providedURL)),
 		}
 	}
 

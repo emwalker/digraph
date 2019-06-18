@@ -1,0 +1,45 @@
+#!/bin/bash
+
+database=digraph_dev
+fixtures=digraph_fixtures
+
+echo "Copying ${database} over to ${fixtures}"
+psql $database <<SQL
+drop database if exists digraph_fixtures;
+create database digraph_fixtures with template digraph_dev owner postgres;
+SQL
+
+echo "Deleting all but one person's data"
+psql $fixtures <<SQL
+delete from sessions;
+delete from users where id <> '461c87c8-fb8f-11e8-9cbc-afde6c54d881';
+delete from organizations where login not in ('wiki', 'emwalker');
+SQL
+
+echo ""
+user_count=$(psql digraph_fixtures -t -c "select count(*) from users")
+echo "${user_count//[[:space:]]/} user"
+
+repo_count=$(psql digraph_fixtures -t -c "select count(*) from repositories")
+echo "${repo_count//[[:space:]]/} repositories"
+
+org_count=$(psql digraph_fixtures -t -c "select count(*) from organizations")
+echo "${org_count//[[:space:]]/} organizations"
+
+session_count=$(psql digraph_fixtures -t -c "select count(*) from sessions")
+echo "${session_count//[[:space:]]/} sessions"
+
+user_link_count=$(psql digraph_fixtures -t -c "select count(distinct user_id) from user_links")
+echo "${user_link_count//[[:space:]]/} user links"
+
+link_count=$(psql digraph_fixtures -t -c "select count(*) from links")
+echo "${link_count//[[:space:]]/} links"
+
+topic_count=$(psql digraph_fixtures -t -c "select count(*) from topics")
+echo "${topic_count//[[:space:]]/} topics"
+
+snapshot_count=$(psql digraph_fixtures -t -c "select count(*) from daily_snapshot")
+echo "${snapshot_count//[[:space:]]/} snapshots"
+
+echo "Saving fixtures.sql"
+pg_dump digraph_fixtures > data/fixtures.sql

@@ -41,7 +41,7 @@ func MakeEdges(lineItems []UpsertLink) ([]*models.ActivityLineItemEdge, error) {
 
 	for i, item := range lineItems {
 		node := upsertLinkNode(item)
-		edges[i] = &models.ActivityLineItemEdge{Node: node}
+		edges[i] = &models.ActivityLineItemEdge{Node: &node}
 	}
 
 	return edges, nil

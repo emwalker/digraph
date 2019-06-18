@@ -16,8 +16,39 @@ Keep track of links in a mind-map like network of topics.
 * [99designs/gqlgen](https://github.com/99designs/gqlgen)
 * [GitHub Primer](https://styleguide.github.com/primer/) CSS
 
-Right now it would be pretty difficult for someone other than me to get up and going without a snapshot of
-the database. Just open an issue, and I'll be happy to put something together as a template database if anyone is interested.
+## Getting started
+
+Requirements
+
+* Postgres 10
+* Redis 5
+* Go 1.11
+* yarn
+
+Install dependencies:
+```
+$ git branch --set-upstream-to=origin/master master
+$ go get -u ./...
+$ yarn install
+$ make test
+```
+
+Set up the login session:
+```
+$ make load-fixtures
+$ make generate
+$ make test-integration
+$ make build-client
+$ redis-server /usr/local/etc/redis.conf # In one terminal
+$ go run cmd/frontend/frontend.go -dev # In another terminal
+# Go to localhost:8080 in a browser and sign in with your Github account, possibly *twice*, if the first time
+# doesn't work. Now you can CTRL-C to quit both go and redis
+```
+
+Run the app in development:
+```
+$ make start
+```
 
 ## Screenshot
 

@@ -18,17 +18,17 @@ type queryResolver struct{ *Resolver }
 //
 // - https://github.com/facebook/relay/issues/1913
 // - https://github.com/facebook/relay/issues/1913#issuecomment-358636018
-func (r *queryResolver) Alerts(ctx context.Context) ([]models.Alert, error) {
-	return []models.Alert{}, nil
+func (r *queryResolver) Alerts(ctx context.Context) ([]*models.Alert, error) {
+	return []*models.Alert{}, nil
 }
 
 // DefaultOrganization returns the main repository that people are directed to.
-func (r *queryResolver) DefaultOrganization(ctx context.Context) (models.Organization, error) {
+func (r *queryResolver) DefaultOrganization(ctx context.Context) (*models.Organization, error) {
 	org, err := models.Organizations(qm.Where("public and login = 'wiki'")).One(ctx, r.DB)
 	if err != nil {
-		return models.Organization{}, err
+		return nil, err
 	}
-	return *org, nil
+	return org, nil
 }
 
 // FakeError returns an error on demand in order to facilitate the debugging of error handling in
@@ -38,8 +38,8 @@ func (r *queryResolver) FakeError(ctx context.Context) (*string, error) {
 }
 
 // Viewer returns the logged-in user.
-func (r *queryResolver) Viewer(ctx context.Context) (models.User, error) {
-	return *r.Actor, nil
+func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
+	return r.Actor, nil
 }
 
 func (r *queryResolver) fetchCurrentRepo(
@@ -74,13 +74,13 @@ func (r *queryResolver) fetchCurrentRepo(
 // View returns a resolver that filters results on the basis of one or more organizations.
 func (r *queryResolver) View(
 	ctx context.Context, orgLogin string, repoName *string, repositoryIds []string, viewerID *string,
-) (models.View, error) {
+) (*models.View, error) {
 	repo, err := r.fetchCurrentRepo(ctx, orgLogin, repoName)
 	if err != nil {
-		return models.View{}, err
+		return &models.View{}, err
 	}
 
-	view := models.View{
+	view := &models.View{
 		CurrentOrganizationLogin: orgLogin,
 		CurrentRepositoryName:    repoName,
 		CurrentRepository:        repo,

@@ -33,7 +33,7 @@ func TestRootTopic(t *testing.T) {
 	topicResolver := rootResolver.Topic()
 	var rootPath string
 
-	if rootPath, err = topicResolver.ResourcePath(m.ctx, &topic); err != nil {
+	if rootPath, err = topicResolver.ResourcePath(m.ctx, topic); err != nil {
 		t.Fatal(err)
 	}
 

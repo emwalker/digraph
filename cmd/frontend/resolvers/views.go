@@ -34,7 +34,7 @@ func newViewFromTopic(ctx context.Context, exec boil.ContextExecutor, topic *mod
 	return &models.View{
 		CurrentOrganizationLogin: org.Login,
 		CurrentRepositoryName:    &repo.Name,
-		CurrentRepository:        &repo,
+		CurrentRepository:        repo,
 	}, nil
 }
 
@@ -66,7 +66,7 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 // Activity returns a feed of actions that have recently been taken.
 func (r *viewResolver) Activity(
 	ctx context.Context, view *models.View, first *int, after *string, last *int, before *string,
-) (models.ActivityLineItemConnection, error) {
+) (*models.ActivityLineItemConnection, error) {
 	mods := view.Filter([]qm.QueryMod{
 		qm.OrderBy("created_at desc"),
 		qm.Load("UserLinkTopics"),
@@ -80,7 +80,7 @@ func (r *viewResolver) Activity(
 	userLinks, err := models.UserLinks(mods...).All(ctx, r.DB)
 	if err != nil {
 		log.Printf("There was a problem fetching user link records: %s", err)
-		return models.ActivityLineItemConnection{}, nil
+		return nil, err
 	}
 
 	logData := make([]activity.UpsertLink, len(userLinks))
@@ -103,7 +103,7 @@ func (r *viewResolver) Activity(
 
 	edges, err := activity.MakeEdges(logData)
 
-	return models.ActivityLineItemConnection{Edges: edges}, err
+	return &models.ActivityLineItemConnection{Edges: edges}, err
 }
 
 // Link returns a specific link.
@@ -130,7 +130,7 @@ func (r *viewResolver) LinkCount(ctx context.Context, view *models.View) (int, e
 func (r *viewResolver) Links(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
 	last *int, before *string, reviewed *bool,
-) (models.LinkConnection, error) {
+) (*models.LinkConnection, error) {
 	mods := view.Filter([]qm.QueryMod{
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
 	})
@@ -156,7 +156,7 @@ func (r *viewResolver) Links(
 
 	totalCount, err := models.Links(mods...).Count(ctx, r.DB)
 	if err != nil {
-		return models.LinkConnection{}, err
+		return nil, err
 	}
 
 	mods = append(
@@ -180,9 +180,16 @@ func (r *viewResolver) Topic(
 	ctx context.Context, view *models.View, topicID string,
 ) (*models.TopicValue, error) {
 	log.Printf("Fetching topic %s", topicID)
-	scope := models.Topics(topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil, nil)...)
-	topic, err := scope.One(ctx, r.DB)
-	return &models.TopicValue{topic, false, view}, err
+
+	topic, err := models.Topics(
+		topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil, nil)...,
+	).One(ctx, r.DB)
+	if err != nil {
+		log.Printf("There was a problem fetching topic %s: %s", topicID, err)
+		return nil, err
+	}
+
+	return &models.TopicValue{topic, false, view}, nil
 }
 
 // TopicCount returns the number of topics the general collection.  Eventually it wll return the
@@ -257,7 +264,7 @@ func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*stri
 func (r *viewResolver) Topics(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
 	last *int, before *string,
-) (models.TopicConnection, error) {
+) (*models.TopicConnection, error) {
 	topics, err := models.Topics(topicQueryMods(view, nil, searchString, first)...).All(ctx, r.DB)
 	return topicConnection(view, topics, err)
 }

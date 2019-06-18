@@ -22,7 +22,7 @@ const (
 var GuestUser models.User
 
 func init() {
-	GuestUser = models.User{}
+	GuestUser = models.User{Name: "Anonymous", ID: ""}
 }
 
 // Resolver is the abstract base class for resolvers.

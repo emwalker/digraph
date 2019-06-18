@@ -1,7 +1,7 @@
 module github.com/emwalker/digraph
 
 require (
-	github.com/99designs/gqlgen v0.7.1
+	github.com/99designs/gqlgen v0.9.0
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.0
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect

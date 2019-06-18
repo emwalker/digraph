@@ -157,7 +157,7 @@ func (r *MutationResolver) ReviewLink(
 	}
 
 	return &models.ReviewLinkPayload{
-		Link: models.LinkValue{result.Link, false, r.Actor.DefaultView()},
+		Link: &models.LinkValue{result.Link, false, r.Actor.DefaultView()},
 	}, nil
 }
 
@@ -185,7 +185,7 @@ func (r *MutationResolver) SelectRepository(
 				return nil, err
 			}
 		}
-		return &models.SelectRepositoryPayload{nil, *r.Actor}, nil
+		return &models.SelectRepositoryPayload{nil, r.Actor}, nil
 	}
 
 	repo = &models.Repository{ID: *repoID}
@@ -204,7 +204,7 @@ func (r *MutationResolver) SelectRepository(
 		return nil, err
 	}
 
-	return &models.SelectRepositoryPayload{repo, *r.Actor}, nil
+	return &models.SelectRepositoryPayload{repo, r.Actor}, nil
 }
 
 // UpsertTopic creates a new topic.
@@ -245,7 +245,7 @@ func (r *MutationResolver) UpsertTopic(
 	return &models.UpsertTopicPayload{
 		Alerts: result.Alerts,
 		TopicEdge: &models.TopicEdge{
-			Node: models.TopicValue{result.Topic, result.TopicCreated, r.Actor.DefaultView()},
+			Node: &models.TopicValue{result.Topic, result.TopicCreated, r.Actor.DefaultView()},
 		},
 	}, nil
 }
@@ -324,7 +324,7 @@ func (r *MutationResolver) UpdateTopic(
 
 	return &models.UpdateTopicPayload{
 		Alerts: result.Alerts,
-		Topic:  models.TopicValue{topic, false, r.Actor.DefaultView()},
+		Topic:  &models.TopicValue{topic, false, r.Actor.DefaultView()},
 	}, nil
 }
 
@@ -365,7 +365,7 @@ func (r *MutationResolver) UpsertLink(
 	return &models.UpsertLinkPayload{
 		Alerts: result.Alerts,
 		LinkEdge: &models.LinkEdge{
-			Node: models.LinkValue{result.Link, result.LinkCreated, r.Actor.DefaultView()},
+			Node: &models.LinkValue{result.Link, result.LinkCreated, r.Actor.DefaultView()},
 		},
 	}, nil
 }
@@ -389,7 +389,7 @@ func (r *MutationResolver) UpdateLinkTopics(
 	}
 
 	return &models.UpdateLinkTopicsPayload{
-		Link: models.LinkValue{link, false, r.Actor.DefaultView()},
+		Link: &models.LinkValue{link, false, r.Actor.DefaultView()},
 	}, nil
 }
 
@@ -418,6 +418,6 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 
 	return &models.UpdateTopicParentTopicsPayload{
 		Alerts: result.Alerts,
-		Topic:  models.TopicValue{result.Topic, false, r.Actor.DefaultView()},
+		Topic:  &models.TopicValue{result.Topic, false, r.Actor.DefaultView()},
 	}, nil
 }

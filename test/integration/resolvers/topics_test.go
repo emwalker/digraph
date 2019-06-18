@@ -198,7 +198,7 @@ func TestUpdateTopic(t *testing.T) {
 		t.Fatal("Expected the topics to be the same")
 	}
 
-	topic = &p2.Topic
+	topic = p2.Topic
 	if err = topic.Reload(m.ctx, m.db); err != nil {
 		t.Fatal(err)
 	}
@@ -498,7 +498,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 
 	topicResolver := rootResolver.Topic()
 
-	var conn models.SearchResultItemConnection
+	var conn *models.SearchResultItemConnection
 
 	if conn, err = topicResolver.Search(m.ctx, root, root.Name, nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
@@ -537,7 +537,7 @@ func TestParentTopicPreloading(t *testing.T) {
 	m.addParentTopicToTopic(t2, t1)
 
 	var err error
-	var connection models.TopicConnection
+	var connection *models.TopicConnection
 
 	if connection, err = r.ChildTopics(m.ctx, t1, nil, nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
@@ -716,7 +716,15 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 	ctx := context.Background()
 	repoName := m.defaultRepo().Name
 
-	var err error
+	c := services.Connection{Exec: testDB, Actor: testActor}
+
+	result, err := c.CreateUser(ctx, "gnusto", "gnusto@frotz.com", "gnusto", "http://avatar/url")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Cleanup()
+	testActor2 := result.User
+
 	var root *models.TopicValue
 	if root, err = m.defaultRepo().RootTopic(ctx, testDB, testActor.DefaultView()); err != nil {
 		t.Fatal(err)
@@ -737,7 +745,7 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var conn models.SearchResultItemConnection
+	var conn *models.SearchResultItemConnection
 	if conn, err = query.Search(m.ctx, root2, "Child topic", nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -804,6 +812,15 @@ func TestViewerCanUpdate(t *testing.T) {
 	}
 
 	query = rootResolver.Topic()
+
+	c := services.Connection{Exec: testDB, Actor: testActor}
+
+	result, err := c.CreateUser(ctx, "gnusto", "gnusto@frotz.com", "gnusto", "http://avatar/url")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Cleanup()
+	testActor2 := result.User
 
 	// Change out the viewer doing the query
 	topic.View.ViewerID = testActor2.ID
@@ -885,7 +902,7 @@ func TestUpdateSynonyms(t *testing.T) {
 	}
 
 	input := models.UpdateSynonymsInput{
-		Synonyms: []models.SynonymInput{
+		Synonyms: []*models.SynonymInput{
 			{Locale: "fr", Name: "Pelle rétrocaveuse"},
 			{Locale: "en", Name: "Backhoe"},
 		},
@@ -927,7 +944,7 @@ func TestTopicNameFromSynonyms(t *testing.T) {
 	defer cleanup()
 
 	input := models.UpdateSynonymsInput{
-		Synonyms: []models.SynonymInput{
+		Synonyms: []*models.SynonymInput{
 			{Locale: "fr", Name: "Pelle rétrocaveuse"},
 			{Locale: "en", Name: "Excavator"},
 			{Locale: "en", Name: "Backhoe"},

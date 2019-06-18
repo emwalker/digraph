@@ -14,43 +14,45 @@ type linkResolver struct {
 	*Resolver
 }
 
-func linkConnection(view *models.View, rows []*models.Link, totalCount int, err error) (models.LinkConnection, error) {
+func linkConnection(view *models.View, rows []*models.Link, totalCount int, err error) (*models.LinkConnection, error) {
 	if err != nil {
 		log.Printf("There was a problem constructing link connection: %s", err)
-		return models.LinkConnection{}, err
+		return nil, err
 	}
 
 	var edges []*models.LinkEdge
 	for _, link := range rows {
 		edges = append(edges, &models.LinkEdge{
-			Node: models.LinkValue{link, false, view},
+			Node: &models.LinkValue{link, false, view},
 		})
 	}
 
-	return models.LinkConnection{Edges: edges, TotalCount: totalCount}, nil
+	return &models.LinkConnection{
+		Edges:      edges,
+		PageInfo:   &models.PageInfo{},
+		TotalCount: totalCount,
+	}, nil
 }
 
 func linkRepository(ctx context.Context, link *models.LinkValue) (*models.Repository, error) {
 	if link.R != nil && link.R.Repository != nil {
 		return link.R.Repository, nil
 	}
-	repo, err := fetchRepository(ctx, link.RepositoryID)
-	return &repo, err
+	return fetchRepository(ctx, link.RepositoryID)
 }
 
 func linkOrganization(ctx context.Context, link *models.LinkValue) (*models.Organization, error) {
 	if link.R != nil && link.R.Organization != nil {
 		return link.R.Organization, nil
 	}
-	repo, err := fetchOrganization(ctx, link.OrganizationID)
-	return &repo, err
+	return fetchOrganization(ctx, link.OrganizationID)
 }
 
 // AvailableParentTopics returns the topics that can be added to the link.
 func (r *linkResolver) AvailableParentTopics(
 	ctx context.Context, link *models.LinkValue, searchString *string, first *int, after *string,
 	last *int, before *string,
-) (models.TopicConnection, error) {
+) (*models.TopicConnection, error) {
 	return availableTopics(ctx, r.DB, link.View, searchString, first, []string{})
 }
 
@@ -65,15 +67,14 @@ func (r *linkResolver) Loading(_ context.Context, link *models.LinkValue) (bool,
 }
 
 // Organization returns the organization for a link.
-func (r *linkResolver) Organization(ctx context.Context, link *models.LinkValue) (models.Organization, error) {
-	org, err := linkOrganization(ctx, link)
-	return *org, err
+func (r *linkResolver) Organization(ctx context.Context, link *models.LinkValue) (*models.Organization, error) {
+	return linkOrganization(ctx, link)
 }
 
 // ParentTopics returns the topics under which the link is categorized.
 func (r *linkResolver) ParentTopics(
 	ctx context.Context, link *models.LinkValue, first *int, after *string, last *int, before *string,
-) (models.TopicConnection, error) {
+) (*models.TopicConnection, error) {
 	if link.R != nil && link.R.ParentTopics != nil {
 		return topicConnection(link.View, link.R.ParentTopics, nil)
 	}
@@ -86,9 +87,8 @@ func (r *linkResolver) ParentTopics(
 }
 
 // Repository returns the repository of the link.
-func (r *linkResolver) Repository(ctx context.Context, link *models.LinkValue) (models.Repository, error) {
-	repo, err := linkRepository(ctx, link)
-	return *repo, err
+func (r *linkResolver) Repository(ctx context.Context, link *models.LinkValue) (*models.Repository, error) {
+	return linkRepository(ctx, link)
 }
 
 // ResourcePath returns a path to the item.
@@ -138,7 +138,7 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 
 	reviewedAt := review.ReviewedAt
 	if reviewedAt.IsZero() {
-		return &models.LinkReview{User: *r.Actor}, nil
+		return &models.LinkReview{User: r.Actor}, nil
 	}
 
 	value, err := reviewedAt.Value()
@@ -154,5 +154,5 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 	}
 
 	str := ts.Format(time.RFC3339)
-	return &models.LinkReview{User: *r.Actor, ReviewedAt: &str}, nil
+	return &models.LinkReview{User: r.Actor, ReviewedAt: &str}, nil
 }

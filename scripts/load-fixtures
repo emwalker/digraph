@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+database=digraph_dev
+
+echo "Re-creating $database"
+psql template1 -c "drop database if exists digraph_dev1"
+psql template1 -c "create database digraph_dev1 with template digraph_dev owner postgres;" 2>/dev/null || true
+psql template1 <<SQL
+drop database if exists digraph_dev;
+create database digraph_dev;
+SQL
+
+echo "Loading fixture data"
+psql $database < data/fixtures.sql
+
+echo "Done."

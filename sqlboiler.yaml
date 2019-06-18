@@ -1,0 +1,9 @@
+psql:
+  dbname: digraph_dev
+  host: localhost
+  user: postgres
+  sslmode: disable
+  blacklist:
+  - migrations
+  - user_link_history
+  - daily_snapshot

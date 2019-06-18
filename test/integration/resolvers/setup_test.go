@@ -26,7 +26,6 @@ type testFetcherT struct{}
 var (
 	testDB       *sql.DB
 	testActor    *models.User
-	testActor2   *models.User
 	rootResolver *resolvers.Resolver
 )
 
@@ -69,13 +68,6 @@ func TestMain(m *testing.M) {
 	testActor, err = models.Users(
 		qm.Load("SelectedRepository"),
 		qm.Where("users.selected_repository_id is not null"),
-	).One(context.Background(), testDB)
-	if err != nil {
-		panic(err)
-	}
-
-	testActor2, err = models.Users(
-		qm.Where("users.id != ?", testActor.ID),
 	).One(context.Background(), testDB)
 	if err != nil {
 		panic(err)
@@ -158,7 +150,7 @@ func (m mutator) addParentTopicToLink(link *models.LinkValue, topic *models.Topi
 	}
 }
 
-func (m mutator) deleteTopic(topic models.TopicValue) {
+func (m mutator) deleteTopic(topic *models.TopicValue) {
 	count, err := topic.Delete(m.ctx, m.db)
 	if err != nil {
 		m.t.Fatal(err)
@@ -194,7 +186,7 @@ func (m mutator) createTopic(orgLogin, repoName, name string) (*models.TopicValu
 		return nil
 	}
 
-	return &topic, cleanup
+	return topic, cleanup
 }
 
 func (m mutator) createLink(orgLogin, repoName, title, url string) (*models.LinkValue, services.CleanupFunc) {
@@ -228,5 +220,5 @@ func (m mutator) createLink(orgLogin, repoName, title, url string) (*models.Link
 		return nil
 	}
 
-	return &link, cleanup
+	return link, cleanup
 }

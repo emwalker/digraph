@@ -52,6 +52,7 @@ migrate-down:
 generate:
 	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml --no-hooks
 	go generate ./...
+	rm -f cmd/frontend/resolvers/resolver.go
 
 .PHONY:
 
@@ -77,8 +78,11 @@ load:
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
 
-fixtures: dump
-	cp data/digraph.sql data/fixtures.sql
+fixtures: data/fixtures.sql
+	bash ./scripts/make-fixtures
+
+load-fixtures:
+	bash ./scripts/load-fixtures
 
 update-models:
 	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml

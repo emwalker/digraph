@@ -48,41 +48,42 @@ func fetchTopic(
 	return topic, err
 }
 
-func topicConnection(view *models.View, rows []*models.Topic, err error) (models.TopicConnection, error) {
+func topicConnection(view *models.View, rows []*models.Topic, err error) (*models.TopicConnection, error) {
 	if err != nil {
-		return models.TopicConnection{}, err
+		return nil, err
 	}
 
 	sort.Sort(ByName(rows))
 
 	edges := make([]*models.TopicEdge, len(rows))
 	for i, topic := range rows {
-		edges[i] = &models.TopicEdge{Node: models.TopicValue{topic, false, view}}
+		edges[i] = &models.TopicEdge{Node: &models.TopicValue{topic, false, view}}
 	}
 
-	return models.TopicConnection{Edges: edges}, nil
+	return &models.TopicConnection{
+		Edges:    edges,
+		PageInfo: &models.PageInfo{},
+	}, nil
 }
 
 func topicRepository(ctx context.Context, topic *models.TopicValue) (*models.Repository, error) {
 	if topic.R != nil && topic.R.Repository != nil {
 		return topic.R.Repository, nil
 	}
-	repo, err := fetchRepository(ctx, topic.RepositoryID)
-	return &repo, err
+	return fetchRepository(ctx, topic.RepositoryID)
 }
 
 func topicOrganization(ctx context.Context, topic *models.TopicValue) (*models.Organization, error) {
 	if topic.R != nil && topic.R.Organization != nil {
 		return topic.R.Organization, nil
 	}
-	org, err := fetchOrganization(ctx, topic.OrganizationID)
-	return &org, err
+	return fetchOrganization(ctx, topic.OrganizationID)
 }
 
 func availableTopics(
 	ctx context.Context, exec boil.ContextExecutor, view *models.View, searchString *string, first *int,
 	excludeTopicIds []string,
-) (models.TopicConnection, error) {
+) (*models.TopicConnection, error) {
 	mods := []qm.QueryMod{
 		qm.InnerJoin("organizations o on o.id = topics.organization_id"),
 		qm.InnerJoin("organization_members om on om.organization_id = o.id"),
@@ -104,7 +105,7 @@ func availableTopics(
 
 	topics, err := models.Topics(mods...).All(ctx, exec)
 	if err != nil {
-		return models.TopicConnection{}, err
+		return nil, err
 	}
 
 	return topicConnection(view, topics, err)
@@ -114,7 +115,7 @@ func availableTopics(
 func (r *topicResolver) AvailableParentTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
-) (models.TopicConnection, error) {
+) (*models.TopicConnection, error) {
 	return availableTopics(ctx, r.DB, topic.View, searchString, first, []string{topic.ID})
 }
 
@@ -122,7 +123,7 @@ func (r *topicResolver) AvailableParentTopics(
 func (r *topicResolver) ChildTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
-) (models.TopicConnection, error) {
+) (*models.TopicConnection, error) {
 	log.Printf("Fetching child topics for topic %s", topic.ID)
 
 	mods := topic.View.Filter([]qm.QueryMod{
@@ -177,7 +178,7 @@ func (r *topicResolver) ID(_ context.Context, topic *models.TopicValue) (string,
 func (r *topicResolver) Links(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
-) (models.LinkConnection, error) {
+) (*models.LinkConnection, error) {
 	log.Printf("Fetching links for topic %s", topic.Summary())
 
 	mods := topic.View.Filter([]qm.QueryMod{
@@ -220,15 +221,14 @@ func (r *topicResolver) NewlyAdded(_ context.Context, topic *models.TopicValue) 
 // Organization returns an organization.
 func (r *topicResolver) Organization(
 	ctx context.Context, topic *models.TopicValue,
-) (models.Organization, error) {
-	org, err := topicOrganization(ctx, topic)
-	return *org, err
+) (*models.Organization, error) {
+	return topicOrganization(ctx, topic)
 }
 
 // ParentTopics returns a set of topics.
 func (r *topicResolver) ParentTopics(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
-) (models.TopicConnection, error) {
+) (*models.TopicConnection, error) {
 	if topic.R != nil && topic.R.ParentTopics != nil {
 		return topicConnection(topic.View, topic.R.ParentTopics, nil)
 	}
@@ -246,9 +246,8 @@ func (r *topicResolver) ParentTopics(
 // Repository returns the repostory of the topic.
 func (r *topicResolver) Repository(
 	ctx context.Context, topic *models.TopicValue,
-) (models.Repository, error) {
-	repo, err := topicRepository(ctx, topic)
-	return *repo, err
+) (*models.Repository, error) {
+	return topicRepository(ctx, topic)
 }
 
 // ResourcePath returns a path to the item.
@@ -398,7 +397,7 @@ func (r *topicResolver) matchingDescendantLinks(
 func (r *topicResolver) Search(
 	ctx context.Context, topic *models.TopicValue, searchString string, first *int, after *string,
 	last *int, before *string,
-) (models.SearchResultItemConnection, error) {
+) (*models.SearchResultItemConnection, error) {
 	log.Printf("Searching topic %s for '%s'", topic.ID, searchString)
 
 	var (
@@ -414,12 +413,12 @@ func (r *topicResolver) Search(
 	}
 
 	if topics, err = r.matchingDescendantTopics(ctx, topic, searchString, limit); err != nil {
-		return models.SearchResultItemConnection{}, err
+		return nil, err
 	}
 
 	limit -= len(topics)
 	if links, err = r.matchingDescendantLinks(ctx, topic, searchString, limit); err != nil {
-		return models.SearchResultItemConnection{}, err
+		return nil, err
 	}
 
 	for _, topic := range topics {
@@ -430,20 +429,19 @@ func (r *topicResolver) Search(
 		edges = append(edges, &models.SearchResultItemEdge{Node: *link})
 	}
 
-	return models.SearchResultItemConnection{Edges: edges}, nil
+	return &models.SearchResultItemConnection{Edges: edges}, nil
 }
 
 // Synonyms return the synonyms for this topic.
-func (r *topicResolver) Synonyms(ctx context.Context, topic *models.TopicValue) ([]models.Synonym, error) {
-	var out []models.Synonym
-
+func (r *topicResolver) Synonyms(ctx context.Context, topic *models.TopicValue) ([]*models.Synonym, error) {
 	synonyms, err := topic.SynonymList()
 	if err != nil {
-		return out, nil
+		return nil, err
 	}
 
+	var out []*models.Synonym
 	for _, synonym := range synonyms.Values {
-		out = append(out, models.Synonym{Locale: synonym.Locale, Name: synonym.Name})
+		out = append(out, &models.Synonym{Locale: synonym.Locale, Name: synonym.Name})
 	}
 
 	return out, nil

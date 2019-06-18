@@ -13,6 +13,5 @@
 /data/personal.nq
 /data/digraph.sql
 /data/*backup.*
-sqlboiler.yaml
 app.yaml
 /cmd/frontend/models/*

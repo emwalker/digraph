@@ -172,6 +172,7 @@ func TestReviewLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer upsertResult.Cleanup()
 
 	link := upsertResult.Link
 

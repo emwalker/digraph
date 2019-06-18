@@ -16,13 +16,13 @@ func getRepositoryLoader(ctx context.Context) *loaders.RepositoryLoader {
 	return ctx.Value(loaders.RepositoryLoaderKey).(*loaders.RepositoryLoader)
 }
 
-func fetchRepository(ctx context.Context, repoID string) (models.Repository, error) {
+func fetchRepository(ctx context.Context, repoID string) (*models.Repository, error) {
 	loader := getRepositoryLoader(ctx)
 	repo, err := loader.Load(repoID)
 	if err != nil {
-		return models.Repository{}, err
+		return nil, err
 	}
-	return *repo, nil
+	return repo, nil
 }
 
 // DisplayColor returns a color by which to display the topic.
@@ -42,7 +42,7 @@ func (r *repositoryResolver) DisplayName(ctx context.Context, repo *models.Repos
 func (r *repositoryResolver) FullName(
 	ctx context.Context, repo *models.Repository,
 ) (string, error) {
-	var org models.Organization
+	var org *models.Organization
 	var err error
 
 	if org, err = fetchOrganization(ctx, repo.OrganizationID); err != nil {
@@ -71,25 +71,24 @@ func (r *repositoryResolver) IsPrivate(
 // Organization returns a set of links.
 func (r *repositoryResolver) Organization(
 	ctx context.Context, repo *models.Repository,
-) (models.Organization, error) {
+) (*models.Organization, error) {
 	return fetchOrganization(ctx, repo.OrganizationID)
 }
 
 // Organization returns a set of links.
 func (r *repositoryResolver) Owner(
 	ctx context.Context, repo *models.Repository,
-) (models.User, error) {
-	owner, err := repo.Owner().One(ctx, r.DB)
-	return *owner, err
+) (*models.User, error) {
+	return repo.Owner().One(ctx, r.DB)
 }
 
 // RootTopic returns the root topic of the repository.
 func (r *repositoryResolver) RootTopic(
 	ctx context.Context, repo *models.Repository,
-) (models.TopicValue, error) {
+) (*models.TopicValue, error) {
 	topic, err := repo.RootTopic(ctx, r.DB, r.Actor.DefaultView())
 	if err != nil {
-		return models.TopicValue{}, err
+		return nil, err
 	}
-	return *topic, err
+	return topic, err
 }

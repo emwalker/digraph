@@ -18,25 +18,25 @@ import (
 
 // UpdateSynonymsResult holds the result after updating the synonyms on a topic.
 type UpdateSynonymsResult struct {
-	Alerts []models.Alert
+	Alerts []*models.Alert
 	Topic  *models.Topic
 }
 
 // UpdateTopicResult holds the result of an UpdateTopic call.
 type UpdateTopicResult struct {
-	Alerts []models.Alert
+	Alerts []*models.Alert
 	Topic  *models.Topic
 }
 
 // UpdateTopicParentTopicsResult holds the result of an UpdateTopicParentTopics call.
 type UpdateTopicParentTopicsResult struct {
-	Alerts []models.Alert
+	Alerts []*models.Alert
 	Topic  *models.Topic
 }
 
 // UpsertTopicResult holds the result of an UpsertTopic call.
 type UpsertTopicResult struct {
-	Alerts       []models.Alert
+	Alerts       []*models.Alert
 	Topic        *models.Topic
 	TopicCreated bool
 	Cleanup      CleanupFunc
@@ -121,7 +121,7 @@ func (c Connection) UpdateTopic(
 		// Does sqlboiler provide a way to get to the pq error?
 		if strings.Contains(err.Error(), "pq: duplicate key value violates unique constraint") {
 			return &UpdateTopicResult{
-				Alerts: []models.Alert{*nameAlreadyExists(name)},
+				Alerts: []*models.Alert{nameAlreadyExists(name)},
 			}, nil
 		}
 		log.Printf("services.UpdateTopic: %s (type %T)", err, err)
@@ -157,7 +157,7 @@ func (c Connection) UpsertTopic(
 
 	if !ok {
 		return &UpsertTopicResult{
-			Alerts:  []models.Alert{*invalidNameWarning(name)},
+			Alerts:  []*models.Alert{invalidNameWarning(name)},
 			Cleanup: noopCleanup,
 		}, nil
 	}
@@ -220,7 +220,7 @@ func (c Connection) UpsertTopic(
 	if !created {
 		alerts = append(
 			alerts,
-			*models.NewAlert(
+			models.NewAlert(
 				models.AlertTypeSuccess,
 				fmt.Sprintf("A topic with the name \"%s\" was found", name),
 			),
@@ -277,10 +277,10 @@ func (c Connection) isDescendantOf(
 
 func (c Connection) parentTopicsAndAlerts(
 	ctx context.Context, topic *models.Topic, parentIds []string,
-) ([]*models.Topic, []models.Alert, error) {
+) ([]*models.Topic, []*models.Alert, error) {
 	maybeParentTopics := util.TopicsFromIds(parentIds)
 	var parentTopics []*models.Topic
-	var alerts []models.Alert
+	var alerts []*models.Alert
 
 	for _, parent := range maybeParentTopics {
 		willHaveCycle, err := c.isDescendantOf(ctx, parent, topic)
@@ -290,7 +290,7 @@ func (c Connection) parentTopicsAndAlerts(
 
 		if willHaveCycle {
 			parent.Reload(ctx, c.Exec)
-			alerts = append(alerts, *cycleWarning(parent, topic))
+			alerts = append(alerts, cycleWarning(parent, topic))
 		} else {
 			parentTopics = append(parentTopics, parent)
 		}
@@ -341,7 +341,7 @@ func (c Connection) upsertTopic(
 
 func (c Connection) parentTopicsToAdd(
 	ctx context.Context, topic *models.Topic, topicIds []string,
-) ([]*models.Topic, []models.Alert, error) {
+) ([]*models.Topic, []*models.Alert, error) {
 	parentTopics, err := topic.ParentTopics().All(ctx, c.Exec)
 	if err != nil {
 		return nil, nil, err
@@ -353,7 +353,7 @@ func (c Connection) parentTopicsToAdd(
 	}
 
 	var parents []*models.Topic
-	var alerts []models.Alert
+	var alerts []*models.Alert
 
 	for _, parentID := range topicIds {
 		if _, ok := seen[parentID]; ok {
@@ -367,7 +367,7 @@ func (c Connection) parentTopicsToAdd(
 
 		if willHaveCycle {
 			parent.Reload(ctx, c.Exec)
-			alerts = append(alerts, *cycleWarning(parent, topic))
+			alerts = append(alerts, cycleWarning(parent, topic))
 		} else {
 			parents = append(parents, parent)
 		}
