@@ -91,6 +91,7 @@ clean:
 	rm -f public/webpack/*.js* public/webpack/*.css*
 
 build-client: clean
+	yarn relay
 	yarn build
 
 build-executables:

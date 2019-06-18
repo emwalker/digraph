@@ -25,19 +25,23 @@ Requirements
 * Go 1.11
 * yarn
 
-Install dependencies:
+Set up the project:
 ```
-$ git branch --set-upstream-to=origin/master master
+$ mkdir $GOPATH/src/github.com/emwalker
+$ cd $GOPATH/src/github.com/emwalker
+$ git clone git@github.com:emwalker/digraph.git
+$ cd digraph
+$ make load-fixtures
+$ go get -u github.com/99designs/gqlgen
+$ make generate
 $ go get -u ./...
 $ yarn install
 $ make test
+$ make test-integration
 ```
 
 Set up the login session:
 ```
-$ make load-fixtures
-$ make generate
-$ make test-integration
 $ make build-client
 $ redis-server /usr/local/etc/redis.conf # In one terminal
 $ go run cmd/frontend/frontend.go -dev # In another terminal
