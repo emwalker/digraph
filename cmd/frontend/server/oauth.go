@@ -35,11 +35,14 @@ var (
 
 // RegisterOauth2Routes adds Oauth 2 handlers to the server.
 func (s *Server) RegisterOauth2Routes() {
+	callbackURL := callbackPath(s.DevMode, "github")
+	log.Printf("Using callback path %s", callbackURL)
+
 	goth.UseProviders(
 		github.New(
 			os.Getenv("DIGRAPH_GITHUB_CLIENT_ID"),
 			os.Getenv("DIGRAPH_GITHUB_CLIENT_SECRET"),
-			callbackPath(s.DevMode, s.Port, "github"),
+			callbackURL,
 			// Strictly for deduping with other OAuth providers
 			"user:email",
 		),
@@ -59,9 +62,9 @@ func redirectTo(w http.ResponseWriter, path string) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func callbackPath(devMode bool, port, provider string) string {
+func callbackPath(devMode bool, provider string) string {
 	if devMode {
-		return fmt.Sprintf("http://localhost:%s/auth/%s/callback", port, provider)
+		return fmt.Sprintf("http://localhost:%s/auth/%s/callback", "3001", provider)
 	}
 	return fmt.Sprintf("https://digraph.app/auth/%s/callback", provider)
 }
@@ -91,6 +94,8 @@ func (s *Server) oauthCallbackRoute(provider string) (string, http.Handler) {
 	path := fmt.Sprintf("/auth/%s/callback", provider)
 
 	return path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Attempting to authenticate with %s", provider)
+
 		gothUser, err := gothic.CompleteUserAuth(w, r)
 		if err != nil {
 			log.Printf("Failed to complete user auth: %s", err)
@@ -113,6 +118,7 @@ func (s *Server) oauthLogoutRoute(provider string) (string, http.Handler) {
 	path := fmt.Sprintf("/logout/%s", provider)
 
 	return path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Logging out of %s", provider)
 		gothic.Logout(w, r)
 		redirectTo(w, "/")
 	})

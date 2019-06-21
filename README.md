@@ -36,17 +36,14 @@ $ go get -u github.com/99designs/gqlgen
 $ make generate
 $ go get -u ./...
 $ yarn install
-$ make test
-$ make test-integration
 ```
 
-Set up the login session:
+Set up the database:
 ```
-$ make build-client
-$ redis-server /usr/local/etc/redis.conf # In one terminal
-$ go run cmd/frontend/frontend.go -dev # In another terminal
-# Go to localhost:8080 in a browser and sign in with your Github account, possibly *twice*, if the first time
-# doesn't work. Now you can CTRL-C to quit both go and redis
+$ make load-fixtures
+$ make generate
+$ make test
+$ make test-integration
 ```
 
 Run the app in development:
