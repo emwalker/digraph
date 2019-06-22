@@ -38,10 +38,8 @@ $ go get -u ./...
 $ yarn install
 ```
 
-Set up the database:
+Run the tests:
 ```
-$ make load-fixtures
-$ make generate
 $ make test
 $ make test-integration
 ```
