@@ -81,12 +81,13 @@ func (s *Server) maybeSaveSession(gothUser goth.User, w http.ResponseWriter, r *
 
 	tx.Commit()
 
-	if err = gothic.StoreInSession(string(userSessionKey), string(result.Session.SessionID), r, w); err != nil {
+	sessionID := result.Session.HexID()
+	if err = gothic.StoreInSession(string(userSessionKey), sessionID, r, w); err != nil {
 		log.Printf("Unable to store session id with session: %s", err)
 		return err
 	}
 
-	log.Printf("Stored session id in session: %s", result.Session.SessionID)
+	log.Printf("Stored session id in session: %s", sessionID)
 	return nil
 }
 

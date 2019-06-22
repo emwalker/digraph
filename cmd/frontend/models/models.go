@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"log"
 
@@ -180,6 +181,12 @@ func (r *Repository) IsPrivate() bool {
 // DisplayColor returns a string of the hex color to use for the topic.
 func (r *Repository) DisplayColor() string {
 	return "#dbedff"
+}
+
+// HexID provides a hex-encoded version of the session id that can be used for things like
+// setting cookies.
+func (s *Session) HexID() string {
+	return hex.EncodeToString(s.SessionID)
 }
 
 // IsGuest returns true if the user is not backed by a row in the database.

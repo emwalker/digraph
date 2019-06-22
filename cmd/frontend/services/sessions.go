@@ -31,11 +31,7 @@ func (c Connection) FetchOrMakeSession(
 	}
 
 	session, err := models.Sessions(
-		qm.Select(
-			"sessions.id id",
-			"sessions.user_id user_id",
-			"encode(sessions.session_id::bytea, 'hex') session_id",
-		),
+		qm.Select("sessions.id", "user_id", "session_id"),
 		qm.InnerJoin("users u on sessions.user_id = u.id"),
 		qm.Where("github_username like ?", gothUser.NickName),
 	).One(ctx, c.Exec)
