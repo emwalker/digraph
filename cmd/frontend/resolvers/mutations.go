@@ -344,11 +344,7 @@ func (r *MutationResolver) UpsertLink(
 
 		s := services.New(tx, r.Actor, r.Fetcher)
 		result, err = s.UpsertLink(
-			ctx,
-			repo,
-			input.URL,
-			input.Title,
-			input.AddParentTopicIds,
+			ctx, repo, input.URL, input.Title, input.AddParentTopicIds,
 		)
 
 		return err

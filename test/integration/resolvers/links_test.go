@@ -221,7 +221,7 @@ func TestParentTopicsDefaultOrdering(t *testing.T) {
 	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
-	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "b64c9bf1c62e", "http://b64c9bf1c62e")
+	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "b64c9bf1c62c", "http://b64c9bf1c62c.com")
 	defer cleanup()
 
 	tC, cleanup := m.createTopic(testActor.Login, repoName, "C")
@@ -236,14 +236,18 @@ func TestParentTopicsDefaultOrdering(t *testing.T) {
 	defer cleanup()
 	m.addParentTopicToLink(link, tB)
 
+	if err := link.Reload(m.ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
 	query := rootResolver.Link()
 	topicConnection, err := query.ParentTopics(m.ctx, link, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(topicConnection.Edges) < 3 {
-		t.Fatalf("Expected 3 parent topics, got %d", len(topicConnection.Edges))
+	if len(topicConnection.Edges) != 4 {
+		t.Fatalf("Expected 4 parent topics, got %d", len(topicConnection.Edges))
 	}
 
 	prevEdge := topicConnection.Edges[0]
@@ -291,8 +295,12 @@ func TestViewerReview(t *testing.T) {
 	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
-	link, cleanup := m.createLink(testActor.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
+	link, cleanup := m.createLink(testActor.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e.com")
 	defer cleanup()
+
+	if err := link.Reload(m.ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
 
 	resolver := rootResolver.Link()
 

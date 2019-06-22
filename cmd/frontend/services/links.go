@@ -2,15 +2,12 @@ package services
 
 import (
 	"context"
-	"crypto/sha1"
 	"fmt"
 	"log"
-	"net/url"
-	"strings"
 	"time"
 
-	pl "github.com/PuerkitoBio/purell"
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	"github.com/emwalker/digraph/cmd/frontend/text"
 	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/volatiletech/null"
@@ -38,110 +35,6 @@ type UpsertLinkResult struct {
 	LinkCreated bool
 }
 
-// URL holds information about a URL that has been upserted.
-type URL struct {
-	CanonicalURL string
-	Input        string
-	Sha1         string
-}
-
-const normalizationFlags = pl.FlagRemoveDefaultPort |
-	pl.FlagDecodeDWORDHost |
-	pl.FlagDecodeOctalHost |
-	pl.FlagDecodeHexHost |
-	pl.FlagRemoveUnnecessaryHostDots |
-	pl.FlagRemoveDotSegments |
-	pl.FlagRemoveDuplicateSlashes |
-	pl.FlagUppercaseEscapes |
-	pl.FlagDecodeUnnecessaryEscapes |
-	pl.FlagEncodeNecessaryEscapes |
-	pl.FlagSortQuery
-
-var (
-	omitQuerySites = []string{
-		"amazon.com",
-		"theatlantic.com",
-		"businessinsider.com",
-		"dictionary.com",
-		"independent.co.uk",
-		"motherjones.com",
-		"nytimes.com",
-		"reuters.com",
-		"scientificamerican.com",
-		"thedailybeast.com",
-		"theguardian.com",
-		"thehill.com",
-		"twitter.com",
-	}
-
-	omitFields = []string{
-		"fbclid",
-		"rss",
-		"utm_campaign",
-		"utm_medium",
-		"utm_source",
-		"utm_term",
-		"via",
-	}
-)
-
-func removeQueryAndAnchor(parsed *url.URL) bool {
-	for _, host := range omitQuerySites {
-		if strings.HasSuffix(parsed.Host, host) {
-			return true
-		}
-	}
-	return false
-}
-
-func stripFragment(parsed *url.URL) bool {
-	return !strings.HasSuffix(parsed.Host, "mail.google.com")
-}
-
-// NormalizeURL normalizes a url before it is stored in the database.
-func NormalizeURL(rawURL string) (*URL, error) {
-	parsed, err := url.Parse(rawURL)
-	if err != nil {
-		return nil, err
-	}
-
-	if removeQueryAndAnchor(parsed) {
-		parsed.RawQuery = ""
-		rawURL = parsed.String()
-	} else if strings.HasSuffix(parsed.Host, "youtube.com") {
-		query := parsed.Query()
-		for key := range query {
-			if key == "v" {
-				continue
-			}
-			query.Del(key)
-		}
-		parsed.RawQuery = query.Encode()
-		rawURL = parsed.String()
-	} else {
-		query := parsed.Query()
-		for _, key := range omitFields {
-			query.Del(key)
-			parsed.RawQuery = query.Encode()
-			rawURL = parsed.String()
-		}
-	}
-
-	flags := normalizationFlags
-
-	if stripFragment(parsed) {
-		flags |= pl.FlagRemoveFragment
-	}
-
-	canonical, err := pl.NormalizeURLString(rawURL, flags)
-	if err != nil {
-		return nil, err
-	}
-
-	sha1 := fmt.Sprintf("%x", sha1.Sum([]byte(canonical)))
-	return &URL{canonical, rawURL, sha1}, nil
-}
-
 func (c Connection) providedOrFetchedTitle(url string, providedTitle *string) (string, error) {
 	if providedTitle != nil && *providedTitle != "" {
 		return *providedTitle, nil
@@ -160,16 +53,8 @@ func (c Connection) providedOrFetchedTitle(url string, providedTitle *string) (s
 	return "", nil
 }
 
-func isURL(name string) bool {
-	_, err := url.ParseRequestURI(name)
-	if err != nil {
-		return false
-	}
-	return true
-}
-
 func (c Connection) addParentTopicsToLink(
-	ctx context.Context, link models.Link, parentTopicIds []string,
+	ctx context.Context, link *models.Link, parentTopicIds []string,
 ) error {
 	if len(parentTopicIds) < 1 {
 		return nil
@@ -210,7 +95,7 @@ func (c Connection) addParentTopicsToLink(
 }
 
 func (c Connection) addTopics(
-	ctx context.Context, repo *models.Repository, link models.Link, parentTopicIds []string,
+	ctx context.Context, repo *models.Repository, link *models.Link, parentTopicIds []string,
 ) error {
 	existingTopicCount, err := link.ParentTopics().Count(ctx, c.Exec)
 	if err != nil {
@@ -236,7 +121,7 @@ func (c Connection) addTopics(
 }
 
 func (c Connection) addUserLinkReview(
-	ctx context.Context, repo *models.Repository, link models.Link,
+	ctx context.Context, repo *models.Repository, link *models.Link,
 ) error {
 	review := models.UserLinkReview{
 		LinkID: link.ID,
@@ -286,6 +171,14 @@ func (c Connection) logUserLinkAction(
 	}
 
 	return &userLink, nil
+}
+
+func (c Connection) updateLink(ctx context.Context, link *models.Link) error {
+	_, err := link.Update(ctx, c.Exec, boil.Whitelist("title"))
+	if err != nil {
+		log.Printf("There was a problem updating link %s: %s", link.Summary(), err)
+	}
+	return err
 }
 
 // DeleteLink removes a link from a repo.
@@ -341,16 +234,13 @@ func (c Connection) UpsertLink(
 	parentTopicIds []string,
 ) (*UpsertLinkResult, error) {
 	var alerts []*models.Alert
+	existing := false
 
-	url, err := NormalizeURL(providedURL)
+	url, err := pageinfo.NewURL(providedURL)
 	if err != nil {
 		log.Printf("Unable to normalize url: %s", err)
-		return nil, err
-	}
-
-	if !isURL(url.CanonicalURL) {
-		alerts = append(alerts,
-			models.NewAlert(models.AlertTypeWarn, fmt.Sprintf("Not a valid link: %s", providedURL)),
+		alerts = append(
+			alerts, models.NewAlert(models.AlertTypeWarn, err.Error()),
 		)
 		return &UpsertLinkResult{
 			Alerts:  alerts,
@@ -358,50 +248,76 @@ func (c Connection) UpsertLink(
 		}, nil
 	}
 
-	title, err := c.providedOrFetchedTitle(url.CanonicalURL, providedTitle)
-	if err != nil {
-		return nil, err
-	}
-
-	link := models.Link{
-		OrganizationID: repo.OrganizationID,
-		RepositoryID:   repo.ID,
-		Sha1:           url.Sha1,
-		Title:          text.Squash(title),
-		URL:            url.CanonicalURL,
-	}
-
-	existing, err := repo.Links(qm.Where("sha1 like ?", url.Sha1)).Count(ctx, c.Exec)
-	if err != nil {
+	link, err := repo.Links(qm.Where("sha1 like ?", url.Sha1)).One(ctx, c.Exec)
+	if err != nil && err.Error() != "sql: no rows in result set" {
 		log.Printf("Failed to query for existing link with sha1 %s: %s", url.Sha1, err)
 		return nil, err
 	}
 
-	if existing > 0 {
-		alerts = []*models.Alert{
-			models.NewAlert(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", providedURL)),
+	if link == nil {
+		log.Printf("Link not found, fetching page: %s", url.CanonicalURL)
+
+		title, err := c.providedOrFetchedTitle(url.CanonicalURL, providedTitle)
+		if err != nil {
+			log.Printf("Failed to fetch title for %s: %s", url.CanonicalURL, err)
+			return nil, err
+		}
+
+		link = &models.Link{
+			OrganizationID: repo.OrganizationID,
+			RepositoryID:   repo.ID,
+			Sha1:           url.Sha1,
+			Title:          text.Squash(title),
+			URL:            url.CanonicalURL,
+		}
+
+		err = link.Upsert(
+			ctx, c.Exec, true, []string{"repository_id", "sha1"}, boil.Whitelist("url", "title"), boil.Infer(),
+		)
+
+		if err != nil {
+			log.Printf("Failed to upsert link: %#v", link)
+			return nil, err
+		}
+	} else {
+		log.Printf("Link found: %s", url.CanonicalURL)
+		existing = true
+
+		if providedTitle == nil {
+			alerts = []*models.Alert{
+				models.NewAlert(models.AlertTypeSuccess, fmt.Sprintf("An existing link %s was found", providedURL)),
+			}
+		} else {
+			if *providedTitle == "" {
+				log.Printf("Provided title empty, updating link after re-fetching page: %s", link.Summary())
+				title, err := c.providedOrFetchedTitle(url.CanonicalURL, providedTitle)
+				if err != nil {
+					return nil, err
+				}
+
+				link.Title = title
+				if err = c.updateLink(ctx, link); err != nil {
+					return nil, err
+				}
+			} else if *providedTitle != link.Title {
+				log.Printf("Provided title and existing differ, updating to new title: %s", *providedTitle)
+
+				link.Title = *providedTitle
+				if err = c.updateLink(ctx, link); err != nil {
+					return nil, err
+				}
+			} else {
+				log.Printf("Provided title and existing title the same, doing nothing: %s", *providedTitle)
+			}
 		}
 	}
 
-	err = link.Upsert(
-		ctx,
-		c.Exec,
-		true,
-		[]string{"repository_id", "sha1"},
-		boil.Whitelist("url", "title"),
-		boil.Infer(),
-	)
-
-	if err != nil {
-		log.Printf("Failed to upsert link: %#v", link)
-		return nil, err
-	}
-
 	if err = c.addTopics(ctx, repo, link, parentTopicIds); err != nil {
+		log.Printf("There was a problem adding topics to link %s: %s", link.Summary(), err)
 		return nil, err
 	}
 
-	userLink, err := c.logUserLinkAction(ctx, repo, c.Actor, &link, models.ActionUpsertLink, parentTopicIds)
+	userLink, err := c.logUserLinkAction(ctx, repo, c.Actor, link, models.ActionUpsertLink, parentTopicIds)
 	if err != nil {
 		return nil, err
 	}
@@ -412,15 +328,14 @@ func (c Connection) UpsertLink(
 	}
 
 	cleanup := func() error {
-		if existing < 1 {
+		if !existing {
 			log.Printf("Deleteing link %s", link.ID)
 			if _, err = link.Delete(ctx, c.Exec); err != nil {
 				return err
 			}
 		}
 
-		_, err := userLink.Delete(ctx, c.Exec)
-		if err != nil {
+		if _, err := userLink.Delete(ctx, c.Exec); err != nil {
 			return err
 		}
 
@@ -430,7 +345,7 @@ func (c Connection) UpsertLink(
 	return &UpsertLinkResult{
 		Alerts:      alerts,
 		Cleanup:     cleanup,
-		Link:        &link,
-		LinkCreated: existing < 1,
+		Link:        link,
+		LinkCreated: !existing,
 	}, nil
 }

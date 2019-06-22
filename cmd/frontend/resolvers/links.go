@@ -75,11 +75,12 @@ func (r *linkResolver) Organization(ctx context.Context, link *models.LinkValue)
 func (r *linkResolver) ParentTopics(
 	ctx context.Context, link *models.LinkValue, first *int, after *string, last *int, before *string,
 ) (*models.TopicConnection, error) {
-	if link.R != nil && link.R.ParentTopics != nil {
+	if link.R != nil && len(link.R.ParentTopics) > 0 {
+		log.Printf("Parent topics already loaded for %s", link.Summary())
 		return topicConnection(link.View, link.R.ParentTopics, nil)
 	}
 
-	log.Print("Fetching parent topics for link")
+	log.Printf("Fetching parent topics for %s", link.Summary())
 	mods := []qm.QueryMod{}
 
 	topics, err := link.ParentTopics(mods...).All(ctx, r.DB)

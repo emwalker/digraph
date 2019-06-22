@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	"github.com/emwalker/digraph/cmd/frontend/text"
 	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/volatiletech/null"
@@ -75,7 +76,7 @@ func NormalizeTopicName(name string) (string, bool) {
 		return "", false
 	}
 
-	if isURL(name) {
+	if pageinfo.IsURL(name) {
 		return name, false
 	}
 

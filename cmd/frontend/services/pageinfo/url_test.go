@@ -1,4 +1,4 @@
-package services_test
+package pageinfo_test
 
 import (
 	"testing"
