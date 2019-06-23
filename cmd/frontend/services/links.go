@@ -342,6 +342,11 @@ func (c Connection) UpsertLink(
 		return nil
 	}
 
+	if err = link.Reload(ctx, c.Exec); err != nil {
+		log.Printf("Failed to reload link %s: %s", link.Summary(), err)
+		return nil, err
+	}
+
 	return &UpsertLinkResult{
 		Alerts:      alerts,
 		Cleanup:     cleanup,
