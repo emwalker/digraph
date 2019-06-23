@@ -96,7 +96,7 @@ func (r *viewResolver) Activity(
 
 		logData[i] = activity.UpsertLink{
 			CreatedAt: userLink.CreatedAt,
-			User:      activity.User{userLink.R.User.Name},
+			User:      activity.User{userLink.R.User.DisplayName()},
 			Link:      activity.Link{userLink.R.Link.Title, userLink.R.Link.URL},
 			Topics:    topics,
 		}

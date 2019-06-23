@@ -185,8 +185,20 @@ func (r *Repository) DisplayColor() string {
 
 // HexID provides a hex-encoded version of the session id that can be used for things like
 // setting cookies.
-func (s *Session) HexID() string {
+func (s Session) HexID() string {
 	return hex.EncodeToString(s.SessionID)
+}
+
+// DisplayName returns the name to be used for the user in case the Name field is not set.
+func (u User) DisplayName() string {
+	switch {
+	case u.Name != "":
+		return u.Name
+	case u.Login != "":
+		return u.Login
+	default:
+		return "<missing name>"
+	}
 }
 
 // IsGuest returns true if the user is not backed by a row in the database.
@@ -196,10 +208,7 @@ func (u User) IsGuest() bool {
 
 // Summary returns info on a user that can be printed to the log
 func (u User) Summary() string {
-	if u.Name == "" {
-		return fmt.Sprintf("user no name (%s)", u.PrimaryEmail)
-	}
-	return fmt.Sprintf("user %s (%s)", u.Name, u.PrimaryEmail)
+	return fmt.Sprintf("user %s (%s)", u.DisplayName(), u.PrimaryEmail)
 }
 
 // DefaultView returns a view that can be used in return values for mutations and similar situations
