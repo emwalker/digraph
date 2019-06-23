@@ -41,6 +41,10 @@ func TestLinkHasATopic(t *testing.T) {
 		t.Fatal("Expected link to be a new one")
 	}
 
+	if result.Link.R != nil {
+		t.Fatal("There should be no preloads on the link")
+	}
+
 	topics, err := result.Link.ParentTopics().All(ctx, c.Exec)
 	if err != nil {
 		t.Fatal(err)
