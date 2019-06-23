@@ -44,8 +44,26 @@ exports[`<LoadingPage /> renders 1`] = `
       value=""
     />
   </div>
-  <div
-    className="page-placeholder"
-  />
+  <div>
+    <Columns>
+      <RightColumn>
+        <_default
+          items={Array []}
+          orgLogin="Gnusto"
+          repoName="General collection"
+          title="Parent topics"
+        />
+      </RightColumn>
+      <LeftColumn>
+        <div
+          className="blankslate"
+        >
+          <p>
+            Searching the computers for items ...
+          </p>
+        </div>
+      </LeftColumn>
+    </Columns>
+  </div>
 </div>
 `;

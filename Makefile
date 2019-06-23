@@ -63,12 +63,12 @@ test: .PHONY
 	go test ./cmd/frontend/...
 	yarn jest
 
-format:
+format: lint
 	yarn flow
 	go fmt ./...
 	git diff --quiet
 
-check: generate lint format test test-integration
+check: generate format test test-integration
 
 load:
 	dropdb $(DBNAME)

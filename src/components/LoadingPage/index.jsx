@@ -3,6 +3,10 @@ import React from 'react'
 import { GoRepo } from 'react-icons/go'
 
 import SearchBox from 'components/ui/SearchBox'
+import Columns from 'components/ui/Columns'
+import LeftColumn from 'components/ui/LeftColumn'
+import RightColumn from 'components/ui/RightColumn'
+import SidebarList from 'components/ui/SidebarList'
 
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 
@@ -43,7 +47,23 @@ const LoadingPage = ({ location }: Props) => {
           value=""
         />
       </div>
-      <div className="page-placeholder" />
+      <div>
+        <Columns>
+          <RightColumn>
+            <SidebarList
+              title="Parent topics"
+              orgLogin={orgLogin}
+              repoName={repoName}
+              items={[]}
+            />
+          </RightColumn>
+          <LeftColumn>
+            <div className="blankslate">
+              <p>Searching the computers for items ...</p>
+            </div>
+          </LeftColumn>
+        </Columns>
+      </div>
     </div>
   )
 }
