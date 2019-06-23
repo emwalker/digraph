@@ -6,7 +6,8 @@ import type { Relay, RepositoryType, TopicType, UserType } from 'components/type
 import upsertTopicMutation from 'mutations/upsertTopicMutation'
 
 const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
-  + 'afterwards if it also belongs under another topic.'
+  + 'afterwards if it also belongs under another topic.\n'
+  + 'Press Enter to submit the new topic.'
 
 type Props = {
   disabled?: boolean,
@@ -79,7 +80,7 @@ class AddTopic extends Component<Props, State> {
     <dl className="form-group">
       <dt>
         <span
-          className="tooltipped tooltipped-w"
+          className="tooltipped tooltipped-ne"
           aria-label={tooltipText}
         >
           <label htmlFor="create-topic-name">Add subtopic</label>

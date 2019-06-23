@@ -5,6 +5,9 @@ import { graphql, createFragmentContainer } from 'react-relay'
 import type { Relay, RepositoryType, TopicType, UserType } from 'components/types'
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
 
+const tooltip = 'Add a link to this topic.\n'
+  + 'Press Enter to submit the new link.'
+
 type Props = {
   disabled?: boolean,
   relay: Relay,
@@ -76,8 +79,8 @@ class AddLink extends Component<Props, State> {
     <dl className="form-group">
       <dt>
         <span
-          className="tooltipped tooltipped-w"
-          aria-label="Add a link to this topic."
+          className="tooltipped tooltipped-ne"
+          aria-label={tooltip}
         >
           <label htmlFor="create-link-url">Add link</label>
         </span>
