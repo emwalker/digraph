@@ -41,7 +41,8 @@ func TestWildcardStringArray(t *testing.T) {
 
 	for _, td := range testData {
 		t.Run(td.name, func(t *testing.T) {
-			actual, ok := wildcardStringArray(td.input).(*types.StringArray)
+			q := query(td.input)
+			actual, ok := q.wildcardStringArray().(*types.StringArray)
 			if !ok {
 				t.Fatalf("Expected a StringArray, got: %#v", actual)
 			}

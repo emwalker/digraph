@@ -94,8 +94,9 @@ func availableTopics(
 	}
 
 	if searchString != nil {
+		q := query(*searchString)
 		mods = append(mods,
-			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", wildcardStringArray(*searchString)),
+			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", q.wildcardStringArray()),
 		)
 	}
 
@@ -133,9 +134,10 @@ func (r *topicResolver) ChildTopics(
 	})
 
 	if searchString != nil && *searchString != "" {
+		q := query(*searchString)
 		mods = append(
 			mods,
-			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", wildcardStringQuery(*searchString)),
+			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", q.wildcardStringQuery()),
 		)
 	}
 
@@ -197,7 +199,11 @@ func (r *topicResolver) Links(
 	}
 
 	if searchString != nil && *searchString != "" {
-		mods = append(mods, qm.Where("links.title ~~* all(?)", wildcardStringArray(*searchString)))
+		q := query(*searchString)
+		array := q.wildcardStringArray()
+		mods = append(mods,
+			qm.Where("links.title ~~* all(?) or links.url ~~* all(?)", array, array),
+		)
 	}
 
 	rows, err := topic.ChildLinks(mods...).All(ctx, r.DB)
@@ -275,8 +281,8 @@ func (r *topicResolver) matchingDescendantTopics(
 		ID string
 	}
 
-	query := wildcardStringQuery(searchString)
-	log.Printf("Looking for descendent topics with query: %s", query)
+	log.Printf("Looking for descendent topics with query: %s", searchString)
+	q := query(searchString)
 
 	err := queries.Raw(`
 	with recursive child_topics as (
@@ -297,7 +303,7 @@ func (r *topicResolver) matchingDescendantTopics(
 		end
 	)
 	limit $3
-	`, topic.ID, query, limit).Bind(ctx, r.DB, &rows)
+	`, topic.ID, q.wildcardStringQuery(), limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err
@@ -338,8 +344,8 @@ func (r *topicResolver) matchingDescendantLinks(
 		ID string
 	}
 
-	query := wildcardStringQuery(searchString)
-	log.Printf("Searching for links that match query: %s", query)
+	log.Printf("Searching for descendant links that match query: %s", searchString)
+	q := query(searchString)
 
 	err := queries.Raw(`
 	with recursive child_topics as (
@@ -356,11 +362,14 @@ func (r *topicResolver) matchingDescendantLinks(
 	where (
 		case $2
 		when '' then true
-		else to_tsvector('linksdict', l.title) @@ to_tsquery('linksdict', $2)
+		else (
+			to_tsvector('linksdict', l.title) @@ to_tsquery('linksdict', $2)
+			or l.url ~~* all($3)
+		)
 		end
 	)
-	limit $3
-	`, topic.ID, query, limit).Bind(ctx, r.DB, &rows)
+	limit $4
+	`, topic.ID, q.wildcardStringQuery(), q.wildcardStringArray(), limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err

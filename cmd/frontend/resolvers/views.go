@@ -57,7 +57,8 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 	}
 
 	if searchString != nil {
-		mods = append(mods, qm.Where("topics.name ~~* all(?)", wildcardStringArray(*searchString)))
+		q := query(*searchString)
+		mods = append(mods, qm.Where("topics.name ~~* all(?)", q.wildcardStringArray()))
 	}
 
 	return mods
@@ -136,7 +137,8 @@ func (r *viewResolver) Links(
 	})
 
 	if searchString != nil && *searchString != "" {
-		mods = append(mods, qm.Where("title ~~* all(?)", wildcardStringArray(*searchString)))
+		q := query(*searchString)
+		mods = append(mods, qm.Where("title ~~* all(?)", q.wildcardStringArray()))
 	}
 
 	if reviewed != nil {

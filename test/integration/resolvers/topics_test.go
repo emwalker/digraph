@@ -335,7 +335,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 	topic, cleanup := m.createTopic(testActor.Login, repoName, "News organizations")
 	defer cleanup()
 
-	link, cleanup := m.createLink(testActor.Login, repoName, "New York Times", "https://www.nytimes.com")
+	link, cleanup := m.createLink(testActor.Login, repoName, "New York Timely", "https://www.nytimely.com")
 	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
@@ -352,7 +352,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 		},
 		{
 			Name:         "When there is a full match",
-			SearchString: "New York Times",
+			SearchString: "New York Timely",
 			Count:        1,
 		},
 		{
@@ -362,13 +362,18 @@ func TestSearchLinksInTopic(t *testing.T) {
 		},
 		{
 			Name:         "When there is a suffix match",
-			SearchString: "York Times",
+			SearchString: "York Timely",
 			Count:        1,
 		},
 		{
 			Name:         "When there is no match",
 			SearchString: "astronomy",
 			Count:        0,
+		},
+		{
+			Name:         "When the search matches the url",
+			SearchString: "nytimely",
+			Count:        1,
 		},
 	}
 
@@ -403,7 +408,7 @@ func TestSearchInTopic(t *testing.T) {
 	defer cleanup()
 	m.addParentTopicToTopic(t2, t1)
 
-	l2, cleanup := m.createLink(testActor.Login, repoName, "New York Times", "https://www.nytimes.com")
+	l2, cleanup := m.createLink(testActor.Login, repoName, "New York Times", "https://www.nytimely.com")
 	defer cleanup()
 	m.addParentTopicToLink(l2, t2)
 
@@ -447,6 +452,11 @@ func TestSearchInTopic(t *testing.T) {
 			searchString: "astronomy",
 			count:        0,
 		},
+		{
+			name:         "Searches include the urls",
+			searchString: "nytimely",
+			count:        1,
+		},
 	}
 
 	topicResolver := rootResolver.Topic()
@@ -465,12 +475,10 @@ func TestSearchInTopic(t *testing.T) {
 
 			if count > 0 {
 				topic, ok := conn.Edges[0].Node.(models.TopicValue)
-				if !ok {
-					t.Fatalf("Unable to cast %#v to a topic", conn.Edges[0].Node)
-				}
-
-				if topic.R == nil || topic.R.ParentTopics == nil {
-					t.Fatal("Expected parent topics to be preloaded")
+				if ok {
+					if topic.R == nil || topic.R.ParentTopics == nil {
+						t.Fatal("Expected parent topics to be preloaded")
+					}
 				}
 			}
 		})

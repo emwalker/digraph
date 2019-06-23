@@ -7,17 +7,19 @@ import (
 	"github.com/volatiletech/sqlboiler/types"
 )
 
-func wildcardStringArray(input string) interface{} {
+type query string
+
+func (q query) wildcardStringArray() interface{} {
 	var tokens []string
-	for _, s := range strings.Split(input, " ") {
+	for _, s := range strings.Split(string(q), " ") {
 		tokens = append(tokens, fmt.Sprintf("%%%s%%", s))
 	}
 	return types.Array(tokens)
 }
 
-func wildcardStringQuery(input string) interface{} {
+func (q query) wildcardStringQuery() interface{} {
 	var tokens []string
-	for _, s := range strings.Split(input, " ") {
+	for _, s := range strings.Split(string(q), " ") {
 		if s != "" {
 			tokens = append(tokens, fmt.Sprintf("%s:*", s))
 		}
