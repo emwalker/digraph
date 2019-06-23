@@ -8,7 +8,7 @@ exports[`<AddTopic /> renders 1`] = `
     <span
       aria-label="Add a subtopic to this topic. You can click \\"Edit\\"
 afterwards if it also belongs under another topic.
-Press Enter to submit the new topic."
+Press \\"Return\\" to submit the new topic."
       className="tooltipped tooltipped-ne"
     >
       <label

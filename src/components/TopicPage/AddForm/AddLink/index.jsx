@@ -6,7 +6,7 @@ import type { Relay, RepositoryType, TopicType, UserType } from 'components/type
 import upsertLinkMutation from 'mutations/upsertLinkMutation'
 
 const tooltip = 'Add a link to this topic.\n'
-  + 'Press Enter to submit the new link.'
+  + 'Press "Return" to submit the new link.'
 
 type Props = {
   disabled?: boolean,

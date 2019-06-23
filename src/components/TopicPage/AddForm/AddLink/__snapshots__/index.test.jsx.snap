@@ -7,7 +7,7 @@ exports[`<AddLink /> renders 1`] = `
   <dt>
     <span
       aria-label="Add a link to this topic.
-Press Enter to submit the new link."
+Press \\"Return\\" to submit the new link."
       className="tooltipped tooltipped-ne"
     >
       <label

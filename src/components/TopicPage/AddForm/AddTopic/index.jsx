@@ -7,7 +7,7 @@ import upsertTopicMutation from 'mutations/upsertTopicMutation'
 
 const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
   + 'afterwards if it also belongs under another topic.\n'
-  + 'Press Enter to submit the new topic.'
+  + 'Press "Return" to submit the new topic.'
 
 type Props = {
   disabled?: boolean,
