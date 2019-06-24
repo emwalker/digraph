@@ -36,6 +36,7 @@ $ go get -u github.com/99designs/gqlgen
 $ make generate
 $ go get -u ./...
 $ yarn install
+$ yarn relay
 ```
 
 Run the tests:
