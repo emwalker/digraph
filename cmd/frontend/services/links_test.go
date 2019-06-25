@@ -147,6 +147,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.thedailybeast.com/how-natural-news-became-a-conspiracy-hub-rivaling-infowars?someparam",
 			canonicalURL: "https://www.thedailybeast.com/how-natural-news-became-a-conspiracy-hub-rivaling-infowars",
 		},
+		{
+			name:         "An article with a utm_content tag",
+			inputURL:     "https://www.modernhealthcare.com/accreditation/joint-commission-unveils-antibiotic-stewardship-programs-outpatient-settings?utm_content=article1-headline",
+			canonicalURL: "https://www.modernhealthcare.com/accreditation/joint-commission-unveils-antibiotic-stewardship-programs-outpatient-settings",
+		},
 	}
 
 	for _, testCase := range testCases {
