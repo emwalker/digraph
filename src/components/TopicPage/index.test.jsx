@@ -14,17 +14,15 @@ describe('<TopicPage />', () => {
       displayName: 'Private collection',
       isPrivate: true,
     },
-  }
-
-  const viewer = {
-    isGuest: false,
+    viewer: {
+      isGuest: false,
+    },
   }
 
   const wrapper = shallow(
     <TopicPage
       topic={topic}
       view={view}
-      viewer={viewer}
     />,
   )
 
@@ -34,7 +32,7 @@ describe('<TopicPage />', () => {
 
   describe('when the viewer is logged in', () => {
     beforeEach(() => {
-      wrapper.setProps({ viewer: { ...viewer, isGuest: false } })
+      wrapper.setProps({ view: { ...view, viewer: { isGuest: false } } })
     })
 
     const form = () => wrapper.find(AddForm)
@@ -46,7 +44,7 @@ describe('<TopicPage />', () => {
 
   describe('when the viewer is a guest', () => {
     beforeEach(() => {
-      wrapper.setProps({ viewer: { ...viewer, isGuest: true } })
+      wrapper.setProps({ view: { ...view, viewer: { isGuest: true } } })
     })
 
     const form = () => wrapper.find('AddForm')

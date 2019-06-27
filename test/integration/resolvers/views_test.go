@@ -369,12 +369,9 @@ func TestActivityVisibility(t *testing.T) {
 	c := services.New(testDB, testViewer, testFetcher)
 
 	result, err := c.CreateUser(
-		ctx,
-		"Frotz",
-		"frotz@frotz.com",
-		"frotz",
-		"http://some-long-url",
+		ctx, "Frotz", "frotz@frotz.com", "frotz", "http://some-long-url",
 	)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -447,5 +444,34 @@ func TestReviewNeeded(t *testing.T) {
 
 	if len(conn.Edges) > 0 {
 		t.Fatal("There should be no unreviewed links now")
+	}
+}
+
+func TestDefaultOrganization(t *testing.T) {
+	ctx := testContext()
+	resolver := rootResolver.View()
+	view := &models.View{}
+
+	org, err := resolver.DefaultOrganization(ctx, view)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !org.Public || org.Login != "wiki" {
+		t.Fatal("Expected the public organization")
+	}
+}
+
+func TestGuestViewer(t *testing.T) {
+	ctx := context.Background()
+	resolver := resolvers.New(rootResolver.DB, rootResolver.Fetcher, rootResolver.RD).View()
+
+	viewer, err := resolver.Viewer(ctx, resolvers.GuestView)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !viewer.IsGuest() {
+		t.Fatalf("Expected the guest user: %v", viewer)
 	}
 }

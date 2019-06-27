@@ -1,0 +1,11 @@
+:global(.Subhead) {
+  margin-top: 0.5em;
+  line-height: 1.3;
+}
+
+:global(.Subhead-heading) {
+  display: inline-flex;
+  flex-direction: column-reverse;
+  font-size: 22px;
+  font-weight: 400;
+}

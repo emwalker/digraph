@@ -21,15 +21,20 @@ kill:
 
 start: kill
 	@yarn relay --watch &
-	@yarn start &
 	@redis-server /usr/local/etc/redis.conf &
-	@go run cmd/frontend/frontend.go --dev --log 1
+	@go run cmd/frontend/frontend.go --dev --log 1 &
+	@yarn start
+
+start-prod: kill
+	@redis-server /usr/local/etc/redis.conf &
+	@go run cmd/frontend/frontend.go --dev --log 1 &
+	@yarn start:prod
 
 start-debug: kill
 	@yarn relay --watch &
-	@yarn start &
 	@redis-server /usr/local/etc/redis.conf &
-	@go run cmd/frontend/frontend.go --dev --log 2
+	@go run cmd/frontend/frontend.go --dev --log 2 &
+	@yarn start
 
 lint:
 	golint $(LINT_DIRECTORIES)

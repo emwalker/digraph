@@ -8,11 +8,11 @@ import type { AlertType } from 'components/types'
 import Alert from './Alert'
 
 type Props = {
-  initialAlerts: ?AlertType[],
+  initialAlerts: ?$ReadOnlyArray<AlertType>,
 }
 
 type State = {
-  messages: AlertType[],
+  messages: $ReadOnlyArray<AlertType>,
 }
 
 class FlashMessages extends Component<Props, State> {

@@ -23,9 +23,15 @@ const Placeholder = () => (
 
 class ReviewPage extends Component<Props> {
   get links(): $ReadOnlyArray<?Link> {
-    const { view: { links: { edges } } } = this.props
+    const { view: { links } } = this.props
+    const edges = links ? links.edges : null
     if (!edges) return []
     return edges.map(edge => edge && edge.node)
+  }
+
+  get totalCount(): number {
+    const { view: { links } } = this.props
+    return links ? links.totalCount : 0
   }
 
   renderReview = (link: ?Link) => link && <Review key={link.id} link={link} />
@@ -37,13 +43,10 @@ class ReviewPage extends Component<Props> {
   )
 
   render = () => {
-    const {
-      links,
-      props: { view: { links: { totalCount } } },
-    } = this
+    const { links } = this
 
     return (
-      <Container totalCount={totalCount}>
+      <Container totalCount={this.totalCount}>
         { links.length > 0
           ? links.map(this.renderReview)
           : this.renderNoLinks()
@@ -55,6 +58,7 @@ class ReviewPage extends Component<Props> {
 
 export const query = graphql`
 query ReviewPage_query_Query(
+  $viewerId: ID!,
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
@@ -66,6 +70,7 @@ query ReviewPage_query_Query(
   }
 
   view(
+    viewerId: $viewerId,
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,

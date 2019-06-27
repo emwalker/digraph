@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 )
@@ -12,7 +13,7 @@ import (
 // CreateUserResult holds the result of a CreateUser call.
 type CreateUserResult struct {
 	*CreateRepositoryResult
-	Alerts       []models.Alert
+	Alerts       []*models.Alert
 	Cleanup      CleanupFunc
 	User         *models.User
 	Organization *models.Organization
@@ -61,21 +62,21 @@ func (c Connection) CreateUser(
 	}
 
 	if err = org.Insert(ctx, c.Exec, boil.Infer()); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "services: failed to insert organization")
 	}
 
 	if err = addMember(ctx, c.Exec, org.ID, user.ID, true); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "services: failed to add user as a member to new organization")
 	}
 
 	if err = addMember(ctx, c.Exec, PublicOrgID, user.ID, false); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "services: failed to add user as a member to the public organization")
 	}
 
 	log.Printf("Creating a default repo for %s", githubUsername)
 	repoResult, err := c.CreateRepository(ctx, &org, "system:default", &user, true)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "services: failed to create a default repo for user")
 	}
 
 	cleanup := func() error {
@@ -92,6 +93,7 @@ func (c Connection) CreateUser(
 	}
 
 	return &CreateUserResult{
+		Alerts:                 []*models.Alert{},
 		CreateRepositoryResult: repoResult,
 		Cleanup:                cleanup,
 		Organization:           &org,

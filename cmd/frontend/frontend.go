@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/emwalker/digraph/cmd/frontend/server"
-	"github.com/go-webpack/webpack"
 	// Load the PQ drivers
 	_ "github.com/lib/pq"
 )
@@ -22,9 +21,6 @@ func getPlaygroundPort() string {
 
 func main() {
 	devMode := flag.Bool("dev", false, "Development mode")
-	webpack.Plugin = "manifest"
-	webpack.Init(*devMode)
-
 	logLevel := flag.Int("log", 1, "Print debugging information to the console")
 
 	flag.Parse()

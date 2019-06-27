@@ -9,6 +9,7 @@ import { toEverything } from 'components/navigation'
 import DigraphLogo from 'components/ui/icons/DigraphLogo'
 import UserNav from './UserNav'
 import SignIn from './SignIn'
+import { header, primaryLogo, userNav } from './styles.module.css'
 
 type Props = {
   className?: ?string,
@@ -24,6 +25,12 @@ class DesktopNav extends Component<Props> {
     return classNames('Header', this.props.className)
   }
 
+  get isGuest(): boolean {
+    const { viewer } = this.props
+
+    return viewer ? viewer.isGuest : true
+  }
+
   renderGuestUserNav = () => (
     <Fragment>
       <SignIn />
@@ -36,16 +43,14 @@ class DesktopNav extends Component<Props> {
     const { viewer } = this.props
 
     return (
-      <header
-        className={this.className}
-      >
-        <nav className="flex-self-center">
+      <header className={classNames(header, 'd-flex')}>
+        <nav className="flex-self-center d-inline-block">
           <h1 className="h3 text-normal">
             <Link
               to="/"
-              className="text-gray-dark n-link no-underline"
+              className={classNames(primaryLogo, 'text-gray-dark n-link no-underline d-flex')}
             >
-              <div className="mr-2 d-inline-block primary-logo">
+              <div className="mr-2 d-inline-block">
                 <DigraphLogo height="28px" width="28px" />
               </div>
 
@@ -53,7 +58,7 @@ class DesktopNav extends Component<Props> {
             </Link>
           </h1>
         </nav>
-        <nav className="user-nav flex-self-center">
+        <nav className={classNames(userNav, 'flex-self-center')}>
           <a
             className="text-gray-dark px-2"
             href="https://blog.digraph.app"
@@ -73,7 +78,7 @@ class DesktopNav extends Component<Props> {
           >
             Everything
           </Link>
-          {viewer.isGuest
+          {this.isGuest
             ? this.renderGuestUserNav()
             : this.renderUserNav(viewer)
           }

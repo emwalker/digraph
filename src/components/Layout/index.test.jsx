@@ -12,10 +12,15 @@ describe('<Layout />', () => {
     search: '',
   }
 
+  const view = {
+    viewer: {},
+  }
+
   const wrapper = shallow(
     <Layout
       router={router}
       location={location}
+      view={view}
     >
       <div>some view</div>
     </Layout>,

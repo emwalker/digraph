@@ -183,6 +183,7 @@ export default createRefetchContainer(EditLinkForm, {
 },
 graphql`
   query EditLinkFormRefetchQuery(
+    $viewerId: ID!,
     $orgLogin: String!,
     $repoName: String,
     $repoIds: [ID!],
@@ -191,6 +192,7 @@ graphql`
     $searchString: String,
   ) {
     view(
+      viewerId: $viewerId,
       currentOrganizationLogin: $orgLogin,
       currentRepositoryName: $repoName,
       repositoryIds: $repoIds,

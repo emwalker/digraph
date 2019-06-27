@@ -1,8 +1,8 @@
 // @flow
 import React from 'react'
 import { Link } from 'found'
-import isExternal from 'is-url-external'
 
+import isExternal from 'utils/isExternal'
 import type { LocationDescriptor } from 'components/types'
 
 type Props = {

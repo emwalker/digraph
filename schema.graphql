@@ -114,6 +114,7 @@ type Mutation {
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
   upsertTopic(input: UpsertTopicInput!): UpsertTopicPayload
+  upsertUser(input: UpsertUserInput!): UpsertUserPayload
 }
 
 interface Namespaceable {
@@ -141,14 +142,12 @@ type PageInfo {
 type Query {
   # Workaround for Relay Modern weirdness
   alerts: [Alert!]!
-  defaultOrganization: Organization!
   fakeError: String
-  viewer: User!
   view(
+    viewerId: ID!
     currentOrganizationLogin: String!,
     currentRepositoryName: String,
     repositoryIds: [ID!],
-    viewerId: ID
   ): View!
 }
 
@@ -302,6 +301,11 @@ type User {
   updatedAt: DateTime!
 }
 
+type UserEdge {
+  cursor: String!
+  node: User!
+}
+
 input SynonymInput {
   name: String!
   locale: String!
@@ -381,6 +385,19 @@ type UpsertTopicPayload implements Alertable {
   topicEdge: TopicEdge
 }
 
+input UpsertUserInput {
+  clientMutationId: String
+  githubAvatarUrl: String!
+  githubUsername: String!
+  name: String!
+  primaryEmail: String!
+}
+
+type UpsertUserPayload implements Alertable {
+  alerts: [Alert!]!
+  userEdge: UserEdge
+}
+
 type View {
   activity(
     first: Int,
@@ -388,6 +405,7 @@ type View {
     last: Int,
     before: String
   ): ActivityLineItemConnection!
+  defaultOrganization: Organization!
   link(id: ID!): Link
   linkCount: Int!
   links(
@@ -409,4 +427,5 @@ type View {
     last: Int,
     before: String
   ): TopicConnection!
+  viewer: User!
 }

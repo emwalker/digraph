@@ -436,3 +436,45 @@ func (r *MutationResolver) UpsertLink(
 		},
 	}, nil
 }
+
+// UpsertUser saves a user to the database if the user has not been seen before, or
+// updates fields on the user if the user is already in the database.
+func (r *MutationResolver) UpsertUser(
+	ctx context.Context, input models.UpsertUserInput,
+) (*models.UpsertUserPayload, error) {
+	actor := GetRequestContext(ctx).Viewer()
+
+	user, err := models.Users(qm.Where("primary_email = ?", input.PrimaryEmail)).One(ctx, r.DB)
+
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			c := services.Connection{Exec: r.DB, Actor: actor}
+
+			result, err := c.CreateUser(
+				ctx, input.Name, input.PrimaryEmail, input.GithubUsername, input.GithubAvatarURL,
+			)
+
+			if err != nil {
+				return nil, fmt.Errorf("Unable to create user: %s", err)
+			}
+
+			user := result.User
+			if err = user.Reload(ctx, r.DB); err != nil {
+				return nil, fmt.Errorf("Unable to reload newly-created user: %s", err)
+			}
+
+			return &models.UpsertUserPayload{
+				Alerts:   result.Alerts,
+				UserEdge: &models.UserEdge{Node: result.User},
+			}, nil
+		}
+
+		log.Printf("Unable to upsert user: %s", err)
+		return nil, perrors.Wrap(err, "resolvers.UpsertUser")
+	}
+
+	return &models.UpsertUserPayload{
+		Alerts:   []*models.Alert{},
+		UserEdge: &models.UserEdge{Node: user},
+	}, nil
+}

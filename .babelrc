@@ -1,0 +1,9 @@
+{
+  "presets": [
+    "razzle/babel",
+    "@babel/flow"
+  ],
+  "plugins": [
+    "relay"
+  ]
+}

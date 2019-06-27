@@ -20,12 +20,14 @@ const EditLinkContainer = ({ isOpen, link, orgLogin, relay, toggleForm }: Props)
     environment={relay.environment}
     query={graphql`
       query EditLinkContainerQuery(
+        $viewerId: ID!,
         $orgLogin: String!,
         $repoName: String,
         $repoIds: [ID!],
         $linkId: ID!,
       ) {
         view(
+          viewerId: $viewerId,
           currentOrganizationLogin: $orgLogin,
           currentRepositoryName: $repoName,
           repositoryIds: $repoIds,

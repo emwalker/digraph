@@ -7,11 +7,13 @@
 .pid
 .DS_Store
 
+yarn-error.log
+app.yaml
 /tmp
 *__generated__*
 /scratchpad
 /data/personal.nq
 /data/digraph.sql
 /data/*backup.*
-app.yaml
 /cmd/frontend/models/*
+/build

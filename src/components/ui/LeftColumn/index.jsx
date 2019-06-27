@@ -6,7 +6,7 @@ type Props = {
 }
 
 const LeftColumn = ({ children }: Props) => (
-  <div className="col-lg-8 col-md-6 col-12 float-left digraph-anim-fade-in">
+  <div className="col-lg-8 col-md-6 col-12 float-left">
     { children }
   </div>
 )

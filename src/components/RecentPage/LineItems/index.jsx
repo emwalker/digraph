@@ -19,7 +19,7 @@ const NoRecentActivity = () => (
 )
 
 const LineItems = ({ view }: Props) => {
-  const edges = view ? view.activity.edges : null
+  const edges = view && view.activity ? view.activity.edges : null
 
   if (!edges) return <NoRecentActivity />
 
