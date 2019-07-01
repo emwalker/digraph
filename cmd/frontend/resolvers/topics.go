@@ -182,7 +182,6 @@ func (r *topicResolver) Links(
 	last *int, before *string,
 ) (*models.LinkConnection, error) {
 	log.Printf("Fetching links for topic %s", topic.Summary())
-	viewer := GetRequestContext(ctx).Viewer()
 
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
@@ -190,11 +189,11 @@ func (r *topicResolver) Links(
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
 	})
 
-	if viewer.IsGuest() {
+	if !r.Actor.IsGuest() {
 		mods = append(
 			mods,
 			qm.Load(
-				models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", viewer.ID), qm.Limit(1),
+				models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", r.Actor.ID), qm.Limit(1),
 			),
 		)
 	}

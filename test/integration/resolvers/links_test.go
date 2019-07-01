@@ -10,7 +10,7 @@ import (
 )
 
 func TestUpsertLink(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 
 	topic, err := models.Topics().One(m.ctx, testDB)
 	if err != nil {
@@ -19,7 +19,7 @@ func TestUpsertLink(t *testing.T) {
 
 	input := models.UpsertLinkInput{
 		AddParentTopicIds: []string{topic.ID},
-		OrganizationLogin: testViewer.Login,
+		OrganizationLogin: testActor.Login,
 		RepositoryName:    m.defaultRepo().Name,
 		URL:               "https://gnusto.blog",
 	}
@@ -34,7 +34,7 @@ func TestUpsertLink(t *testing.T) {
 
 	defer func() {
 		_, err = models.UserLinks(
-			qm.Where("link_id = ? and user_id = ?", link.ID, testViewer.ID),
+			qm.Where("link_id = ? and user_id = ?", link.ID, testActor.ID),
 		).DeleteAll(m.ctx, m.db)
 		if err != nil {
 			t.Fatal(err)
@@ -83,10 +83,10 @@ func TestUpsertLink(t *testing.T) {
 }
 
 func TestUpdateParentTopics(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
-	link, cleanup := m.createLink(testViewer.Login, repoName, "Gnusto's Blog", "https://gnusto.blog")
+	link, cleanup := m.createLink(testActor.Login, repoName, "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
 	var topics []*models.Topic
@@ -133,12 +133,12 @@ func TestUpdateParentTopics(t *testing.T) {
 }
 
 func TestAvailableTopicsForLinks(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 
-	_, cleanup := m.createTopic(testViewer.Login, m.defaultRepo().Name, "Something")
+	_, cleanup := m.createTopic(testActor.Login, m.defaultRepo().Name, "Something")
 	defer cleanup()
 
-	link, cleanup := m.createLink(testViewer.Login, m.defaultRepo().Name, "Gnusto's Blog", "https://gnusto.blog")
+	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
 	query := rootResolver.Link()
@@ -154,30 +154,30 @@ func TestAvailableTopicsForLinks(t *testing.T) {
 }
 
 func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
-	m := newMutator(t, testViewer)
-	s := services.New(testDB, testViewer, rootResolver.Fetcher)
+	m := newMutator(t, testActor)
+	s := services.New(testDB, testActor, rootResolver.Fetcher)
 
-	org, err := models.Organizations(qm.Where("login = ?", testViewer.Login)).One(m.ctx, testDB)
+	org, err := models.Organizations(qm.Where("login = ?", testActor.Login)).One(m.ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	r1, err := s.CreateRepository(m.ctx, org, "r1", testViewer, false)
+	r1, err := s.CreateRepository(m.ctx, org, "r1", testActor, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer r1.Cleanup()
 
-	r2, err := s.CreateRepository(m.ctx, org, "r2", testViewer, false)
+	r2, err := s.CreateRepository(m.ctx, org, "r2", testActor, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer r2.Cleanup()
 
-	_, cleanup := m.createTopic(testViewer.Login, r1.Repository.Name, "Something")
+	_, cleanup := m.createTopic(testActor.Login, r1.Repository.Name, "Something")
 	defer cleanup()
 
-	link, cleanup := m.createLink(testViewer.Login, r2.Repository.Name, "Gnusto's Blog", "https://gnusto.blog")
+	link, cleanup := m.createLink(testActor.Login, r2.Repository.Name, "Gnusto's Blog", "https://gnusto.blog")
 	defer cleanup()
 
 	query := rootResolver.Link()
@@ -193,9 +193,9 @@ func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 }
 
 func TestDeleteLink(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 
-	link, cleanup := m.createLink(testViewer.Login, m.defaultRepo().Name, "Some link", "http://some.com/link")
+	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "Some link", "http://some.com/link")
 	defer cleanup()
 
 	payload, err := m.resolver.DeleteLink(m.ctx, models.DeleteLinkInput{LinkID: link.ID})
@@ -218,21 +218,21 @@ func TestDeleteLink(t *testing.T) {
 }
 
 func TestParentTopicsDefaultOrdering(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
-	link, cleanup := m.createLink(testViewer.Login, m.defaultRepo().Name, "b64c9bf1c62c", "http://b64c9bf1c62c.com")
+	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "b64c9bf1c62c", "http://b64c9bf1c62c.com")
 	defer cleanup()
 
-	tC, cleanup := m.createTopic(testViewer.Login, repoName, "C")
+	tC, cleanup := m.createTopic(testActor.Login, repoName, "C")
 	defer cleanup()
 	m.addParentTopicToLink(link, tC)
 
-	tA, cleanup := m.createTopic(testViewer.Login, repoName, "A")
+	tA, cleanup := m.createTopic(testActor.Login, repoName, "A")
 	defer cleanup()
 	m.addParentTopicToLink(link, tA)
 
-	tB, cleanup := m.createTopic(testViewer.Login, repoName, "B")
+	tB, cleanup := m.createTopic(testActor.Login, repoName, "B")
 	defer cleanup()
 	m.addParentTopicToLink(link, tB)
 
@@ -261,13 +261,13 @@ func TestParentTopicsDefaultOrdering(t *testing.T) {
 }
 
 func TestReviewLink(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
-	link, cleanup := m.createLink(testViewer.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
+	link, cleanup := m.createLink(testActor.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
 	defer cleanup()
 
-	review, err := link.UserLinkReviews(qm.Where("user_id = ?", testViewer.ID)).One(m.ctx, m.db)
+	review, err := link.UserLinkReviews(qm.Where("user_id = ?", testActor.ID)).One(m.ctx, m.db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,10 +292,10 @@ func TestReviewLink(t *testing.T) {
 }
 
 func TestViewerReview(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
-	link, cleanup := m.createLink(testViewer.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e.com")
+	link, cleanup := m.createLink(testActor.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e.com")
 	defer cleanup()
 
 	if err := link.Reload(m.ctx, testDB); err != nil {
@@ -319,13 +319,13 @@ func TestViewerReview(t *testing.T) {
 }
 
 func TestTotalCount(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
-	link, cleanup := m.createLink(testViewer.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
+	link, cleanup := m.createLink(testActor.Login, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
 	defer cleanup()
 
-	topic, cleanup := m.createTopic(testViewer.Login, repoName, "A")
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "A")
 	defer cleanup()
 	m.addParentTopicToLink(link, topic)
 

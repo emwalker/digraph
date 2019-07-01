@@ -66,15 +66,13 @@ func findRepo(
 func (r *MutationResolver) DeleteLink(
 	ctx context.Context, input models.DeleteLinkInput,
 ) (*models.DeleteLinkPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
-	if actor.IsGuest() {
+	if r.Actor.IsGuest() {
 		return nil, errNoAnonymousMutations
 	}
 
 	link, err := models.Links(
 		qm.InnerJoin("organization_members om on links.organization_id = om.organization_id"),
-		qm.Where("links.id = ? and om.user_id = ?", input.LinkID, actor.ID),
+		qm.Where("links.id = ? and om.user_id = ?", input.LinkID, r.Actor.ID),
 		qm.Load("Repository"),
 	).One(ctx, r.DB)
 
@@ -85,7 +83,7 @@ func (r *MutationResolver) DeleteLink(
 	repo := link.R.Repository
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		c := services.Connection{Exec: tx, Actor: actor}
+		c := services.Connection{Exec: tx, Actor: r.Actor}
 
 		_, err := c.DeleteLink(ctx, repo, link)
 		if err != nil {
@@ -97,7 +95,7 @@ func (r *MutationResolver) DeleteLink(
 
 	if err != nil {
 		log.Printf(
-			"%s failed to delete link %s from repo %s: %s", actor.Summary(), link.Summary(),
+			"%s failed to delete link %s from repo %s: %s", r.Actor.Summary(), link.Summary(),
 			repo.Summary(), err,
 		)
 	}
@@ -112,13 +110,11 @@ func (r *MutationResolver) DeleteLink(
 func (r *MutationResolver) DeleteTopic(
 	ctx context.Context, input models.DeleteTopicInput,
 ) (*models.DeleteTopicPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
-	if actor.IsGuest() {
+	if r.Actor.IsGuest() {
 		return nil, errNoAnonymousMutations
 	}
 
-	topic, err := fetchTopic(ctx, r.DB, input.TopicID, actor)
+	topic, err := fetchTopic(ctx, r.DB, input.TopicID, r.Actor)
 	if err != nil {
 		log.Printf("There was a problem looking up topic: %s", input.TopicID)
 		return nil, err
@@ -140,19 +136,18 @@ func (r *MutationResolver) ReviewLink(
 	ctx context.Context, input models.ReviewLinkInput,
 ) (*models.ReviewLinkPayload, error) {
 	log.Printf("Adding review to link %s", input.LinkID)
-	actor := GetRequestContext(ctx).Viewer()
 
-	c := services.Connection{Exec: r.DB, Actor: actor}
+	c := services.Connection{Exec: r.DB, Actor: r.Actor}
 
 	link, err := models.Links(
 		qm.InnerJoin("repositories r on r.id = links.repository_id"),
 		qm.InnerJoin("organization_members om on om.organization_id = r.organization_id"),
 		qm.Where("links.id = ?", input.LinkID),
-		qm.Where("om.user_id = ?", actor.ID),
+		qm.Where("om.user_id = ?", r.Actor.ID),
 	).One(ctx, r.DB)
 
 	if err != nil {
-		log.Printf("Did not find link %s in the repos visible to %s: %s", input.LinkID, actor.Summary(), err)
+		log.Printf("Did not find link %s in the repos visible to %s: %s", input.LinkID, r.Actor.Summary(), err)
 		return nil, err
 	}
 
@@ -162,7 +157,7 @@ func (r *MutationResolver) ReviewLink(
 	}
 
 	return &models.ReviewLinkPayload{
-		Link: &models.LinkValue{result.Link, false, actor.DefaultView()},
+		Link: &models.LinkValue{result.Link, false, r.Actor.DefaultView()},
 	}, nil
 }
 
@@ -171,32 +166,31 @@ func (r *MutationResolver) SelectRepository(
 	ctx context.Context, input models.SelectRepositoryInput,
 ) (*models.SelectRepositoryPayload, error) {
 	repoID := input.RepositoryID
-	actor := GetRequestContext(ctx).Viewer()
-	log.Printf("Atempting to select repository %v for %#v", repoID, actor)
+	log.Printf("Atempting to select repository %v for %#v", repoID, r.Actor)
 
 	var err error
 	var repo *models.Repository
 
 	if repoID == nil {
-		exists, err := actor.SelectedRepository().Exists(ctx, r.DB)
+		exists, err := r.Actor.SelectedRepository().Exists(ctx, r.DB)
 		if exists {
-			log.Printf("Unselecting repository from %s", actor.ID)
-			repo, err = actor.SelectedRepository().One(ctx, r.DB)
+			log.Printf("Unselecting repository from %s", r.Actor.ID)
+			repo, err = r.Actor.SelectedRepository().One(ctx, r.DB)
 
-			if err = actor.RemoveSelectedRepository(ctx, r.DB, repo); err != nil {
+			if err = r.Actor.RemoveSelectedRepository(ctx, r.DB, repo); err != nil {
 				return nil, err
 			}
 
-			if err = actor.Reload(ctx, r.DB); err != nil {
+			if err = r.Actor.Reload(ctx, r.DB); err != nil {
 				return nil, err
 			}
 		}
-		return &models.SelectRepositoryPayload{nil, actor}, nil
+		return &models.SelectRepositoryPayload{nil, r.Actor}, nil
 	}
 
 	repo = &models.Repository{ID: *repoID}
-	log.Printf("Selecting repository %s for user %s", repo.ID, actor.ID)
-	if err = actor.SetSelectedRepository(ctx, r.DB, false, repo); err != nil {
+	log.Printf("Selecting repository %s for user %s", repo.ID, r.Actor.ID)
+	if err = r.Actor.SetSelectedRepository(ctx, r.DB, false, repo); err != nil {
 		return nil, err
 	}
 
@@ -205,31 +199,29 @@ func (r *MutationResolver) SelectRepository(
 		return nil, err
 	}
 
-	log.Printf("Reloading user %s", actor.ID)
-	if err = actor.Reload(ctx, r.DB); err != nil {
+	log.Printf("Reloading user %s", r.Actor.ID)
+	if err = r.Actor.Reload(ctx, r.DB); err != nil {
 		return nil, err
 	}
 
-	return &models.SelectRepositoryPayload{repo, actor}, nil
+	return &models.SelectRepositoryPayload{repo, r.Actor}, nil
 }
 
 // UpsertTopic creates a new topic.
 func (r *MutationResolver) UpsertTopic(
 	ctx context.Context, input models.UpsertTopicInput,
 ) (*models.UpsertTopicPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
 	var result *services.UpsertTopicResult
 	var err error
 	var repo *models.Repository
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		repo, err = findRepo(ctx, tx, actor, input.OrganizationLogin, input.RepositoryName)
+		repo, err = findRepo(ctx, tx, r.Actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			return err
 		}
 
-		c := services.Connection{Exec: tx, Actor: actor}
+		c := services.Connection{Exec: tx, Actor: r.Actor}
 		result, err = c.UpsertTopic(
 			ctx,
 			repo,
@@ -242,7 +234,8 @@ func (r *MutationResolver) UpsertTopic(
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("UpsertTopic: %s", err)
+		log.Printf("There was an error upserting the topic: %s", err)
+		return nil, err
 	}
 
 	if result.Topic == nil {
@@ -252,7 +245,7 @@ func (r *MutationResolver) UpsertTopic(
 	return &models.UpsertTopicPayload{
 		Alerts: result.Alerts,
 		TopicEdge: &models.TopicEdge{
-			Node: &models.TopicValue{result.Topic, result.TopicCreated, actor.DefaultView()},
+			Node: &models.TopicValue{result.Topic, result.TopicCreated, r.Actor.DefaultView()},
 		},
 	}, nil
 }
@@ -261,12 +254,10 @@ func (r *MutationResolver) UpsertTopic(
 func (r *MutationResolver) UpdateSynonyms(
 	ctx context.Context, input models.UpdateSynonymsInput,
 ) (*models.UpdateSynonymsPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
 	var result *services.UpdateSynonymsResult
 	var err error
 
-	topic, err := fetchTopic(ctx, r.DB, input.TopicID, actor)
+	topic, err := fetchTopic(ctx, r.DB, input.TopicID, r.Actor)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +277,7 @@ func (r *MutationResolver) UpdateSynonyms(
 	}
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		c := services.Connection{Exec: tx, Actor: actor}
+		c := services.Connection{Exec: tx, Actor: r.Actor}
 
 		result, err = c.UpdateSynonyms(ctx, topic, synonyms)
 		if err != nil {
@@ -298,13 +289,13 @@ func (r *MutationResolver) UpdateSynonyms(
 
 	if err != nil {
 		log.Printf(
-			"%s failed update synonyms (%v) topic %s: %s", actor.Summary(), synonyms, topic.ID, err,
+			"%s failed update synonyms (%v) topic %s: %s", r.Actor.Summary(), synonyms, topic.ID, err,
 		)
 	}
 
 	return &models.UpdateSynonymsPayload{
 		Alerts: result.Alerts,
-		Topic:  &models.TopicValue{Topic: topic, View: actor.DefaultView()},
+		Topic:  &models.TopicValue{Topic: topic, View: r.Actor.DefaultView()},
 	}, nil
 }
 
@@ -312,23 +303,20 @@ func (r *MutationResolver) UpdateSynonyms(
 func (r *MutationResolver) UpdateTopic(
 	ctx context.Context, input models.UpdateTopicInput,
 ) (*models.UpdateTopicPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
-	c := services.New(r.DB, actor, nil)
+	s := services.Connection{Exec: r.DB, Actor: r.Actor}
 
 	topic, err := models.Topics(
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.InnerJoin("organization_members om on r.organization_id = om.organization_id"),
-		qm.Where("topics.id = ? and om.user_id = ?", input.ID, actor.ID),
+		qm.Where("topics.id = ? and om.user_id = ?", input.ID, r.Actor.ID),
 	).One(ctx, r.DB)
-
 	if err != nil {
-		log.Printf("No topic %s is visible to %s", input.ID, actor.Summary())
+		log.Printf("No topic %s is visible to %s", input.ID, r.Actor.Summary())
 		return nil, err
 	}
-	log.Printf("%s attempting to update %s", actor.Summary(), topic.Summary())
+	log.Printf("%s attempting to update %s", r.Actor.Summary(), topic.Summary())
 
-	result, err := c.UpdateTopic(ctx, topic, input.Name, input.Description)
+	result, err := s.UpdateTopic(ctx, topic, input.Name, input.Description)
 	if err != nil {
 		log.Printf("There was a problem updating %s", topic.Summary())
 		return nil, err
@@ -336,7 +324,7 @@ func (r *MutationResolver) UpdateTopic(
 
 	return &models.UpdateTopicPayload{
 		Alerts: result.Alerts,
-		Topic:  &models.TopicValue{topic, false, actor.DefaultView()},
+		Topic:  &models.TopicValue{topic, false, r.Actor.DefaultView()},
 	}, nil
 }
 
@@ -344,19 +332,17 @@ func (r *MutationResolver) UpdateTopic(
 func (r *MutationResolver) UpsertLink(
 	ctx context.Context, input models.UpsertLinkInput,
 ) (*models.UpsertLinkPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
 	var result *services.UpsertLinkResult
 	var err error
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		repo, err := findRepo(ctx, tx, actor, input.OrganizationLogin, input.RepositoryName)
+		repo, err := findRepo(ctx, tx, r.Actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			log.Printf("Repo not found for link: %s/%s", input.OrganizationLogin, input.RepositoryName)
 			return err
 		}
 
-		s := services.New(tx, actor, r.Fetcher)
+		s := services.New(tx, r.Actor, r.Fetcher)
 		result, err = s.UpsertLink(
 			ctx, repo, input.URL, input.Title, input.AddParentTopicIds,
 		)
@@ -375,7 +361,7 @@ func (r *MutationResolver) UpsertLink(
 	return &models.UpsertLinkPayload{
 		Alerts: result.Alerts,
 		LinkEdge: &models.LinkEdge{
-			Node: &models.LinkValue{result.Link, result.LinkCreated, actor.DefaultView()},
+			Node: &models.LinkValue{result.Link, result.LinkCreated, r.Actor.DefaultView()},
 		},
 	}, nil
 }
@@ -384,8 +370,6 @@ func (r *MutationResolver) UpsertLink(
 func (r *MutationResolver) UpdateLinkTopics(
 	ctx context.Context, input models.UpdateLinkTopicsInput,
 ) (*models.UpdateLinkTopicsPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
 	link, err := models.FindLink(ctx, r.DB, input.LinkID)
 	if err != nil {
 		return nil, err
@@ -401,7 +385,7 @@ func (r *MutationResolver) UpdateLinkTopics(
 	}
 
 	return &models.UpdateLinkTopicsPayload{
-		Link: &models.LinkValue{link, false, actor.DefaultView()},
+		Link: &models.LinkValue{link, false, r.Actor.DefaultView()},
 	}, nil
 }
 
@@ -409,14 +393,12 @@ func (r *MutationResolver) UpdateLinkTopics(
 func (r *MutationResolver) UpdateTopicParentTopics(
 	ctx context.Context, input models.UpdateTopicParentTopicsInput,
 ) (*models.UpdateTopicParentTopicsPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
 	var result *services.UpdateTopicParentTopicsResult
 	var topic *models.Topic
 	var err error
 
 	err = transact(r.DB, func(tx *sql.Tx) error {
-		c := services.Connection{Exec: tx, Actor: actor}
+		c := services.Connection{Exec: tx, Actor: r.Actor}
 
 		if topic, err = models.FindTopic(ctx, tx, input.TopicID); err != nil {
 			return err
@@ -432,6 +414,6 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 
 	return &models.UpdateTopicParentTopicsPayload{
 		Alerts: result.Alerts,
-		Topic:  &models.TopicValue{result.Topic, false, actor.DefaultView()},
+		Topic:  &models.TopicValue{result.Topic, false, r.Actor.DefaultView()},
 	}, nil
 }

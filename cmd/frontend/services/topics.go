@@ -185,13 +185,14 @@ func (c Connection) UpsertTopic(
 	var created bool
 
 	if topic, created, err = c.upsertTopic(ctx, repo, topic); err != nil {
-		return nil, fmt.Errorf("upsertTopic: %s", err)
+		log.Printf("Problem upserting topic: %s", err)
+		return nil, err
 	}
 
 	if len(parentTopicIds) < 1 {
 		var rootTopic *models.Topic
 		if rootTopic, err = repo.Topics(qm.Where("root")).One(ctx, c.Exec); err != nil {
-			return nil, fmt.Errorf("upsertTopic: %s", err)
+			return nil, err
 		}
 		parentTopicIds = append(parentTopicIds, rootTopic.ID)
 	}
@@ -208,7 +209,7 @@ func (c Connection) UpsertTopic(
 	if len(parents) > 0 {
 		err = topic.AddParentTopics(ctx, c.Exec, false, parents...)
 		if err != nil {
-			return nil, fmt.Errorf("upsertTopic: %s", err)
+			return nil, err
 		}
 	}
 
@@ -307,7 +308,8 @@ func (c Connection) upsertTopic(
 	).One(ctx, c.Exec)
 
 	if err != nil && err.Error() != "sql: no rows in result set" {
-		return nil, false, fmt.Errorf("upsertTopic: %s", err)
+		log.Printf("Unable to search for synonyms for %s: %s", topic.Name, err)
+		return nil, false, err
 	}
 
 	if existing != nil {

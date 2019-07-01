@@ -1,17 +1,18 @@
 package resolvers_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 )
 
 func TestRootTopic(t *testing.T) {
-	m := newMutator(t, testViewer)
-	ctx := testContext()
+	m := newMutator(t, testActor)
 
-	defaultRepo, err := testViewer.DefaultRepo(m.ctx, testDB)
+	defaultRepo, err := testActor.DefaultRepo(m.ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -21,10 +22,10 @@ func TestRootTopic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := fmt.Sprintf("/%s/topics/%s", testViewer.Login, rootTopic.ID)
+	path := fmt.Sprintf("/%s/topics/%s", testActor.Login, rootTopic.ID)
 	repoResolver := rootResolver.Repository()
 
-	topic, err := repoResolver.RootTopic(ctx, defaultRepo)
+	topic, err := repoResolver.RootTopic(context.Background(), defaultRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,26 +43,27 @@ func TestRootTopic(t *testing.T) {
 }
 
 func TestSelectRepository(t *testing.T) {
-	ctx := testContext()
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
+	ctx := context.Background()
 
-	repo, err := testViewer.SelectedRepository().One(ctx, testDB)
+	repo, err := testActor.SelectedRepository().One(ctx, testDB)
 	if err == nil && repo != nil {
-		if err = testViewer.RemoveSelectedRepository(ctx, m.db, repo); err != nil {
+		if err = testActor.RemoveSelectedRepository(ctx, m.db, repo); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	if err = testViewer.Reload(ctx, m.db); err != nil {
+	if err = testActor.Reload(ctx, m.db); err != nil {
 		t.Fatal(err)
 	}
 
-	if testViewer.SelectedRepositoryID.Ptr() != nil {
-		t.Fatalf("Expected user to not have a repository selected: %v", testViewer.SelectedRepositoryID)
+	if testActor.SelectedRepositoryID.Ptr() != nil {
+		t.Fatalf("Expected user to not have a repository selected: %v", testActor.SelectedRepositoryID)
 	}
 
 	repo = m.defaultRepo()
 
+	ctx = context.WithValue(ctx, resolvers.CurrentUserKey, testActor)
 	payload, err := m.resolver.SelectRepository(ctx, models.SelectRepositoryInput{RepositoryID: &repo.ID})
 	if err != nil {
 		t.Fatal(err)

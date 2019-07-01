@@ -119,14 +119,12 @@ func (r *linkResolver) URL(_ context.Context, link *models.LinkValue) (string, e
 
 // ReviewedAt is the time at which the link was reviewed.
 func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue) (*models.LinkReview, error) {
-	viewer := GetRequestContext(ctx).Viewer()
-
 	var review *models.UserLinkReview
 	var err error
 
 	if link.R == nil {
 		log.Printf("Fetching reviewedAt for link %s", link.Summary())
-		review, err = link.UserLinkReviews(qm.Where("user_id = ?", viewer.ID)).One(ctx, r.DB)
+		review, err = link.UserLinkReviews(qm.Where("user_id = ?", r.Actor.ID)).One(ctx, r.DB)
 		if err != nil {
 			if err.Error() == "sql: no rows in result set" {
 				return nil, nil
@@ -141,7 +139,7 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 
 	reviewedAt := review.ReviewedAt
 	if reviewedAt.IsZero() {
-		return &models.LinkReview{User: viewer}, nil
+		return &models.LinkReview{User: r.Actor}, nil
 	}
 
 	value, err := reviewedAt.Value()
@@ -157,5 +155,5 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 	}
 
 	str := ts.Format(time.RFC3339)
-	return &models.LinkReview{User: viewer, ReviewedAt: &str}, nil
+	return &models.LinkReview{User: r.Actor, ReviewedAt: &str}, nil
 }

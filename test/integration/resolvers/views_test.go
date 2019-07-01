@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -27,12 +26,12 @@ func TestQueryView(t *testing.T) {
 	query := rootResolver.View()
 
 	// When the repository is in the db
-	repo, err := testViewer.DefaultRepo(ctx, testDB)
+	repo, err := testActor.DefaultRepo(ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v1 := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{repo.ID}}
+	v1 := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{repo.ID}}
 	connection, err := query.Topics(ctx, v1, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -44,7 +43,7 @@ func TestQueryView(t *testing.T) {
 
 	// When the repo is not in the db
 	fakeID := "542d7ecc-f378-11e8-8eb2-f2801f1b9fd1"
-	v2 := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{fakeID}}
+	v2 := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{fakeID}}
 	connection, err = query.Topics(ctx, v2, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -55,7 +54,7 @@ func TestQueryView(t *testing.T) {
 	}
 
 	// When no repo id is provided
-	v3 := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{}}
+	v3 := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{}}
 	connection, err = query.Topics(ctx, v3, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -67,13 +66,13 @@ func TestQueryView(t *testing.T) {
 }
 
 func TestSearchTopics(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
-	topic, cleanup := m.createTopic(testViewer.Login, repoName, "Agriculture")
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "Agriculture")
 	defer cleanup()
 
-	childTopic, cleanup := m.createTopic(testViewer.Login, repoName, "Crop rotation")
+	childTopic, cleanup := m.createTopic(testActor.Login, repoName, "Crop rotation")
 	defer cleanup()
 
 	m.addParentTopicToTopic(childTopic, topic)
@@ -116,7 +115,7 @@ func TestSearchTopics(t *testing.T) {
 		},
 	}
 
-	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 	viewResolver := rootResolver.View()
 
 	for _, td := range cases {
@@ -134,13 +133,13 @@ func TestSearchTopics(t *testing.T) {
 }
 
 func TestSearchLinks(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	repoName := m.defaultRepo().Name
 
-	topic, cleanup := m.createTopic(testViewer.Login, repoName, "News organizations")
+	topic, cleanup := m.createTopic(testActor.Login, repoName, "News organizations")
 	defer cleanup()
 
-	link, cleanup := m.createLink(testViewer.Login, repoName, "New York Times", "https://www.nytimes.com")
+	link, cleanup := m.createLink(testActor.Login, repoName, "New York Times", "https://www.nytimes.com")
 	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
@@ -201,12 +200,11 @@ func TestSearchLinks(t *testing.T) {
 }
 
 func TestTopicVisibility(t *testing.T) {
-	ctx1 := testContext()
-
-	c := services.New(testDB, testViewer, testFetcher)
+	ctx := context.Background()
+	c := services.Connection{Exec: testDB, Actor: testActor}
 
 	r1, err := c.CreateUser(
-		ctx1,
+		ctx,
 		"Gnusto",
 		"gnusto@gnusto.com",
 		"gnusto",
@@ -218,7 +216,7 @@ func TestTopicVisibility(t *testing.T) {
 	defer r1.Cleanup()
 
 	r2, err := c.CreateUser(
-		ctx1,
+		ctx,
 		"Frotz",
 		"frotz@frotz.com",
 		"frotz",
@@ -232,10 +230,6 @@ func TestTopicVisibility(t *testing.T) {
 	if r1.User.ID == r2.User.ID {
 		t.Fatal("Two users should have been created")
 	}
-
-	ctx2 := context.Background()
-	rc := resolvers.NewRequestContext(r2.User)
-	ctx2 = resolvers.WithRequestContext(ctx2, rc)
 
 	m1 := newMutator(t, r1.User)
 	m2 := newMutator(t, r2.User)
@@ -255,7 +249,7 @@ func TestTopicVisibility(t *testing.T) {
 	v2 := &models.View{ViewerID: r2.User.ID, RepositoryIds: []string{r2.Repository.ID}}
 	var topic *models.TopicValue
 
-	if topic, err = r.Topic(ctx1, v1, t1.ID); err != nil {
+	if topic, err = r.Topic(ctx, v1, t1.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -263,11 +257,11 @@ func TestTopicVisibility(t *testing.T) {
 		t.Fatal("User 1 unable to fetch own topic")
 	}
 
-	if topic, err = r.Topic(ctx1, v1, t2.ID); err == nil {
+	if topic, err = r.Topic(ctx, v1, t2.ID); err == nil {
 		t.Fatal("User 1 able to see topic in private repo of user 2")
 	}
 
-	if topic, err = r.Topic(ctx2, v2, t2.ID); err != nil {
+	if topic, err = r.Topic(ctx, v2, t2.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -275,16 +269,16 @@ func TestTopicVisibility(t *testing.T) {
 		t.Fatal("User 2 unable to fetch own topic")
 	}
 
-	if topic, err = r.Topic(ctx2, v2, t1.ID); err == nil {
+	if topic, err = r.Topic(ctx, v2, t1.ID); err == nil {
 		t.Fatal("User 2 able to see topic in private repo of user 1")
 	}
 }
 
 func TestTopicGraph(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	ctx := context.Background()
 	r := rootResolver.View()
-	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 
 	str, err := r.TopicGraph(ctx, view)
 	if err != nil {
@@ -314,10 +308,10 @@ func TestTopicGraph(t *testing.T) {
 }
 
 func TestTopicCount(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	ctx := context.Background()
 	r := rootResolver.View()
-	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 
 	count, err := r.TopicCount(ctx, view)
 	if err != nil {
@@ -330,10 +324,10 @@ func TestTopicCount(t *testing.T) {
 }
 
 func TestLinkCount(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	ctx := context.Background()
 	r := rootResolver.View()
-	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 
 	count, err := r.LinkCount(ctx, view)
 	if err != nil {
@@ -346,12 +340,12 @@ func TestLinkCount(t *testing.T) {
 }
 
 func TestActivity(t *testing.T) {
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	ctx := context.Background()
 	r := rootResolver.View()
-	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 
-	_, cleanup := m.createLink(testViewer.Login, m.defaultRepo().Name, "New York Times", "https://www.nytimes.com")
+	_, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, "New York Times", "https://www.nytimes.com")
 	defer cleanup()
 
 	connection, err := r.Activity(ctx, view, nil, nil, nil, nil)
@@ -366,7 +360,7 @@ func TestActivity(t *testing.T) {
 
 func TestActivityVisibility(t *testing.T) {
 	ctx := context.Background()
-	c := services.New(testDB, testViewer, testFetcher)
+	c := services.Connection{Exec: testDB, Actor: testActor}
 
 	result, err := c.CreateUser(
 		ctx,
@@ -387,9 +381,9 @@ func TestActivityVisibility(t *testing.T) {
 	link, cleanup := m2.createLink(user2.Login, m2.defaultRepo().Name, linkTitle, "https://www.4b517480670.com")
 	defer cleanup()
 
-	m := newMutator(t, testViewer)
+	m := newMutator(t, testActor)
 	r := rootResolver.View()
-	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+	view := &models.View{ViewerID: testActor.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 
 	connection, err := r.Activity(ctx, view, nil, nil, nil, nil)
 	if err != nil {
@@ -405,14 +399,14 @@ func TestActivityVisibility(t *testing.T) {
 }
 
 func TestReviewNeeded(t *testing.T) {
-	m := newMutator(t, testViewer)
-	ctx := testContext()
+	m := newMutator(t, testActor)
+	ctx := context.Background()
 
 	linkTitle := "4b517480670"
-	link, cleanup := m.createLink(testViewer.Login, m.defaultRepo().Name, linkTitle, "https://www.4b517480670.com")
+	link, cleanup := m.createLink(testActor.Login, m.defaultRepo().Name, linkTitle, "https://www.4b517480670.com")
 	defer cleanup()
 
-	count, err := link.UserLinkReviews(qm.Where("user_id = ?", testViewer.ID)).Count(ctx, m.db)
+	count, err := link.UserLinkReviews(qm.Where("user_id = ?", testActor.ID)).Count(ctx, m.db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -421,7 +415,7 @@ func TestReviewNeeded(t *testing.T) {
 		t.Fatal("Expected a pending link review to have been created")
 	}
 
-	view := &models.View{ViewerID: testViewer.Login, RepositoryIds: []string{m.defaultRepo().ID}}
+	view := &models.View{ViewerID: testActor.Login, RepositoryIds: []string{m.defaultRepo().ID}}
 	resolver := rootResolver.View()
 
 	reviewed := false
@@ -434,7 +428,7 @@ func TestReviewNeeded(t *testing.T) {
 		t.Fatal("There should at least one unreviewed link")
 	}
 
-	c := services.Connection{Exec: testDB, Actor: testViewer}
+	c := services.Connection{Exec: testDB, Actor: testActor}
 	_, err = c.ReviewLink(ctx, link.Link, true)
 	if err != nil {
 		t.Fatal(err)

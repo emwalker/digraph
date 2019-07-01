@@ -86,9 +86,7 @@ func (r *repositoryResolver) Owner(
 func (r *repositoryResolver) RootTopic(
 	ctx context.Context, repo *models.Repository,
 ) (*models.TopicValue, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
-	topic, err := repo.RootTopic(ctx, r.DB, actor.DefaultView())
+	topic, err := repo.RootTopic(ctx, r.DB, r.Actor.DefaultView())
 	if err != nil {
 		return nil, err
 	}

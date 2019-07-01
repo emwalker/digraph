@@ -25,8 +25,7 @@ type testFetcherT struct{}
 
 var (
 	testDB       *sql.DB
-	testFetcher  *testFetcherT
-	testViewer   *models.User
+	testActor    *models.User
 	rootResolver *resolvers.Resolver
 )
 
@@ -36,12 +35,6 @@ type mutator struct {
 	db       *sql.DB
 	resolver models.MutationResolver
 	t        *testing.T
-}
-
-func testContext() context.Context {
-	rc := resolvers.NewRequestContext(testViewer)
-	ctx := context.Background()
-	return resolvers.WithRequestContext(ctx, rc)
 }
 
 func (m mutator) repo(login string) *models.Repository {
@@ -72,7 +65,7 @@ func TestMain(m *testing.M) {
 	testDB = newTestDb()
 	defer testDB.Close()
 
-	testViewer, err = models.Users(
+	testActor, err = models.Users(
 		qm.Load("SelectedRepository"),
 		qm.Where("users.selected_repository_id is not null"),
 	).One(context.Background(), testDB)
@@ -80,7 +73,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	rootResolver = resolvers.New(testDB, testFetcher, testRD)
+	rootResolver = resolvers.New(testDB, testActor, &testFetcherT{}, testRD)
 
 	os.Exit(m.Run())
 }
@@ -95,12 +88,11 @@ func newTestDb() *sql.DB {
 
 func newMutator(t *testing.T, actor *models.User) mutator {
 	resolver := &resolvers.MutationResolver{
-		&resolvers.Resolver{DB: testDB, Fetcher: rootResolver.Fetcher},
+		&resolvers.Resolver{DB: testDB, Actor: actor, Fetcher: rootResolver.Fetcher},
 	}
 
 	ctx := context.Background()
-	rc := resolvers.NewRequestContext(actor)
-	ctx = resolvers.WithRequestContext(ctx, rc)
+	ctx = context.WithValue(ctx, resolvers.CurrentUserKey, actor)
 	ctx = loaders.AddToContext(ctx, testDB, 1*time.Millisecond)
 
 	return mutator{

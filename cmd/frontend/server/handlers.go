@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/subtle"
 	"fmt"
 	"io/ioutil"
@@ -68,7 +69,7 @@ func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 
 func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		s.resolver.Actor = &resolvers.GuestUser
 
 		sessionID, err := gothic.GetFromSession(userSessionKey, r)
 		if err != nil {
@@ -76,6 +77,8 @@ func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 			next.ServeHTTP(w, r)
 			return
 		}
+
+		ctx := r.Context()
 
 		log.Printf("A session id found, looking up session: %s", sessionID)
 		session, err := models.Sessions(
@@ -90,21 +93,20 @@ func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 		}
 
 		// Figure out a way to avoid mutating the resolver after the fact
-		var viewer *models.User
+		var actor *models.User
 		if s.ImpersonateUserID == nil {
-			viewer = session.R.User
+			actor = session.R.User
 		} else {
-			viewer, err = models.Users(qm.Where("id = ?", s.ImpersonateUserID)).One(ctx, s.db)
+			actor, err = models.Users(qm.Where("id = ?", s.ImpersonateUserID)).One(ctx, s.db)
 			if err != nil {
 				panic(err)
 			}
-			log.Printf("Impersonating %s", viewer.Summary())
+			log.Printf("Impersonating %s", actor.Summary())
 		}
+		s.resolver.Actor = actor
 
-		log.Printf("Adding %s to context", viewer.Summary())
-		rc := resolvers.NewRequestContext(viewer)
-		ctx = resolvers.WithRequestContext(ctx, rc)
-
+		log.Printf("Adding %s to context", actor.Summary())
+		ctx = context.WithValue(ctx, resolvers.CurrentUserKey, actor)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
