@@ -61,7 +61,7 @@ func New(
 		DB:       0,
 	})
 
-	resolver := resolvers.New(db, &resolvers.GuestUser, fetcher, rd)
+	resolver := resolvers.New(db, fetcher, rd)
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})
 
 	server := &http.Server{

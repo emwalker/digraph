@@ -8,8 +8,8 @@ import (
 )
 
 func TestResolveView(t *testing.T) {
-	ctx := context.Background()
-	m := newMutator(t, testActor)
+	ctx := testContext()
+	m := newMutator(t, testViewer)
 
 	repo := m.defaultRepo()
 	org, err := repo.Organization().One(ctx, testDB)
@@ -44,7 +44,7 @@ func TestResolveView(t *testing.T) {
 				td.OrgLogin,
 				td.RepoName,
 				[]string{},
-				&testActor.ID,
+				&testViewer.ID,
 			)
 
 			if err != nil {
@@ -59,7 +59,7 @@ func TestResolveView(t *testing.T) {
 }
 
 func TestDefaultOrganization(t *testing.T) {
-	ctx := context.Background()
+	ctx := testContext()
 	resolver := rootResolver.Query()
 
 	org, err := resolver.DefaultOrganization(ctx)
@@ -87,9 +87,7 @@ func TestFakeError(t *testing.T) {
 
 func TestGuestViewer(t *testing.T) {
 	ctx := context.Background()
-	resolver := resolvers.New(
-		rootResolver.DB, &resolvers.GuestUser, rootResolver.Fetcher, rootResolver.RD,
-	).Query()
+	resolver := resolvers.New(rootResolver.DB, rootResolver.Fetcher, rootResolver.RD).Query()
 
 	viewer, err := resolver.Viewer(ctx)
 	if err != nil {

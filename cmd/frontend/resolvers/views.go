@@ -132,6 +132,8 @@ func (r *viewResolver) Links(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
 	last *int, before *string, reviewed *bool,
 ) (*models.LinkConnection, error) {
+	viewer := GetRequestContext(ctx).Viewer()
+
 	mods := view.Filter([]qm.QueryMod{
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
 	})
@@ -144,9 +146,9 @@ func (r *viewResolver) Links(
 	if reviewed != nil {
 		mods = append(
 			mods,
-			qm.Load(models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", r.Actor.ID), qm.Limit(1)),
+			qm.Load(models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", viewer.ID), qm.Limit(1)),
 			qm.InnerJoin("user_link_reviews ulr on links.id = ulr.link_id"),
-			qm.Where("ulr.user_id = ?", r.Actor.ID),
+			qm.Where("ulr.user_id = ?", viewer.ID),
 		)
 
 		if *reviewed {
