@@ -16,6 +16,8 @@ LINT_DIRECTORIES = $(shell find cmd/ -type d ! -name "loaders" ! -name "server")
 kill:
 	@killall server 2>/dev/null || true
 	@killall node 2>/dev/null || true
+	@pkill -ABRT -f node || true
+	@pkill -TERM -f frontend || true
 
 start: kill
 	@yarn relay --watch &

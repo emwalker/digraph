@@ -39,7 +39,7 @@ func (r *queryResolver) FakeError(ctx context.Context) (*string, error) {
 
 // Viewer returns the logged-in user.
 func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
-	return r.Actor, nil
+	return GetRequestContext(ctx).Viewer(), nil
 }
 
 func (r *queryResolver) fetchCurrentRepo(
@@ -80,11 +80,13 @@ func (r *queryResolver) View(
 		return &models.View{}, err
 	}
 
+	viewer := GetRequestContext(ctx).Viewer()
+
 	view := &models.View{
 		CurrentOrganizationLogin: orgLogin,
 		CurrentRepositoryName:    repoName,
 		CurrentRepository:        repo,
-		ViewerID:                 r.Actor.ID,
+		ViewerID:                 viewer.ID,
 		RepositoryIds:            repositoryIds,
 	}
 

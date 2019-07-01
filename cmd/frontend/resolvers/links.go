@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	perrors "github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -16,8 +17,7 @@ type linkResolver struct {
 
 func linkConnection(view *models.View, rows []*models.Link, totalCount int, err error) (*models.LinkConnection, error) {
 	if err != nil {
-		log.Printf("There was a problem constructing link connection: %s", err)
-		return nil, err
+		return nil, perrors.Wrap(err, "linkConnection")
 	}
 
 	var edges []*models.LinkEdge
@@ -119,12 +119,14 @@ func (r *linkResolver) URL(_ context.Context, link *models.LinkValue) (string, e
 
 // ReviewedAt is the time at which the link was reviewed.
 func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue) (*models.LinkReview, error) {
+	viewer := GetRequestContext(ctx).Viewer()
+
 	var review *models.UserLinkReview
 	var err error
 
 	if link.R == nil {
 		log.Printf("Fetching reviewedAt for link %s", link.Summary())
-		review, err = link.UserLinkReviews(qm.Where("user_id = ?", r.Actor.ID)).One(ctx, r.DB)
+		review, err = link.UserLinkReviews(qm.Where("user_id = ?", viewer.ID)).One(ctx, r.DB)
 		if err != nil {
 			if err.Error() == "sql: no rows in result set" {
 				return nil, nil
@@ -139,7 +141,7 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 
 	reviewedAt := review.ReviewedAt
 	if reviewedAt.IsZero() {
-		return &models.LinkReview{User: r.Actor}, nil
+		return &models.LinkReview{User: viewer}, nil
 	}
 
 	value, err := reviewedAt.Value()
@@ -155,5 +157,5 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 	}
 
 	str := ts.Format(time.RFC3339)
-	return &models.LinkReview{User: r.Actor, ReviewedAt: &str}, nil
+	return &models.LinkReview{User: viewer, ReviewedAt: &str}, nil
 }
