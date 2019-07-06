@@ -14,32 +14,34 @@ psql $fixtures <<SQL
 delete from sessions;
 delete from users where id <> '461c87c8-fb8f-11e8-9cbc-afde6c54d881';
 delete from organizations where login not in ('wiki', 'emwalker');
+delete from links where repository_id = '34a020d6-fc1b-11e8-85cd-bbcf3ebdfe13';
+delete from topics where repository_id = '34a020d6-fc1b-11e8-85cd-bbcf3ebdfe13';
 SQL
 
 echo ""
-user_count=$(psql digraph_fixtures -t -c "select count(*) from users")
-echo "${user_count//[[:space:]]/} user"
+count=$(psql digraph_fixtures -t -c "select count(*) from users")
+echo "${count//[[:space:]]/} user"
 
-repo_count=$(psql digraph_fixtures -t -c "select count(*) from repositories")
-echo "${repo_count//[[:space:]]/} repositories"
+count=$(psql digraph_fixtures -t -c "select count(*) from repositories")
+echo "${count//[[:space:]]/} repositories"
 
-org_count=$(psql digraph_fixtures -t -c "select count(*) from organizations")
-echo "${org_count//[[:space:]]/} organizations"
+count=$(psql digraph_fixtures -t -c "select count(*) from organizations")
+echo "${count//[[:space:]]/} organizations"
 
-session_count=$(psql digraph_fixtures -t -c "select count(*) from sessions")
-echo "${session_count//[[:space:]]/} sessions"
+count=$(psql digraph_fixtures -t -c "select count(*) from sessions")
+echo "${count//[[:space:]]/} sessions"
 
-user_link_count=$(psql digraph_fixtures -t -c "select count(distinct user_id) from user_links")
-echo "${user_link_count//[[:space:]]/} user links"
+count=$(psql digraph_fixtures -t -c "select count(distinct user_id) from user_links")
+echo "${count//[[:space:]]/} user links"
 
-link_count=$(psql digraph_fixtures -t -c "select count(*) from links")
-echo "${link_count//[[:space:]]/} links"
+count=$(psql digraph_fixtures -t -c "select count(*) from links")
+echo "${count//[[:space:]]/} links"
 
-topic_count=$(psql digraph_fixtures -t -c "select count(*) from topics")
-echo "${topic_count//[[:space:]]/} topics"
+count=$(psql digraph_fixtures -t -c "select count(*) from topics")
+echo "${count//[[:space:]]/} topics"
 
-snapshot_count=$(psql digraph_fixtures -t -c "select count(*) from daily_snapshot")
-echo "${snapshot_count//[[:space:]]/} snapshots"
+count=$(psql digraph_fixtures -t -c "select count(*) from daily_snapshot")
+echo "${count//[[:space:]]/} snapshots"
 
 echo "Saving fixtures.sql"
 pg_dump digraph_fixtures > data/fixtures.sql
