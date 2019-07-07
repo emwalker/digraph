@@ -11,6 +11,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/emwalker/digraph/cmd/frontend/util"
+	perrors "github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -340,46 +341,6 @@ func (r *MutationResolver) UpdateTopic(
 	}, nil
 }
 
-// UpsertLink adds a new link to the database.
-func (r *MutationResolver) UpsertLink(
-	ctx context.Context, input models.UpsertLinkInput,
-) (*models.UpsertLinkPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
-	var result *services.UpsertLinkResult
-	var err error
-
-	err = transact(r.DB, func(tx *sql.Tx) error {
-		repo, err := findRepo(ctx, tx, actor, input.OrganizationLogin, input.RepositoryName)
-		if err != nil {
-			log.Printf("Repo not found for link: %s/%s", input.OrganizationLogin, input.RepositoryName)
-			return err
-		}
-
-		s := services.New(tx, actor, r.Fetcher)
-		result, err = s.UpsertLink(
-			ctx, repo, input.URL, input.Title, input.AddParentTopicIds,
-		)
-
-		return err
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if result.Link == nil {
-		return &models.UpsertLinkPayload{Alerts: result.Alerts}, nil
-	}
-
-	return &models.UpsertLinkPayload{
-		Alerts: result.Alerts,
-		LinkEdge: &models.LinkEdge{
-			Node: &models.LinkValue{result.Link, result.LinkCreated, actor.DefaultView()},
-		},
-	}, nil
-}
-
 // UpdateLinkTopics sets the parent topics on a link.
 func (r *MutationResolver) UpdateLinkTopics(
 	ctx context.Context, input models.UpdateLinkTopicsInput,
@@ -433,5 +394,45 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 	return &models.UpdateTopicParentTopicsPayload{
 		Alerts: result.Alerts,
 		Topic:  &models.TopicValue{result.Topic, false, actor.DefaultView()},
+	}, nil
+}
+
+// UpsertLink adds a new link to the database.
+func (r *MutationResolver) UpsertLink(
+	ctx context.Context, input models.UpsertLinkInput,
+) (*models.UpsertLinkPayload, error) {
+	actor := GetRequestContext(ctx).Viewer()
+
+	var result *services.UpsertLinkResult
+	var err error
+
+	err = transact(r.DB, func(tx *sql.Tx) error {
+		repo, err := findRepo(ctx, tx, actor, input.OrganizationLogin, input.RepositoryName)
+		if err != nil {
+			log.Printf("resolvers.UpsertLink: repo %s/%s not found", input.OrganizationLogin, input.RepositoryName)
+			return perrors.Wrap(err, "resolvers.UpsertLink")
+		}
+
+		s := services.New(tx, actor, r.Fetcher)
+		result, err = s.UpsertLink(
+			ctx, repo, input.URL, input.Title, input.AddParentTopicIds,
+		)
+
+		return perrors.Wrap(err, "resolvers.UpsertLink")
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Link == nil {
+		return &models.UpsertLinkPayload{Alerts: result.Alerts}, nil
+	}
+
+	return &models.UpsertLinkPayload{
+		Alerts: result.Alerts,
+		LinkEdge: &models.LinkEdge{
+			Node: &models.LinkValue{result.Link, result.LinkCreated, actor.DefaultView()},
+		},
 	}, nil
 }

@@ -17,7 +17,7 @@ type linkResolver struct {
 
 func linkConnection(view *models.View, rows []*models.Link, totalCount int, err error) (*models.LinkConnection, error) {
 	if err != nil {
-		return nil, perrors.Wrap(err, "linkConnection")
+		return nil, perrors.Wrap(err, "resolvers.linkConnection")
 	}
 
 	var edges []*models.LinkEdge

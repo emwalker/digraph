@@ -10,6 +10,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	"github.com/emwalker/digraph/cmd/frontend/text"
 	"github.com/emwalker/digraph/cmd/frontend/util"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -251,7 +252,7 @@ func (c Connection) UpsertLink(
 	link, err := repo.Links(qm.Where("sha1 like ?", url.Sha1)).One(ctx, c.Exec)
 	if err != nil && err.Error() != "sql: no rows in result set" {
 		log.Printf("Failed to query for existing link with sha1 %s: %s", url.Sha1, err)
-		return nil, err
+		return nil, errors.Wrap(err, "services.UpsertLink")
 	}
 
 	if link == nil {
@@ -277,7 +278,7 @@ func (c Connection) UpsertLink(
 
 		if err != nil {
 			log.Printf("Failed to upsert link: %#v", link)
-			return nil, err
+			return nil, errors.Wrap(err, "services.UpsertLink")
 		}
 	} else {
 		log.Printf("Link found: %s", url.CanonicalURL)
@@ -292,19 +293,19 @@ func (c Connection) UpsertLink(
 				log.Printf("Provided title empty, updating link after re-fetching page: %s", link.Summary())
 				title, err := c.providedOrFetchedTitle(url.CanonicalURL, providedTitle)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, "services.UpsertLink")
 				}
 
 				link.Title = title
 				if err = c.updateLink(ctx, link); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, "services.UpsertLink")
 				}
 			} else if *providedTitle != link.Title {
 				log.Printf("Provided title and existing differ, updating to new title: %s", *providedTitle)
 
 				link.Title = *providedTitle
 				if err = c.updateLink(ctx, link); err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, "services.UpsertLink")
 				}
 			} else {
 				log.Printf("Provided title and existing title the same, doing nothing: %s", *providedTitle)
@@ -313,30 +314,30 @@ func (c Connection) UpsertLink(
 	}
 
 	if err = c.addTopics(ctx, repo, link, parentTopicIds); err != nil {
-		log.Printf("There was a problem adding topics to link %s: %s", link.Summary(), err)
-		return nil, err
+		log.Printf("There was a problem adding topics %v to link %s: %s", parentTopicIds, link.Summary(), err)
+		return nil, errors.Wrap(err, "services.UpsertLink")
 	}
 
 	userLink, err := c.logUserLinkAction(ctx, repo, c.Actor, link, models.ActionUpsertLink, parentTopicIds)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "services.UpsertLink")
 	}
 
 	if err = c.addUserLinkReview(ctx, repo, link); err != nil {
 		log.Printf("There was a problem creating a user link review record: %s", err)
-		return nil, err
+		return nil, errors.Wrap(err, "services.UpsertLink")
 	}
 
 	cleanup := func() error {
 		if !existing {
 			log.Printf("Deleteing link %s", link.ID)
 			if _, err = link.Delete(ctx, c.Exec); err != nil {
-				return err
+				return errors.Wrap(err, "services.UpsertLink")
 			}
 		}
 
 		if _, err := userLink.Delete(ctx, c.Exec); err != nil {
-			return err
+			return errors.Wrap(err, "services.UpsertLink")
 		}
 
 		return nil
@@ -344,7 +345,7 @@ func (c Connection) UpsertLink(
 
 	if err = link.Reload(ctx, c.Exec); err != nil {
 		log.Printf("Failed to reload link %s: %s", link.Summary(), err)
-		return nil, err
+		return nil, errors.Wrap(err, "services.UpsertLink")
 	}
 
 	return &UpsertLinkResult{

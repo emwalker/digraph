@@ -15,7 +15,7 @@ delete from sessions;
 delete from users where id <> '461c87c8-fb8f-11e8-9cbc-afde6c54d881';
 delete from organizations where login not in ('wiki', 'emwalker');
 delete from links where repository_id = '34a020d6-fc1b-11e8-85cd-bbcf3ebdfe13';
-delete from topics where repository_id = '34a020d6-fc1b-11e8-85cd-bbcf3ebdfe13';
+delete from topics where repository_id = '34a020d6-fc1b-11e8-85cd-bbcf3ebdfe13' and not root;
 SQL
 
 echo ""

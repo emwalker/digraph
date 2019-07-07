@@ -205,6 +205,7 @@ func (m mutator) createLink(orgLogin, repoName, title, url string) (*models.Link
 		Title:             &title,
 		URL:               url,
 	})
+
 	if err != nil {
 		m.t.Fatal(err)
 	}

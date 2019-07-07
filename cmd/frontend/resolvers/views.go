@@ -9,6 +9,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
 	"github.com/go-redis/redis"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -80,8 +81,7 @@ func (r *viewResolver) Activity(
 
 	userLinks, err := models.UserLinks(mods...).All(ctx, r.DB)
 	if err != nil {
-		log.Printf("There was a problem fetching user link records: %s", err)
-		return nil, err
+		return nil, errors.Wrap(err, "resolvers.Activity")
 	}
 
 	logData := make([]activity.UpsertLink, len(userLinks))
@@ -103,8 +103,11 @@ func (r *viewResolver) Activity(
 	}
 
 	edges, err := activity.MakeEdges(logData)
+	if err != nil {
+		return nil, errors.Wrap(err, "resolvers.Activity")
+	}
 
-	return &models.ActivityLineItemConnection{Edges: edges}, err
+	return &models.ActivityLineItemConnection{Edges: edges}, nil
 }
 
 // Link returns a specific link.
