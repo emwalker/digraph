@@ -5,7 +5,8 @@ import connectRedis from 'connect-redis'
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser'
 
-import upsertUserMutation from 'mutations/upsertUserMutation'
+import createSessionMutation from 'mutations/createSessionMutation'
+import deleteSessionMutation from 'mutations/deleteSessionMutation'
 import { createEnvironment } from '../environment'
 
 /* eslint no-console: 0 */
@@ -14,11 +15,8 @@ const RedisStore = connectRedis(session)
 
 const primaryOrFirstEmail = (emails) => {
   const matches = emails.filter(({ primary }) => primary)
-
   if (matches.length) return matches[0].value
-
   if (emails.length) return emails[0].value
-
   return null
 }
 
@@ -39,18 +37,19 @@ export default (app, fetcher) => {
       primaryEmail: email,
     }
 
-    upsertUserMutation(environment, [], input, {
+    createSessionMutation(environment, [], input, {
       onCompleted(payload) {
-        if (!payload.upsertUser) {
-          console.log('upsertUser field missing from response:', payload)
+        if (!payload.createSession) {
+          console.log('createSession field missing from response:', payload)
           done(null, null)
           return
         }
 
-        const { upsertUser: { userEdge } } = payload
-        console.log('User fetched from api, saving to session', userEdge)
-        done(null, { id: userEdge.node.id })
+        const { createSession: { userEdge, sessionEdge } } = payload
+        console.log('User fetched from api, saving to session', userEdge, sessionEdge)
+        done(null, { id: userEdge.node.id, sessionId: sessionEdge.node.id })
       },
+
       onError(error) {
         console.log('Something happened:', error, error.source.errors)
         done(null, null)
@@ -82,12 +81,31 @@ export default (app, fetcher) => {
     },
   )
 
+  app.get('/logout', (req, res) => {
+    deleteSessionMutation(
+      environment,
+      [],
+      { sessionId: req.user.sessionId },
+      {
+        onCompleted() {
+          console.log('Deleted session for user', req.user.id)
+          req.logout()
+          res.redirect('/')
+        },
+
+        onError(error) {
+          console.log(`Failed to delete session for user ${req.user.id}`, error, error.source.errors)
+        },
+      },
+    )
+  })
+
   passport.use(
     new Strategy(
       {
-        clientID: process.env.DIGRAPH_GITHUB_CLIENT_ID,
-        clientSecret: process.env.DIGRAPH_GITHUB_CLIENT_SECRET,
-        callbackURL: 'http://localhost:3001/auth/github/callback',
+        clientID: process.env.DIGRAPH_GITHUB_CLIENT_ID || 'GitHub client id needed',
+        clientSecret: process.env.DIGRAPH_GITHUB_CLIENT_SECRET || 'GitHub client secret needed',
+        callbackURL: '/auth/github/callback',
         scope: 'user:email',
       },
       onGithubAuthSuccess,
@@ -96,12 +114,14 @@ export default (app, fetcher) => {
 
   passport.serializeUser((viewer, done) => {
     console.log('serializeUser', viewer)
-    done(null, viewer.id)
+    done(null, [viewer.id, viewer.sessionId])
   })
 
-  passport.deserializeUser((id, done) => {
+  passport.deserializeUser((ids, done) => {
+    const [id, sessionId] = ids
+    const viewer = { id, sessionId }
     console.log('deserializeUser', id)
-    done(null, { id })
+    done(null, viewer)
   })
 
   return app

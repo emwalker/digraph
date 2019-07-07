@@ -43,11 +43,6 @@ app
   .use(express.static(publicDir))
   .use('/static/images', express.static(imagesDir))
 
-app.get('/logout', function(req, res) {
-  req.logout()
-  res.redirect('/')
-})
-
 app.get('*', async (req, res) => {
   try {
     console.log('Viewer session present?', !!req.user)

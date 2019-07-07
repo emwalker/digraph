@@ -27,11 +27,13 @@ export function createResolver(fetcher) {
 
 const prepareVariablesFn = viewer => (params) => {
   const viewerId = viewer ? viewer.id : ''
+  const sessionId = viewer ? viewer.sessionId : ''
 
   return {
     topicId: defaultRootTopicId,
     orgLogin: defaultOrganizationLogin,
     ...params,
+    sessionId,
     viewerId,
   }
 }

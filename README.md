@@ -33,6 +33,7 @@ $ cd $GOPATH/src/github.com/emwalker
 $ git clone git@github.com:emwalker/digraph.git
 $ cd digraph
 $ make load-fixtures
+$ go get -u github.com/golang-migrate/migrate
 $ go get -u github.com/99designs/gqlgen
 $ make generate
 $ go get -u ./...

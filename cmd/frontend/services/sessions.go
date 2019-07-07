@@ -2,107 +2,77 @@ package services
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/markbates/goth"
-	"github.com/volatiletech/null"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const rowNotFound = "sql: no rows in result set"
 
-// FetchOrMakeSessionSessionResult holds the result of a FetchOrMakeSessionSession service call.
-type FetchOrMakeSessionSessionResult struct {
-	Session        *models.Session
-	SessionCreated bool
-	User           *models.User
-	UserCreated    bool
+// CreateSessionResult holds the result of a CreateSession service call.
+type CreateSessionResult struct {
+	Alerts  []*models.Alert
+	Cleanup CleanupFunc
+	Session *models.Session
+	User    *models.User
 }
 
-// FetchOrMakeSession obtains the current session if it exists.
-func (c Connection) FetchOrMakeSession(
-	ctx context.Context, gothUser goth.User,
-) (*FetchOrMakeSessionSessionResult, error) {
-	if gothUser.Provider != "github" {
-		return nil, errors.New("Do not know how to look up a non-Github user yet")
-	}
+// CreateSession creates a new session for the user.  If the user is not found in the database,
+// a new user is created.
+func (c Connection) CreateSession(
+	ctx context.Context, username, primaryEmail, githubUsername, githubAvatarURL string,
+) (*CreateSessionResult, error) {
+	var result *CreateUserResult
 
-	session, err := models.Sessions(
-		qm.Select("sessions.id", "user_id", "session_id"),
-		qm.InnerJoin("users u on sessions.user_id = u.id"),
-		qm.Where("github_username like ?", gothUser.NickName),
-	).One(ctx, c.Exec)
+	user, err := models.Users(qm.Where("primary_email = ?", primaryEmail)).One(ctx, c.Exec)
 
-	if err != nil && err.Error() != rowNotFound {
-		return nil, err
-	}
-
-	if session != nil {
-		user, err := session.User().One(ctx, c.Exec)
-		if err != nil {
-			return nil, err
+	if err != nil {
+		if err.Error() != "sql: no rows in result set" {
+			log.Printf("Unable to upsert user: %s", err)
+			return nil, errors.Wrap(err, "resolvers: failed to upsert user")
 		}
 
-		return &FetchOrMakeSessionSessionResult{
-			Session:        session,
-			SessionCreated: false,
-			User:           user,
-			UserCreated:    false,
-		}, nil
-	}
-
-	userCreated := false
-
-	mods := []qm.QueryMod{
-		qm.Where("github_username like ?", gothUser.NickName),
-	}
-
-	if gothUser.Email != "" {
-		mods = append(mods, qm.Or("primary_email like ?", gothUser.Email))
-	}
-
-	user, err := models.Users(mods...).One(ctx, c.Exec)
-	if err != nil && err.Error() != rowNotFound {
-		return nil, err
-	}
-
-	if user == nil {
-		log.Printf("User with a github username '%s' not found, creating", gothUser.NickName)
 		result, err := c.CreateUser(
-			ctx,
-			gothUser.Name,
-			gothUser.Email,
-			gothUser.NickName,
-			gothUser.AvatarURL,
+			ctx, username, primaryEmail, githubUsername, githubAvatarURL,
 		)
 
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Unable to create user: %s", err)
 		}
 
 		user = result.User
-		userCreated = true
-	} else {
-		log.Printf("Updating github account info for user %s", user.ID)
-		user.GithubUsername = null.StringFrom(gothUser.NickName)
-		user.GithubAvatarURL = null.StringFrom(gothUser.AvatarURL)
-		if _, err = user.Update(ctx, c.Exec, boil.Infer()); err != nil {
-			return nil, err
+		if err = user.Reload(ctx, c.Exec); err != nil {
+			return nil, fmt.Errorf("Unable to reload newly-created user: %s", err)
 		}
 	}
 
-	session = &models.Session{UserID: user.ID}
+	session := &models.Session{UserID: user.ID}
 	if err = session.Insert(ctx, c.Exec, boil.Infer()); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "resolvers: failed to create session")
 	}
 
-	return &FetchOrMakeSessionSessionResult{
-		Session:        session,
-		SessionCreated: true,
-		User:           user,
-		UserCreated:    userCreated,
+	cleanup := func() error {
+		if result != nil {
+			if _, err := result.User.Delete(ctx, c.Exec); err != nil {
+				return err
+			}
+
+			_, err = models.Organizations(qm.Where("login = ?", result.User.Login)).DeleteAll(ctx, c.Exec)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	return &CreateSessionResult{
+		Cleanup: cleanup,
+		Session: session,
+		User:    user,
 	}, nil
 }

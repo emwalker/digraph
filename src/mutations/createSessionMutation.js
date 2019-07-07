@@ -4,10 +4,10 @@ import defaultMutation from './util/defaultMutation'
 import flashMessageUpdater from './util/flashMessageUpdater'
 
 export default defaultMutation(graphql`
-  mutation upsertUserMutation(
-    $input: UpsertUserInput!
+  mutation createSessionMutation(
+    $input: CreateSessionInput!
   ) {
-    upsertUser(input: $input) {
+    createSession(input: $input) {
       alerts {
         id
         text
@@ -19,6 +19,12 @@ export default defaultMutation(graphql`
           id
         }
       }
+
+      sessionEdge {
+        node {
+          id
+        }
+      }
     }
   }
-`, flashMessageUpdater('upsertUser'))
+`, flashMessageUpdater('createSession'))

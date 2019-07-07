@@ -31,6 +31,20 @@ enum AlertType {
 
 scalar Color
 
+input CreateSessionInput {
+  clientMutationId: String
+  githubAvatarUrl: String!
+  githubUsername: String!
+  name: String!
+  primaryEmail: String!
+}
+
+type CreateSessionPayload implements Alertable {
+  alerts: [Alert!]!
+  userEdge: UserEdge
+  sessionEdge: SessionEdge
+}
+
 scalar DateTime
 
 input DeleteLinkInput {
@@ -41,6 +55,16 @@ input DeleteLinkInput {
 type DeleteLinkPayload {
   clientMutationId: String
   deletedLinkId: ID!
+}
+
+input DeleteSessionInput {
+  clientMutationId: String
+  sessionId: ID!
+}
+
+type DeleteSessionPayload {
+  clientMutationId: String
+  deletedSessionId: ID!
 }
 
 input DeleteTopicInput {
@@ -104,7 +128,9 @@ type LinkReview {
 }
 
 type Mutation {
+  createSession(input: CreateSessionInput!): CreateSessionPayload
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
+  deleteSession(input: DeleteSessionInput!): DeleteSessionPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
   reviewLink(input: ReviewLinkInput!): ReviewLinkPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
@@ -114,7 +140,6 @@ type Mutation {
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
   upsertTopic(input: UpsertTopicInput!): UpsertTopicPayload
-  upsertUser(input: UpsertUserInput!): UpsertUserPayload
 }
 
 interface Namespaceable {
@@ -145,6 +170,7 @@ type Query {
   fakeError: String
   view(
     viewerId: ID!
+    sessionId: ID!
     currentOrganizationLogin: String!,
     currentRepositoryName: String,
     repositoryIds: [ID!],
@@ -306,6 +332,15 @@ type UserEdge {
   node: User!
 }
 
+type Session {
+  id: ID!
+}
+
+type SessionEdge {
+  cursor: String!
+  node: Session!
+}
+
 input SynonymInput {
   name: String!
   locale: String!
@@ -383,19 +418,6 @@ input UpsertTopicInput {
 type UpsertTopicPayload implements Alertable {
   alerts: [Alert!]!
   topicEdge: TopicEdge
-}
-
-input UpsertUserInput {
-  clientMutationId: String
-  githubAvatarUrl: String!
-  githubUsername: String!
-  name: String!
-  primaryEmail: String!
-}
-
-type UpsertUserPayload implements Alertable {
-  alerts: [Alert!]!
-  userEdge: UserEdge
 }
 
 type View {

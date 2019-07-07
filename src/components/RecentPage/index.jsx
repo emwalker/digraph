@@ -41,12 +41,14 @@ export default ({ props }: WrapperProps) => (
 export const query = graphql`
 query RecentPage_recent_Query(
   $viewerId: ID!,
+  $sessionId: ID!,
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
 ) {
   view(
     viewerId: $viewerId,
+    sessionId: $sessionId,
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,

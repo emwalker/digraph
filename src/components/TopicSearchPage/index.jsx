@@ -115,6 +115,7 @@ class TopicSearchPage extends Component<Props> {
 export const query = graphql`
 query TopicSearchPage_query_Query(
   $viewerId: ID!,
+  $sessionId: ID!,
   $orgLogin: String!
   $repoName: String,
   $repoIds: [ID!],
@@ -123,6 +124,7 @@ query TopicSearchPage_query_Query(
 ) {
   view(
     viewerId: $viewerId,
+    sessionId: $sessionId,
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,

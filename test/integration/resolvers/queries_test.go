@@ -40,7 +40,7 @@ func TestResolveView(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			view, err := queryResolver.View(
-				ctx, testViewer.ID, td.OrgLogin, td.RepoName, []string{},
+				ctx, testViewer.ID, testSessionID, td.OrgLogin, td.RepoName, []string{},
 			)
 
 			if err != nil {
@@ -85,7 +85,7 @@ func TestContextUpdatedWithViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = resolver.View(ctx, testViewer.ID, org.Login, &repo.Name, []string{})
+	_, err = resolver.View(ctx, testViewer.ID, testSessionID, org.Login, &repo.Name, []string{})
 
 	if err != nil {
 		t.Fatal(err)

@@ -63,6 +63,30 @@ func findRepo(
 	return models.Repositories(mods...).One(ctx, exec)
 }
 
+// CreateSession creates a new session for the user passed in, possibly alongside any existing
+// sessions.  If the user is not yet in the database, a new user is created.  Sessions are destroyed
+// using DestroySession, which is called when someone logs out of the client.
+func (r *MutationResolver) CreateSession(
+	ctx context.Context, input models.CreateSessionInput,
+) (*models.CreateSessionPayload, error) {
+	actor := GetRequestContext(ctx).Viewer()
+
+	c := services.Connection{Exec: r.DB, Actor: actor}
+	result, err := c.CreateSession(
+		ctx, input.Name, input.PrimaryEmail, input.GithubUsername, input.GithubAvatarURL,
+	)
+
+	if err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to create session")
+	}
+
+	return &models.CreateSessionPayload{
+		Alerts:      result.Alerts,
+		UserEdge:    &models.UserEdge{Node: result.User},
+		SessionEdge: &models.SessionEdge{Node: result.Session},
+	}, nil
+}
+
 // DeleteLink sets the parent topics on a topic.
 func (r *MutationResolver) DeleteLink(
 	ctx context.Context, input models.DeleteLinkInput,
@@ -107,6 +131,24 @@ func (r *MutationResolver) DeleteLink(
 		ClientMutationID: input.ClientMutationID,
 		DeletedLinkID:    input.LinkID,
 	}, nil
+}
+
+// DeleteSession deletes a user session.
+func (r *MutationResolver) DeleteSession(
+	ctx context.Context, input models.DeleteSessionInput,
+) (*models.DeleteSessionPayload, error) {
+	actor := GetRequestContext(ctx).Viewer()
+
+	session, err := actor.Sessions(qm.Where("id = ?", input.SessionID)).One(ctx, r.DB)
+	if err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to fetch session")
+	}
+
+	if _, err = session.Delete(ctx, r.DB); err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to delete session")
+	}
+
+	return &models.DeleteSessionPayload{DeletedSessionID: input.SessionID}, nil
 }
 
 // DeleteTopic deletes a topic.
@@ -434,47 +476,5 @@ func (r *MutationResolver) UpsertLink(
 		LinkEdge: &models.LinkEdge{
 			Node: &models.LinkValue{result.Link, result.LinkCreated, actor.DefaultView()},
 		},
-	}, nil
-}
-
-// UpsertUser saves a user to the database if the user has not been seen before, or
-// updates fields on the user if the user is already in the database.
-func (r *MutationResolver) UpsertUser(
-	ctx context.Context, input models.UpsertUserInput,
-) (*models.UpsertUserPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
-
-	user, err := models.Users(qm.Where("primary_email = ?", input.PrimaryEmail)).One(ctx, r.DB)
-
-	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
-			c := services.Connection{Exec: r.DB, Actor: actor}
-
-			result, err := c.CreateUser(
-				ctx, input.Name, input.PrimaryEmail, input.GithubUsername, input.GithubAvatarURL,
-			)
-
-			if err != nil {
-				return nil, fmt.Errorf("Unable to create user: %s", err)
-			}
-
-			user := result.User
-			if err = user.Reload(ctx, r.DB); err != nil {
-				return nil, fmt.Errorf("Unable to reload newly-created user: %s", err)
-			}
-
-			return &models.UpsertUserPayload{
-				Alerts:   result.Alerts,
-				UserEdge: &models.UserEdge{Node: result.User},
-			}, nil
-		}
-
-		log.Printf("Unable to upsert user: %s", err)
-		return nil, perrors.Wrap(err, "resolvers.UpsertUser")
-	}
-
-	return &models.UpsertUserPayload{
-		Alerts:   []*models.Alert{},
-		UserEdge: &models.UserEdge{Node: user},
 	}, nil
 }

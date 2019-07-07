@@ -106,7 +106,6 @@ func (s *Server) Routes() {
 	http.Handle("/playground", defaultHandling(s.withBasicAuth(s.handleGraphqlPlayground())))
 	http.Handle("/_ah/health", defaultHandling(s.handleHealthCheck()))
 	http.Handle("/500", defaultHandling(s.handleMock500()))
-	s.RegisterOauth2Routes()
 }
 
 // Run starts up the http server.
