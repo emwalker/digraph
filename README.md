@@ -27,6 +27,7 @@ Requirements
 
 Set up the project:
 ```
+$ export DIGRAPH_POSTGRES_CONNECTION="dbname=digraph_dev user=postgres sslmode=disable"
 $ mkdir $GOPATH/src/github.com/emwalker
 $ cd $GOPATH/src/github.com/emwalker
 $ git clone git@github.com:emwalker/digraph.git
@@ -48,6 +49,13 @@ $ make test-integration
 Run the app in development:
 ```
 $ make start
+```
+
+In order to log in, you'll need to configure a dedicated OAuth app in GitHub and set the following environment
+variables:
+```
+$ export DIGRAPH_GITHUB_CLIENT_ID="..."
+$ export DIGRAPH_GITHUB_CLIENT_SECRET="..."
 ```
 
 ## Screenshots

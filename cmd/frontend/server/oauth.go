@@ -38,10 +38,20 @@ func (s *Server) RegisterOauth2Routes() {
 	callbackURL := callbackPath(s.DevMode, "github")
 	log.Printf("Using callback path %s", callbackURL)
 
+	clientID := os.Getenv("DIGRAPH_GITHUB_CLIENT_ID")
+	if clientID == "" {
+		clientID = "Obtain GitHub client ID"
+	}
+
+	clientSecret := os.Getenv("DIGRAPH_GITHUB_CLIENT_SECRET")
+	if clientSecret == "" {
+		clientSecret = "Obtain GitHub client secret"
+	}
+
 	goth.UseProviders(
 		github.New(
-			os.Getenv("DIGRAPH_GITHUB_CLIENT_ID"),
-			os.Getenv("DIGRAPH_GITHUB_CLIENT_SECRET"),
+			clientID,
+			clientSecret,
 			callbackURL,
 			// Strictly for deduping with other OAuth providers
 			"user:email",

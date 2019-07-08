@@ -31,7 +31,7 @@ func main() {
 
 	connectionString := os.Getenv("DIGRAPH_POSTGRES_CONNECTION")
 	if connectionString == "" {
-		panic("POSTGRES_CONNECTION not set")
+		panic("DIGRAPH_POSTGRES_CONNECTION not set")
 	}
 
 	redisHost := os.Getenv("DIGRAPH_REDIS_HOST")
