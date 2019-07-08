@@ -15,10 +15,25 @@ const joinArray = (fn, array) => (array
   ? array.map(fn).join('\n')
   : '')
 
+const googleAnalytics = (gaId) => {
+  if (!gaId) return ''
+
+  return `
+  <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '${gaId}');
+  </script>
+  `
+}
+
 const template = vo => `
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    ${googleAnalytics(vo.gaId)}
     <meta charset="utf-8">
     <meta http-equiv="Content-Language" content="en">
     <title>Digraph</title>
@@ -45,6 +60,7 @@ export default (
   assets: Object, fetcher: Function, element: Node, preloadedState: Object,
 ): string => (
   template({
+    gaId: process.env.DIGRAPH_GOOGLE_ANALYTICS_ID,
     mainCSSBundle: assets.client.css,
     mainJSBundle: assets.client.js,
     relayPayloads: serialize(fetcher, { isJSON: true }),
