@@ -8,7 +8,7 @@ import { createStore } from 'redux'
 import { Provider } from 'react-redux'
 import '@primer/css/index.scss?global'
 
-import { ClientFetcher } from '../fetcher'
+import ClientFetcher from './ClientFetcher'
 import {
   createResolver,
   createRouteConfig,

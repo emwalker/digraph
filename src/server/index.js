@@ -9,7 +9,7 @@ import { createStore } from 'redux'
 import { Provider } from 'react-redux'
 
 import renderFullPage from './renderFullPage'
-import { ServerFetcher } from '../fetcher'
+import ServerFetcher from './ServerFetcher'
 import configurePassport from './configurePassport'
 import configureApiProxy from './configureApiProxy'
 
@@ -44,6 +44,8 @@ app
   .use('/static/images', express.static(imagesDir))
 
 app.get('*', async (req, res) => {
+  fetcher.clear()
+
   try {
     console.log('Viewer session present?', !!req.user)
     const preloadedState = { viewer: req.user }
