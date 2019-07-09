@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -32,7 +33,17 @@ func TestCreateSession(t *testing.T) {
 		PrimaryEmail:    email,
 	}
 
-	payload, err := m.resolver.CreateSession(m.ctx, input)
+	// Doesn't work if we do not have an admin session
+	payload, err := m.resolver.CreateSession(ctx, input)
+	if err != resolvers.ErrUnauthorized {
+		t.Fatal(err)
+	}
+
+	// Works if we have an admin session
+	rc := resolvers.GetRequestContext(ctx)
+	rc.SetIsAdminSession(true)
+
+	payload, err = m.resolver.CreateSession(ctx, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,6 +82,8 @@ func TestCreateSession(t *testing.T) {
 	if payload.SessionEdge == nil {
 		t.Fatal("A session should have been created")
 	}
+
+	resolvers.ClearRequestSession(ctx)
 }
 
 func TestDestroySession(t *testing.T) {

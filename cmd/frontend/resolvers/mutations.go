@@ -21,8 +21,10 @@ type MutationResolver struct {
 	*Resolver
 }
 
+// Special errors.
 var (
-	errNoAnonymousMutations = errors.New("anonymous users cannot make updates or deletions")
+	ErrNoAnonymousMutations = errors.New("anonymous users cannot make updates or deletions")
+	ErrUnauthorized         = errors.New("you are not allowed to do that")
 )
 
 func init() {
@@ -69,7 +71,13 @@ func findRepo(
 func (r *MutationResolver) CreateSession(
 	ctx context.Context, input models.CreateSessionInput,
 ) (*models.CreateSessionPayload, error) {
-	actor := GetRequestContext(ctx).Viewer()
+	rc := GetRequestContext(ctx)
+	actor := rc.Viewer()
+
+	if !rc.IsAdminSession() {
+		log.Printf("Attempt by %s to create a session without an admin header", actor.Summary())
+		return nil, ErrUnauthorized
+	}
 
 	c := services.Connection{Exec: r.DB, Actor: actor}
 	result, err := c.CreateSession(
@@ -94,7 +102,7 @@ func (r *MutationResolver) DeleteLink(
 	actor := GetRequestContext(ctx).Viewer()
 
 	if actor.IsGuest() {
-		return nil, errNoAnonymousMutations
+		return nil, ErrNoAnonymousMutations
 	}
 
 	link, err := models.Links(
@@ -158,7 +166,7 @@ func (r *MutationResolver) DeleteTopic(
 	actor := GetRequestContext(ctx).Viewer()
 
 	if actor.IsGuest() {
-		return nil, errNoAnonymousMutations
+		return nil, ErrNoAnonymousMutations
 	}
 
 	topic, err := fetchTopic(ctx, r.DB, input.TopicID, actor)

@@ -10,12 +10,17 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
+	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/gorilla/handlers"
 	"github.com/rs/cors"
 )
 
 const (
 	userSessionKey = "userSessionKey"
+)
+
+var (
+	adminHeader = os.Getenv("DIGRAPH_ADMIN_TOKEN")
 )
 
 func must(err error) {
@@ -57,6 +62,17 @@ func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		ctx = loaders.AddToContext(ctx, s.db, 1*time.Millisecond)
+
+		hasAdminToken := false
+		if adminHeader != "" && adminHeader == r.Header.Get("X-Digraph-Admin-Token") {
+			log.Print("Admin token found, elevating to an admin session")
+			hasAdminToken = true
+		}
+
+		rc := resolvers.NewRequestContext(resolvers.GuestViewer)
+		rc.SetIsAdminSession(hasAdminToken)
+		ctx = resolvers.WithRequestContext(ctx, rc)
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

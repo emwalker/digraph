@@ -61,38 +61,15 @@ func (r *queryResolver) fetchCurrentRepo(
 func (r *queryResolver) View(
 	ctx context.Context, viewerID, sessionID, orgLogin string, repoName *string, repositoryIds []string,
 ) (*models.View, error) {
+	viewer, err := WithViewer(ctx, r.DB, viewerID, sessionID)
+	if err != nil {
+		return nil, err
+	}
+
 	repo, err := r.fetchCurrentRepo(ctx, orgLogin, repoName)
 	if err != nil {
 		return GuestView, perrors.Wrap(err, "resolvers: unable to fetch current repo")
 	}
-
-	var viewer *models.User
-
-	if sessionID == "" {
-		viewer = GuestViewer
-	} else {
-		session, err := models.FindSession(ctx, r.DB, sessionID)
-		if err != nil {
-			if err.Error() == "sql: no rows in result set" {
-				log.Printf("Attempt to query under user %s with bad session id %s", viewerID, sessionID)
-				return GuestView, nil
-			}
-			return GuestView, perrors.Wrap(err, "resolvers: unable to find session")
-		}
-
-		viewer, err = session.User().One(ctx, r.DB)
-		if err != nil {
-			return GuestView, perrors.Wrap(err, "resolvers: unable to find user")
-		}
-
-		if viewerID != viewer.ID {
-			return GuestView, perrors.Wrap(err, "resolvers: provided viewer id did not match the id of the session user")
-		}
-	}
-
-	// Add the assumed viewer to the request context
-	GetRequestContext(ctx).SetViewer(viewer)
-	log.Printf("View with %s user and %s session id", viewerID, sessionID)
 
 	view := &models.View{
 		ViewerID:                 viewer.ID,
