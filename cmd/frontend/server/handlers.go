@@ -89,18 +89,7 @@ func (s *Server) withSession(next http.Handler) http.HandlerFunc {
 			return
 		}
 
-		// Figure out a way to avoid mutating the resolver after the fact
-		var viewer *models.User
-		if s.ImpersonateUserID == nil {
-			viewer = session.R.User
-		} else {
-			viewer, err = models.Users(qm.Where("id = ?", s.ImpersonateUserID)).One(ctx, s.db)
-			if err != nil {
-				panic(err)
-			}
-			log.Printf("Impersonating %s", viewer.Summary())
-		}
-
+		viewer := session.R.User
 		log.Printf("Adding %s to context", viewer.Summary())
 		rc := resolvers.NewRequestContext(viewer)
 		ctx = resolvers.WithRequestContext(ctx, rc)
