@@ -35,6 +35,7 @@ export default (app, fetcher) => {
       githubUsername: username,
       name: displayName,
       primaryEmail: email,
+      serverSecret: process.env.DIGRAPH_SERVER_SECRET || 'keyboard cat',
     }
 
     createSessionMutation(environment, [], input, {

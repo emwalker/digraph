@@ -37,6 +37,7 @@ input CreateSessionInput {
   githubUsername: String!
   name: String!
   primaryEmail: String!
+  serverSecret: String!
 }
 
 type CreateSessionPayload implements Alertable {

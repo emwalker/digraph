@@ -14,10 +14,10 @@ type key string
 
 // RequestContext holds information about the current request.
 type RequestContext struct {
-	mux            sync.Mutex
-	view           *models.View
-	viewer         *models.User
-	isAdminSession bool
+	mux          sync.Mutex
+	view         *models.View
+	viewer       *models.User
+	serverSecret string
 }
 
 var requestKey key = "requestKey"
@@ -46,6 +46,12 @@ func GetRequestContext(ctx context.Context) *RequestContext {
 		return rc
 	}
 	return GuestRequestContext
+}
+
+// InitiatedByServer returns true if the GraphQL operation provides proof that it originated from the
+// node server rather than being proxied from the client.
+func (c *RequestContext) InitiatedByServer(serverSecret string) bool {
+	return c.serverSecret == serverSecret
 }
 
 // WithViewer looks up the viewer for the session ID provided, makes sure they match, and adds
@@ -84,9 +90,32 @@ func WithViewer(
 	return viewer, nil
 }
 
-// IsAdminSession returns true if the session is privileged.
-func (c *RequestContext) IsAdminSession() bool {
-	return c.isAdminSession
+// ServerSecret returns the value to be used for proof that a request originates from the server rather
+// than being proxied through the client.
+func (c *RequestContext) ServerSecret() string {
+	return c.serverSecret
+}
+
+// SetView sets the current view.
+func (c *RequestContext) SetView(view *models.View) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	c.view = view
+}
+
+// SetViewer sets the current viewer.
+func (c *RequestContext) SetViewer(viewer *models.User) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	c.viewer = viewer
+}
+
+// SetServerSecret adds a secret to the request context that can be used to verify that the request
+// originates from the server rather than one that is proxied from the client.
+func (c *RequestContext) SetServerSecret(secret string) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	c.serverSecret = secret
 }
 
 // View returns the current view.
@@ -109,28 +138,6 @@ func (c *RequestContext) Viewer() *models.User {
 		return GuestViewer
 	}
 	return c.viewer
-}
-
-// SetView sets the current view.
-func (c *RequestContext) SetView(view *models.View) {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	c.view = view
-}
-
-// SetViewer sets the current viewer.
-func (c *RequestContext) SetViewer(viewer *models.User) {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	c.viewer = viewer
-}
-
-// SetIsAdminSession returns true if the request has provided a secret via the X-Digraph-Admin-Token
-// headers.  Just a temporary placeholder until service accounts and admin accounts are introduced.
-func (c *RequestContext) SetIsAdminSession(on bool) {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	c.isAdminSession = on
 }
 
 // WithRequestContext adds the specified request context object to the context.

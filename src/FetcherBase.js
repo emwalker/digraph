@@ -1,7 +1,15 @@
 // @import
 import 'isomorphic-fetch'
 
+/* eslint class-methods-use-this: 0 */
+
 class FetcherBase {
+  get headers(): Object {
+    return {
+      'Content-Type': 'application/json',
+    }
+  }
+
   async fetch(operation, variables) {
     const { headers } = this
 

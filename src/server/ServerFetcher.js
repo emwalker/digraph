@@ -1,6 +1,6 @@
 import FetcherBase from '../FetcherBase'
 
-import { authHeaders } from './configureApiProxy'
+import { basicAuthSecret } from './configureApiProxy'
 
 /* eslint class-methods-use-this: 0, no-console: 0 */
 
@@ -12,19 +12,32 @@ class ServerFetcher extends FetcherBase {
     this.payloads = {}
   }
 
+  setBasicAuth(viewerId, sessionId) {
+    this.viewerId = viewerId
+    this.sessionId = sessionId
+  }
+
   get url(): string {
     return `${graphqlApiBaseUrl}/graphql`
   }
 
   get headers(): Object {
-    return {
+    const headers = {
       'Content-Type': 'application/json',
-      ...authHeaders,
     }
+
+    if (this.viewerId) {
+      const secret = basicAuthSecret(this.viewerId, this.sessionId)
+      headers.Authorization = `Basic ${secret}`
+    }
+
+    return headers
   }
 
   clear() {
     this.payloads = {}
+    this.viewerId = null
+    this.sessionId = null
   }
 
   async fetch(operation, variables, config) {

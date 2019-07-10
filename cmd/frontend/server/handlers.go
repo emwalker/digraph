@@ -1,7 +1,6 @@
 package server
 
 import (
-	"crypto/subtle"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
+	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/gorilla/handlers"
 	"github.com/rs/cors"
@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	adminHeader = os.Getenv("DIGRAPH_ADMIN_TOKEN")
+	serverSecret = os.Getenv("DIGRAPH_SERVER_SECRET")
 )
 
 func must(err error) {
@@ -29,31 +29,49 @@ func must(err error) {
 	}
 }
 
-func (s *Server) basicAuthRequired(r *http.Request) bool {
-	user, pass, ok := r.BasicAuth()
-
-	authFailed := !ok ||
-		subtle.ConstantTimeCompare([]byte(user), []byte(s.BasicAuthUsername)) != 1 ||
-		subtle.ConstantTimeCompare([]byte(pass), []byte(s.BasicAuthPassword)) != 1
-
-	if authFailed {
-		log.Printf("User '%s' did not succeed in authenticating; be sure to pass the basic auth username and password via a header", user)
-	}
-
-	return authFailed
+func rejectBasicAuth(next http.Handler, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", `Basic realm="Digraph"`)
+	w.WriteHeader(401)
+	w.Write([]byte("Unauthorized.\n"))
 }
 
 // https://stackoverflow.com/a/39591234/61048
 func (s *Server) withBasicAuth(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s.basicAuthRequired(r) {
-			w.Header().Set("WWW-Authenticate", `Basic realm="Digraph"`)
-			w.WriteHeader(401)
-			w.Write([]byte("Unauthorized.\n"))
-			return
+		viewerID, sessionID, ok := r.BasicAuth()
+
+		ctx := r.Context()
+		rc := resolvers.NewRequestContext(resolvers.GuestViewer)
+		rc.SetServerSecret(serverSecret)
+		ctx = resolvers.WithRequestContext(ctx, rc)
+
+		if !ok {
+			log.Printf("Basic auth not ok, continuing as guest: %s", r.Header.Get("Authorization"))
+		} else if viewerID != "" {
+			session, err := models.FindSession(ctx, s.db, sessionID)
+
+			switch {
+			case err != nil:
+				log.Printf("There was a problem looking up session: %s", err)
+				rejectBasicAuth(next, w, r)
+				break
+			case session.UserID != viewerID:
+				log.Printf("Viewer %s did not match user id %s on session %s", viewerID, session.UserID, session.ID)
+				rejectBasicAuth(next, w, r)
+				break
+			default:
+				viewer, err := session.User().One(ctx, s.db)
+				if err != nil {
+					log.Printf("There was a problem looking up viewer: %s", err)
+					rejectBasicAuth(next, w, r)
+				} else {
+					log.Printf("Viewer %s added to request context", viewer.Summary())
+					rc.SetViewer(viewer)
+				}
+			}
 		}
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -62,17 +80,6 @@ func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		ctx = loaders.AddToContext(ctx, s.db, 1*time.Millisecond)
-
-		hasAdminToken := false
-		if adminHeader != "" && adminHeader == r.Header.Get("X-Digraph-Admin-Token") {
-			log.Print("Admin token found, elevating to an admin session")
-			hasAdminToken = true
-		}
-
-		rc := resolvers.NewRequestContext(resolvers.GuestViewer)
-		rc.SetIsAdminSession(hasAdminToken)
-		ctx = resolvers.WithRequestContext(ctx, rc)
-
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

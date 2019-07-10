@@ -74,8 +74,8 @@ func (r *MutationResolver) CreateSession(
 	rc := GetRequestContext(ctx)
 	actor := rc.Viewer()
 
-	if !rc.IsAdminSession() {
-		log.Printf("Attempt by %s to create a session without an admin header", actor.Summary())
+	if !rc.InitiatedByServer(input.ServerSecret) {
+		log.Printf("Session creation initiated by user %s rather than the server", actor.Summary())
 		return nil, ErrUnauthorized
 	}
 

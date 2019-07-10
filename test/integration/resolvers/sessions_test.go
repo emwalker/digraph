@@ -31,6 +31,7 @@ func TestCreateSession(t *testing.T) {
 		GithubUsername:  login,
 		Name:            name,
 		PrimaryEmail:    email,
+		ServerSecret:    "keyboard cat",
 	}
 
 	// Doesn't work if we do not have an admin session
@@ -39,9 +40,9 @@ func TestCreateSession(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Works if we have an admin session
+	// Works if the request originates from the server rather than the client.
 	rc := resolvers.GetRequestContext(ctx)
-	rc.SetIsAdminSession(true)
+	rc.SetServerSecret("keyboard cat")
 
 	payload, err = m.resolver.CreateSession(ctx, input)
 	if err != nil {

@@ -8,12 +8,6 @@ class ClientFetcher extends FetcherBase {
     this.payloads = payloads
   }
 
-  get headers(): Object {
-    return {
-      'Content-Type': 'application/json',
-    }
-  }
-
   get url(): string {
     return '/graphql'
   }

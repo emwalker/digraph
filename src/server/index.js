@@ -50,6 +50,8 @@ app.get('*', async (req, res) => {
     console.log('Viewer session present?', !!req.user)
     const preloadedState = { viewer: req.user }
 
+    if (req.user) fetcher.setBasicAuth(req.user.id, req.user.sessionId)
+
     const store = createStore(reducer, preloadedState)
     const routeConfig = createRouteConfig(store)
     const resolver = createResolver(fetcher)
