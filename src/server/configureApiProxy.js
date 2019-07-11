@@ -21,6 +21,8 @@ export default (app: Object) => (
           const { id, sessionId } = user
           const secret = basicAuthSecret(id, sessionId)
           proxyReq.setHeader('Authorization', `Basic ${secret}`)
+        } else {
+          console.log('No user found with the request, omitting basic auth header')
         }
       },
       onError(err) {

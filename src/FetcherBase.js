@@ -17,6 +17,7 @@ class FetcherBase {
       method: 'POST',
       headers,
       body: JSON.stringify({ query: operation.text, variables }),
+      credentials: 'include',
     })
 
     return response.json()

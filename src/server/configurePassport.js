@@ -59,7 +59,7 @@ export default (app, fetcher) => {
   }
 
   app.use(session({
-    store: new RedisStore(),
+    store: new RedisStore({ host: process.env.DIGRAPH_REDIS_HOST || '' }),
     secret: process.env.DIGRAPH_COOKIE_SECRET || 'keyboard cat',
     resave: true,
     saveUninitialized: true,

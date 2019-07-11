@@ -75,9 +75,10 @@ func (r *MutationResolver) CreateSession(
 	actor := rc.Viewer()
 
 	if !rc.InitiatedByServer(input.ServerSecret) {
-		log.Printf("Session creation initiated by user %s rather than the server", actor.Summary())
+		log.Printf("Session creation initiated by %s rather than the server", actor.Summary())
 		return nil, ErrUnauthorized
 	}
+	log.Printf("Request comes from server, creating session for %s", actor.Summary())
 
 	c := services.Connection{Exec: r.DB, Actor: actor}
 	result, err := c.CreateSession(

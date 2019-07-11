@@ -7,6 +7,7 @@ import { getFarceResult } from 'found/lib/server'
 import compression from 'compression'
 import { createStore } from 'redux'
 import { Provider } from 'react-redux'
+import path from 'path'
 
 import renderFullPage from './renderFullPage'
 import ServerFetcher from './ServerFetcher'
@@ -22,7 +23,8 @@ import {
 
 /* eslint no-console: 0, react/jsx-filename-extension: 0 */
 
-const publicDir = process.env.RAZZLE_PUBLIC_DIR || 'no-such-directory'
+const publicDir = path.join(__dirname, 'public/static')
+
 const imagesDir = `${publicDir}/images`
 
 if (typeof window === 'undefined') global.window = {}
@@ -34,19 +36,21 @@ const fetcher = new ServerFetcher()
 
 // eslint-disable-next-line import/no-mutable-exports
 let app: Object = express()
+
 app = configurePassport(app, fetcher)
 app = configureApiProxy(app)
 
 app
   .disable('x-powered-by')
   .use(compression())
-  .use(express.static(publicDir))
   .use('/static/images', express.static(imagesDir))
+  .use('/static', express.static(publicDir))
 
 app.get('*', async (req, res) => {
   fetcher.clear()
 
   try {
+    console.log('Serving up static assets from', publicDir)
     console.log('Viewer session present?', !!req.user)
     const preloadedState = { viewer: req.user }
 

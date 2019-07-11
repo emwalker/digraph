@@ -1,0 +1,57 @@
+version: '3'
+volumes:
+  nodemodules:
+
+services:
+  redis:
+    image: redis:5-alpine
+    expose:
+      - "6379"
+
+  cron:
+    build:
+      context: .
+      dockerfile: k8s/docker/cron/Dockerfile
+    image: emwalker/digraph-cron
+    environment:
+      - DIGRAPH_POSTGRES_CONNECTION=postgres://postgres@${PGLOCALHOST}/digraph_dev?sslmode=disable
+
+  api:
+    build:
+      context: .
+      dockerfile: k8s/docker/frontend/Dockerfile
+    image: emwalker/digraph-api
+    expose:
+      - "8080"
+    environment:
+      - DIGRAPH_POSTGRES_CONNECTION=postgres://postgres@${PGLOCALHOST}/digraph_dev?sslmode=disable
+      - DIGRAPH_REDIS_HOST=redis:6379
+      - DIGRAPH_SERVER_SECRET
+    links:
+      - redis
+    depends_on:
+      - redis
+
+  node:
+    image: emwalker/digraph-node
+    build:
+      context: .
+      dockerfile: k8s/docker/node/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - DIGRAPH_API_BASE_URL=http://api:8080
+      - DIGRAPH_REDIS_HOST=redis
+      - DIGRAPH_SERVER_SECRET
+      - DIGRAPH_COOKIE_SECRET
+      - DIGRAPH_GITHUB_CLIENT_ID
+      - DIGRAPH_GITHUB_CLIENT_SECRET
+      - DIGRAPH_GOOGLE_ANALYTICS_ID
+    depends_on:
+      - api
+      - redis
+    links:
+      - api
+      - redis
+    volumes:
+      - nodemodules:/app/node_modules
