@@ -64,6 +64,9 @@
     "when": "~>3.7.8",
     "winston": "~3.2.1"
   },
+  "resolutions": {
+    "lodash.template": "4.5.0"
+  },
   "babel": {
     "presets": [
       "@babel/preset-env",
@@ -229,6 +232,7 @@
     "testURL": "http://localhost/"
   },
   "peerDependencies": {
+    "lodash.template": "^4.5.0",
     "prop-types": "^15.5.7"
   }
 }
