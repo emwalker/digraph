@@ -59,12 +59,9 @@ func (r *queryResolver) fetchCurrentRepo(
 
 // View returns a resolver that filters results on the basis of one or more organizations.
 func (r *queryResolver) View(
-	ctx context.Context, viewerID, sessionID, orgLogin string, repoName *string, repositoryIds []string,
+	ctx context.Context, viewerID, orgLogin string, repoName *string, repositoryIds []string,
 ) (*models.View, error) {
-	viewer, err := WithViewer(ctx, r.DB, viewerID, sessionID)
-	if err != nil {
-		return nil, err
-	}
+	viewer := GetRequestContext(ctx).Viewer()
 
 	repo, err := r.fetchCurrentRepo(ctx, orgLogin, repoName)
 	if err != nil {

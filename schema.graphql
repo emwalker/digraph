@@ -171,7 +171,6 @@ type Query {
   fakeError: String
   view(
     viewerId: ID!
-    sessionId: ID!
     currentOrganizationLogin: String!,
     currentRepositoryName: String,
     repositoryIds: [ID!],

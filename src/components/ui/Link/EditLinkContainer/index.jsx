@@ -42,6 +42,7 @@ const EditLinkContainer = ({ isOpen, link, orgLogin, relay, toggleForm }: Props)
       orgLogin,
       repoName: null,
       linkId: link.id,
+      viewerId: '',
       repoIds: [],
     }}
     render={makeEditLink({ isOpen, orgLogin, relay, toggleForm })}

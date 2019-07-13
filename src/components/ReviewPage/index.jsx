@@ -59,7 +59,6 @@ class ReviewPage extends Component<Props> {
 export const query = graphql`
 query ReviewPage_query_Query(
   $viewerId: ID!,
-  $sessionId: ID!,
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
@@ -72,7 +71,6 @@ query ReviewPage_query_Query(
 
   view(
     viewerId: $viewerId,
-    sessionId: $sessionId,
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
