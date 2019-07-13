@@ -1,11 +1,13 @@
 // @flow
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
+import classNames from 'classnames'
 
 import type { Relay, TopicType, UserType, ViewType } from '../../types'
 import { liftNodes } from '../../../utils'
 import Item from '../Item'
 import EditTopic from './EditTopicContainer'
+import { topicRow } from './styles.module.css'
 
 type Props = {
   orgLogin: string,
@@ -61,7 +63,7 @@ class Topic extends Component<Props, State> {
     return (
       <Item
         canEdit={!this.props.viewer.isGuest}
-        className="Box-row--topic"
+        className={classNames(topicRow, 'Box-row--topic')}
         description={this.props.topic.description}
         displayColor={this.displayColor}
         formIsOpen={this.state.formIsOpen}

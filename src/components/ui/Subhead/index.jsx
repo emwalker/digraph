@@ -6,6 +6,7 @@ import DocumentTitle from 'react-document-title'
 
 import type { ViewType } from 'components/types'
 import SearchBox from 'components/ui/SearchBox'
+import './styles.module.css'
 
 const resourcePath = pathOr('/', ['currentRepository', 'rootTopic', 'resourcePath'])
 

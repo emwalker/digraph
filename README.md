@@ -12,6 +12,7 @@ Keep track of links in a mind-map like network of topics.
 * Postgres
 * React/Relay client
 * Webpack 4
+* Server-side rendering with [Razzle](https://github.com/jaredpalmer/razzle)
 * [volatiletech/sqlboiler](https://github.com/volatiletech/sqlboiler)
 * [99designs/gqlgen](https://github.com/99designs/gqlgen)
 * [GitHub Primer](https://styleguide.github.com/primer/) CSS
@@ -23,7 +24,7 @@ Requirements
 * Postgres 10
 * Redis 5
 * Go 1.11
-* yarn
+* Yarn
 
 Set up the project:
 ```
@@ -33,6 +34,7 @@ $ cd $GOPATH/src/github.com/emwalker
 $ git clone git@github.com:emwalker/digraph.git
 $ cd digraph
 $ make load-fixtures
+$ go get -u github.com/golang-migrate/migrate
 $ go get -u github.com/99designs/gqlgen
 $ make generate
 $ go get -u ./...

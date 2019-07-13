@@ -179,6 +179,8 @@ export default createRefetchContainer(EditTopicForm, {
 },
 graphql`
   query EditTopicFormRefetchQuery(
+    $viewerId: ID!,
+    $sessionId: ID!,
     $orgLogin: String!,
     $repoName: String,
     $repoIds: [ID!],
@@ -187,6 +189,8 @@ graphql`
     $searchString: String,
   ) {
     view(
+      viewerId: $viewerId,
+      sessionId: $sessionId,
       currentOrganizationLogin: $orgLogin,
       currentRepositoryName: $repoName,
       repositoryIds: $repoIds,

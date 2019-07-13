@@ -1,7 +1,7 @@
 import { commitMutation } from 'react-relay'
 import uuidv1 from 'uuid/v1'
 
-export default (mutation, updater) => (environment, configs, input, config) => {
+export default (mutation, updater) => (environment, connectionConfigs, input, config) => {
   const clientMutationId = uuidv1()
 
   return commitMutation(
@@ -9,7 +9,7 @@ export default (mutation, updater) => (environment, configs, input, config) => {
     {
       ...config,
       mutation,
-      configs,
+      configs: connectionConfigs,
       updater,
       variables: {
         input: { clientMutationId, ...input },

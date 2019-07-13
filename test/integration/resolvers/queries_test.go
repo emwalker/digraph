@@ -40,11 +40,7 @@ func TestResolveView(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			view, err := queryResolver.View(
-				ctx,
-				td.OrgLogin,
-				td.RepoName,
-				[]string{},
-				&testViewer.ID,
+				ctx, testViewer.ID, testSessionID, td.OrgLogin, td.RepoName, []string{},
 			)
 
 			if err != nil {
@@ -55,20 +51,6 @@ func TestResolveView(t *testing.T) {
 				t.Fatalf("Expected repo %s, got repo %s", repo.ID, view.CurrentRepository.ID)
 			}
 		})
-	}
-}
-
-func TestDefaultOrganization(t *testing.T) {
-	ctx := testContext()
-	resolver := rootResolver.Query()
-
-	org, err := resolver.DefaultOrganization(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !org.Public || org.Login != "wiki" {
-		t.Fatal("Expected the public organization")
 	}
 }
 
@@ -85,16 +67,35 @@ func TestFakeError(t *testing.T) {
 	}
 }
 
-func TestGuestViewer(t *testing.T) {
+func TestContextUpdatedWithViewer(t *testing.T) {
 	ctx := context.Background()
+	viewer := resolvers.GetRequestContext(ctx).Viewer()
+
+	if !viewer.IsGuest() {
+		t.Fatal("Expected the guest viewer")
+	}
+
 	resolver := resolvers.New(rootResolver.DB, rootResolver.Fetcher, rootResolver.RD).Query()
 
-	viewer, err := resolver.Viewer(ctx)
+	m := newMutator(t, testViewer)
+	repo := m.defaultRepo()
+	org, err := repo.Organization().One(ctx, testDB)
+
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !viewer.IsGuest() {
-		t.Fatal("Expected the guest user")
+	_, err = resolver.View(ctx, testViewer.ID, testSessionID, org.Login, &repo.Name, []string{})
+
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	viewer = resolvers.GetRequestContext(ctx).Viewer()
+	if viewer.IsGuest() {
+		t.Fatal("Expected viewer to be set in context")
+	}
+
+	// Clean up after ourselves
+	resolvers.GetRequestContext(ctx).SetViewer(nil)
 }

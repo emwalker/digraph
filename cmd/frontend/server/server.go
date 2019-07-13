@@ -95,14 +95,6 @@ func logAndTimeout(h http.Handler) http.HandlerFunc {
 	}
 }
 
-// https://developers.google.com/web/tools/lighthouse/audits/cache-policy
-func cacheAssets(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "max-age=31557600")
-		h.ServeHTTP(w, r)
-	})
-}
-
 func defaultHandling(h http.Handler) http.Handler {
 	withoutGz := logAndTimeout(h)
 	return gziphandler.GzipHandler(withoutGz)
@@ -110,13 +102,10 @@ func defaultHandling(h http.Handler) http.Handler {
 
 // Routes registers route handlers with the http server.
 func (s *Server) Routes() {
-	http.Handle("/static/", defaultHandling(s.withBasicAuth(cacheAssets(s.handleStaticFiles()))))
-	http.Handle("/graphql", defaultHandling(s.withSession(s.withBasicAuth(s.handleGraphqlRequest()))))
+	http.Handle("/graphql", defaultHandling(s.withBasicAuth(s.handleGraphqlRequest())))
 	http.Handle("/playground", defaultHandling(s.withBasicAuth(s.handleGraphqlPlayground())))
 	http.Handle("/_ah/health", defaultHandling(s.handleHealthCheck()))
 	http.Handle("/500", defaultHandling(s.handleMock500()))
-	http.Handle("/", defaultHandling(http.HandlerFunc(s.withBasicAuth(s.handleRoot()))))
-	s.RegisterOauth2Routes()
 }
 
 // Run starts up the http server.

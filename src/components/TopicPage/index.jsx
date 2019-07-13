@@ -2,9 +2,10 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
+import classNames from 'classnames'
 
 import { liftNodes } from 'utils'
-import type { LinkType, Relay, TopicType, UserType, ViewType } from 'components/types'
+import type { LinkType, Relay } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import Breadcrumbs from 'components/ui/Breadcrumbs'
 import SidebarList from 'components/ui/SidebarList'
@@ -15,6 +16,11 @@ import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
 import AddForm from './AddForm'
+import styles from './styles.module.css'
+import { type TopicPage_query_QueryResponse as Response } from './__generated__/TopicPage_query_Query.graphql'
+import { type TopicPage_topic as TopicType } from './__generated__/TopicPage_topic.graphql'
+
+type ViewType = $PropertyType<Response, 'view'>
 
 type Props = {
   // eslint-disable-next-line react/no-unused-prop-types
@@ -25,7 +31,6 @@ type Props = {
   router: Object,
   topic: TopicType,
   view: ViewType,
-  viewer: UserType,
 }
 
 type SynonymType = {
@@ -51,8 +56,12 @@ class TopicPage extends Component<Props, State> {
     return liftNodes(this.props.topic.childTopics)
   }
 
-  get synonyms(): SynonymType[] {
+  get synonyms(): $ReadOnlyArray<SynonymType> {
     return this.props.topic.synonyms
+  }
+
+  get isGuest(): boolean {
+    return this.props.view.viewer.isGuest
   }
 
   renderLink = (link: LinkType) => (
@@ -62,7 +71,7 @@ class TopicPage extends Component<Props, State> {
       orgLogin={this.props.orgLogin}
       relay={this.props.relay}
       view={this.props.view}
-      viewer={this.props.viewer}
+      viewer={this.props.view.viewer}
     />
   )
 
@@ -73,7 +82,7 @@ class TopicPage extends Component<Props, State> {
       relay={this.props.relay}
       topic={topic}
       view={this.props.view}
-      viewer={this.props.viewer}
+      viewer={this.props.view.viewer}
     />
   )
 
@@ -81,7 +90,7 @@ class TopicPage extends Component<Props, State> {
     <AddForm
       relay={this.props.relay}
       topic={this.props.topic}
-      viewer={this.props.viewer}
+      viewer={this.props.view.viewer}
     />
   )
 
@@ -92,9 +101,9 @@ class TopicPage extends Component<Props, State> {
     if (length < 2) return null
 
     return (
-      <div className="synonyms h6">
+      <div className={classNames(styles.synonyms, 'h6')}>
         {synonyms.slice(1, length).map(({ name }) => (
-          <span key={name} className="synonym">{name}</span>
+          <span key={name} className={styles.synonym}>{name}</span>
         ))}
       </div>
     )
@@ -146,10 +155,10 @@ class TopicPage extends Component<Props, State> {
             <SidebarList
               title="Parent topics"
               orgLogin={this.props.orgLogin}
-              repoName={currentRepository.name}
+              repoName={currentRepository ? currentRepository.displayName : 'No name'}
               items={liftNodes(parentTopics)}
             />
-            { this.props.viewer.isGuest
+            { this.isGuest
               ? this.renderNotification()
               : this.renderAddForm()
             }
@@ -173,6 +182,8 @@ export const UnwrappedTopicPage = TopicPage
 
 export const query = graphql`
 query TopicPage_query_Query(
+  $viewerId: ID!,
+  $sessionId: ID!,
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
@@ -185,19 +196,21 @@ query TopicPage_query_Query(
     type
   }
 
-  viewer {
-    id
-    isGuest
-    ...AddForm_viewer
-    ...Link_viewer
-    ...Topic_viewer
-  }
-
   view(
+    viewerId: $viewerId,
+    sessionId: $sessionId,
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
+    viewer {
+      id
+      isGuest
+      ...AddForm_viewer
+      ...Link_viewer
+      ...Topic_viewer
+    }
+
     currentRepository {
       displayName
       ...Breadcrumbs_repository
@@ -219,8 +232,8 @@ export default createFragmentContainer(TopicPage, {
       searchString: {type: "String", defaultValue: ""},
     ) {
       displayName
+      id
       resourcePath
-      ...AddForm_topic
 
       synonyms {
         name
@@ -252,6 +265,8 @@ export default createFragmentContainer(TopicPage, {
           }
         }
       }
+
+      ...AddForm_topic
     }
   `,
 })

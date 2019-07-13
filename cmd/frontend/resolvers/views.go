@@ -110,6 +110,17 @@ func (r *viewResolver) Activity(
 	return &models.ActivityLineItemConnection{Edges: edges}, nil
 }
 
+// DefaultOrganization returns the main repository that people are directed to.
+func (r *viewResolver) DefaultOrganization(
+	ctx context.Context, view *models.View,
+) (*models.Organization, error) {
+	org, err := models.Organizations(qm.Where("public and login = 'wiki'")).One(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+	return org, nil
+}
+
 // Link returns a specific link.
 func (r *viewResolver) Link(
 	ctx context.Context, view *models.View, linkID string,
@@ -274,4 +285,9 @@ func (r *viewResolver) Topics(
 ) (*models.TopicConnection, error) {
 	topics, err := models.Topics(topicQueryMods(view, nil, searchString, first)...).All(ctx, r.DB)
 	return topicConnection(view, topics, err)
+}
+
+// Viewer returns the logged-in user.
+func (r *viewResolver) Viewer(ctx context.Context, view *models.View) (*models.User, error) {
+	return GetRequestContext(ctx).Viewer(), nil
 }

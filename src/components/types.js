@@ -5,7 +5,7 @@
 // Deprecated
 
 export type AlertType = {
-  id: string,
+  +id: string,
 }
 
 export type LinkConnection = {

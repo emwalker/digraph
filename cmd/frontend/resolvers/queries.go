@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	// "github.com/volatiletech/sqlboiler/boil"
+	perrors "github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -22,24 +22,10 @@ func (r *queryResolver) Alerts(ctx context.Context) ([]*models.Alert, error) {
 	return []*models.Alert{}, nil
 }
 
-// DefaultOrganization returns the main repository that people are directed to.
-func (r *queryResolver) DefaultOrganization(ctx context.Context) (*models.Organization, error) {
-	org, err := models.Organizations(qm.Where("public and login = 'wiki'")).One(ctx, r.DB)
-	if err != nil {
-		return nil, err
-	}
-	return org, nil
-}
-
 // FakeError returns an error on demand in order to facilitate the debugging of error handling in
 // the client.
 func (r *queryResolver) FakeError(ctx context.Context) (*string, error) {
 	return nil, errors.New("there was a problem")
-}
-
-// Viewer returns the logged-in user.
-func (r *queryResolver) Viewer(ctx context.Context) (*models.User, error) {
-	return GetRequestContext(ctx).Viewer(), nil
 }
 
 func (r *queryResolver) fetchCurrentRepo(
@@ -73,20 +59,23 @@ func (r *queryResolver) fetchCurrentRepo(
 
 // View returns a resolver that filters results on the basis of one or more organizations.
 func (r *queryResolver) View(
-	ctx context.Context, orgLogin string, repoName *string, repositoryIds []string, viewerID *string,
+	ctx context.Context, viewerID, sessionID, orgLogin string, repoName *string, repositoryIds []string,
 ) (*models.View, error) {
-	repo, err := r.fetchCurrentRepo(ctx, orgLogin, repoName)
+	viewer, err := WithViewer(ctx, r.DB, viewerID, sessionID)
 	if err != nil {
-		return &models.View{}, err
+		return nil, err
 	}
 
-	viewer := GetRequestContext(ctx).Viewer()
+	repo, err := r.fetchCurrentRepo(ctx, orgLogin, repoName)
+	if err != nil {
+		return GuestView, perrors.Wrap(err, "resolvers: unable to fetch current repo")
+	}
 
 	view := &models.View{
+		ViewerID:                 viewer.ID,
 		CurrentOrganizationLogin: orgLogin,
 		CurrentRepositoryName:    repoName,
 		CurrentRepository:        repo,
-		ViewerID:                 viewer.ID,
 		RepositoryIds:            repositoryIds,
 	}
 

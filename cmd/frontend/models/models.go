@@ -208,6 +208,9 @@ func (u User) IsGuest() bool {
 
 // Summary returns info on a user that can be printed to the log
 func (u User) Summary() string {
+	if u.PrimaryEmail == "" {
+		return fmt.Sprintf("user %s", u.DisplayName())
+	}
 	return fmt.Sprintf("user %s (%s)", u.DisplayName(), u.PrimaryEmail)
 }
 

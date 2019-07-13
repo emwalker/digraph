@@ -2,20 +2,20 @@
 
 exports[`<DesktopNav /> renders 1`] = `
 <header
-  className="Header"
+  className="header d-flex"
 >
   <nav
-    className="flex-self-center"
+    className="flex-self-center d-inline-block"
   >
     <h1
       className="h3 text-normal"
     >
       <Link
-        className="text-gray-dark n-link no-underline"
+        className="primaryLogo text-gray-dark n-link no-underline d-flex"
         to="/"
       >
         <div
-          className="mr-2 d-inline-block primary-logo"
+          className="mr-2 d-inline-block"
         >
           <_default
             height="28px"
@@ -27,7 +27,7 @@ exports[`<DesktopNav /> renders 1`] = `
     </h1>
   </nav>
   <nav
-    className="user-nav flex-self-center"
+    className="userNav flex-self-center"
   >
     <a
       className="text-gray-dark px-2"

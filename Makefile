@@ -21,15 +21,20 @@ kill:
 
 start: kill
 	@yarn relay --watch &
-	@yarn start &
 	@redis-server /usr/local/etc/redis.conf &
-	@go run cmd/frontend/frontend.go --dev --log 1
+	@go run cmd/frontend/frontend.go --dev --log 1 &
+	@yarn start
+
+start-prod: kill
+	@redis-server /usr/local/etc/redis.conf &
+	@go run cmd/frontend/frontend.go --dev --log 1 &
+	@yarn start:prod
 
 start-debug: kill
 	@yarn relay --watch &
-	@yarn start &
 	@redis-server /usr/local/etc/redis.conf &
-	@go run cmd/frontend/frontend.go --dev --log 2
+	@go run cmd/frontend/frontend.go --dev --log 2 &
+	@yarn start
 
 lint:
 	golint $(LINT_DIRECTORIES)
@@ -72,11 +77,6 @@ format: lint
 
 check: generate format test test-integration
 
-load:
-	dropdb $(DBNAME)
-	createdb $(DBNAME)
-	psql -d $(DBNAME) --set ON_ERROR_STOP=on < data/fixtures.sql
-
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
 
@@ -86,13 +86,7 @@ fixtures: data/fixtures.sql
 load-fixtures:
 	bash ./scripts/load-fixtures
 
-update-models:
-	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml
-
-clean:
-	rm -f public/webpack/*.js* public/webpack/*.css*
-
-build-client: clean
+build-client:
 	yarn relay
 	yarn build
 
@@ -102,22 +96,24 @@ build-executables:
 	cp $(shell go env GOPATH)/bin/linux_amd64/frontend tmp/stage/
 	cp $(shell go env GOPATH)/bin/linux_amd64/cron tmp/stage/
 
-build-frontend-container:
-	docker build . -t digraph:latest -f k8s/docker/frontend/Dockerfile
-	docker tag digraph:latest emwalker/digraph:$(shell cat k8s/release)
+build-container-api:
+	docker-compose build api
+	docker tag emwalker/digraph-api:latest emwalker/digraph-api:$(shell cat k8s/release)
 
-build-cron-container:
-	docker build . -t digraph-cron:latest -f k8s/docker/cron/Dockerfile
-	docker tag digraph-cron:latest emwalker/digraph-cron:$(shell cat k8s/release)
+build-container-node: build-client
+	docker-compose build node
+	docker tag emwalker/digraph-node:latest emwalker/digraph-node:$(shell cat k8s/release)
 
-build: build-client build-executables build-frontend-container build-cron-container
+build-container-cron:
+	docker-compose build cron
+	docker tag emwalker/digraph-cron:latest emwalker/digraph-cron:$(shell cat k8s/release)
 
-up:
-	docker run -p 5432:5432 -p 8080:8080 --env-file tmp/env.list --rm -it digraph
+build: build-executables build-container-cron build-container-api build-container-node
 
 push:
-	docker push emwalker/digraph:$(shell cat k8s/release)
 	docker push emwalker/digraph-cron:$(shell cat k8s/release)
+	docker push emwalker/digraph-api:$(shell cat k8s/release)
+	docker push emwalker/digraph-node:$(shell cat k8s/release)
 
 deploy:
 	kubectl config use-context do-default

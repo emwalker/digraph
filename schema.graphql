@@ -31,6 +31,21 @@ enum AlertType {
 
 scalar Color
 
+input CreateSessionInput {
+  clientMutationId: String
+  githubAvatarUrl: String!
+  githubUsername: String!
+  name: String!
+  primaryEmail: String!
+  serverSecret: String!
+}
+
+type CreateSessionPayload implements Alertable {
+  alerts: [Alert!]!
+  userEdge: UserEdge
+  sessionEdge: SessionEdge
+}
+
 scalar DateTime
 
 input DeleteLinkInput {
@@ -41,6 +56,16 @@ input DeleteLinkInput {
 type DeleteLinkPayload {
   clientMutationId: String
   deletedLinkId: ID!
+}
+
+input DeleteSessionInput {
+  clientMutationId: String
+  sessionId: ID!
+}
+
+type DeleteSessionPayload {
+  clientMutationId: String
+  deletedSessionId: ID!
 }
 
 input DeleteTopicInput {
@@ -104,7 +129,9 @@ type LinkReview {
 }
 
 type Mutation {
+  createSession(input: CreateSessionInput!): CreateSessionPayload
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
+  deleteSession(input: DeleteSessionInput!): DeleteSessionPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
   reviewLink(input: ReviewLinkInput!): ReviewLinkPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
@@ -141,14 +168,13 @@ type PageInfo {
 type Query {
   # Workaround for Relay Modern weirdness
   alerts: [Alert!]!
-  defaultOrganization: Organization!
   fakeError: String
-  viewer: User!
   view(
+    viewerId: ID!
+    sessionId: ID!
     currentOrganizationLogin: String!,
     currentRepositoryName: String,
     repositoryIds: [ID!],
-    viewerId: ID
   ): View!
 }
 
@@ -302,6 +328,20 @@ type User {
   updatedAt: DateTime!
 }
 
+type UserEdge {
+  cursor: String!
+  node: User!
+}
+
+type Session {
+  id: ID!
+}
+
+type SessionEdge {
+  cursor: String!
+  node: Session!
+}
+
 input SynonymInput {
   name: String!
   locale: String!
@@ -388,6 +428,7 @@ type View {
     last: Int,
     before: String
   ): ActivityLineItemConnection!
+  defaultOrganization: Organization!
   link(id: ID!): Link
   linkCount: Int!
   links(
@@ -409,4 +450,5 @@ type View {
     last: Int,
     before: String
   ): TopicConnection!
+  viewer: User!
 }

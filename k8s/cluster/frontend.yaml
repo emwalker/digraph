@@ -9,12 +9,12 @@ spec:
     nodePort: 30723
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3001
   - name: frontend-https
     nodePort: 31583
     port: 443
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3001
   selector:
     app: digraph
     tier: frontend
@@ -46,16 +46,24 @@ spec:
         tier: frontend
     spec:
       containers:
-      - name: frontend
-        command:
-        - ./frontend
+      - name: api
         envFrom:
         - secretRef:
             name: digraph-secrets
-        image: emwalker/digraph:v152
+        image: emwalker/digraph-api:v156
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
+          name: http
+          protocol: TCP
+      - name: frontend
+        envFrom:
+        - secretRef:
+            name: digraph-secrets
+        image: emwalker/digraph-node:v156
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3001
           name: http
           protocol: TCP
       restartPolicy: Always

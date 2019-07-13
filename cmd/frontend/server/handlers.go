@@ -1,29 +1,26 @@
 package server
 
 import (
-	"crypto/subtle"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"regexp"
-	"text/template"
 	"time"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
-	"github.com/go-webpack/webpack"
 	"github.com/gorilla/handlers"
-	"github.com/markbates/goth/gothic"
 	"github.com/rs/cors"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const (
 	userSessionKey = "userSessionKey"
+)
+
+var (
+	serverSecret = os.Getenv("DIGRAPH_SERVER_SECRET")
 )
 
 func must(err error) {
@@ -32,28 +29,49 @@ func must(err error) {
 	}
 }
 
-func (s *Server) basicAuthRequired(r *http.Request) bool {
-	if s.BasicAuthUsername == "" && s.BasicAuthPassword == "" {
-		return false
-	}
-
-	user, pass, ok := r.BasicAuth()
-	return !ok ||
-		subtle.ConstantTimeCompare([]byte(user), []byte(s.BasicAuthUsername)) != 1 ||
-		subtle.ConstantTimeCompare([]byte(pass), []byte(s.BasicAuthPassword)) != 1
+func rejectBasicAuth(next http.Handler, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", `Basic realm="Digraph"`)
+	w.WriteHeader(401)
+	w.Write([]byte("Unauthorized.\n"))
 }
 
 // https://stackoverflow.com/a/39591234/61048
 func (s *Server) withBasicAuth(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s.basicAuthRequired(r) {
-			w.Header().Set("WWW-Authenticate", `Basic realm="Digraph"`)
-			w.WriteHeader(401)
-			w.Write([]byte("Unauthorized.\n"))
-			return
+		viewerID, sessionID, ok := r.BasicAuth()
+
+		ctx := r.Context()
+		rc := resolvers.NewRequestContext(resolvers.GuestViewer)
+		rc.SetServerSecret(serverSecret)
+		ctx = resolvers.WithRequestContext(ctx, rc)
+
+		if !ok {
+			log.Printf("Basic auth not ok, continuing as guest: %s", r.Header.Get("Authorization"))
+		} else if viewerID != "" {
+			session, err := models.FindSession(ctx, s.db, sessionID)
+
+			switch {
+			case err != nil:
+				log.Printf("There was a problem looking up session: %s", err)
+				rejectBasicAuth(next, w, r)
+				break
+			case session.UserID != viewerID:
+				log.Printf("Viewer %s did not match user id %s on session %s", viewerID, session.UserID, session.ID)
+				rejectBasicAuth(next, w, r)
+				break
+			default:
+				viewer, err := session.User().One(ctx, s.db)
+				if err != nil {
+					log.Printf("There was a problem looking up viewer: %s", err)
+					rejectBasicAuth(next, w, r)
+				} else {
+					log.Printf("Viewer %s added to request context", viewer.Summary())
+					rc.SetViewer(viewer)
+				}
+			}
 		}
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -63,86 +81,6 @@ func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		ctx = loaders.AddToContext(ctx, s.db, 1*time.Millisecond)
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func (s *Server) withSession(next http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		sessionID, err := gothic.GetFromSession(userSessionKey, r)
-		if err != nil {
-			log.Printf("No user session found: %s", err)
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		log.Printf("A session id found, looking up session: %s", sessionID)
-		session, err := models.Sessions(
-			qm.Load("User"),
-			qm.Where("session_id = decode(?, 'hex')", sessionID),
-		).One(ctx, s.db)
-
-		if err != nil {
-			log.Printf("Session not found for session id %s", sessionID)
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		viewer := session.R.User
-		log.Printf("Adding %s to context", viewer.Summary())
-		rc := resolvers.NewRequestContext(viewer)
-		ctx = resolvers.WithRequestContext(ctx, rc)
-
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func parseTemplate(name, path string) *template.Template {
-	funcMap := map[string]interface{}{"asset": webpack.AssetHelper}
-	io, err := ioutil.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-	t := template.New(name).Funcs(funcMap)
-	template.Must(t.Parse(string(io)))
-	return t
-}
-
-var chunkFilePattern = regexp.MustCompile(`^[0-9]+\.`)
-
-func (s *Server) handleRoot() http.Handler {
-	variables := struct {
-		GAID string
-	}{
-		GAID: os.Getenv("DIGRAPH_GOOGLE_ANALYTICS_ID"),
-	}
-
-	appTemplate := parseTemplate("appTemplate", "public/webpack/layout.html")
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		relpath := r.URL.Path[1:]
-
-		switch relpath {
-		case "robots.txt":
-			http.ServeFile(w, r, "public/webpack/robots.txt")
-			return
-		case "":
-			ua := newUserAgent(r.Header.Get("User-Agent"))
-			// Workaround for a bug in which iOS Chrome cannot load the page with the graphic.
-			if ua.isChrome() && ua.isPhone() {
-				http.Redirect(w, r, resolvers.EverythingTopicPath, 301)
-			} else {
-				appTemplate.Execute(w, variables)
-			}
-		default:
-			if chunkFilePattern.MatchString(relpath) {
-				path := fmt.Sprintf("public/webpack/%s", r.URL.Path[1:])
-				http.ServeFile(w, r, path)
-			} else {
-				appTemplate.Execute(w, variables)
-			}
-		}
 	})
 }
 
@@ -169,9 +107,4 @@ func (s *Server) handleMock500() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "There was a problem", 500)
 	})
-}
-
-func (s *Server) handleStaticFiles() http.Handler {
-	fs := http.FileServer(http.Dir("public/webpack"))
-	return http.StripPrefix("/static", fs)
 }

@@ -5,7 +5,6 @@ module.exports = {
     "curly": ["error", "multi-or-nest", "consistent"],
     "flowtype/define-flow-type": 1,
     "flowtype/use-flow-type": 1,
-    "function-paren-newline": ["error", "consistent"],
     "jsx-a11y/anchor-is-valid": "off",
     "jsx-a11y/label-has-associated-control": "off",
     "jsx-a11y/label-has-for": "off",

@@ -13,6 +13,8 @@ models:
     model: github.com/emwalker/digraph/cmd/frontend/models.Organization
   Repository:
     model: github.com/emwalker/digraph/cmd/frontend/models.Repository
+  Session:
+    model: github.com/emwalker/digraph/cmd/frontend/models.Session
   Synonym:
     model: github.com/emwalker/digraph/cmd/frontend/models.Synonym
   Topic:

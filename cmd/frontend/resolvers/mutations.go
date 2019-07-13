@@ -21,8 +21,10 @@ type MutationResolver struct {
 	*Resolver
 }
 
+// Special errors.
 var (
-	errNoAnonymousMutations = errors.New("anonymous users cannot make updates or deletions")
+	ErrNoAnonymousMutations = errors.New("anonymous users cannot make updates or deletions")
+	ErrUnauthorized         = errors.New("you are not allowed to do that")
 )
 
 func init() {
@@ -63,6 +65,37 @@ func findRepo(
 	return models.Repositories(mods...).One(ctx, exec)
 }
 
+// CreateSession creates a new session for the user passed in, possibly alongside any existing
+// sessions.  If the user is not yet in the database, a new user is created.  Sessions are destroyed
+// using DestroySession, which is called when someone logs out of the client.
+func (r *MutationResolver) CreateSession(
+	ctx context.Context, input models.CreateSessionInput,
+) (*models.CreateSessionPayload, error) {
+	rc := GetRequestContext(ctx)
+	actor := rc.Viewer()
+
+	if !rc.InitiatedByServer(input.ServerSecret) {
+		log.Printf("Session creation initiated by %s rather than the server", actor.Summary())
+		return nil, ErrUnauthorized
+	}
+	log.Printf("Request comes from server, creating session for %s", actor.Summary())
+
+	c := services.Connection{Exec: r.DB, Actor: actor}
+	result, err := c.CreateSession(
+		ctx, input.Name, input.PrimaryEmail, input.GithubUsername, input.GithubAvatarURL,
+	)
+
+	if err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to create session")
+	}
+
+	return &models.CreateSessionPayload{
+		Alerts:      result.Alerts,
+		UserEdge:    &models.UserEdge{Node: result.User},
+		SessionEdge: &models.SessionEdge{Node: result.Session},
+	}, nil
+}
+
 // DeleteLink sets the parent topics on a topic.
 func (r *MutationResolver) DeleteLink(
 	ctx context.Context, input models.DeleteLinkInput,
@@ -70,7 +103,7 @@ func (r *MutationResolver) DeleteLink(
 	actor := GetRequestContext(ctx).Viewer()
 
 	if actor.IsGuest() {
-		return nil, errNoAnonymousMutations
+		return nil, ErrNoAnonymousMutations
 	}
 
 	link, err := models.Links(
@@ -109,6 +142,24 @@ func (r *MutationResolver) DeleteLink(
 	}, nil
 }
 
+// DeleteSession deletes a user session.
+func (r *MutationResolver) DeleteSession(
+	ctx context.Context, input models.DeleteSessionInput,
+) (*models.DeleteSessionPayload, error) {
+	actor := GetRequestContext(ctx).Viewer()
+
+	session, err := actor.Sessions(qm.Where("id = ?", input.SessionID)).One(ctx, r.DB)
+	if err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to fetch session")
+	}
+
+	if _, err = session.Delete(ctx, r.DB); err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to delete session")
+	}
+
+	return &models.DeleteSessionPayload{DeletedSessionID: input.SessionID}, nil
+}
+
 // DeleteTopic deletes a topic.
 func (r *MutationResolver) DeleteTopic(
 	ctx context.Context, input models.DeleteTopicInput,
@@ -116,7 +167,7 @@ func (r *MutationResolver) DeleteTopic(
 	actor := GetRequestContext(ctx).Viewer()
 
 	if actor.IsGuest() {
-		return nil, errNoAnonymousMutations
+		return nil, ErrNoAnonymousMutations
 	}
 
 	topic, err := fetchTopic(ctx, r.DB, input.TopicID, actor)

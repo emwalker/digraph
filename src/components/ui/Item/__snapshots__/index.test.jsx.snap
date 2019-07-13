@@ -27,7 +27,7 @@ exports[`<Item /> renders 1`] = `
       className="col-2 text-center"
     >
       <span
-        className="disabled-link"
+        className="disabledLink"
       >
         Edit
       </span>

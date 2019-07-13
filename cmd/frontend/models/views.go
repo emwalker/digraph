@@ -3,9 +3,10 @@ package models
 // View holds config information for what is seen in a given query.
 type View struct {
 	CurrentOrganizationLogin string
-	CurrentRepositoryName    *string
 	CurrentRepository        *Repository
+	CurrentRepositoryName    *string
 	RepositoryIds            []string
+	SessionID                string
 	ViewerID                 string
 }
 

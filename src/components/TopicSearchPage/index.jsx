@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
-import type { LinkType, Relay, TopicType, UserType, ViewType } from 'components/types'
+import type { LinkType, Relay } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
 import Columns from 'components/ui/Columns'
@@ -14,6 +14,13 @@ import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
 import Breadcrumbs from 'components/ui/Breadcrumbs'
 import { liftNodes } from 'utils'
+// import type { LinkType, Relay, TopicType, UserType, ViewType } from 'components/types'
+import {
+  type TopicSearchPage_query_QueryResponse as Response,
+} from './__generated__/TopicSearchPage_query_Query.graphql'
+import { type TopicSearchPage_topic as TopicType } from './__generated__/TopicSearchPage_topic.graphql'
+
+type ViewType = $PropertyType<Response, 'view'>
 
 /* eslint no-underscore-dangle: 0 */
 
@@ -24,7 +31,6 @@ type Props = {
   router: Object,
   topic: TopicType,
   view: ViewType,
-  viewer: UserType,
 }
 
 class TopicSearchPage extends Component<Props> {
@@ -39,7 +45,7 @@ class TopicSearchPage extends Component<Props> {
           orgLogin={this.props.orgLogin}
           relay={this.props.relay}
           view={this.props.view}
-          viewer={this.props.viewer}
+          viewer={this.props.view.viewer}
         />
       )
     }
@@ -53,7 +59,7 @@ class TopicSearchPage extends Component<Props> {
         relay={this.props.relay}
         topic={topic}
         view={this.props.view}
-        viewer={this.props.viewer}
+        viewer={this.props.view.viewer}
       />
     )
   }
@@ -88,7 +94,7 @@ class TopicSearchPage extends Component<Props> {
             <SidebarList
               items={liftNodes(parentTopics)}
               orgLogin={this.props.orgLogin}
-              repoName={repo.displayName}
+              repoName={repo ? repo.displayName : 'No repo'}
               title="Parent topics"
             />
           </RightColumn>
@@ -108,22 +114,26 @@ class TopicSearchPage extends Component<Props> {
 
 export const query = graphql`
 query TopicSearchPage_query_Query(
+  $viewerId: ID!,
+  $sessionId: ID!,
   $orgLogin: String!
   $repoName: String,
   $repoIds: [ID!],
   $topicId: ID!,
   $searchString: String!,
 ) {
-  viewer {
-    ...Link_viewer
-    ...Topic_viewer
-  }
-
   view(
+    viewerId: $viewerId,
+    sessionId: $sessionId,
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
+    viewer {
+      ...Link_viewer
+      ...Topic_viewer
+    }
+
     currentRepository {
       displayName
       ...Breadcrumbs_repository
@@ -144,6 +154,7 @@ export default createFragmentContainer(TopicSearchPage, {
     fragment TopicSearchPage_topic on Topic @argumentDefinitions(
       searchString: {type: "String!", defaultValue: ""},
     ) {
+      id
       name
       resourcePath
 

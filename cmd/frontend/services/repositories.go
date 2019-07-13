@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
@@ -19,7 +20,9 @@ type CreateRepositoryResult struct {
 func (c *Connection) CreateRepository(
 	ctx context.Context, org *models.Organization, name string, owner *models.User, system bool,
 ) (*CreateRepositoryResult, error) {
-	log.Printf("Creating repository %s", name)
+	repoName := fmt.Sprintf("%s/%s", owner.Login, name)
+
+	log.Printf("Creating repository %s", repoName)
 	repo := models.Repository{
 		OrganizationID: org.ID,
 		Name:           name,
@@ -31,7 +34,7 @@ func (c *Connection) CreateRepository(
 		return nil, err
 	}
 
-	log.Printf("Creating a root topic for %s", name)
+	log.Printf("Creating a root topic for %s", repoName)
 	topic := models.Topic{
 		OrganizationID: org.ID,
 		RepositoryID:   repo.ID,

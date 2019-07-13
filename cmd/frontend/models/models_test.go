@@ -14,7 +14,7 @@ func TestSessionHexID(t *testing.T) {
 	}
 
 	session := Session{
-		ID:        1234,
+		ID:        "1233",
 		SessionID: binaryID,
 		UserID:    "1234",
 	}

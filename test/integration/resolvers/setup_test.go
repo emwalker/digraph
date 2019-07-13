@@ -24,10 +24,11 @@ const orgID = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
 type testFetcherT struct{}
 
 var (
-	testDB       *sql.DB
-	testFetcher  *testFetcherT
-	testViewer   *models.User
-	rootResolver *resolvers.Resolver
+	testDB        *sql.DB
+	testFetcher   *testFetcherT
+	testViewer    *models.User
+	rootResolver  *resolvers.Resolver
+	testSessionID string
 )
 
 type mutator struct {
@@ -79,6 +80,19 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
+
+	username := testViewer.GithubUsername.Ptr()
+	avatarURL := testViewer.GithubAvatarURL.Ptr()
+
+	c := services.New(testDB, testViewer, nil)
+	result, err := c.CreateSession(
+		context.Background(), testViewer.Name, testViewer.PrimaryEmail, *username, *avatarURL,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	testSessionID = result.Session.ID
 
 	rootResolver = resolvers.New(testDB, testFetcher, testRD)
 

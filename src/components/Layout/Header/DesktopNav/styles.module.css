@@ -1,0 +1,13 @@
+.userNav {
+  display: inline-block;
+  margin-left: auto;
+}
+
+.header {
+  flex: 1;
+}
+
+.primaryLogo {
+  display: inline-block;
+  margin-top: 8px;
+}

@@ -21,6 +21,9 @@ exports[`<TopicPage /> renders 1`] = `
           "displayName": "Private collection",
           "isPrivate": true,
         },
+        "viewer": Object {
+          "isGuest": false,
+        },
       }
     }
   />
@@ -28,6 +31,7 @@ exports[`<TopicPage /> renders 1`] = `
     <RightColumn>
       <_default
         items={Array []}
+        repoName="Private collection"
         title="Parent topics"
       />
       <ForwardRef(Relay(AddForm))

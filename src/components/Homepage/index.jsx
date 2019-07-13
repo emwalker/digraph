@@ -94,11 +94,15 @@ class Homepage extends Component<Props, State> {
 
 export const query = graphql`
 query Homepage_homepage_Query(
+  $viewerId: ID!,
+  $sessionId: ID!,
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
 ) {
   view(
+    viewerId: $viewerId,
+    sessionId: $sessionId,
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,

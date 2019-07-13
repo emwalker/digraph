@@ -18,45 +18,21 @@ html, body {
 }
 
 .layout {
-  min-height: 100vh;
-  overflow: hidden;
-  display: block;
-  position: relative;
-  padding-bottom: $footer-height;
-
-  .primary-logo {
-    position: relative;
-    top: 8px;
-
-  }
-
-  h1.h3 {
-    margin-top: -9px;
-  }
-
   &.homepage {
     .primary-logo {
       margin-right: 5px;
       top: 9px;
     }
   }
+}
 
-  .form-group textarea.form-control {
-    height: unset;
-    min-height: unset;
-  }
+h1.h3 {
+  margin-top: -9px;
+}
 
-  .Subhead {
-    margin-top: 0.5em;
-    line-height: 1.3;
-
-    .Subhead-heading {
-      display: inline-flex;
-      flex-direction: column-reverse;
-      font-size: 22px;
-      font-weight: 400;
-    }
-  }
+.form-group textarea.form-control {
+  height: unset;
+  min-height: unset;
 }
 
 .SignUpPage {
@@ -76,15 +52,6 @@ html, body {
   }
 }
 
-.Header {
-  background: $header-color;
-  @include navbar-boxshadow;
-
-  .user-nav {
-    margin-left: auto;
-  }
-}
-
 .SignUp {
   border-color: #4043467d !important;
 
@@ -94,12 +61,6 @@ html, body {
     background: #80808014;
     transition-duration: 150ms;
   }
-}
-
-footer {
-  position: absolute;
-  width: 100%;
-  bottom: 0;
 }
 
 select {
@@ -116,11 +77,6 @@ select {
   }
 }
 
-.digraph-anim-fade-in {
-  @extend .anim-fade-in;
-  animation-duration: 0.05s;
-}
-
 .link-url {
   &.css-truncate.css-truncate-target,
   &.css-truncate .css-truncate-target {
@@ -130,13 +86,7 @@ select {
 
 .Item-row {
   &.Box-row--hover-gray:first-of-type {
-    border-top-color: #e1e4e8;
-  }
-}
-
-.Box-row--topic {
-  .Box-row-link {
-    font-weight: 500;
+    border-top-color: #e1e4e8 !important;
   }
 }
 
@@ -162,10 +112,6 @@ select {
   animation: spin 2s linear infinite;
 }
 
-.disabled-link {
-  color: #959da5;
-}
-
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -182,21 +128,6 @@ select {
 
 input[type=text].form-control {
   width: 100%;
-}
-
-.synonyms {
-  color: #444d56;
-  margin-top: 3px;
-
-  .synonym:after {
-    content: "・";
-    margin: 0 3px;
-  }
-
-  .synonym:last-child:after {
-    content: '';
-    margin: 0 3px;
-  }
 }
 
 .Review {
