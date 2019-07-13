@@ -50,8 +50,6 @@ app.get('*', async (req, res) => {
   fetcher.clear()
 
   try {
-    console.log('Serving up static assets from', publicDir)
-    console.log('Viewer session present?', !!req.user)
     const preloadedState = { viewer: req.user }
 
     if (req.user) fetcher.setBasicAuth(req.user.id, req.user.sessionId)

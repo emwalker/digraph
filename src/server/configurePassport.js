@@ -59,7 +59,10 @@ export default (app, fetcher) => {
   }
 
   app.use(session({
-    store: new RedisStore({ host: process.env.DIGRAPH_REDIS_HOST || '' }),
+    store: new RedisStore({
+      host: process.env.DIGRAPH_NODE_REDIS_HOST || '',
+      pass: process.env.DIGRAPH_REDIS_PASSWORD,
+    }),
     secret: process.env.DIGRAPH_COOKIE_SECRET || 'keyboard cat',
     resave: true,
     saveUninitialized: true,
@@ -106,7 +109,7 @@ export default (app, fetcher) => {
       {
         clientID: process.env.DIGRAPH_GITHUB_CLIENT_ID || 'GitHub client id needed',
         clientSecret: process.env.DIGRAPH_GITHUB_CLIENT_SECRET || 'GitHub client secret needed',
-        callbackURL: '/auth/github/callback',
+        callbackURL: process.env.DIGRAPH_GITHUB_CALLBACK_URL || 'GitHub callback url needed',
         scope: 'user:email',
       },
       onGithubAuthSuccess,

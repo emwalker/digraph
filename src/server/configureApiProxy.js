@@ -7,7 +7,7 @@ const graphqlApiBaseUrl = process.env.DIGRAPH_API_BASE_URL || 'http://localhost:
 export const basicAuthSecret = (viewerId: string, sessionId: string) =>
   Buffer.from(`${viewerId}:${sessionId}`).toString('base64')
 
-export default (app: Object) => (
+export default (app: Object) => {
   app.post(
     '/graphql',
     requestProxy({
@@ -30,4 +30,15 @@ export default (app: Object) => (
       },
     }),
   )
-)
+
+  app.get(
+    '/_ah/health',
+    requestProxy({
+      target: graphqlApiBaseUrl,
+      changeOrigin: true,
+      secure: false,
+    }),
+  )
+
+  return app
+}

@@ -46,22 +46,21 @@ spec:
         tier: frontend
     spec:
       containers:
-      - name: graphql
+      - name: api
         envFrom:
         - secretRef:
             name: digraph-secrets
-        image: emwalker/digraph-api:v152
+        image: emwalker/digraph-api:v156
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
           name: http
           protocol: TCP
-      restartPolicy: Always
-      - name: node
+      - name: frontend
         envFrom:
         - secretRef:
             name: digraph-secrets
-        image: emwalker/digraph-node:v152
+        image: emwalker/digraph-node:v156
         imagePullPolicy: Always
         ports:
         - containerPort: 3001
