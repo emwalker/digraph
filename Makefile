@@ -77,11 +77,6 @@ format: lint
 
 check: generate format test test-integration
 
-load:
-	dropdb $(DBNAME)
-	createdb $(DBNAME)
-	psql -d $(DBNAME) --set ON_ERROR_STOP=on < data/fixtures.sql
-
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
 
@@ -91,13 +86,7 @@ fixtures: data/fixtures.sql
 load-fixtures:
 	bash ./scripts/load-fixtures
 
-update-models:
-	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml
-
-clean:
-	rm -f public/webpack/*.js* public/webpack/*.css*
-
-build-client: clean
+build-client:
 	yarn relay
 	yarn build
 
