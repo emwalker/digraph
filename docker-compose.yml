@@ -1,7 +1,6 @@
 version: '3'
 volumes:
   nodemodules:
-
 services:
   redis:
     image: redis:5-alpine
