@@ -20,12 +20,14 @@ const EditTopicContainer = ({ isOpen, orgLogin, topic, relay, toggleForm }: Prop
     environment={relay.environment}
     query={graphql`
       query EditTopicContainerQuery(
+        $viewerId: ID!,
         $orgLogin: String!,
         $repoName: String,
         $repoIds: [ID!],
         $topicId: ID!,
       ) {
         view(
+          viewerId: $viewerId,
           currentOrganizationLogin: $orgLogin,
           currentRepositoryName: $repoName,
           repositoryIds: $repoIds,
@@ -45,6 +47,7 @@ const EditTopicContainer = ({ isOpen, orgLogin, topic, relay, toggleForm }: Prop
       repoName: null,
       repoIds: [],
       topicId: topic.id,
+      viewerId: '',
     }}
     render={makeEditTopic({ isOpen, orgLogin, relay, toggleForm })}
   />
