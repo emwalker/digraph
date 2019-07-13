@@ -24,8 +24,7 @@ import {
 /* eslint no-console: 0, react/jsx-filename-extension: 0 */
 
 const publicDir = path.join(__dirname, 'public/static')
-
-const imagesDir = `${publicDir}/images`
+const imagesDir = path.join(__dirname, 'public/images')
 
 if (typeof window === 'undefined') global.window = {}
 
