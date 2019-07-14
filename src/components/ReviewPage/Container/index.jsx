@@ -18,7 +18,7 @@ export default ({ children, totalCount }: Props) => (
           { title }
         </div>
       </div>
-      <div className="Box">
+      <div className="Box Box--condensed">
         <div className="Box-header">
           <h3 className="Box-title overflow-hidden flex-auto">
             Links

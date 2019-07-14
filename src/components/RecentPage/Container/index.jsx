@@ -13,7 +13,7 @@ export default ({ children }: Props) => (
         Recent activity
       </div>
     </div>
-    <div className="Box">
+    <div className="Box Box--condensed">
       <div className="Box-header">
         <h3 className="Box-title overflow-hidden flex-auto">
           Activity
