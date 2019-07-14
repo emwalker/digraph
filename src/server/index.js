@@ -45,6 +45,11 @@ app
   .use('/static/images', express.static(imagesDir))
   .use('/static', express.static(publicDir))
 
+app.use('/robots.txt', function (req, res) {
+  res.type('text/plain')
+  res.send("User-agent: *\nAllow: /\n");
+})
+
 app.get('*', async (req, res) => {
   fetcher.clear()
 
