@@ -13,7 +13,7 @@ type Props = {
 }
 
 export default ({ viewer, defaultOrganization }: Props) => (
-  <div className={classNames(header, 'clearfix mb-3 d-flex px-3 px-md-6 px-lg-4 py-2')}>
+  <div className={classNames(header, 'clearfix mb-3 d-flex px-md-6 px-lg-4')}>
     <div style={{ width: '100%' }}>
       <MediaQuery query="(max-width: 544px)">
         <MobileNav viewer={viewer} />

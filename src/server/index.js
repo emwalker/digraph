@@ -45,9 +45,9 @@ app
   .use('/static/images', express.static(imagesDir))
   .use('/static', express.static(publicDir))
 
-app.use('/robots.txt', function (req, res) {
+app.use('/robots.txt', (req, res) => {
   res.type('text/plain')
-  res.send("User-agent: *\nAllow: /\n");
+  res.send('User-agent: *\nAllow: /\n')
 })
 
 app.get('*', async (req, res) => {

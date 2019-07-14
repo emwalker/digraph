@@ -2,10 +2,12 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { Link } from 'found'
+import classNames from 'classnames'
 
 import type { UserType } from 'components/types'
 import DigraphLogo from 'components/ui/icons/DigraphLogo'
 import Menu from './Menu'
+import styles from './styles.module.css'
 
 type Props = {
   viewer: UserType,
@@ -25,13 +27,18 @@ class MobileNav extends Component<Props, State> {
   }
 
   render = () => (
-    <div className="mobile-menu mb-4">
-      <div className="mobile-menu-header px-3 py-2">
+    <div className={classNames(styles.mobileMenu, 'mobile-menu mb-4')}>
+      <div className="mobile-menu-header d-flex px-3 py-2">
         <Link
           to="/"
-          className="h3 text-normal menu-logo text-gray-dark n-link no-underline d-inline-block"
+          className={classNames(
+            styles.link,
+            'h3 text-normal menu-logo text-gray-dark n-link no-underline d-flex flex-items-center',
+          )}
         >
-          <DigraphLogo width="32px" height="32px" />
+          <div className="mr-2 d-inline-block">
+            <DigraphLogo width="32px" height="32px" />
+          </div>
           {' '}
           Digraph
         </Link>

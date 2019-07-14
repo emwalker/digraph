@@ -1,9 +1,11 @@
 // @flow
 import React, { Component, Fragment } from 'react'
 import { Link } from 'found'
+import classNames from 'classnames'
 
 import { toEverything } from 'components/navigation'
 import type { UserType } from 'components/types'
+import styles from './styles.module.css'
 
 type Props = {
   viewer: UserType,
@@ -29,7 +31,7 @@ class Menu extends Component<Props> {
   )
 
   render = () => (
-    <nav className="menu" aria-label="Person settings">
+    <nav className={classNames(styles.menu, 'menu')} aria-label="Person settings">
       <a
         className="menu-item text-gray-dark p-3"
         href="https://blog.digraph.app"
