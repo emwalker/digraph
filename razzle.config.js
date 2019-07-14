@@ -15,6 +15,11 @@ module.exports = {
     if (target === 'web')
       appConfig.node = {fs: 'empty'};
 
+    appConfig.devServer = {
+      hot: false,
+      inline: false,
+    };
+
     return appConfig;
   },
 
