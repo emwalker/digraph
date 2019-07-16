@@ -152,6 +152,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.modernhealthcare.com/accreditation/joint-commission-unveils-antibiotic-stewardship-programs-outpatient-settings?utm_content=article1-headline",
 			canonicalURL: "https://www.modernhealthcare.com/accreditation/joint-commission-unveils-antibiotic-stewardship-programs-outpatient-settings",
 		},
+		{
+			name:         "An article in New York magazine",
+			inputURL:     "https://nymag.com/intelligencer/2017/07/climate-change-earth-too-hot-for-humans.html?gtm=top",
+			canonicalURL: "https://nymag.com/intelligencer/2017/07/climate-change-earth-too-hot-for-humans.html",
+		},
 	}
 
 	for _, testCase := range testCases {

@@ -37,6 +37,7 @@ var (
 		"dictionary.com",
 		"independent.co.uk",
 		"motherjones.com",
+		"nymag.com",
 		"nytimes.com",
 		"reuters.com",
 		"scientificamerican.com",
