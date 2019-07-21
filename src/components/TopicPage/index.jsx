@@ -240,7 +240,7 @@ export default createFragmentContainer(TopicPage, {
       parentTopics(first: 100) {
         edges {
           node {
-            display: name
+            display: displayName
             resourcePath
           }
         }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	perrors "github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -161,7 +162,7 @@ func (r *topicResolver) Description(_ context.Context, topic *models.TopicValue)
 func (r *topicResolver) DisplayName(_ context.Context, topic *models.TopicValue) (string, error) {
 	synonyms, err := topic.SynonymList()
 	if err != nil {
-		return "<name missing>", err
+		return "<name missing>", perrors.Wrap(err, "resolvers: failed to fetch synonym list")
 	}
 
 	name, ok := synonyms.NameForLocale(models.LocaleIdentifierEn)
@@ -236,7 +237,7 @@ func (r *topicResolver) Organization(
 func (r *topicResolver) ParentTopics(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (*models.TopicConnection, error) {
-	if topic.R != nil && topic.R.ParentTopics != nil {
+	if topic.R != nil && len(topic.R.ParentTopics) > 0 {
 		return topicConnection(topic.View, topic.R.ParentTopics, nil)
 	}
 
@@ -446,7 +447,7 @@ func (r *topicResolver) Search(
 func (r *topicResolver) Synonyms(ctx context.Context, topic *models.TopicValue) ([]*models.Synonym, error) {
 	synonyms, err := topic.SynonymList()
 	if err != nil {
-		return nil, err
+		return nil, perrors.Wrap(err, "resolvers: failed to fetch synonym list")
 	}
 
 	var out []*models.Synonym

@@ -202,6 +202,7 @@ func (r *viewResolver) Topic(
 	topic, err := models.Topics(
 		topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil, nil)...,
 	).One(ctx, r.DB)
+
 	if err != nil {
 		log.Printf("There was a problem fetching topic %s: %s", topicID, err)
 		return nil, err
