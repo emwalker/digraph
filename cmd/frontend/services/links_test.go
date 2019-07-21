@@ -157,6 +157,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://nymag.com/intelligencer/2017/07/climate-change-earth-too-hot-for-humans.html?gtm=top",
 			canonicalURL: "https://nymag.com/intelligencer/2017/07/climate-change-earth-too-hot-for-humans.html",
 		},
+		{
+			name:         "Another New Yorker article",
+			inputURL:     "https://www.newyorker.com/news/our-columnists/there-is-nothing-strategic-about-trumps-racism?utm_social-type=owned&utm_medium=social&mbid=social_twitter&utm_brand=tny&utm_source=twitter",
+			canonicalURL: "https://www.newyorker.com/news/our-columnists/there-is-nothing-strategic-about-trumps-racism",
+		},
 	}
 
 	for _, testCase := range testCases {

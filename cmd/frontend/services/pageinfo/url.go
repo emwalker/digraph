@@ -37,6 +37,7 @@ var (
 		"dictionary.com",
 		"independent.co.uk",
 		"motherjones.com",
+		"newyorker.com",
 		"nymag.com",
 		"nytimes.com",
 		"reuters.com",
@@ -49,12 +50,8 @@ var (
 
 	omitFields = []string{
 		"fbclid",
+		"mbid",
 		"rss",
-		"utm_campaign",
-		"utm_content",
-		"utm_medium",
-		"utm_source",
-		"utm_term",
 		"via",
 	}
 )
@@ -79,6 +76,20 @@ func removeQueryAndAnchor(parsed *url.URL) bool {
 
 func stripFragment(parsed *url.URL) bool {
 	return !strings.HasSuffix(parsed.Host, "mail.google.com")
+}
+
+func removeQueryParam(field string) bool {
+	if strings.HasPrefix(field, "utm") {
+		return true
+	}
+
+	for _, omittedField := range omitFields {
+		if omittedField == field {
+			return true
+		}
+	}
+
+	return false
 }
 
 // NewURL returns a URL with a canonicalized form and a SHA1.
@@ -108,21 +119,27 @@ func NormalizeURL(rawURL string) (*URL, error) {
 		rawURL = parsed.String()
 	} else if strings.HasSuffix(parsed.Host, "youtube.com") {
 		query := parsed.Query()
+
 		for key := range query {
 			if key == "v" {
 				continue
 			}
 			query.Del(key)
 		}
+
 		parsed.RawQuery = query.Encode()
 		rawURL = parsed.String()
 	} else {
 		query := parsed.Query()
-		for _, key := range omitFields {
-			query.Del(key)
-			parsed.RawQuery = query.Encode()
-			rawURL = parsed.String()
+
+		for field := range query {
+			if removeQueryParam(field) {
+				query.Del(field)
+			}
 		}
+
+		parsed.RawQuery = query.Encode()
+		rawURL = parsed.String()
 	}
 
 	flags := normalizationFlags
