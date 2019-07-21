@@ -1,0 +1,19 @@
+.description {
+  display: inline;
+}
+
+.description p {
+  display: inline;
+}
+
+.description p a {
+  color: inherit !important;
+  text-decoration: underline;
+}
+
+.timeAgo {
+  margin-left: 1em;
+  display: inline;
+  font-size: smaller;
+  color: #6a737d;
+}

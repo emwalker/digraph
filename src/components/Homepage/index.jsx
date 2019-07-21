@@ -1,96 +1,51 @@
-import React, { Component, Suspense } from 'react'
+import React from 'react'
 import { graphql } from 'react-relay'
-import { Link } from 'found'
+import classNames from 'classnames'
 
-import { toEverything } from 'components/navigation'
+import { Homepage_homepage_QueryResponse as Response } from './__generated__/Homepage_homepage_Query.graphql'
+import LineItem from './LineItem'
+import SearchBox from './SearchBox'
+import styles from './styles.module.css'
 
-const TreeGraph = React.lazy(() => import('./TreeGraph'))
-
-const placeholder = (
-  <div className="topic-chart-placeholder">
-    <div className="loader" />
-  </div>
-)
+type ViewType = $PropertyType<Response, 'view'>
 
 type Props = {
-  view: {
-    linkCount: number,
-    topicCount: number,
-    topicGraph: ?string,
-  },
+  router: Object,
+  view: ViewType,
 }
 
-type State = {
-  height: number,
-  showChart: boolean,
-  width: number,
-}
+const Homepage = ({ view, router }: Props) => (
+  <div
+    className={classNames(styles.container, 'px-3 px-md-6 px-lg-0')}
+  >
+    <h1 className="text-center mb-5">
+      Digraph
+    </h1>
 
-class Homepage extends Component<Props, State> {
-  state = {
-    showChart: false,
-    height: 150,
-    width: 150,
-  }
+    <ul className={classNames(styles.list, 'ml-4 f3')}>
+      <li>Save links in a mind-map–like network of topics.</li>
+      <li>Keep track of everything you&apos;ve read or might want to read in the future.</li>
+      <li>
+        Gain control over your time and turn the flood of information into knowledge.
+      </li>
+    </ul>
 
-  containerRef: React$ElementRef<*> | null
+    <h4>Recent updates</h4>
+    <div className="f4">
+      {view.activity.edges.map(({ node }) => <LineItem key={node.description} item={node} />)}
 
-  componentDidMount = () => {
-    if (this.containerRef) {
-      const rect = this.containerRef.getBoundingClientRect()
-      this.setState({ showChart: true, height: 700, width: rect.width })
-    }
-  }
-
-  get showChart(): boolean {
-    return Boolean(this.props.view.topicGraph) && this.state.showChart
-  }
-
-  render = () => (
-    <div
-      ref={(ref) => { this.containerRef = ref }}
-      className="px-3 px-md-6 px-lg-0 topic-chart"
-    >
-      <div className="Subhead">
-        <div className="Subhead-heading">Topics in the general collection</div>
+      <div>
+        There are currently
+        {` ${view.linkCount} `}
+        links and
+        {` ${view.topicCount} `}
+        topics.
       </div>
-      <p className="mb-3">
-        These are the topics in the
-        {' '}
-        <Link to={toEverything}>general collection</Link>
-        . There are
-        {' '}
-        {this.props.view.topicCount}
-        {' '}
-        topics in this collection, categorizing
-        {' '}
-        {this.props.view.linkCount}
-        {' '}
-        links between them. Rotate and zoom in to explore.  Hover over
-        a topic to see the label. Click on a topic to visit its page.
-      </p>
-
-      <div className="mb-3 topic-chart-container">
-        { this.showChart && (
-          <Suspense fallback={placeholder}>
-            <TreeGraph
-              height={this.state.height}
-              topicGraph={this.props.view.topicGraph}
-              width={this.state.width}
-            />
-          </Suspense>
-        )}
-      </div>
-
-      <p className="mb-3">
-        Many of the topics above have subtopics and links associated with them. Making it easy to
-        create and manage a network of topics facilitates keeping track of thousands of links.  Once
-        a topic becomes too crowded, it can be cleaned up by moving links into one or more
-        subtopics.
-      </p>
     </div>
-  )
-}
+
+    <SearchBox className={styles.search} router={router} />
+  </div>
+)
 
 export const query = graphql`
 query Homepage_homepage_Query(
@@ -107,7 +62,15 @@ query Homepage_homepage_Query(
   ) {
     linkCount
     topicCount
-    topicGraph
+
+    activity(first: 3) {
+      edges {
+        node {
+          description
+          ...LineItem_item
+        }
+      }
+    }
   }
 }`
 

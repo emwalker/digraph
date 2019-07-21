@@ -13,8 +13,8 @@
   "author": "Eric Walker",
   "license": "MIT",
   "dependencies": {
-    "@primer/css": "^12.4.1",
     "@babel/runtime": "^7.5.4",
+    "@primer/css": "^12.4.1",
     "array-move": "^2.1.0",
     "body-parser": "^1.19.0",
     "chroma-js": "~2.0.4",
@@ -40,7 +40,6 @@
     "react": "~16.8.6",
     "react-document-title": "^2.0.3",
     "react-dom": "~16.8.6",
-    "react-force-graph": "^1.23.1",
     "react-google-recaptcha": "^1.0.5",
     "react-icons": "^3.7.0",
     "react-markdown": "^4.1.0",
@@ -183,7 +182,7 @@
     "testURL": "http://localhost/"
   },
   "peerDependencies": {
-    "graphql": "^14.4.2",
+    "graphql": "^14.2.0",
     "lodash.template": "^4.5.0",
     "prop-types": "^15.5.7"
   }

@@ -58,15 +58,17 @@ const toString = state => JSON.stringify(state).replace(/</g, '\\u003c')
 
 export default (
   assets: Object, fetcher: Function, element: Node, preloadedState: Object,
-): string => (
-  template({
+): string => {
+  const vendor = assets[''] || {}
+
+  return template({
     gaId: process.env.DIGRAPH_GOOGLE_ANALYTICS_ID,
     mainCSSBundle: assets.client.css,
     mainJSBundle: assets.client.js,
     relayPayloads: serialize(fetcher, { isJSON: true }),
     root: renderToString(element),
-    vendorCSSBundle: assets[''].css,
-    vendorJSBundle: assets[''].js,
+    vendorCSSBundle: vendor.css,
+    vendorJSBundle: vendor.js,
     state: toString(preloadedState),
   })
-)
+}

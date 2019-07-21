@@ -1,0 +1,16 @@
+.container {
+  max-width: 720px;
+  margin: auto;
+}
+
+.container > p {
+  margin-bottom: 3em;
+}
+
+.list {
+  margin-bottom: 3em;
+}
+
+.search {
+  margin-top: 5em !important;
+}
