@@ -267,6 +267,66 @@ func TestTopicParentTopics(t *testing.T) {
 	}
 }
 
+func TestChildTopicsDefaultOrdering(t *testing.T) {
+	m := newMutator(t, testViewer)
+	repoName := m.defaultRepo().Name
+
+	topic, cleanup := m.createTopic(testViewer.Login, repoName, "Agriculture")
+	defer cleanup()
+
+	childTopic1, cleanup := m.createTopic(testViewer.Login, repoName, "A")
+	defer cleanup()
+
+	childTopic2, cleanup := m.createTopic(testViewer.Login, repoName, "B")
+	defer cleanup()
+
+	m.addParentTopicToTopic(childTopic1, topic)
+	m.addParentTopicToTopic(childTopic2, topic)
+
+	input := models.UpdateSynonymsInput{
+		Synonyms: []*models.SynonymInput{
+			{Locale: "en", Name: "C"},
+			{Locale: "en", Name: "A"},
+		},
+		TopicID: childTopic1.ID,
+	}
+
+	resolver := rootResolver.Mutation()
+	if _, err := resolver.UpdateSynonyms(m.ctx, input); err != nil {
+		t.Fatal(err)
+	}
+
+	topicResolver := rootResolver.Topic()
+	conn, err := topicResolver.ChildTopics(m.ctx, topic, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(conn.Edges) < 2 {
+		t.Fatalf("Expected two results: %#v", conn.Edges)
+	}
+
+	prevName := ""
+
+	for _, edge := range conn.Edges {
+		synonyms, err := edge.Node.SynonymList()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		currName, ok := synonyms.NameForLocale("en")
+		if !ok {
+			t.Fatal("There was a problem fetching the display name")
+		}
+
+		if prevName != "" && currName <= prevName {
+			t.Fatalf("Expected %s to come before %s", currName, prevName)
+		}
+
+		prevName = currName
+	}
+}
+
 func TestSearchChildTopics(t *testing.T) {
 	m := newMutator(t, testViewer)
 	repoName := m.defaultRepo().Name

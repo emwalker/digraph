@@ -21,18 +21,26 @@ import (
 type topicResolver struct{ *Resolver }
 
 // ByName provides a way to sort a topic by name.
-type ByName []*models.Topic
-
-func (a ByName) Len() int {
-	return len(a)
+type ByName struct {
+	topics []*models.Topic
+	locale models.LocaleIdentifier
 }
 
-func (a ByName) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
+func (b ByName) Len() int {
+	return len(b.topics)
 }
 
-func (a ByName) Less(i, j int) bool {
-	return a[i].Name < a[j].Name
+func (b ByName) Swap(i, j int) {
+	b.topics[i], b.topics[j] = b.topics[j], b.topics[i]
+}
+
+func (b ByName) Less(i, j int) bool {
+	ilist, _ := b.topics[i].SynonymList()
+	jlist, _ := b.topics[j].SynonymList()
+
+	iname, _ := ilist.NameForLocale(b.locale)
+	jname, _ := jlist.NameForLocale(b.locale)
+	return iname < jname
 }
 
 func getTopicLoader(ctx context.Context) *loaders.TopicLoader {
@@ -54,7 +62,7 @@ func topicConnection(view *models.View, rows []*models.Topic, err error) (*model
 		return nil, err
 	}
 
-	sort.Sort(ByName(rows))
+	sort.Sort(ByName{rows, "en"})
 
 	edges := make([]*models.TopicEdge, len(rows))
 	for i, topic := range rows {
@@ -288,12 +296,12 @@ func (r *topicResolver) matchingDescendantTopics(
 
 	err := queries.Raw(`
 	with recursive child_topics as (
-	  select parent_id, parent_id as child_id
-	  from topic_topics where parent_id = $1
+		select parent_id, parent_id as child_id
+		from topic_topics where parent_id = $1
 	union
-	  select pt.child_id, ct.child_id
-	  from topic_topics ct
-	  inner join child_topics pt on pt.child_id = ct.parent_id
+		select pt.child_id, ct.child_id
+		from topic_topics ct
+		inner join child_topics pt on pt.child_id = ct.parent_id
 	)
 	select distinct t.id
 	from topics t
