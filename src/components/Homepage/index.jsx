@@ -18,7 +18,7 @@ const Homepage = ({ view, router }: Props) => (
   <div
     className={classNames(styles.container, 'px-3 px-md-6 px-lg-0')}
   >
-    <h1 className="text-center mb-5">
+    <h1 className="mb-3">
       Digraph
     </h1>
 
