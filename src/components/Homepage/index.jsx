@@ -18,15 +18,15 @@ const Homepage = ({ view, router }: Props) => (
   <div
     className={classNames(styles.container, 'px-3 px-md-6 px-lg-0')}
   >
-    <h1 className="mb-3">
+    <h2 className="mb-2">
       Digraph
-    </h1>
+    </h2>
 
-    <ul className={classNames(styles.list, 'ml-4 f3')}>
-      <li>Save links in a mind-map–like network of topics.</li>
+    <ul className={classNames(styles.list, 'ml-4 f4')}>
+      <li>Save links in a mind map–like network of topics.</li>
       <li>Keep track of everything you&apos;ve read or might want to read in the future.</li>
       <li>
-        Gain control over your time and turn the flood of information into knowledge.
+        Gain control over your reading and turn the flood of information into knowledge.
       </li>
     </ul>
 
@@ -36,9 +36,9 @@ const Homepage = ({ view, router }: Props) => (
 
       <div>
         There are currently
-        {` ${view.linkCount} `}
+        {` ${view.linkCount.toLocaleString()} `}
         links and
-        {` ${view.topicCount} `}
+        {` ${view.topicCount.toLocaleString()} `}
         topics.
       </div>
     </div>
