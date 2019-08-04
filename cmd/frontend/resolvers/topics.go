@@ -11,10 +11,11 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
 	perrors "github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries"
+	squeries "github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -104,9 +105,9 @@ func availableTopics(
 	}
 
 	if searchString != nil {
-		q := query(*searchString)
+		q := queries.NewSearchQuery(*searchString)
 		mods = append(mods,
-			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", q.wildcardStringArray()),
+			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", q.WildcardStringArray()),
 		)
 	}
 
@@ -132,9 +133,9 @@ func (r *topicResolver) matchingDescendantTopicIds(
 	var topicIds []interface{}
 
 	log.Printf("Looking for topics under %s with query: %s", topic.Summary(), searchString)
-	q := query(searchString)
+	q := queries.NewSearchQuery(searchString)
 
-	err := queries.Raw(`
+	err := squeries.Raw(`
 	with recursive child_topics as (
 		select parent_id, parent_id as child_id
 		from topic_topics where parent_id = $1
@@ -153,7 +154,7 @@ func (r *topicResolver) matchingDescendantTopicIds(
 		end
 	)
 	limit $3
-	`, topic.ID, q.wildcardStringQuery(), limit).Bind(ctx, r.DB, &rows)
+	`, topic.ID, q.WildcardStringQuery(), limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, perrors.Wrap(err, "resolvers: failed to fetch descendant topics")
@@ -207,9 +208,9 @@ func (r *topicResolver) matchingDescendantLinks(
 	}
 
 	log.Printf("Searching for descendant links that match query: %s", searchString)
-	q := query(searchString)
+	q := queries.NewSearchQuery(searchString)
 
-	err := queries.Raw(`
+	err := squeries.Raw(`
 	with recursive child_topics as (
 		select parent_id, parent_id as child_id
 		from topic_topics where parent_id = $1
@@ -231,7 +232,7 @@ func (r *topicResolver) matchingDescendantLinks(
 		end
 	)
 	limit $4
-	`, topic.ID, q.wildcardStringQuery(), q.wildcardStringArray(), limit).Bind(ctx, r.DB, &rows)
+	`, topic.ID, q.WildcardStringQuery(), q.WildcardStringArray(), limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
 		return nil, err
@@ -342,10 +343,10 @@ func (r *topicResolver) ChildTopics(
 	})
 
 	if searchString != nil && *searchString != "" {
-		q := query(*searchString)
+		q := queries.NewSearchQuery(*searchString)
 		mods = append(
 			mods,
-			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", q.wildcardStringQuery()),
+			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", q.WildcardStringQuery()),
 		)
 	}
 
@@ -386,36 +387,42 @@ func (r *topicResolver) ID(_ context.Context, topic *models.TopicValue) (string,
 
 // Links returns a set of links.
 func (r *topicResolver) Links(
-	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
-	last *int, before *string,
+	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
+	searchString *string, reviewed, descendants *bool,
 ) (*models.LinkConnection, error) {
 	log.Printf("Fetching links for topic %s", topic.Summary())
 	viewer := GetRequestContext(ctx).Viewer()
 
-	mods := topic.View.Filter([]qm.QueryMod{
-		qm.Load("ParentTopics"),
-		qm.OrderBy("links.created_at desc"),
-		qm.InnerJoin("repositories r on links.repository_id = r.id"),
-	})
+	q := queries.NewLinkQuery(topic.View, viewer, searchString, first, reviewed)
+	mods := append(q.Mods(), qm.OrderBy("links.created_at desc"))
 
-	if !viewer.IsGuest() {
+	if descendants != nil && *descendants {
+		topicIds, err := r.matchingDescendantTopicIds(ctx, topic, "", 1000000)
+
+		if err != nil {
+			return nil, perrors.Wrap(err, "resolvers: failed to fetch descendant topics")
+		}
+
 		mods = append(
 			mods,
-			qm.Load(
-				models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", viewer.ID), qm.Limit(1),
-			),
+			qm.InnerJoin("link_topics lt on lt.child_id = links.id"),
+			qm.WhereIn("lt.parent_id in ?", topicIds...),
+		)
+	} else {
+		mods = append(
+			mods,
+			qm.InnerJoin("link_topics lt on lt.child_id = links.id"),
+			qm.Where("lt.parent_id = ?", topic.ID),
 		)
 	}
 
-	if searchString != nil && *searchString != "" {
-		q := query(*searchString)
-		array := q.wildcardStringArray()
-		mods = append(mods,
-			qm.Where("links.title ~~* all(?) or links.url ~~* all(?)", array, array),
-		)
-	}
+	mods = append(
+		mods,
+		qm.GroupBy("links.id"),
+		qm.OrderBy("links.created_at desc"),
+	)
 
-	rows, err := topic.ChildLinks(mods...).All(ctx, r.DB)
+	rows, err := models.Links(mods...).All(ctx, r.DB)
 	return linkConnection(topic.View, rows, len(rows), err)
 }
 

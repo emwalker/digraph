@@ -19,7 +19,7 @@ type WrapperProps = {|
 |}
 
 const Placeholder = () => (
-  <Container>
+  <Container topicName={null}>
     <div className="blankslate">
       <p>Searching the servers for recent activity ...</p>
     </div>

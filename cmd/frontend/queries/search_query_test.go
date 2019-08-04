@@ -1,8 +1,9 @@
-package resolvers
+package queries_test
 
 import (
 	"testing"
 
+	"github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/volatiletech/sqlboiler/types"
 )
 
@@ -41,8 +42,9 @@ func TestWildcardStringArray(t *testing.T) {
 
 	for _, td := range testData {
 		t.Run(td.name, func(t *testing.T) {
-			q := query(td.input)
-			actual, ok := q.wildcardStringArray().(*types.StringArray)
+			q := queries.NewSearchQuery(td.input)
+
+			actual, ok := q.WildcardStringArray().(*types.StringArray)
 			if !ok {
 				t.Fatalf("Expected a StringArray, got: %#v", actual)
 			}

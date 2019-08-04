@@ -11,8 +11,8 @@ type Props = {|
 |}
 
 const NoRecentActivity = () => (
-  <Container>
-    <div className="blankslate">
+  <Container topicName={null}>
+    <div className="blankslate" topicName={null}>
       <p>No recent activity.</p>
     </div>
   </Container>
@@ -24,7 +24,7 @@ const LineItems = ({ topic }: Props) => {
   if (!edges) return <NoRecentActivity topic={topic} />
 
   return (
-    <Container topic={topic}>
+    <Container topicName={topic.displayName}>
       { edges.map(e => e && e.node && (
         <LineItem key={e.node.createdAt} item={e.node} />
       )) }
@@ -35,7 +35,7 @@ const LineItems = ({ topic }: Props) => {
 export default createFragmentContainer(LineItems, {
   topic: graphql`
     fragment LineItems_topic on Topic {
-      ...Container_topic
+      displayName
 
       activity(first: 50) {
         edges {

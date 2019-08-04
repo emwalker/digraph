@@ -67,6 +67,25 @@ exports[`<TopicPage /> renders 1`] = `
               Recent activity
             </Link>
           </li>
+          <li
+            className="Box-row"
+          >
+            <Link
+              className="Box-row-link"
+              to={
+                Object {
+                  "pathname": "undefined/review",
+                  "state": Object {
+                    "itemTitle": "Frotz",
+                    "orgLogin": undefined,
+                    "repoName": "Private collection",
+                  },
+                }
+              }
+            >
+              Links to review
+            </Link>
+          </li>
         </ul>
       </div>
       <ForwardRef(Relay(AddForm))

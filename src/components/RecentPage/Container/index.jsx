@@ -1,19 +1,16 @@
 // @flow
 import React, { Component } from 'react'
 import type { Node } from 'react'
-import { createFragmentContainer, graphql } from 'react-relay'
-
-import type { LineItems_topic as Topic } from './__generated__/Container_topic.graphql'
 
 type Props = {|
   children: Node | string,
-  topic: Topic,
+  topicName: ?string,
 |}
 
 class Container extends Component<Props> {
   get title(): string {
-    return this.props.topic
-      ? `Recent activity within ${this.props.topic.displayName}`
+    return this.props.topicName
+      ? `Recent activity within ${this.props.topicName}`
       : 'Recent activity'
   }
 
@@ -36,10 +33,4 @@ class Container extends Component<Props> {
   )
 }
 
-export default createFragmentContainer(Container, {
-  topic: graphql`
-    fragment Container_topic on Topic {
-      displayName
-    }
-  `,
-})
+export default Container

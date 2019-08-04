@@ -105,6 +105,12 @@ export const createRouteConfig = (store) => {
               query={recentPageQuery}
               render={withErrorBoundary(RecentPage)}
             />
+            <Route
+              path="review"
+              prepareVariables={prepareVariables}
+              query={reviewPageQuery}
+              render={withErrorBoundary(ReviewPage)}
+            />
           </Route>
         </Route>
       </Route>

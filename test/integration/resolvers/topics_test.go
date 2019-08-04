@@ -428,7 +428,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 		},
 		{
 			Name:         "When there is no match",
-			SearchString: "astronomy",
+			SearchString: "astrogomy",
 			Count:        0,
 		},
 		{
@@ -442,7 +442,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			conn, err := topicResolver.Links(m.ctx, topic, &td.SearchString, nil, nil, nil, nil)
+			conn, err := topicResolver.Links(m.ctx, topic, nil, nil, nil, nil, &td.SearchString, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -943,7 +943,7 @@ func TestGuestViewTopic(t *testing.T) {
 	resolver := resolvers.New(testDB, rootResolver.Fetcher, rootResolver.RD).Topic()
 
 	searchString := "topic"
-	conn, err := resolver.Links(ctx, topic, &searchString, nil, nil, nil, nil)
+	conn, err := resolver.Links(ctx, topic, nil, nil, nil, nil, &searchString, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1060,7 +1060,7 @@ func TestGuestTopicQuery(t *testing.T) {
 	rc := resolvers.NewRequestContext(resolvers.GuestViewer)
 	ctx = resolvers.WithRequestContext(ctx, rc)
 
-	conn, err := resolver.Links(ctx, topic, nil, nil, nil, nil, nil)
+	conn, err := resolver.Links(ctx, topic, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

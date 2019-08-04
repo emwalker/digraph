@@ -332,7 +332,7 @@ func TestTotalCount(t *testing.T) {
 	query := rootResolver.Topic()
 
 	first := 100
-	connection, err := query.Links(m.ctx, topic, nil, &first, nil, nil, nil)
+	connection, err := query.Links(m.ctx, topic, &first, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

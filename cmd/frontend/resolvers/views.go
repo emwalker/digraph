@@ -7,11 +7,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
 	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries"
+	squeries "github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -58,8 +59,8 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 	}
 
 	if searchString != nil {
-		q := query(*searchString)
-		mods = append(mods, qm.Where("topics.name ~~* all(?)", q.wildcardStringArray()))
+		q := queries.NewSearchQuery(*searchString)
+		mods = append(mods, qm.Where("topics.name ~~* all(?)", q.WildcardStringArray()))
 	}
 
 	return mods
@@ -148,40 +149,14 @@ func (r *viewResolver) Links(
 ) (*models.LinkConnection, error) {
 	viewer := GetRequestContext(ctx).Viewer()
 
-	mods := view.Filter([]qm.QueryMod{
-		qm.InnerJoin("repositories r on links.repository_id = r.id"),
-	})
-
-	if searchString != nil && *searchString != "" {
-		q := query(*searchString)
-		mods = append(mods, qm.Where("title ~~* all(?)", q.wildcardStringArray()))
-	}
-
-	if reviewed != nil {
-		mods = append(
-			mods,
-			qm.Load(models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", viewer.ID), qm.Limit(1)),
-			qm.InnerJoin("user_link_reviews ulr on links.id = ulr.link_id"),
-			qm.Where("ulr.user_id = ?", viewer.ID),
-		)
-
-		if *reviewed {
-			mods = append(mods, qm.Where("ulr.reviewed_at is not null"))
-		} else {
-			mods = append(mods, qm.Where("ulr.reviewed_at is null"))
-		}
-	}
+	mods := queries.NewLinkQuery(view, viewer, searchString, first, reviewed).Mods()
 
 	totalCount, err := models.Links(mods...).Count(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}
 
-	mods = append(
-		mods,
-		qm.OrderBy("links.created_at desc"),
-		qm.Limit(pageSizeOrDefault(first)),
-	)
+	mods = append(mods, qm.OrderBy("links.created_at desc"))
 
 	rows, err := models.Links(mods...).All(ctx, r.DB)
 	return linkConnection(view, rows, int(totalCount), err)
@@ -237,7 +212,7 @@ func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*stri
 	}{}
 
 	// TODO - search within the repositories specified in view.RepositoryIds
-	err = queries.Raw(`
+	err = squeries.Raw(`
 	select jsonb_build_object('links', (
 	  select jsonb_agg(a) from (
 	    select tt.parent_id source, tt.child_id target, count(distinct lt.child_id) "linkCount"

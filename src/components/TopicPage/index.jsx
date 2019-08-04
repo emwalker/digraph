@@ -81,6 +81,17 @@ class TopicPage extends Component<Props, State> {
     }
   }
 
+  get linksToReviewLocation(): Object {
+    return {
+      pathname: `${this.props.topic.resourcePath}/review`,
+      state: {
+        orgLogin: this.props.orgLogin,
+        repoName: this.repoName,
+        itemTitle: this.props.topic.displayName,
+      },
+    }
+  }
+
   renderLink = (link: LinkType) => (
     <Link
       key={link.id}
@@ -142,13 +153,18 @@ class TopicPage extends Component<Props, State> {
         <span className="Box-title">This topic</span>
       </div>
       <ul>
-        <li
-          className="Box-row"
-        >
+        <li className="Box-row">
           <FoundLink to={this.recentActivityLocation} className="Box-row-link">
             Recent activity
           </FoundLink>
         </li>
+        {!this.isGuest && (
+          <li className="Box-row">
+            <FoundLink to={this.linksToReviewLocation} className="Box-row-link">
+              Links to review
+            </FoundLink>
+          </li>
+        )}
       </ul>
     </div>
   )
