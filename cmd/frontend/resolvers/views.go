@@ -7,7 +7,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
 	"github.com/go-redis/redis"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -61,6 +63,51 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 	}
 
 	return mods
+}
+
+// Activity returns a feed of actions that have recently been taken.
+func (r *viewResolver) Activity(
+	ctx context.Context, view *models.View, first *int, after *string, last *int, before *string,
+) (*models.ActivityLineItemConnection, error) {
+	mods := view.Filter([]qm.QueryMod{
+		qm.OrderBy("created_at desc"),
+		qm.Load("UserLinkTopics"),
+		qm.Load("UserLinkTopics.Topic"),
+		qm.Load("Link"),
+		qm.Load("User"),
+		qm.Limit(pageSizeOrDefault(first)),
+		qm.InnerJoin("repositories r on user_links.repository_id = r.id"),
+	})
+
+	userLinks, err := models.UserLinks(mods...).All(ctx, r.DB)
+	if err != nil {
+		return nil, errors.Wrap(err, "resolvers.Activity")
+	}
+
+	logData := make([]activity.UpsertLink, len(userLinks))
+
+	for i, userLink := range userLinks {
+		topics := make([]activity.Topic, len(userLink.R.UserLinkTopics))
+
+		for j, linkTopic := range userLink.R.UserLinkTopics {
+			topic := linkTopic.R.Topic
+			topics[j] = activity.Topic{topic.Name, topic.ID}
+		}
+
+		logData[i] = activity.UpsertLink{
+			CreatedAt: userLink.CreatedAt,
+			User:      activity.User{userLink.R.User.DisplayName()},
+			Link:      activity.Link{userLink.R.Link.Title, userLink.R.Link.URL},
+			Topics:    topics,
+		}
+	}
+
+	edges, err := activity.MakeEdges(logData)
+	if err != nil {
+		return nil, errors.Wrap(err, "resolvers.Activity")
+	}
+
+	return &models.ActivityLineItemConnection{Edges: edges}, nil
 }
 
 // DefaultOrganization returns the main repository that people are directed to.

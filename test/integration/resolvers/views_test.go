@@ -3,6 +3,7 @@ package resolvers_test
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
@@ -341,6 +342,62 @@ func TestLinkCount(t *testing.T) {
 
 	if count < 1 {
 		t.Fatal("Expected at least one link")
+	}
+}
+
+func TestViewActivity(t *testing.T) {
+	m := newMutator(t, testViewer)
+	ctx := context.Background()
+	r := rootResolver.View()
+	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+
+	_, cleanup := m.createLink(testViewer.Login, m.defaultRepo().Name, "New York Times", "https://www.nytimes.com")
+	defer cleanup()
+
+	connection, err := r.Activity(ctx, view, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(connection.Edges) < 1 {
+		t.Fatal("Expected at least one activity line item")
+	}
+}
+
+func TestViewActivityVisibility(t *testing.T) {
+	ctx := context.Background()
+	c := services.New(testDB, testViewer, testFetcher)
+
+	result, err := c.CreateUser(
+		ctx, "Frotz", "frotz@frotz.com", "frotz", "http://some-long-url",
+	)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Cleanup()
+
+	user2 := result.User
+	m2 := newMutator(t, user2)
+
+	linkTitle := "4b517480670"
+	link, cleanup := m2.createLink(user2.Login, m2.defaultRepo().Name, linkTitle, "https://www.4b517480670.com")
+	defer cleanup()
+
+	m := newMutator(t, testViewer)
+	r := rootResolver.View()
+	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+
+	connection, err := r.Activity(ctx, view, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, edge := range connection.Edges {
+		node := edge.Node
+		if strings.Contains(node.Description, linkTitle) {
+			t.Fatalf("Activity feed contains a link submitted to a private repo: %v", link.URL)
+		}
 	}
 }
 

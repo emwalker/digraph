@@ -427,6 +427,12 @@ type UpsertTopicPayload implements Alertable {
 }
 
 type View {
+  activity(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): ActivityLineItemConnection!
   defaultOrganization: Organization!
   link(id: ID!): Link
   linkCount: Int!
