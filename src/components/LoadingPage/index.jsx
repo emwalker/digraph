@@ -53,6 +53,7 @@ const LoadingPage = ({ location }: Props) => {
             <SidebarList
               title="Parent topics"
               orgLogin={orgLogin}
+              placeholder="There are no parent topics for this topic."
               repoName={repoName}
               items={[]}
             />

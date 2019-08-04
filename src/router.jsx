@@ -88,14 +88,24 @@ export const createRouteConfig = (store) => {
         <Route path="topics">
           <Route
             path=":topicId"
-            render={renderTopicPage}
-            prepareVariables={prepareVariables}
-            getQuery={({ location }) => (
-              location.query.q
-                ? topicSearchPageQuery
-                : topicPageQuery
-            )}
-          />
+          >
+            <Route
+              path=""
+              render={renderTopicPage}
+              prepareVariables={prepareVariables}
+              getQuery={({ location }) => (
+                location.query.q
+                  ? topicSearchPageQuery
+                  : topicPageQuery
+              )}
+            />
+            <Route
+              path="recent"
+              prepareVariables={prepareVariables}
+              query={recentPageQuery}
+              render={withErrorBoundary(RecentPage)}
+            />
+          </Route>
         </Route>
       </Route>
     </Route>,

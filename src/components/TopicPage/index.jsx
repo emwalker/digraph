@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 import classNames from 'classnames'
+import { Link as FoundLink } from 'found'
 
 import { liftNodes } from 'utils'
 import type { LinkType, Relay } from 'components/types'
@@ -64,6 +65,22 @@ class TopicPage extends Component<Props, State> {
     return this.props.view.viewer.isGuest
   }
 
+  get repoName(): string {
+    const { currentRepository } = this.props.view
+    return currentRepository ? currentRepository.displayName : 'No name'
+  }
+
+  get recentActivityLocation(): Object {
+    return {
+      pathname: `${this.props.topic.resourcePath}/recent`,
+      state: {
+        orgLogin: this.props.orgLogin,
+        repoName: this.repoName,
+        itemTitle: this.props.topic.displayName,
+      },
+    }
+  }
+
   renderLink = (link: LinkType) => (
     <Link
       key={link.id}
@@ -119,6 +136,23 @@ class TopicPage extends Component<Props, State> {
     </div>
   )
 
+  renderTopicViews = () => (
+    <div className="Box Box--condensed mb-3">
+      <div className="Box-header">
+        <span className="Box-title">This topic</span>
+      </div>
+      <ul>
+        <li
+          className="Box-row"
+        >
+          <FoundLink to={this.recentActivityLocation} className="Box-row-link">
+            Recent activity
+          </FoundLink>
+        </li>
+      </ul>
+    </div>
+  )
+
   render = () => {
     const { location, topic, view } = this.props
 
@@ -132,7 +166,7 @@ class TopicPage extends Component<Props, State> {
     }
 
     const { displayName, parentTopics, resourcePath } = topic
-    const { topics, links } = this
+    const { topics, links, repoName } = this
     const { currentRepository } = view
 
     return (
@@ -153,11 +187,13 @@ class TopicPage extends Component<Props, State> {
         <Columns>
           <RightColumn>
             <SidebarList
-              title="Parent topics"
-              orgLogin={this.props.orgLogin}
-              repoName={currentRepository ? currentRepository.displayName : 'No name'}
               items={liftNodes(parentTopics)}
+              orgLogin={this.props.orgLogin}
+              placeholder="There are no parent topics for this topic."
+              repoName={repoName}
+              title="Parent topics"
             />
+            { this.renderTopicViews() }
             { this.isGuest
               ? this.renderNotification()
               : this.renderAddForm()

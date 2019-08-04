@@ -16,38 +16,42 @@ type Props = {
 }
 
 const Homepage = ({ view, router }: Props) => (
-  <DocumentTitle title="Digraph">
-    <div
-      className={classNames(styles.container, 'px-3 px-md-6 px-lg-0')}
-    >
-      <h2 className="mb-2">
-        Digraph
-      </h2>
+  view.topic && (
+    <DocumentTitle title="Digraph">
+      <div
+        className={classNames(styles.container, 'px-3 px-md-6 px-lg-0')}
+      >
+        <h2 className="mb-2">
+          Digraph
+        </h2>
 
-      <ul className={classNames(styles.list, 'ml-4 f4')}>
-        <li>Save links in a mind map–like network of topics.</li>
-        <li>Keep track of everything you&apos;ve read or might want to read in the future.</li>
-        <li>
-          Gain control over your reading and turn the flood of information into knowledge.
-        </li>
-      </ul>
+        <ul className={classNames(styles.list, 'ml-4 f4')}>
+          <li>Save links in a mind map–like network of topics.</li>
+          <li>Keep track of everything you&apos;ve read or might want to read in the future.</li>
+          <li>
+            Gain control over your reading and turn the flood of information into knowledge.
+          </li>
+        </ul>
 
-      <h4>Recent updates</h4>
-      <div className="f4">
-        {view.activity.edges.map(({ node }) => <LineItem key={node.description} item={node} />)}
+        <h4>Recent updates</h4>
+        <div className="f4">
+          {view.topic.activity.edges.map(({ node }) => (
+            <LineItem key={node.description} item={node} />
+          ))}
 
-        <div>
-          There are currently
-          {` ${view.linkCount.toLocaleString()} `}
-          links and
-          {` ${view.topicCount.toLocaleString()} `}
-          topics.
+          <div>
+            There are currently
+            {` ${view.linkCount.toLocaleString()} `}
+            links and
+            {` ${view.topicCount.toLocaleString()} `}
+            topics.
+          </div>
         </div>
-      </div>
 
-      <SearchBox className={styles.search} router={router} />
-    </div>
-  </DocumentTitle>
+        <SearchBox className={styles.search} router={router} />
+      </div>
+    </DocumentTitle>
+  )
 )
 
 export const query = graphql`
@@ -56,6 +60,7 @@ query Homepage_homepage_Query(
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
+  $topicId: ID!,
 ) {
   view(
     viewerId: $viewerId,
@@ -66,11 +71,13 @@ query Homepage_homepage_Query(
     linkCount
     topicCount
 
-    activity(first: 3) {
-      edges {
-        node {
-          description
-          ...LineItem_item
+    topic(id: $topicId) {
+      activity(first: 3) {
+        edges {
+          node {
+            description
+            ...LineItem_item
+          }
         }
       }
     }

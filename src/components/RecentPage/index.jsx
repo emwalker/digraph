@@ -30,9 +30,9 @@ export default ({ props }: WrapperProps) => (
   <DocumentTitle title="Recent activity | Digraph">
     {
       // eslint-disable-next-line react/prop-types
-      props && props.view
+      props && props.view && props.view.topic
         // eslint-disable-next-line react/prop-types
-        ? <LineItems view={props.view} />
+        ? <LineItems topic={props.view.topic} />
         : <Placeholder />
     }
   </DocumentTitle>
@@ -44,6 +44,7 @@ query RecentPage_recent_Query(
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
+  $topicId: ID!,
 ) {
   view(
     viewerId: $viewerId,
@@ -51,6 +52,8 @@ query RecentPage_recent_Query(
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
-    ...LineItems_view
+    topic(id: $topicId) {
+      ...LineItems_topic
+    }
   }
 }`

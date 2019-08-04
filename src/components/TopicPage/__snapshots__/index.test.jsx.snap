@@ -31,9 +31,44 @@ exports[`<TopicPage /> renders 1`] = `
     <RightColumn>
       <_default
         items={Array []}
+        placeholder="There are no parent topics for this topic."
         repoName="Private collection"
         title="Parent topics"
       />
+      <div
+        className="Box Box--condensed mb-3"
+      >
+        <div
+          className="Box-header"
+        >
+          <span
+            className="Box-title"
+          >
+            This topic
+          </span>
+        </div>
+        <ul>
+          <li
+            className="Box-row"
+          >
+            <Link
+              className="Box-row-link"
+              to={
+                Object {
+                  "pathname": "undefined/recent",
+                  "state": Object {
+                    "itemTitle": "Frotz",
+                    "orgLogin": undefined,
+                    "repoName": "Private collection",
+                  },
+                }
+              }
+            >
+              Recent activity
+            </Link>
+          </li>
+        </ul>
+      </div>
       <ForwardRef(Relay(AddForm))
         topic={
           Object {

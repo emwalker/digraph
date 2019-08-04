@@ -94,6 +94,7 @@ class TopicSearchPage extends Component<Props> {
             <SidebarList
               items={liftNodes(parentTopics)}
               orgLogin={this.props.orgLogin}
+              placeholder="There are no parent topics for this topic."
               repoName={repo ? repo.displayName : 'No repo'}
               title="Parent topics"
             />

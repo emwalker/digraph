@@ -3,6 +3,7 @@ package resolvers_test
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
@@ -1066,5 +1067,77 @@ func TestGuestTopicQuery(t *testing.T) {
 
 	if len(conn.Edges) < 1 {
 		t.Fatal("Expected at least one topic")
+	}
+}
+
+func TestActivity(t *testing.T) {
+	m := newMutator(t, testViewer)
+	repo := m.defaultRepo()
+	resolver := rootResolver.Topic()
+
+	topic, cleanup := m.createTopic(testViewer.Login, repo.Name, "Gnusto")
+	defer cleanup()
+
+	c := services.New(testDB, testViewer, testFetcher)
+
+	title := "New York Times"
+	result, err := c.UpsertLink(m.ctx, repo, "https://www.nytimes.com", &title, []string{topic.ID})
+	defer result.Cleanup()
+
+	connection, err := resolver.Activity(m.ctx, topic, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(connection.Edges) < 1 {
+		t.Fatal("Expected at least one activity line item")
+	}
+}
+
+func TestActivityVisibility(t *testing.T) {
+	ctx := context.Background()
+	c := services.New(testDB, testViewer, testFetcher)
+
+	result, err := c.CreateUser(
+		ctx, "Frotz", "frotz@frotz.com", "frotz", "http://some-long-url",
+	)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Cleanup()
+
+	user2 := result.User
+	m2 := newMutator(t, user2)
+	repoName := m2.defaultRepo().Name
+
+	topic, cleanup := m2.createTopic(user2.Login, repoName, "Gnusto")
+	defer cleanup()
+
+	linkTitle := "4b517480670"
+	link, cleanup := m2.createLink(user2.Login, repoName, linkTitle, "https://www.4b517480670.com")
+	defer cleanup()
+
+	m2.addParentTopicToLink(link, topic)
+
+	resolver := rootResolver.Topic()
+
+	m := newMutator(t, testViewer)
+
+	var root *models.TopicValue
+	if root, err = m.defaultRepo().RootTopic(ctx, testDB, testViewer.DefaultView()); err != nil {
+		t.Fatal(err)
+	}
+
+	connection, err := resolver.Activity(ctx, root, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, edge := range connection.Edges {
+		node := edge.Node
+		if strings.Contains(node.Description, linkTitle) {
+			t.Fatalf("Activity feed contains a link submitted to a private repo: %v", link.URL)
+		}
 	}
 }

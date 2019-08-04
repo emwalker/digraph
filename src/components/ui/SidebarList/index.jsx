@@ -5,9 +5,9 @@ import { Link } from 'found'
 
 import BlankslateUI from '../Blankslate'
 
-const Blankslate = () => (
+const Blankslate = ({ placeholder }: { placeholder: string }) => (
   <BlankslateUI>
-    <p>There are no parent topics for this topic.</p>
+    <p>{ placeholder }</p>
   </BlankslateUI>
 )
 
@@ -56,17 +56,18 @@ const ItemList = ({ items, orgLogin, repoName }: ItemListProps) => {
 type Props = {
   items: ItemType[],
   orgLogin: string,
+  placeholder: string,
   repoName: string,
   title: string,
 }
 
-export default ({ items, orgLogin, repoName, title }: Props) => (
-  <div className="Box Box--condensed">
+export default ({ items, orgLogin, placeholder, repoName, title }: Props) => (
+  <div className="Box Box--condensed mb-3">
     <div className="Box-header">
       <span className="Box-title">{title}</span>
     </div>
     { isEmpty(items)
-      ? <Blankslate />
+      ? <Blankslate placeholder={placeholder} />
       : <ItemList items={items} orgLogin={orgLogin} repoName={repoName} />
     }
   </div>

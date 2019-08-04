@@ -28,6 +28,7 @@ exports[`<TopicPage /> renders 1`] = `
     <RightColumn>
       <_default
         items={Array []}
+        placeholder="There are no parent topics for this topic."
         repoName="Private collection"
         title="Parent topics"
       />
