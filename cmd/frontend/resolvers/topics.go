@@ -403,6 +403,8 @@ func (r *topicResolver) Links(
 			return nil, perrors.Wrap(err, "resolvers: failed to fetch descendant topics")
 		}
 
+		topicIds = append(topicIds, topic.ID)
+
 		mods = append(
 			mods,
 			qm.InnerJoin("link_topics lt on lt.child_id = links.id"),
