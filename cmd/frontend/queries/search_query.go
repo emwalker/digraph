@@ -2,9 +2,14 @@ package queries
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/volatiletech/sqlboiler/types"
+)
+
+var (
+	stringDelim = "e390c488d729"
 )
 
 // Query encapsulates a search query.
@@ -25,14 +30,23 @@ func (q Query) WildcardStringArray() interface{} {
 	return types.Array(tokens)
 }
 
-// WildcardStringQuery returns a set of wildcard tokens that can be used in a Postgres full text
+// PostgresTsQueryInput returns a set of wildcard tokens that can be used in a Postgres full text
 // search.
-func (q Query) WildcardStringQuery() interface{} {
+func (q Query) PostgresTsQueryInput() interface{} {
 	var tokens []string
-	for _, s := range strings.Split(string(q), " ") {
-		if s != "" {
-			tokens = append(tokens, fmt.Sprintf("%s:*", s))
+
+	for _, token := range strings.Split(string(q), " ") {
+		if token != "" {
+			if strings.Contains(stringDelim, token) {
+				log.Printf("Skipping token containing string delimiter: %s", token)
+			} else {
+				newToken := fmt.Sprintf("quote_literal($%s$%s$%s$) || ':*'", stringDelim, token, stringDelim)
+				tokens = append(tokens, newToken)
+			}
 		}
 	}
-	return strings.Join(tokens, " & ")
+	if len(tokens) < 1 {
+		return "''"
+	}
+	return strings.Join(tokens, " || ' & ' || ")
 }

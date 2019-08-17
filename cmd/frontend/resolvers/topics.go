@@ -106,9 +106,10 @@ func availableTopics(
 
 	if searchString != nil {
 		q := queries.NewSearchQuery(*searchString)
-		mods = append(mods,
-			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", q.WildcardStringArray()),
+		whereClause := fmt.Sprintf(
+			"to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(%s)", q.PostgresTsQueryInput(),
 		)
+		mods = append(mods, qm.Where(whereClause))
 	}
 
 	if len(excludeTopicIds) > 0 {
@@ -135,7 +136,7 @@ func (r *topicResolver) matchingDescendantTopicIds(
 	log.Printf("Looking for topics under %s with query: %s", topic.Summary(), searchString)
 	q := queries.NewSearchQuery(searchString)
 
-	err := squeries.Raw(`
+	sql := fmt.Sprintf(`
 	with recursive child_topics as (
 		select parent_id, parent_id as child_id
 		from topic_topics where parent_id = $1
@@ -150,13 +151,16 @@ func (r *topicResolver) matchingDescendantTopicIds(
 	where (
 		case $2
 		when '' then true
-		else to_tsvector('synonymsdict', t.synonyms) @@ to_tsquery('synonymsdict', $2)
+		else to_tsvector('synonymsdict', t.synonyms) @@ to_tsquery('synonymsdict', %s)
 		end
 	)
 	limit $3
-	`, topic.ID, q.WildcardStringQuery(), limit).Bind(ctx, r.DB, &rows)
+	`, q.PostgresTsQueryInput())
+
+	err := squeries.Raw(sql, topic.ID, searchString, limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
+		log.Printf("There was a problem with this sql: %s", sql)
 		return nil, perrors.Wrap(err, "resolvers: failed to fetch descendant topics")
 	}
 
@@ -210,7 +214,7 @@ func (r *topicResolver) matchingDescendantLinks(
 	log.Printf("Searching for descendant links that match query: %s", searchString)
 	q := queries.NewSearchQuery(searchString)
 
-	err := squeries.Raw(`
+	sql := fmt.Sprintf(`
 	with recursive child_topics as (
 		select parent_id, parent_id as child_id
 		from topic_topics where parent_id = $1
@@ -226,16 +230,19 @@ func (r *topicResolver) matchingDescendantLinks(
 		case $2
 		when '' then true
 		else (
-			to_tsvector('linksdict', l.title) @@ to_tsquery('linksdict', $2)
+			to_tsvector('linksdict', l.title) @@ to_tsquery('linksdict', %s)
 			or l.url ~~* all($3)
 		)
 		end
 	)
 	limit $4
-	`, topic.ID, q.WildcardStringQuery(), q.WildcardStringArray(), limit).Bind(ctx, r.DB, &rows)
+	`, q.PostgresTsQueryInput())
+
+	err := squeries.Raw(sql, topic.ID, searchString, q.WildcardStringArray(), limit).Bind(ctx, r.DB, &rows)
 
 	if err != nil {
-		return nil, err
+		log.Printf("There was a problem with this sql: %s", sql)
+		return nil, perrors.Wrap(err, "resolvers: failed to fetch descendant links")
 	}
 
 	if len(rows) < 1 {
@@ -273,7 +280,7 @@ func (r *topicResolver) Activity(
 	topicIds, err := r.matchingDescendantTopicIds(ctx, topic, "", 1000000)
 
 	if err != nil {
-		return nil, perrors.Wrap(err, "resolvers: failed to fetch descendant topics")
+		return nil, err
 	}
 
 	topicIds = append(topicIds, topic.ID)
@@ -344,10 +351,10 @@ func (r *topicResolver) ChildTopics(
 
 	if searchString != nil && *searchString != "" {
 		q := queries.NewSearchQuery(*searchString)
-		mods = append(
-			mods,
-			qm.Where("to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(?)", q.WildcardStringQuery()),
+		whereClause := fmt.Sprintf(
+			"to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(%s)", q.PostgresTsQueryInput(),
 		)
+		mods = append(mods, qm.Where(whereClause))
 	}
 
 	topics, err := topic.ChildTopics(mods...).All(ctx, r.DB)
