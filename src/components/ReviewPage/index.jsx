@@ -104,7 +104,7 @@ const Wrapper = createFragmentContainer(ReviewPage, {
       topic(id: $topicId) {
         displayName
 
-        links(first: 1000, reviewed: false, descendants: true) {
+        links(first: 100, reviewed: false, descendants: true) {
           totalCount
 
           edges {
