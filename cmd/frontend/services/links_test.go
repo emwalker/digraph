@@ -162,6 +162,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.newyorker.com/news/our-columnists/there-is-nothing-strategic-about-trumps-racism?utm_social-type=owned&utm_medium=social&mbid=social_twitter&utm_brand=tny&utm_source=twitter",
 			canonicalURL: "https://www.newyorker.com/news/our-columnists/there-is-nothing-strategic-about-trumps-racism",
 		},
+		{
+			name:         "A SourceWatch article",
+			inputURL:     "https://www.sourcewatch.org/index.php/American_Future_Fund#cite_ref-nyt_4-0",
+			canonicalURL: "https://www.sourcewatch.org/index.php/American_Future_Fund",
+		},
 	}
 
 	for _, testCase := range testCases {
