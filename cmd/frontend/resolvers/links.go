@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/queries"
 	perrors "github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -127,7 +128,7 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 		log.Printf("Fetching reviewedAt for link %s", link.Summary())
 		review, err = link.UserLinkReviews(qm.Where("user_id = ?", viewer.ID)).One(ctx, r.DB)
 		if err != nil {
-			if err.Error() == "sql: no rows in result set" {
+			if err.Error() == queries.ErrSQLNoRows {
 				return nil, nil
 			}
 			return nil, err

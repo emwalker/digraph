@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/emwalker/digraph/cmd/frontend/util"
 	perrors "github.com/pkg/errors"
@@ -368,18 +370,13 @@ func (r *MutationResolver) UpdateTopic(
 
 	c := services.New(r.DB, actor, nil)
 
-	topic, err := models.Topics(
-		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
-		qm.InnerJoin("organization_members om on r.organization_id = om.organization_id"),
-		qm.Where("topics.id = ? and om.user_id = ?", input.ID, actor.ID),
-	).One(ctx, r.DB)
-
+	topic, err := models.Topics(queries.Topic(actor.ID, input.ID)...).One(ctx, r.DB)
 	if err != nil {
 		log.Printf("No topic %s is visible to %s", input.ID, actor.Summary())
 		return nil, err
 	}
-	log.Printf("%s attempting to update %s", actor.Summary(), topic.Summary())
 
+	log.Printf("%s attempting to update %s", actor.Summary(), topic.Summary())
 	result, err := c.UpdateTopic(ctx, topic, input.Name, input.Description)
 	if err != nil {
 		log.Printf("There was a problem updating %s", topic.Summary())
@@ -485,5 +482,37 @@ func (r *MutationResolver) UpsertLink(
 		LinkEdge: &models.LinkEdge{
 			Node: &models.LinkValue{result.Link, result.LinkCreated, actor.DefaultView()},
 		},
+	}, nil
+}
+
+// UpsertTopicTimeline adds a timeline to a topic.
+func (r *MutationResolver) UpsertTopicTimeline(
+	ctx context.Context, input models.UpsertTopicTimelineInput,
+) (*models.UpsertTopicTimelinePayload, error) {
+	actor := GetRequestContext(ctx).Viewer()
+	c := services.Connection{Exec: r.DB, Actor: actor}
+
+	topic, err := models.Topics(queries.Topic(actor.ID, input.TopicID)...).One(ctx, r.DB)
+	if err != nil {
+		return nil, perrors.Wrap(err, "resolveres: topic not found")
+	}
+
+	startsAt, err := time.Parse(time.RFC3339, input.StartsAt)
+	if err != nil {
+		return nil, perrors.Wrap(err, "resolveres: failed to parse startsAt")
+	}
+
+	result, err := c.UpsertTopicTimeline(ctx, topic, startsAt, nil, input.PrefixFormat)
+	if err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to upsert topic timline")
+	}
+
+	timeline := &models.Timeline{
+		StartsAt:     startsAt.Format(time.RFC3339),
+		PrefixFormat: models.TimelinePrefixFormat(result.TopicTimeline.PrefixFormat),
+	}
+
+	return &models.UpsertTopicTimelinePayload{
+		TimelineEdge: &models.TimelineEdge{Node: timeline},
 	}, nil
 }

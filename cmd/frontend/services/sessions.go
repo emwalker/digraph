@@ -6,12 +6,11 @@ import (
 	"log"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
-
-const rowNotFound = "sql: no rows in result set"
 
 // CreateSessionResult holds the result of a CreateSession service call.
 type CreateSessionResult struct {
@@ -31,7 +30,7 @@ func (c Connection) CreateSession(
 	user, err := models.Users(qm.Where("primary_email = ?", primaryEmail)).One(ctx, c.Exec)
 
 	if err != nil {
-		if err.Error() != "sql: no rows in result set" {
+		if err.Error() != queries.ErrSQLNoRows {
 			log.Printf("Unable to upsert user: %s", err)
 			return nil, errors.Wrap(err, "resolvers: failed to upsert user")
 		}

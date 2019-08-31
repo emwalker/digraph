@@ -3,14 +3,18 @@ package services
 import (
 	"context"
 	"encoding/json"
+	coreerrors "errors"
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	dqueries "github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	"github.com/emwalker/digraph/cmd/frontend/text"
 	"github.com/emwalker/digraph/cmd/frontend/util"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -41,6 +45,13 @@ type UpsertTopicResult struct {
 	Topic        *models.Topic
 	TopicCreated bool
 	Cleanup      CleanupFunc
+}
+
+// UpsertTopicTimelineResult returns the result of an upsert call.
+type UpsertTopicTimelineResult struct {
+	Alerts        []*models.Alert
+	Topic         *models.Topic
+	TopicTimeline *models.TopicTimeline
 }
 
 func cycleWarning(descendant, ancestor *models.Topic) *models.Alert {
@@ -83,6 +94,40 @@ func NormalizeTopicName(name string) (string, bool) {
 	return name, true
 }
 
+// DisplayName constructs a display name from a SynonymList and a TopicTimeline.
+func DisplayName(
+	timeline *models.TopicTimeline, synonyms *models.SynonymList, locale models.LocaleIdentifier,
+) (string, error) {
+	name, ok := synonyms.NameForLocale(locale)
+	if !ok {
+		return "<name missing>", coreerrors.New("name not found")
+	}
+
+	if timeline == nil {
+		return name, nil
+	}
+
+	if !timeline.StartsAt.Valid {
+		return name, coreerrors.New("startsAt is not valid")
+	}
+
+	startsAtValue, err := timeline.StartsAt.Value()
+	if err != nil {
+		return name, errors.Wrap(err, "resolvers: failed to convert startsAt")
+	}
+
+	startsAt := startsAtValue.(time.Time)
+
+	switch models.TimelinePrefixFormat(timeline.PrefixFormat) {
+	case models.TimelinePrefixFormatStartYear:
+		return fmt.Sprintf("%s %s", startsAt.Format("2006"), name), nil
+	case models.TimelinePrefixFormatStartYearMonth:
+		return fmt.Sprintf("%s %s", startsAt.Format("2006-01"), name), nil
+	}
+
+	return name, nil
+}
+
 // UpdateSynonyms updates the synonyms of the topic.
 func (c Connection) UpdateSynonyms(
 	ctx context.Context, topic *models.Topic, synonyms []models.Synonym,
@@ -103,7 +148,17 @@ func (c Connection) UpdateSynonyms(
 		return nil, err
 	}
 
-	if _, err := topic.Update(ctx, c.Exec, boil.Whitelist("synonyms")); err != nil {
+	timeline, err := dqueries.TopicTimeline(ctx, c.Exec, topic)
+	if err != nil {
+		return nil, errors.Wrap(err, "services: failed to fetch timeline")
+	}
+
+	topic.Name, err = DisplayName(timeline, &models.SynonymList{Values: dedupedSynonyms}, models.LocaleIdentifierEn)
+	if err != nil {
+		return nil, errors.Wrap(err, "services: failed to update display name")
+	}
+
+	if _, err := topic.Update(ctx, c.Exec, boil.Whitelist("synonyms", "name")); err != nil {
 		log.Printf("Unable to update synonyms for topic %s", topic.Summary())
 		return nil, err
 	}
@@ -306,7 +361,7 @@ func (c Connection) upsertTopic(
 		qm.Where(`topics.name like ?`, topic.Name),
 	).One(ctx, c.Exec)
 
-	if err != nil && err.Error() != "sql: no rows in result set" {
+	if err != nil && err.Error() != dqueries.ErrSQLNoRows {
 		return nil, false, fmt.Errorf("upsertTopic: %s", err)
 	}
 
@@ -373,4 +428,44 @@ func (c Connection) parentTopicsToAdd(
 	}
 
 	return parents, alerts, nil
+}
+
+// UpsertTopicTimeline adds a timeline to a topic.
+func (c Connection) UpsertTopicTimeline(
+	ctx context.Context, topic *models.Topic, startsAt time.Time, endsAt *time.Time, format models.TimelinePrefixFormat,
+) (*UpsertTopicTimelineResult, error) {
+	var alerts []*models.Alert
+
+	timeline, err := topic.TopicTimelines().One(ctx, c.Exec)
+
+	if err == nil {
+		log.Printf("Timeline already exists, updating")
+		timeline.StartsAt = null.NewTime(startsAt, true)
+		timeline.PrefixFormat = string(format)
+
+		if _, err = timeline.Update(ctx, c.Exec, boil.Infer()); err != nil {
+			return nil, errors.Wrap(err, "services: failed to update existing timeline")
+		}
+	} else {
+		if err.Error() != dqueries.ErrSQLNoRows {
+			return nil, errors.Wrap(err, "services: failed to query for timeline")
+		}
+
+		log.Printf("Timeline does not yet exist, creating")
+		timeline = &models.TopicTimeline{
+			TopicID:      topic.ID,
+			StartsAt:     null.NewTime(startsAt, true),
+			PrefixFormat: string(format),
+		}
+
+		if err = timeline.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+			return nil, errors.Wrap(err, "services: failed to insert new timeline")
+		}
+	}
+
+	return &UpsertTopicTimelineResult{
+		Alerts:        alerts,
+		Topic:         topic,
+		TopicTimeline: timeline,
+	}, nil
 }

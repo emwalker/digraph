@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
@@ -169,5 +170,45 @@ func TestDeduplicationOfSynonyms(t *testing.T) {
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Expected %#v, got %#v", expected, actual)
+	}
+}
+
+func TestUpsertTopicTimeline(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	topicResult, err := c.UpsertTopic(ctx, defaultRepo, "William invades England", nil, []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer topicResult.Cleanup()
+
+	topic := topicResult.Topic
+
+	count, err := topic.TopicTimelines().Count(ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count > 0 {
+		t.Fatal("Expected no timeline")
+	}
+
+	result, err := c.UpsertTopicTimeline(ctx, topic, time.Now(), nil, models.TimelinePrefixFormatStartYear)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.TopicTimeline == nil {
+		t.Fatal("Expected a timeline to be returned")
+	}
+
+	count, err = topic.TopicTimelines().Count(ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count < 1 {
+		t.Fatal("Expected a timeline")
 	}
 }

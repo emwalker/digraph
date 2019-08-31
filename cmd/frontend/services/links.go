@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	"github.com/emwalker/digraph/cmd/frontend/text"
 	"github.com/emwalker/digraph/cmd/frontend/util"
@@ -250,7 +251,7 @@ func (c Connection) UpsertLink(
 	}
 
 	link, err := repo.Links(qm.Where("sha1 like ?", url.Sha1)).One(ctx, c.Exec)
-	if err != nil && err.Error() != "sql: no rows in result set" {
+	if err != nil && err.Error() != queries.ErrSQLNoRows {
 		log.Printf("Failed to query for existing link with sha1 %s: %s", url.Sha1, err)
 		return nil, errors.Wrap(err, "services.UpsertLink")
 	}

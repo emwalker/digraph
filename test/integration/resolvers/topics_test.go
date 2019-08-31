@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
@@ -1031,7 +1032,7 @@ func TestTopicNameFromSynonyms(t *testing.T) {
 	}
 
 	query := rootResolver.Topic()
-	name, err := query.DisplayName(ctx, topic)
+	name, err := query.DisplayName(ctx, topic, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1139,5 +1140,29 @@ func TestActivityVisibility(t *testing.T) {
 		if strings.Contains(node.Description, linkTitle) {
 			t.Fatalf("Activity feed contains a link submitted to a private repo: %v", link.URL)
 		}
+	}
+}
+
+func TestUpsertTopicTimeline(t *testing.T) {
+	m := newMutator(t, testViewer)
+	repo := m.defaultRepo()
+	resolver := rootResolver.Mutation()
+
+	topic, cleanup := m.createTopic(testViewer.Login, repo.Name, "Gnusto")
+	defer cleanup()
+
+	input := models.UpsertTopicTimelineInput{
+		TopicID:      topic.ID,
+		StartsAt:     time.Now().Format(time.RFC3339),
+		PrefixFormat: models.TimelinePrefixFormatStartYear,
+	}
+
+	payload, err := resolver.UpsertTopicTimeline(m.ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if payload.TimelineEdge == nil {
+		t.Fatal("Expected a timeline edge")
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 )
@@ -66,7 +67,7 @@ func WithViewer(
 	} else {
 		session, err := models.FindSession(ctx, exec, sessionID)
 		if err != nil {
-			if err.Error() == "sql: no rows in result set" {
+			if err.Error() == queries.ErrSQLNoRows {
 				log.Printf("Attempt to query under user %s with bad session id %s", viewerID, sessionID)
 				return GuestViewer, nil
 			}

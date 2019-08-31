@@ -141,6 +141,7 @@ type Mutation {
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
   upsertTopic(input: UpsertTopicInput!): UpsertTopicPayload
+  upsertTopicTimeline(input: UpsertTopicTimelineInput!): UpsertTopicTimelinePayload
 }
 
 interface Namespaceable {
@@ -163,6 +164,12 @@ type PageInfo {
   hasPreviousPage: Boolean!
   startCursor: String
   endCursor: String
+}
+
+enum TimelinePrefixFormat {
+  NONE
+  START_YEAR
+  START_YEAR_MONTH
 }
 
 type Query {
@@ -271,7 +278,9 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   ): TopicConnection!
   createdAt: DateTime!
   description: String
-  displayName: String!
+  displayName(
+    timeline: Boolean,
+  ): String!
   id: ID!
   links(
     first: Int,
@@ -302,14 +311,26 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     before: String
   ): SearchResultItemConnection!
   synonyms: [Synonym!]!
+  timeline: Timeline
   updatedAt: DateTime!
   viewerCanDeleteSynonyms: Boolean!
   viewerCanUpdate: Boolean!
 }
 
+type Timeline {
+  startsAt: DateTime!
+  endsAt: DateTime
+  prefixFormat: TimelinePrefixFormat!
+}
+
 type TopicEdge {
   cursor: String!
   node: Topic!
+}
+
+type TimelineEdge {
+  cursor: String!
+  node: Timeline!
 }
 
 type TopicConnection {
@@ -423,9 +444,22 @@ input UpsertTopicInput {
   topicIds: [String!]
 }
 
+input UpsertTopicTimelineInput {
+  clientMutationId: String
+  topicId: ID!
+  startsAt: DateTime!
+  endsAt: DateTime
+  prefixFormat: TimelinePrefixFormat!
+}
+
 type UpsertTopicPayload implements Alertable {
   alerts: [Alert!]!
   topicEdge: TopicEdge
+}
+
+type UpsertTopicTimelinePayload implements Alertable {
+  alerts: [Alert!]!
+  timelineEdge: TimelineEdge
 }
 
 type View {

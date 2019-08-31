@@ -23,6 +23,7 @@
     "connect-redis": "^3.4.1",
     "cookie-parser": "^1.4.4",
     "core-js": "^2.6.9",
+    "dateformat": "^3.0.3",
     "es6-promise-debounce": "^1.0.1",
     "express": "~4.17.1",
     "express-session": "^1.16.2",

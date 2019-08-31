@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -13,7 +12,8 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
-	perrors "github.com/pkg/errors"
+	"github.com/emwalker/digraph/cmd/frontend/services"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	squeries "github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -161,7 +161,7 @@ func (r *topicResolver) matchingDescendantTopicIds(
 
 	if err != nil {
 		log.Printf("There was a problem with this sql: %s", sql)
-		return nil, perrors.Wrap(err, "resolvers: failed to fetch descendant topics")
+		return nil, errors.Wrap(err, "resolvers: failed to fetch descendant topics")
 	}
 
 	for _, row := range rows {
@@ -194,7 +194,7 @@ func (r *topicResolver) matchingDescendantTopics(
 
 	topics, err := models.Topics(mods...).All(ctx, r.DB)
 	if err != nil {
-		return nil, perrors.Wrap(err, "resolvers: failed to fetch topics")
+		return nil, errors.Wrap(err, "resolvers: failed to fetch topics")
 	}
 
 	for _, t := range topics {
@@ -242,7 +242,7 @@ func (r *topicResolver) matchingDescendantLinks(
 
 	if err != nil {
 		log.Printf("There was a problem with this sql: %s", sql)
-		return nil, perrors.Wrap(err, "resolvers: failed to fetch descendant links")
+		return nil, errors.Wrap(err, "resolvers: failed to fetch descendant links")
 	}
 
 	if len(rows) < 1 {
@@ -299,7 +299,7 @@ func (r *topicResolver) Activity(
 
 	userLinks, err := models.UserLinks(mods...).All(ctx, r.DB)
 	if err != nil {
-		return nil, perrors.Wrap(err, "resolvers: failed to fetch user links")
+		return nil, errors.Wrap(err, "resolvers: failed to fetch user links")
 	}
 
 	logData := make([]activity.UpsertLink, len(userLinks))
@@ -322,7 +322,7 @@ func (r *topicResolver) Activity(
 
 	edges, err := activity.MakeEdges(logData)
 	if err != nil {
-		return nil, perrors.Wrap(err, "resolvers.Activity")
+		return nil, errors.Wrap(err, "resolvers.Activity")
 	}
 
 	return &models.ActivityLineItemConnection{Edges: edges}, nil
@@ -345,6 +345,8 @@ func (r *topicResolver) ChildTopics(
 
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
+		qm.Load("ParentTopics.TopicTimelines"),
+		qm.Load("TopicTimelines"),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.OrderBy("topics.name"),
 	})
@@ -374,18 +376,23 @@ func (r *topicResolver) Description(_ context.Context, topic *models.TopicValue)
 // DisplayName returns the name of the topic.  The name is obtained by finding the first synonym
 // in the current locale.  If there is no synonym in the current locale, the first English synonym
 // is returned.  If there is no English synonym, the first synonym is returned.
-func (r *topicResolver) DisplayName(_ context.Context, topic *models.TopicValue) (string, error) {
+func (r *topicResolver) DisplayName(
+	ctx context.Context, topic *models.TopicValue, includeTimeline *bool,
+) (string, error) {
 	synonyms, err := topic.SynonymList()
 	if err != nil {
-		return "<name missing>", perrors.Wrap(err, "resolvers: failed to fetch synonym list")
+		return "<name missing>", errors.Wrap(err, "resolvers: failed to fetch synonym list")
 	}
 
-	name, ok := synonyms.NameForLocale(models.LocaleIdentifierEn)
-	if !ok {
-		return "<name missing>", errors.New("name not found")
+	if includeTimeline != nil && *includeTimeline {
+		timeline, err := queries.TopicTimeline(ctx, r.DB, topic.Topic)
+		if err != nil {
+			return "<name missing>", errors.Wrap(err, "resolvers: failed to fetch timeline")
+		}
+		return services.DisplayName(timeline, synonyms, models.LocaleIdentifierEn)
 	}
 
-	return name, nil
+	return services.DisplayName(nil, synonyms, models.LocaleIdentifierEn)
 }
 
 func (r *topicResolver) ID(_ context.Context, topic *models.TopicValue) (string, error) {
@@ -407,7 +414,7 @@ func (r *topicResolver) Links(
 		topicIds, err := r.matchingDescendantTopicIds(ctx, topic, "", 1000000)
 
 		if err != nil {
-			return nil, perrors.Wrap(err, "resolvers: failed to fetch descendant topics")
+			return nil, errors.Wrap(err, "resolvers: failed to fetch descendant topics")
 		}
 
 		topicIds = append(topicIds, topic.ID)
@@ -541,7 +548,7 @@ func (r *topicResolver) Search(
 func (r *topicResolver) Synonyms(ctx context.Context, topic *models.TopicValue) ([]*models.Synonym, error) {
 	synonyms, err := topic.SynonymList()
 	if err != nil {
-		return nil, perrors.Wrap(err, "resolvers: failed to fetch synonym list")
+		return nil, errors.Wrap(err, "resolvers: failed to fetch synonym list")
 	}
 
 	var out []*models.Synonym
@@ -550,6 +557,24 @@ func (r *topicResolver) Synonyms(ctx context.Context, topic *models.TopicValue) 
 	}
 
 	return out, nil
+}
+
+// Timeline returns a timeline associated with the topic, if one exists.
+func (r *topicResolver) Timeline(ctx context.Context, topic *models.TopicValue) (*models.Timeline, error) {
+	timeline, err := queries.TopicTimeline(ctx, r.DB, topic.Topic)
+
+	startsAt, err := timeline.StartsAt.Value()
+	if err != nil {
+		return nil, errors.Wrap(err, "resolvers: failed to cast timestamp")
+	}
+
+	format := models.TimelinePrefixFormat(timeline.PrefixFormat)
+
+	dt := startsAt.(time.Time)
+	return &models.Timeline{
+		StartsAt:     dt.Format(time.RFC3339),
+		PrefixFormat: format,
+	}, nil
 }
 
 // UpdatedAt returns the time of the most recent update.
