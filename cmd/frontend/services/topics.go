@@ -147,7 +147,7 @@ func (c Connection) DeleteTopicTimeRange(
 		}
 	}
 
-	if err = c.updateTopicName(ctx, topic, timerange); err != nil {
+	if err = c.updateTopicName(ctx, topic, nil); err != nil {
 		return nil, errors.Wrap(err, "services: failed to update topic name")
 	}
 

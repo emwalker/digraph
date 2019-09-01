@@ -37,12 +37,7 @@ func (b ByName) Swap(i, j int) {
 }
 
 func (b ByName) Less(i, j int) bool {
-	ilist, _ := b.topics[i].SynonymList()
-	jlist, _ := b.topics[j].SynonymList()
-
-	iname, _ := ilist.NameForLocale(b.locale)
-	jname, _ := jlist.NameForLocale(b.locale)
-	return iname < jname
+	return b.topics[i].Name < b.topics[j].Name
 }
 
 func getTopicLoader(ctx context.Context) *loaders.TopicLoader {
