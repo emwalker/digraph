@@ -21,6 +21,13 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// DeleteTopicTimeRangeResult holds the result of an attempt to delete the time range on a topic.
+type DeleteTopicTimeRangeResult struct {
+	Alerts             []*models.Alert
+	Topic              *models.Topic
+	DeletedTimeRangeID *string
+}
+
 // UpdateSynonymsResult holds the result after updating the synonyms on a topic.
 type UpdateSynonymsResult struct {
 	Alerts []*models.Alert
@@ -121,6 +128,37 @@ func DisplayName(
 	}
 
 	return name, nil
+}
+
+// DeleteTopicTimeRange removes a time range from a topic.
+func (c Connection) DeleteTopicTimeRange(
+	ctx context.Context, topic *models.Topic,
+) (*DeleteTopicTimeRangeResult, error) {
+	timerange, err := dqueries.TopicTimeRange(ctx, c.Exec, topic)
+	if err != nil && err.Error() != dqueries.ErrSQLNoRows {
+		return nil, errors.Wrap(err, "services: failed to fetch time range")
+	}
+
+	var timerangeID *string
+	if timerange != nil {
+		timerangeID = &timerange.ID
+		if _, err = timerange.Delete(ctx, c.Exec); err != nil {
+			return nil, errors.Wrap(err, "services: failed to delete time range")
+		}
+	}
+
+	if err = c.updateTopicName(ctx, topic, timerange); err != nil {
+		return nil, errors.Wrap(err, "services: failed to update topic name")
+	}
+
+	if err = topic.Reload(ctx, c.Exec); err != nil {
+		return nil, errors.Wrap(err, "services: failed to reload topic")
+	}
+
+	return &DeleteTopicTimeRangeResult{
+		DeletedTimeRangeID: timerangeID,
+		Topic:              topic,
+	}, nil
 }
 
 // UpdateSynonyms updates the synonyms of the topic.
@@ -425,6 +463,31 @@ func (c Connection) parentTopicsToAdd(
 	return parents, alerts, nil
 }
 
+func (c Connection) updateTopicName(
+	ctx context.Context, topic *models.Topic, timerange *models.TopicTimerange,
+) error {
+	synonyms, err := topic.SynonymList()
+	if err != nil {
+		return errors.Wrap(err, "services: failed to fetch synonym list")
+	}
+
+	// Updating of the topic name is temporary; eventually the topic name will go away, as it is
+	// necessarily locale-specific, and we want all locales to work the same way. Currently the
+	// topic name is used for sorting topic results at the database query.
+
+	displayName, err := DisplayName(timerange, synonyms, models.LocaleIdentifierEn)
+	if err != nil {
+		return errors.Wrap(err, "services: failed to calculate display name")
+	}
+
+	topic.Name = displayName
+	if _, err = topic.Update(ctx, c.Exec, boil.Infer()); err != nil {
+		return errors.Wrap(err, "services: failed to update topic name")
+	}
+
+	return nil
+}
+
 // UpsertTopicTimeRange adds a timeline to a topic.
 func (c Connection) UpsertTopicTimeRange(
 	ctx context.Context, topic *models.Topic, startsAt time.Time, endsAt *time.Time, format models.TimeRangePrefixFormat,
@@ -456,6 +519,10 @@ func (c Connection) UpsertTopicTimeRange(
 		if err = timerange.Insert(ctx, c.Exec, boil.Infer()); err != nil {
 			return nil, errors.Wrap(err, "services: failed to insert new time range")
 		}
+	}
+
+	if err = c.updateTopicName(ctx, topic, timerange); err != nil {
+		return nil, errors.Wrap(err, "services: failed to update topic name")
 	}
 
 	return &UpsertTopicTimeRangeResult{

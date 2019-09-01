@@ -21,7 +21,7 @@ export default defaultMutation(graphql`
       }
 
       topic {
-        displayName
+        displayName(timeRange: true)
         ...Synonyms_topic
       }
     }

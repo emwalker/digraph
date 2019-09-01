@@ -806,7 +806,7 @@ func TestDeleteTopicTimeRange(t *testing.T) {
 		t.Fatal("Expected a payload")
 	}
 
-	timerange, _ = models.FindTopicTimerange(m.ctx, testDB, payload.DeletedTimeRangeID)
+	timerange, _ = models.FindTopicTimerange(m.ctx, testDB, *payload.DeletedTimeRangeID)
 	if timerange != nil {
 		t.Fatal("Expected time range to have been deleted")
 	}

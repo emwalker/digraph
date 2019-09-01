@@ -85,7 +85,7 @@ input DeleteTopicTimeRangeInput {
 
 type DeleteTopicTimeRangePayload {
   clientMutationId: String
-  deletedTimeRangeId: ID!
+  deletedTimeRangeId: ID
   topic: Topic!
 }
 

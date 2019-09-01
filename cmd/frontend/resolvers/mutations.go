@@ -205,26 +205,15 @@ func (r *MutationResolver) DeleteTopicTimeRange(
 		return nil, err
 	}
 
-	timerange, err := queries.TopicTimeRange(ctx, r.DB, topic)
-	if err != nil && err.Error() != queries.ErrSQLNoRows {
-		return nil, perrors.Wrap(err, "resolvers: failed to fetch time range")
-	}
-
-	var timerangeID string
-	if timerange != nil {
-		timerangeID = timerange.ID
-		if _, err = timerange.Delete(ctx, r.DB); err != nil {
-			return nil, perrors.Wrap(err, "resolvers: failed to delete time range")
-		}
-	}
-
-	if err = topic.Reload(ctx, r.DB); err != nil {
-		return nil, perrors.Wrap(err, "resolvers: failed to reload topic")
+	c := services.Connection{Exec: r.DB, Actor: actor}
+	result, err := c.DeleteTopicTimeRange(ctx, topic)
+	if err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to delete time range")
 	}
 
 	return &models.DeleteTopicTimeRangePayload{
-		DeletedTimeRangeID: timerangeID,
-		Topic:              &models.TopicValue{Topic: topic, View: actor.DefaultView()},
+		DeletedTimeRangeID: result.DeletedTimeRangeID,
+		Topic:              &models.TopicValue{Topic: result.Topic, View: actor.DefaultView()},
 	}, nil
 }
 

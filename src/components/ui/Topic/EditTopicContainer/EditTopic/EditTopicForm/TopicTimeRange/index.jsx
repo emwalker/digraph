@@ -31,8 +31,8 @@ const updateOrDelete = (relay, topic, setMutationInFlight) => async () => {
       [],
       {
         topicId: topic.id,
-        startsAt: (new Date()).toJSON(),
-        prefixFormat: 'NONE',
+        startsAt: (new Date()).toISOString(),
+        prefixFormat: 'START_YEAR_MONTH',
       },
     )
   }
@@ -57,10 +57,16 @@ const TopicTimeRange = ({ relay, topic }: Props) => {
             onChange={onChange}
             type="checkbox"
           />
-          {' Has a time range'}
+          {' Occurs in time'}
         </label>
       </div>
-      {checked && <TopicTimeRangeForm topic={topic} timeRange={topic.timeRange} />}
+      {checked && (
+        <TopicTimeRangeForm
+          relay={relay}
+          topic={topic}
+          timeRange={topic.timeRange}
+        />
+      )}
     </div>
   )
 }
@@ -72,6 +78,7 @@ export default createFragmentContainer(TopicTimeRange, {
 
       timeRange {
         startsAt
+        ...TopicTimeRangeForm_timeRange
       }
 
       ...TopicTimeRangeForm_topic

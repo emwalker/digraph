@@ -194,7 +194,9 @@ func TestUpsertTopicTimeRange(t *testing.T) {
 		t.Fatal("Expected no timeline")
 	}
 
-	result, err := c.UpsertTopicTimeRange(ctx, topic, time.Now(), nil, models.TimeRangePrefixFormatStartYear)
+	t1 := time.Date(1066, time.October, 14, 0, 0, 0, 0, time.UTC)
+	result, err := c.UpsertTopicTimeRange(ctx, topic, t1, nil, models.TimeRangePrefixFormatStartYear)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,12 +205,43 @@ func TestUpsertTopicTimeRange(t *testing.T) {
 		t.Fatal("Expected a time range to be returned")
 	}
 
-	count, err = topic.TopicTimeranges().Count(ctx, testDB)
+	timerange, err := topic.TopicTimeranges().One(ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if count < 1 {
+	if timerange == nil {
 		t.Fatal("Expected a timeline")
+	}
+
+	if err = topic.Reload(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
+	synonyms, err := topic.SynonymList()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	displayName, err := services.DisplayName(timerange, synonyms, models.LocaleIdentifierEn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedDisplayName := "1066 William invades England"
+
+	if displayName != expectedDisplayName {
+		t.Fatalf("Expected %s, got %s", expectedDisplayName, displayName)
+	}
+
+	// The topic name should be updated as well.  The topic name will eventually go away, but for
+	// the moment it's used for sorting topics, which should take into account the time range prefix.
+
+	if err = topic.Reload(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
+	if topic.Name != expectedDisplayName {
+		t.Fatalf("Expected %s, got %s", expectedDisplayName, topic.Name)
 	}
 }

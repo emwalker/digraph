@@ -62,7 +62,6 @@ class Synonyms extends Component<Props, State> {
         clientMutationId: null,
         topic: {
           ...this.props.topic,
-          displayName: synonyms[0].name,
           synonyms,
         },
       },
@@ -135,6 +134,7 @@ export const UnwrappedSynonyms = Synonyms
 export default createFragmentContainer(Synonyms, {
   topic: graphql`
     fragment Synonyms_topic on Topic {
+      displayName(timeRange: true)
       id
       viewerCanDeleteSynonyms
       viewerCanUpdate

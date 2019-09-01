@@ -145,7 +145,7 @@ export default createRefetchContainer(EditTopicForm, {
     ) {
       description
       id
-      displayName
+      displayName(timeRange: true)
 
       selectedTopics: parentTopics(first: 100) {
         edges {

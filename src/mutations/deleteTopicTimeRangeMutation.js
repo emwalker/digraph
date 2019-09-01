@@ -10,6 +10,7 @@ export default defaultMutation(graphql`
       clientMutationId
 
       topic {
+        ...Topic_topic
         ...TopicTimeRange_topic
       }
     }
