@@ -57,6 +57,7 @@
     "regenerator-runtime": "^0.13.2",
     "relay-runtime": "~5.0.0",
     "serialize-javascript": "~1.7.0",
+    "use-debounce": "^3.0.0",
     "uuid": "~3.3.2"
   },
   "resolutions": {

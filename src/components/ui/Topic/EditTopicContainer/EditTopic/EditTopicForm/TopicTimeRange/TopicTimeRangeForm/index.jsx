@@ -2,6 +2,7 @@
 import React, { useState, useCallback } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import moment from 'moment'
+import { useDebouncedCallback } from 'use-debounce'
 
 import type { Relay } from 'components/types'
 import upsertTopicTimeRangeMutation from 'mutations/upsertTopicTimeRangeMutation'
@@ -20,32 +21,31 @@ type Props = {
 
 const TopicTimeRangeForm = ({ relay, timeRange, topic: { id: topicId } }: Props) => {
   const [mutationInFlight, setMutationInFlight] = useState(false)
-  const startsAt = moment(timeRange.startsAt)
+  const [startsAt, setStartsAt] = useState(moment(timeRange.startsAt))
   const { prefixFormat } = timeRange
 
-  const updateStartsAt = useCallback(
-    async (event: SyntheticInputEvent<HTMLInputElement>) => {
-      setMutationInFlight(true)
+  const [updateStartsAt] = useDebouncedCallback(
+    async (dt: Object) => {
+      if (dt.isValid()) {
+        setMutationInFlight(true)
 
-      const newStartsAt = moment(event.target.value)
-
-      if (newStartsAt.isValid()) {
         await upsertTopicTimeRangeMutation(
           relay.environment,
           [],
           {
             prefixFormat,
-            startsAt: newStartsAt.toISOString(),
+            startsAt: dt.toISOString(),
             topicId,
           },
         )
       } else {
-        console.log('invalid date:', event.target.value)
+        // eslint-disable-next-line no-console
+        console.log('invalid date:', dt)
       }
 
       setMutationInFlight(false)
     },
-    [setMutationInFlight, prefixFormat],
+    1000,
   )
 
   const updateFormat = useCallback(
@@ -92,10 +92,18 @@ const TopicTimeRangeForm = ({ relay, timeRange, topic: { id: topicId } }: Props)
             className={styles.startsAt}
             disabled={mutationInFlight}
             id="time-range-starts-at"
-            onChange={updateStartsAt}
+            onChange={(e) => {
+              e.persist()
+              const dt = moment(e.target.value)
+
+              if (dt.isValid()) {
+                setStartsAt(dt)
+                updateStartsAt(dt)
+              }
+            }}
             required
             type="date"
-            value={startsAt.format('YYYY-MM-DD')}
+            value={startsAt.isValid() ? startsAt.format('YYYY-MM-DD') : ''}
           />
         </dd>
       </dl>
