@@ -19,24 +19,24 @@ func Topic(actorID, topicID string) []qm.QueryMod {
 	}
 }
 
-// TopicTimeline returns the timeline for a topic.
-func TopicTimeline(
+// TopicTimeRange returns the time range for a topic.
+func TopicTimeRange(
 	ctx context.Context, exec boil.ContextExecutor, topic *models.Topic,
-) (*models.TopicTimeline, error) {
+) (*models.TopicTimerange, error) {
 	if topic.R != nil {
-		if len(topic.R.TopicTimelines) > 0 {
-			return topic.R.TopicTimelines[0], nil
+		if len(topic.R.TopicTimeranges) > 0 {
+			return topic.R.TopicTimeranges[0], nil
 		}
 		return nil, nil
 	}
 
-	log.Printf("Fetching topic timeline")
-	timeline, err := topic.TopicTimelines().One(ctx, exec)
+	log.Printf("Fetching topic time range")
+	timerange, err := topic.TopicTimeranges().One(ctx, exec)
 	if err != nil {
 		if err.Error() == ErrSQLNoRows {
 			return nil, nil
 		}
-		return nil, errors.Wrap(err, "resolvers: failed to fetch timeline")
+		return nil, errors.Wrap(err, "resolvers: failed to fetch timerange")
 	}
-	return timeline, err
+	return timerange, err
 }

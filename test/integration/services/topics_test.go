@@ -173,7 +173,7 @@ func TestDeduplicationOfSynonyms(t *testing.T) {
 	}
 }
 
-func TestUpsertTopicTimeline(t *testing.T) {
+func TestUpsertTopicTimeRange(t *testing.T) {
 	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
 
@@ -185,7 +185,7 @@ func TestUpsertTopicTimeline(t *testing.T) {
 
 	topic := topicResult.Topic
 
-	count, err := topic.TopicTimelines().Count(ctx, testDB)
+	count, err := topic.TopicTimeranges().Count(ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,16 +194,16 @@ func TestUpsertTopicTimeline(t *testing.T) {
 		t.Fatal("Expected no timeline")
 	}
 
-	result, err := c.UpsertTopicTimeline(ctx, topic, time.Now(), nil, models.TimelinePrefixFormatStartYear)
+	result, err := c.UpsertTopicTimeRange(ctx, topic, time.Now(), nil, models.TimeRangePrefixFormatStartYear)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if result.TopicTimeline == nil {
-		t.Fatal("Expected a timeline to be returned")
+	if result.TopicTimeRange == nil {
+		t.Fatal("Expected a time range to be returned")
 	}
 
-	count, err = topic.TopicTimelines().Count(ctx, testDB)
+	count, err = topic.TopicTimeranges().Count(ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}

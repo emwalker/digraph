@@ -154,13 +154,13 @@ export default createFragmentContainer(TopicSearchPage, {
       searchString: {type: "String!", defaultValue: ""},
     ) {
       id
-      name: displayName(timeline: true)
+      name: displayName(timeRange: true)
       resourcePath
 
       parentTopics(first: 100) {
         edges {
           node {
-            display: displayName(timeline: true)
+            display: displayName(timeRange: true)
             resourcePath
           }
         }

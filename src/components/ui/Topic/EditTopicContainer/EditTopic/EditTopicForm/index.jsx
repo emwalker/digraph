@@ -9,7 +9,7 @@ import updateTopicTopicsMutation from 'mutations/updateTopicParentTopicsMutation
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
 import Synonyms from './Synonyms'
-import TocicTimeline from './TopicTimeline'
+import TopicTimeRange from './TopicTimeRange'
 
 type Props = {
   isOpen: boolean,
@@ -112,7 +112,7 @@ class EditTopicForm extends Component<Props, State> {
     return (
       <div className="my-4">
         <Synonyms relay={this.props.relay} topic={this.props.topic} />
-        <TocicTimeline relay={this.props.relay} topic={this.props.topic} />
+        <TopicTimeRange relay={this.props.relay} topic={this.props.topic} />
 
         <EditTopicList
           loadOptions={this.loadOptions}
@@ -166,7 +166,7 @@ export default createRefetchContainer(EditTopicForm, {
       }
 
       ...Synonyms_topic
-      ...TopicTimeline_topic
+      ...TopicTimeRange_topic
     }
   `,
 },

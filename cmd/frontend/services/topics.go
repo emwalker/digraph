@@ -47,11 +47,11 @@ type UpsertTopicResult struct {
 	Cleanup      CleanupFunc
 }
 
-// UpsertTopicTimelineResult returns the result of an upsert call.
-type UpsertTopicTimelineResult struct {
-	Alerts        []*models.Alert
-	Topic         *models.Topic
-	TopicTimeline *models.TopicTimeline
+// UpsertTopicTimeRangeResult returns the result of an upsert call.
+type UpsertTopicTimeRangeResult struct {
+	Alerts         []*models.Alert
+	Topic          *models.Topic
+	TopicTimeRange *models.TopicTimerange
 }
 
 func cycleWarning(descendant, ancestor *models.Topic) *models.Alert {
@@ -96,32 +96,27 @@ func NormalizeTopicName(name string) (string, bool) {
 
 // DisplayName constructs a display name from a SynonymList and a TopicTimeline.
 func DisplayName(
-	timeline *models.TopicTimeline, synonyms *models.SynonymList, locale models.LocaleIdentifier,
+	timerange *models.TopicTimerange, synonyms *models.SynonymList, locale models.LocaleIdentifier,
 ) (string, error) {
 	name, ok := synonyms.NameForLocale(locale)
 	if !ok {
 		return "<name missing>", coreerrors.New("name not found")
 	}
 
-	if timeline == nil {
+	if timerange == nil {
 		return name, nil
 	}
 
-	if !timeline.StartsAt.Valid {
+	if timerange.StartsAt.IsZero() {
 		return name, coreerrors.New("startsAt is not valid")
 	}
 
-	startsAtValue, err := timeline.StartsAt.Value()
-	if err != nil {
-		return name, errors.Wrap(err, "resolvers: failed to convert startsAt")
-	}
+	startsAt := timerange.StartsAt
 
-	startsAt := startsAtValue.(time.Time)
-
-	switch models.TimelinePrefixFormat(timeline.PrefixFormat) {
-	case models.TimelinePrefixFormatStartYear:
+	switch models.TimeRangePrefixFormat(timerange.PrefixFormat) {
+	case models.TimeRangePrefixFormatStartYear:
 		return fmt.Sprintf("%s %s", startsAt.Format("2006"), name), nil
-	case models.TimelinePrefixFormatStartYearMonth:
+	case models.TimeRangePrefixFormatStartYearMonth:
 		return fmt.Sprintf("%s %s", startsAt.Format("2006-01"), name), nil
 	}
 
@@ -148,12 +143,12 @@ func (c Connection) UpdateSynonyms(
 		return nil, err
 	}
 
-	timeline, err := dqueries.TopicTimeline(ctx, c.Exec, topic)
+	timerange, err := dqueries.TopicTimeRange(ctx, c.Exec, topic)
 	if err != nil {
-		return nil, errors.Wrap(err, "services: failed to fetch timeline")
+		return nil, errors.Wrap(err, "services: failed to fetch time range")
 	}
 
-	topic.Name, err = DisplayName(timeline, &models.SynonymList{Values: dedupedSynonyms}, models.LocaleIdentifierEn)
+	topic.Name, err = DisplayName(timerange, &models.SynonymList{Values: dedupedSynonyms}, models.LocaleIdentifierEn)
 	if err != nil {
 		return nil, errors.Wrap(err, "services: failed to update display name")
 	}
@@ -430,42 +425,42 @@ func (c Connection) parentTopicsToAdd(
 	return parents, alerts, nil
 }
 
-// UpsertTopicTimeline adds a timeline to a topic.
-func (c Connection) UpsertTopicTimeline(
-	ctx context.Context, topic *models.Topic, startsAt time.Time, endsAt *time.Time, format models.TimelinePrefixFormat,
-) (*UpsertTopicTimelineResult, error) {
+// UpsertTopicTimeRange adds a timeline to a topic.
+func (c Connection) UpsertTopicTimeRange(
+	ctx context.Context, topic *models.Topic, startsAt time.Time, endsAt *time.Time, format models.TimeRangePrefixFormat,
+) (*UpsertTopicTimeRangeResult, error) {
 	var alerts []*models.Alert
 
-	timeline, err := topic.TopicTimelines().One(ctx, c.Exec)
+	timerange, err := topic.TopicTimeranges().One(ctx, c.Exec)
 
 	if err == nil {
-		log.Printf("Timeline already exists, updating")
-		timeline.StartsAt = null.NewTime(startsAt, true)
-		timeline.PrefixFormat = string(format)
+		log.Printf("Time range already exists, updating")
+		timerange.StartsAt = startsAt
+		timerange.PrefixFormat = string(format)
 
-		if _, err = timeline.Update(ctx, c.Exec, boil.Infer()); err != nil {
-			return nil, errors.Wrap(err, "services: failed to update existing timeline")
+		if _, err = timerange.Update(ctx, c.Exec, boil.Infer()); err != nil {
+			return nil, errors.Wrap(err, "services: failed to update existing time range")
 		}
 	} else {
 		if err.Error() != dqueries.ErrSQLNoRows {
-			return nil, errors.Wrap(err, "services: failed to query for timeline")
+			return nil, errors.Wrap(err, "services: failed to query for time range")
 		}
 
-		log.Printf("Timeline does not yet exist, creating")
-		timeline = &models.TopicTimeline{
+		log.Printf("Time range does not yet exist, creating")
+		timerange = &models.TopicTimerange{
 			TopicID:      topic.ID,
-			StartsAt:     null.NewTime(startsAt, true),
+			StartsAt:     startsAt,
 			PrefixFormat: string(format),
 		}
 
-		if err = timeline.Insert(ctx, c.Exec, boil.Infer()); err != nil {
-			return nil, errors.Wrap(err, "services: failed to insert new timeline")
+		if err = timerange.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+			return nil, errors.Wrap(err, "services: failed to insert new time range")
 		}
 	}
 
-	return &UpsertTopicTimelineResult{
-		Alerts:        alerts,
-		Topic:         topic,
-		TopicTimeline: timeline,
+	return &UpsertTopicTimeRangeResult{
+		Alerts:         alerts,
+		Topic:          topic,
+		TopicTimeRange: timerange,
 	}, nil
 }

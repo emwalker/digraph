@@ -3,21 +3,21 @@ import React, { useCallback, useState } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import dateFormat from 'dateformat'
 
-import type { TopicTimelineForm_topic as Topic } from './__generated__/TopicTimelineForm_topic.graphql'
+import type { TopicTimelineForm_topic as Topic } from './__generated__/TopicTimeRangeForm_topic.graphql'
 import styles from './styles.module.css'
 
-const initialDate = dateFormat(Date.now(), 'yyyy-mm-dd')
+// const initialDate = dateFormat(Date.now(), 'yyyy-mm-dd')
 
-type Timeline = $NonMaybeType<$PropertyType<Topic, 'timeline'>>
+type TimeRange = $NonMaybeType<$PropertyType<Topic, 'timeRange'>>
 
 type Props = {
-  topic: Topic,
-  timeline: Timeline,
+  // topic: Topic,
+  timeRange: TimeRange,
 }
 
-const TopicTimelineForm = ({ topic, timeline }: Props) => {
-  const [startsAt, setStartsAt] = useState(Date.parse(timeline.startsAt))
-  const [format, setFormat] = useState(timeline.prefixFormat)
+const TopicTimeRangeForm = ({ timeRange }: Props) => {
+  const [startsAt, setStartsAt] = useState(Date.parse(timeRange.startsAt))
+  const [format, setFormat] = useState(timeRange.prefixFormat)
 
   const updateStartsAt = useCallback(
     (event: SyntheticInputEvent<HTMLInputElement>) => setStartsAt(event.target.value),
@@ -32,11 +32,11 @@ const TopicTimelineForm = ({ topic, timeline }: Props) => {
   return (
     <div className={styles.formElements}>
       <dl className="form-group my-0">
-        <dt><label htmlFor="timeline-prefix-format">Prefix</label></dt>
+        <dt><label htmlFor="time-range-prefix-format">Prefix</label></dt>
         <dd>
           <select
             className="form-select"
-            id="timeline-prefix-select"
+            id="time-range-prefix-select"
             onChange={updateFormat}
             value={format}
           >
@@ -48,12 +48,12 @@ const TopicTimelineForm = ({ topic, timeline }: Props) => {
       </dl>
       <dl className="form-group ml-3 my-0">
         <dt>
-          <label htmlFor="timeline-starts-at">Start date</label>
+          <label htmlFor="time-range-starts-at">Start date</label>
         </dt>
         <dd>
           <input
             className={styles.startsAt}
-            id="timeline-starts-at"
+            id="time-range-starts-at"
             onChange={updateStartsAt}
             type="date"
             value={startsAt}
@@ -64,15 +64,15 @@ const TopicTimelineForm = ({ topic, timeline }: Props) => {
   )
 }
 
-export default createFragmentContainer(TopicTimelineForm, {
+export default createFragmentContainer(TopicTimeRangeForm, {
   topic: graphql`
-    fragment TopicTimelineForm_topic on Topic {
+    fragment TopicTimeRangeForm_topic on Topic {
       id
 
-      timeline {
+      timeRange {
         startsAt
         prefixFormat
       }
     }
-  `
+  `,
 })

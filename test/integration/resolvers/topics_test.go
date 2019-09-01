@@ -781,6 +781,37 @@ func TestDeleteTopic(t *testing.T) {
 	}
 }
 
+func TestDeleteTopicTimeRange(t *testing.T) {
+	m := newMutator(t, testViewer)
+
+	topic, _ := m.createTopic(testViewer.Login, m.defaultRepo().Name, "A new topic")
+	timerange := &models.TopicTimerange{
+		TopicID:      topic.ID,
+		StartsAt:     time.Now(),
+		PrefixFormat: string(models.TimeRangePrefixFormatNone),
+	}
+
+	if err := timerange.Insert(m.ctx, testDB, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	payload, err := m.resolver.DeleteTopicTimeRange(m.ctx, models.DeleteTopicTimeRangeInput{
+		TopicID: topic.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if payload == nil {
+		t.Fatal("Expected a payload")
+	}
+
+	timerange, _ = models.FindTopicTimerange(m.ctx, testDB, payload.DeletedTimeRangeID)
+	if timerange != nil {
+		t.Fatal("Expected time range to have been deleted")
+	}
+}
+
 func TestChildTopicAndLinkVisibility(t *testing.T) {
 	m := newMutator(t, testViewer)
 	ctx := testContext()
@@ -1151,18 +1182,18 @@ func TestUpsertTopicTimeline(t *testing.T) {
 	topic, cleanup := m.createTopic(testViewer.Login, repo.Name, "Gnusto")
 	defer cleanup()
 
-	input := models.UpsertTopicTimelineInput{
+	input := models.UpsertTopicTimeRangeInput{
 		TopicID:      topic.ID,
 		StartsAt:     time.Now().Format(time.RFC3339),
-		PrefixFormat: models.TimelinePrefixFormatStartYear,
+		PrefixFormat: models.TimeRangePrefixFormatStartYear,
 	}
 
-	payload, err := resolver.UpsertTopicTimeline(m.ctx, input)
+	payload, err := resolver.UpsertTopicTimeRange(m.ctx, input)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if payload.TimelineEdge == nil {
+	if payload.TimeRangeEdge == nil {
 		t.Fatal("Expected a timeline edge")
 	}
 }

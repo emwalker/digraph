@@ -345,8 +345,8 @@ func (r *topicResolver) ChildTopics(
 
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
-		qm.Load("ParentTopics.TopicTimelines"),
-		qm.Load("TopicTimelines"),
+		qm.Load("ParentTopics.TopicTimeranges"),
+		qm.Load("TopicTimeranges"),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.OrderBy("topics.name"),
 	})
@@ -377,19 +377,19 @@ func (r *topicResolver) Description(_ context.Context, topic *models.TopicValue)
 // in the current locale.  If there is no synonym in the current locale, the first English synonym
 // is returned.  If there is no English synonym, the first synonym is returned.
 func (r *topicResolver) DisplayName(
-	ctx context.Context, topic *models.TopicValue, includeTimeline *bool,
+	ctx context.Context, topic *models.TopicValue, includeTimeRange *bool,
 ) (string, error) {
 	synonyms, err := topic.SynonymList()
 	if err != nil {
 		return "<name missing>", errors.Wrap(err, "resolvers: failed to fetch synonym list")
 	}
 
-	if includeTimeline != nil && *includeTimeline {
-		timeline, err := queries.TopicTimeline(ctx, r.DB, topic.Topic)
+	if includeTimeRange != nil && *includeTimeRange {
+		timerange, err := queries.TopicTimeRange(ctx, r.DB, topic.Topic)
 		if err != nil {
-			return "<name missing>", errors.Wrap(err, "resolvers: failed to fetch timeline")
+			return "<name missing>", errors.Wrap(err, "resolvers: failed to fetch time range")
 		}
-		return services.DisplayName(timeline, synonyms, models.LocaleIdentifierEn)
+		return services.DisplayName(timerange, synonyms, models.LocaleIdentifierEn)
 	}
 
 	return services.DisplayName(nil, synonyms, models.LocaleIdentifierEn)
@@ -559,27 +559,21 @@ func (r *topicResolver) Synonyms(ctx context.Context, topic *models.TopicValue) 
 	return out, nil
 }
 
-// Timeline returns a timeline associated with the topic, if one exists.
-func (r *topicResolver) Timeline(ctx context.Context, topic *models.TopicValue) (*models.Timeline, error) {
-	timeline, err := queries.TopicTimeline(ctx, r.DB, topic.Topic)
+// TimeRange returns a time range associated with the topic, if one exists.
+func (r *topicResolver) TimeRange(ctx context.Context, topic *models.TopicValue) (*models.TimeRange, error) {
+	timerange, err := queries.TopicTimeRange(ctx, r.DB, topic.Topic)
 	if err != nil {
-		return nil, errors.Wrap(err, "resolvers: failed to fetch timeline")
+		return nil, errors.Wrap(err, "resolvers: failed to fetch time range")
 	}
 
-	if timeline == nil || timeline.StartsAt.IsZero() {
+	if timerange == nil || timerange.StartsAt.IsZero() {
 		return nil, nil
 	}
 
-	startsAt, err := timeline.StartsAt.Value()
-	if err != nil {
-		return nil, errors.Wrap(err, "resolvers: failed to cast timestamp")
-	}
+	format := models.TimeRangePrefixFormat(timerange.PrefixFormat)
 
-	format := models.TimelinePrefixFormat(timeline.PrefixFormat)
-
-	dt := startsAt.(time.Time)
-	return &models.Timeline{
-		StartsAt:     dt.Format(time.RFC3339),
+	return &models.TimeRange{
+		StartsAt:     timerange.StartsAt.Format(time.RFC3339),
 		PrefixFormat: format,
 	}, nil
 }

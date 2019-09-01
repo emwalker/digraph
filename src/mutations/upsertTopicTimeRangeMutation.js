@@ -4,10 +4,10 @@ import defaultMutation from './util/defaultMutation'
 import flashMessageUpdater from './util/flashMessageUpdater'
 
 export default defaultMutation(graphql`
-  mutation upsertTopicTimelineMutation(
-    $input: UpsertTopicTimelineInput!
+  mutation upsertTopicTimeRangeMutation(
+    $input: UpsertTopicTimeRangeInput!
   ) {
-    upsertTopicTimeline(input: $input) {
+    upsertTopicTimeRange(input: $input) {
       alerts {
         id
         text
@@ -15,8 +15,8 @@ export default defaultMutation(graphql`
       }
 
       topic {
-        ...TopicTimeline_topic
+        ...TopicTimeRange_topic
       }
     }
   }
-`, flashMessageUpdater('upsertTopicTimeline'))
+`, flashMessageUpdater('upsertTopicTimeRange'))

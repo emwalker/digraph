@@ -6,7 +6,6 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
-	"github.com/volatiletech/null"
 )
 
 func TestNormalizeName(t *testing.T) {
@@ -57,28 +56,27 @@ func TestNormalizeName(t *testing.T) {
 }
 
 func TestDisplayName(t *testing.T) {
-	nullStartsAt, _ := time.Parse(time.RFC3339, "2020-10-02T15:00:00Z")
-	startsAt := null.NewTime(nullStartsAt, true)
+	startsAt, _ := time.Parse(time.RFC3339, "2020-10-02T15:00:00Z")
 
 	testData := []struct {
 		displayName string
 		name        string
-		timeline    *models.TopicTimeline
+		timerange   *models.TopicTimerange
 		synonyms    *models.SynonymList
 	}{
 		{
-			name:     "When there is no timeline",
-			timeline: nil,
+			name:      "When there is no time range",
+			timerange: nil,
 			synonyms: &models.SynonymList{
 				Values: []models.Synonym{{"en", "Gnusto"}},
 			},
 			displayName: "Gnusto",
 		},
 		{
-			name: "When there is a timeline with a format of NONE",
-			timeline: &models.TopicTimeline{
+			name: "When there is a time range with a format of NONE",
+			timerange: &models.TopicTimerange{
 				StartsAt:     startsAt,
-				PrefixFormat: string(models.TimelinePrefixFormatNone),
+				PrefixFormat: string(models.TimeRangePrefixFormatNone),
 			},
 			synonyms: &models.SynonymList{
 				Values: []models.Synonym{{"en", "Gnusto"}},
@@ -86,10 +84,10 @@ func TestDisplayName(t *testing.T) {
 			displayName: "Gnusto",
 		},
 		{
-			name: "When there is a timeline with a format of START_YEAR",
-			timeline: &models.TopicTimeline{
+			name: "When there is a time range with a format of START_YEAR",
+			timerange: &models.TopicTimerange{
 				StartsAt:     startsAt,
-				PrefixFormat: string(models.TimelinePrefixFormatStartYear),
+				PrefixFormat: string(models.TimeRangePrefixFormatStartYear),
 			},
 			synonyms: &models.SynonymList{
 				Values: []models.Synonym{{"en", "Gnusto"}},
@@ -97,10 +95,10 @@ func TestDisplayName(t *testing.T) {
 			displayName: "2020 Gnusto",
 		},
 		{
-			name: "When there is a timeline with a format of START_YEAR_MONTH",
-			timeline: &models.TopicTimeline{
+			name: "When there is a time range with a format of START_YEAR_MONTH",
+			timerange: &models.TopicTimerange{
 				StartsAt:     startsAt,
-				PrefixFormat: string(models.TimelinePrefixFormatStartYearMonth),
+				PrefixFormat: string(models.TimeRangePrefixFormatStartYearMonth),
 			},
 			synonyms: &models.SynonymList{
 				Values: []models.Synonym{{"en", "Gnusto"}},
@@ -111,7 +109,7 @@ func TestDisplayName(t *testing.T) {
 
 	for _, td := range testData {
 		t.Run(td.name, func(t *testing.T) {
-			name, err := services.DisplayName(td.timeline, td.synonyms, "en")
+			name, err := services.DisplayName(td.timerange, td.synonyms, "en")
 			if err != nil {
 				t.Fatal(err)
 			}

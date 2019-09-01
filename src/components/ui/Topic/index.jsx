@@ -106,7 +106,7 @@ export default createFragmentContainer(Topic, {
   topic: graphql`
     fragment Topic_topic on Topic {
       description
-      displayName(timeline: true)
+      displayName(timeRange: true)
       id
       loading
       newlyAdded

@@ -189,6 +189,45 @@ func (r *MutationResolver) DeleteTopic(
 	}, nil
 }
 
+// DeleteTopicTimeRange deletes a topic.
+func (r *MutationResolver) DeleteTopicTimeRange(
+	ctx context.Context, input models.DeleteTopicTimeRangeInput,
+) (*models.DeleteTopicTimeRangePayload, error) {
+	actor := GetRequestContext(ctx).Viewer()
+
+	if actor.IsGuest() {
+		return nil, ErrNoAnonymousMutations
+	}
+
+	topic, err := fetchTopic(ctx, r.DB, input.TopicID, actor)
+	if err != nil {
+		log.Printf("There was a problem looking up topic: %s", input.TopicID)
+		return nil, err
+	}
+
+	timerange, err := queries.TopicTimeRange(ctx, r.DB, topic)
+	if err != nil && err.Error() != queries.ErrSQLNoRows {
+		return nil, perrors.Wrap(err, "resolvers: failed to fetch time range")
+	}
+
+	var timerangeID string
+	if timerange != nil {
+		timerangeID = timerange.ID
+		if _, err = timerange.Delete(ctx, r.DB); err != nil {
+			return nil, perrors.Wrap(err, "resolvers: failed to delete time range")
+		}
+	}
+
+	if err = topic.Reload(ctx, r.DB); err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to reload topic")
+	}
+
+	return &models.DeleteTopicTimeRangePayload{
+		DeletedTimeRangeID: timerangeID,
+		Topic:              &models.TopicValue{Topic: topic, View: actor.DefaultView()},
+	}, nil
+}
+
 // ReviewLink marks a link reviewed.
 func (r *MutationResolver) ReviewLink(
 	ctx context.Context, input models.ReviewLinkInput,
@@ -485,10 +524,10 @@ func (r *MutationResolver) UpsertLink(
 	}, nil
 }
 
-// UpsertTopicTimeline adds a timeline to a topic.
-func (r *MutationResolver) UpsertTopicTimeline(
-	ctx context.Context, input models.UpsertTopicTimelineInput,
-) (*models.UpsertTopicTimelinePayload, error) {
+// UpsertTopicTimeRange adds a timeline to a topic.
+func (r *MutationResolver) UpsertTopicTimeRange(
+	ctx context.Context, input models.UpsertTopicTimeRangeInput,
+) (*models.UpsertTopicTimeRangePayload, error) {
 	actor := GetRequestContext(ctx).Viewer()
 	c := services.Connection{Exec: r.DB, Actor: actor}
 
@@ -502,22 +541,22 @@ func (r *MutationResolver) UpsertTopicTimeline(
 		return nil, perrors.Wrap(err, "resolveres: failed to parse startsAt")
 	}
 
-	result, err := c.UpsertTopicTimeline(ctx, topic, startsAt, nil, input.PrefixFormat)
+	result, err := c.UpsertTopicTimeRange(ctx, topic, startsAt, nil, input.PrefixFormat)
 	if err != nil {
 		return nil, perrors.Wrap(err, "resolvers: failed to upsert topic timline")
 	}
 
-	timeline := &models.Timeline{
+	timeline := &models.TimeRange{
 		StartsAt:     startsAt.Format(time.RFC3339),
-		PrefixFormat: models.TimelinePrefixFormat(result.TopicTimeline.PrefixFormat),
+		PrefixFormat: models.TimeRangePrefixFormat(result.TopicTimeRange.PrefixFormat),
 	}
 
 	if err = topic.Reload(ctx, r.DB); err != nil {
 		return nil, perrors.Wrap(err, "resolvers: failed to reload topic")
 	}
 
-	return &models.UpsertTopicTimelinePayload{
-		Topic:        &models.TopicValue{Topic: topic, View: actor.DefaultView()},
-		TimelineEdge: &models.TimelineEdge{Node: timeline},
+	return &models.UpsertTopicTimeRangePayload{
+		Topic:         &models.TopicValue{Topic: topic, View: actor.DefaultView()},
+		TimeRangeEdge: &models.TimeRangeEdge{Node: timeline},
 	}, nil
 }

@@ -281,7 +281,7 @@ export default createFragmentContainer(TopicPage, {
     fragment TopicPage_topic on Topic @argumentDefinitions(
       searchString: {type: "String", defaultValue: ""},
     ) {
-      displayName(timeline: true)
+      displayName(timeRange: true)
       id
       resourcePath
 
@@ -292,7 +292,7 @@ export default createFragmentContainer(TopicPage, {
       parentTopics(first: 100) {
         edges {
           node {
-            display: displayName(timeline: true)
+            display: displayName(timeRange: true)
             resourcePath
           }
         }
