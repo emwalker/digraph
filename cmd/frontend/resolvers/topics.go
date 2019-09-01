@@ -562,6 +562,13 @@ func (r *topicResolver) Synonyms(ctx context.Context, topic *models.TopicValue) 
 // Timeline returns a timeline associated with the topic, if one exists.
 func (r *topicResolver) Timeline(ctx context.Context, topic *models.TopicValue) (*models.Timeline, error) {
 	timeline, err := queries.TopicTimeline(ctx, r.DB, topic.Topic)
+	if err != nil {
+		return nil, errors.Wrap(err, "resolvers: failed to fetch timeline")
+	}
+
+	if timeline == nil || timeline.StartsAt.IsZero() {
+		return nil, nil
+	}
 
 	startsAt, err := timeline.StartsAt.Value()
 	if err != nil {

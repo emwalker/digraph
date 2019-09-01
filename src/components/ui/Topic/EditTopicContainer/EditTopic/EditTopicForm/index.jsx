@@ -2,21 +2,19 @@
 import React, { Component } from 'react'
 import { createRefetchContainer, graphql } from 'react-relay'
 
-import type { Option, TopicType } from 'components/types'
+import type { Option, Relay, TopicType } from 'components/types'
 import deleteTopicMutation from 'mutations/deleteTopicMutation'
 import updateTopicMutation from 'mutations/updateTopicMutation'
 import updateTopicTopicsMutation from 'mutations/updateTopicParentTopicsMutation'
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
 import Synonyms from './Synonyms'
+import TocicTimeline from './TopicTimeline'
 
 type Props = {
   isOpen: boolean,
   orgLogin: string,
-  relay: {
-    environment: Object,
-    refetch: Function,
-  },
+  relay: Relay,
   toggleForm: Function,
   // $FlowFixMe
   topic: TopicType,
@@ -114,6 +112,7 @@ class EditTopicForm extends Component<Props, State> {
     return (
       <div className="my-4">
         <Synonyms relay={this.props.relay} topic={this.props.topic} />
+        <TocicTimeline relay={this.props.relay} topic={this.props.topic} />
 
         <EditTopicList
           loadOptions={this.loadOptions}
@@ -139,13 +138,6 @@ class EditTopicForm extends Component<Props, State> {
 }
 
 export default createRefetchContainer(EditTopicForm, {
-  viewer: graphql`
-    fragment EditTopicForm_viewer on User {
-      defaultRepository {
-        id
-      }
-    }
-  `,
   topic: graphql`
     fragment EditTopicForm_topic on Topic @argumentDefinitions(
       searchString: {type: "String", defaultValue: null},
@@ -174,6 +166,7 @@ export default createRefetchContainer(EditTopicForm, {
       }
 
       ...Synonyms_topic
+      ...TopicTimeline_topic
     }
   `,
 },

@@ -512,7 +512,12 @@ func (r *MutationResolver) UpsertTopicTimeline(
 		PrefixFormat: models.TimelinePrefixFormat(result.TopicTimeline.PrefixFormat),
 	}
 
+	if err = topic.Reload(ctx, r.DB); err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to reload topic")
+	}
+
 	return &models.UpsertTopicTimelinePayload{
+		Topic:        &models.TopicValue{Topic: topic, View: actor.DefaultView()},
 		TimelineEdge: &models.TimelineEdge{Node: timeline},
 	}, nil
 }

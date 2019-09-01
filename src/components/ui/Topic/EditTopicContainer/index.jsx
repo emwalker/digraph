@@ -32,10 +32,6 @@ const EditTopicContainer = ({ isOpen, orgLogin, topic, relay, toggleForm }: Prop
           currentRepositoryName: $repoName,
           repositoryIds: $repoIds,
         ) {
-          viewer {
-            ...EditTopicForm_viewer
-          }
-
           topic(id: $topicId) {
             ...EditTopic_topic
           }
