@@ -185,7 +185,7 @@ func TestUpsertTopicTimeRange(t *testing.T) {
 
 	topic := topicResult.Topic
 
-	count, err := topic.TopicTimeranges().Count(ctx, testDB)
+	count, err := topic.Timerange().Count(ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,11 +201,11 @@ func TestUpsertTopicTimeRange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.TopicTimeRange == nil {
+	if result.TimeRange == nil {
 		t.Fatal("Expected a time range to be returned")
 	}
 
-	timerange, err := topic.TopicTimeranges().One(ctx, testDB)
+	timerange, err := topic.Timerange().One(ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -51,7 +51,7 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 	mods := view.Filter([]qm.QueryMod{
 		qm.Limit(pageSizeOrDefault(first)),
 		qm.Load("ParentTopics"),
-		qm.Load("TopicTimeranges"),
+		qm.Load("Timerange"),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 	})
 

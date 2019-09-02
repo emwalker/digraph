@@ -340,8 +340,8 @@ func (r *topicResolver) ChildTopics(
 
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
-		qm.Load("ParentTopics.TopicTimeranges"),
-		qm.Load("TopicTimeranges"),
+		qm.Load("ParentTopics.Timerange"),
+		qm.Load("Timerange"),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.OrderBy("topics.name"),
 	})
@@ -380,7 +380,7 @@ func (r *topicResolver) DisplayName(
 	}
 
 	if includeTimeRange != nil && *includeTimeRange {
-		timerange, err := queries.TopicTimeRange(ctx, r.DB, topic.Topic)
+		timerange, err := queries.TimeRange(ctx, r.DB, topic.Topic)
 		if err != nil {
 			return "<name missing>", errors.Wrap(err, "resolvers: failed to fetch time range")
 		}
@@ -556,7 +556,7 @@ func (r *topicResolver) Synonyms(ctx context.Context, topic *models.TopicValue) 
 
 // TimeRange returns a time range associated with the topic, if one exists.
 func (r *topicResolver) TimeRange(ctx context.Context, topic *models.TopicValue) (*models.TimeRange, error) {
-	timerange, err := queries.TopicTimeRange(ctx, r.DB, topic.Topic)
+	timerange, err := queries.TimeRange(ctx, r.DB, topic.Topic)
 	if err != nil {
 		return nil, errors.Wrap(err, "resolvers: failed to fetch time range")
 	}

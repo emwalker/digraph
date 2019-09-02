@@ -19,19 +19,16 @@ func Topic(actorID, topicID string) []qm.QueryMod {
 	}
 }
 
-// TopicTimeRange returns the time range for a topic.
-func TopicTimeRange(
+// TimeRange returns the time range for a topic.
+func TimeRange(
 	ctx context.Context, exec boil.ContextExecutor, topic *models.Topic,
-) (*models.TopicTimerange, error) {
-	if topic.R != nil {
-		if len(topic.R.TopicTimeranges) > 0 {
-			return topic.R.TopicTimeranges[0], nil
-		}
-		return nil, nil
+) (*models.Timerange, error) {
+	if topic.R != nil && topic.R.Timerange != nil {
+		return topic.R.Timerange, nil
 	}
 
 	log.Printf("Fetching topic time range")
-	timerange, err := topic.TopicTimeranges().One(ctx, exec)
+	timerange, err := topic.Timerange().One(ctx, exec)
 	if err != nil {
 		if err.Error() == ErrSQLNoRows {
 			return nil, nil

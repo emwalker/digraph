@@ -61,7 +61,7 @@ func TestDisplayName(t *testing.T) {
 	testData := []struct {
 		displayName string
 		name        string
-		timerange   *models.TopicTimerange
+		timerange   *models.Timerange
 		synonyms    *models.SynonymList
 	}{
 		{
@@ -74,7 +74,7 @@ func TestDisplayName(t *testing.T) {
 		},
 		{
 			name: "When there is a time range with a format of NONE",
-			timerange: &models.TopicTimerange{
+			timerange: &models.Timerange{
 				StartsAt:     startsAt,
 				PrefixFormat: string(models.TimeRangePrefixFormatNone),
 			},
@@ -85,7 +85,7 @@ func TestDisplayName(t *testing.T) {
 		},
 		{
 			name: "When there is a time range with a format of START_YEAR",
-			timerange: &models.TopicTimerange{
+			timerange: &models.Timerange{
 				StartsAt:     startsAt,
 				PrefixFormat: string(models.TimeRangePrefixFormatStartYear),
 			},
@@ -96,7 +96,7 @@ func TestDisplayName(t *testing.T) {
 		},
 		{
 			name: "When there is a time range with a format of START_YEAR_MONTH",
-			timerange: &models.TopicTimerange{
+			timerange: &models.Timerange{
 				StartsAt:     startsAt,
 				PrefixFormat: string(models.TimeRangePrefixFormatStartYearMonth),
 			},

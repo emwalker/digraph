@@ -537,7 +537,7 @@ func (r *MutationResolver) UpsertTopicTimeRange(
 
 	timeline := &models.TimeRange{
 		StartsAt:     startsAt.Format(time.RFC3339),
-		PrefixFormat: models.TimeRangePrefixFormat(result.TopicTimeRange.PrefixFormat),
+		PrefixFormat: models.TimeRangePrefixFormat(result.TimeRange.PrefixFormat),
 	}
 
 	if err = topic.Reload(ctx, r.DB); err != nil {

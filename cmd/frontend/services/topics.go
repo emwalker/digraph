@@ -56,9 +56,9 @@ type UpsertTopicResult struct {
 
 // UpsertTopicTimeRangeResult returns the result of an upsert call.
 type UpsertTopicTimeRangeResult struct {
-	Alerts         []*models.Alert
-	Topic          *models.Topic
-	TopicTimeRange *models.TopicTimerange
+	Alerts    []*models.Alert
+	Topic     *models.Topic
+	TimeRange *models.Timerange
 }
 
 func cycleWarning(descendant, ancestor *models.Topic) *models.Alert {
@@ -101,9 +101,9 @@ func NormalizeTopicName(name string) (string, bool) {
 	return name, true
 }
 
-// DisplayName constructs a display name from a SynonymList and a TopicTimeline.
+// DisplayName constructs a display name from a SynonymList and a Timerange.
 func DisplayName(
-	timerange *models.TopicTimerange, synonyms *models.SynonymList, locale models.LocaleIdentifier,
+	timerange *models.Timerange, synonyms *models.SynonymList, locale models.LocaleIdentifier,
 ) (string, error) {
 	name, ok := synonyms.NameForLocale(locale)
 	if !ok {
@@ -134,7 +134,7 @@ func DisplayName(
 func (c Connection) DeleteTopicTimeRange(
 	ctx context.Context, topic *models.Topic,
 ) (*DeleteTopicTimeRangeResult, error) {
-	timerange, err := dqueries.TopicTimeRange(ctx, c.Exec, topic)
+	timerange, err := dqueries.TimeRange(ctx, c.Exec, topic)
 	if err != nil && err.Error() != dqueries.ErrSQLNoRows {
 		return nil, errors.Wrap(err, "services: failed to fetch time range")
 	}
@@ -147,6 +147,7 @@ func (c Connection) DeleteTopicTimeRange(
 		}
 	}
 
+	topic.TimerangeID = null.StringFromPtr(nil)
 	if err = c.updateTopicName(ctx, topic, nil); err != nil {
 		return nil, errors.Wrap(err, "services: failed to update topic name")
 	}
@@ -181,7 +182,7 @@ func (c Connection) UpdateSynonyms(
 		return nil, err
 	}
 
-	timerange, err := dqueries.TopicTimeRange(ctx, c.Exec, topic)
+	timerange, err := dqueries.TimeRange(ctx, c.Exec, topic)
 	if err != nil {
 		return nil, errors.Wrap(err, "services: failed to fetch time range")
 	}
@@ -464,7 +465,7 @@ func (c Connection) parentTopicsToAdd(
 }
 
 func (c Connection) updateTopicName(
-	ctx context.Context, topic *models.Topic, timerange *models.TopicTimerange,
+	ctx context.Context, topic *models.Topic, timerange *models.Timerange,
 ) error {
 	synonyms, err := topic.SynonymList()
 	if err != nil {
@@ -494,7 +495,7 @@ func (c Connection) UpsertTopicTimeRange(
 ) (*UpsertTopicTimeRangeResult, error) {
 	var alerts []*models.Alert
 
-	timerange, err := topic.TopicTimeranges().One(ctx, c.Exec)
+	timerange, err := topic.Timerange().One(ctx, c.Exec)
 
 	if err == nil {
 		log.Printf("Time range already exists, updating")
@@ -510,14 +511,18 @@ func (c Connection) UpsertTopicTimeRange(
 		}
 
 		log.Printf("Time range does not yet exist, creating")
-		timerange = &models.TopicTimerange{
-			TopicID:      topic.ID,
+		timerange = &models.Timerange{
 			StartsAt:     startsAt,
 			PrefixFormat: string(format),
 		}
 
 		if err = timerange.Insert(ctx, c.Exec, boil.Infer()); err != nil {
 			return nil, errors.Wrap(err, "services: failed to insert new time range")
+		}
+
+		topic.TimerangeID = null.NewString(timerange.ID, true)
+		if _, err = topic.Update(ctx, c.Exec, boil.Whitelist("timerange_id")); err != nil {
+			return nil, errors.Wrap(err, "services: failed to add time range to topic")
 		}
 	}
 
@@ -526,8 +531,8 @@ func (c Connection) UpsertTopicTimeRange(
 	}
 
 	return &UpsertTopicTimeRangeResult{
-		Alerts:         alerts,
-		Topic:          topic,
-		TopicTimeRange: timerange,
+		Alerts:    alerts,
+		Topic:     topic,
+		TimeRange: timerange,
 	}, nil
 }

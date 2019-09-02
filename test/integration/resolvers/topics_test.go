@@ -10,6 +10,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -785,13 +786,17 @@ func TestDeleteTopicTimeRange(t *testing.T) {
 	m := newMutator(t, testViewer)
 
 	topic, _ := m.createTopic(testViewer.Login, m.defaultRepo().Name, "A new topic")
-	timerange := &models.TopicTimerange{
-		TopicID:      topic.ID,
+	timerange := &models.Timerange{
 		StartsAt:     time.Now(),
 		PrefixFormat: string(models.TimeRangePrefixFormatNone),
 	}
 
 	if err := timerange.Insert(m.ctx, testDB, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	topic.TimerangeID = null.NewString(timerange.ID, true)
+	if _, err := topic.Update(m.ctx, testDB, boil.Whitelist("timerange_id")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -806,7 +811,7 @@ func TestDeleteTopicTimeRange(t *testing.T) {
 		t.Fatal("Expected a payload")
 	}
 
-	timerange, _ = models.FindTopicTimerange(m.ctx, testDB, *payload.DeletedTimeRangeID)
+	timerange, _ = models.FindTimerange(m.ctx, testDB, *payload.DeletedTimeRangeID)
 	if timerange != nil {
 		t.Fatal("Expected time range to have been deleted")
 	}
