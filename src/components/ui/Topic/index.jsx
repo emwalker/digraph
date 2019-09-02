@@ -121,7 +121,7 @@ export default createFragmentContainer(Topic, {
       parentTopics(first: 100) {
         edges {
           node {
-            displayName
+            displayName(timeRange: true)
             resourcePath
           }
         }
