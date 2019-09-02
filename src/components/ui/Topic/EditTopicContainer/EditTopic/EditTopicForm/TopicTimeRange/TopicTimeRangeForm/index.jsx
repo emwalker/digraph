@@ -90,7 +90,6 @@ const TopicTimeRangeForm = ({ relay, timeRange, topic: { id: topicId } }: Props)
         <dd>
           <input
             className={styles.startsAt}
-            disabled={mutationInFlight}
             id="time-range-starts-at"
             onChange={(e) => {
               e.persist()
