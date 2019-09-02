@@ -145,13 +145,13 @@ export default createRefetchContainer(EditTopicForm, {
     ) {
       description
       id
-      displayName(timeRange: true)
+      displayName: name
 
       selectedTopics: parentTopics(first: 100) {
         edges {
           node {
             value: id
-            label: displayName
+            label: name
           }
         }
       }
@@ -160,7 +160,7 @@ export default createRefetchContainer(EditTopicForm, {
         edges {
           node {
             value: id
-            label: displayName
+            label: name
           }
         }
       }

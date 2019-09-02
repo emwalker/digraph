@@ -117,7 +117,7 @@ export default createFragmentContainer(Link, {
       parentTopics(first: 10) {
         edges {
           node {
-            displayName(timeRange: true)
+            displayName: name
             resourcePath
           }
         }

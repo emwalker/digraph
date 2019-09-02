@@ -106,7 +106,7 @@ export default createFragmentContainer(Topic, {
   topic: graphql`
     fragment Topic_topic on Topic {
       description
-      displayName(timeRange: true)
+      displayName: name
       id
       loading
       newlyAdded
@@ -121,7 +121,7 @@ export default createFragmentContainer(Topic, {
       parentTopics(first: 100) {
         edges {
           node {
-            displayName(timeRange: true)
+            displayName: name
             resourcePath
           }
         }

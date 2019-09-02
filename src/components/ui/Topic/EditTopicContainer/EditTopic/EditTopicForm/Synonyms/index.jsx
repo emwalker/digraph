@@ -134,7 +134,7 @@ export const UnwrappedSynonyms = Synonyms
 export default createFragmentContainer(Synonyms, {
   topic: graphql`
     fragment Synonyms_topic on Topic {
-      displayName(timeRange: true)
+      displayName: name
       id
       viewerCanDeleteSynonyms
       viewerCanUpdate
