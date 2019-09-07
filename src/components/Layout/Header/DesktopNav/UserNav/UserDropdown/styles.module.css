@@ -6,3 +6,8 @@
   background-image: unset;
   padding: 6px 6px;
 }
+
+.itemLink, .itemLink:hover {
+  text-decoration: none;
+  color: inherit;
+}

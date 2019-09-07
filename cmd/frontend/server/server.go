@@ -18,7 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
-const requestTimeout = 5
+const requestTimeout = 15
 
 // Server holds config information for running the API server.
 type Server struct {

@@ -98,6 +98,35 @@ func (r *MutationResolver) CreateSession(
 	}, nil
 }
 
+// DeleteAccount deletes the user account and any private data associated with it.  Links and topics
+// added to the public repo will not be removed, but the association between the user and the links
+// and topics will no longer exist.
+func (r *MutationResolver) DeleteAccount(
+	ctx context.Context, input models.DeleteAccountInput,
+) (*models.DeleteAccountPayload, error) {
+	actor := GetRequestContext(ctx).Viewer()
+
+	if actor.IsGuest() {
+		return nil, ErrNoAnonymousMutations
+	}
+
+	if actor.ID != input.UserID {
+		return nil, fmt.Errorf("not allowed to delete account %s", input.UserID)
+	}
+
+	c := services.Connection{Exec: r.DB, Actor: actor}
+	result, err := c.DeleteAccount(ctx, actor)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.DeleteAccountPayload{
+		Alerts:        result.Alerts,
+		DeletedUserID: actor.ID,
+	}, nil
+}
+
 // DeleteLink sets the parent topics on a topic.
 func (r *MutationResolver) DeleteLink(
 	ctx context.Context, input models.DeleteLinkInput,

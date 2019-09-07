@@ -2,6 +2,7 @@ import queryMiddleware from 'farce/lib/queryMiddleware'
 import createRender from 'found/lib/createRender'
 import makeRouteConfig from 'found/lib/makeRouteConfig'
 import Route from 'found/lib/Route'
+import RedirectException from 'found/lib/RedirectException'
 import { Resolver } from 'found-relay'
 import React from 'react'
 
@@ -9,6 +10,7 @@ import { defaultRootTopicId, defaultOrganizationLogin } from 'components/constan
 import Homepage, { query as homepageQuery } from 'components/Homepage'
 import RecentPage, { query as recentPageQuery } from 'components/RecentPage'
 import ReviewPage, { query as reviewPageQuery } from 'components/ReviewPage'
+import UserSettings, { query as userSettingsQuery } from 'components/UserSettings'
 import { query as topicPageQuery } from 'components/TopicPage'
 import renderTopicPage from 'components/renderTopicPage'
 import { query as topicSearchPageQuery } from 'components/TopicSearchPage'
@@ -84,6 +86,21 @@ export const createRouteConfig = (store) => {
         query={reviewPageQuery}
         render={withErrorBoundary(ReviewPage)}
       />
+      <Route
+        path="/settings"
+      >
+        <Route
+          render={() => {
+            throw new RedirectException('/settings/account')
+          }}
+        />
+        <Route
+          path="/account"
+          prepareVariables={prepareVariables}
+          query={userSettingsQuery}
+          render={withErrorBoundary(UserSettings)}
+        />
+      </Route>
       <Route path=":orgLogin">
         <Route path="topics">
           <Route

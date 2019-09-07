@@ -15,8 +15,18 @@ type Props = {
   view: ViewType,
 }
 
+const noActivity = (
+  <div className="my-3 blankslate border">
+    <p>No recent activity found.</p>
+  </div>
+)
+
 const Homepage = ({ view, router }: Props) => {
   useDocumentTitle('Digraph')
+
+  const recents = view.activity.edges.map(
+    ({ node }) => <LineItem key={node.description} item={node} />,
+  )
 
   return (
     <div
@@ -36,7 +46,10 @@ const Homepage = ({ view, router }: Props) => {
 
       <h4>Recent updates</h4>
       <div className="f4">
-        {view.activity.edges.map(({ node }) => <LineItem key={node.description} item={node} />)}
+        {recents.length > 0
+          ? recents
+          : noActivity
+        }
 
         <div>
           There are currently

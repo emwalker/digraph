@@ -1,7 +1,8 @@
 // @flow
-import React from 'react'
+import React, { useCallback } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { Avatar, Dropdown } from '@primer/components'
+import { Link } from 'found'
 
 import type { UserType } from 'components/types'
 import styles from './styles.module.css'
@@ -19,6 +20,10 @@ const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
     />
   )
 
+  const signOut = useCallback(() => {
+    window.location.href = '/logout'
+  })
+
   return (
     <span className={styles.dropdown}>
       <Dropdown
@@ -26,7 +31,12 @@ const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
         title={avatar}
       >
         <Dropdown.Menu direction="sw">
-          <Dropdown.Item>Settings</Dropdown.Item>
+          <Dropdown.Item>
+            <Link className={styles.itemLink} to="/settings/account">Account</Link>
+          </Dropdown.Item>
+          <Dropdown.Item>
+            <a className={styles.itemLink} onClick={signOut} href="/logout">Sign out</a>
+          </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown>
     </span>

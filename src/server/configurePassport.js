@@ -98,7 +98,10 @@ export default (app, fetcher) => {
         },
 
         onError(error) {
-          console.log(`Failed to delete session for user ${req.user.id}`, error, error.source.errors)
+          const errors = error.source && error.source.errors
+          const userId = req.user && req.user.id
+          console.log(`Failed to delete session for user ${userId}`, error, errors)
+          req.logout()
         },
       },
     )

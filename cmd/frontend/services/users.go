@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 // CreateUserResult holds the result of a CreateUser call.
@@ -17,6 +18,12 @@ type CreateUserResult struct {
 	Cleanup      CleanupFunc
 	User         *models.User
 	Organization *models.Organization
+}
+
+// DeleteAccountResult holds the result of deleting an account.
+type DeleteAccountResult struct {
+	Alerts        []*models.Alert
+	DeletedUserID string
 }
 
 func addMember(ctx context.Context, exec boil.ContextExecutor, orgID, userID string, owner bool) error {
@@ -98,5 +105,41 @@ func (c Connection) CreateUser(
 		Cleanup:                cleanup,
 		Organization:           &org,
 		User:                   &user,
+	}, nil
+}
+
+// DeleteAccount hard-deletes the account and any private data associated with it.  Topics and links
+// added to public repos are not deleted.
+func (c Connection) DeleteAccount(
+	ctx context.Context, user *models.User,
+) (*DeleteAccountResult, error) {
+	log.Printf("Deleting account %s ...", user.Summary())
+
+	deletedUser := models.DeletedUser{UserID: user.ID}
+	if err := deletedUser.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+		log.Printf("Failed to add a row to the deleted users table for %s", user.ID)
+		return nil, errors.Wrap(err, "services: failed to add a row to deleted users")
+	}
+
+	_, err := models.Organizations(qm.Where("login like ? and system", user.Login)).DeleteAll(ctx, c.Exec)
+	if err != nil {
+		log.Printf("There was a problem deleting organizations for %s: %s", user.ID, err)
+		return nil, errors.Wrap(err, "services: failed to fetch organization")
+	}
+	log.Printf("Organization for %s deleted.", user.Summary())
+
+	if _, err := user.Delete(ctx, c.Exec); err != nil {
+		return nil, errors.Wrap(err, "services: failed to delete user")
+	}
+	log.Printf("Account for %s deleted.", user.Summary())
+
+	return &DeleteAccountResult{
+		Alerts: []*models.Alert{
+			models.NewAlert(
+				models.AlertTypeSuccess,
+				"Your account has been deleted",
+			),
+		},
+		DeletedUserID: user.ID,
 	}, nil
 }

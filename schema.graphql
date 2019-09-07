@@ -48,6 +48,17 @@ type CreateSessionPayload implements Alertable {
 
 scalar DateTime
 
+input DeleteAccountInput {
+  clientMutationId: String
+  userId: ID!
+}
+
+type DeleteAccountPayload implements Alertable {
+  alerts: [Alert!]!
+  clientMutationId: String
+  deletedUserId: ID!
+}
+
 input DeleteLinkInput {
   clientMutationId: String
   linkId: ID!
@@ -141,6 +152,7 @@ type LinkReview {
 
 type Mutation {
   createSession(input: CreateSessionInput!): CreateSessionPayload
+  deleteAccount(input: DeleteAccountInput!): DeleteAccountPayload
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
   deleteSession(input: DeleteSessionInput!): DeleteSessionPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
