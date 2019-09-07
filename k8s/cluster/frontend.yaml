@@ -56,6 +56,11 @@ spec:
         - containerPort: 8080
           name: http
           protocol: TCP
+        resources:
+          requests:
+            memory: 100Mi
+          limits:
+            memory: 200Mi
       - name: frontend
         envFrom:
         - secretRef:
@@ -66,4 +71,9 @@ spec:
         - containerPort: 3001
           name: http
           protocol: TCP
+        resources:
+          requests:
+            memory: 300Mi
+          limits:
+            memory: 400Mi
       restartPolicy: Always
