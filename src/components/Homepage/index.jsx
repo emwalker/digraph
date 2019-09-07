@@ -1,8 +1,8 @@
 import React from 'react'
 import { graphql } from 'react-relay'
 import classNames from 'classnames'
-import DocumentTitle from 'react-document-title'
 
+import useDocumentTitle from 'utils/useDocumentTitle'
 import { Homepage_homepage_QueryResponse as Response } from './__generated__/Homepage_homepage_Query.graphql'
 import LineItem from './LineItem'
 import SearchBox from './SearchBox'
@@ -15,8 +15,10 @@ type Props = {
   view: ViewType,
 }
 
-const Homepage = ({ view, router }: Props) => (
-  <DocumentTitle title="Digraph">
+const Homepage = ({ view, router }: Props) => {
+  useDocumentTitle('Digraph')
+
+  return (
     <div
       className={classNames(styles.container, 'px-3 px-md-6 px-lg-0')}
     >
@@ -47,8 +49,8 @@ const Homepage = ({ view, router }: Props) => (
 
       <SearchBox className={styles.search} router={router} />
     </div>
-  </DocumentTitle>
-)
+  )
+}
 
 export const query = graphql`
 query Homepage_homepage_Query(

@@ -1,27 +1,37 @@
 // @flow
 import React from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
+import { Avatar, Dropdown } from '@primer/components'
 
 import type { UserType } from 'components/types'
+import styles from './styles.module.css'
 
 type Props = {
   viewer: UserType,
 }
 
-const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => (
-  <summary className="d-inline">
-    <a className="text-gray-dark px-2" href="/logout">Sign out</a>
-    <img
+const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
+  const avatar = (
+    <Avatar
       alt={name}
-      className="avatar"
-      height="20"
+      size={20}
       src={`${avatarUrl}&s=40`}
-      width="20"
     />
-  </summary>
-)
+  )
 
-export const UnwrappedUserDropdown = UserDropdown
+  return (
+    <span className={styles.dropdown}>
+      <Dropdown
+        backgroundColor="transparent"
+        title={avatar}
+      >
+        <Dropdown.Menu direction="sw">
+          <Dropdown.Item>Settings</Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown>
+    </span>
+  )
+}
 
 export default createFragmentContainer(UserDropdown, {
   viewer: graphql`
