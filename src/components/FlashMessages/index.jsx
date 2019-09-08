@@ -24,7 +24,7 @@ class FlashMessages extends Component<Props, State> {
     window.flashMessages = this
   }
 
-  get alerts(): Iterable<React$Node> {
+  get alerts(): Array<React$Node> {
     return this.state.messages.map(message => (
       <Alert
         key={message.id}
@@ -47,11 +47,17 @@ class FlashMessages extends Component<Props, State> {
     }))
   }
 
-  render = () => (
-    <div>
-      { this.alerts }
-    </div>
-  )
+  render = () => {
+    const { alerts } = this
+
+    if (alerts.length === 0) return null
+
+    return (
+      <div className="container-lg clearfix my-2 px-3 px-md-6 px-lg-3">
+        { alerts }
+      </div>
+    )
+  }
 }
 
 export default FlashMessages
