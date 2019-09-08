@@ -2,7 +2,6 @@
 import React from 'react'
 import type { Node } from 'react'
 import { graphql } from 'react-relay'
-import { MediaQueryProvider } from 'react-responsive-hoc'
 
 import Header from './Header'
 import FlashMessages from '../FlashMessages'
@@ -55,30 +54,28 @@ query LayoutQuery(
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 
 const Layout = ({ alerts, children, view }: Props) => (
-  <MediaQueryProvider width={1600} height={800}>
-    <div className={layout}>
-      <div>
-        <Header
-          viewer={view.viewer}
-          defaultOrganization={view.defaultOrganization}
-        />
-        <div className="container-lg clearfix">
-          <FlashMessages initialAlerts={alerts} />
-          { children }
-        </div>
-        <footer className={footer}>
-          <div className="container-lg px-3 px-md-6 px-lg-0 my-6 pt-2 border-top">
-            <p className="mb-2">
-              Available for use under the MIT
-              {' '}
-              <a href="https://github.com/emwalker/digraph/blob/master/LICENSE.md">license</a>
-              . © Eric Walker.
-            </p>
-          </div>
-        </footer>
+  <div className={layout}>
+    <div>
+      <Header
+        viewer={view.viewer}
+        defaultOrganization={view.defaultOrganization}
+      />
+      <div className="container-lg clearfix">
+        <FlashMessages initialAlerts={alerts} />
+        { children }
       </div>
+      <footer className={footer}>
+        <div className="container-lg px-3 px-md-6 px-lg-0 my-6 pt-2 border-top">
+          <p className="mb-2">
+            Available for use under the MIT
+            {' '}
+            <a href="https://github.com/emwalker/digraph/blob/master/LICENSE.md">license</a>
+            . © Eric Walker.
+          </p>
+        </div>
+      </footer>
     </div>
-  </MediaQueryProvider>
+  </div>
 )
 
 Layout.defaultProps = {

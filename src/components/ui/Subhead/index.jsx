@@ -1,9 +1,9 @@
 // @flow
-import React, { Component } from 'react'
+import React, { useCallback } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { pathOr } from 'ramda'
-import DocumentTitle from 'react-document-title'
 
+import useDocumentTitle from 'utils/useDocumentTitle'
 import type { ViewType } from 'components/types'
 import SearchBox from 'components/ui/SearchBox'
 import './styles.module.css'
@@ -24,53 +24,42 @@ type Props = {
   view: ViewType,
 }
 
-class Subhead extends Component<Props> {
-  static defaultProps = {
-    renderHeadingDetail: null,
-  }
+const Subhead = (props: Props) => {
+  const { heading, location, renderHeadingDetail, router, view } = props
+  const pathname = resourcePath(view)
 
-  onSearch = (query: string) => {
+  const onSearch = useCallback((query: string) => {
     if (query === '') {
-      this.props.router.push({ pathname: this.pathname })
+      router.push({ pathname })
       return
     }
 
-    this.props.router.push({ pathname: this.pathname, query: { q: query } })
-  }
+    router.push({ pathname, query: { q: query } })
+  }, [router, pathname])
 
-  get pathname(): string {
-    return resourcePath(this.props.view)
-  }
+  const searchString = location.search
+    ? location.query.q
+    : ''
 
-  get searchString(): string {
-    return this.props.location.search
-      ? this.props.location.query.q
-      : ''
-  }
+  useDocumentTitle(`${heading} | Digraph`)
 
-  get title(): string {
-    return `${this.props.heading} | Digraph`
-  }
-
-  renderHeadingDetail = () => (
-    this.props.renderHeadingDetail && this.props.renderHeadingDetail()
-  )
-
-  render = () => (
-    <DocumentTitle title={this.title}>
-      <div className="Subhead clearfix gutter">
-        <div className="Subhead-heading col-lg-8 col-12 d-inline-flex">
-          { this.renderHeadingDetail() }
-          <div>{ this.props.heading }</div>
-        </div>
-        <SearchBox
-          className="col-lg-4 col-12"
-          onEnter={this.onSearch}
-          value={this.searchString}
-        />
+  return (
+    <div className="Subhead clearfix gutter">
+      <div className="Subhead-heading col-lg-8 col-12 d-inline-flex">
+        { renderHeadingDetail && renderHeadingDetail() }
+        <div>{ heading }</div>
       </div>
-    </DocumentTitle>
+      <SearchBox
+        className="col-lg-4 col-12"
+        onEnter={onSearch}
+        value={searchString}
+      />
+    </div>
   )
+}
+
+Subhead.defaultProps = {
+  renderHeadingDetail: null,
 }
 
 export default createFragmentContainer(Subhead, {

@@ -1,8 +1,8 @@
 import React from 'react'
 import { graphql } from 'react-relay'
 import classNames from 'classnames'
-import DocumentTitle from 'react-document-title'
 
+import useDocumentTitle from 'utils/useDocumentTitle'
 import { Homepage_homepage_QueryResponse as Response } from './__generated__/Homepage_homepage_Query.graphql'
 import LineItem from './LineItem'
 import SearchBox from './SearchBox'
@@ -15,8 +15,20 @@ type Props = {
   view: ViewType,
 }
 
-const Homepage = ({ view, router }: Props) => (
-  <DocumentTitle title="Digraph">
+const noActivity = (
+  <div className="my-3 blankslate border">
+    <p>No recent activity found.</p>
+  </div>
+)
+
+const Homepage = ({ view, router }: Props) => {
+  useDocumentTitle('Digraph')
+
+  const recents = view.activity.edges.map(
+    ({ node }) => <LineItem key={node.description} item={node} />,
+  )
+
+  return (
     <div
       className={classNames(styles.container, 'px-3 px-md-6 px-lg-0')}
     >
@@ -34,7 +46,10 @@ const Homepage = ({ view, router }: Props) => (
 
       <h4>Recent updates</h4>
       <div className="f4">
-        {view.activity.edges.map(({ node }) => <LineItem key={node.description} item={node} />)}
+        {recents.length > 0
+          ? recents
+          : noActivity
+        }
 
         <div>
           There are currently
@@ -47,8 +62,8 @@ const Homepage = ({ view, router }: Props) => (
 
       <SearchBox className={styles.search} router={router} />
     </div>
-  </DocumentTitle>
-)
+  )
+}
 
 export const query = graphql`
 query Homepage_homepage_Query(

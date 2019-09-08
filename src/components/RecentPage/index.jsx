@@ -1,8 +1,8 @@
 // @flow
 import React from 'react'
 import { graphql } from 'react-relay'
-import DocumentTitle from 'react-document-title'
 
+import useDocumentTitle from 'utils/useDocumentTitle'
 import LineItems from './LineItems'
 import type { RecentPage_recent_QueryResponse as Response } from './__generated__/RecentPage_recent_Query.graphql'
 import Container from './Container'
@@ -26,17 +26,17 @@ const Placeholder = () => (
   </Container>
 )
 
-export default ({ props }: WrapperProps) => (
-  <DocumentTitle title="Recent activity | Digraph">
-    {
+export default ({ props }: WrapperProps) => {
+  useDocumentTitle('Recent activity | Digraph')
+
+  return (
+    // eslint-disable-next-line react/prop-types
+    props && props.view && props.view.topic
       // eslint-disable-next-line react/prop-types
-      props && props.view && props.view.topic
-        // eslint-disable-next-line react/prop-types
-        ? <LineItems topic={props.view.topic} />
-        : <Placeholder />
-    }
-  </DocumentTitle>
-)
+      ? <LineItems topic={props.view.topic} />
+      : <Placeholder />
+  )
+}
 
 export const query = graphql`
 query RecentPage_recent_Query(
