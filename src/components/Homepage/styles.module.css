@@ -20,3 +20,9 @@
   text-align: center;
   margin: auto auto 4em auto;
 }
+
+@media (max-width: 1012px) {
+  .hero {
+    width: 95%;
+  }
+}
