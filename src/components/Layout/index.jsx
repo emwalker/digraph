@@ -69,7 +69,7 @@ const Layout = ({ alerts, children, view }: Props) => (
         <footer className={footer}>
           <div className="container-lg px-3 px-md-6 px-lg-0 my-6 pt-2 border-top">
             <p className="mb-2">
-              Software available for use under the MIT
+              Software available under the MIT
               {' '}
               <a href="https://github.com/emwalker/digraph/blob/master/LICENSE.md">license</a>
               . © Eric Walker.
