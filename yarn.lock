@@ -1258,7 +1258,7 @@
     react-is "16.8.6"
     styled-system "5.0.5"
 
-"@primer/css@^12.4.1":
+"@primer/css@^12.7.0":
   version "12.7.0"
   resolved "https://registry.yarnpkg.com/@primer/css/-/css-12.7.0.tgz#7ea766625a3cdcfe34f7d2bb48bbdc21211f1950"
   integrity sha512-EVqfwX1jxKWQoV9IxxCJQG7HlyKefdkYTJdnDV43Rr1cyidUTkQN9W0uMuN+RD9cmAzip/40b2E+7gsvsFDmBA==

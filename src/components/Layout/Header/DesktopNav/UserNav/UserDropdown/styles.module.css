@@ -5,13 +5,12 @@
 
 .dropdown summary {
   background-image: unset;
+  background-color: unset;
   padding: 6px 6px;
   border: none;
 }
 
-.itemLink, .itemLink:hover {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  width: 100%;
+.summary {
+  display: flex;
+  align-items: center;
 }

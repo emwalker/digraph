@@ -1,7 +1,7 @@
 // @flow
 import React, { useCallback } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
-import { Avatar, Dropdown } from '@primer/components'
+import { Avatar } from '@primer/components'
 import { Link } from 'found'
 
 import type { UserType } from 'components/types'
@@ -12,33 +12,33 @@ type Props = {
 }
 
 const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
-  const avatar = (
-    <Avatar
-      alt={name}
-      size={20}
-      src={`${avatarUrl}&s=40`}
-    />
-  )
-
   const signOut = useCallback(() => {
     window.location.href = '/logout'
   })
 
   return (
     <div className={styles.dropdown}>
-      <Dropdown
-        backgroundColor="transparent"
-        title={avatar}
-      >
-        <Dropdown.Menu direction="sw">
-          <Dropdown.Item>
-            <Link className={styles.itemLink} to="/settings/account">Account</Link>
-          </Dropdown.Item>
-          <Dropdown.Item>
-            <a className={styles.itemLink} onClick={signOut} href="/logout">Sign out</a>
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown>
+      <details className="dropdown details-reset details-overlay d-inline-block">
+        <summary className="btn" aria-haspopup="true">
+          <div className={styles.summary}>
+            <Avatar
+              alt={name}
+              size={20}
+              src={`${avatarUrl}&s=40`}
+            />
+            <div className="dropdown-caret" />
+          </div>
+        </summary>
+
+        <ul className="dropdown-menu dropdown-menu-sw">
+          <li>
+            <Link className="dropdown-item" to="/settings/account">Account</Link>
+          </li>
+          <li>
+            <a className="dropdown-item" onClick={signOut} href="/logout">Sign out</a>
+          </li>
+        </ul>
+      </details>
     </div>
   )
 }
