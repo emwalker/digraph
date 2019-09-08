@@ -30,20 +30,20 @@ const Homepage = ({ view, router }: Props) => {
 
   return (
     <div
-      className={classNames(styles.container, 'container-lg px-3 px-md-6 px-lg-0')}
+      className={classNames(styles.container, 'container-lg f4 px-3 px-md-6 px-lg-0')}
     >
       <h2 className="mb-2">
         Digraph
       </h2>
 
       <p>
-        Save links in a mind map–like network of topics. Keep track of everything
+        Save links in a mind map-like network of topics. Keep track of everything
         you&apos;ve read or might want to read in the future. Gain control over your
-        reading and turn the flood of information into knowledge.
+        reading and turn the deluge of information into knowledge.
       </p>
 
       <h4>Recent updates</h4>
-      <div className="f4">
+      <div>
         {recents.length > 0
           ? recents
           : noActivity
