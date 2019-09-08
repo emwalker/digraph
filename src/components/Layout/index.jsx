@@ -2,7 +2,7 @@
 import React from 'react'
 import type { Node } from 'react'
 import { graphql } from 'react-relay'
-import { Context as ResponsiveContext } from 'react-responsive'
+import { MediaQueryProvider } from 'react-responsive-hoc'
 
 import Header from './Header'
 import FlashMessages from '../FlashMessages'
@@ -55,7 +55,7 @@ query LayoutQuery(
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 
 const Layout = ({ alerts, children, view }: Props) => (
-  <ResponsiveContext.Provider values={{ width: 1600 }}>
+  <MediaQueryProvider width={1600} height={800}>
     <div className={layout}>
       <div>
         <Header
@@ -78,7 +78,7 @@ const Layout = ({ alerts, children, view }: Props) => (
         </footer>
       </div>
     </div>
-  </ResponsiveContext.Provider>
+  </MediaQueryProvider>
 )
 
 Layout.defaultProps = {

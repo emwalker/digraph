@@ -1,6 +1,6 @@
 // @flow
 import React from 'react'
-import MediaQuery from 'react-responsive'
+import { MediaQuery } from 'react-responsive-hoc'
 import classNames from 'classnames'
 
 import DesktopNav from './DesktopNav'
@@ -18,10 +18,10 @@ export default ({ viewer, defaultOrganization }: Props) => {
   return (
     <div className={classes}>
       <div style={{ width: '100%' }}>
-        <MediaQuery maxWidth={544}>
+        <MediaQuery query="(max-width: 544px)">
           <MobileNav viewer={viewer} />
         </MediaQuery>
-        <MediaQuery minWidth={544}>
+        <MediaQuery query="(min-width: 544px)">
           <DesktopNav
             viewer={viewer}
             defaultOrganization={defaultOrganization}

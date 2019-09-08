@@ -1,12 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<Layout /> renders 1`] = `
-<ContextProvider
-  values={
-    Object {
-      "width": 1600,
-    }
-  }
+<MediaQueryProvider
+  height={800}
+  width={1600}
 >
   <div
     className="layout"
@@ -45,5 +42,5 @@ exports[`<Layout /> renders 1`] = `
       </footer>
     </div>
   </div>
-</ContextProvider>
+</MediaQueryProvider>
 `;

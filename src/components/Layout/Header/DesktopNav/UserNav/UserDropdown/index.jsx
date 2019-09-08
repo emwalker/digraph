@@ -25,7 +25,7 @@ const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
   })
 
   return (
-    <span className={styles.dropdown}>
+    <div className={styles.dropdown}>
       <Dropdown
         backgroundColor="transparent"
         title={avatar}
@@ -39,7 +39,7 @@ const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
           </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown>
-    </span>
+    </div>
   )
 }
 

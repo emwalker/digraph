@@ -8003,10 +8003,10 @@ markdown-escapes@^1.0.0:
   resolved "https://registry.yarnpkg.com/markdown-escapes/-/markdown-escapes-1.0.3.tgz#6155e10416efaafab665d466ce598216375195f5"
   integrity sha512-XUi5HJhhV5R74k8/0H2oCbCiYf/u4cO/rX8tnGkRvrqhsr5BRNU6Mg0yt/8UIx1iIS8220BNJsDb7XnILhLepw==
 
-matchmediaquery@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/matchmediaquery/-/matchmediaquery-0.3.0.tgz#6f672bcdbc44de16825c6917fbcdcfb9b82607b1"
-  integrity sha512-u0dlv+VENJ+3YepvwSPBieuvnA6DWfaYa/ctwysAR13y4XLJNyt7bEVKzNj/Nvjo+50d88Pj+xL9xaSo6JmX/w==
+matchmediaquery@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/matchmediaquery/-/matchmediaquery-0.2.1.tgz#223c7005793de03e47ce92b13285a72c44ada2cf"
+  integrity sha1-IjxwBXk94D5HzpKxMoWnLEStos8=
   dependencies:
     css-mediaquery "^0.1.2"
 
@@ -10653,15 +10653,22 @@ react-remove-scroll@^1.0.2:
     react-remove-scroll-bar "^1.1.5"
     tslib "^1.0.0"
 
-react-responsive@^8.0.1:
-  version "8.0.1"
-  resolved "https://registry.yarnpkg.com/react-responsive/-/react-responsive-8.0.1.tgz#38022665dfb759227880f4221c475438a06a1771"
-  integrity sha512-caseFCvFFV4QW+JOl7inzDme+avoX4r7GPpQJ+04NCzIgbroV3BU0noPgHGxVCEFKm9IsgcKOBAf+6MqIUeQIg==
+react-responsive-hoc@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/react-responsive-hoc/-/react-responsive-hoc-1.0.0.tgz#bf3bd9747021c1eac25e408efd19436d4b469719"
+  integrity sha512-0+iAh/5479HuLtxFiG466bmtaWkf8PZARMBWOF41NTaAprYaDGyJ9vn5dETvt5txvCyr+ko6p8AFUUGE8DVYug==
+  dependencies:
+    prop-types "^15.6.0"
+    react-responsive "^3.0"
+
+react-responsive@^3.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/react-responsive/-/react-responsive-3.0.0.tgz#26e895dbdf748d4473c76cf46d29cb9d824e02ec"
+  integrity sha512-1w42433p6EvW6w3/IvIwG52ZrjPyZcZCV8wxnHTq7ZD3RiKp3IrAT/zInrYUUc2ipJEoR+4GARhwJNaIh+LD6Q==
   dependencies:
     hyphenate-style-name "^1.0.0"
-    matchmediaquery "^0.3.0"
-    prop-types "^15.6.1"
-    shallow-equal "^1.1.0"
+    matchmediaquery "^0.2.1"
+    prop-types "^15.5.7"
 
 react-select@3.0.4:
   version "3.0.4"
@@ -11528,11 +11535,6 @@ shallow-clone@^1.0.0:
     is-extendable "^0.1.1"
     kind-of "^5.0.0"
     mixin-object "^2.0.1"
-
-shallow-equal@^1.1.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/shallow-equal/-/shallow-equal-1.2.0.tgz#fd828d2029ff4e19569db7e19e535e94e2d1f5cc"
-  integrity sha512-Z21pVxR4cXsfwpMKMhCEIO1PCi5sp7KEp+CmOpBQ+E8GpHwKOw2sEzk7sgblM3d/j4z4gakoWEoPcjK0VJQogA==
 
 shebang-command@^1.2.0:
   version "1.2.0"
