@@ -30,19 +30,17 @@ const Homepage = ({ view, router }: Props) => {
 
   return (
     <div
-      className={classNames(styles.container, 'px-3 px-md-6 px-lg-0')}
+      className={classNames(styles.container, 'container-lg px-3 px-md-6 px-lg-0')}
     >
       <h2 className="mb-2">
         Digraph
       </h2>
 
-      <ul className={classNames(styles.list, 'ml-4 f4')}>
-        <li>Save links in a mind map–like network of topics.</li>
-        <li>Keep track of everything you&apos;ve read or might want to read in the future.</li>
-        <li>
-          Gain control over your reading and turn the flood of information into knowledge.
-        </li>
-      </ul>
+      <p>
+        Save links in a mind map–like network of topics. Keep track of everything
+        you&apos;ve read or might want to read in the future. Gain control over your
+        reading and turn the flood of information into knowledge.
+      </p>
 
       <h4>Recent updates</h4>
       <div className="f4">
