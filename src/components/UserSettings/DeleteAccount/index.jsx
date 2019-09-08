@@ -54,12 +54,11 @@ const DeleteAccount = ({ relay, view }: Props) => {
         </a>
         {' '}
         menu and look for &quot;Digraph&quot;.
-      </p>
-      <p>
-        If you do not revoke permission for this app, it will seem as though your account was not
-        deleted the next time you attempt to log into Digraph.  In that event, your account will be
-        silently recreated using the information that you authorized Digraph to use when logging in
-        the first time.
+        If you run into any difficulties deleting your account, email the
+        {' '}
+        <a href="mailto:eric.walker@gmail.com?subject=Problem deleting account">app maintainer</a>
+        {' '}
+        with a description of the problem.
       </p>
     </>
   )
