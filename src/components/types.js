@@ -127,3 +127,9 @@ type Edge<EdgesType> = $NonMaybeType<$ElementType<EdgesType, number>>
 type Node<EdgeType> = $NonMaybeType<$PropertyType<EdgeType, 'node'>>
 
 export type CollectionNode<ConnectionType> = Node<Edge<Edges<ConnectionType>>>
+
+export type Match = {
+  location: {
+    pathname: string,
+  },
+}

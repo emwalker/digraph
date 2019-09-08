@@ -26,6 +26,9 @@ class Menu extends Component<Props> {
       <Link className="menu-item text-gray-dark p-3" to="/review">
         Review
       </Link>
+      <Link className="menu-item text-gray-dark p-3" to="/settings/account">
+        Settings
+      </Link>
       <a className="menu-item text-gray-dark p-3" href="/logout">Sign out</a>
     </Fragment>
   )

@@ -100,6 +100,12 @@ export const createRouteConfig = (store) => {
           query={userSettingsQuery}
           render={withErrorBoundary(UserSettings)}
         />
+        <Route
+          path="/support"
+          prepareVariables={prepareVariables}
+          query={userSettingsQuery}
+          render={withErrorBoundary(UserSettings)}
+        />
       </Route>
       <Route path=":orgLogin">
         <Route path="topics">

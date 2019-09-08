@@ -32,10 +32,13 @@ const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
 
         <ul className="dropdown-menu dropdown-menu-sw">
           <li>
+            <a className="dropdown-item" onClick={signOut} href="/logout">Sign out</a>
+          </li>
+          <li>
             <Link className="dropdown-item" to="/settings/account">Account</Link>
           </li>
           <li>
-            <a className="dropdown-item" onClick={signOut} href="/logout">Sign out</a>
+            <Link className="dropdown-item" to="/settings/support">Support</Link>
           </li>
         </ul>
       </details>

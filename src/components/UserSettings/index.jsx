@@ -1,13 +1,14 @@
 // @flow
 import React, { useEffect } from 'react'
-import { Link } from 'found'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import Page from 'components/ui/Page'
-import type { Relay } from 'components/types'
+import type { Match, Relay } from 'components/types'
 import useDocumentTitle from 'utils/useDocumentTitle'
 import { type UserSettings_view as View } from './__generated__/UserSettings_view.graphql'
-import DeleteAccount from './DeleteAccount'
+import Sidenav from './Sidenav'
+import Account from './Account'
+import Support from './Support'
 
 export const query = graphql`
   query UserSettings_query_Query(
@@ -34,11 +35,12 @@ export const query = graphql`
 `
 
 type RenderProps = {
+  match: Match,
   relay: Relay,
   view: View,
 }
 
-const UserSettings = ({ relay, view }: RenderProps) => {
+const UserSettings = ({ match, relay, view }: RenderProps) => {
   const { viewer } = view
 
   useEffect(() => {
@@ -48,17 +50,13 @@ const UserSettings = ({ relay, view }: RenderProps) => {
 
   if (viewer.isGuest) return null
 
-  useDocumentTitle('Account | Digraph')
+  useDocumentTitle('Settings | Digraph')
 
   return (
     <Page>
-      <nav className="menu col-3 float-left" aria-label="Settings">
-        <span className="menu-heading" id="menu-heading">Settings</span>
-        <Link className="menu-item selected" to="/settings/account">Account</Link>
-      </nav>
-      <div className="col-9 float-left pl-4">
-        <DeleteAccount relay={relay} view={view} />
-      </div>
+      <Sidenav match={match} />
+      <Account match={match} relay={relay} view={view} />
+      <Support match={match} />
     </Page>
   )
 }
@@ -67,22 +65,24 @@ const Wrapper = createFragmentContainer(UserSettings, {
   view: graphql`
     fragment UserSettings_view on View {
       viewer {
-        id
         isGuest
       }
 
-      ...DeleteAccount_view
+      ...Account_view
     }
   `,
 })
 
 type Props = {
-  view: View,
+  props: {
+    view: View,
+  },
+  match: Match,
 }
 
-export default ({ props }: { props: Props }) => (
+export default ({ props, match }: Props) => (
   // eslint-disable-next-line react/prop-types
   props && props.view
-    ? <Wrapper {...props} />
+    ? <Wrapper match={match} {...props} />
     : null
 )
