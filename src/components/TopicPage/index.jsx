@@ -7,6 +7,7 @@ import { Link as FoundLink } from 'found'
 
 import { liftNodes } from 'utils'
 import type { LinkType, Relay } from 'components/types'
+import Page from 'components/ui/Page'
 import Subhead from 'components/ui/Subhead'
 import Breadcrumbs from 'components/ui/Breadcrumbs'
 import SidebarList from 'components/ui/SidebarList'
@@ -186,7 +187,7 @@ class TopicPage extends Component<Props, State> {
     const { currentRepository } = view
 
     return (
-      <div className="px-3 px-md-6 px-lg-0">
+      <Page>
         <Breadcrumbs
           orgLogin={this.props.orgLogin}
           repository={currentRepository}
@@ -225,7 +226,7 @@ class TopicPage extends Component<Props, State> {
             </List>
           </LeftColumn>
         </Columns>
-      </div>
+      </Page>
     )
   }
 }

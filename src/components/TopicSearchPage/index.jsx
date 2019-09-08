@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
+import Page from 'components/ui/Page'
 import type { LinkType, Relay } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
@@ -76,39 +77,41 @@ class TopicSearchPage extends Component<Props> {
     const { currentRepository: repo } = view
 
     return (
-      <div className="px-3 px-md-6 px-lg-0">
-        <Breadcrumbs
-          orgLogin={orgLogin}
-          repository={repo}
-        />
-        <Subhead
-          heading={name}
-          headingLink={resourcePath}
-          location={location}
-          orgLogin={orgLogin}
-          router={router}
-          view={view}
-        />
-        <Columns>
-          <RightColumn>
-            <SidebarList
-              items={liftNodes(parentTopics)}
-              orgLogin={this.props.orgLogin}
-              placeholder="There are no parent topics for this topic."
-              repoName={repo ? repo.displayName : 'No repo'}
-              title="Parent topics"
-            />
-          </RightColumn>
-          <LeftColumn>
-            <List
-              placeholder="There are no items in this list."
-              hasItems={!isEmpty(rows)}
-            >
-              { rows.map(this.renderSearchResultItem) }
-            </List>
-          </LeftColumn>
-        </Columns>
-      </div>
+      <Page>
+        <div className="px-3 px-md-6 px-lg-0">
+          <Breadcrumbs
+            orgLogin={orgLogin}
+            repository={repo}
+          />
+          <Subhead
+            heading={name}
+            headingLink={resourcePath}
+            location={location}
+            orgLogin={orgLogin}
+            router={router}
+            view={view}
+          />
+          <Columns>
+            <RightColumn>
+              <SidebarList
+                items={liftNodes(parentTopics)}
+                orgLogin={this.props.orgLogin}
+                placeholder="There are no parent topics for this topic."
+                repoName={repo ? repo.displayName : 'No repo'}
+                title="Parent topics"
+              />
+            </RightColumn>
+            <LeftColumn>
+              <List
+                placeholder="There are no items in this list."
+                hasItems={!isEmpty(rows)}
+              >
+                { rows.map(this.renderSearchResultItem) }
+              </List>
+            </LeftColumn>
+          </Columns>
+        </div>
+      </Page>
     )
   }
 }

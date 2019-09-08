@@ -15,7 +15,7 @@ class Container extends Component<Props> {
   }
 
   render = () => (
-    <div className="px-3 px-md-6 px-lg-0">
+    <>
       <div className="Subhead clearfix gutter">
         <div className="Subhead-heading col-lg-8 col-12">
           { this.title }
@@ -29,7 +29,7 @@ class Container extends Component<Props> {
         </div>
         { this.props.children }
       </div>
-    </div>
+    </>
   )
 }
 

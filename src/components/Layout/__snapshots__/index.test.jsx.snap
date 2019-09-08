@@ -13,7 +13,7 @@ exports[`<Layout /> renders 1`] = `
         viewer={Object {}}
       />
       <div
-        className="container-lg clearfix"
+        className="clearfix"
       >
         <FlashMessages />
         <div>

@@ -2,6 +2,7 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
+import Page from 'components/ui/Page'
 import { type CollectionNode } from 'components/types'
 import { type ReviewPage_view as View } from './__generated__/ReviewPage_view.graphql'
 import Container from './Container'
@@ -120,8 +121,12 @@ const Wrapper = createFragmentContainer(ReviewPage, {
 })
 
 export default ({ props }: { props: Props }) => (
-  // eslint-disable-next-line react/prop-types
-  props && props.view
-    ? <Wrapper {...props} />
-    : <Placeholder />
+  <Page>
+    {
+      // eslint-disable-next-line react/prop-types
+      props && props.view
+        ? <Wrapper {...props} />
+        : <Placeholder />
+    }
+  </Page>
 )

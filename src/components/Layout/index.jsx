@@ -62,7 +62,7 @@ const Layout = ({ alerts, children, view }: Props) => (
           viewer={view.viewer}
           defaultOrganization={view.defaultOrganization}
         />
-        <div className="container-lg clearfix">
+        <div className="clearfix">
           <FlashMessages initialAlerts={alerts} />
           { children }
         </div>

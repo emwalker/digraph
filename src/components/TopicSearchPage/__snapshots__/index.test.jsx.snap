@@ -1,44 +1,46 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<TopicPage /> renders 1`] = `
-<div
-  className="px-3 px-md-6 px-lg-0"
->
-  <Breadcrumbs
-    repository={
-      Object {
-        "displayName": "Private collection",
-        "isPrivate": true,
-      }
-    }
-  />
-  <Subhead
-    heading="Frotz"
-    renderHeadingDetail={null}
-    view={
-      Object {
-        "currentRepository": Object {
+<Page>
+  <div
+    className="px-3 px-md-6 px-lg-0"
+  >
+    <Breadcrumbs
+      repository={
+        Object {
           "displayName": "Private collection",
           "isPrivate": true,
-        },
+        }
       }
-    }
-  />
-  <Columns>
-    <RightColumn>
-      <_default
-        items={Array []}
-        placeholder="There are no parent topics for this topic."
-        repoName="Private collection"
-        title="Parent topics"
-      />
-    </RightColumn>
-    <LeftColumn>
-      <_default
-        hasItems={false}
-        placeholder="There are no items in this list."
-      />
-    </LeftColumn>
-  </Columns>
-</div>
+    />
+    <Subhead
+      heading="Frotz"
+      renderHeadingDetail={null}
+      view={
+        Object {
+          "currentRepository": Object {
+            "displayName": "Private collection",
+            "isPrivate": true,
+          },
+        }
+      }
+    />
+    <Columns>
+      <RightColumn>
+        <_default
+          items={Array []}
+          placeholder="There are no parent topics for this topic."
+          repoName="Private collection"
+          title="Parent topics"
+        />
+      </RightColumn>
+      <LeftColumn>
+        <_default
+          hasItems={false}
+          placeholder="There are no items in this list."
+        />
+      </LeftColumn>
+    </Columns>
+  </div>
+</Page>
 `;

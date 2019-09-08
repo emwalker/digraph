@@ -1,70 +1,72 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<LoadingPage /> renders 1`] = `
-<div
-  className="px-3 px-md-6 px-lg-0"
->
-  <nav
-    aria-label="Breadcrumb"
-    className="mb-1"
-  >
-    <ol>
-      <li
-        className="breadcrumb-item"
-      >
-        <GoRepo
-          className="mr-1"
-        />
-         
-        <a
-          href="#"
-        >
-          Gnusto
-        </a>
-      </li>
-      <li
-        aria-current="page"
-        className="breadcrumb-item breadcrumb-item-selected text-gray"
-      >
-        General collection
-      </li>
-    </ol>
-  </nav>
+<Page>
   <div
-    className="Subhead clearfix gutter"
+    className="px-3 px-md-6 px-lg-0"
   >
-    <div
-      className="Subhead-heading col-lg-8 col-12"
+    <nav
+      aria-label="Breadcrumb"
+      className="mb-1"
     >
-      Some title
-    </div>
-    <SearchBox
-      className="col-lg-4 col-12"
-      onEnter={null}
-      value=""
-    />
-  </div>
-  <div>
-    <Columns>
-      <RightColumn>
-        <_default
-          items={Array []}
-          orgLogin="Gnusto"
-          placeholder="There are no parent topics for this topic."
-          repoName="General collection"
-          title="Parent topics"
-        />
-      </RightColumn>
-      <LeftColumn>
-        <div
-          className="blankslate"
+      <ol>
+        <li
+          className="breadcrumb-item"
         >
-          <p>
-            Searching the computers for items ...
-          </p>
-        </div>
-      </LeftColumn>
-    </Columns>
+          <GoRepo
+            className="mr-1"
+          />
+           
+          <a
+            href="#"
+          >
+            Gnusto
+          </a>
+        </li>
+        <li
+          aria-current="page"
+          className="breadcrumb-item breadcrumb-item-selected text-gray"
+        >
+          General collection
+        </li>
+      </ol>
+    </nav>
+    <div
+      className="Subhead clearfix gutter"
+    >
+      <div
+        className="Subhead-heading col-lg-8 col-12"
+      >
+        Some title
+      </div>
+      <SearchBox
+        className="col-lg-4 col-12"
+        onEnter={null}
+        value=""
+      />
+    </div>
+    <div>
+      <Columns>
+        <RightColumn>
+          <_default
+            items={Array []}
+            orgLogin="Gnusto"
+            placeholder="There are no parent topics for this topic."
+            repoName="General collection"
+            title="Parent topics"
+          />
+        </RightColumn>
+        <LeftColumn>
+          <div
+            className="blankslate"
+          >
+            <p>
+              Searching the computers for items ...
+            </p>
+          </div>
+        </LeftColumn>
+      </Columns>
+    </div>
   </div>
-</div>
+</Page>
 `;

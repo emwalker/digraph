@@ -2,6 +2,7 @@
 import React from 'react'
 import { graphql } from 'react-relay'
 
+import Page from 'components/ui/Page'
 import useDocumentTitle from 'utils/useDocumentTitle'
 import LineItems from './LineItems'
 import type { RecentPage_recent_QueryResponse as Response } from './__generated__/RecentPage_recent_Query.graphql'
@@ -30,11 +31,15 @@ export default ({ props }: WrapperProps) => {
   useDocumentTitle('Recent activity | Digraph')
 
   return (
-    // eslint-disable-next-line react/prop-types
-    props && props.view && props.view.topic
-      // eslint-disable-next-line react/prop-types
-      ? <LineItems topic={props.view.topic} />
-      : <Placeholder />
+    <Page>
+      {
+        // eslint-disable-next-line react/prop-types
+        props && props.view && props.view.topic
+          // eslint-disable-next-line react/prop-types
+          ? <LineItems topic={props.view.topic} />
+          : <Placeholder />
+      }
+    </Page>
   )
 }
 

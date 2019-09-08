@@ -2,6 +2,7 @@
 import React from 'react'
 import { GoRepo } from 'react-icons/go'
 
+import Page from 'components/ui/Page'
 import SearchBox from 'components/ui/SearchBox'
 import Columns from 'components/ui/Columns'
 import LeftColumn from 'components/ui/LeftColumn'
@@ -22,50 +23,52 @@ const LoadingPage = ({ location }: Props) => {
   const { orgLogin, repoName, itemTitle } = state
 
   return (
-    <div className="px-3 px-md-6 px-lg-0">
-      <nav aria-label="Breadcrumb" className="mb-1">
-        <ol>
-          <li className="breadcrumb-item">
-            <GoRepo className="mr-1" />
-            {' '}
-            <a href="#">{orgLogin}</a>
-          </li>
-          <li
-            className="breadcrumb-item breadcrumb-item-selected text-gray"
-            aria-current="page"
-          >
-            { repoName }
-          </li>
-        </ol>
-      </nav>
-      <div className="Subhead clearfix gutter">
-        <div className="Subhead-heading col-lg-8 col-12">
-          { itemTitle }
+    <Page>
+      <div className="px-3 px-md-6 px-lg-0">
+        <nav aria-label="Breadcrumb" className="mb-1">
+          <ol>
+            <li className="breadcrumb-item">
+              <GoRepo className="mr-1" />
+              {' '}
+              <a href="#">{orgLogin}</a>
+            </li>
+            <li
+              className="breadcrumb-item breadcrumb-item-selected text-gray"
+              aria-current="page"
+            >
+              { repoName }
+            </li>
+          </ol>
+        </nav>
+        <div className="Subhead clearfix gutter">
+          <div className="Subhead-heading col-lg-8 col-12">
+            { itemTitle }
+          </div>
+          <SearchBox
+            className="col-lg-4 col-12"
+            value=""
+          />
         </div>
-        <SearchBox
-          className="col-lg-4 col-12"
-          value=""
-        />
+        <div>
+          <Columns>
+            <RightColumn>
+              <SidebarList
+                title="Parent topics"
+                orgLogin={orgLogin}
+                placeholder="There are no parent topics for this topic."
+                repoName={repoName}
+                items={[]}
+              />
+            </RightColumn>
+            <LeftColumn>
+              <div className="blankslate">
+                <p>Searching the computers for items ...</p>
+              </div>
+            </LeftColumn>
+          </Columns>
+        </div>
       </div>
-      <div>
-        <Columns>
-          <RightColumn>
-            <SidebarList
-              title="Parent topics"
-              orgLogin={orgLogin}
-              placeholder="There are no parent topics for this topic."
-              repoName={repoName}
-              items={[]}
-            />
-          </RightColumn>
-          <LeftColumn>
-            <div className="blankslate">
-              <p>Searching the computers for items ...</p>
-            </div>
-          </LeftColumn>
-        </Columns>
-      </div>
-    </div>
+    </Page>
   )
 }
 

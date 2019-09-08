@@ -1,9 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<TopicPage /> renders 1`] = `
-<div
-  className="px-3 px-md-6 px-lg-0"
->
+<Page>
   <ForwardRef(Relay(Breadcrumbs))
     repository={
       Object {
@@ -108,5 +106,5 @@ exports[`<TopicPage /> renders 1`] = `
       />
     </LeftColumn>
   </Columns>
-</div>
+</Page>
 `;

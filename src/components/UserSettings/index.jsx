@@ -3,6 +3,7 @@ import React, { useEffect } from 'react'
 import { Link } from 'found'
 import { createFragmentContainer, graphql } from 'react-relay'
 
+import Page from 'components/ui/Page'
 import type { Relay } from 'components/types'
 import useDocumentTitle from 'utils/useDocumentTitle'
 import { type UserSettings_view as View } from './__generated__/UserSettings_view.graphql'
@@ -50,7 +51,7 @@ const UserSettings = ({ relay, view }: RenderProps) => {
   useDocumentTitle('Account | Digraph')
 
   return (
-    <div className="container clearfix">
+    <Page>
       <nav className="menu col-3 float-left" aria-label="Settings">
         <span className="menu-heading" id="menu-heading">Settings</span>
         <Link className="menu-item selected" to="/settings/account">Account</Link>
@@ -58,7 +59,7 @@ const UserSettings = ({ relay, view }: RenderProps) => {
       <div className="col-9 float-left pl-4">
         <DeleteAccount relay={relay} view={view} />
       </div>
-    </div>
+    </Page>
   )
 }
 

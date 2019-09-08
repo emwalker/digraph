@@ -13,7 +13,7 @@ type Props = {
 }
 
 export default ({ viewer, defaultOrganization }: Props) => {
-  const classes = classNames(header, 'clearfix mb-3 d-flex px-sm-3 px-md-6 px-lg-4')
+  const classes = classNames(header, 'clearfix d-flex px-sm-3 px-md-6 px-lg-4')
 
   return (
     <div className={classes}>
