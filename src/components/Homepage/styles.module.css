@@ -26,3 +26,8 @@
     width: 95%;
   }
 }
+
+.logo, .logo:hover {
+  text-decoration: none;
+  color: inherit;
+}

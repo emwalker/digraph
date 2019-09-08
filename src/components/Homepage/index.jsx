@@ -3,6 +3,7 @@ import { graphql } from 'react-relay'
 import classNames from 'classnames'
 
 import useDocumentTitle from 'utils/useDocumentTitle'
+import DigraphLogo from 'components/ui/icons/DigraphLogo'
 import { Homepage_homepage_QueryResponse as Response } from './__generated__/Homepage_homepage_Query.graphql'
 import LineItem from './LineItem'
 import SearchBox from './SearchBox'
@@ -33,9 +34,15 @@ const Homepage = ({ view, router }: Props) => {
       className={classNames(styles.container, 'container-lg f4 px-3 px-md-6 px-lg-0')}
     >
       <div className={styles.hero}>
-        <h1 className="mb-4">
-          Digraph
-        </h1>
+        <a className={styles.logo} href="/">
+          <h1 className="mb-3">
+            Digraph
+          </h1>
+
+          <div className="mb-3">
+            <DigraphLogo height="60px" width="60px" />
+          </div>
+        </a>
 
         <p>
           Save links in a mind map-like network of topics. Keep track of everything
