@@ -5,6 +5,7 @@
 
 .header {
   flex: 1;
+  height: 40px;
 }
 
 .primaryLogo {
