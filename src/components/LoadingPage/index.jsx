@@ -24,49 +24,47 @@ const LoadingPage = ({ location }: Props) => {
 
   return (
     <Page>
-      <div className="px-3 px-md-6 px-lg-0">
-        <nav aria-label="Breadcrumb" className="mb-1">
-          <ol>
-            <li className="breadcrumb-item">
-              <GoRepo className="mr-1" />
-              {' '}
-              <a href="#">{orgLogin}</a>
-            </li>
-            <li
-              className="breadcrumb-item breadcrumb-item-selected text-gray"
-              aria-current="page"
-            >
-              { repoName }
-            </li>
-          </ol>
-        </nav>
-        <div className="Subhead clearfix gutter">
-          <div className="Subhead-heading col-lg-8 col-12">
-            { itemTitle }
-          </div>
-          <SearchBox
-            className="col-lg-4 col-12"
-            value=""
-          />
+      <nav aria-label="Breadcrumb" className="mb-1">
+        <ol>
+          <li className="breadcrumb-item">
+            <GoRepo className="mr-1" />
+            {' '}
+            <a href="#">{orgLogin}</a>
+          </li>
+          <li
+            className="breadcrumb-item breadcrumb-item-selected text-gray"
+            aria-current="page"
+          >
+            { repoName }
+          </li>
+        </ol>
+      </nav>
+      <div className="Subhead clearfix gutter">
+        <div className="Subhead-heading col-lg-8 col-12">
+          { itemTitle }
         </div>
-        <div>
-          <Columns>
-            <RightColumn>
-              <SidebarList
-                title="Parent topics"
-                orgLogin={orgLogin}
-                placeholder="There are no parent topics for this topic."
-                repoName={repoName}
-                items={[]}
-              />
-            </RightColumn>
-            <LeftColumn>
-              <div className="blankslate">
-                <p>Searching the computers for items ...</p>
-              </div>
-            </LeftColumn>
-          </Columns>
-        </div>
+        <SearchBox
+          className="col-lg-4 col-12"
+          value=""
+        />
+      </div>
+      <div>
+        <Columns>
+          <RightColumn>
+            <SidebarList
+              title="Parent topics"
+              orgLogin={orgLogin}
+              placeholder="There are no parent topics for this topic."
+              repoName={repoName}
+              items={[]}
+            />
+          </RightColumn>
+          <LeftColumn>
+            <div className="blankslate">
+              <p>Searching the computers for items ...</p>
+            </div>
+          </LeftColumn>
+        </Columns>
       </div>
     </Page>
   )

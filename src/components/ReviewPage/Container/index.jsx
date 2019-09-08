@@ -18,7 +18,7 @@ const Container = (props: Props) => {
   useDocumentTitle(title)
 
   return (
-    <div className="px-3 px-md-6 px-lg-0">
+    <>
       <div className="Subhead clearfix gutter">
         <div className="Subhead-heading col-lg-8 col-12">
           { title }
@@ -37,7 +37,7 @@ const Container = (props: Props) => {
           { props.children }
         </ul>
       </div>
-    </div>
+    </>
   )
 }
 
