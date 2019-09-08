@@ -5,6 +5,7 @@
 .dropdown summary {
   background-image: unset;
   padding: 6px 6px;
+  border: none;
 }
 
 .itemLink, .itemLink:hover {

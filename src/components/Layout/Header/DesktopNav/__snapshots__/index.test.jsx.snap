@@ -2,7 +2,7 @@
 
 exports[`<DesktopNav /> renders 1`] = `
 <header
-  className="header d-flex py-2"
+  className="header d-flex py-1"
 >
   <nav
     className="flex-self-center d-inline-block"

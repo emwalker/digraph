@@ -43,7 +43,7 @@ class DesktopNav extends Component<Props> {
     const { viewer } = this.props
 
     return (
-      <header className={classNames(header, 'd-flex py-2')}>
+      <header className={classNames(header, 'd-flex py-1')}>
         <nav className="flex-self-center d-inline-block">
           <h1 className="h3 text-normal">
             <Link
