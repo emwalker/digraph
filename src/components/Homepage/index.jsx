@@ -34,9 +34,9 @@ const Homepage = ({ view, router }: Props) => {
       <div className={styles.hero}>
         <div className={styles.content}>
           <a className={styles.logo} href="/">
-            <h1 className="mb-3">
+            <div className={styles.appName}>
               Digraph
-            </h1>
+            </div>
 
             <div className="mb-3">
               <DigraphLogo height="60px" width="60px" />

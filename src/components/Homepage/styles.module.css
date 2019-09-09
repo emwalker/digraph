@@ -47,3 +47,10 @@
   text-decoration: none;
   color: inherit;
 }
+
+.appName {
+  font-size: 38px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 9px;
+}
