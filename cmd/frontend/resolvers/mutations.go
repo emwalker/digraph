@@ -33,26 +33,6 @@ func init() {
 	log.SetOutput(os.Stdout)
 }
 
-// https://stackoverflow.com/a/23502629/61048
-func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
-	tx, err := db.Begin()
-	if err != nil {
-		return
-	}
-	defer func() {
-		if p := recover(); p != nil {
-			tx.Rollback()
-			panic(p)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-	err = txFunc(tx)
-	return
-}
-
 func findRepo(
 	ctx context.Context, exec boil.ContextExecutor, actor *models.User, orgLogin, repoName string,
 ) (*models.Repository, error) {
@@ -149,7 +129,7 @@ func (r *MutationResolver) DeleteLink(
 	}
 	repo := link.R.Repository
 
-	err = transact(r.DB, func(tx *sql.Tx) error {
+	err = queries.Transact(r.DB, func(tx *sql.Tx) error {
 		c := services.Connection{Exec: tx, Actor: actor}
 
 		_, err := c.DeleteLink(ctx, repo, link)
@@ -204,12 +184,22 @@ func (r *MutationResolver) DeleteTopic(
 	topic, err := fetchTopic(ctx, r.DB, input.TopicID, actor)
 	if err != nil {
 		log.Printf("There was a problem looking up topic: %s", input.TopicID)
-		return nil, err
+		return nil, perrors.Wrap(err, "resolvers: failed to fetch topic")
 	}
 
-	if _, err = topic.Delete(ctx, r.DB); err != nil {
-		log.Printf("There was a problem deleting topic: %#v", topic)
-		return nil, err
+	err = queries.Transact(r.DB, func(tx *sql.Tx) error {
+		c := services.New(tx, actor, nil)
+
+		if _, err = c.DeleteTopic(ctx, topic); err != nil {
+			log.Printf("There was a problem deleting topic: %#v", topic)
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, perrors.Wrap(err, "resolvers: failed to delete topic")
 	}
 
 	return &models.DeleteTopicPayload{
@@ -334,7 +324,7 @@ func (r *MutationResolver) UpsertTopic(
 	var err error
 	var repo *models.Repository
 
-	err = transact(r.DB, func(tx *sql.Tx) error {
+	err = queries.Transact(r.DB, func(tx *sql.Tx) error {
 		repo, err = findRepo(ctx, tx, actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			return err
@@ -396,7 +386,7 @@ func (r *MutationResolver) UpdateSynonyms(
 		}
 	}
 
-	err = transact(r.DB, func(tx *sql.Tx) error {
+	err = queries.Transact(r.DB, func(tx *sql.Tx) error {
 		c := services.Connection{Exec: tx, Actor: actor}
 
 		result, err = c.UpdateSynonyms(ctx, topic, synonyms)
@@ -481,7 +471,7 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 	var topic *models.Topic
 	var err error
 
-	err = transact(r.DB, func(tx *sql.Tx) error {
+	err = queries.Transact(r.DB, func(tx *sql.Tx) error {
 		c := services.Connection{Exec: tx, Actor: actor}
 
 		if topic, err = models.FindTopic(ctx, tx, input.TopicID); err != nil {
@@ -511,7 +501,7 @@ func (r *MutationResolver) UpsertLink(
 	var result *services.UpsertLinkResult
 	var err error
 
-	err = transact(r.DB, func(tx *sql.Tx) error {
+	err = queries.Transact(r.DB, func(tx *sql.Tx) error {
 		repo, err := findRepo(ctx, tx, actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			log.Printf("resolvers.UpsertLink: repo %s/%s not found", input.OrganizationLogin, input.RepositoryName)

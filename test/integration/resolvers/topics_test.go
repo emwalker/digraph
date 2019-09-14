@@ -12,6 +12,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -756,13 +757,77 @@ func TestAvailableParentTopicsDoesNotIncludeSelf(t *testing.T) {
 	}
 }
 
+func topicsToString(topics []*models.Topic) string {
+	summaries := make([]string, len(topics))
+	for i, topic := range topics {
+		summaries[i] = topic.Summary()
+	}
+	return strings.Join(summaries, ", ")
+}
+
 func TestDeleteTopic(t *testing.T) {
-	m := newMutator(t, testViewer)
+	mutator := newMutator(t, testViewer)
+	repo := mutator.defaultRepo()
+	repoName := repo.Name
 
-	topic, _ := m.createTopic(testViewer.Login, m.defaultRepo().Name, "A new topic")
+	ancestorTopic, cleanup := mutator.createTopic(testViewer.Login, repoName, "Ancestor topic")
+	defer cleanup()
 
-	payload, err := m.resolver.DeleteTopic(m.ctx, models.DeleteTopicInput{
-		TopicID: topic.ID,
+	parentTopic, _ := mutator.createTopic(testViewer.Login, repoName, "Parent topic")
+
+	childTopic1, cleanup := mutator.createTopic(testViewer.Login, repoName, "Child topic 1")
+	defer cleanup()
+
+	childTopic2, cleanup := mutator.createTopic(testViewer.Login, repoName, "Child topic 2")
+	defer cleanup()
+
+	childLink1, cleanup := mutator.createLink(testViewer.Login, repoName, "Child link", "https://en.wikipedia.org/wiki/Child_link")
+	defer cleanup()
+
+	mutator.addParentTopicToTopic(parentTopic, ancestorTopic)
+	mutator.addParentTopicToTopic(childTopic1, parentTopic)
+	mutator.addParentTopicToTopic(childTopic2, parentTopic)
+	mutator.addParentTopicToLink(childLink1, parentTopic)
+
+	rootTopic, err := repo.RootTopic(mutator.ctx, testDB, testViewer.DefaultView())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = queries.Raw(`
+	delete from topic_topics
+		where parent_id in ($1, $2)
+		and child_id in ($3, $4)
+	`, services.PublicRootTopicID, rootTopic.ID, childTopic1.ID, childTopic2.ID).Exec(testDB)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = queries.Raw(`
+	delete from link_topics
+		where parent_id in ($1, $2)
+		and child_id = $3
+	`, services.PublicRootTopicID, rootTopic.ID, childLink1.ID).Exec(testDB)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if topics, _ := childTopic1.ParentTopics().All(mutator.ctx, testDB); len(topics) > 1 {
+		t.Fatalf("Expected there to be a single parent topic: %s", topicsToString(topics))
+	}
+
+	if topics, _ := childTopic2.ParentTopics().All(mutator.ctx, testDB); len(topics) > 1 {
+		t.Fatalf("Expected there to be a single parent topic: %s", topicsToString(topics))
+	}
+
+	if topics, _ := childLink1.ParentTopics().All(mutator.ctx, testDB); len(topics) > 1 {
+		t.Fatalf("Expected there to be a single parent topic: %s", topicsToString(topics))
+	}
+
+	payload, err := mutator.resolver.DeleteTopic(mutator.ctx, models.DeleteTopicInput{
+		TopicID: parentTopic.ID,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -772,13 +837,40 @@ func TestDeleteTopic(t *testing.T) {
 		t.Fatal("Expected a payload")
 	}
 
-	count, err := models.Topics(qm.Where("id = ?", topic.ID)).Count(m.ctx, m.db)
+	count, err := models.Topics(qm.Where("id = ?", parentTopic.ID)).Count(mutator.ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if count > 0 {
 		t.Fatal("Failed to delete topic")
+	}
+
+	newParentTopic, err := childTopic1.ParentTopics().One(mutator.ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if newParentTopic.ID != ancestorTopic.ID {
+		t.Fatalf("Expected child topic 1 to be placed under the ancestor topic, got: %s", newParentTopic.Summary())
+	}
+
+	newParentTopic, err = childTopic2.ParentTopics().One(mutator.ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if newParentTopic.ID != ancestorTopic.ID {
+		t.Fatalf("Expected child topic 2 to be placed under the ancestor topic, got: %s", newParentTopic.Summary())
+	}
+
+	newParentTopic, err = childLink1.ParentTopics().One(mutator.ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if newParentTopic.ID != ancestorTopic.ID {
+		t.Fatalf("Expected child link 1 to be placed under the ancestor topic, got: %s", newParentTopic.Summary())
 	}
 }
 

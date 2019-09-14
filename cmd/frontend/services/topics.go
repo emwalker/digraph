@@ -21,6 +21,12 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// DeleteTopicResult holds the result of an attempt to delete a topic.
+type DeleteTopicResult struct {
+	Alerts         []*models.Alert
+	DeletedTopicID *string
+}
+
 // DeleteTopicTimeRangeResult holds the result of an attempt to delete the time range on a topic.
 type DeleteTopicTimeRangeResult struct {
 	Alerts             []*models.Alert
@@ -128,6 +134,53 @@ func DisplayName(
 	}
 
 	return name, nil
+}
+
+// DeleteTopic removes a time range from a topic.
+func (c Connection) DeleteTopic(
+	ctx context.Context, topic *models.Topic,
+) (*DeleteTopicResult, error) {
+	if topic.ID == PublicRootTopicID {
+		return nil, coreerrors.New("Cannot delete root topic")
+	}
+
+	log.Printf("%s is deleting %s; moving its topics and links to its parent topics", c.Actor.Summary(), topic.Summary())
+
+	// Add any child topics to the parent topics of the topic to be deleted.
+	_, err := queries.Raw(`
+	insert into topic_topics (parent_id, child_id)
+		select gp.parent_id, pc.child_id
+		from topic_topics gp
+		join topic_topics pc on gp.child_id = pc.parent_id
+		where pc.parent_id = $1
+		on conflict do nothing;
+	`, topic.ID).Exec(c.Exec)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "services: failed to re-seat child topics")
+	}
+
+	// Add any child links to the parent topics of the topic to be deleted.
+	_, err = queries.Raw(`
+	insert into link_topics (parent_id, child_id)
+		select gp.parent_id, pc.child_id
+		from topic_topics gp
+		join link_topics pc on gp.child_id = pc.parent_id
+		where pc.parent_id = $1
+		on conflict do nothing;
+	`, topic.ID).Exec(c.Exec)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "services: failed to re-seat child links")
+	}
+
+	if _, err = topic.Delete(ctx, c.Exec); err != nil {
+		return nil, errors.Wrap(err, "services: failed to delete topic")
+	}
+
+	return &DeleteTopicResult{
+		DeletedTopicID: &topic.ID,
+	}, nil
 }
 
 // DeleteTopicTimeRange removes a time range from a topic.
