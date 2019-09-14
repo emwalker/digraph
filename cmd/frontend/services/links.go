@@ -178,7 +178,7 @@ func (c Connection) logUserLinkAction(
 func (c Connection) updateLink(ctx context.Context, link *models.Link) error {
 	_, err := link.Update(ctx, c.Exec, boil.Whitelist("title"))
 	if err != nil {
-		log.Printf("There was a problem updating link %s: %s", link.Summary(), err)
+		log.Printf("There was a problem updating link %s: %s", link, err)
 	}
 	return err
 }
@@ -291,7 +291,7 @@ func (c Connection) UpsertLink(
 			}
 		} else {
 			if *providedTitle == "" {
-				log.Printf("Provided title empty, updating link after re-fetching page: %s", link.Summary())
+				log.Printf("Provided title empty, updating link after re-fetching page: %s", link)
 				title, err := c.providedOrFetchedTitle(url.CanonicalURL, providedTitle)
 				if err != nil {
 					return nil, errors.Wrap(err, "services.UpsertLink")
@@ -315,7 +315,7 @@ func (c Connection) UpsertLink(
 	}
 
 	if err = c.addTopics(ctx, repo, link, parentTopicIds); err != nil {
-		log.Printf("There was a problem adding topics %v to link %s: %s", parentTopicIds, link.Summary(), err)
+		log.Printf("There was a problem adding topics %v to link %s: %s", parentTopicIds, link, err)
 		return nil, errors.Wrap(err, "services.UpsertLink")
 	}
 
@@ -345,7 +345,7 @@ func (c Connection) UpsertLink(
 	}
 
 	if err = link.Reload(ctx, c.Exec); err != nil {
-		log.Printf("Failed to reload link %s: %s", link.Summary(), err)
+		log.Printf("Failed to reload link %s: %s", link, err)
 		return nil, errors.Wrap(err, "services.UpsertLink")
 	}
 

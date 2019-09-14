@@ -128,7 +128,7 @@ func (r *topicResolver) matchingDescendantTopicIds(
 
 	var topicIds []interface{}
 
-	log.Printf("Looking for topics under %s with query: %s", topic.Summary(), searchString)
+	log.Printf("Looking for topics under %s with query: %s", topic, searchString)
 	q := queries.NewSearchQuery(searchString)
 
 	sql := fmt.Sprintf(`
@@ -399,7 +399,7 @@ func (r *topicResolver) Links(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 	searchString *string, reviewed, descendants *bool,
 ) (*models.LinkConnection, error) {
-	log.Printf("Fetching links for topic %s", topic.Summary())
+	log.Printf("Fetching links for topic %s", topic)
 	viewer := GetRequestContext(ctx).Viewer()
 
 	q := queries.NewLinkQuery(topic.View, viewer, searchString, first, reviewed)
@@ -580,6 +580,12 @@ func (r *topicResolver) UpdatedAt(_ context.Context, topic *models.TopicValue) (
 
 // ViewerCanAddSynonym returns true if the viewer can add a synonym.
 func (r *topicResolver) ViewerCanUpdate(ctx context.Context, topic *models.TopicValue) (bool, error) {
+	viewer := GetRequestContext(ctx).Viewer()
+
+	if topic.Root || viewer.IsGuest() {
+		return false, nil
+	}
+
 	log.Printf("Fetching value for ViewerCanAddSynonym for %s", topic.ID)
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),

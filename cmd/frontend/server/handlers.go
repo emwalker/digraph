@@ -65,7 +65,7 @@ func (s *Server) withBasicAuth(next http.Handler) http.HandlerFunc {
 					log.Printf("There was a problem looking up viewer: %s", err)
 					rejectBasicAuth(next, w, r)
 				} else {
-					log.Printf("Viewer %s added to request context", viewer.Summary())
+					log.Printf("Viewer %s added to request context", viewer)
 					rc.SetViewer(viewer)
 				}
 			}

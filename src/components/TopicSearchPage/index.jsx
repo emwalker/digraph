@@ -133,7 +133,6 @@ query TopicSearchPage_query_Query(
   ) {
     viewer {
       ...Link_viewer
-      ...Topic_viewer
     }
 
     currentRepository {

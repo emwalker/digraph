@@ -113,7 +113,7 @@ func (c Connection) CreateUser(
 func (c Connection) DeleteAccount(
 	ctx context.Context, user *models.User,
 ) (*DeleteAccountResult, error) {
-	log.Printf("Deleting account %s ...", user.Summary())
+	log.Printf("Deleting account %s ...", user)
 
 	deletedUser := models.DeletedUser{UserID: user.ID}
 	if err := deletedUser.Insert(ctx, c.Exec, boil.Infer()); err != nil {
@@ -126,12 +126,12 @@ func (c Connection) DeleteAccount(
 		log.Printf("There was a problem deleting organizations for %s: %s", user.ID, err)
 		return nil, errors.Wrap(err, "services: failed to fetch organization")
 	}
-	log.Printf("Organization for %s deleted.", user.Summary())
+	log.Printf("Organization for %s deleted.", user)
 
 	if _, err := user.Delete(ctx, c.Exec); err != nil {
 		return nil, errors.Wrap(err, "services: failed to delete user")
 	}
-	log.Printf("Account for %s deleted.", user.Summary())
+	log.Printf("Account for %s deleted.", user)
 
 	return &DeleteAccountResult{
 		Alerts: []*models.Alert{

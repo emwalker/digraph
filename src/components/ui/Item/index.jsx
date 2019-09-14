@@ -1,4 +1,3 @@
-// @flow
 import React, { Component, Fragment, type Node } from 'react'
 import classNames from 'classnames'
 

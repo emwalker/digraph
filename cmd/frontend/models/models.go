@@ -83,16 +83,16 @@ func (Link) IsResourceIdentifiable() {}
 // IsSearchResultItem tags Link as being in the SearchResultItem union.
 func (Link) IsSearchResultItem() {}
 
-// Summary returns info on a user that can be printed to the log
-func (l Link) Summary() string {
+// String returns info on a user that can be printed to the log
+func (l Link) String() string {
 	return fmt.Sprintf("link %s (%s)", l.URL, l.ID)
 }
 
 // IsResourceIdentifiable tags Repository as implementing the ResourceIdentifiable interface.
 func (Repository) IsResourceIdentifiable() {}
 
-// Summary returns a string that can be included in logs.
-func (r Repository) Summary() string {
+// String returns a string that can be included in logs.
+func (r Repository) String() string {
 	return fmt.Sprintf("repo %s (%s)", r.Name, r.ID)
 }
 
@@ -105,8 +105,8 @@ func (Topic) IsResourceIdentifiable() {}
 // IsSearchResultItem tags Topic as being in the SearchResultItem union.
 func (Topic) IsSearchResultItem() {}
 
-// Summary returns info on a user that can be printed to the log.
-func (t Topic) Summary() string {
+// String returns info on a user that can be printed to the log.
+func (t Topic) String() string {
 	return fmt.Sprintf("topic %s (%s)", t.Name, t.ID)
 }
 
@@ -206,8 +206,8 @@ func (u User) IsGuest() bool {
 	return u.ID == ""
 }
 
-// Summary returns info on a user that can be printed to the log
-func (u User) Summary() string {
+// String returns info on a user that can be printed to the log
+func (u User) String() string {
 	if u.PrimaryEmail == "" {
 		return fmt.Sprintf("user %s", u.DisplayName())
 	}

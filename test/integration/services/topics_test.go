@@ -8,6 +8,7 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func TestUpsertTopicEnsuresATopic(t *testing.T) {
@@ -243,5 +244,34 @@ func TestUpsertTopicTimeRange(t *testing.T) {
 
 	if topic.Name != expectedDisplayName {
 		t.Fatalf("Expected %s, got %s", expectedDisplayName, topic.Name)
+	}
+}
+
+func TestDeleteTopicFailsForRoot(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	topics, err := models.Topics(qm.Where("root")).All(ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(topics) < 1 {
+		t.Fatal("Expected at least one root topic")
+	}
+
+	for _, topic := range topics {
+		if !topic.Root {
+			t.Fatalf("Expected a root topic: %s", topic)
+		}
+
+		result, err := c.DeleteTopic(ctx, topic)
+		if err == nil {
+			t.Fatal("Expected an error")
+		}
+
+		if result != nil {
+			t.Fatal("A result should not be returned")
+		}
 	}
 }

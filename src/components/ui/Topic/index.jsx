@@ -3,18 +3,19 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import classNames from 'classnames'
 
-import type { Relay, TopicType, UserType, ViewType } from '../../types'
+import type { Relay } from 'components/types'
 import { liftNodes } from '../../../utils'
 import Item from '../Item'
 import EditTopic from './EditTopicContainer'
 import { topicRow } from './styles.module.css'
+import type { Topic_topic as TopicType } from './__generated__/Topic_topic.graphql'
+import type { Topic_view as ViewType } from './__generated__/Topic_view.graphql'
 
 type Props = {
   orgLogin: string,
   relay: Relay,
   topic: TopicType,
   view: ViewType,
-  viewer: UserType,
 }
 
 type State = {
@@ -50,7 +51,7 @@ class Topic extends Component<Props, State> {
   }
 
   get showEditButton(): boolean {
-    return !this.props.topic.loading && !this.props.viewer.isGuest
+    return !this.props.topic.loading && this.props.topic.viewerCanUpdate
   }
 
   toggleForm = () => {
@@ -62,7 +63,7 @@ class Topic extends Component<Props, State> {
 
     return (
       <Item
-        canEdit={!this.props.viewer.isGuest}
+        canEdit={this.props.topic.viewerCanUpdate}
         className={classNames(topicRow, 'Box-row--topic')}
         description={this.props.topic.description}
         displayColor={this.displayColor}
@@ -98,11 +99,6 @@ export default createFragmentContainer(Topic, {
       }
     }
   `,
-  viewer: graphql`
-    fragment Topic_viewer on User {
-      isGuest
-    }
-  `,
   topic: graphql`
     fragment Topic_topic on Topic {
       description
@@ -111,6 +107,7 @@ export default createFragmentContainer(Topic, {
       loading
       newlyAdded
       resourcePath
+      viewerCanUpdate
 
       repository {
         name

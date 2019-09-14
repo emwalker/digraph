@@ -577,7 +577,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 	}
 
 	if len(conn.Edges) < 1 {
-		t.Fatalf("Expected a result, %s", testViewer.Summary())
+		t.Fatalf("Expected a result, %s", testViewer)
 	}
 
 	resultTopicIds := make(map[string]bool)
@@ -592,7 +592,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 	}
 
 	if _, ok := resultTopicIds[root.ID]; !ok {
-		t.Fatalf("Expected root topic to show up in results, %s", testViewer.Summary())
+		t.Fatalf("Expected root topic to show up in results, %s", testViewer)
 	}
 }
 
@@ -760,7 +760,7 @@ func TestAvailableParentTopicsDoesNotIncludeSelf(t *testing.T) {
 func topicsToString(topics []*models.Topic) string {
 	summaries := make([]string, len(topics))
 	for i, topic := range topics {
-		summaries[i] = topic.Summary()
+		summaries[i] = topic.String()
 	}
 	return strings.Join(summaries, ", ")
 }
@@ -852,7 +852,7 @@ func TestDeleteTopic(t *testing.T) {
 	}
 
 	if newParentTopic.ID != ancestorTopic.ID {
-		t.Fatalf("Expected child topic 1 to be placed under the ancestor topic, got: %s", newParentTopic.Summary())
+		t.Fatalf("Expected child topic 1 to be placed under the ancestor topic, got: %s", newParentTopic)
 	}
 
 	newParentTopic, err = childTopic2.ParentTopics().One(mutator.ctx, testDB)
@@ -861,7 +861,7 @@ func TestDeleteTopic(t *testing.T) {
 	}
 
 	if newParentTopic.ID != ancestorTopic.ID {
-		t.Fatalf("Expected child topic 2 to be placed under the ancestor topic, got: %s", newParentTopic.Summary())
+		t.Fatalf("Expected child topic 2 to be placed under the ancestor topic, got: %s", newParentTopic)
 	}
 
 	newParentTopic, err = childLink1.ParentTopics().One(mutator.ctx, testDB)
@@ -870,7 +870,7 @@ func TestDeleteTopic(t *testing.T) {
 	}
 
 	if newParentTopic.ID != ancestorTopic.ID {
-		t.Fatalf("Expected child link 1 to be placed under the ancestor topic, got: %s", newParentTopic.Summary())
+		t.Fatalf("Expected child link 1 to be placed under the ancestor topic, got: %s", newParentTopic)
 	}
 }
 
@@ -1030,6 +1030,28 @@ func TestViewerCanUpdate(t *testing.T) {
 
 	if canUpdate {
 		t.Fatal("Second viewer should not be able to update the topic")
+	}
+}
+
+func TestViewerCannotUpdateRootTopic(t *testing.T) {
+	m := newMutator(t, testViewer)
+	ctx := testContext()
+	repoName := m.defaultRepo().Name
+
+	topic, cleanup := m.createTopic(testViewer.Login, repoName, "A topic")
+	defer cleanup()
+
+	query := rootResolver.Topic()
+
+	topic.Root = true
+
+	canUpdate, err := query.ViewerCanUpdate(ctx, topic)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if canUpdate {
+		t.Fatal("Viewers should not be able to update root topic")
 	}
 }
 

@@ -80,7 +80,7 @@ func (r *linkResolver) ParentTopics(
 		return topicConnection(link.View, link.R.ParentTopics, nil)
 	}
 
-	log.Printf("Fetching parent topics for %s", link.Summary())
+	log.Printf("Fetching parent topics for %s", link)
 	mods := []qm.QueryMod{}
 
 	topics, err := link.ParentTopics(mods...).All(ctx, r.DB)
@@ -125,7 +125,7 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 	var err error
 
 	if link.R == nil {
-		log.Printf("Fetching reviewedAt for link %s", link.Summary())
+		log.Printf("Fetching reviewedAt for link %s", link)
 		review, err = link.UserLinkReviews(qm.Where("user_id = ?", viewer.ID)).One(ctx, r.DB)
 		if err != nil {
 			if err.Error() == queries.ErrSQLNoRows {

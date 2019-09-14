@@ -57,10 +57,10 @@ func (r *MutationResolver) CreateSession(
 	actor := rc.Viewer()
 
 	if !rc.InitiatedByServer(input.ServerSecret) {
-		log.Printf("Session creation initiated by %s rather than the server", actor.Summary())
+		log.Printf("Session creation initiated by %s rather than the server", actor)
 		return nil, ErrUnauthorized
 	}
-	log.Printf("Request comes from server, creating session for %s", actor.Summary())
+	log.Printf("Request comes from server, creating session for %s", actor)
 
 	c := services.Connection{Exec: r.DB, Actor: actor}
 	result, err := c.CreateSession(
@@ -142,8 +142,7 @@ func (r *MutationResolver) DeleteLink(
 
 	if err != nil {
 		log.Printf(
-			"%s failed to delete link %s from repo %s: %s", actor.Summary(), link.Summary(),
-			repo.Summary(), err,
+			"%s failed to delete link %s from repo %s: %s", actor, link, repo, err,
 		)
 	}
 
@@ -253,7 +252,7 @@ func (r *MutationResolver) ReviewLink(
 	).One(ctx, r.DB)
 
 	if err != nil {
-		log.Printf("Did not find link %s in the repos visible to %s: %s", input.LinkID, actor.Summary(), err)
+		log.Printf("Did not find link %s in the repos visible to %s: %s", input.LinkID, actor, err)
 		return nil, err
 	}
 
@@ -399,7 +398,7 @@ func (r *MutationResolver) UpdateSynonyms(
 
 	if err != nil {
 		log.Printf(
-			"%s failed update synonyms (%v) topic %s: %s", actor.Summary(), synonyms, topic.ID, err,
+			"%s failed update synonyms (%v) topic %s: %s", actor, synonyms, topic.ID, err,
 		)
 	}
 
@@ -419,14 +418,14 @@ func (r *MutationResolver) UpdateTopic(
 
 	topic, err := models.Topics(queries.Topic(actor.ID, input.ID)...).One(ctx, r.DB)
 	if err != nil {
-		log.Printf("No topic %s is visible to %s", input.ID, actor.Summary())
+		log.Printf("No topic %s is visible to %s", input.ID, actor)
 		return nil, err
 	}
 
-	log.Printf("%s attempting to update %s", actor.Summary(), topic.Summary())
+	log.Printf("%s attempting to update %s", actor, topic)
 	result, err := c.UpdateTopic(ctx, topic, input.Name, input.Description)
 	if err != nil {
-		log.Printf("There was a problem updating %s", topic.Summary())
+		log.Printf("There was a problem updating %s", topic)
 		return nil, err
 	}
 

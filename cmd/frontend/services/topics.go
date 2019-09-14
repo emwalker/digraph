@@ -21,6 +21,10 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+var (
+	errCannotDeleteRootTopic = coreerrors.New("cannot delete root topic")
+)
+
 // DeleteTopicResult holds the result of an attempt to delete a topic.
 type DeleteTopicResult struct {
 	Alerts         []*models.Alert
@@ -140,11 +144,12 @@ func DisplayName(
 func (c Connection) DeleteTopic(
 	ctx context.Context, topic *models.Topic,
 ) (*DeleteTopicResult, error) {
-	if topic.ID == PublicRootTopicID {
-		return nil, coreerrors.New("Cannot delete root topic")
+	if topic.Root {
+		log.Printf("%s attempted to delete root %s", c.Actor, topic)
+		return nil, errCannotDeleteRootTopic
 	}
 
-	log.Printf("%s is deleting %s; moving its topics and links to its parent topics", c.Actor.Summary(), topic.Summary())
+	log.Printf("%s is deleting %s; moving its topics and links to its parent topics", c.Actor, topic)
 
 	// Add any child topics to the parent topics of the topic to be deleted.
 	_, err := queries.Raw(`
@@ -219,7 +224,7 @@ func (c Connection) DeleteTopicTimeRange(
 func (c Connection) UpdateSynonyms(
 	ctx context.Context, topic *models.Topic, synonyms []models.Synonym,
 ) (*UpdateSynonymsResult, error) {
-	log.Printf("Updating synonyms for topic %s", topic.Summary())
+	log.Printf("Updating synonyms for topic %s", topic)
 
 	seen := make(map[models.Synonym]bool)
 	dedupedSynonyms := []models.Synonym{}
@@ -246,7 +251,7 @@ func (c Connection) UpdateSynonyms(
 	}
 
 	if _, err := topic.Update(ctx, c.Exec, boil.Whitelist("synonyms", "name")); err != nil {
-		log.Printf("Unable to update synonyms for topic %s", topic.Summary())
+		log.Printf("Unable to update synonyms for topic %s", topic)
 		return nil, err
 	}
 

@@ -85,7 +85,7 @@ func WithViewer(
 	}
 
 	// Add the assumed viewer to the request context
-	log.Printf("View with %s and session id %s", viewer.Summary(), sessionID)
+	log.Printf("View with %s and session id %s", viewer, sessionID)
 	GetRequestContext(ctx).SetViewer(viewer)
 
 	return viewer, nil

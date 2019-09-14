@@ -259,7 +259,6 @@ query TopicPage_query_Query(
       isGuest
       ...AddForm_viewer
       ...Link_viewer
-      ...Topic_viewer
     }
 
     currentRepository {

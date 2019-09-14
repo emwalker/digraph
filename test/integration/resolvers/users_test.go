@@ -30,13 +30,9 @@ func TestDeleteAccount(t *testing.T) {
 		t.Fatalf("Expected there to be a user with the email %s", email)
 	}
 
-	count, err = models.DeletedUsers().Count(ctx, testDB)
+	_, err = models.DeletedUsers().DeleteAll(ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	if count > 0 {
-		t.Fatal("Expected to be no deleted users")
 	}
 
 	user := result.User
