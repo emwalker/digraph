@@ -13,13 +13,7 @@ func TestCreateUser(t *testing.T) {
 	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
 
-	result, err := c.CreateUser(
-		ctx,
-		"Gnusto Frotz",
-		"gnusto@gnusto.com",
-		"gnusto",
-		"http://some-long-url",
-	)
+	result, err := c.CreateUser(ctx, "frotz", "Gnusto Frotz", "gnusto@gnusto.com", "http://avatar/url")
 	if err != nil {
 		t.Fatal(err)
 	}

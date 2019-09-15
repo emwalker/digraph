@@ -9,7 +9,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func TestCreateSession(t *testing.T) {
+func TestCreateGithubSession(t *testing.T) {
 	ctx := testContext()
 	m := newMutator(t, testViewer)
 
@@ -26,7 +26,7 @@ func TestCreateSession(t *testing.T) {
 		t.Fatalf("Expected there to be no users with the email %s", email)
 	}
 
-	input := models.CreateSessionInput{
+	input := models.CreateGithubSessionInput{
 		GithubAvatarURL: "https://some/url",
 		GithubUsername:  login,
 		Name:            name,
@@ -35,7 +35,7 @@ func TestCreateSession(t *testing.T) {
 	}
 
 	// Doesn't work if we do not have an admin session
-	payload, err := m.resolver.CreateSession(ctx, input)
+	payload, err := m.resolver.CreateGithubSession(ctx, input)
 	if err != resolvers.ErrUnauthorized {
 		t.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestCreateSession(t *testing.T) {
 	rc := resolvers.GetRequestContext(ctx)
 	rc.SetServerSecret("keyboard cat")
 
-	payload, err = m.resolver.CreateSession(ctx, input)
+	payload, err = m.resolver.CreateGithubSession(ctx, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,6 +84,15 @@ func TestCreateSession(t *testing.T) {
 		t.Fatal("A session should have been created")
 	}
 
+	count, err = models.GithubAccounts(qm.Where("username like ?", login)).Count(m.ctx, m.db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count < 1 {
+		t.Fatal("expected a GitHub account to be created")
+	}
+
 	resolvers.ClearRequestSession(ctx)
 }
 
@@ -94,7 +103,7 @@ func TestDestroySession(t *testing.T) {
 	avatarURL := testViewer.GithubAvatarURL.Ptr()
 
 	c := services.New(testDB, testViewer, nil)
-	result, err := c.CreateSession(
+	result, err := c.CreateGithubSession(
 		ctx, testViewer.Name, testViewer.PrimaryEmail, *username, *avatarURL,
 	)
 

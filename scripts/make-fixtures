@@ -17,6 +17,8 @@ delete from organizations where login not in ('wiki', 'emwalker');
 delete from links where repository_id = '34a020d6-fc1b-11e8-85cd-bbcf3ebdfe13';
 delete from topics where repository_id = '34a020d6-fc1b-11e8-85cd-bbcf3ebdfe13' and not root;
 delete from daily_snapshot;
+delete from github_accounts where username not in ('emwalker');
+delete from google_accounts;
 SQL
 
 echo ""
@@ -43,6 +45,12 @@ echo "${count//[[:space:]]/} topics"
 
 count=$(psql digraph_fixtures -t -c "select count(*) from daily_snapshot")
 echo "${count//[[:space:]]/} snapshots"
+
+count=$(psql digraph_fixtures -t -c "select count(*) from github_accounts")
+echo "${count//[[:space:]]/} GitHub accounts"
+
+count=$(psql digraph_fixtures -t -c "select count(*) from google_accounts")
+echo "${count//[[:space:]]/} Google accounts"
 
 echo "Saving fixtures.sql"
 pg_dump digraph_fixtures > data/fixtures.sql

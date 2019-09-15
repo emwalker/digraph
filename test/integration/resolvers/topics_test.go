@@ -916,7 +916,7 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 
 	c := services.Connection{Exec: testDB, Actor: testViewer}
 
-	result, err := c.CreateUser(ctx, "gnusto", "gnusto@frotz.com", "gnusto", "http://avatar/url")
+	result, err := c.CreateUser(ctx, "gnusto", "Gnusto", "gnusto@frotz.com", "http://avatar/url")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1013,7 +1013,7 @@ func TestViewerCanUpdate(t *testing.T) {
 
 	c := services.New(testDB, testViewer, testFetcher)
 
-	result, err := c.CreateUser(ctx, "gnusto", "gnusto@frotz.com", "gnusto", "http://avatar/url")
+	result, err := c.CreateUser(ctx, "gnusto", "Gnusto", "gnusto@frotz.com", "http://avatar/url")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1249,9 +1249,7 @@ func TestActivityVisibility(t *testing.T) {
 	ctx := context.Background()
 	c := services.New(testDB, testViewer, testFetcher)
 
-	result, err := c.CreateUser(
-		ctx, "Frotz", "frotz@frotz.com", "frotz", "http://some-long-url",
-	)
+	result, err := c.CreateUser(ctx, "frotz", "Frotz", "frotz@frotz.com", "http://avatar/url")
 
 	if err != nil {
 		t.Fatal(err)

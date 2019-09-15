@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
@@ -12,7 +11,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-// CreateSessionResult holds the result of a CreateSession service call.
+// CreateSessionResult holds the result of a Create{Github,Google}Session service call.
 type CreateSessionResult struct {
 	Alerts  []*models.Alert
 	Cleanup CleanupFunc
@@ -20,38 +19,46 @@ type CreateSessionResult struct {
 	User    *models.User
 }
 
-// CreateSession creates a new session for the user.  If the user is not found in the database,
+// CreateGithubSession creates a new session for the user.  If the user is not found in the database,
 // a new user is created.
-func (c Connection) CreateSession(
-	ctx context.Context, username, primaryEmail, githubUsername, githubAvatarURL string,
+func (c Connection) CreateGithubSession(
+	ctx context.Context, name, primaryEmail, githubUsername, githubAvatarURL string,
 ) (*CreateSessionResult, error) {
 	var result *CreateUserResult
+	var user *models.User
 
-	user, err := models.Users(qm.Where("primary_email = ?", primaryEmail)).One(ctx, c.Exec)
+	account, err := models.GithubAccounts(qm.Where("username = ?", githubUsername)).One(ctx, c.Exec)
 
 	if err != nil {
 		if err.Error() != queries.ErrSQLNoRows {
 			log.Printf("Unable to upsert user: %s", err)
-			return nil, errors.Wrap(err, "resolvers: failed to upsert user")
+			return nil, errors.Wrap(err, "services: failed to upsert user")
 		}
 
-		result, err := c.CreateUser(
-			ctx, username, primaryEmail, githubUsername, githubAvatarURL,
-		)
-
+		result, err := c.CreateUser(ctx, githubUsername, name, primaryEmail, githubAvatarURL)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to create user: %s", err)
+			return nil, err
 		}
 
 		user = result.User
-		if err = user.Reload(ctx, c.Exec); err != nil {
-			return nil, fmt.Errorf("Unable to reload newly-created user: %s", err)
+
+		_, err = c.CreateGithubAccount(
+			ctx, user, githubUsername, name, primaryEmail, githubAvatarURL,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+	} else {
+		user, err = account.User().One(ctx, c.Exec)
+		if err != nil {
+			return nil, errors.Wrap(err, "services: failed to fetch user")
 		}
 	}
 
 	session := &models.Session{UserID: user.ID}
 	if err = session.Insert(ctx, c.Exec, boil.Infer()); err != nil {
-		return nil, errors.Wrap(err, "resolvers: failed to create session")
+		return nil, errors.Wrap(err, "services: failed to create session")
 	}
 
 	cleanup := func() error {

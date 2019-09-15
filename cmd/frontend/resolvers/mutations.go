@@ -47,12 +47,14 @@ func findRepo(
 	return models.Repositories(mods...).One(ctx, exec)
 }
 
-// CreateSession creates a new session for the user passed in, possibly alongside any existing
+// CreateGithubSession creates a new session for the user passed in, possibly alongside any existing
 // sessions.  If the user is not yet in the database, a new user is created.  Sessions are destroyed
 // using DestroySession, which is called when someone logs out of the client.
-func (r *MutationResolver) CreateSession(
-	ctx context.Context, input models.CreateSessionInput,
-) (*models.CreateSessionPayload, error) {
+func (r *MutationResolver) CreateGithubSession(
+	ctx context.Context, input models.CreateGithubSessionInput,
+) (*models.CreateGithubSessionPayload, error) {
+	var result *services.CreateSessionResult
+
 	rc := GetRequestContext(ctx)
 	actor := rc.Viewer()
 
@@ -62,16 +64,21 @@ func (r *MutationResolver) CreateSession(
 	}
 	log.Printf("Request comes from server, creating session for %s", actor)
 
-	c := services.Connection{Exec: r.DB, Actor: actor}
-	result, err := c.CreateSession(
-		ctx, input.Name, input.PrimaryEmail, input.GithubUsername, input.GithubAvatarURL,
-	)
+	err := queries.Transact(r.DB, func(tx *sql.Tx) error {
+		var err error
+		c := services.New(tx, actor, nil)
+		result, err = c.CreateGithubSession(
+			ctx, input.Name, input.PrimaryEmail, input.GithubUsername, input.GithubAvatarURL,
+		)
+		return err
+	})
 
 	if err != nil {
+		log.Printf("There was a problem creating a session: %s", err)
 		return nil, perrors.Wrap(err, "resolvers: failed to create session")
 	}
 
-	return &models.CreateSessionPayload{
+	return &models.CreateGithubSessionPayload{
 		Alerts:      result.Alerts,
 		UserEdge:    &models.UserEdge{Node: result.User},
 		SessionEdge: &models.SessionEdge{Node: result.Session},

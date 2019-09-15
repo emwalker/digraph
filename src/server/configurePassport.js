@@ -5,7 +5,7 @@ import connectRedis from 'connect-redis'
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser'
 
-import createSessionMutation from 'mutations/createSessionMutation'
+import createGithubSessionMutation from 'mutations/createGithubSessionMutation'
 import deleteSessionMutation from 'mutations/deleteSessionMutation'
 import { createEnvironment } from '../environment'
 
@@ -38,15 +38,15 @@ export default (app, fetcher) => {
       serverSecret: process.env.DIGRAPH_SERVER_SECRET || 'keyboard cat',
     }
 
-    createSessionMutation(environment, [], input, {
+    createGithubSessionMutation(environment, [], input, {
       onCompleted(payload) {
-        if (!payload.createSession) {
-          console.log('createSession field missing from response:', payload)
+        if (!payload.createGithubSession) {
+          console.log('createGithubSession field missing from response:', payload)
           done(null, null)
           return
         }
 
-        const { createSession: { userEdge, sessionEdge } } = payload
+        const { createGithubSession: { userEdge, sessionEdge } } = payload
         console.log('User fetched from api, saving to session', userEdge, sessionEdge)
         done(null, { id: userEdge.node.id, sessionId: sessionEdge.node.id })
       },

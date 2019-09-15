@@ -31,7 +31,7 @@ enum AlertType {
 
 scalar Color
 
-input CreateSessionInput {
+input CreateGithubSessionInput {
   clientMutationId: String
   githubAvatarUrl: String!
   githubUsername: String!
@@ -40,7 +40,7 @@ input CreateSessionInput {
   serverSecret: String!
 }
 
-type CreateSessionPayload implements Alertable {
+type CreateGithubSessionPayload implements Alertable {
   alerts: [Alert!]!
   userEdge: UserEdge
   sessionEdge: SessionEdge
@@ -151,7 +151,7 @@ type LinkReview {
 }
 
 type Mutation {
-  createSession(input: CreateSessionInput!): CreateSessionPayload
+  createGithubSession(input: CreateGithubSessionInput!): CreateGithubSessionPayload
   deleteAccount(input: DeleteAccountInput!): DeleteAccountPayload
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
   deleteSession(input: DeleteSessionInput!): DeleteSessionPayload

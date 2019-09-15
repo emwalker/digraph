@@ -20,6 +20,12 @@ type CreateUserResult struct {
 	Organization *models.Organization
 }
 
+// CreateGithubAccountResult holds the result of attempting to create a new Github account.
+type CreateGithubAccountResult struct {
+	Alerts  []*models.Alert
+	Account *models.GithubAccount
+}
+
 // DeleteAccountResult holds the result of deleting an account.
 type DeleteAccountResult struct {
 	Alerts        []*models.Alert
@@ -41,28 +47,46 @@ func addMember(ctx context.Context, exec boil.ContextExecutor, orgID, userID str
 	return nil
 }
 
+// CreateGithubAccount creates a new github account.
+func (c Connection) CreateGithubAccount(
+	ctx context.Context, user *models.User, username, name, primaryEmail, avatarURL string,
+) (*CreateGithubAccountResult, error) {
+	account := models.GithubAccount{
+		AvatarURL:    avatarURL,
+		Name:         name,
+		PrimaryEmail: primaryEmail,
+		UserID:       user.ID,
+		Username:     username,
+	}
+
+	if err := account.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+		return nil, errors.Wrap(err, "services: failed to create GitHub account")
+	}
+
+	return &CreateGithubAccountResult{Account: &account}, nil
+}
+
 // CreateUser creates a new user and provides a default organization and repo for him/her.
 func (c Connection) CreateUser(
-	ctx context.Context, name, email, githubUsername, githubAvatarURL string,
+	ctx context.Context, login, name, email, avatarURL string,
 ) (*CreateUserResult, error) {
 	var err error
 
-	log.Printf("Creating user account (%s, %s)", githubUsername, name)
+	log.Printf("Creating user account (%s, %s)", login, name)
 	user := models.User{
-		GithubAvatarURL: null.StringFromPtr(&githubAvatarURL),
-		GithubUsername:  null.StringFromPtr(&githubUsername),
-		Login:           githubUsername,
-		Name:            name,
-		PrimaryEmail:    email,
+		AvatarURL:    null.StringFromPtr(&avatarURL),
+		Login:        login,
+		Name:         name,
+		PrimaryEmail: email,
 	}
 
 	if err = user.Insert(ctx, c.Exec, boil.Infer()); err != nil {
 		return nil, err
 	}
 
-	log.Printf("Creating a default organization for %s", githubUsername)
+	log.Printf("Creating a default organization for %s", login)
 	org := models.Organization{
-		Login:  githubUsername,
+		Login:  login,
 		Name:   "system:default",
 		Public: false,
 		System: true,
@@ -80,7 +104,7 @@ func (c Connection) CreateUser(
 		return nil, errors.Wrap(err, "services: failed to add user as a member to the public organization")
 	}
 
-	log.Printf("Creating a default repo for %s", githubUsername)
+	log.Printf("Creating a default repo for %s", login)
 	repoResult, err := c.CreateRepository(ctx, &org, "system:default", &user, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "services: failed to create a default repo for user")

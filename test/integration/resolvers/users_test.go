@@ -16,7 +16,7 @@ func TestDeleteAccount(t *testing.T) {
 	login := "bozbar"
 
 	c := services.Connection{Exec: testDB, Actor: testViewer}
-	result, err := c.CreateSession(
+	result, err := c.CreateGithubSession(
 		ctx, name, email, login, "https://some/url",
 	)
 	defer result.Cleanup()

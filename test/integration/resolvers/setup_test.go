@@ -85,7 +85,7 @@ func TestMain(m *testing.M) {
 	avatarURL := testViewer.GithubAvatarURL.Ptr()
 
 	c := services.New(testDB, testViewer, nil)
-	result, err := c.CreateSession(
+	result, err := c.CreateGithubSession(
 		context.Background(), testViewer.Name, testViewer.PrimaryEmail, *username, *avatarURL,
 	)
 	if err != nil {

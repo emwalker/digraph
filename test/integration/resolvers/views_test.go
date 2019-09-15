@@ -205,25 +205,13 @@ func TestTopicVisibility(t *testing.T) {
 
 	c := services.New(testDB, testViewer, testFetcher)
 
-	r1, err := c.CreateUser(
-		ctx1,
-		"Gnusto",
-		"gnusto@gnusto.com",
-		"gnusto",
-		"http://some-long-url",
-	)
+	r1, err := c.CreateUser(ctx1, "gnusto", "Gnusto", "gnusto@gnusto.com", "http://avatar/url")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer r1.Cleanup()
 
-	r2, err := c.CreateUser(
-		ctx1,
-		"Frotz",
-		"frotz@frotz.com",
-		"frotz",
-		"http://some-long-url",
-	)
+	r2, err := c.CreateUser(ctx1, "frotz", "Frotz", "frotz@frotz.com", "http://avatar/url")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,9 +356,7 @@ func TestViewActivityVisibility(t *testing.T) {
 	ctx := context.Background()
 	c := services.New(testDB, testViewer, testFetcher)
 
-	result, err := c.CreateUser(
-		ctx, "Frotz", "frotz@frotz.com", "frotz", "http://some-long-url",
-	)
+	result, err := c.CreateUser(ctx, "frotz", "Frotz", "frotz@frotz.com", "http://avatar/url")
 
 	if err != nil {
 		t.Fatal(err)
