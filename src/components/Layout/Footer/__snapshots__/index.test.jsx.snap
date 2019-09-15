@@ -15,7 +15,7 @@ exports[`<Footer /> renders 1`] = `
         test-id="terms-of-use"
         to="/terms-of-use"
       >
-        Terms of use
+        Terms
       </Link>
        ・ 
       Software available under the MIT

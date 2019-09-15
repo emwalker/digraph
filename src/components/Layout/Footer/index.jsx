@@ -13,7 +13,7 @@ const Footer = () => (
           to="/terms-of-use"
           test-id="terms-of-use"
         >
-          Terms of use
+          Terms
         </Link>
         {' ・ '}
         Software available under the MIT
