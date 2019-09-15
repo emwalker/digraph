@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/pkg/errors"
@@ -13,10 +14,16 @@ import (
 
 // CreateUserResult holds the result of a CreateUser call.
 type CreateUserResult struct {
+	Alerts  []*models.Alert
+	Cleanup CleanupFunc
+	User    *models.User
+}
+
+// CompleteRegistrationResult holds the result of a CreateUser call.
+type CompleteRegistrationResult struct {
 	*CreateRepositoryResult
 	Alerts       []*models.Alert
 	Cleanup      CleanupFunc
-	User         *models.User
 	Organization *models.Organization
 }
 
@@ -24,6 +31,12 @@ type CreateUserResult struct {
 type CreateGithubAccountResult struct {
 	Alerts  []*models.Alert
 	Account *models.GithubAccount
+}
+
+// CreateGoogleAccountResult holds the result of attempting to create a new Github account.
+type CreateGoogleAccountResult struct {
+	Alerts  []*models.Alert
+	Account *models.GoogleAccount
 }
 
 // DeleteAccountResult holds the result of deleting an account.
@@ -66,16 +79,34 @@ func (c Connection) CreateGithubAccount(
 	return &CreateGithubAccountResult{Account: &account}, nil
 }
 
+// CreateGoogleAccount creates a new github account.
+func (c Connection) CreateGoogleAccount(
+	ctx context.Context, user *models.User, profileID, name, primaryEmail, avatarURL string,
+) (*CreateGoogleAccountResult, error) {
+	account := models.GoogleAccount{
+		AvatarURL:    avatarURL,
+		Name:         name,
+		PrimaryEmail: primaryEmail,
+		ProfileID:    profileID,
+		UserID:       user.ID,
+	}
+
+	if err := account.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+		return nil, errors.Wrap(err, "services: failed to create Google account")
+	}
+
+	return &CreateGoogleAccountResult{Account: &account}, nil
+}
+
 // CreateUser creates a new user and provides a default organization and repo for him/her.
 func (c Connection) CreateUser(
-	ctx context.Context, login, name, email, avatarURL string,
+	ctx context.Context, name, email, avatarURL string,
 ) (*CreateUserResult, error) {
 	var err error
 
-	log.Printf("Creating user account (%s, %s)", login, name)
+	log.Printf("Creating user account (%s, %s)", name, email)
 	user := models.User{
 		AvatarURL:    null.StringFromPtr(&avatarURL),
-		Login:        login,
 		Name:         name,
 		PrimaryEmail: email,
 	}
@@ -84,7 +115,39 @@ func (c Connection) CreateUser(
 		return nil, err
 	}
 
+	if err := addMember(ctx, c.Exec, PublicOrgID, user.ID, false); err != nil {
+		return nil, errors.Wrap(err, "services: failed to add user as a member to the public organization")
+	}
+
+	cleanup := func() error {
+		if _, err := user.Delete(ctx, c.Exec); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return &CreateUserResult{
+		Alerts:  []*models.Alert{},
+		Cleanup: cleanup,
+		User:    &user,
+	}, nil
+}
+
+// CompleteRegistration finishes the registration process by creating an organization and a repo for
+// the user.
+func (c Connection) CompleteRegistration(
+	ctx context.Context, user *models.User, login string,
+) (*CompleteRegistrationResult, error) {
 	log.Printf("Creating a default organization for %s", login)
+
+	dt := time.Now()
+	user.RegisteredAt = null.TimeFromPtr(&dt)
+	user.Login = null.StringFromPtr(&login)
+
+	if _, err := user.Update(ctx, c.Exec, boil.Whitelist("registered_at", "login")); err != nil {
+		return nil, errors.Wrap(err, "services: failed to mark user account as completing registration")
+	}
+
 	org := models.Organization{
 		Login:  login,
 		Name:   "system:default",
@@ -92,20 +155,16 @@ func (c Connection) CreateUser(
 		System: true,
 	}
 
-	if err = org.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+	if err := org.Insert(ctx, c.Exec, boil.Infer()); err != nil {
 		return nil, errors.Wrap(err, "services: failed to insert organization")
 	}
 
-	if err = addMember(ctx, c.Exec, org.ID, user.ID, true); err != nil {
+	if err := addMember(ctx, c.Exec, org.ID, user.ID, true); err != nil {
 		return nil, errors.Wrap(err, "services: failed to add user as a member to new organization")
 	}
 
-	if err = addMember(ctx, c.Exec, PublicOrgID, user.ID, false); err != nil {
-		return nil, errors.Wrap(err, "services: failed to add user as a member to the public organization")
-	}
-
 	log.Printf("Creating a default repo for %s", login)
-	repoResult, err := c.CreateRepository(ctx, &org, "system:default", &user, true)
+	repoResult, err := c.CreateRepository(ctx, &org, "system:default", user, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "services: failed to create a default repo for user")
 	}
@@ -117,18 +176,14 @@ func (c Connection) CreateUser(
 		if _, err := org.Delete(ctx, c.Exec); err != nil {
 			return err
 		}
-		if _, err := user.Delete(ctx, c.Exec); err != nil {
-			return err
-		}
 		return nil
 	}
 
-	return &CreateUserResult{
+	return &CompleteRegistrationResult{
 		Alerts:                 []*models.Alert{},
 		CreateRepositoryResult: repoResult,
 		Cleanup:                cleanup,
 		Organization:           &org,
-		User:                   &user,
 	}, nil
 }
 

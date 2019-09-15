@@ -23,10 +23,7 @@ class SignInPage extends Component<Props> {
         <div className="col-10 col-md-6 column">
           <h2 className="mb-2">Sign in</h2>
           <p className="mb-2">Log in with your GitHub account:</p>
-
-          <GithubLogin className="mb-5">
-            Log in with GitHub
-          </GithubLogin>
+          <GithubLogin className="mb-5" />
         </div>
       </div>
     </Page>

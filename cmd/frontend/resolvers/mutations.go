@@ -47,29 +47,25 @@ func findRepo(
 	return models.Repositories(mods...).One(ctx, exec)
 }
 
-// CreateGithubSession creates a new session for the user passed in, possibly alongside any existing
-// sessions.  If the user is not yet in the database, a new user is created.  Sessions are destroyed
-// using DestroySession, which is called when someone logs out of the client.
-func (r *MutationResolver) CreateGithubSession(
-	ctx context.Context, input models.CreateGithubSessionInput,
-) (*models.CreateGithubSessionPayload, error) {
-	var result *services.CreateSessionResult
+type createSessionFunc func(*sql.Tx, *models.User) (*services.CreateSessionResult, error)
 
+func (r *MutationResolver) sessionPayload(
+	ctx context.Context, serverSecret string, createSession createSessionFunc,
+) (*models.CreateSessionPayload, error) {
 	rc := GetRequestContext(ctx)
 	actor := rc.Viewer()
 
-	if !rc.InitiatedByServer(input.ServerSecret) {
+	if !rc.InitiatedByServer(serverSecret) {
 		log.Printf("Session creation initiated by %s rather than the server", actor)
 		return nil, ErrUnauthorized
 	}
 	log.Printf("Request comes from server, creating session for %s", actor)
 
+	var result *services.CreateSessionResult
+
 	err := queries.Transact(r.DB, func(tx *sql.Tx) error {
 		var err error
-		c := services.New(tx, actor, nil)
-		result, err = c.CreateGithubSession(
-			ctx, input.Name, input.PrimaryEmail, input.GithubUsername, input.GithubAvatarURL,
-		)
+		result, err = createSession(tx, actor)
 		return err
 	})
 
@@ -78,11 +74,38 @@ func (r *MutationResolver) CreateGithubSession(
 		return nil, perrors.Wrap(err, "resolvers: failed to create session")
 	}
 
-	return &models.CreateGithubSessionPayload{
+	return &models.CreateSessionPayload{
 		Alerts:      result.Alerts,
 		UserEdge:    &models.UserEdge{Node: result.User},
 		SessionEdge: &models.SessionEdge{Node: result.Session},
 	}, nil
+}
+
+// CreateGithubSession creates a new session for the user passed in, possibly alongside any existing
+// sessions.  If the user is not yet in the database, a new user is created.  Sessions are destroyed
+// using DestroySession, which is called when someone logs out of the client.
+func (r *MutationResolver) CreateGithubSession(
+	ctx context.Context, input models.CreateGithubSessionInput,
+) (*models.CreateSessionPayload, error) {
+	return r.sessionPayload(ctx, input.ServerSecret, func(tx *sql.Tx, actor *models.User) (*services.CreateSessionResult, error) {
+		c := services.New(tx, actor, nil)
+		return c.CreateGithubSession(
+			ctx, input.Name, input.PrimaryEmail, input.GithubUsername, input.GithubAvatarURL,
+		)
+	})
+}
+
+// CreateGoogleSession creates a new session for the user passed in.  See CreateGithubSession for
+// details.
+func (r *MutationResolver) CreateGoogleSession(
+	ctx context.Context, input models.CreateGoogleSessionInput,
+) (*models.CreateSessionPayload, error) {
+	return r.sessionPayload(ctx, input.ServerSecret, func(tx *sql.Tx, actor *models.User) (*services.CreateSessionResult, error) {
+		c := services.New(tx, actor, nil)
+		return c.CreateGoogleSession(
+			ctx, input.Name, input.PrimaryEmail, input.GoogleProfileID, input.GoogleAvatarURL,
+		)
+	})
 }
 
 // DeleteAccount deletes the user account and any private data associated with it.  Links and topics

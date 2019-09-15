@@ -3,6 +3,8 @@ package models
 import (
 	"encoding/hex"
 	"testing"
+
+	"github.com/volatiletech/null"
 )
 
 func TestSessionHexID(t *testing.T) {
@@ -33,17 +35,17 @@ func TestUserDisplayName(t *testing.T) {
 	}{
 		{
 			name:         "When the name is set",
-			user:         User{Name: "Gnusto", Login: "gnusto"},
+			user:         User{Name: "Gnusto", Login: null.StringFrom("gnusto")},
 			expectedName: "Gnusto",
 		},
 		{
 			name:         "When only the login is set",
-			user:         User{Name: "", Login: "gnusto"},
+			user:         User{Name: "", Login: null.StringFrom("gnusto")},
 			expectedName: "gnusto",
 		},
 		{
 			name:         "When neither the name nor the login are set",
-			user:         User{Name: "", Login: ""},
+			user:         User{Name: "", Login: null.StringFromPtr(nil)},
 			expectedName: "<missing name>",
 		},
 	}

@@ -40,7 +40,16 @@ input CreateGithubSessionInput {
   serverSecret: String!
 }
 
-type CreateGithubSessionPayload implements Alertable {
+input CreateGoogleSessionInput {
+  clientMutationId: String
+  googleAvatarUrl: String!
+  googleProfileId: String!
+  name: String!
+  primaryEmail: String!
+  serverSecret: String!
+}
+
+type CreateSessionPayload implements Alertable {
   alerts: [Alert!]!
   userEdge: UserEdge
   sessionEdge: SessionEdge
@@ -151,7 +160,8 @@ type LinkReview {
 }
 
 type Mutation {
-  createGithubSession(input: CreateGithubSessionInput!): CreateGithubSessionPayload
+  createGithubSession(input: CreateGithubSessionInput!): CreateSessionPayload
+  createGoogleSession(input: CreateGoogleSessionInput!): CreateSessionPayload
   deleteAccount(input: DeleteAccountInput!): DeleteAccountPayload
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
   deleteSession(input: DeleteSessionInput!): DeleteSessionPayload

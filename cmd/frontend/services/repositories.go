@@ -2,11 +2,17 @@ package services
 
 import (
 	"context"
+	coreerrors "errors"
 	"fmt"
 	"log"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/volatiletech/sqlboiler/boil"
+)
+
+// Error constants.
+var (
+	ErrInvalidLogin = coreerrors.New("not a valid login")
 )
 
 // CreateRepositoryResult holds the result of a CreateRepository service call.
@@ -20,7 +26,11 @@ type CreateRepositoryResult struct {
 func (c *Connection) CreateRepository(
 	ctx context.Context, org *models.Organization, name string, owner *models.User, system bool,
 ) (*CreateRepositoryResult, error) {
-	repoName := fmt.Sprintf("%s/%s", owner.Login, name)
+	if !owner.Login.Valid {
+		return nil, ErrInvalidLogin
+	}
+
+	repoName := fmt.Sprintf("%s/%s", owner.Login.String, name)
 
 	log.Printf("Creating repository %s", repoName)
 	repo := models.Repository{

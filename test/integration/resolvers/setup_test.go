@@ -50,14 +50,16 @@ func (m mutator) repo(login string) *models.Repository {
 		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
 		qm.Where("repositories.system and o.login = ?", login),
 	).One(m.ctx, testDB)
+
 	if err != nil {
 		panic(err)
 	}
+
 	return repo
 }
 
 func (m mutator) defaultRepo() *models.Repository {
-	return m.repo(m.actor.Login)
+	return m.repo(m.actor.Login.String)
 }
 
 func TestMain(m *testing.M) {

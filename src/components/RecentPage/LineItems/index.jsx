@@ -21,7 +21,7 @@ const NoRecentActivity = () => (
 const LineItems = ({ topic }: Props) => {
   const edges = topic && topic.activity ? topic.activity.edges : null
 
-  if (!edges) return <NoRecentActivity topic={topic} />
+  if (!edges || edges.length === 0) return <NoRecentActivity topic={topic} />
 
   return (
     <Container topicName={topic.displayName}>

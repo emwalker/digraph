@@ -194,8 +194,8 @@ func (u User) DisplayName() string {
 	switch {
 	case u.Name != "":
 		return u.Name
-	case u.Login != "":
-		return u.Login
+	case u.Login.Valid:
+		return u.Login.String
 	default:
 		return "<missing name>"
 	}

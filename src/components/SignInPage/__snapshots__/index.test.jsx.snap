@@ -20,9 +20,7 @@ exports[`<SignInPage /> renders 1`] = `
       </p>
       <GithubLogin
         className="mb-5"
-      >
-        Log in with GitHub
-      </GithubLogin>
+      />
     </div>
   </div>
 </Page>

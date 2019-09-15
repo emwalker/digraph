@@ -21,7 +21,7 @@ func TestRootTopic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := fmt.Sprintf("/%s/topics/%s", testViewer.Login, rootTopic.ID)
+	path := fmt.Sprintf("/%s/topics/%s", testViewer.Login.String, rootTopic.ID)
 	repoResolver := rootResolver.Repository()
 
 	topic, err := repoResolver.RootTopic(ctx, defaultRepo)
