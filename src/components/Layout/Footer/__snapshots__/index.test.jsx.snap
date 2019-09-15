@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Footer /> renders 1`] = `
+<footer
+  className="footer"
+>
+  <div
+    className="container-lg clearfix my-3 px-3 px-md-6 px-lg-3 my-6 pt-2 border-top"
+  >
+    <p
+      className="mb-2"
+    >
+      <Link
+        className="gray-link"
+        test-id="terms-of-use"
+        to="/terms-of-use"
+      >
+        Terms of use
+      </Link>
+       ・ 
+      Software available under the MIT
+       
+      <a
+        className="gray-link"
+        href="https://github.com/emwalker/digraph/blob/master/LICENSE.md"
+      >
+        license
+      </a>
+      . © Eric Walker.
+    </p>
+  </div>
+</footer>
+`;

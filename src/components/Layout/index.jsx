@@ -4,9 +4,10 @@ import type { Node } from 'react'
 import { graphql } from 'react-relay'
 import { MediaQueryProvider } from 'react-responsive-hoc'
 
-import Header from './Header'
 import FlashMessages from '../FlashMessages'
-import { footer, layout } from './styles.module.css'
+import Header from './Header'
+import Footer from './Footer'
+import styles from './styles.module.css'
 import { type LayoutQueryResponse } from './__generated__/LayoutQuery.graphql'
 
 type AlertsType = $PropertyType<LayoutQueryResponse, 'alerts'>
@@ -52,11 +53,9 @@ query LayoutQuery(
   }
 }`
 
-/* eslint jsx-a11y/anchor-is-valid: 0 */
-
 const Layout = ({ alerts, children, view }: Props) => (
   <MediaQueryProvider width={1600} height={800}>
-    <div className={layout}>
+    <div className={styles.layout}>
       <div>
         <Header
           viewer={view.viewer}
@@ -66,16 +65,7 @@ const Layout = ({ alerts, children, view }: Props) => (
           <FlashMessages initialAlerts={alerts} />
           { children }
         </div>
-        <footer className={footer}>
-          <div className="container-lg px-3 px-md-6 px-lg-0 my-6 pt-2 border-top">
-            <p className="mb-2">
-              Software available under the MIT
-              {' '}
-              <a href="https://github.com/emwalker/digraph/blob/master/LICENSE.md">license</a>
-              . © Eric Walker.
-            </p>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </div>
   </MediaQueryProvider>

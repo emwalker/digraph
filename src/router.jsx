@@ -8,6 +8,7 @@ import React from 'react'
 
 import { defaultRootTopicId, defaultOrganizationLogin } from 'components/constants'
 import Homepage, { query as homepageQuery } from 'components/Homepage'
+import TermsOfUse from 'components/TermsOfUse'
 import RecentPage, { query as recentPageQuery } from 'components/RecentPage'
 import ReviewPage, { query as reviewPageQuery } from 'components/ReviewPage'
 import UserSettings, { query as userSettingsQuery } from 'components/UserSettings'
@@ -107,6 +108,10 @@ export const createRouteConfig = (store) => {
           render={withErrorBoundary(UserSettings)}
         />
       </Route>
+      <Route
+        path="/terms-of-use"
+        Component={TermsOfUse}
+      />
       <Route path=":orgLogin">
         <Route path="topics">
           <Route
