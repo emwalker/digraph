@@ -262,7 +262,7 @@ func (c Connection) UpsertLink(
 		title, err := c.providedOrFetchedTitle(url.CanonicalURL, providedTitle)
 		if err != nil {
 			log.Printf("Failed to fetch title for %s: %s", url.CanonicalURL, err)
-			return nil, err
+			title = "Error fetching title"
 		}
 
 		link = &models.Link{
