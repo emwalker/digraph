@@ -13,7 +13,8 @@ restriction.
   and topics to the public repo, you are making them available to others without restriction,
   and the content will outlive your account if you decide to delete it.
 * Links and topics added to your private repo are yours and will not be visible to other people.
-  Content in your private repo will be permanently deleted when you delete your account.
+  Content in your private repo will be removed from the site when you delete your account (but may be
+  retained in periodic database backups).
 `
 
 export default () => (
