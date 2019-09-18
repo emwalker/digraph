@@ -10,9 +10,9 @@ exports[`<DesktopNav /> renders 1`] = `
     <h1
       className="h3 text-normal"
     >
-      <Link
+      <a
         className="primaryLogo text-gray-dark n-link no-underline d-flex"
-        to="/"
+        href="/"
       >
         <div
           className="mr-2 d-inline-block"
@@ -23,7 +23,7 @@ exports[`<DesktopNav /> renders 1`] = `
           />
         </div>
         Digraph
-      </Link>
+      </a>
     </h1>
   </nav>
   <nav

@@ -46,8 +46,8 @@ class DesktopNav extends Component<Props> {
       <header className={classNames(header, 'd-flex py-1')}>
         <nav className="flex-self-center d-inline-block">
           <h1 className="h3 text-normal">
-            <Link
-              to="/"
+            <a
+              href="/"
               className={classNames(primaryLogo, 'text-gray-dark n-link no-underline d-flex')}
             >
               <div className="mr-2 d-inline-block">
@@ -55,7 +55,7 @@ class DesktopNav extends Component<Props> {
               </div>
 
               Digraph
-            </Link>
+            </a>
           </h1>
         </nav>
         <nav className={classNames(userNav, 'flex-self-center')}>
