@@ -1,6 +1,10 @@
+// @flow
 import { graphql } from 'react-relay'
 
 import defaultMutation from './util/defaultMutation'
+import type { UpsertTopicTimeRangeInput } from './__generated__/deleteTopicTimeRangeMutation.graphql'
+
+export type Input = UpsertTopicTimeRangeInput
 
 export default defaultMutation(graphql`
   mutation deleteTopicTimeRangeMutation(

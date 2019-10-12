@@ -2,16 +2,18 @@
 import React from 'react'
 import { QueryRenderer, graphql } from 'react-relay'
 
-import type { LinkType } from 'components/types'
+import type { Relay } from 'components/types'
 import makeEditLink from './EditLink'
+
+type Link = {
+  +id: string,
+}
 
 type Props = {
   isOpen: boolean,
-  link: LinkType,
+  link: Link,
   orgLogin: string,
-  relay: {
-    environment: Object,
-  },
+  relay: Relay,
   toggleForm: Function,
 }
 
@@ -45,7 +47,7 @@ const EditLinkContainer = ({ isOpen, link, orgLogin, relay, toggleForm }: Props)
       viewerId: '',
       repoIds: [],
     }}
-    render={makeEditLink({ isOpen, orgLogin, relay, toggleForm })}
+    render={makeEditLink({ isOpen, orgLogin, toggleForm })}
   />
 )
 

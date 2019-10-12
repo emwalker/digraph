@@ -11,7 +11,6 @@ import Container from './Container'
 type View = $NonMaybeType<$PropertyType<Response, 'view'>>
 
 type Props = {|
-  // $FlowFixMe
   +view: View,
 |}
 

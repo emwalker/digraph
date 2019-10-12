@@ -1,3 +1,4 @@
+// @flow
 import http from 'http'
 
 /* eslint no-console: 0, global-require: 0 */
@@ -14,9 +15,11 @@ server.listen(port, (error) => {
   console.log('🚀 node server listening on', port)
 })
 
+// $FlowFixMe
 if (module.hot) {
   console.log('✅  Server-side HMR Enabled!')
 
+  // $FlowFixMe
   module.hot.accept('./server', () => {
     console.log('🔁  HMR Reloading `./server`...')
 

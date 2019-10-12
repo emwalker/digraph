@@ -1,18 +1,21 @@
+// @flow
 import passport from 'passport'
 import session from 'express-session'
 import connectRedis from 'connect-redis'
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser'
 
-import deleteSessionMutation from 'mutations/deleteSessionMutation'
+import deleteSessionMutation, { type Input } from 'mutations/deleteSessionMutation'
 import { createEnvironment } from '../environment'
 import withGithub from './auth/withGithub'
+import type { Fetcher } from '../environment'
+import type { App } from './types'
 
 /* eslint no-console: 0 */
 
 const RedisStore = connectRedis(session)
 
-export default (app, fetcher) => {
+export default (app: App, fetcher: Fetcher) => {
   const environment = createEnvironment(fetcher)
 
   app.use(session({
@@ -34,10 +37,10 @@ export default (app, fetcher) => {
   withGithub(app, environment)
 
   app.get('/logout', (req, res) => {
+    const input: Input = { sessionId: req.user.sessionId }
     deleteSessionMutation(
       environment,
-      [],
-      { sessionId: req.user.sessionId },
+      input,
       {
         onCompleted() {
           console.log('Deleted session for user', req.user.id)

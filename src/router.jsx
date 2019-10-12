@@ -1,3 +1,4 @@
+// @flow
 import queryMiddleware from 'farce/lib/queryMiddleware'
 import createRender from 'found/lib/createRender'
 import makeRouteConfig from 'found/lib/makeRouteConfig'
@@ -19,11 +20,15 @@ import Layout, { query as layoutQuery } from 'components/Layout'
 import withErrorBoundary from 'components/withErrorBoundary'
 import SignInPage from 'components/SignInPage'
 import SignUpPage from 'components/SignUpPage'
-import { createEnvironment } from './environment'
+import { createEnvironment, type Fetcher } from './environment'
+
+type Store = {|
+  getState: Function,
+|}
 
 export const historyMiddlewares = [queryMiddleware]
 
-export function createResolver(fetcher) {
+export function createResolver(fetcher: Fetcher) {
   const environment = createEnvironment(fetcher)
   return new Resolver(environment)
 }
@@ -42,7 +47,7 @@ const prepareVariablesFn = viewer => (params) => {
 }
 
 /* eslint function-paren-newline: 0 */
-export const createRouteConfig = (store) => {
+export const createRouteConfig = (store: Store) => {
   const { viewer } = store.getState()
   const prepareVariables = prepareVariablesFn(viewer)
 

@@ -1,6 +1,8 @@
+// @flow
 import passport from 'passport'
+import type { App } from '../types'
 
-const registerEndpointsFn = provider => (app) => {
+const registerEndpointsFn = (provider: string) => (app: App) => {
   app.get(`/auth/${provider}`, passport.authenticate(provider))
 
   app.get(

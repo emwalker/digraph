@@ -4,7 +4,7 @@ import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
 import Page from 'components/ui/Page'
-import type { LinkType, Relay } from 'components/types'
+import type { Relay } from 'components/types'
 import Subhead from 'components/ui/Subhead'
 import SidebarList from 'components/ui/SidebarList'
 import Columns from 'components/ui/Columns'
@@ -22,6 +22,10 @@ import {
 import { type TopicSearchPage_topic as TopicType } from './__generated__/TopicSearchPage_topic.graphql'
 
 type ViewType = $PropertyType<Response, 'view'>
+
+type LinkType = {
+  id: string,
+}
 
 /* eslint no-underscore-dangle: 0 */
 

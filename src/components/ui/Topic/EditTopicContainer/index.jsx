@@ -2,15 +2,14 @@
 import React from 'react'
 import { QueryRenderer, graphql } from 'react-relay'
 
+import type { Relay } from 'components/types'
 import makeEditTopic from './EditTopic'
 import type { EditTopic_topic as Topic } from './__generated__/EditTopicContainerQuery.graphql'
 
 type Props = {
   isOpen: boolean,
   orgLogin: string,
-  relay: {
-    environment: Object,
-  },
+  relay: Relay,
   toggleForm: Function,
   topic: Topic,
 }

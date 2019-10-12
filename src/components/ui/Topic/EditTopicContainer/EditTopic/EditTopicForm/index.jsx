@@ -2,21 +2,21 @@
 import React, { Component } from 'react'
 import { createRefetchContainer, graphql } from 'react-relay'
 
-import type { Option, Relay, TopicType } from 'components/types'
-import deleteTopicMutation from 'mutations/deleteTopicMutation'
-import updateTopicMutation from 'mutations/updateTopicMutation'
-import updateTopicTopicsMutation from 'mutations/updateTopicParentTopicsMutation'
+import type { Option, Relay } from 'components/types'
+import deleteTopicMutation, { type Input as DeleteInput } from 'mutations/deleteTopicMutation'
+import updateTopicMutation, { type Input as UpdateInput } from 'mutations/updateTopicMutation'
+import updateTopicTopicsMutation, { type Input as UpdateTopicsInput } from 'mutations/updateTopicParentTopicsMutation'
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
 import Synonyms from './Synonyms'
 import TopicTimeRange from './TopicTimeRange'
+import type { EditTopicForm_topic as TopicType } from './__generated__/EditTopicForm_topic.graphql'
 
 type Props = {
   isOpen: boolean,
   orgLogin: string,
   relay: Relay,
   toggleForm: Function,
-  // $FlowFixMe
   topic: TopicType,
 }
 
@@ -35,28 +35,26 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   onSave = () => {
-    updateTopicMutation(
-      this.props.relay.environment,
-      [],
-      {
-        topicIds: this.addTopicIds,
-        description: this.state.description || '',
-        id: this.props.topic.id,
-        displayName: this.state.displayName,
-      },
-    )
+    const input: UpdateInput = {
+      topicIds: this.addTopicIds,
+      description: this.state.description || '',
+      id: this.props.topic.id,
+      displayName: this.state.displayName,
+    }
+    updateTopicMutation(this.props.relay.environment, input)
     this.props.toggleForm()
   }
 
   onDelete = () => {
+    const input: DeleteInput = { topicId: this.props.topic.id }
     deleteTopicMutation(
       this.props.relay.environment,
-      [{
-        type: 'NODE_DELETE',
-        deletedIDFieldName: 'deletedTopicId',
-      }],
+      input,
       {
-        topicId: this.props.topic.id,
+        configs: [{
+          type: 'NODE_DELETE',
+          deletedIDFieldName: 'deletedTopicId',
+        }],
       },
     )
   }
@@ -70,15 +68,17 @@ class EditTopicForm extends Component<Props, State> {
     return this.props.topic.id
   }
 
+  get selectedTopics(): ?Option[] {
+    const { selectedTopics } = this.props.topic
+    return selectedTopics ? makeOptions(selectedTopics) : null
+  }
+
   updateParentTopics = (parentTopicIds: string[]) => {
-    updateTopicTopicsMutation(
-      this.props.relay.environment,
-      [],
-      {
-        topicId: this.props.topic.id,
-        parentTopicIds,
-      },
-    )
+    const input: UpdateTopicsInput = {
+      topicId: this.props.topic.id,
+      parentTopicIds,
+    }
+    updateTopicTopicsMutation(this.props.relay.environment, input)
   }
 
   updateDescription = (event: Object) => {
@@ -100,7 +100,8 @@ class EditTopicForm extends Component<Props, State> {
       }
 
       this.props.relay.refetch(variables, null, () => {
-        const options = makeOptions(this.props.topic.availableTopics)
+        const { availableTopics } = this.props.topic
+        const options = availableTopics ? makeOptions(availableTopics) : []
         resolve(options)
       })
     })
@@ -109,30 +110,34 @@ class EditTopicForm extends Component<Props, State> {
   render = () => {
     if (!this.props.isOpen) return null
 
+    const { selectedTopics } = this
+
     return (
-      <div className="my-4">
-        <Synonyms relay={this.props.relay} topic={this.props.topic} />
-        <TopicTimeRange relay={this.props.relay} topic={this.props.topic} />
+      selectedTopics ? (
+        <div className="my-4">
+          <Synonyms relay={this.props.relay} topic={this.props.topic} />
+          <TopicTimeRange relay={this.props.relay} topic={this.props.topic} />
 
-        <EditTopicList
-          loadOptions={this.loadOptions}
-          selectedTopics={makeOptions(this.props.topic.selectedTopics)}
-          updateTopics={this.updateParentTopics}
-        />
-
-        <dl className="form-group">
-          <DeleteButton
-            onDelete={this.onDelete}
+          <EditTopicList
+            loadOptions={this.loadOptions}
+            selectedTopics={selectedTopics}
+            updateTopics={this.updateParentTopics}
           />
-          <button
-            className="btn-link float-right"
-            onClick={this.props.toggleForm}
-            type="button"
-          >
-            Close
-          </button>
-        </dl>
-      </div>
+
+          <dl className="form-group">
+            <DeleteButton
+              onDelete={this.onDelete}
+            />
+            <button
+              className="btn-link float-right"
+              onClick={this.props.toggleForm}
+              type="button"
+            >
+              Close
+            </button>
+          </dl>
+        </div>
+      ) : null
     )
   }
 }
@@ -147,7 +152,7 @@ export default createRefetchContainer(EditTopicForm, {
       id
       displayName: name
 
-      selectedTopics: parentTopics(first: 100) {
+      selectedTopics: parentTopics(first: 1000) {
         edges {
           node {
             value: id

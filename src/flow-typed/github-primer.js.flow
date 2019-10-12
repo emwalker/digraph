@@ -1,0 +1,3 @@
+declare module '@primer/css/index.scss?global' {
+  declare module.exports: any;
+}

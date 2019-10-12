@@ -2,9 +2,16 @@
 import React from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import type { Relay, TopicType, UserType, ViewType } from 'components/types'
-import { liftNodes } from 'utils'
+import type { Relay } from 'components/types'
 import EditTopicForm from './EditTopicForm'
+
+type Topic = {
+  +id: string,
+}
+
+type View = {
+  topic: Topic,
+}
 
 type Props = {
   isOpen: boolean,
@@ -16,9 +23,8 @@ type PropsType = {
   error: ?Object,
   orgLogin: string,
   relay: Relay,
-  topic: TopicType,
-  view: ViewType,
-  viewer: UserType,
+  topic: Topic,
+  view: View,
 } & Props
 
 type RenderProps = {
@@ -30,49 +36,32 @@ type RenderProps = {
 /* eslint react/no-unused-prop-types: 0 */
 
 const EditTopic = (props: PropsType) => {
-  const { error, isOpen, orgLogin, relay, toggleForm, topic, viewer } = props
+  const { error, topic } = props
 
   if (error) return <div>{error.message}</div>
 
-  if (!topic) return null
-
-  return (
-    <EditTopicForm
-      availableTopics={liftNodes(topic.availableTopics)}
-      isOpen={isOpen}
-      orgLogin={orgLogin}
-      relay={relay}
-      selectedTopics={liftNodes(topic.selectedTopics)}
-      toggleForm={toggleForm}
-      topic={topic}
-      viewer={viewer}
-    />
-  )
+  return <EditTopicForm {...props} topic={topic} />
 }
 
 const Wrapped = createFragmentContainer(EditTopic, {
   topic: graphql`
     fragment EditTopic_topic on Topic {
+      id
       ...EditTopicForm_topic
     }
   `,
 })
 
-export default ({ isOpen, orgLogin, toggleForm }: Props) => ({ error, props }: RenderProps) => {
-  if (!props) return null
-
-  const { view, viewer } = props
-
-  return (
+export default ({ isOpen, orgLogin, toggleForm }: Props) => ({ error, props }: RenderProps) => (
+  props && props.view && props.view.topic && (
     <Wrapped
+      {...props}
       error={error}
       isOpen={isOpen}
       orgLogin={orgLogin}
       relay={props.relay}
+      topic={props.view.topic}
       toggleForm={toggleForm}
-      topic={view.topic}
-      view={view}
-      viewer={viewer}
     />
   )
-}
+)

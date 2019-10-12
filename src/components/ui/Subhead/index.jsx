@@ -1,14 +1,17 @@
 // @flow
 import React, { useCallback } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
-import { pathOr } from 'ramda'
 
 import useDocumentTitle from 'utils/useDocumentTitle'
-import type { ViewType } from 'components/types'
 import SearchBox from 'components/ui/SearchBox'
+import type { Subhead_view as View } from './__generated__/Subhead_view.graphql'
 import './styles.module.css'
 
-const resourcePath = pathOr('/', ['currentRepository', 'rootTopic', 'resourcePath'])
+const resourcePath = (view: View): string => (
+  view.currentRepository && view.currentRepository.rootTopic
+    ? view.currentRepository.rootTopic.resourcePath
+    : '/'
+)
 
 type Props = {
   heading: string,
@@ -21,7 +24,7 @@ type Props = {
   router: {
     push: Function,
   },
-  view: ViewType,
+  view: View,
 }
 
 const Subhead = (props: Props) => {

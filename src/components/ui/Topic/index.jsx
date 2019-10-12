@@ -84,7 +84,6 @@ class Topic extends Component<Props, State> {
           relay={this.props.relay}
           toggleForm={this.toggleForm}
           topic={topic}
-          view={this.props.view}
         />
       </Item>
     )

@@ -5,13 +5,12 @@ import moment from 'moment'
 import { useDebouncedCallback } from 'use-debounce'
 
 import type { Relay } from 'components/types'
-import upsertTopicTimeRangeMutation from 'mutations/upsertTopicTimeRangeMutation'
+import upsertTopicTimeRangeMutation, { type Input } from 'mutations/upsertTopicTimeRangeMutation'
 import type { TopicTimelineForm_topic as Topic } from './__generated__/TopicTimeRangeForm_topic.graphql'
 import styles from './styles.module.css'
 
-// const initialDate = dateFormat(Date.now(), 'yyyy-mm-dd')
-
 type TimeRange = $NonMaybeType<$PropertyType<Topic, 'timeRange'>>
+type PrefixFormat = $PropertyType<TimeRange, 'prefixFormat'>
 
 type Props = {
   relay: Relay,
@@ -28,16 +27,12 @@ const TopicTimeRangeForm = ({ relay, timeRange, topic: { id: topicId } }: Props)
     async (dt: Object) => {
       if (dt.isValid()) {
         setMutationInFlight(true)
-
-        await upsertTopicTimeRangeMutation(
-          relay.environment,
-          [],
-          {
-            prefixFormat,
-            startsAt: dt.toISOString(),
-            topicId,
-          },
-        )
+        const input: Input = {
+          prefixFormat,
+          startsAt: dt.toISOString(),
+          topicId,
+        }
+        await upsertTopicTimeRangeMutation(relay.environment, input)
       } else {
         // eslint-disable-next-line no-console
         console.log('invalid date:', dt)
@@ -51,15 +46,13 @@ const TopicTimeRangeForm = ({ relay, timeRange, topic: { id: topicId } }: Props)
   const updateFormat = useCallback(
     async (event: SyntheticInputEvent<HTMLInputElement>) => {
       setMutationInFlight(true)
-      await upsertTopicTimeRangeMutation(
-        relay.environment,
-        [],
-        {
-          prefixFormat: event.target.value,
-          startsAt,
-          topicId,
-        },
-      )
+      const newPrefix = (event.target.value: PrefixFormat)
+      const input: Input = {
+        prefixFormat: newPrefix,
+        startsAt,
+        topicId,
+      }
+      await upsertTopicTimeRangeMutation(relay.environment, input)
       setMutationInFlight(false)
     },
     [setMutationInFlight, startsAt],

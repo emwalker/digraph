@@ -1,3 +1,4 @@
+// @flow
 const urlRegexp = /^https?:\/\//i
 
-export default url => urlRegexp.test(url)
+export default (url: string): bool => urlRegexp.test(url)

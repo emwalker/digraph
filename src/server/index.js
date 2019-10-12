@@ -13,6 +13,7 @@ import renderFullPage from './renderFullPage'
 import ServerFetcher from './ServerFetcher'
 import configurePassport from './configurePassport'
 import configureApiProxy from './configureApiProxy'
+import type { App } from './types'
 
 import {
   createResolver,
@@ -34,7 +35,7 @@ const reducer = state => state
 const fetcher = new ServerFetcher()
 
 // eslint-disable-next-line import/no-mutable-exports
-let app: Object = express()
+let app: App = express()
 
 app = configurePassport(app, fetcher)
 app = configureApiProxy(app)

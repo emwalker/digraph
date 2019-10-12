@@ -1,7 +1,15 @@
+// @flow
 import { graphql } from 'react-relay'
 
 import defaultMutation from './util/defaultMutation'
 import flashMessageUpdater from './util/flashMessageUpdater'
+import type {
+  CreateGithubSessionInput,
+  createGithubSessionMutationResponse,
+} from './__generated__/createGithubSessionMutation.graphql'
+
+export type Input = CreateGithubSessionInput
+export type Response = createGithubSessionMutationResponse
 
 export default defaultMutation(graphql`
   mutation createGithubSessionMutation(

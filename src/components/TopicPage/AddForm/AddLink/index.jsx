@@ -2,8 +2,12 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import type { Relay, RepositoryType, TopicType, UserType } from 'components/types'
-import upsertLinkMutation from 'mutations/upsertLinkMutation'
+import type { Relay } from 'components/types'
+import upsertLinkMutation, { type Input } from 'mutations/upsertLinkMutation'
+import type { AddLink_viewer as Viewer } from './__generated__/AddLink_viewer.graphql'
+import type { AddLink_Topic as Topic } from './__generated__/AddLink_topic.graphql'
+
+type Repository = $PropertyType<Viewer, 'selectedRepository'>
 
 const tooltip = 'Add a link to this topic.\n'
   + 'Press "Return" to submit the new link.'
@@ -11,8 +15,8 @@ const tooltip = 'Add a link to this topic.\n'
 type Props = {
   disabled?: boolean,
   relay: Relay,
-  topic: TopicType,
-  viewer: UserType,
+  topic: Topic,
+  viewer: Viewer,
 }
 
 type State = {
@@ -32,7 +36,7 @@ class AddLink extends Component<Props, State> {
     if (event.key === 'Enter') this.createLink()
   }
 
-  get selectedRepo(): ?RepositoryType {
+  get selectedRepo(): ?Repository {
     return this.props.viewer.selectedRepository
   }
 
@@ -61,15 +65,23 @@ class AddLink extends Component<Props, State> {
   createLink() {
     const repo = this.selectedRepo
     const repoName = repo ? repo.name : null
+    const { orgLogin } = this
+
+    if (!repoName) return
+    if (!orgLogin) return
+
+    const input: Input = {
+      addParentTopicIds: [this.props.topic.id],
+      organizationLogin: orgLogin,
+      repositoryName: repoName,
+      url: this.state.url,
+    }
 
     upsertLinkMutation(
       this.props.relay.environment,
-      this.relayConfigs,
+      input,
       {
-        addParentTopicIds: [this.props.topic.id],
-        organizationLogin: this.orgLogin,
-        repositoryName: repoName,
-        url: this.state.url,
+        configs: this.relayConfigs,
       },
     )
     this.setState({ url: '' })

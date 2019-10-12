@@ -2,8 +2,12 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import type { Relay, RepositoryType, TopicType, UserType } from 'components/types'
+import type { Relay } from 'components/types'
 import upsertTopicMutation from 'mutations/upsertTopicMutation'
+import type { AddTopic_viewer as Viewer } from './__generated__/AddTopic_viewer.graphql'
+import type { AddTopic_topic as Topic } from './__generated__/AddTopic_topic.graphql'
+
+type Repository = $PropertyType<Viewer, 'selectedRepository'>
 
 const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
   + 'afterwards if it also belongs under another topic.\n'
@@ -12,8 +16,8 @@ const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
 type Props = {
   disabled?: boolean,
   relay: Relay,
-  topic: TopicType,
-  viewer: UserType,
+  topic: Topic,
+  viewer: Viewer,
 }
 
 type State = {
@@ -33,7 +37,7 @@ class AddTopic extends Component<Props, State> {
     if (event.key === 'Enter') this.createTopic()
   }
 
-  get selectedRepo(): ?RepositoryType {
+  get selectedRepo(): ?Repository {
     return this.props.viewer.selectedRepository
   }
 
@@ -65,12 +69,14 @@ class AddTopic extends Component<Props, State> {
 
     upsertTopicMutation(
       this.props.relay.environment,
-      this.relayConfigs,
       {
         name: this.state.name,
         repositoryName: repoName,
         organizationLogin: this.orgLogin,
         topicIds: [this.props.topic.id],
+      },
+      {
+        configs: this.relayConfigs,
       },
     )
     this.setState({ name: '' })

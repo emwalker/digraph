@@ -3,16 +3,36 @@ import React, { Component } from 'react'
 import AsyncSelect from 'react-select/async'
 import debounce from 'es6-promise-debounce'
 
-import type { Option, TopicConnection } from 'components/types'
+import type { Option } from 'components/types'
 import colourStyles from './colourStyles'
 
 /* eslint react/no-unused-state: 0 */
 
+type TopicOption = {
+  +value: string,
+  +label: string,
+  // +color: string,
+}
+
+type Edge = {
+  +node: ?TopicOption,
+}
+
+type TopicConnection = {
+  +edges: ?$ReadOnlyArray<?Edge>,
+}
+
 const color = '#0366d6'
 
-const makeOption = ({ node }) => ({ ...node, color })
+const makeOption = (edge: ?Edge): Option => (
+  edge && edge.node
+    ? ({ ...edge.node, color })
+    : { value: 'missing', label: '<missing>', color: '' }
+)
 
-const makeOptions = (conn: TopicConnection): any => conn.edges.map(makeOption)
+function makeOptions<T: TopicConnection>(conn: T): Option[] {
+  return conn.edges ? conn.edges.map(makeOption) : []
+}
 
 type Props = {
   loadOptions: (string) => Promise<Option[]>,
@@ -42,7 +62,6 @@ class EditTopicList extends Component<Props, State> {
     this.setState({ inputValue })
   }
 
-  // $FlowFixMe
   handleChange = (selectedTopics: Option[]) => {
     this.setState({ selectedTopics }, () => {
       this.props.updateTopics(selectedTopics.map(option => option.value))

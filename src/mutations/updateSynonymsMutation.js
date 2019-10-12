@@ -7,7 +7,7 @@ import flashMessageUpdater from './util/flashMessageUpdater'
 
 export type Input = UpdateSynonymsInput
 
-export default defaultMutation(graphql`
+const updateSynonymsMutation = defaultMutation(graphql`
   mutation updateSynonymsMutation(
     $input: UpdateSynonymsInput!
   ) {
@@ -27,3 +27,5 @@ export default defaultMutation(graphql`
     }
   }
 `, flashMessageUpdater('updateSynonyms'))
+
+export default updateSynonymsMutation

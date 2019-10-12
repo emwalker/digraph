@@ -4,7 +4,7 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import { ButtonDanger } from '@primer/components'
 
 import type { Relay } from 'components/types'
-import deleteAccountMutation from 'mutations/deleteAccountMutation'
+import deleteAccountMutation, { type Input } from 'mutations/deleteAccountMutation'
 import type { DeleteAccount_view as View } from './__generated__/DeleteAccount_view.graphql'
 
 declare var confirm: Function
@@ -22,8 +22,12 @@ const DeleteAccount = ({ relay, view }: Props) => {
     // eslint-disable-next-line no-restricted-globals
     if (!confirm('Are you sure you want to delete your account?')) return
 
+    const { id: userId } = viewer
+    if (!userId) return
+
     setMutationInFlight(true)
-    await deleteAccountMutation(relay.environment, [], { userId: viewer.id })
+    const input: Input = { userId }
+    await deleteAccountMutation(relay.environment, input)
 
     setTimeout(
       () => {

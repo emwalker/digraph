@@ -1,14 +1,19 @@
+// @flow
 import React, { Component, Fragment, type Node } from 'react'
 import classNames from 'classnames'
 
-import type { TopicType } from 'components/types'
 import LinkOrA from './LinkOrA'
 import TopicBadge from '../TopicBadge'
 import { disabledLink } from './styles.module.css'
 
 /* eslint no-underscore-dangle: 0 */
 
-type Props = {
+type Topic = {
+  +displayName: string,
+  +resourcePath: string,
+}
+
+type Props<T> = {
   canEdit: boolean,
   children: Node,
   className: string,
@@ -22,11 +27,11 @@ type Props = {
   repoName: ?string,
   title: string,
   toggleForm: Function,
-  topics: TopicType[],
+  topics: T[],
   url: ?string,
 }
 
-class Item extends Component<Props> {
+class Item<T: Topic> extends Component<Props<T>> {
   static defaultProps = {
     description: null,
     showLink: false,
@@ -98,10 +103,7 @@ class Item extends Component<Props> {
     }
   )
 
-  renderTopicBadge = (
-    // eslint-disable-next-line react/no-unused-prop-types
-    { displayName, resourcePath }: {displayName: string, resourcePath: string},
-  ) => (
+  renderTopicBadge = ({ displayName, resourcePath }: Topic) => (
     <TopicBadge
       key={resourcePath}
       displayName={displayName}

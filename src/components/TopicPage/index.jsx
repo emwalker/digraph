@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { Link as FoundLink } from 'found'
 
 import { liftNodes } from 'utils'
-import type { LinkType, Relay } from 'components/types'
+import type { Relay, CollectionNode } from 'components/types'
 import Page from 'components/ui/Page'
 import Subhead from 'components/ui/Subhead'
 import Breadcrumbs from 'components/ui/Breadcrumbs'
@@ -23,6 +23,7 @@ import { type TopicPage_query_QueryResponse as Response } from './__generated__/
 import { type TopicPage_topic as TopicType } from './__generated__/TopicPage_topic.graphql'
 
 type ViewType = $PropertyType<Response, 'view'>
+type LinkType = CollectionNode<$PropertyType<TopicType, 'links'>>
 
 type Props = {
   // eslint-disable-next-line react/no-unused-prop-types

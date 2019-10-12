@@ -1,9 +1,14 @@
-import React from 'react'
+// @flow
+import React, { type AbstractComponent } from 'react'
 
 import ErrorBoundary from './ui/ErrorBoundary'
 
-export default Wrapped => props => (
-  <ErrorBoundary>
-    <Wrapped {...props} />
-  </ErrorBoundary>
-)
+function withErrorBoundary<Config, Props>(Wrapped: AbstractComponent<Config>) {
+  return (props: Props) => (
+    <ErrorBoundary>
+      <Wrapped {...props} />
+    </ErrorBoundary>
+  )
+}
+
+export default withErrorBoundary

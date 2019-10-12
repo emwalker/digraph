@@ -1,13 +1,25 @@
+// @flow
 import chroma from 'chroma-js'
+
+type Option = {|
+  data: {
+    color: string,
+  },
+  isDisabled?: boolean,
+  isFocused?: boolean,
+  isSelected?: boolean,
+|}
+
+type Styles = {||}
 
 /* eslint no-nested-ternary: 0 */
 
 export default {
-  control: styles => ({ ...styles, backgroundColor: 'white' }),
+  control: (styles: Styles) => ({ ...styles, backgroundColor: 'white' }),
 
-  option: (styles, {
+  option: (styles: Styles, {
     data, isDisabled, isFocused, isSelected,
-  }) => {
+  }: Option) => {
     const color = chroma(data.color)
     return {
       ...styles,
@@ -23,7 +35,7 @@ export default {
     }
   },
 
-  multiValue: (styles, { data }) => {
+  multiValue: (styles: Styles, { data }: Option) => {
     const color = chroma(data.color)
     return {
       ...styles,
@@ -31,12 +43,12 @@ export default {
     }
   },
 
-  multiValueLabel: (styles, { data }) => ({
+  multiValueLabel: (styles: Styles, { data }: Option) => ({
     ...styles,
     color: data.color,
   }),
 
-  multiValueRemove: (styles, { data }) => ({
+  multiValueRemove: (styles: Styles, { data }: Option) => ({
     ...styles,
     color: data.color,
     ':hover': {

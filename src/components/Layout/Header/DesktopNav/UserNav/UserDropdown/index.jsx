@@ -4,11 +4,11 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import { Avatar } from '@primer/components'
 import { Link } from 'found'
 
-import type { UserType } from 'components/types'
+import type { UserDropdown_viewer as Viewer } from './__generated__/UserDropdown_viewer.graphql'
 import styles from './styles.module.css'
 
 type Props = {
-  viewer: UserType,
+  viewer: Viewer,
 }
 
 const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {

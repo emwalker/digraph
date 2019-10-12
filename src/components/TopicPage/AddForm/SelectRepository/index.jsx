@@ -2,26 +2,30 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import type { Relay, RepositoryEdge, UserType } from 'components/types'
-import selectRepositoryMutation from 'mutations/selectRepositoryMutation'
+import type { Relay, Edge, Edges } from 'components/types'
+import selectRepositoryMutation, { type Input } from 'mutations/selectRepositoryMutation'
+import type { SelectRepository_viewer as Viewer } from './__generated__/SelectRepository_viewer.graphql'
+
+type Repositories = $PropertyType<Viewer, 'repositories'>
+type RepositoryEdge = Edge<Edges<Repositories>>
 
 type Props = {
   relay: Relay,
-  viewer: UserType,
+  viewer: Viewer,
 }
 
 class SelectRepository extends Component<Props> {
   onChange = (event: SyntheticInputEvent<HTMLInputElement>) => {
     const repositoryId = event ? event.target.value : null
-    selectRepositoryMutation(
-      this.props.relay.environment,
-      [],
-      { repositoryId: repositoryId === 'placeholder' ? null : repositoryId },
-    )
+    const input: Input = {
+      repositoryId: repositoryId === 'placeholder' ? null : repositoryId,
+    }
+    selectRepositoryMutation(this.props.relay.environment, input)
   }
 
-  get repositoryEdges(): Object[] {
-    return this.props.viewer.repositories.edges
+  get repositoryEdges(): $ReadOnlyArray<?RepositoryEdge> {
+    const { repositories } = this.props.viewer
+    return repositories && repositories.edges ? repositories.edges : []
   }
 
   get selectedId(): ?string {
@@ -29,13 +33,15 @@ class SelectRepository extends Component<Props> {
     return repo ? repo.id : null
   }
 
-  renderOption = (edge: RepositoryEdge) => (
-    <option
-      key={edge.node.fullName}
-      value={edge.node.id}
-    >
-      {edge.node.fullName}
-    </option>
+  renderOption = (edge: ?RepositoryEdge) => (
+    edge && (
+      <option
+        key={edge.node.fullName}
+        value={edge.node.id}
+      >
+        {edge.node.fullName}
+      </option>
+    )
   )
 
   render = () => (

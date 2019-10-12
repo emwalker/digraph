@@ -1,16 +1,20 @@
-// @import
+// @flow
 import 'isomorphic-fetch'
+
+import type { Operation, Variables } from './environment'
 
 /* eslint class-methods-use-this: 0 */
 
 class FetcherBase {
+  +url: string
+
   get headers(): Object {
     return {
       'Content-Type': 'application/json',
     }
   }
 
-  async fetch(operation, variables) {
+  async fetch(operation: Operation, variables: Variables) {
     const { headers } = this
 
     const response = await fetch(this.url, {

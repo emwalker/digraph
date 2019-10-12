@@ -2,13 +2,14 @@
 import React, { Component, Fragment } from 'react'
 import { Link } from 'found'
 import classNames from 'classnames'
+import { createFragmentContainer, graphql } from 'react-relay'
 
 import { toEverything } from 'components/navigation'
-import type { UserType } from 'components/types'
 import styles from './styles.module.css'
+import type { Menu_viewer as Viewer } from './__generated__/Menu_viewer.graphql'
 
 type Props = {
-  viewer: UserType,
+  viewer: Viewer,
 }
 
 class Menu extends Component<Props> {
@@ -63,4 +64,10 @@ class Menu extends Component<Props> {
   )
 }
 
-export default Menu
+export default createFragmentContainer(Menu, {
+  viewer: graphql`
+    fragment Menu_viewer on User {
+      isGuest
+    }
+  `,
+})

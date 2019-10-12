@@ -1,6 +1,13 @@
+// @flow
 import FetcherBase from '../FetcherBase'
 
 import { basicAuthSecret } from './configureApiProxy'
+import type { Operation, Variables } from '../environment'
+
+type Headers = {|
+  Authorization?: string,
+  'Content-Type': string,
+|}
 
 /* eslint class-methods-use-this: 0, no-console: 0 */
 
@@ -12,7 +19,13 @@ class ServerFetcher extends FetcherBase {
     this.payloads = {}
   }
 
-  setBasicAuth(viewerId, sessionId) {
+  payloads: Object
+
+  sessionId: ?string
+
+  viewerId: ?string
+
+  setBasicAuth(viewerId: string, sessionId: string) {
     this.viewerId = viewerId
     this.sessionId = sessionId
   }
@@ -22,11 +35,11 @@ class ServerFetcher extends FetcherBase {
   }
 
   get headers(): Object {
-    const headers = {
+    const headers: Headers = {
       'Content-Type': 'application/json',
     }
 
-    if (this.viewerId) {
+    if (this.viewerId && this.sessionId) {
       const secret = basicAuthSecret(this.viewerId, this.sessionId)
       headers.Authorization = `Basic ${secret}`
     }
@@ -40,9 +53,9 @@ class ServerFetcher extends FetcherBase {
     this.sessionId = null
   }
 
-  async fetch(operation, variables, config) {
+  async fetch(operation: Operation, variables: Variables) {
     console.log('Quering from the node server:', operation.name)
-    const payload = await super.fetch(operation, variables, config)
+    const payload = await super.fetch(operation, variables)
     this.payloads[operation.name] = payload
     return payload
   }

@@ -4,13 +4,13 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import { Link } from 'found'
 import classNames from 'classnames'
 
-import type { UserType } from 'components/types'
 import DigraphLogo from 'components/ui/icons/DigraphLogo'
 import Menu from './Menu'
 import styles from './styles.module.css'
+import type { MobileNav_viewer as Viewer } from './__generated__/MobileNav_viewer.graphql'
 
 type Props = {
-  viewer: UserType,
+  viewer: Viewer,
 }
 
 type State = {
@@ -62,6 +62,7 @@ export default createFragmentContainer(MobileNav, {
   viewer: graphql`
     fragment MobileNav_viewer on User {
       isGuest
+      ...Menu_viewer
     }
   `,
 })

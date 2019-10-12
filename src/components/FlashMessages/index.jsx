@@ -4,19 +4,22 @@ import update from 'immutability-helper'
 
 // https://medium.com/@veelenga/displaying-rails-flash-messages-with-react-5f82982f241c
 
-import type { AlertType } from 'components/types'
 import Alert from './Alert'
 
-type Props = {
-  initialAlerts: ?$ReadOnlyArray<AlertType>,
+type AlertType = {
+  +id: string,
 }
 
-type State = {
-  messages: $ReadOnlyArray<AlertType>,
+type Props<A> = {
+  initialAlerts: ?$ReadOnlyArray<A>,
 }
 
-class FlashMessages extends Component<Props, State> {
-  constructor(props: Props) {
+type State<A> = {
+  messages: $ReadOnlyArray<A>,
+}
+
+class FlashMessages<A: AlertType> extends Component<Props<A>, State<A>> {
+  constructor(props: Props<A>) {
     super(props)
     this.state = {
       messages: props.initialAlerts || [],

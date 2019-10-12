@@ -4,16 +4,16 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import { Link } from 'found'
 import classNames from 'classnames'
 
-import type { UserType } from 'components/types'
 import { toEverything } from 'components/navigation'
 import DigraphLogo from 'components/ui/icons/DigraphLogo'
 import UserNav from './UserNav'
 import SignIn from './SignIn'
 import { header, primaryLogo, userNav } from './styles.module.css'
+import type { DesktopNav_viewer as Viewer } from './__generated__/DesktopNav_viewer.graphql'
 
 type Props = {
   className?: ?string,
-  viewer: UserType,
+  viewer: Viewer,
 }
 
 class DesktopNav extends Component<Props> {
@@ -37,7 +37,7 @@ class DesktopNav extends Component<Props> {
     </Fragment>
   )
 
-  renderUserNav = (viewer: UserType) => <UserNav viewer={viewer} />
+  renderUserNav = (viewer: Viewer) => <UserNav viewer={viewer} />
 
   render = () => {
     const { viewer } = this.props

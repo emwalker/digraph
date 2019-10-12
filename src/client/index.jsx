@@ -1,3 +1,4 @@
+// @flow
 import 'core-js'
 import 'regenerator-runtime/runtime'
 import React from 'react'
@@ -39,13 +40,18 @@ const init = async () => {
     routeConfig,
   })
 
-  hydrate(
-    <Provider store={store}>
-      <Router resolver={resolver} />
-    </Provider>,
-    document.getElementById('root'),
-  )
+  const element = document.getElementById('root')
 
+  if (element) {
+    hydrate(
+      <Provider store={store}>
+        <Router resolver={resolver} />
+      </Provider>,
+      element,
+    )
+  }
+
+  // $FlowFixMe
   if (module.hot) module.hot.accept()
 }
 

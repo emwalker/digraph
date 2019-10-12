@@ -1,7 +1,11 @@
+// @flow
 import { graphql } from 'react-relay'
 
 import defaultMutation from './util/defaultMutation'
 import flashMessageUpdater from './util/flashMessageUpdater'
+import type { UpsertTopicTimeRangeInput } from './__generated__/upsertTopicTimeRangeMutation.graphql'
+
+export type Input = UpsertTopicTimeRangeInput
 
 export default defaultMutation(graphql`
   mutation upsertTopicTimeRangeMutation(

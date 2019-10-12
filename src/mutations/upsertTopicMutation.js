@@ -1,12 +1,19 @@
+// @flow
+import { Environment } from 'relay-runtime'
 import { commitMutation, graphql } from 'react-relay'
 import uuidv1 from 'uuid/v1'
 
 import flashMessageUpdater from './util/flashMessageUpdater'
 import updateTopicConnections from './util/updateTopicConnections'
+import type { UpdateTopicInput as Input } from './__generated__/upsertTopicMutation.graphql'
+
+type Config = {|
+  configs: Array<*>,
+|}
 
 let tmpId = 0
 
-export default (environment, configs, input) => {
+export default (environment: Environment, input: Input, config: Config) => {
   const mutation = graphql`
   mutation upsertTopicMutation(
       $input: UpsertTopicInput!
@@ -41,8 +48,8 @@ export default (environment, configs, input) => {
   return commitMutation(
     environment,
     {
+      ...config,
       mutation,
-      configs,
       optimisticUpdater,
       updater: flashMessageUpdater('upsertTopic'),
       variables: {

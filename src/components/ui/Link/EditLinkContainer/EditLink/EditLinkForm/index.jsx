@@ -2,14 +2,15 @@
 import React, { Component } from 'react'
 import { createRefetchContainer, graphql } from 'react-relay'
 
-import type { LinkType, Option, Relay } from 'components/types'
+import type { Option, Relay } from 'components/types'
 import Input from 'components/ui/Input'
-import deleteLinkMutation from 'mutations/deleteLinkMutation'
-import upsertLinkMutation from 'mutations/upsertLinkMutation'
-import updateLinkTopicsMutation from 'mutations/updateLinkTopicsMutation'
+import deleteLinkMutation, { type Input as DeleteInput } from 'mutations/deleteLinkMutation'
+import upsertLinkMutation, { type Input as UpsertInput } from 'mutations/upsertLinkMutation'
+import updateLinkTopicsMutation, { type Input as UpdateTopicsInput } from 'mutations/updateLinkTopicsMutation'
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
 import DeleteButton from 'components/ui/DeleteButton'
+import type { EditLinkForm_link as LinkType } from './__generated__/EditLinkForm_link.graphql'
 
 type Props = {
   isOpen: boolean,
@@ -34,32 +35,30 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   onSave = () => {
-    const configs = []
     const { name, organization: { login } } = this.props.link.repository
 
-    upsertLinkMutation(
-      this.props.relay.environment,
-      configs,
-      {
-        addParentTopicIds: [],
-        organizationLogin: login,
-        repositoryName: name,
-        title: this.state.title,
-        url: this.state.url,
-      },
-    )
+    const input: UpsertInput = {
+      addParentTopicIds: [],
+      organizationLogin: login,
+      repositoryName: name,
+      title: this.state.title,
+      url: this.state.url,
+    }
+
+    upsertLinkMutation(this.props.relay.environment, input)
     this.props.toggleForm()
   }
 
   onDelete = () => {
+    const input: DeleteInput = { linkId: this.props.link.id }
     deleteLinkMutation(
       this.props.relay.environment,
-      [{
-        type: 'NODE_DELETE',
-        deletedIDFieldName: 'deletedLinkId',
-      }],
+      input,
       {
-        linkId: this.props.link.id,
+        configs: [{
+          type: 'NODE_DELETE',
+          deletedIDFieldName: 'deletedLinkId',
+        }],
       },
     )
   }
@@ -68,19 +67,21 @@ class EditLinkForm extends Component<Props, State> {
     return this.props.link.id
   }
 
+  get selectedTopics(): ?Option[] {
+    const { link } = this.props
+    return link.selectedTopics && makeOptions(link.selectedTopics)
+  }
+
   updateTitle = (event: Object) => {
     this.setState({ title: event.currentTarget.value })
   }
 
   updateTopics = (parentTopicIds: string[]) => {
-    updateLinkTopicsMutation(
-      this.props.relay.environment,
-      [],
-      {
-        linkId: this.linkId,
-        parentTopicIds,
-      },
-    )
+    const input: UpdateTopicsInput = {
+      linkId: this.linkId,
+      parentTopicIds,
+    }
+    updateLinkTopicsMutation(this.props.relay.environment, input)
   }
 
   loadOptions = (searchString: string): Promise<Option[]> => {
@@ -94,7 +95,8 @@ class EditLinkForm extends Component<Props, State> {
       }
 
       this.props.relay.refetch(variables, null, () => {
-        const options = makeOptions(this.props.link.availableTopics)
+        const { availableTopics } = this.props.link
+        const options = availableTopics ? makeOptions(availableTopics) : []
         resolve(options)
       })
     })
@@ -105,40 +107,43 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   render() {
+    const { selectedTopics } = this
     if (!this.props.isOpen) return null
 
     return (
-      <div>
-        <Input
-          className="col-12"
-          id={`edit-link-title-${this.linkId}`}
-          label="Page title"
-          onChange={this.updateTitle}
-          value={this.state.title}
-        />
-        <Input
-          className="col-12"
-          id={`edit-link-url-${this.linkId}`}
-          label="Url"
-          onChange={this.updateUrl}
-          value={this.state.url}
-        />
+      selectedTopics ? (
         <div>
-          <SaveOrCancel
-            onSave={this.onSave}
-            onCancel={this.props.toggleForm}
+          <Input
+            className="col-12"
+            id={`edit-link-title-${this.linkId}`}
+            label="Page title"
+            onChange={this.updateTitle}
+            value={this.state.title}
           />
-          <DeleteButton
-            className="float-right"
-            onDelete={this.onDelete}
+          <Input
+            className="col-12"
+            id={`edit-link-url-${this.linkId}`}
+            label="Url"
+            onChange={this.updateUrl}
+            value={this.state.url}
+          />
+          <div>
+            <SaveOrCancel
+              onSave={this.onSave}
+              onCancel={this.props.toggleForm}
+            />
+            <DeleteButton
+              className="float-right"
+              onDelete={this.onDelete}
+            />
+          </div>
+          <EditTopicList
+            loadOptions={this.loadOptions}
+            selectedTopics={selectedTopics}
+            updateTopics={this.updateTopics}
           />
         </div>
-        <EditTopicList
-          loadOptions={this.loadOptions}
-          selectedTopics={makeOptions(this.props.link.selectedTopics)}
-          updateTopics={this.updateTopics}
-        />
-      </div>
+      ) : null
     )
   }
 }
@@ -161,7 +166,7 @@ export default createRefetchContainer(EditLinkForm, {
         }
       }
 
-      selectedTopics: parentTopics(first: 10) {
+      selectedTopics: parentTopics(first: 1000) {
         edges {
           node {
             value: id

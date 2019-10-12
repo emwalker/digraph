@@ -5,6 +5,10 @@ module.exports = {
     "curly": ["error", "multi-or-nest", "consistent"],
     "flowtype/define-flow-type": 1,
     "flowtype/use-flow-type": 1,
+    "flowtype/require-valid-file-annotation": [
+      2,
+      "always"
+    ],
     "jsx-a11y/anchor-is-valid": "off",
     "jsx-a11y/label-has-associated-control": "off",
     "jsx-a11y/label-has-for": "off",
@@ -14,6 +18,18 @@ module.exports = {
     "react/destructuring-assignment": "off",
     "semi": ["error", "never"]
   },
+
+  "overrides": [
+    {
+      "files": [ "**/*.test.jsx" ],
+      "rules": {
+        "flowtype/require-valid-file-annotation": [
+          2,
+          "never"
+        ]
+      }
+    }
+  ],
 
   "parser": "babel-eslint",
 
@@ -32,4 +48,3 @@ module.exports = {
     "import/resolver": "webpack"
   },
 };
-

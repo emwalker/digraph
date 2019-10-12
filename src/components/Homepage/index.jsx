@@ -1,10 +1,11 @@
+// @flow
 import React from 'react'
 import { graphql } from 'react-relay'
 
 import Page from 'components/ui/Page'
 import useDocumentTitle from 'utils/useDocumentTitle'
 import DigraphLogo from 'components/ui/icons/DigraphLogo'
-import { Homepage_homepage_QueryResponse as Response } from './__generated__/Homepage_homepage_Query.graphql'
+import { type Homepage_homepage_QueryResponse as Response } from './__generated__/Homepage_homepage_Query.graphql'
 import LineItem from './LineItem'
 import SearchBox from './SearchBox'
 import styles from './styles.module.css'
@@ -25,8 +26,8 @@ const noActivity = (
 const Homepage = ({ view, router }: Props) => {
   useDocumentTitle('Digraph')
 
-  const recents = view.activity.edges.map(
-    ({ node }) => <LineItem key={node.description} item={node} />,
+  const recents = (view.activity.edges || []).map(
+    edge => edge && edge.node && <LineItem key={edge.node.description} item={edge.node} />,
   )
 
   return (

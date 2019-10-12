@@ -2,17 +2,20 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 
-import type { LinkType, Relay, UserType, ViewType } from 'components/types'
+import type { Relay } from 'components/types'
 import { liftNodes } from 'utils'
 import EditLink from './EditLinkContainer'
 import Item from '../Item'
+import type { Link_link as LinkType } from './__generated__/Link_link.graphql'
+import type { Link_view as View } from './__generated__/Link_view.graphql'
+import type { Link_viewer as Viewer } from './__generated__/Link_viewer.graphql'
 
 type Props = {
   link: LinkType,
   orgLogin: string,
   relay: Relay,
-  view: ViewType,
-  viewer: UserType,
+  view: View,
+  viewer: Viewer,
 }
 
 type State = {
@@ -84,7 +87,6 @@ class Link extends Component<Props, State> {
   )
 }
 
-
 export const UnwrappedLink = Link
 
 export default createFragmentContainer(Link, {
@@ -114,7 +116,7 @@ export default createFragmentContainer(Link, {
         id
       }
 
-      parentTopics(first: 10) {
+      parentTopics(first: 1000) {
         edges {
           node {
             displayName: name

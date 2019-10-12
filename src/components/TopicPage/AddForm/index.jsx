@@ -3,16 +3,18 @@ import React, { Component, Fragment } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import classNames from 'classnames'
 
-import type { Relay, TopicType, UserType } from 'components/types'
+import type { Relay } from 'components/types'
 import AddTopic from './AddTopic'
 import AddLink from './AddLink'
 import SelectRepository from './SelectRepository'
 import './index.css'
+import type { AddForm_topic as Topic } from './__generated__/AddForm_topic.graphql'
+import type { AddForm_viewer as Viewer } from './__generated__/AddForm_viewer.graphql'
 
 type Props = {
   relay: Relay,
-  topic: TopicType,
-  viewer: UserType,
+  topic: Topic,
+  viewer: Viewer,
 }
 
 class AddForm extends Component<Props> {

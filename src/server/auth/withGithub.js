@@ -1,8 +1,11 @@
+// @flow
 import passport from 'passport'
 import { Strategy } from 'passport-github'
+import { Environment } from 'relay-runtime'
 
-import createGithubSessionMutation from 'mutations/createGithubSessionMutation'
+import createGithubSessionMutation, { type Input, type Response } from 'mutations/createGithubSessionMutation'
 import registerEndpointsFn from './registerEndpointsFn'
+import type { App } from '../types'
 
 /* eslint no-console: 0 */
 
@@ -19,8 +22,9 @@ const onAuthSuccessFn = environment => async (accessToken, refreshToken, profile
   // eslint-disable-next-line camelcase
   const { displayName, emails, username, _json: { avatar_url } } = profile
   const email = primaryOrFirstEmail(emails)
+  if (!email) return
 
-  const input = {
+  const input: Input = {
     githubAvatarUrl: avatar_url,
     githubUsername: username,
     name: displayName,
@@ -28,17 +32,21 @@ const onAuthSuccessFn = environment => async (accessToken, refreshToken, profile
     serverSecret: process.env.DIGRAPH_SERVER_SECRET || 'keyboard cat',
   }
 
-  createGithubSessionMutation(environment, [], input, {
-    onCompleted(payload) {
+  createGithubSessionMutation(environment, input, {
+    onCompleted(payload: Response) {
       if (!payload.createGithubSession) {
         console.log('createGithubSession field missing from response:', payload)
         done(null, null)
         return
       }
 
-      const { createGithubSession: { userEdge, sessionEdge } } = payload
+      const { createGithubSession } = payload
+      const userEdge = createGithubSession && createGithubSession.userEdge
+      const sessionEdge = createGithubSession && createGithubSession.sessionEdge
       console.log('User fetched from api, saving to session', userEdge, sessionEdge)
-      done(null, { id: userEdge.node.id, sessionId: sessionEdge.node.id })
+      const id = userEdge && userEdge.node && userEdge.node.id
+      const sessionId = sessionEdge && sessionEdge.node && sessionEdge.node.id
+      done(null, { id, sessionId })
     },
 
     onError(error) {
@@ -50,7 +58,7 @@ const onAuthSuccessFn = environment => async (accessToken, refreshToken, profile
 
 const registerEndpoints = registerEndpointsFn('github')
 
-export default (app, environment) => {
+export default (app: App, environment: Environment) => {
   registerEndpoints(app)
 
   passport.use(

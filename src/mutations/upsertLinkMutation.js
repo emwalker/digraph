@@ -1,12 +1,21 @@
+// @flow
+import { Environment } from 'relay-runtime'
 import { commitMutation, graphql } from 'react-relay'
 import uuidv1 from 'uuid/v1'
 
 import flashMessageUpdater from './util/flashMessageUpdater'
 import updateTopicConnections from './util/updateTopicConnections'
+import type { UpsertLinkInput } from './__generated__/upsertLinkMutation.graphql'
+
+export type Input = UpsertLinkInput
+
+type Config = {|
+  configs: Array<*>,
+|}
 
 let tmpId = 0
 
-export default (environment, configs, input) => {
+export default (environment: Environment, input: Input, config?: Config) => {
   const mutation = graphql`
     mutation upsertLinkMutation(
       $input: UpsertLinkInput!
@@ -35,14 +44,15 @@ export default (environment, configs, input) => {
     node.setValue(input.title || 'Adding link to repo ...', 'title')
     node.setValue(input.url, 'url')
     node.setValue(true, 'loading')
-    updateTopicConnections(store, node, 'LinkEdge', input.addParentTopicIds || [], 'Topic_links')
+    const parentTopicIds = input.addParentTopicIds || []
+    updateTopicConnections(store, node, 'LinkEdge', parentTopicIds, 'Topic_links')
   }
 
   return commitMutation(
     environment,
     {
+      ...config,
       mutation,
-      configs,
       optimisticUpdater,
       updater: flashMessageUpdater('upsertLink'),
       variables: {

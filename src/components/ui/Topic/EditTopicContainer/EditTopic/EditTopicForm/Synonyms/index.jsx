@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { Relay } from 'components/types'
-import updateSynonymsMutation from 'mutations/updateSynonymsMutation'
+import updateSynonymsMutation, { type Input } from 'mutations/updateSynonymsMutation'
 import SynonymList from './SynonymList'
 import { type Topic, type Synonym as SynonymType } from './types'
 import copySynonyms from './copySynonyms'
@@ -16,6 +16,9 @@ type Props = {
 type State = {
   locale: string,
   name: string,
+}
+
+type Response = {
 }
 
 class Synonyms extends Component<Props, State> {
@@ -55,7 +58,7 @@ class Synonyms extends Component<Props, State> {
     return this.props.topic.synonyms
   }
 
-  optimisticResponse = (synonyms: $ReadOnlyArray<SynonymType>) => (
+  optimisticResponse = (synonyms: $ReadOnlyArray<SynonymType>): Response => (
     {
       updateSynonyms: {
         alerts: [],
@@ -69,11 +72,13 @@ class Synonyms extends Component<Props, State> {
   )
 
   updateSynonyms = (synonyms: $ReadOnlyArray<SynonymType>) => {
+    // $FlowFixMe
+    const input: Input = { topicId: this.props.topic.id, synonyms }
+
     this.setState({ locale: 'en', name: '' }, () => {
       updateSynonymsMutation(
         this.props.relay.environment,
-        [],
-        { topicId: this.props.topic.id, synonyms },
+        input,
         { optimisticResponse: this.optimisticResponse(synonyms) },
       )
     })

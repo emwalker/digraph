@@ -5,7 +5,11 @@ import { ConnectionHandler } from 'relay-runtime'
 let tmpId = 0
 
 export default (
-  store: any, node: Node, edgeType: Object, topicIds: string[], connectionName: string,
+  store: any,
+  node: Node,
+  edgeType: Object,
+  topicIds: $ReadOnlyArray<string>,
+  connectionName: string,
 ) => {
   tmpId += 1
 

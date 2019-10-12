@@ -5,13 +5,13 @@ import { GoRepo } from 'react-icons/go'
 import { Link } from 'found'
 import { pathOr } from 'ramda'
 
-import type { RepositoryType } from 'components/types'
+import type { Breadcrumbs_repository as Repository } from './__generated__/Breadcrumbs_repository.graphql'
 
 const orgFrom = pathOr(null, ['organization'])
 
 type Props = {
   orgLogin: string,
-  repository: RepositoryType,
+  repository: Repository,
 }
 
 class Breadcrumbs extends Component<Props> {

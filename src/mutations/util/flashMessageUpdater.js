@@ -1,6 +1,8 @@
 // @flow
 
-export default (rootField: string) => (store: any) => {
+import type { Updater } from './types'
+
+export default (rootField: string): Updater => (store: any) => {
   const payload = store.getRootField(rootField)
   if (!payload) return
 

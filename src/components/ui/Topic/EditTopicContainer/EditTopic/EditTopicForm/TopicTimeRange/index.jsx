@@ -3,8 +3,8 @@ import React, { useState } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import type { Relay } from 'components/types'
-import upsertTopicTimeRangeMutation from 'mutations/upsertTopicTimeRangeMutation'
-import deleteTopicTimeRangeMutation from 'mutations/deleteTopicTimeRangeMutation'
+import upsertTopicTimeRangeMutation, { type Input as UpdateInput } from 'mutations/upsertTopicTimeRangeMutation'
+import deleteTopicTimeRangeMutation, { type Input as DeleteInput } from 'mutations/deleteTopicTimeRangeMutation'
 import type { TopicTimeline_topic as Topic } from './__generated__/TopicTimeRange_topic.graphql'
 import TopicTimeRangeForm from './TopicTimeRangeForm'
 import styles from './styles.module.css'
@@ -18,23 +18,15 @@ const updateOrDelete = (relay, topic, setMutationInFlight) => async () => {
   setMutationInFlight(true)
 
   if (topic.timeRange) {
-    await deleteTopicTimeRangeMutation(
-      relay.environment,
-      [],
-      {
-        topicId: topic.id,
-      },
-    )
+    const input: DeleteInput = { topicId: topic.id }
+    await deleteTopicTimeRangeMutation(relay.environment, input)
   } else {
-    await upsertTopicTimeRangeMutation(
-      relay.environment,
-      [],
-      {
-        topicId: topic.id,
-        startsAt: (new Date()).toISOString(),
-        prefixFormat: 'START_YEAR_MONTH',
-      },
-    )
+    const input: UpdateInput = {
+      topicId: topic.id,
+      startsAt: (new Date()).toISOString(),
+      prefixFormat: 'START_YEAR_MONTH',
+    }
+    await upsertTopicTimeRangeMutation(relay.environment, input)
   }
 
   setMutationInFlight(false)

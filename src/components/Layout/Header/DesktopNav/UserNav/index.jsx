@@ -3,11 +3,11 @@ import React from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { Link } from 'found'
 
-import type { UserType } from 'components/types'
 import UserDropdown from './UserDropdown'
+import type { UserNav_viewer as Viewer } from './__generated__/UserNav_viewer.graphql'
 
 type Props = {
-  viewer: UserType,
+  viewer: Viewer,
 }
 
 const UserNav = ({ viewer }: Props) => (

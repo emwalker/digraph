@@ -2,9 +2,12 @@
 import React from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import type { LinkType, Relay, UserType, ViewType } from 'components/types'
-import { liftNodes } from 'utils'
 import EditLinkForm from './EditLinkForm'
+import type { EditLink_link as Link } from './__generated__/EditLink_link.graphql'
+
+type View = {
+  link: Link,
+}
 
 type Props = {
   isOpen: boolean,
@@ -15,10 +18,8 @@ type Props = {
 type PropsType = {
   error: ?Object,
   orgLogin: string,
-  relay: Relay,
-  link: LinkType,
-  view: ViewType,
-  viewer: UserType,
+  link: Link,
+  view: View,
 } & Props
 
 type RenderProps = {
@@ -30,49 +31,31 @@ type RenderProps = {
 /* eslint react/no-unused-prop-types: 0 */
 
 const EditLink = (props: PropsType) => {
-  const { error, isOpen, orgLogin, relay, toggleForm, link, viewer } = props
+  const { error, link } = props
 
   if (error) return <div>{error.message}</div>
 
-  if (!link) return null
-
-  return (
-    <EditLinkForm
-      availableTopics={liftNodes(link.availableTopics)}
-      isOpen={isOpen}
-      orgLogin={orgLogin}
-      relay={relay}
-      selectedTopics={liftNodes(link.selectedTopics)}
-      toggleForm={toggleForm}
-      link={link}
-      viewer={viewer}
-    />
-  )
+  return <EditLinkForm {...props} link={link} />
 }
 
 const Wrapped = createFragmentContainer(EditLink, {
   link: graphql`
     fragment EditLink_link on Link {
+      id
       ...EditLinkForm_link
     }
   `,
 })
 
-export default ({ isOpen, orgLogin, toggleForm }: Props) => ({ error, props }: RenderProps) => {
-  if (!props) return null
-
-  const { view, viewer } = props
-
-  return (
+export default ({ isOpen, orgLogin, toggleForm }: Props) => ({ error, props }: RenderProps) => (
+  props && props.view && props.view.link && (
     <Wrapped
+      {...props}
       error={error}
       isOpen={isOpen}
+      link={props.view.link}
       orgLogin={orgLogin}
       toggleForm={toggleForm}
-      link={view.link}
-      relay={props.relay}
-      view={view}
-      viewer={viewer}
     />
   )
-}
+)

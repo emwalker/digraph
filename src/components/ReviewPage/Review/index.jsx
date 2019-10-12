@@ -4,7 +4,7 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import classNames from 'classnames'
 
 import { type Relay } from 'components/types'
-import reviewLinkMutation from 'mutations/reviewLinkMutation'
+import reviewLinkMutation, { type Input } from 'mutations/reviewLinkMutation'
 import { type Review_link as Link } from './__generated__/Review_link.graphql'
 
 type Props = {
@@ -29,11 +29,8 @@ class Review extends Component<Props, State> {
   onChange = () => {
     this.setState(
       ({ reviewed }) => {
-        reviewLinkMutation(
-          this.props.relay.environment,
-          [],
-          { linkId: this.props.link.id, reviewed: !reviewed },
-        )
+        const input: Input = { linkId: this.props.link.id, reviewed: !reviewed }
+        reviewLinkMutation(this.props.relay.environment, input)
 
         return {
           reviewed: !reviewed,
