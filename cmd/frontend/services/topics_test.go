@@ -22,6 +22,12 @@ func TestNormalizeName(t *testing.T) {
 			isValid:        true,
 		},
 		{
+			description:    "A topic with a colon in it",
+			inputName:      "Sarecycline: a narrow spectrum tetracycline for the treatment of moderate-to-severe acne vulgaris",
+			normalizedName: "Sarecycline: a narrow spectrum tetracycline for the treatment of moderate-to-severe acne vulgaris",
+			isValid:        true,
+		},
+		{
 			description:    "An empty topic",
 			inputName:      "   ",
 			normalizedName: "",

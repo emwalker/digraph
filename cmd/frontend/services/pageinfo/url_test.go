@@ -175,3 +175,36 @@ func TestSha1Value(t *testing.T) {
 		t.Fatalf("Unexpected SHA1: %s", url.Sha1)
 	}
 }
+
+func TestIsURL(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input string
+		isURL bool
+	}{
+		{
+			name:  "A basic case",
+			input: "http://some.url.com",
+			isURL: true,
+		},
+		{
+			name:  "When unusual case is used",
+			input: "HTTP://some.url.com",
+			isURL: true,
+		},
+		{
+			name:  "A title with a colon",
+			input: "Sarecycline: a narrow spectrum tetracycline for the treatment of moderate-to-severe acne vulgaris",
+			isURL: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := pageinfo.IsURL(testCase.input)
+			if actual != testCase.isURL {
+				t.Fatalf("Unexpected result: %t, actual result: %t", testCase.isURL, actual)
+			}
+		})
+	}
+}

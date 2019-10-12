@@ -54,15 +54,29 @@ var (
 		"rss",
 		"via",
 	}
+
+	schemes = []string{
+		"ftp",
+		"git",
+		"gopher",
+		"http",
+		"https",
+		"ssh",
+	}
 )
 
 // IsURL returns true if a string parses as a URL and false otherwise.
 func IsURL(str string) bool {
-	_, err := url.ParseRequestURI(str)
+	parsed, err := url.ParseRequestURI(str)
 	if err != nil {
 		return false
 	}
-	return true
+	for _, scheme := range schemes {
+		if scheme == parsed.Scheme {
+			return true
+		}
+	}
+	return false
 }
 
 func removeQueryAndAnchor(parsed *url.URL) bool {
