@@ -1,5 +1,5 @@
 // @flow
-import React, { Component, Fragment } from 'react'
+import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { Link } from 'found'
 import classNames from 'classnames'
@@ -32,9 +32,9 @@ class DesktopNav extends Component<Props> {
   }
 
   renderGuestUserNav = () => (
-    <Fragment>
+    <>
       <SignIn />
-    </Fragment>
+    </>
   )
 
   renderUserNav = (viewer: Viewer) => <UserNav viewer={viewer} />
@@ -80,8 +80,7 @@ class DesktopNav extends Component<Props> {
           </Link>
           {this.isGuest
             ? this.renderGuestUserNav()
-            : this.renderUserNav(viewer)
-          }
+            : this.renderUserNav(viewer)}
         </nav>
       </header>
     )

@@ -15,8 +15,11 @@ type Props = {}
 // http://emumba.com/blog/2016-12-07-setting-up-google-recaptcha-in-a-reactjs-app/
 
 class SignUpPage extends Component<Props, State> {
-  state = {
-    gCaptchaResponse: null,
+  constructor(props: Props) {
+    super(props)
+    this.state = {
+      gCaptchaResponse: null,
+    }
   }
 
   onCaptchaSumit = (response: string) => {

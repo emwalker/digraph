@@ -25,7 +25,7 @@ const LineItems = ({ topic }: Props) => {
 
   return (
     <Container topicName={topic.displayName}>
-      { edges.map(e => e && e.node && (
+      { edges.map((e) => e && e.node && (
         <LineItem key={e.node.createdAt} item={e.node} />
       )) }
     </Container>

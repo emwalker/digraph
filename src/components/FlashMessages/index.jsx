@@ -28,7 +28,7 @@ class FlashMessages<A: AlertType> extends Component<Props<A>, State<A>> {
   }
 
   get alerts(): Array<React$Node> {
-    return this.state.messages.map(message => (
+    return this.state.messages.map((message) => (
       <Alert
         key={message.id}
         message={message}
@@ -39,13 +39,13 @@ class FlashMessages<A: AlertType> extends Component<Props<A>, State<A>> {
 
   removeMessage = (message: AlertType) => {
     const index = this.state.messages.indexOf(message)
-    this.setState(prevState => ({
+    this.setState((prevState) => ({
       messages: update(prevState.messages, { $splice: [[index, 1]] }),
     }))
   }
 
   addMessage = (message: AlertType) => {
-    this.setState(prevState => ({
+    this.setState((prevState) => ({
       messages: update(prevState.messages, { $push: [message] }),
     }))
   }

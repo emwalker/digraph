@@ -37,7 +37,7 @@ class ReviewPage extends Component<Props> {
     const edges = links ? links.edges : null
     if (!edges) return []
 
-    return edges.map(edge => edge && edge.node)
+    return edges.map((edge) => edge && edge.node)
   }
 
   get totalCount(): number {
@@ -68,8 +68,7 @@ class ReviewPage extends Component<Props> {
       <Container totalCount={this.totalCount} topicName={this.topicName}>
         { links.length > 0
           ? links.map(this.renderReview)
-          : this.renderNoLinks()
-        }
+          : this.renderNoLinks()}
       </Container>
     )
   }

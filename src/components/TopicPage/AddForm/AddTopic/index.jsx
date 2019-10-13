@@ -29,8 +29,11 @@ class AddTopic extends Component<Props, State> {
     disabled: true,
   }
 
-  state = {
-    name: '',
+  constructor(props: Props) {
+    super(props)
+    this.state = {
+      name: '',
+    }
   }
 
   onKeyPress = (event: Object) => {

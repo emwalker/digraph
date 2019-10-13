@@ -1,5 +1,5 @@
 // @flow
-import React, { Component, Fragment, type Node } from 'react'
+import React, { Component, type Node } from 'react'
 import classNames from 'classnames'
 
 import LinkOrA from './LinkOrA'
@@ -112,7 +112,7 @@ class Item<T: Topic> extends Component<Props<T>> {
   )
 
   renderEditable = () => (
-    <Fragment>
+    <>
       <div className="clearfix d-flex flex-items-center">
         <div className="col-10">
           <div>
@@ -135,14 +135,13 @@ class Item<T: Topic> extends Component<Props<T>> {
                 Edit
               </button>
             )
-            : <span className={disabledLink}>Edit</span>
-          }
+            : <span className={disabledLink}>Edit</span>}
         </div>
       </div>
       <div>
         { this.props.formIsOpen && this.props.children }
       </div>
-    </Fragment>
+    </>
   )
 
   renderWide = () => (
@@ -171,8 +170,7 @@ class Item<T: Topic> extends Component<Props<T>> {
       >
         { this.props.canEdit
           ? this.renderEditable()
-          : this.renderWide()
-        }
+          : this.renderWide()}
       </li>
     )
   }

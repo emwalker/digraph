@@ -16,8 +16,11 @@ class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  state = {
-    hasError: false,
+  constructor(props: Props) {
+    super(props)
+    this.state = {
+      hasError: false,
+    }
   }
 
   // eslint-disable-next-line class-methods-use-this

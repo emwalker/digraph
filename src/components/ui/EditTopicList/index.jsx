@@ -52,7 +52,7 @@ class EditTopicList extends Component<Props, State> {
     super(props)
     this.state = {
       inputValue: '',
-      selectedTopics: props.selectedTopics.map(option => ({ ...option, color })),
+      selectedTopics: props.selectedTopics.map((option) => ({ ...option, color })),
     }
     this.loadOptions = debounce(this.props.loadOptions, 500)
   }
@@ -64,7 +64,7 @@ class EditTopicList extends Component<Props, State> {
 
   handleChange = (selectedTopics: Option[]) => {
     this.setState({ selectedTopics }, () => {
-      this.props.updateTopics(selectedTopics.map(option => option.value))
+      this.props.updateTopics(selectedTopics.map((option) => option.value))
     })
   }
 

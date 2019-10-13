@@ -4,7 +4,7 @@ import { shallow } from 'enzyme'
 import AddForm from './index'
 
 jest.mock('react-relay', () => ({
-  createFragmentContainer: component => component,
+  createFragmentContainer: (component) => component,
 }))
 
 const defaultViewer = {

@@ -31,7 +31,7 @@ if (typeof window === 'undefined') global.window = {}
 
 // eslint-disable-next-line import/no-dynamic-require
 const assets = require(process.env.RAZZLE_ASSETS_MANIFEST || '')
-const reducer = state => state
+const reducer = (state) => state
 const fetcher = new ServerFetcher()
 
 // eslint-disable-next-line import/no-mutable-exports

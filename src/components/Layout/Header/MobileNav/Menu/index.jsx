@@ -1,5 +1,5 @@
 // @flow
-import React, { Component, Fragment } from 'react'
+import React, { Component } from 'react'
 import { Link } from 'found'
 import classNames from 'classnames'
 import { createFragmentContainer, graphql } from 'react-relay'
@@ -23,7 +23,7 @@ class Menu extends Component<Props> {
   )
 
   renderUserNav = () => (
-    <Fragment>
+    <>
       <Link className="menu-item text-gray-dark p-3" to="/review">
         Review
       </Link>
@@ -31,7 +31,7 @@ class Menu extends Component<Props> {
         Settings
       </Link>
       <a className="menu-item text-gray-dark p-3" href="/logout">Sign out</a>
-    </Fragment>
+    </>
   )
 
   render = () => (
@@ -58,8 +58,7 @@ class Menu extends Component<Props> {
 
       { this.props.viewer.isGuest
         ? this.renderSignIn()
-        : this.renderUserNav()
-      }
+        : this.renderUserNav()}
     </nav>
   )
 }

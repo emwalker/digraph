@@ -18,12 +18,15 @@ type State = {
 }
 
 class MobileNav extends Component<Props, State> {
-  state = {
-    isOpen: false,
+  constructor(props: Props) {
+    super(props)
+    this.state = {
+      isOpen: false,
+    }
   }
 
   onClick = () => {
-    this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    this.setState((prevState) => ({ isOpen: !prevState.isOpen }))
   }
 
   render = () => (

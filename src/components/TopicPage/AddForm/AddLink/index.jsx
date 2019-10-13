@@ -25,11 +25,14 @@ type State = {
 
 class AddLink extends Component<Props, State> {
   static defaultProps = {
-    disabled: true,
+    disabled: false,
   }
 
-  state = {
-    url: '',
+  constructor(props: Props) {
+    super(props)
+    this.state = {
+      url: '',
+    }
   }
 
   onKeyPress = (event: Object) => {

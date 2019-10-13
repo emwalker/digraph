@@ -17,8 +17,7 @@ exports[`<Footer /> renders 1`] = `
       >
         Terms
       </Link>
-       ・ 
-      Software available under the MIT
+      ・ Software available under the MIT
        
       <a
         className="gray-link"

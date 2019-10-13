@@ -2,7 +2,7 @@ import React from 'react'
 import { shallow } from 'enzyme'
 import AddTopic from './index'
 
-jest.mock('react-relay', () => ({ createFragmentContainer: component => component }))
+jest.mock('react-relay', () => ({ createFragmentContainer: (component) => component }))
 
 describe('<AddTopic />', () => {
   const wrapper = shallow(

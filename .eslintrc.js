@@ -16,6 +16,8 @@ module.exports = {
     "no-unexpected-multiline": "error",
     "object-curly-newline": ["error",  {"consistent": true}],
     "react/destructuring-assignment": "off",
+    "react/jsx-props-no-spreading": "off",
+    "react/static-property-placement": ["error", "static public field"],
     "semi": ["error", "never"]
   },
 

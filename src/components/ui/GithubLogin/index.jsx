@@ -9,7 +9,7 @@ type Props = {
 
 class GithubLogin extends Component<Props> {
   static defaultProps = {
-    className: null,
+    className: '',
   }
 
   onClick = () => {

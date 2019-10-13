@@ -3,7 +3,7 @@ import { shallow } from 'enzyme'
 
 import AddLink from './index'
 
-jest.mock('react-relay', () => ({ createFragmentContainer: component => component }))
+jest.mock('react-relay', () => ({ createFragmentContainer: (component) => component }))
 
 const props = {
   disabled: false,

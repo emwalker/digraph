@@ -33,7 +33,7 @@ export function createResolver(fetcher: Fetcher) {
   return new Resolver(environment)
 }
 
-const prepareVariablesFn = viewer => (params) => {
+const prepareVariablesFn = (viewer) => (params) => {
   const viewerId = viewer ? viewer.id : ''
   const sessionId = viewer ? viewer.sessionId : ''
 

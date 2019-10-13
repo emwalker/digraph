@@ -16,7 +16,7 @@ const primaryOrFirstEmail = (emails) => {
   return null
 }
 
-const onAuthSuccessFn = environment => async (accessToken, refreshToken, profile, done) => {
+const onAuthSuccessFn = (environment) => async (accessToken, refreshToken, profile, done) => {
   console.log('GitHub login succeeded, getting viewer id')
 
   // eslint-disable-next-line camelcase

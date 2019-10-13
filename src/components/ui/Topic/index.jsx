@@ -23,8 +23,11 @@ type State = {
 }
 
 class Topic extends Component<Props, State> {
-  state = {
-    formIsOpen: false,
+  constructor(props: Props) {
+    super(props)
+    this.state = {
+      formIsOpen: false,
+    }
   }
 
   get repo(): ?Object {

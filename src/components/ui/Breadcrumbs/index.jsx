@@ -1,5 +1,5 @@
 // @flow
-import React, { Component, Fragment, type Node } from 'react'
+import React, { Component, type Node } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { GoRepo } from 'react-icons/go'
 import { Link } from 'found'
@@ -55,10 +55,10 @@ class Breadcrumbs extends Component<Props> {
           >
             {repository.displayName}
             {repository.isPrivate && (
-              <Fragment>
+              <>
                 {' '}
                 <span className="Label Label--outline v-align-middle">Private</span>
-              </Fragment>
+              </>
             )}
           </li>
         </ol>

@@ -26,7 +26,7 @@ const DragHandle = SortableHandle(() => (
   />
 ))
 
-const SortableSynonym = SortableElement(props => <Synonym {...props} />)
+const SortableSynonym = SortableElement((props) => <Synonym {...props} />)
 
 type ContainerProps = {
   items: SynonymType[],
@@ -69,7 +69,7 @@ class SynonymList extends Component<Props> {
 
   renderReadonlyList = () => (
     // $FlowFixMe
-    this.props.synonyms.map(value => (
+    this.props.synonyms.map((value) => (
       <Synonym key={value.name} synonym={value} />
     ))
   )

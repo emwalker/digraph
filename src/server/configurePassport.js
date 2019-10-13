@@ -1,5 +1,6 @@
 // @flow
 import passport from 'passport'
+import { createClient } from 'redis'
 import session from 'express-session'
 import connectRedis from 'connect-redis'
 import cookieParser from 'cookie-parser'
@@ -15,14 +16,16 @@ import type { App } from './types'
 
 const RedisStore = connectRedis(session)
 
+const client = createClient({
+  host: process.env.DIGRAPH_NODE_REDIS_HOST || '',
+  password: process.env.DIGRAPH_REDIS_PASSWORD,
+})
+
 export default (app: App, fetcher: Fetcher) => {
   const environment = createEnvironment(fetcher)
 
   app.use(session({
-    store: new RedisStore({
-      host: process.env.DIGRAPH_NODE_REDIS_HOST || '',
-      pass: process.env.DIGRAPH_REDIS_PASSWORD,
-    }),
+    store: new RedisStore({ client }),
     secret: process.env.DIGRAPH_COOKIE_SECRET || 'keyboard cat',
     resave: true,
     saveUninitialized: true,

@@ -3,11 +3,11 @@ import { type Node } from 'react'
 import serialize from 'serialize-javascript'
 import { renderToString } from 'react-dom/server'
 
-const getDeferScript = src => (src
+const getDeferScript = (src) => (src
   ? `<script defer src="${src}"></script>`
   : '')
 
-const getStylesheet = href => (href
+const getStylesheet = (href) => (href
   ? `<link rel="stylesheet" type="text/css" href="${href}">`
   : '')
 
@@ -29,7 +29,7 @@ const googleAnalytics = (gaId) => {
   `
 }
 
-const template = vo => `
+const template = (vo) => `
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
@@ -54,7 +54,7 @@ const template = vo => `
 </html>
 `
 
-const toString = state => JSON.stringify(state).replace(/</g, '\\u003c')
+const toString = (state) => JSON.stringify(state).replace(/</g, '\\u003c')
 
 export default (
   assets: Object, fetcher: Function, element: Node, preloadedState: Object,

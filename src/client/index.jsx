@@ -20,7 +20,7 @@ import './global.scss'
 
 /* eslint no-underscore-dangle: 0 */
 
-const reducer = store => store
+const reducer = (store) => store
 
 const init = async () => {
   const fetcher = new ClientFetcher(window.__RELAY_PAYLOADS__)

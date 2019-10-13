@@ -25,7 +25,8 @@ class SearchBox extends Component<Props, State> {
     }
   }
 
-  componentWillReceiveProps(nextProps: Props) {
+  // eslint-disable-next-line camelcase
+  UNSAFE_componentWillReceiveProps(nextProps: Props) {
     this.setState({ value: nextProps.value })
   }
 

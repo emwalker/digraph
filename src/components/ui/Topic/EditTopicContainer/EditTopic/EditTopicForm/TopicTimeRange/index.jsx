@@ -49,7 +49,7 @@ const TopicTimeRange = ({ relay, topic }: Props) => {
             onChange={onChange}
             type="checkbox"
           />
-          {' Occurs in time'}
+           Occurs in time
         </label>
       </div>
       {checked && (

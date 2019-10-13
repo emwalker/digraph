@@ -1,5 +1,5 @@
 // @flow
-import React, { Component, Fragment } from 'react'
+import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import classNames from 'classnames'
 
@@ -40,7 +40,7 @@ class AddForm extends Component<Props> {
   }
 
   renderInputFields = () => (
-    <Fragment>
+    <>
       <AddTopic
         disabled={!this.repoSelected}
         relay={this.props.relay}
@@ -53,7 +53,7 @@ class AddForm extends Component<Props> {
         topic={this.props.topic}
         viewer={this.props.viewer}
       />
-    </Fragment>
+    </>
   )
 
   render = () => (

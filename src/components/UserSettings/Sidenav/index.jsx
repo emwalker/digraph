@@ -31,7 +31,7 @@ const menuItem = (match, item) => {
 const Sidenav = ({ match }: Props) => (
   <nav className="menu col-3 float-left" aria-label="Settings">
     <span className="menu-heading" id="menu-heading">Settings</span>
-    { menuItems.map(item => menuItem(match, item)) }
+    { menuItems.map((item) => menuItem(match, item)) }
   </nav>
 )
 

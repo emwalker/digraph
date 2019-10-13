@@ -43,13 +43,16 @@ type SynonymType = {
 type State = {}
 
 class TopicPage extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props)
+    this.state = {}
+  }
+
   static getDerivedStateFromProps = (nextProps: Props) => {
     const shouldAppend = window.flashMessages && nextProps.alerts && nextProps.alerts.length > 0
     if (shouldAppend) nextProps.alerts.forEach(window.flashMessages.addMessage)
     return {}
   }
-
-  state = {}
 
   get links(): LinkType[] {
     return liftNodes(this.props.topic.links)
@@ -214,8 +217,7 @@ class TopicPage extends Component<Props, State> {
             { this.renderTopicViews() }
             { this.isGuest
               ? this.renderNotification()
-              : this.renderAddForm()
-            }
+              : this.renderAddForm()}
           </RightColumn>
           <LeftColumn>
             <List

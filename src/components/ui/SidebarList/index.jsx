@@ -68,7 +68,6 @@ export default ({ items, orgLogin, placeholder, repoName, title }: Props) => (
     </div>
     { isEmpty(items)
       ? <Blankslate placeholder={placeholder} />
-      : <ItemList items={items} orgLogin={orgLogin} repoName={repoName} />
-    }
+      : <ItemList items={items} orgLogin={orgLogin} repoName={repoName} />}
   </div>
 )
