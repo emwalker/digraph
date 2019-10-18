@@ -73,7 +73,7 @@ spec:
           protocol: TCP
         resources:
           requests:
-            memory: 300Mi
+            memory: 150Mi
           limits:
             memory: 400Mi
       restartPolicy: Always
