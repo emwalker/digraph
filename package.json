@@ -56,7 +56,7 @@
     "redux": "^4.0.1",
     "regenerator-runtime": "^0.13.3",
     "relay-runtime": "~6.0.0",
-    "serialize-javascript": "~2.1.0",
+    "serialize-javascript": "~2.1.1",
     "use-debounce": "^3.1.0",
     "uuid": "~3.3.3"
   },
