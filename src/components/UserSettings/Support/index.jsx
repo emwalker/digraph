@@ -18,11 +18,8 @@ const Support = ({ match }: Props) => {
       </div>
 
       <p>
-        If you run into difficulties, send an email to the
-        {' '}
-        <a href="mailto:eric.walker+digraph-support">app maintainer</a>
-        {' '}
-        with your question, and he&apos;ll look into it.
+        Have a problem or feedback to give? Send an email with your comments or questions to
+        eric.walker@gmail.com.
       </p>
     </Content>
   )
