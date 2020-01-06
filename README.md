@@ -66,6 +66,6 @@ $ export DIGRAPH_GITHUB_CLIENT_SECRET="..."
 
 ![Example of a topic](https://user-images.githubusercontent.com/760949/59727248-24619980-91f2-11e9-9067-62042fbda222.png)
 
-![Synonyms for a topic](https://user-images.githubusercontent.com/760949/71789253-e98d4a80-2ff7-11ea-9728-d889ee0ce0c2.png)
+![Synonyms for a topic](https://user-images.githubusercontent.com/760949/71789329-720beb00-2ff8-11ea-941b-2bba49b252e2.png)
 
 ![Links to review](https://user-images.githubusercontent.com/760949/59727250-275c8a00-91f2-11e9-87b8-3aed54ad0335.png)
