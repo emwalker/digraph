@@ -1,7 +1,6 @@
 // @flow
 import React, { useState, useCallback } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
-import { ButtonDanger } from '@primer/components'
 
 import type { Relay } from 'components/types'
 import deleteAccountMutation, { type Input } from 'mutations/deleteAccountMutation'
@@ -47,9 +46,14 @@ const DeleteAccount = ({ relay, view }: Props) => {
         account. Links and topics that you have added to the public collection will still be there,
         but your account will no longer be associated with them.
       </p>
-      <ButtonDanger disabled={mutationInFlight} onClick={onClick}>
+      <button
+        className="btn btn-danger"
+        disabled={mutationInFlight}
+        onClick={onClick}
+        type="button"
+      >
         Delete your account
-      </ButtonDanger>
+      </button>
       <p className="mt-5">
         To revoke GitHub auth permission for this account, go to the
         {' '}

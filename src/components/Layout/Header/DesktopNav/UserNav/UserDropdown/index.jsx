@@ -1,7 +1,6 @@
 // @flow
 import React, { useCallback } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
-import { Avatar } from '@primer/components'
 import { Link } from 'found'
 
 import type { UserDropdown_viewer as Viewer } from './__generated__/UserDropdown_viewer.graphql'
@@ -21,10 +20,12 @@ const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
       <details className="dropdown details-reset details-overlay d-inline-block">
         <summary className="btn" aria-haspopup="true">
           <div className={styles.summary}>
-            <Avatar
+            <img
               alt={name}
-              size={20}
+              className="avatar"
+              height="20"
               src={`${avatarUrl}&s=40`}
+              width="20"
             />
             <div className="dropdown-caret" />
           </div>
