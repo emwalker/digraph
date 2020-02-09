@@ -7,8 +7,8 @@ import type { Synonym_synonym as SynonymType } from './__generated__/Synonym_syn
 
 type Props = {
   dragHandle: ?Node,
-  index: number,
   onDelete?: ?Function,
+  position: number,
   // $FlowFixMe
   synonym: SynonymType,
 }
@@ -20,7 +20,7 @@ class Synonym extends Component<Props> {
 
   onClick = () => {
     if (!this.props.onDelete) return
-    this.props.onDelete(this.props.index)
+    this.props.onDelete(this.props.position)
   }
 
   renderDeleteButton = () => (

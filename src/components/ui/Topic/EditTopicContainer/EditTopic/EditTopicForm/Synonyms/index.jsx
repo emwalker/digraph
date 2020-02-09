@@ -45,12 +45,12 @@ class Synonyms extends Component<Props, State> {
     this.updateSynonyms(update)
   }
 
-  onDelete = (idx: number) => {
+  onDelete = (position: number) => {
     // eslint-disable-next-line no-alert
     if (!window.confirm('Are you sure you want to delete this synonym?')) return
 
     const update = copySynonyms(this.synonyms)
-    update.splice(idx, 1)
+    update.splice(position, 1)
     this.updateSynonyms((update: any))
   }
 

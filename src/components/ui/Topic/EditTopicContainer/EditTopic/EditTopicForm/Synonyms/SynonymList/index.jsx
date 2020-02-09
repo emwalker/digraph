@@ -39,10 +39,11 @@ const SortableList = SortableContainer(({ onDelete, items }: ContainerProps) => 
       items.map((synonym, index) => (
         <SortableSynonym
           dragHandle={<DragHandle />}
-          key={synonym.name}
           index={index}
-          synonym={synonym}
+          key={synonym.name}
           onDelete={onDelete}
+          position={index}
+          synonym={synonym}
         />
       ))
     }

@@ -7,6 +7,7 @@ const onDelete = jest.fn()
 
 const props = {
   onDelete,
+  position: 0,
   synonym: {
     id: '1234',
     locale: 'en',
