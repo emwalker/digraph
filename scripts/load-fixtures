@@ -13,6 +13,6 @@ create database digraph_dev;
 SQL
 
 echo "Loading fixture data"
-psql $database < data/fixtures.sql
+psql -v ON_ERROR_STOP=1 $database < data/fixtures.sql
 
 echo "Done."

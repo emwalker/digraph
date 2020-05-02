@@ -16,10 +16,16 @@ import type { App } from './types'
 
 const RedisStore = connectRedis(session)
 
-const client = createClient({
-  host: process.env.DIGRAPH_NODE_REDIS_HOST || '',
-  password: process.env.DIGRAPH_REDIS_PASSWORD,
-})
+let client
+
+if (process.env.DIGRAPH_REDIS_PASSWORD) {
+  client = createClient({
+    host: process.env.DIGRAPH_NODE_REDIS_HOST,
+    password: process.env.DIGRAPH_REDIS_PASSWORD,
+  })
+} else {
+  client = createClient()
+}
 
 export default (app: App, fetcher: Fetcher) => {
   const environment = createEnvironment(fetcher)

@@ -27,7 +27,7 @@ const onAuthSuccessFn = (environment) => async (accessToken, refreshToken, profi
   const input: Input = {
     githubAvatarUrl: avatar_url,
     githubUsername: username,
-    name: displayName,
+    name: displayName || 'Nemo',
     primaryEmail: email,
     serverSecret: process.env.DIGRAPH_SERVER_SECRET || 'keyboard cat',
   }
