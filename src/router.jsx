@@ -1,9 +1,6 @@
 // @flow
-import queryMiddleware from 'farce/lib/queryMiddleware'
-import createRender from 'found/lib/createRender'
-import makeRouteConfig from 'found/lib/makeRouteConfig'
-import Route from 'found/lib/Route'
-import RedirectException from 'found/lib/RedirectException'
+import { queryMiddleware } from 'farce'
+import { Route, RedirectException, createRender, makeRouteConfig } from 'found'
 import { Resolver } from 'found-relay'
 import React from 'react'
 

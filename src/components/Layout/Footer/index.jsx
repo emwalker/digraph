@@ -15,7 +15,7 @@ const Footer = () => (
         >
           Terms
         </Link>
-         ・
+        ・
         Software available under the MIT
         {' '}
         <a

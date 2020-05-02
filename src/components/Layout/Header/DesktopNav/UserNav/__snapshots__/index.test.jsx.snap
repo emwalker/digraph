@@ -8,7 +8,7 @@ exports[`<UserNav /> renders 1`] = `
   >
     Review
   </Link>
-  <ForwardRef(Relay(UserDropdown))
+  <Relay(UserDropdown)
     viewer={Object {}}
   />
 </Fragment>

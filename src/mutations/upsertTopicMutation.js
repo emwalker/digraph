@@ -1,7 +1,7 @@
 // @flow
 import { Environment } from 'relay-runtime'
 import { commitMutation, graphql } from 'react-relay'
-import uuidv1 from 'uuid/v1'
+import { v1 as uuidv1 } from 'uuid'
 
 import flashMessageUpdater from './util/flashMessageUpdater'
 import updateTopicConnections from './util/updateTopicConnections'

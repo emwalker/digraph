@@ -1,7 +1,3 @@
-[ignore]
-.*/vendor/.*
-.*/node_modules/polished/**/.*
-
 [include]
 src/
 
@@ -21,6 +17,10 @@ module.file_ext=.json
 module.ignore_non_literal_requires=true
 module.system.node.resolve_dirname=node_modules
 module.system.node.resolve_dirname=./src
+module.name_mapper='^utils' -> '<PROJECT_ROOT>/src/utils'
+module.name_mapper='^utils\/\(.*\)$' -> '<PROJECT_ROOT>/src/utils/\1'
+module.name_mapper='^components\/\(.*\)$' -> '<PROJECT_ROOT>/src/components/\1'
+module.name_mapper='^mutations\/\(.*\)$' -> '<PROJECT_ROOT>/src/mutations/\1'
 
 [strict]
 nonstrict-import
@@ -35,3 +35,13 @@ deprecated-type
 
 [untyped]
 .*/node_modules/react-select/.*
+# TODO: remove
+.*/node_modules/**
+
+# TODO: uncomment
+#[definitions]
+#.*/node_modules/**
+
+[ignore]
+.*/vendor/.*
+.*/node_modules/polished/**/.*

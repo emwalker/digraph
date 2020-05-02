@@ -23,6 +23,7 @@ exports[`<EditTopicList /> renders 1`] = `
     filterOption={null}
     id="parent-topics"
     isClearable={false}
+    isLoading={false}
     isMulti={true}
     loadOptions={[Function]}
     onChange={[Function]}

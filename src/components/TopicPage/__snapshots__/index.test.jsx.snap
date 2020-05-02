@@ -2,7 +2,7 @@
 
 exports[`<TopicPage /> renders 1`] = `
 <Page>
-  <ForwardRef(Relay(Breadcrumbs))
+  <Relay(Breadcrumbs)
     repository={
       Object {
         "displayName": "Private collection",
@@ -10,7 +10,7 @@ exports[`<TopicPage /> renders 1`] = `
       }
     }
   />
-  <ForwardRef(Relay(Subhead))
+  <Relay(Subhead)
     heading="Frotz"
     renderHeadingDetail={[Function]}
     view={
@@ -86,7 +86,7 @@ exports[`<TopicPage /> renders 1`] = `
           </li>
         </ul>
       </div>
-      <ForwardRef(Relay(AddForm))
+      <Relay(AddForm)
         topic={
           Object {
             "displayName": "Frotz",

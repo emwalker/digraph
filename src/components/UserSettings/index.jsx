@@ -83,6 +83,6 @@ type Props = {
 export default ({ props, match }: Props) => (
   // eslint-disable-next-line react/prop-types
   props && props.view
-    ? <Wrapper match={match} {...props} />
+    ? <Wrapper {...props} match={match} />
     : null
 )

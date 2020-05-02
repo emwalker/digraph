@@ -1,7 +1,7 @@
 // @flow
 import React, { useState, useCallback } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
-import moment from 'moment'
+import moment from 'moment/moment'
 import { useDebouncedCallback } from 'use-debounce'
 
 import type { Relay } from 'components/types'

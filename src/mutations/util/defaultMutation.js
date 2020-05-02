@@ -1,7 +1,7 @@
 // @flow
 import { Environment } from 'relay-runtime'
 import { commitMutation } from 'react-relay'
-import uuidv1 from 'uuid/v1'
+import { v1 as uuidv1 } from 'uuid'
 
 import type { Updater } from './types'
 
@@ -27,7 +27,7 @@ function defaultMutation<Mutation: {}>(mutation: Mutation, updater?: Updater) {
         mutation,
         updater,
         variables: {
-          input: { clientMutationId, ...input },
+          input: { ...input, clientMutationId },
         },
       },
     )

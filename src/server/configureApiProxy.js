@@ -1,5 +1,5 @@
 // @flow
-import requestProxy from 'http-proxy-middleware'
+import { createProxyMiddleware } from 'http-proxy-middleware'
 
 /* eslint no-console: 0, implicit-arrow-linebreak: 0 */
 const graphqlApiBaseUrl = process.env.DIGRAPH_API_BASE_URL || 'http://localhost:8080'
@@ -10,7 +10,7 @@ export const basicAuthSecret = (viewerId: string, sessionId: string) =>
 export default (app: Object) => {
   app.post(
     '/graphql',
-    requestProxy({
+    createProxyMiddleware({
       target: graphqlApiBaseUrl,
       changeOrigin: true,
       secure: false,
@@ -33,7 +33,7 @@ export default (app: Object) => {
 
   app.get(
     '/_ah/health',
-    requestProxy({
+    createProxyMiddleware({
       target: graphqlApiBaseUrl,
       changeOrigin: true,
       secure: false,

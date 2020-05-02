@@ -3,7 +3,7 @@ import React, { type AbstractComponent } from 'react'
 
 import ErrorBoundary from './ui/ErrorBoundary'
 
-function withErrorBoundary<Config, Props>(Wrapped: AbstractComponent<Config>) {
+function withErrorBoundary<Props>(Wrapped: AbstractComponent<Props>) {
   return (props: Props) => (
     <ErrorBoundary>
       <Wrapped {...props} />
