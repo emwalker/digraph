@@ -147,6 +147,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.thedailybeast.com/how-natural-news-became-a-conspiracy-hub-rivaling-infowars?someparam",
 			canonicalURL: "https://www.thedailybeast.com/how-natural-news-became-a-conspiracy-hub-rivaling-infowars",
 		},
+		{
+			name:         "An Urban Dictionary definition",
+			inputURL:     "https://www.urbandictionary.com/define.php?term=Vote%20from%20the%20rooftops",
+			canonicalURL: "https://www.urbandictionary.com/define.php?term=Vote+from+the+rooftops",
+		},
 	}
 
 	for _, testCase := range testCases {

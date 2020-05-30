@@ -17,6 +17,11 @@ type URL struct {
 	Sha1         string
 }
 
+type urlSpec struct {
+	suffix     string
+	keepParams []string
+}
+
 const normalizationFlags = pl.FlagRemoveDefaultPort |
 	pl.FlagDecodeDWORDHost |
 	pl.FlagDecodeOctalHost |
@@ -30,24 +35,6 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 	pl.FlagSortQuery
 
 var (
-	omitQuerySites = []string{
-		"amazon.com",
-		"theatlantic.com",
-		"businessinsider.com",
-		"dictionary.com",
-		"independent.co.uk",
-		"motherjones.com",
-		"newyorker.com",
-		"nymag.com",
-		"nytimes.com",
-		"reuters.com",
-		"scientificamerican.com",
-		"thedailybeast.com",
-		"theguardian.com",
-		"thehill.com",
-		"twitter.com",
-	}
-
 	omitFields = []string{
 		"fbclid",
 		"mbid",
@@ -63,7 +50,49 @@ var (
 		"https",
 		"ssh",
 	}
+
+	urlSpecs = []urlSpec{
+		urlSpec{suffix: "youtube.com", keepParams: []string{"v"}},
+		urlSpec{suffix: "urbandictionary.com", keepParams: []string{"term"}},
+		urlSpec{suffix: "amazon.com"},
+		urlSpec{suffix: "businessinsider.com"},
+		urlSpec{suffix: "dictionary.com"},
+		urlSpec{suffix: "independent.co.uk"},
+		urlSpec{suffix: "motherjones.com"},
+		urlSpec{suffix: "newyorker.com"},
+		urlSpec{suffix: "nymag.com"},
+		urlSpec{suffix: "nytimes.com"},
+		urlSpec{suffix: "reuters.com"},
+		urlSpec{suffix: "scientificamerican.com"},
+		urlSpec{suffix: "theatlantic.com"},
+		urlSpec{suffix: "thedailybeast.com"},
+		urlSpec{suffix: "theguardian.com"},
+		urlSpec{suffix: "thehill.com"},
+		urlSpec{suffix: "twitter.com"},
+	}
 )
+
+func (s *urlSpec) matchesHost(host string) bool {
+	return strings.HasSuffix(host, s.suffix)
+}
+
+func (s *urlSpec) normalizeUrl(parsed *url.URL) string {
+	query := parsed.Query()
+
+Loop:
+	for queryParam := range query {
+		for _, keepParam := range s.keepParams {
+			if queryParam == keepParam {
+				continue Loop
+			}
+		}
+		query.Del(queryParam)
+	}
+
+	// FIXME: don't modify the input argument
+	parsed.RawQuery = query.Encode()
+	return parsed.String()
+}
 
 // IsURL returns true if a string parses as a URL and false otherwise.
 func IsURL(str string) bool {
@@ -73,15 +102,6 @@ func IsURL(str string) bool {
 	}
 	for _, scheme := range schemes {
 		if scheme == parsed.Scheme {
-			return true
-		}
-	}
-	return false
-}
-
-func removeQueryAndAnchor(parsed *url.URL) bool {
-	for _, host := range omitQuerySites {
-		if strings.HasSuffix(parsed.Host, host) {
 			return true
 		}
 	}
@@ -106,6 +126,15 @@ func removeQueryParam(field string) bool {
 	return false
 }
 
+func urlSpecFor(host string) *urlSpec {
+	for _, spec := range urlSpecs {
+		if spec.matchesHost(host) {
+			return &spec
+		}
+	}
+	return nil
+}
+
 // NewURL returns a URL with a canonicalized form and a SHA1.
 func NewURL(providedURL string) (*URL, error) {
 	value, err := NormalizeURL(providedURL)
@@ -123,26 +152,16 @@ func NewURL(providedURL string) (*URL, error) {
 
 // NormalizeURL normalizes a url before it is stored in the database.
 func NormalizeURL(rawURL string) (*URL, error) {
-	parsed, err := url.Parse(rawURL)
+	copiedURL := rawURL
+	parsed, err := url.Parse(copiedURL)
 	if err != nil {
 		return nil, err
 	}
 
-	if removeQueryAndAnchor(parsed) {
-		parsed.RawQuery = ""
-		rawURL = parsed.String()
-	} else if strings.HasSuffix(parsed.Host, "youtube.com") {
-		query := parsed.Query()
+	spec := urlSpecFor(parsed.Host)
 
-		for key := range query {
-			if key == "v" {
-				continue
-			}
-			query.Del(key)
-		}
-
-		parsed.RawQuery = query.Encode()
-		rawURL = parsed.String()
+	if spec != nil {
+		copiedURL = spec.normalizeUrl(parsed)
 	} else {
 		query := parsed.Query()
 
@@ -153,7 +172,7 @@ func NormalizeURL(rawURL string) (*URL, error) {
 		}
 
 		parsed.RawQuery = query.Encode()
-		rawURL = parsed.String()
+		copiedURL = parsed.String()
 	}
 
 	flags := normalizationFlags
@@ -161,7 +180,7 @@ func NormalizeURL(rawURL string) (*URL, error) {
 		flags |= pl.FlagRemoveFragment
 	}
 
-	canonical, err := pl.NormalizeURLString(rawURL, flags)
+	canonical, err := pl.NormalizeURLString(copiedURL, flags)
 	if err != nil {
 		return nil, err
 	}
