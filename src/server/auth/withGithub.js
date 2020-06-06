@@ -1,6 +1,6 @@
 // @flow
 import passport from 'passport'
-import { Strategy } from 'passport-github'
+import { Strategy } from 'passport-github2'
 import { Environment } from 'relay-runtime'
 
 import createGithubSessionMutation, { type Input, type Response } from 'mutations/createGithubSessionMutation'
