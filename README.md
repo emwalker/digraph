@@ -21,7 +21,7 @@ Keep track of links in a mind-map like network of topics.
 
 Requirements
 
-* Postgres 10
+* Postgres 12
 * Redis 5
 * Go 1.11
 * Yarn
