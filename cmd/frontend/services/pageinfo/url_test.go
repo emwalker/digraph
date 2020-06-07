@@ -152,6 +152,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.urbandictionary.com/define.php?term=Vote%20from%20the%20rooftops",
 			canonicalURL: "https://www.urbandictionary.com/define.php?term=Vote+from+the+rooftops",
 		},
+		{
+			name:         "A redirectedFrom parameter",
+			inputURL:     "https://academic.oup.com/cid/advance-article-abstract/doi/10.1093/cid/ciaa436/5847659?redirectedFrom=fulltext",
+			canonicalURL: "https://academic.oup.com/cid/advance-article-abstract/doi/10.1093/cid/ciaa436/5847659",
+		},
 	}
 
 	for _, testCase := range testCases {

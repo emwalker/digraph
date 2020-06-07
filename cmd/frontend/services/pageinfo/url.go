@@ -40,6 +40,7 @@ var (
 		"mbid",
 		"rss",
 		"via",
+		"redirectedFrom",
 	}
 
 	schemes = []string{
