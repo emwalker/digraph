@@ -23,6 +23,7 @@ import (
 
 var (
 	errCannotDeleteRootTopic = coreerrors.New("cannot delete root topic")
+	errInvalidSynonym        = coreerrors.New("invalid synonym")
 )
 
 // DeleteTopicResult holds the result of an attempt to delete a topic.
@@ -230,9 +231,19 @@ func (c Connection) UpdateSynonyms(
 	dedupedSynonyms := []models.Synonym{}
 
 	for _, synonym := range synonyms {
-		if _, ok := seen[synonym]; !ok {
-			seen[synonym] = true
-			dedupedSynonyms = append(dedupedSynonyms, synonym)
+		normalized := synonym
+		normalizedName, validName := NormalizeTopicName(synonym.Name)
+
+		if validName {
+			normalized.Name = normalizedName
+		} else {
+			log.Printf("Not a valid synonym: %s", synonym)
+			return nil, errors.Wrap(errInvalidSynonym, "services: failed to update synonyms")
+		}
+
+		if _, ok := seen[normalized]; !ok {
+			seen[normalized] = true
+			dedupedSynonyms = append(dedupedSynonyms, normalized)
 		}
 	}
 

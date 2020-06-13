@@ -174,6 +174,49 @@ func TestDeduplicationOfSynonyms(t *testing.T) {
 	}
 }
 
+func TestNormalizationOfSynonyms(t *testing.T) {
+	c := services.Connection{Exec: testDB, Actor: testActor}
+	ctx := context.Background()
+
+	result, err := c.UpsertTopic(ctx, defaultRepo, "Backhoe", nil, []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Cleanup()
+
+	topic := result.Topic
+
+	synonyms := []models.Synonym{
+		{Locale: "en", Name: "Backhoe"},
+		{Locale: "en", Name: " Excavator "},
+	}
+
+	// Synonyms are cleaned up
+	normalizedSynonyms := []models.Synonym{
+		{Locale: "en", Name: "Backhoe"},
+		{Locale: "en", Name: "Excavator"},
+	}
+
+	expected := &models.SynonymList{Values: normalizedSynonyms}
+
+	if _, err = c.UpdateSynonyms(ctx, topic, synonyms); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = topic.Reload(ctx, testDB); err != nil {
+		t.Fatal(err)
+	}
+
+	actual, err := topic.SynonymList()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("Expected %#v, got %#v", expected, actual)
+	}
+}
+
 func TestUpsertTopicTimeRange(t *testing.T) {
 	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
