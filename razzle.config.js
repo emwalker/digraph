@@ -12,14 +12,6 @@ module.exports = {
       utils: path.resolve(__dirname, './src/utils'),
     };
 
-    if (target === 'web')
-      appConfig.node = {fs: 'empty'};
-
-    appConfig.devServer = {
-      hot: false,
-      inline: false,
-    };
-
     return appConfig;
   },
 

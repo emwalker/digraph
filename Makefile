@@ -36,9 +36,11 @@ start-debug: kill
 	@go run cmd/frontend/frontend.go --dev --log 2 &
 	@yarn start
 
-lint:
-	golint $(LINT_DIRECTORIES)
+lint-js:
 	yarn eslint
+
+lint: lint-js
+	golint $(LINT_DIRECTORIES)
 
 install:
 	@yarn install
@@ -66,14 +68,22 @@ generate:
 test-integration: .PHONY
 	go test ./test/integration/...
 
-test: .PHONY
-	go test ./cmd/frontend/...
+test-js: .PHONY
 	yarn jest
 
-format: lint
+test: test-js
+	go test ./cmd/frontend/...
+
+format-js: lint-js
 	yarn flow
+
+format: lint format-js
 	go fmt ./...
 	git diff --quiet
+
+check-js: format-js test-js
+	yarn relay
+	yarn outdated
 
 check: generate format test test-integration
 

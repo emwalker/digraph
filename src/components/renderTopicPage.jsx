@@ -15,7 +15,6 @@ export default ({ props, variables, error, match: { location } }: any) => {
 
   const { view } = props
 
-
   if (location.query.q) {
     return (
       <TopicSearchPage

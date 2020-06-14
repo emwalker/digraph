@@ -18,7 +18,9 @@ module.exports = {
     "react/destructuring-assignment": "off",
     "react/jsx-props-no-spreading": "off",
     "react/static-property-placement": ["error", "static public field"],
-    "semi": ["error", "never"]
+    "semi": ["error", "never"],
+    "template-curly-spacing" : "off",
+    "indent": "off"
   },
 
   "overrides": [
