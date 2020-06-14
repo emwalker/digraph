@@ -108,8 +108,27 @@ class Synonyms extends Component<Props, State> {
       <div className="col-12 col-lg-3 mt-2 d-inline-block">
         <select onChange={this.onLocaleChange} className="form-select mr-2">
           <option>en</option>
+          <option>ar</option>
+          <option>de</option>
+          <option>el</option>
           <option>es</option>
+          <option>fa</option>
+          <option>fi</option>
           <option>fr</option>
+          <option>hi</option>
+          <option>it</option>
+          <option>ja</option>
+          <option>ji</option>
+          <option>ko</option>
+          <option>la</option>
+          <option>nl</option>
+          <option>no</option>
+          <option>pt</option>
+          <option>ru</option>
+          <option>sv</option>
+          <option>tr</option>
+          <option>uk</option>
+          <option>zh</option>
         </select>
 
         <button type="button" onClick={this.onAdd} className="btn">

@@ -149,9 +149,28 @@ type LinkConnection {
 }
 
 enum LocaleIdentifier {
+  ar
+  de
+  el
   en
   es
+  fa
+  fi
   fr
+  hi
+  it
+  ja
+  ji
+  ko
+  la
+  nl
+  no
+  pt
+  ru
+  sv
+  tr
+  uk
+  zh
 }
 
 type LinkReview {
