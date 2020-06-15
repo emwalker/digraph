@@ -11,4 +11,7 @@
 .primaryLogo {
   display: inline-block;
   margin-top: 8px;
+  font-family: Avenir Next, Verdana;
+  letter-spacing: 1px;
+  font-weight: 500;
 }

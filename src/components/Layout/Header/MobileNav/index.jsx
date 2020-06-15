@@ -30,16 +30,17 @@ class MobileNav extends Component<Props, State> {
   }
 
   render = () => (
-    <div className={classNames(styles.mobileMenu, 'mobile-menu mb-4')}>
+    <div className={classNames(styles.mobileMenu, 'mobile-menu')}>
       <div className="mobile-menu-header d-flex px-3 py-2">
         <Link
           to="/"
           className={classNames(
             styles.link,
-            'h3 text-normal menu-logo text-gray-dark n-link no-underline d-flex flex-items-center',
+            styles.logo,
+            'menu-logo text-gray-dark n-link no-underline d-flex flex-items-center',
           )}
         >
-          <div className="mr-2 d-inline-block">
+          <div className="mr-1 d-inline-block">
             <DigraphLogo width="32px" height="32px" />
           </div>
           {' '}
