@@ -16,13 +16,23 @@
 }
 
 .hero {
+  font-family: Verdana;
+  font-weight: 500;
   position: relative;
   width: 100%;
   margin: auto auto 3em auto;
-  background-color: rgba(0, 114, 255, 0.05);
+  background-color: rgba(218, 234, 255, 0.26);
   padding: 3em;
-  border-bottom: 1px solid #808080b5;
-  border-top: 1px solid #808080b5;
+}
+
+.appName {
+  font-size: 30px;
+  letter-spacing: 6px;
+  margin-bottom: 9px;
+}
+
+.subtitle {
+  font-size: 20px;
 }
 
 .content {
@@ -46,11 +56,4 @@
 .logo, .logo:hover {
   text-decoration: none;
   color: inherit;
-}
-
-.appName {
-  font-size: 38px;
-  font-weight: 500;
-  letter-spacing: 3px;
-  margin-bottom: 9px;
 }

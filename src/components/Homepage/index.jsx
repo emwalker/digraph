@@ -43,13 +43,8 @@ const Homepage = ({ view, router }: Props) => {
               <DigraphLogo height="60px" width="60px" />
             </div>
           </a>
-          <p>
-            Save links in a mind map-like network of topics.
-          </p>
-          <p>
-            Keep track of everything
-            you&apos;ve read or might want to read in the future. Gain control over your
-            reading and turn the deluge of information into knowledge.
+          <p className={styles.subtitle}>
+            Organize the world
           </p>
         </div>
       </div>
