@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	"github.com/volatiletech/sqlboiler/types"
 )
 
@@ -25,6 +26,12 @@ func NewSearchQuery(input string) *Query {
 func (q Query) WildcardStringArray() interface{} {
 	var tokens []string
 	for _, s := range strings.Split(string(q), " ") {
+		if pageinfo.IsURL(s) {
+			url, err := pageinfo.NormalizeURL(s)
+			if err == nil {
+				s = url.CanonicalURL
+			}
+		}
 		tokens = append(tokens, fmt.Sprintf("%%%s%%", s))
 	}
 	return types.Array(tokens)

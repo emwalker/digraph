@@ -38,6 +38,11 @@ func TestWildcardStringArray(t *testing.T) {
 			input:  "York% New",
 			output: `{"%York%%","%New%"}`,
 		},
+		{
+			name:   "URL-like strings are normalized",
+			input:  "https://www.nytimes.com/page?query=",
+			output: `{"%https://www.nytimes.com/page%"}`,
+		},
 	}
 
 	for _, td := range testData {
