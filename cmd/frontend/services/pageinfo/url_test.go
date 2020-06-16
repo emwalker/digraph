@@ -157,6 +157,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://academic.oup.com/cid/advance-article-abstract/doi/10.1093/cid/ciaa436/5847659?redirectedFrom=fulltext",
 			canonicalURL: "https://academic.oup.com/cid/advance-article-abstract/doi/10.1093/cid/ciaa436/5847659",
 		},
+		{
+			name:         "An ABC News article",
+			inputURL:     "https://abcnews.go.com/US/facebook-takes-proud-boys-american-guard-accounts-connected/story?cid=clicksource_4380645_2_heads_hero_live_twopack_hed&id=71286604",
+			canonicalURL: "https://abcnews.go.com/US/facebook-takes-proud-boys-american-guard-accounts-connected/story?id=71286604",
+		},
 	}
 
 	for _, testCase := range testCases {
