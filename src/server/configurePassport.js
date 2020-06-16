@@ -35,6 +35,8 @@ export default (app: App, fetcher: Fetcher) => {
     secret: process.env.DIGRAPH_COOKIE_SECRET || 'keyboard cat',
     resave: true,
     saveUninitialized: true,
+    // Expire in one month
+    cookie: { maxAge: 1000 * 3600 * 24 * 30 },
   }))
 
   app
