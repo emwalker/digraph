@@ -56,6 +56,7 @@ var (
 		urlSpec{suffix: "youtube.com", keepParams: []string{"v"}},
 		urlSpec{suffix: "urbandictionary.com", keepParams: []string{"term"}},
 		urlSpec{suffix: "abcnews.go.com", keepParams: []string{"id"}},
+		urlSpec{suffix: "facebook.com", keepParams: []string{"__xts__[0]"}},
 		urlSpec{suffix: "amazon.com"},
 		urlSpec{suffix: "businessinsider.com"},
 		urlSpec{suffix: "dictionary.com"},
