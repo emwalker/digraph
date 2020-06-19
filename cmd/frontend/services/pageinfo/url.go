@@ -36,6 +36,7 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 
 var (
 	omitFields = []string{
+		"_returnURL",
 		"fbclid",
 		"mbid",
 		"rss",
