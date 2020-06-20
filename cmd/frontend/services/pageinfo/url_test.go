@@ -172,6 +172,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.cell.com/cell/pdf/S0092-8674(20)30567-5.pdf?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867420305675%3Fshowall%3Dtrue",
 			canonicalURL: "https://www.cell.com/cell/pdf/S0092-8674(20)30567-5.pdf",
 		},
+		{
+			name:         "An article in Huffington Post",
+			inputURL:     "https://www.huffingtonpost.co.uk/entry/katie-hopkins-account-permanently-suspended_uk_5eece139c5b6e9623c8179bf?guce_referrer=aHR0cHM6Ly90LmNvL2x3bFREcTFrVEg_YW1wPTE&guce_referrer_sig=AQAAADtPeiajMvrnzZWDtw7yy-JiohkfzxDxV7FaOXDaDuB_gDWIvwG7SMs0qsUS959IQ8OC0rehnZAZGF6OOnA3TRwCJayLF9QcUZp0EMlJ0aP4Gjt_4ce0v9M5wy5qV5via8b17RMJt-K2_zpJX2jOn_sh3RBeZfxDDQxXMDAJZN19&guccounter=2",
+			canonicalURL: "https://www.huffingtonpost.co.uk/entry/katie-hopkins-account-permanently-suspended_uk_5eece139c5b6e9623c8179bf",
+		},
 	}
 
 	for _, testCase := range testCases {

@@ -61,6 +61,7 @@ var (
 		urlSpec{suffix: "amazon.com"},
 		urlSpec{suffix: "businessinsider.com"},
 		urlSpec{suffix: "dictionary.com"},
+		urlSpec{suffix: "huffingtonpost.co.uk"},
 		urlSpec{suffix: "independent.co.uk"},
 		urlSpec{suffix: "motherjones.com"},
 		urlSpec{suffix: "newyorker.com"},
