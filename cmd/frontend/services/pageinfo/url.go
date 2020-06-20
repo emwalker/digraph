@@ -65,6 +65,7 @@ var (
 		urlSpec{suffix: "independent.co.uk"},
 		urlSpec{suffix: "motherjones.com"},
 		urlSpec{suffix: "newyorker.com"},
+		urlSpec{suffix: "npr.org"},
 		urlSpec{suffix: "nymag.com"},
 		urlSpec{suffix: "nytimes.com"},
 		urlSpec{suffix: "reuters.com"},

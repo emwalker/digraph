@@ -177,6 +177,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.huffingtonpost.co.uk/entry/katie-hopkins-account-permanently-suspended_uk_5eece139c5b6e9623c8179bf?guce_referrer=aHR0cHM6Ly90LmNvL2x3bFREcTFrVEg_YW1wPTE&guce_referrer_sig=AQAAADtPeiajMvrnzZWDtw7yy-JiohkfzxDxV7FaOXDaDuB_gDWIvwG7SMs0qsUS959IQ8OC0rehnZAZGF6OOnA3TRwCJayLF9QcUZp0EMlJ0aP4Gjt_4ce0v9M5wy5qV5via8b17RMJt-K2_zpJX2jOn_sh3RBeZfxDDQxXMDAJZN19&guccounter=2",
 			canonicalURL: "https://www.huffingtonpost.co.uk/entry/katie-hopkins-account-permanently-suspended_uk_5eece139c5b6e9623c8179bf",
 		},
+		{
+			name:         "An NPR article",
+			inputURL:     "https://www.npr.org/2020/06/20/881148365/geoffrey-berman-u-s-attorney-who-prosecuted-trump-allies-says-he-wont-quit?utm_source=npr_newsletter&utm_medium=email&utm_content=20200619&utm_term=4628612&utm_campaign=breaking-news&utm_id=2400537&orgid=309",
+			canonicalURL: "https://www.npr.org/2020/06/20/881148365/geoffrey-berman-u-s-attorney-who-prosecuted-trump-allies-says-he-wont-quit",
+		},
 	}
 
 	for _, testCase := range testCases {
