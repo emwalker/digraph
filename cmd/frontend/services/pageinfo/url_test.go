@@ -187,6 +187,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.nbcnewyork.com/news/local/u-s-attorney-in-manhattan-who-oversaw-key-cases-of-trump-allies-abruptly-resigns/2474381/?__twitter_impression=true&_osource=SocialFlowTwt_NYBrand&amp=",
 			canonicalURL: "https://www.nbcnewyork.com/news/local/u-s-attorney-in-manhattan-who-oversaw-key-cases-of-trump-allies-abruptly-resigns/2474381/",
 		},
+		{
+			name:         "A note from the CDC",
+			inputURL:     "https://www.cdc.gov/mmwr/volumes/69/wr/mm6924a2.htm?s_cid=mm6924a2_w",
+			canonicalURL: "https://www.cdc.gov/mmwr/volumes/69/wr/mm6924a2.htm",
+		},
 	}
 
 	for _, testCase := range testCases {

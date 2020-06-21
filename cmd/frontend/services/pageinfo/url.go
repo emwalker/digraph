@@ -43,6 +43,7 @@ var (
 		"fbclid",
 		"mbid",
 		"rss",
+		"s_cid",
 		"via",
 		"redirectedFrom",
 	}
