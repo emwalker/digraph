@@ -182,6 +182,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.npr.org/2020/06/20/881148365/geoffrey-berman-u-s-attorney-who-prosecuted-trump-allies-says-he-wont-quit?utm_source=npr_newsletter&utm_medium=email&utm_content=20200619&utm_term=4628612&utm_campaign=breaking-news&utm_id=2400537&orgid=309",
 			canonicalURL: "https://www.npr.org/2020/06/20/881148365/geoffrey-berman-u-s-attorney-who-prosecuted-trump-allies-says-he-wont-quit",
 		},
+		{
+			name:         "An NBC News article",
+			inputURL:     "https://www.nbcnewyork.com/news/local/u-s-attorney-in-manhattan-who-oversaw-key-cases-of-trump-allies-abruptly-resigns/2474381/?__twitter_impression=true&_osource=SocialFlowTwt_NYBrand&amp=",
+			canonicalURL: "https://www.nbcnewyork.com/news/local/u-s-attorney-in-manhattan-who-oversaw-key-cases-of-trump-allies-abruptly-resigns/2474381/",
+		},
 	}
 
 	for _, testCase := range testCases {

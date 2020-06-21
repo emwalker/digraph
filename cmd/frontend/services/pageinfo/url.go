@@ -36,7 +36,10 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 
 var (
 	omitFields = []string{
+		"__twitter_impression",
+		"_osource",
 		"_returnURL",
+		"amp",
 		"fbclid",
 		"mbid",
 		"rss",
