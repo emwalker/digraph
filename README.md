@@ -62,7 +62,7 @@ $ export DIGRAPH_GITHUB_CLIENT_SECRET="..."
 
 ## Screenshots
 
-![Landing page](https://user-images.githubusercontent.com/760949/64667069-b81fbc00-d415-11e9-9919-0be315eecb67.png)
+![Landing page](https://user-images.githubusercontent.com/760949/85933236-fc3f5880-b891-11ea-8494-13d02389d3b9.png)
 
 ![Example of a topic](https://user-images.githubusercontent.com/760949/59727248-24619980-91f2-11e9-9067-62042fbda222.png)
 
