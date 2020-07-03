@@ -1,10 +1,9 @@
 # Digraph
 
-Keep track of links in a mind-map like network of topics.
+Organize the world. Save links in a mind map-like network of topics. Keep track of everything you've read or might want to read in the future. Gain control over your reading and turn the deluge of information into knowledge.
 
-* Public site [here](https://digraph.app)
-* Recent updates are covered [here](https://blog.digraph.app)
-* Some of the use cases that are contemplated are described [here](https://github.com/emwalker/digraph/wiki)
+* [Public site](https://digraph.app)
+* [Long-term vision](https://blog.digraph.app/2020-06-13-democratization-of-search.html)
 
 ## Technical details
 
@@ -17,48 +16,7 @@ Keep track of links in a mind-map like network of topics.
 * [99designs/gqlgen](https://github.com/99designs/gqlgen)
 * [GitHub Primer](https://styleguide.github.com/primer/) CSS
 
-## Getting started
-
-Requirements
-
-* Postgres 12
-* Redis 5
-* Go 1.11
-* Yarn
-
-Set up the project:
-```
-$ export DIGRAPH_POSTGRES_CONNECTION="dbname=digraph_dev user=postgres sslmode=disable"
-$ mkdir $GOPATH/src/github.com/emwalker
-$ cd $GOPATH/src/github.com/emwalker
-$ git clone git@github.com:emwalker/digraph.git
-$ cd digraph
-$ make load-fixtures
-$ go get -u github.com/golang-migrate/migrate
-$ go get -u github.com/99designs/gqlgen
-$ make generate
-$ go get -u ./...
-$ yarn install
-$ yarn relay
-```
-
-Run the tests:
-```
-$ make test
-$ make test-integration
-```
-
-Run the app in development:
-```
-$ make start
-```
-
-In order to log in, you'll need to configure a dedicated OAuth app in GitHub and set the following environment
-variables:
-```
-$ export DIGRAPH_GITHUB_CLIENT_ID="..."
-$ export DIGRAPH_GITHUB_CLIENT_SECRET="..."
-```
+Steps for getting started with development [here](https://github.com/emwalker/digraph/wiki/Getting-started-with-development).
 
 ## Screenshots
 
