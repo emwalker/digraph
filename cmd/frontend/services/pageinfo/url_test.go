@@ -192,6 +192,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.cdc.gov/mmwr/volumes/69/wr/mm6924a2.htm?s_cid=mm6924a2_w",
 			canonicalURL: "https://www.cdc.gov/mmwr/volumes/69/wr/mm6924a2.htm",
 		},
+		{
+			name:         "A URL with a glcid parameter",
+			inputURL:     "https://www.southafrica.net/gl/en/travel/article/the-face-of-an-uprising-the-hector-pieterson-museum-soweto?gclid=CjwKCAjw_-D3BRBIEiwAjVMy7AR_6Aaw2XjWkV36MEbdlqaCY2sHqXCc655NWoMZ8NtDtI30KF1UCxoCF0IQAvD_BwE",
+			canonicalURL: "https://www.southafrica.net/gl/en/travel/article/the-face-of-an-uprising-the-hector-pieterson-museum-soweto",
+		},
 	}
 
 	for _, testCase := range testCases {

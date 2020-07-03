@@ -62,6 +62,7 @@ var (
 		urlSpec{suffix: "urbandictionary.com", keepParams: []string{"term"}},
 		urlSpec{suffix: "abcnews.go.com", keepParams: []string{"id"}},
 		urlSpec{suffix: "facebook.com", keepParams: []string{"__xts__[0]"}},
+		urlSpec{suffix: "ycombinator.com", keepParams: []string{"id"}},
 		urlSpec{suffix: "amazon.com"},
 		urlSpec{suffix: "businessinsider.com"},
 		urlSpec{suffix: "dictionary.com"},
@@ -173,15 +174,9 @@ func NormalizeURL(rawURL string) (*URL, error) {
 	if spec != nil {
 		copiedURL = spec.normalizeUrl(parsed)
 	} else {
-		query := parsed.Query()
-
-		for field := range query {
-			if removeQueryParam(field) {
-				query.Del(field)
-			}
-		}
-
-		parsed.RawQuery = query.Encode()
+		// By default, strip all query parameters.  In special cases, override this behavior with
+		// whitelisted parameters.
+		parsed.RawQuery = ""
 		copiedURL = parsed.String()
 	}
 
