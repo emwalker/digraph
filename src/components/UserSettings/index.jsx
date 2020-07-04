@@ -80,6 +80,7 @@ type Props = {
   match: Match,
 }
 
+// eslint-disable-next-line react/prop-types
 export default ({ props, match }: Props) => (
   // eslint-disable-next-line react/prop-types
   props && props.view
