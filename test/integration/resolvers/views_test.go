@@ -9,7 +9,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var (
@@ -476,7 +476,7 @@ func TestDefaultOrganization(t *testing.T) {
 
 func TestGuestViewer(t *testing.T) {
 	ctx := context.Background()
-	resolver := resolvers.New(rootResolver.DB, rootResolver.Fetcher, rootResolver.RD).View()
+	resolver := resolvers.New(rootResolver.DB, rootResolver.Fetcher, rootResolver.Redis).View()
 
 	viewer, err := resolver.Viewer(ctx, resolvers.GuestView)
 	if err != nil {

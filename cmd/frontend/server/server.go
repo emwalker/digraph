@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net"
@@ -11,11 +12,11 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/NYTimes/gziphandler"
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/redis"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
-	"github.com/go-redis/redis"
 	"github.com/gorilla/handlers"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 const requestTimeout = 15
@@ -29,7 +30,7 @@ type Server struct {
 	DevMode           bool
 	LogLevel          int
 	Port              string
-	rd                *redis.Client
+	rd                redis.Connection
 	resolver          *resolvers.Resolver
 	schema            graphql.ExecutableSchema
 	server            *http.Server
@@ -54,13 +55,13 @@ func New(
 
 	fetcher := pageinfo.New(client)
 
-	rd := redis.NewClient(&redis.Options{
+	conn := redis.New(&redis.Options{
 		Addr:     redisHost,
 		Password: redisPassword,
 		DB:       0,
 	})
 
-	resolver := resolvers.New(db, fetcher, rd)
+	resolver := resolvers.New(db, fetcher, conn)
 	schema := models.NewExecutableSchema(models.Config{Resolvers: resolver})
 
 	server := &http.Server{
@@ -78,7 +79,7 @@ func New(
 		LogLevel:          logLevel,
 		Port:              port,
 		resolver:          resolver,
-		rd:                rd,
+		rd:                conn,
 		schema:            schema,
 		server:            server,
 	}
@@ -122,7 +123,7 @@ func (s *Server) Run() {
 	}
 	log.Printf("Postgres is available")
 
-	_, err = s.rd.Ping().Result()
+	_, err = s.rd.Ping(context.Background()).Result()
 	if err != nil {
 		log.Printf("Redis is not available")
 		panic(err)

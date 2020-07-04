@@ -7,8 +7,8 @@ import (
 	"log"
 
 	"github.com/google/uuid"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // LinkValue wraps a link with additional fields that are not obtained from the database.

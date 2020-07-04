@@ -12,9 +12,9 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/text"
 	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // DeleteLinkResult holds the result of a DeleteLink call.

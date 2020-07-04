@@ -10,10 +10,10 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func TestUpsertTopic(t *testing.T) {
@@ -1091,7 +1091,7 @@ func TestGuestViewTopic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resolver := resolvers.New(testDB, rootResolver.Fetcher, rootResolver.RD).Topic()
+	resolver := resolvers.New(testDB, rootResolver.Fetcher, rootResolver.Redis).Topic()
 
 	searchString := "topic"
 	conn, err := resolver.Links(ctx, topic, nil, nil, nil, nil, &searchString, nil, nil)

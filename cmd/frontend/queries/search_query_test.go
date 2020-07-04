@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/queries"
-	"github.com/volatiletech/sqlboiler/types"
+	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
 func TestWildcardStringArray(t *testing.T) {

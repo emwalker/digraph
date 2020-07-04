@@ -8,15 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alicebob/miniredis"
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/redis"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
-	"github.com/go-redis/redis"
 	_ "github.com/lib/pq"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const orgID = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
@@ -63,15 +62,8 @@ func (m mutator) defaultRepo() *models.Repository {
 }
 
 func TestMain(m *testing.M) {
-	mini, err := miniredis.Run()
-	if err != nil {
-		panic(err)
-	}
-
-	testRD := redis.NewClient(&redis.Options{
-		Addr: mini.Addr(),
-	})
-
+	var err error
+	testRD := redis.NewTestConnection(&redis.Options{})
 	testDB = newTestDb()
 	defer testDB.Close()
 

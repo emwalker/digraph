@@ -6,8 +6,8 @@ import (
 	"database/sql"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/redis"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
-	"github.com/go-redis/redis"
 )
 
 // CurrentUserKey is the key used for storing the current user in the session.
@@ -21,15 +21,15 @@ const (
 type Resolver struct {
 	DB      *sql.DB
 	Fetcher pageinfo.Fetcher
-	RD      *redis.Client
+	Redis   redis.Connection
 }
 
 // New returns a new resolver.
-func New(db *sql.DB, fetcher pageinfo.Fetcher, rd *redis.Client) *Resolver {
+func New(db *sql.DB, fetcher pageinfo.Fetcher, conn redis.Connection) *Resolver {
 	return &Resolver{
 		DB:      db,
 		Fetcher: fetcher,
-		RD:      rd,
+		Redis:   conn,
 	}
 }
 

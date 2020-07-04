@@ -3,21 +3,16 @@ package resolvers
 import (
 	"context"
 	"log"
-	"time"
-	"unicode/utf8"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/queries"
+	"github.com/emwalker/digraph/cmd/frontend/redis"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
-	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/boil"
-	squeries "github.com/volatiletech/sqlboiler/queries"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-)
-
-var (
-	topicGraphKey = "topicGraph"
+	"github.com/vmihailenco/msgpack/v5"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	squeries "github.com/volatiletech/sqlboiler/v4/queries"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type viewResolver struct{ *Resolver }
@@ -196,63 +191,61 @@ func (r *viewResolver) TopicCount(ctx context.Context, view *models.View) (int, 
 
 // TopicGraph returns a json string that can be used for building a visual representation of the graph.
 func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*string, error) {
-	cachedGraph, err := r.RD.Get(topicGraphKey).Result()
-	if err != nil && err != redis.Nil {
-		return nil, err
-	}
-
-	if err == nil {
-		log.Printf("Returning cached topic graph at '%s'", topicGraphKey)
-		return &cachedGraph, nil
-	}
-
-	log.Printf("Querying for topic graph and setting '%s' redis key", topicGraphKey)
-
-	result := struct {
+	type topicResult struct {
 		Payload string
-	}{}
-
-	// TODO - search within the repositories specified in view.RepositoryIds
-	err = squeries.Raw(`
-	select jsonb_build_object('links', (
-	  select jsonb_agg(a) from (
-	    select tt.parent_id source, tt.child_id target, count(distinct lt.child_id) "linkCount"
-	    from topic_topics tt
-	    join topics t on tt.parent_id = t.id
-	    join topics t2 on tt.child_id = t2.id
-	    left join link_topics lt on tt.child_id = lt.parent_id
-	    where t.repository_id = $1 and t2.repository_id = $1
-	    group by tt.parent_id, tt.child_id
-	  ) a
-	)) ||
-	jsonb_build_object('nodes', (
-	  select jsonb_agg(b) from (
-	    select
-	      t.id, t.name, count(distinct lt.child_id) "linkCount",
-	      count(distinct tt.child_id) "topicCount"
-	    from topics t
-	    left join topic_topics tt on t.id = tt.parent_id
-	    left join link_topics lt on t.id = lt.parent_id
-	    where t.repository_id = $1
-	    group by t.id, t.name
-	    order by t.id, t.name
-	  ) b
-	)) payload
-	`, generalRepositoryID).Bind(ctx, r.DB, &result)
-
-	if err != nil {
-		log.Printf("There was a problem fetching topic graph: %s", err)
-		return nil, err
 	}
 
-	log.Printf("Setting '%s' redis key with %d char payload", topicGraphKey, utf8.RuneCountInString(result.Payload))
-	_, err = r.RD.SetNX(topicGraphKey, result.Payload, 10*time.Minute).Result()
-	if err != nil {
-		log.Printf("There was a problem setting the '%s' redis key: %s", topicGraphKey, err)
-		return nil, err
+	key := redis.NewKey("TopicGraph", "static-value")
+
+	result := r.Redis.Fetch(ctx, key, func() (*string, error) {
+		topics := topicResult{}
+
+		// TODO - search within the repositories specified in view.RepositoryIds
+		err := squeries.Raw(`
+		select jsonb_build_object('links', (
+		  select jsonb_agg(a) from (
+		    select tt.parent_id source, tt.child_id target, count(distinct lt.child_id) "linkCount"
+		    from topic_topics tt
+		    join topics t on tt.parent_id = t.id
+		    join topics t2 on tt.child_id = t2.id
+		    left join link_topics lt on tt.child_id = lt.parent_id
+		    where t.repository_id = $1 and t2.repository_id = $1
+		    group by tt.parent_id, tt.child_id
+		  ) a
+		)) ||
+		jsonb_build_object('nodes', (
+		  select jsonb_agg(b) from (
+		    select
+		      t.id, t.name, count(distinct lt.child_id) "linkCount",
+		      count(distinct tt.child_id) "topicCount"
+		    from topics t
+		    left join topic_topics tt on t.id = tt.parent_id
+		    left join link_topics lt on t.id = lt.parent_id
+		    where t.repository_id = $1
+		    group by t.id, t.name
+		    order by t.id, t.name
+		  ) b
+		)) payload
+		`, generalRepositoryID).Bind(ctx, r.DB, &topics)
+
+		bytes, err := msgpack.Marshal(&topics)
+		if err != nil {
+			return nil, err
+		}
+
+		str := string(bytes)
+		return &str, err
+	})
+
+	if result.Success() {
+		var topics topicResult
+		if err := msgpack.Unmarshal([]byte(*result.Payload), &topics); err != nil {
+			return nil, err
+		}
+		return &topics.Payload, nil
 	}
 
-	return &result.Payload, nil
+	return nil, result.Err
 }
 
 // Topics returns a set of topics.

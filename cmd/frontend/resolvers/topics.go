@@ -14,10 +14,10 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/boil"
-	squeries "github.com/volatiletech/sqlboiler/queries"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	"github.com/volatiletech/sqlboiler/types"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	squeries "github.com/volatiletech/sqlboiler/v4/queries"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
 type topicResolver struct{ *Resolver }
@@ -119,59 +119,12 @@ func availableTopics(
 	return topicConnection(view, topics, err)
 }
 
-func (r *topicResolver) matchingDescendantTopicIds(
-	ctx context.Context, topic *models.TopicValue, searchString string, limit int,
-) ([]interface{}, error) {
-	var rows []struct {
-		ID string
-	}
-
-	var topicIds []interface{}
-
-	log.Printf("Looking for topics under %s with query: %s", topic, searchString)
-	q := queries.NewSearchQuery(searchString)
-
-	sql := fmt.Sprintf(`
-	with recursive child_topics as (
-		select parent_id, parent_id as child_id
-		from topic_topics where parent_id = $1
-	union
-		select pt.child_id, ct.child_id
-		from topic_topics ct
-		inner join child_topics pt on pt.child_id = ct.parent_id
-	)
-	select distinct t.id
-	from topics t
-	inner join child_topics ct on ct.child_id = t.id
-	where (
-		case $2
-		when '' then true
-		else to_tsvector('synonymsdict', t.synonyms) @@ to_tsquery('synonymsdict', %s)
-		end
-	)
-	limit $3
-	`, q.PostgresTsQueryInput())
-
-	err := squeries.Raw(sql, topic.ID, searchString, limit).Bind(ctx, r.DB, &rows)
-
-	if err != nil {
-		log.Printf("There was a problem with this sql: %s", sql)
-		return nil, errors.Wrap(err, "resolvers: failed to fetch descendant topics")
-	}
-
-	for _, row := range rows {
-		topicIds = append(topicIds, row.ID)
-	}
-
-	return topicIds, nil
-}
-
 func (r *topicResolver) matchingDescendantTopics(
 	ctx context.Context, topic *models.TopicValue, searchString string, limit int,
 ) ([]*models.TopicValue, error) {
 	var topicValues []*models.TopicValue
 
-	topicIds, err := r.matchingDescendantTopicIds(ctx, topic, searchString, limit)
+	topicIds, err := queries.MatchingDescendantTopicIds(ctx, r.Redis, r.DB, topic, searchString, limit)
 
 	if err != nil {
 		return nil, err
@@ -272,7 +225,7 @@ func (r *topicResolver) matchingDescendantLinks(
 func (r *topicResolver) Activity(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (*models.ActivityLineItemConnection, error) {
-	topicIds, err := r.matchingDescendantTopicIds(ctx, topic, "", 1000000)
+	topicIds, err := queries.MatchingDescendantTopicIds(ctx, r.Redis, r.DB, topic, "", 1000000)
 
 	if err != nil {
 		return nil, err
@@ -406,7 +359,7 @@ func (r *topicResolver) Links(
 	mods := append(q.Mods(), qm.OrderBy("links.created_at desc"))
 
 	if descendants != nil && *descendants {
-		topicIds, err := r.matchingDescendantTopicIds(ctx, topic, "", 1000000)
+		topicIds, err := queries.MatchingDescendantTopicIds(ctx, r.Redis, r.DB, topic, "", 1000000)
 
 		if err != nil {
 			return nil, errors.Wrap(err, "resolvers: failed to fetch descendant topics")
