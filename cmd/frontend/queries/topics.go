@@ -8,7 +8,6 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/redis"
 	"github.com/pkg/errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -42,70 +41,52 @@ func TimeRange(
 	return timerange, err
 }
 
-type TopicIds struct {
-	ID string
-}
-
-// Given a topic and a search string, find the transitive closure of matching descendant topics.
+// MatchingDescendantTopicIds uses the topic and search string to find the transitive closure of matching
+// descendant topics.
 func MatchingDescendantTopicIds(
 	ctx context.Context, conn redis.Connection, exec boil.ContextExecutor, topic *models.TopicValue,
 	searchString string, limit int,
 ) ([]interface{}, error) {
-	key := redis.NewKey("MatchingDescendantTopicIds", searchString)
+	q := NewSearchQuery(searchString)
 
-	result := conn.Fetch(ctx, key, func() (*string, error) {
-		q := NewSearchQuery(searchString)
+	rows := []struct {
+		ID string
+	}{}
 
-		var rows []TopicIds
+	log.Printf("Looking for topics under %s with query: %s", topic, searchString)
 
-		log.Printf("Looking for topics under %s with query: %s", topic, searchString)
+	sql := fmt.Sprintf(`
+	with recursive child_topics as (
+		select parent_id, parent_id as child_id
+		from topic_topics where parent_id = $1
+	union
+		select pt.child_id, ct.child_id
+		from topic_topics ct
+		inner join child_topics pt on pt.child_id = ct.parent_id
+	)
+	select distinct t.id
+	from topics t
+	inner join child_topics ct on ct.child_id = t.id
+	where (
+		case $2
+		when '' then true
+		else to_tsvector('synonymsdict', t.synonyms) @@ to_tsquery('synonymsdict', %s)
+		end
+	)
+	limit $3
+	`, q.PostgresTsQueryInput())
 
-		sql := fmt.Sprintf(`
-		with recursive child_topics as (
-			select parent_id, parent_id as child_id
-			from topic_topics where parent_id = $1
-		union
-			select pt.child_id, ct.child_id
-			from topic_topics ct
-			inner join child_topics pt on pt.child_id = ct.parent_id
-		)
-		select distinct t.id
-		from topics t
-		inner join child_topics ct on ct.child_id = t.id
-		where (
-			case $2
-			when '' then true
-			else to_tsvector('synonymsdict', t.synonyms) @@ to_tsquery('synonymsdict', %s)
-			end
-		)
-		limit $3
-		`, q.PostgresTsQueryInput())
+	err := queries.Raw(sql, topic.ID, searchString, limit).Bind(ctx, exec, &rows)
 
-		err := queries.Raw(sql, topic.ID, searchString, limit).Bind(ctx, exec, &rows)
-
-		if err != nil {
-			log.Printf("There was a problem with this sql: %s", sql)
-			return nil, errors.Wrap(err, "resolvers: failed to fetch descendant topics")
-		}
-
-		bytes, err := msgpack.Marshal(&rows)
-		if err != nil {
-			return nil, err
-		}
-
-		str := string(bytes)
-		return &str, err
-	})
-
-	if result.Success() {
-		var dest []TopicIds
-		msgpack.Unmarshal([]byte(*result.Payload), &dest)
-		var topicIds []interface{}
-		for _, row := range dest {
-			topicIds = append(topicIds, row.ID)
-		}
-		return topicIds, nil
+	if err != nil {
+		log.Printf("There was a problem with this sql: %s", sql)
+		return nil, errors.Wrap(err, "resolvers: failed to fetch descendant topics")
 	}
 
-	return nil, result.Err
+	var topicIds []interface{}
+	for _, row := range rows {
+		topicIds = append(topicIds, row.ID)
+	}
+
+	return topicIds, nil
 }

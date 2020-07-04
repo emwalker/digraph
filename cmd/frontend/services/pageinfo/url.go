@@ -87,7 +87,7 @@ func (s *urlSpec) matchesHost(host string) bool {
 	return strings.HasSuffix(host, s.suffix)
 }
 
-func (s *urlSpec) normalizeUrl(parsed *url.URL) string {
+func (s *urlSpec) normalizeURL(parsed *url.URL) string {
 	query := parsed.Query()
 
 Loop:
@@ -172,7 +172,7 @@ func NormalizeURL(rawURL string) (*URL, error) {
 	spec := urlSpecFor(parsed.Host)
 
 	if spec != nil {
-		copiedURL = spec.normalizeUrl(parsed)
+		copiedURL = spec.normalizeURL(parsed)
 	} else {
 		// By default, strip all query parameters.  In special cases, override this behavior with
 		// whitelisted parameters.

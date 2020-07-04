@@ -10,7 +10,13 @@ import (
 )
 
 func TestUpsertLink(t *testing.T) {
+	url := "https://gnusto.blog"
 	m := newMutator(t, testViewer)
+
+	_, err := models.Links(qm.Where("url = ?", url)).DeleteAll(m.ctx, m.db)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	topic, err := models.Topics().One(m.ctx, testDB)
 	if err != nil {
@@ -21,38 +27,15 @@ func TestUpsertLink(t *testing.T) {
 		AddParentTopicIds: []string{topic.ID},
 		OrganizationLogin: testViewer.Login.String,
 		RepositoryName:    m.defaultRepo().Name,
-		URL:               "https://gnusto.blog",
+		URL:               url,
 	}
 
-	countBefore, err := models.Links().Count(m.ctx, m.db)
 	payload1, err := m.resolver.UpsertLink(m.ctx, input)
 	if err != nil {
 		m.t.Fatal(err)
 	}
 
 	link := payload1.LinkEdge.Node
-
-	defer func() {
-		_, err = models.UserLinks(
-			qm.Where("link_id = ? and user_id = ?", link.ID, testViewer.ID),
-		).DeleteAll(m.ctx, m.db)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		count, err := link.Delete(m.ctx, m.db)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if count != int64(1) {
-			t.Fatal("Expected at least one record to be deleted")
-		}
-	}()
-
-	countAfter, _ := models.Links().Count(m.ctx, m.db)
-	if countAfter != countBefore+1 {
-		t.Fatal("The number of links should increase")
-	}
 
 	if input.URL != payload1.LinkEdge.Node.URL {
 		t.Fatal("Unexpected url", payload1.LinkEdge.Node.URL)
@@ -65,20 +48,6 @@ func TestUpsertLink(t *testing.T) {
 
 	if len(topics) != 1 {
 		t.Fatal("Expected link to have a topic")
-	}
-
-	payload2, err := m.resolver.UpsertLink(m.ctx, input)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(payload2.Alerts) < 1 {
-		t.Fatal("Expected an alert")
-	}
-
-	countAfter, _ = models.Links().Count(m.ctx, m.db)
-	if countAfter != countBefore+1 {
-		t.Fatal("The number of links should stay the same")
 	}
 }
 
