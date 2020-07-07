@@ -10,7 +10,7 @@ exports[`<TopicPage /> renders 1`] = `
       }
     }
   />
-  <Relay(Subhead)
+  <Subhead
     heading="Frotz"
     renderHeadingDetail={[Function]}
     view={

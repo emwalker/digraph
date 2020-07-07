@@ -1,62 +1,24 @@
 // @flow
-import React, { useCallback } from 'react'
-import { createFragmentContainer, graphql } from 'react-relay'
+import React from 'react'
 
 import useDocumentTitle from 'utils/useDocumentTitle'
-import SearchBox from 'components/ui/SearchBox'
-import type { Subhead_view as View } from './__generated__/Subhead_view.graphql'
-import './styles.module.css'
-
-const resourcePath = (view: View): string => (
-  view.currentRepository && view.currentRepository.rootTopic
-    ? view.currentRepository.rootTopic.resourcePath
-    : '/'
-)
 
 type Props = {
   heading: string,
-  location: {
-    pathname: string,
-    query: Object,
-    search: string,
-  },
   renderHeadingDetail?: Function,
-  router: {
-    push: Function,
-  },
-  view: View,
 }
 
 const Subhead = (props: Props) => {
-  const { heading, location, renderHeadingDetail, router, view } = props
-  const pathname = resourcePath(view)
-
-  const onSearch = useCallback((query: string) => {
-    if (query === '') {
-      router.push({ pathname })
-      return
-    }
-
-    router.push({ pathname, query: { q: query } })
-  }, [router, pathname])
-
-  const searchString = location.search
-    ? location.query.q
-    : ''
+  const { heading, renderHeadingDetail } = props
 
   useDocumentTitle(`${heading} | Digraph`)
 
   return (
-    <div className="Subhead clearfix gutter">
-      <div className="Subhead-heading col-lg-8 col-12 d-inline-flex">
-        { renderHeadingDetail && renderHeadingDetail() }
+    <div className="Subhead gutter">
+      <div className="Subhead-heading col-lg-12 col-12">
         <div>{ heading }</div>
+        { renderHeadingDetail && renderHeadingDetail() }
       </div>
-      <SearchBox
-        className="col-lg-4 col-12"
-        onEnter={onSearch}
-        value={searchString}
-      />
     </div>
   )
 }
@@ -65,14 +27,4 @@ Subhead.defaultProps = {
   renderHeadingDetail: null,
 }
 
-export default createFragmentContainer(Subhead, {
-  view: graphql`
-    fragment Subhead_view on View {
-      currentRepository {
-        rootTopic {
-          resourcePath
-        }
-      }
-    }
-  `,
-})
+export default Subhead

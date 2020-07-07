@@ -38,7 +38,16 @@ exports[`<LoadingPage /> renders 1`] = `
     </div>
     <SearchBox
       className="col-lg-4 col-12"
-      onEnter={null}
+      location={
+        Object {
+          "pathname": "/some/path",
+          "state": Object {
+            "itemTitle": "Some title",
+            "orgLogin": "Gnusto",
+            "repoName": "General collection",
+          },
+        }
+      }
       value=""
     />
   </div>

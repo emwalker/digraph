@@ -26,8 +26,23 @@ export type Edge<EdgesType> = $NonMaybeType<$ElementType<EdgesType, number>>
 export type Node<EdgeType> = $NonMaybeType<$PropertyType<EdgeType, 'node'>>
 export type CollectionNode<ConnectionType> = Node<Edge<Edges<ConnectionType>>>
 
-export type Match = {
-  location: {
-    pathname: string,
+export type Location = {
+  pathname: string,
+  query: {
+    q: string,
   },
+  search: string,
+  state: {
+    orgLogin: string,
+    repoName: string,
+    itemTitle: string,
+  }
+}
+
+export type Router = {
+  push: Function,
+}
+
+export type Match = {
+  location: Location,
 }

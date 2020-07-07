@@ -1,11 +1,11 @@
-.userNav {
-  display: inline-block;
-  margin-left: auto;
-}
-
 .header {
   flex: 1;
-  height: 40px;
+  flex-wrap: wrap;
+  /*height: 50px;*/
+  display: flex;
+  align-items: center;
+  padding-top: 9px;
+  padding-bottom: 9px;
 }
 
 .primaryLogo {
@@ -14,4 +14,33 @@
   font-family: Avenir Next, Verdana, Helvetica;
   letter-spacing: 1px;
   font-weight: 500;
+}
+
+.navLeft {
+  flex: 1;
+  order: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.searchBox {
+  flex: 3;
+  order: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 984px;
+}
+
+.userNav {
+  flex: 1;
+  display: flex;
+  order: 3;
+  justify-content: flex-end;
+}
+
+@media (max-width: 1500px) {
+  .searchBox {
+    flex: 2;
+  }
 }

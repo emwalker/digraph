@@ -12,3 +12,10 @@
   font-weight: 500 !important;
   font-size: 20px;
 }
+
+.searchBox {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 16px;
+  padding-right: 16px;
+}

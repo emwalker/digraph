@@ -10,6 +10,19 @@ exports[`<Layout /> renders 1`] = `
   >
     <div>
       <_default
+        location={
+          Object {
+            "query": Object {
+              "q": "",
+            },
+            "search": "",
+          }
+        }
+        router={
+          Object {
+            "push": [MockFunction],
+          }
+        }
         viewer={Object {}}
       />
       <div

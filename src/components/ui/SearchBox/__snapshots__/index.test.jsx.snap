@@ -1,17 +1,27 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<FilterInput /> renders 1`] = `
-<div
-  className="SearchBox form-group mb-1 mt-1"
+<form
+  className="searchBox input-group"
+  onSubmit={[Function]}
 >
+  <span
+    className="input-group-button"
+  >
+    <button
+      className="btn"
+      type="button"
+    >
+      Everything
+    </button>
+  </span>
   <input
     aria-label="Search"
-    className="form-control"
-    onChange={[Function]}
+    className="form-control searchInput"
+    defaultValue=""
     onKeyPress={[Function]}
     placeholder="Search"
     type="search"
-    value="some search phrase"
   />
-</div>
+</form>
 `;

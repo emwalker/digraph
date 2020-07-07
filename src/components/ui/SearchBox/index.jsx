@@ -1,68 +1,69 @@
 // @flow
-import React, { Component } from 'react'
+import React, { useCallback } from 'react'
 import classNames from 'classnames'
 
+import { everythingTopicPath } from 'components/constants'
+import type { Location, Router } from 'components/types'
+import styles from './styles.module.css'
+
 type Props = {
-  className?: ?string,
-  onEnter?: ?Function,
-  value: string,
+  className?: string,
+  location: Location,
+  router: Router,
 }
 
-type State = {
-  value: string,
+const pathnameFor = (pathname: string) => (
+  pathname === '/' ? everythingTopicPath : pathname
+)
+
+const onFormSubmit = (event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
+  event.preventDefault()
 }
 
-class SearchBox extends Component<Props, State> {
-  static defaultProps = {
-    className: '',
-    onEnter: null,
-  }
+const SearchBox = ({ className, router, location }: Props) => {
+  const { pathname } = location
 
-  constructor(props: Props) {
-    super(props)
-    this.state = {
-      value: props.value,
-    }
-  }
+  const searchString = location.search
+    ? location.query.q
+    : ''
 
-  // eslint-disable-next-line camelcase
-  UNSAFE_componentWillReceiveProps(nextProps: Props) {
-    this.setState({ value: nextProps.value })
-  }
+  const scopeLabel = pathname === '/' ? 'Everything' : 'This topic'
 
-  onChange = (event: SyntheticEvent<HTMLButtonElement>) => {
-    const { value } = (event.target: window.HTMLInputElement)
-    this.setState({ value })
-  }
-
-  onEnter = (string: string) => {
-    if (this.props.onEnter) this.props.onEnter(string)
-  }
-
-  onKeyPress = (event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
+  const onKeyPress = useCallback((event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
     if (event.key === 'Enter') {
       const { value } = (event.target: window.HTMLInputElement)
-      this.onEnter(value)
+      const newPathname = pathnameFor(pathname)
+
+      if (value === '') {
+        router.push({ pathname: newPathname })
+        return
+      }
+
+      router.push({ pathname: newPathname, query: { q: value } })
     }
-  }
+  }, [router, pathname])
 
-  get className(): string {
-    return classNames('SearchBox form-group mb-1 mt-1', this.props.className)
-  }
+  const actualClassName = classNames(styles.searchBox, 'input-group', className)
 
-  render = () => (
-    <div className={this.className}>
+  return (
+    <form className={actualClassName} onSubmit={onFormSubmit}>
+      <span className="input-group-button">
+        <button className="btn" type="button">{scopeLabel}</button>
+      </span>
       <input
         aria-label="Search"
-        className="form-control"
-        onChange={this.onChange}
-        onKeyPress={this.onKeyPress}
+        className={classNames('form-control', styles.searchInput)}
+        onKeyPress={onKeyPress}
         placeholder="Search"
         type="search"
-        value={this.state.value}
+        defaultValue={searchString}
       />
-    </div>
+    </form>
   )
+}
+
+SearchBox.defaultProps = {
+  className: '',
 }
 
 export default SearchBox

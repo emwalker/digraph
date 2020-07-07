@@ -7,9 +7,11 @@ describe('<Layout />', () => {
     push: jest.fn(),
   }
 
-  const location = {
-    query: { q: '' },
-    search: '',
+  const match = {
+    location: {
+      query: { q: '' },
+      search: '',
+    },
   }
 
   const view = {
@@ -19,7 +21,7 @@ describe('<Layout />', () => {
   const wrapper = shallow(
     <Layout
       router={router}
-      location={location}
+      match={match}
       view={view}
     >
       <div>some view</div>

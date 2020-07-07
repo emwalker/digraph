@@ -53,12 +53,14 @@ export const createRouteConfig = (store: Store) => {
       Component={Layout}
       path="/"
       query={layoutQuery}
-      prepareVariables={(params, { location }) => {
+      prepareVariables={(params, { location, router }) => {
         const { q } = location.query
 
         return {
           ...prepareVariables(params),
           repoIds: [],
+          location,
+          router,
           searchString: q,
         }
       }}

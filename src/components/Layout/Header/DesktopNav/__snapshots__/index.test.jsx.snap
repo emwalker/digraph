@@ -2,10 +2,10 @@
 
 exports[`<DesktopNav /> renders 1`] = `
 <header
-  className="header d-flex py-1"
+  className="header px-sm-3 px-md-6 px-lg-4"
 >
   <nav
-    className="flex-self-center d-inline-block"
+    className="navLeft d-inline-block"
   >
     <h1
       className="h3 text-normal"
@@ -26,8 +26,15 @@ exports[`<DesktopNav /> renders 1`] = `
       </a>
     </h1>
   </nav>
+  <div
+    className="searchBox"
+  >
+    <SearchBox
+      className=""
+    />
+  </div>
   <nav
-    className="userNav flex-self-center"
+    className="userNav"
   >
     <a
       className="text-gray-dark px-2"

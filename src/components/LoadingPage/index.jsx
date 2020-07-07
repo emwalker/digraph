@@ -2,6 +2,7 @@
 import React from 'react'
 import { GoRepo } from 'react-icons/go'
 
+import type { Location, Router } from 'components/types'
 import Page from 'components/ui/Page'
 import SearchBox from 'components/ui/SearchBox'
 import Columns from 'components/ui/Columns'
@@ -12,13 +13,11 @@ import SidebarList from 'components/ui/SidebarList'
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 
 type Props = {
-  location: {
-    pathname: string,
-    state: ?Object,
-  }
+  location: Location,
+  router: Router,
 }
 
-const LoadingPage = ({ location }: Props) => {
+const LoadingPage = ({ location, router }: Props) => {
   const state = location.state || {}
   const { orgLogin, repoName, itemTitle } = state
 
@@ -45,6 +44,8 @@ const LoadingPage = ({ location }: Props) => {
         </div>
         <SearchBox
           className="col-lg-4 col-12"
+          location={location}
+          router={router}
           value=""
         />
       </div>

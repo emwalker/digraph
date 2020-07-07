@@ -5,7 +5,12 @@ import FilterInput from './index'
 
 const props = {
   onEnter: jest.fn(),
-  value: 'some search phrase',
+  location: {
+    pathname: '/',
+  },
+  router: {
+    push: () => {},
+  },
 }
 
 describe('<FilterInput />', () => {

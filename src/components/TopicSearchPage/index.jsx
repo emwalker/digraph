@@ -146,7 +146,6 @@ query TopicSearchPage_query_Query(
 
     ...Link_view
     ...Topic_view
-    ...Subhead_view
 
     topic(id: $topicId) {
       ...TopicSearchPage_topic @arguments(searchString: $searchString)
