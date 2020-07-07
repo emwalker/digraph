@@ -35,34 +35,38 @@ class MobileNav extends Component<Props, State> {
 
   render = () => (
     <div className={classNames(styles.mobileMenu, 'mobile-menu')}>
-      <div className="mobile-menu-header d-flex px-3 py-2">
-        <Link
-          to="/"
-          className={classNames(
-            styles.link,
-            styles.logo,
-            'menu-logo text-gray-dark n-link no-underline d-flex flex-items-center',
-          )}
-        >
-          <div className="mr-1 d-inline-block">
-            <DigraphLogo width="32px" height="32px" />
-          </div>
-          {' '}
-          Digraph
-        </Link>
+      <div className={classNames(styles.mobileMenuHeader, 'mobile-menu-header d-flex px-3 py-2')}>
+        <div className={styles.logo}>
+          <Link
+            to="/"
+            className={classNames(
+              styles.link,
+              'menu-logo text-gray-dark n-link no-underline d-flex flex-items-center',
+            )}
+          >
+            <div className="mr-1 d-inline-block">
+              <DigraphLogo width="32px" height="32px" />
+            </div>
+            {' '}
+            Digraph
+          </Link>
+        </div>
 
-        <button
-          className="menu-btn btn btn-outline py-1"
-          onClick={this.onClick}
-          type="button"
-        >
-          Menu
-        </button>
+        <div className={styles.searchBox}>
+          <SearchBox router={this.props.router} location={this.props.location} />
+        </div>
+
+        <div className={styles.rightButton}>
+          <button
+            className="menu-btn btn btn-outline py-1"
+            onClick={this.onClick}
+            type="button"
+          >
+            Menu
+          </button>
+        </div>
       </div>
       { this.state.isOpen && <Menu viewer={this.props.viewer} /> }
-      <div className={styles.searchBox}>
-        <SearchBox router={this.props.router} location={this.props.location} />
-      </div>
     </div>
   )
 }

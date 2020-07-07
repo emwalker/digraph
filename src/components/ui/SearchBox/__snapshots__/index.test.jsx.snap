@@ -8,18 +8,12 @@ exports[`<FilterInput /> renders 1`] = `
   <span
     className="input-group-button"
   >
-    <select
+    <button
       className="btn"
-      onChange={[Function]}
-      value="Everything"
+      type="button"
     >
-      <option>
-        This topic
-      </option>
-      <option>
-        Everything
-      </option>
-    </select>
+      Everything
+    </button>
   </span>
   <input
     aria-label="Search"

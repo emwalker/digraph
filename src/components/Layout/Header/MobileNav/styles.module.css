@@ -1,12 +1,17 @@
-.link {
-  flex: 1;
-}
-
 .mobileMenu {
   width: 100%;
 }
 
+.mobileMenuHeader {
+  align-items: center;
+}
+
 .logo {
+  flex: 1;
+  order: 1;
+}
+
+.link {
   font-family: Avenir Next, Verdana, Helvetica;
   letter-spacing: 1px;
   font-weight: 500 !important;
@@ -14,8 +19,20 @@
 }
 
 .searchBox {
-  padding-top: 10px;
-  padding-bottom: 10px;
-  padding-left: 16px;
-  padding-right: 16px;
+  flex: 3;
+  order: 2;
+}
+
+.rightButton {
+  flex: 1;
+  order: 3;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .searchBox {
+    margin-left: 2em;
+    flex: 2;
+  }
 }

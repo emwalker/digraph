@@ -12,13 +12,32 @@ type Props = {
   router: Router,
 }
 
+const atHomepage = (pathname: string) => pathname === '/'
+
 const pathnameFor = (pathname: string, selectedScope: string) => {
-  if (pathname === '/') return everythingTopicPath
+  if (atHomepage(pathname)) return everythingTopicPath
   return selectedScope === 'Everything' ? everythingTopicPath : pathname
 }
 
 const onFormSubmit = (event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
   event.preventDefault()
+}
+
+const leftButton = (pathname: string, selectedScope: string, onSelectChange: Function) => {
+  if (atHomepage(pathname)) {
+    return (
+      <button className="btn" type="button">
+        Everything
+      </button>
+    )
+  }
+
+  return (
+    <select onChange={onSelectChange} value={selectedScope} className="btn">
+      <option>This topic</option>
+      <option>Everything</option>
+    </select>
+  )
 }
 
 const SearchBox = ({ className, router, location }: Props) => {
@@ -50,10 +69,7 @@ const SearchBox = ({ className, router, location }: Props) => {
   return (
     <form className={actualClassName} onSubmit={onFormSubmit}>
       <span className="input-group-button">
-        <select onChange={onSelectChange} value={selectedScope} className="btn">
-          <option>This topic</option>
-          <option>Everything</option>
-        </select>
+        {leftButton(pathname, selectedScope, onSelectChange)}
       </span>
       <input
         aria-label="Search"
