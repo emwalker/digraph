@@ -12,9 +12,10 @@ type Props = {
   router: Router,
 }
 
-const pathnameFor = (pathname: string, selectedScope: string) => (
-  selectedScope === 'Everything' ? everythingTopicPath : pathname
-)
+const pathnameFor = (pathname: string, selectedScope: string) => {
+  if (pathname === '/') return everythingTopicPath
+  return selectedScope === 'Everything' ? everythingTopicPath : pathname
+}
 
 const onFormSubmit = (event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
   event.preventDefault()
