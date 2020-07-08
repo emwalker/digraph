@@ -21,14 +21,22 @@ export default ({ defaultOrganization, location, router, viewer }: Props) => {
   return (
     <div className={classes}>
       <div style={{ width: '100%' }}>
-        <MediaQuery query="(max-width: 1280px)">
+        <MediaQuery query="(max-width: 768px)">
+          <MobileNav
+            location={location}
+            router={router}
+            viewer={viewer}
+            showButton={false}
+          />
+        </MediaQuery>
+        <MediaQuery query="(min-width: 769px) and (max-width: 1280px)">
           <MobileNav
             location={location}
             router={router}
             viewer={viewer}
           />
         </MediaQuery>
-        <MediaQuery query="(min-width: 1280px)">
+        <MediaQuery query="(min-width: 1281px)">
           <DesktopNav
             defaultOrganization={defaultOrganization}
             location={location}

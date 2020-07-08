@@ -14,6 +14,7 @@ import type { MobileNav_viewer as Viewer } from './__generated__/MobileNav_viewe
 type Props = {
   location: Location,
   router: Router,
+  showButton?: boolean,
   viewer: Viewer,
 }
 
@@ -22,6 +23,10 @@ type State = {
 }
 
 class MobileNav extends Component<Props, State> {
+  static defaultProps = {
+    showButton: true,
+  }
+
   constructor(props: Props) {
     super(props)
     this.state = {
@@ -53,7 +58,11 @@ class MobileNav extends Component<Props, State> {
         </div>
 
         <div className={styles.searchBox}>
-          <SearchBox router={this.props.router} location={this.props.location} />
+          <SearchBox
+            location={this.props.location}
+            router={this.props.router}
+            showButton={this.props.showButton}
+          />
         </div>
 
         <div className={styles.rightButton}>

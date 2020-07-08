@@ -48,6 +48,7 @@ exports[`<LoadingPage /> renders 1`] = `
           },
         }
       }
+      showButton={true}
       value=""
     />
   </div>

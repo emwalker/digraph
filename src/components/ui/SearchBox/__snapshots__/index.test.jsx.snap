@@ -5,6 +5,14 @@ exports[`<FilterInput /> renders 1`] = `
   className="searchBox input-group"
   onSubmit={[Function]}
 >
+  <input
+    aria-label="Search"
+    className="form-control searchInput"
+    defaultValue=""
+    onKeyPress={[Function]}
+    placeholder="Search"
+    type="search"
+  />
   <span
     className="input-group-button"
   >
@@ -15,13 +23,5 @@ exports[`<FilterInput /> renders 1`] = `
       Everything
     </button>
   </span>
-  <input
-    aria-label="Search"
-    className="form-control searchInput"
-    defaultValue=""
-    onKeyPress={[Function]}
-    placeholder="Search"
-    type="search"
-  />
 </form>
 `;

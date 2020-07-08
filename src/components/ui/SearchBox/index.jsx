@@ -10,6 +10,7 @@ type Props = {
   className?: string,
   location: Location,
   router: Router,
+  showButton?: boolean,
 }
 
 const atHomepage = (pathname: string) => pathname === '/'
@@ -23,7 +24,7 @@ const onFormSubmit = (event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
   event.preventDefault()
 }
 
-const leftButton = (pathname: string, selectedScope: string, onSelectChange: Function) => {
+const inputSelect = (pathname: string, selectedScope: string, onSelectChange: Function) => {
   if (atHomepage(pathname)) {
     return (
       <button className="btn" type="button">
@@ -34,13 +35,13 @@ const leftButton = (pathname: string, selectedScope: string, onSelectChange: Fun
 
   return (
     <select onChange={onSelectChange} value={selectedScope} className="btn">
-      <option>This topic</option>
       <option>Everything</option>
+      <option>This topic</option>
     </select>
   )
 }
 
-const SearchBox = ({ className, router, location }: Props) => {
+const SearchBox = ({ className, router, location, showButton }: Props) => {
   const { pathname } = location
   const searchString = location.search ? location.query.q : ''
   const [selectedScope, setSelectedScope] = useState('Everything')
@@ -68,9 +69,6 @@ const SearchBox = ({ className, router, location }: Props) => {
 
   return (
     <form className={actualClassName} onSubmit={onFormSubmit}>
-      <span className="input-group-button">
-        {leftButton(pathname, selectedScope, onSelectChange)}
-      </span>
       <input
         aria-label="Search"
         className={classNames('form-control', styles.searchInput)}
@@ -79,12 +77,18 @@ const SearchBox = ({ className, router, location }: Props) => {
         type="search"
         defaultValue={searchString}
       />
+      {showButton && (
+        <span className="input-group-button">
+          {inputSelect(pathname, selectedScope, onSelectChange)}
+        </span>
+      )}
     </form>
   )
 }
 
 SearchBox.defaultProps = {
   className: '',
+  showButton: true,
 }
 
 export default SearchBox
