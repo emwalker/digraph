@@ -20,10 +20,10 @@ Steps for getting started with development [here](https://github.com/emwalker/di
 
 ## Screenshots
 
-![Landing page](https://user-images.githubusercontent.com/760949/85933236-fc3f5880-b891-11ea-8494-13d02389d3b9.png)
+![Landing page](https://user-images.githubusercontent.com/760949/87226926-59d4aa00-c354-11ea-9082-689e079b7100.png)
 
-![Example of a topic](https://user-images.githubusercontent.com/760949/59727248-24619980-91f2-11e9-9067-62042fbda222.png)
+![Example of a topic](https://user-images.githubusercontent.com/760949/87226972-c5b71280-c354-11ea-9305-54ee1b24068f.png)
 
-![Synonyms for a topic](https://user-images.githubusercontent.com/760949/71789329-720beb00-2ff8-11ea-941b-2bba49b252e2.png)
+![Synonyms for a topic](https://user-images.githubusercontent.com/760949/87226975-c9e33000-c354-11ea-83b2-ef919c570035.png)
 
-![Links to review](https://user-images.githubusercontent.com/760949/59727250-275c8a00-91f2-11e9-87b8-3aed54ad0335.png)
+![Links to review](https://user-images.githubusercontent.com/760949/87226978-cea7e400-c354-11ea-848e-e8462d51e908.png)
