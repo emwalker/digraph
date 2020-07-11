@@ -6,8 +6,10 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/queries"
+	"github.com/emwalker/digraph/cmd/frontend/queries/parser"
 	"github.com/emwalker/digraph/cmd/frontend/redis"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
+	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -54,9 +56,9 @@ func topicQueryMods(view *models.View, filter qm.QueryMod, searchString *string,
 		mods = append(mods, filter)
 	}
 
-	if searchString != nil {
-		q := queries.NewSearchQuery(*searchString)
-		mods = append(mods, qm.Where("topics.name ~~* all(?)", q.WildcardStringArray()))
+	if util.Present(searchString) {
+		s := parser.Parse(searchString)
+		mods = append(mods, qm.Where("topics.name ~~* all(?)", s.WildcardStringArray()))
 	}
 
 	return mods
@@ -253,7 +255,9 @@ func (r *viewResolver) Topics(
 	ctx context.Context, view *models.View, searchString *string, first *int, after *string,
 	last *int, before *string,
 ) (*models.TopicConnection, error) {
-	topics, err := models.Topics(topicQueryMods(view, nil, searchString, first)...).All(ctx, r.DB)
+	mods := topicQueryMods(view, nil, searchString, first)
+	mods = append(mods, qm.OrderBy("char_length(topics.name)"))
+	topics, err := models.Topics(mods...).All(ctx, r.DB)
 	return topicConnection(view, topics, err)
 }
 

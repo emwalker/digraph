@@ -11,11 +11,12 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/queries"
+	"github.com/emwalker/digraph/cmd/frontend/queries/parser"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers/activity"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	squeries "github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/types"
 )
@@ -99,10 +100,10 @@ func availableTopics(
 		qm.Limit(limitFrom(first)),
 	}
 
-	if searchString != nil {
-		q := queries.NewSearchQuery(*searchString)
+	if util.Present(searchString) {
+		s := parser.Parse(searchString)
 		whereClause := fmt.Sprintf(
-			"to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(%s)", q.PostgresTsQueryInput(),
+			"to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(%s)", s.EscapedPostgresTsQueryInput(),
 		)
 		mods = append(mods, qm.Where(whereClause))
 	}
@@ -119,118 +120,16 @@ func availableTopics(
 	return topicConnection(view, topics, err)
 }
 
-func (r *topicResolver) matchingDescendantTopics(
-	ctx context.Context, topic *models.TopicValue, searchString string, limit int,
-) ([]*models.TopicValue, error) {
-	var topicValues []*models.TopicValue
-
-	topicIds, err := queries.MatchingDescendantTopicIds(ctx, r.Redis, r.DB, topic, searchString, limit)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if len(topicIds) < 1 {
-		return topicValues, nil
-	}
-
-	mods := topic.View.Filter([]qm.QueryMod{
-		qm.Load("ParentTopics"),
-		qm.WhereIn("topics.id in ?", topicIds...),
-		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
-	})
-
-	topics, err := models.Topics(mods...).All(ctx, r.DB)
-	if err != nil {
-		return nil, errors.Wrap(err, "resolvers: failed to fetch topics")
-	}
-
-	for _, t := range topics {
-		topicValues = append(topicValues, &models.TopicValue{t, false, topic.View})
-	}
-
-	return topicValues, nil
-}
-
-func (r *topicResolver) matchingDescendantLinks(
-	ctx context.Context, topic *models.TopicValue, searchString string, limit int,
-) ([]*models.LinkValue, error) {
-	var rows []struct {
-		ID string
-	}
-
-	log.Printf("Searching for descendant links that match query: %s", searchString)
-	q := queries.NewSearchQuery(searchString)
-
-	sql := fmt.Sprintf(`
-	with recursive child_topics as (
-		select parent_id, parent_id as child_id
-		from topic_topics where parent_id = $1
-	union
-		select pt.child_id, ct.child_id
-		from topic_topics ct
-		inner join child_topics pt on pt.child_id = ct.parent_id
-	)
-	select l.id from links l
-	inner join link_topics lt on l.id = lt.child_id
-	inner join child_topics ct on ct.child_id = lt.parent_id
-	where (
-		case $2
-		when '' then true
-		else (
-			to_tsvector('linksdict', l.title) @@ to_tsquery('linksdict', %s)
-			or l.url ~~* all($3)
-		)
-		end
-	)
-	limit $4
-	`, q.PostgresTsQueryInput())
-
-	err := squeries.Raw(sql, topic.ID, searchString, q.WildcardStringArray(), limit).Bind(ctx, r.DB, &rows)
-
-	if err != nil {
-		log.Printf("There was a problem with this sql: %s", sql)
-		return nil, errors.Wrap(err, "resolvers: failed to fetch descendant links")
-	}
-
-	if len(rows) < 1 {
-		return nil, nil
-	}
-
-	var ids []interface{}
-	for _, row := range rows {
-		ids = append(ids, row.ID)
-	}
-
-	mods := topic.View.Filter([]qm.QueryMod{
-		qm.Load("ParentTopics"),
-		qm.WhereIn("links.id in ?", ids...),
-		qm.InnerJoin("repositories r on links.repository_id = r.id"),
-	})
-
-	links, err := models.Links(mods...).All(ctx, r.DB)
-	if err != nil {
-		return nil, err
-	}
-
-	var linkValues []*models.LinkValue
-	for _, l := range links {
-		linkValues = append(linkValues, &models.LinkValue{l, false, topic.View})
-	}
-
-	return linkValues, nil
-}
-
 // Activity returns a feed of actions that have recently been taken.
 func (r *topicResolver) Activity(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (*models.ActivityLineItemConnection, error) {
-	topicIds, err := queries.MatchingDescendantTopicIds(ctx, r.Redis, r.DB, topic, "", 1000000)
-
+	query, err := queries.NewSearch(topic, nil).Exec(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}
 
+	topicIds := query.TopicTransitiveClosure
 	topicIds = append(topicIds, topic.ID)
 
 	mods := topic.View.Filter([]qm.QueryMod{
@@ -299,10 +198,10 @@ func (r *topicResolver) ChildTopics(
 		qm.OrderBy("topics.name"),
 	})
 
-	if searchString != nil && *searchString != "" {
-		q := queries.NewSearchQuery(*searchString)
+	if util.Present(searchString) {
+		s := parser.Parse(searchString)
 		whereClause := fmt.Sprintf(
-			"to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(%s)", q.PostgresTsQueryInput(),
+			"to_tsvector('synonymsdict', topics.synonyms) @@ to_tsquery(%s)", s.EscapedPostgresTsQueryInput(),
 		)
 		mods = append(mods, qm.Where(whereClause))
 	}
@@ -359,18 +258,15 @@ func (r *topicResolver) Links(
 	mods := append(q.Mods(), qm.OrderBy("links.created_at desc"))
 
 	if descendants != nil && *descendants {
-		topicIds, err := queries.MatchingDescendantTopicIds(ctx, r.Redis, r.DB, topic, "", 1000000)
-
+		query, err := queries.NewSearch(topic, nil).Exec(ctx, r.DB)
 		if err != nil {
 			return nil, errors.Wrap(err, "resolvers: failed to fetch descendant topics")
 		}
 
-		topicIds = append(topicIds, topic.ID)
-
 		mods = append(
 			mods,
 			qm.InnerJoin("link_topics lt on lt.child_id = links.id"),
-			qm.WhereIn("lt.parent_id in ?", topicIds...),
+			qm.WhereIn("lt.parent_id in ?", query.TopicTransitiveClosure...),
 		)
 	} else {
 		mods = append(
@@ -458,35 +354,42 @@ func (r *topicResolver) Search(
 	ctx context.Context, topic *models.TopicValue, searchString string, first *int, after *string,
 	last *int, before *string,
 ) (*models.SearchResultItemConnection, error) {
-	log.Printf("Searching topic %s for '%s'", topic.ID, searchString)
-
 	var (
-		err    error
-		topics []*models.TopicValue
-		links  []*models.LinkValue
-		edges  []*models.SearchResultItemEdge
+		err   error
+		edges []*models.SearchResultItemEdge
 	)
 
 	var limit = math.MaxInt32
 	if first != nil {
 		limit = *first
 	}
+	log.Printf("Searching topic %s for '%s'", topic.ID, searchString)
 
-	if topics, err = r.matchingDescendantTopics(ctx, topic, searchString, limit); err != nil {
+	query, err := queries.NewSearch(topic, &searchString).Exec(ctx, r.DB)
+	if err != nil {
+		log.Printf("There was a problem: %s", err)
+		return nil, err
+	}
+
+	topics, err := query.DescendantTopics(ctx, r.DB, limit)
+	if err != nil {
 		return nil, err
 	}
 
 	limit -= len(topics)
-	if links, err = r.matchingDescendantLinks(ctx, topic, searchString, limit); err != nil {
+	links, err := query.DescendantLinks(ctx, r.DB, limit)
+	if err != nil {
 		return nil, err
 	}
 
-	for _, topic := range topics {
-		edges = append(edges, &models.SearchResultItemEdge{Node: *topic})
+	for _, t := range topics {
+		topicValue := models.TopicValue{t, false, topic.View}
+		edges = append(edges, &models.SearchResultItemEdge{Node: topicValue})
 	}
 
-	for _, link := range links {
-		edges = append(edges, &models.SearchResultItemEdge{Node: *link})
+	for _, l := range links {
+		linkValue := models.LinkValue{l, false, topic.View}
+		edges = append(edges, &models.SearchResultItemEdge{Node: linkValue})
 	}
 
 	return &models.SearchResultItemConnection{Edges: edges}, nil

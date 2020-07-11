@@ -1,0 +1,22 @@
+.searchBox {
+  width: 100%;
+  margin: 0;
+  display: grid !important;
+  align-items: stretch;
+  grid-template-columns: 5fr auto;
+  grid-template-rows: 100%;
+}
+
+.button {
+  display: block;
+  height: 100%;
+}
+
+.buttonContainer {
+  display: grid !important;
+}
+
+:global(.public-DraftEditorPlaceholder-inner) {
+  position: absolute;
+  color: #aaaaaa;
+}

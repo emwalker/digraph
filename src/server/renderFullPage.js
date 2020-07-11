@@ -1,7 +1,7 @@
 // @flow
 import { type Node } from 'react'
 import serialize from 'serialize-javascript'
-import { renderToString } from 'react-dom/server'
+import { renderToStringAsync } from 'react-async-ssr'
 
 const getDeferScript = (src) => (src
   ? `<script defer src="${src}"></script>`
@@ -56,19 +56,21 @@ const template = (vo) => `
 
 const toString = (state) => JSON.stringify(state).replace(/</g, '\\u003c')
 
-export default (
+export default async (
   assets: Object, fetcher: Function, element: Node, preloadedState: Object,
-): string => {
+): Promise<string> => {
   const vendor = assets[''] || {}
+  const root = await renderToStringAsync(element)
 
-  return template({
+  const html = template({
     gaId: process.env.DIGRAPH_GOOGLE_ANALYTICS_ID,
     mainCSSBundle: assets.client.css,
     mainJSBundle: assets.client.js,
     relayPayloads: serialize(fetcher, { isJSON: true }),
-    root: renderToString(element),
+    root,
     vendorCSSBundle: vendor.css,
     vendorJSBundle: vendor.js,
     state: toString(preloadedState),
   })
+  return Promise.resolve(html)
 }

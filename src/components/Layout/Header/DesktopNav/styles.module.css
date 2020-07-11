@@ -26,9 +26,7 @@
 .searchBox {
   flex: 3;
   order: 2;
-  display: flex;
   justify-content: center;
-  align-items: center;
   max-width: 982px;
 }
 

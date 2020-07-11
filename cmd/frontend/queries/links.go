@@ -2,6 +2,8 @@ package queries
 
 import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
+	"github.com/emwalker/digraph/cmd/frontend/queries/parser"
+	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -72,9 +74,9 @@ func (q LinkQuery) Mods() []qm.QueryMod {
 		}
 	}
 
-	if q.searchString != nil && *q.searchString != "" {
-		q := NewSearchQuery(*q.searchString)
-		array := q.WildcardStringArray()
+	if util.Present(q.searchString) {
+		s := parser.Parse(q.searchString)
+		array := s.WildcardStringArray()
 
 		mods = append(mods,
 			qm.Where("links.title ~~* all(?) or links.url ~~* all(?)", array, array),

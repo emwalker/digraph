@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<FilterInput /> renders 1`] = `
+<form
+  className="searchBox input-group"
+  onSubmit={[Function]}
+>
+  <TextInput
+    defaultValue=""
+    handleReturn={[Function]}
+  />
+  <div
+    className="input-group-button buttonContainer"
+  >
+    <button
+      className="btn button"
+      type="button"
+    >
+      Everything
+    </button>
+  </div>
+</form>
+`;

@@ -1,4 +1,4 @@
-package queries
+package parser
 
 import (
 	"fmt"
@@ -19,19 +19,37 @@ const (
 	letterIdxMask = 1<<letterIdxBits - 1
 	// # of letter indices fitting in 63 bits
 	letterIdxMax = 63 / letterIdxBits
+	// NoTopicID is a topic ID that won't match anything
+	NoTopicID = "00000000-0000-0000-0000-000000000000"
 )
 
 var (
 	src = rand.NewSource(time.Now().UnixNano())
 )
 
-// Query encapsulates a search query.
-type Query string
+// TopicSpec provides information about a topic that has been included in a query
+type TopicSpec struct {
+	resourcePath string
+}
 
-// NewSearchQuery returns a helper for constructing wildcard queries.
-func NewSearchQuery(input string) *Query {
-	q := Query(input)
-	return &q
+// ID returns the uuid for the topic, assuming the resource path is well-formed.  If it is not, return
+// a zeroed-out uuid
+func (s TopicSpec) ID() string {
+	parts := strings.Split(s.resourcePath, "/")
+	if len(parts) < 1 {
+		return NoTopicID
+	}
+	return parts[len(parts)-1]
+}
+
+// QuerySpec encapsulates a search query.
+type QuerySpec struct {
+	Input  *string
+	Tokens []string
+	// Eventually we'll want to handle OR's and AND's, so the following fields are implementation details that
+	// callers should not rely on.
+	stringTokens []string
+	Topics       []TopicSpec
 }
 
 // See https://stackoverflow.com/a/31832326/61048
@@ -54,10 +72,17 @@ func randSeq(n int) string {
 	return sb.String()
 }
 
-// WildcardStringArray returns an array of wildcard tokens that can be used in a SQL query.
-func (q Query) WildcardStringArray() interface{} {
+// TokenInput returns the search string stripped of special search types
+func (s QuerySpec) TokenInput() string {
+	return strings.Join(s.stringTokens, " ")
+}
+
+// WildcardStringArray returns an array of wildcard tokens that can be used in a SQL query. The assumption
+// here is that the individual tokens will be passed through appropriate sanitization.  The tokens in the
+// array that is returned are not safe to interpolate directly into a SQL query.
+func (s QuerySpec) WildcardStringArray() interface{} {
 	var tokens []string
-	for _, s := range strings.Split(string(q), " ") {
+	for _, s := range s.stringTokens {
 		if pageinfo.IsURL(s) {
 			url, err := pageinfo.NormalizeURL(s)
 			if err == nil {
@@ -69,13 +94,13 @@ func (q Query) WildcardStringArray() interface{} {
 	return types.Array(tokens)
 }
 
-// PostgresTsQueryInput returns a set of wildcard tokens that can be used in a Postgres full text
+// EscapedPostgresTsQueryInput returns a set of wildcard tokens that can be used in a Postgres full text
 // search.
-func (q Query) PostgresTsQueryInput() interface{} {
+func (s QuerySpec) EscapedPostgresTsQueryInput() interface{} {
 	var tokens []string
 	stringDelim := randSeq(40)
 
-	for _, token := range strings.Split(string(q), " ") {
+	for _, token := range s.stringTokens {
 		if token != "" {
 			if strings.Contains(stringDelim, token) {
 				log.Printf("Skipping token containing string delimiter: %s", token)

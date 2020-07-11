@@ -82,7 +82,7 @@ app.get('*', async (req, res) => {
       </Provider>
     )
 
-    const html = renderFullPage(assets, fetcher, wrapped, preloadedState)
+    const html = await renderFullPage(assets, fetcher, wrapped, preloadedState)
     res.status(status).send(html)
   } catch (e) {
     console.log('error', 'There was a problem', e)

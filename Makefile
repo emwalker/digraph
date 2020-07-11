@@ -71,8 +71,10 @@ test-integration: .PHONY
 test-js: .PHONY
 	yarn jest
 
-test: test-js
+test-go: .PHONY
 	go test ./cmd/frontend/...
+
+test: test-js test-go
 
 format-js: lint-js
 	yarn flow
