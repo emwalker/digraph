@@ -2,6 +2,7 @@
 import 'core-js'
 import 'regenerator-runtime/runtime'
 import React from 'react'
+import { RelayEnvironmentProvider } from 'react-relay/hooks'
 import { BrowserProtocol } from 'farce'
 import { createInitialFarceRouter } from 'found'
 import { hydrate } from 'react-dom'
@@ -44,9 +45,11 @@ const init = async () => {
 
   if (element) {
     hydrate(
-      <Provider store={store}>
-        <Router resolver={resolver} />
-      </Provider>,
+      <RelayEnvironmentProvider environment={resolver.environment}>
+        <Provider store={store}>
+          <Router resolver={resolver} />
+        </Provider>
+      </RelayEnvironmentProvider>,
       element,
     )
   }
