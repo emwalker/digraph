@@ -137,7 +137,6 @@ func (s Search) DescendantTopics(
 		for _, topicID := range s.TopicTransitiveClosure {
 			ids = append(ids, topicID)
 		}
-		log.Printf("matching topic ids (no string match): %v", ids)
 	} else {
 		rows := []struct {
 			ID string
@@ -171,7 +170,6 @@ func (s Search) DescendantTopics(
 		for _, row := range rows {
 			ids = append(ids, row.ID)
 		}
-		log.Printf("matching topic ids (string match): %v, %s", ids, *s.searchString)
 	}
 
 	mods := s.parentTopic.View.Filter([]qm.QueryMod{
@@ -221,7 +219,7 @@ func (s Search) DescendantLinks(
 	).Bind(ctx, exec, &rows)
 
 	if realError(err) {
-		log.Printf("There was a problem with this sql: %s", sql)
+		log.Printf("There was a problem with this sql: %s\n%s", sql, err)
 		return nil, errors.Wrap(err, "resolvers: failed to fetch descendant links")
 	}
 

@@ -256,7 +256,7 @@ func (r *viewResolver) Topics(
 	last *int, before *string,
 ) (*models.TopicConnection, error) {
 	mods := topicQueryMods(view, nil, searchString, first)
-	mods = append(mods, qm.OrderBy("char_length(topics.name)"))
+	mods = append(mods, qm.OrderBy("char_length(topics.name), topics.name"))
 	topics, err := models.Topics(mods...).All(ctx, r.DB)
 	return topicConnection(view, topics, err)
 }

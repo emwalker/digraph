@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"sort"
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
@@ -59,8 +58,6 @@ func topicConnection(view *models.View, rows []*models.Topic, err error) (*model
 	if err != nil {
 		return nil, err
 	}
-
-	sort.Sort(ByName{rows, "en"})
 
 	edges := make([]*models.TopicEdge, len(rows))
 	for i, topic := range rows {
@@ -376,7 +373,12 @@ func (r *topicResolver) Search(
 		return nil, err
 	}
 
-	limit -= len(topics)
+	if limit < len(topics) {
+		limit = 0
+	} else {
+		limit -= len(topics)
+	}
+
 	links, err := query.DescendantLinks(ctx, r.DB, limit)
 	if err != nil {
 		return nil, err
