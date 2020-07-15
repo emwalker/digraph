@@ -439,6 +439,21 @@ func TestSearchLinksInTopic(t *testing.T) {
 			SearchString: "nytimely",
 			Count:        1,
 		},
+		{
+			Name:         "When the URL is provided",
+			SearchString: "https://www.nytimely.com",
+			Count:        1,
+		},
+		{
+			Name:         "When the URL has a parameter",
+			SearchString: "https://www.nytimely.com?something",
+			Count:        1,
+		},
+		{
+			Name:         "When the URL is not present",
+			SearchString: "https://www.random.com",
+			Count:        0,
+		},
 	}
 
 	topicResolver := rootResolver.Topic()

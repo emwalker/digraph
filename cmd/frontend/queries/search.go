@@ -30,12 +30,21 @@ type Search struct {
 	TopicTransitiveClosure []interface{}
 }
 
+// ExplicitTopicIds returns the topics specified in the search string
+func (s SearchSpec) ExplicitTopicIds() []interface{} {
+	var ids []interface{}
+	for _, topic := range s.Topics {
+		ids = append(ids, topic.ID())
+	}
+	return ids
+}
+
 // StartingTopicIds returns all of the parent topic ids that will be used in the search
 func (s SearchSpec) StartingTopicIds() []interface{} {
 	var ids []interface{}
 	ids = append(ids, s.parentTopic.ID)
-	for _, topic := range s.Topics {
-		ids = append(ids, topic.ID())
+	for _, topicID := range s.ExplicitTopicIds() {
+		ids = append(ids, topicID)
 	}
 	return ids
 }
@@ -59,13 +68,12 @@ func (s SearchSpec) toString() string {
 		pos := idx + 1
 		cte := fmt.Sprintf(`
 	child_topics%d as (
-		select parent_id, parent_id as child_id
-		from topic_topics where parent_id = $%d
+		select $%d::uuid parent_id, $%d::uuid child_id
 	union
 		select pt.child_id, ct.child_id
 		from topic_topics ct
 		inner join child_topics%d pt on pt.child_id = ct.parent_id
-	)`, pos, pos, pos)
+	)`, pos, pos, pos, pos)
 		commonTableExpressions = append(commonTableExpressions, cte)
 	}
 	buffer = append(buffer, strings.Join(commonTableExpressions, ", "))
@@ -177,6 +185,7 @@ func (s Search) DescendantTopics(
 		qm.WhereIn("topics.id in ?", ids...),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.OrderBy("char_length(topics.name), topics.name"),
+		qm.Limit(limit),
 	})
 
 	topics, err := models.Topics(mods...).All(ctx, exec)
@@ -194,8 +203,12 @@ func (s Search) DescendantLinks(
 		ID string
 	}{}
 
+	tsquery := s.EscapedPostgresTsQueryInput()
+
 	sql := fmt.Sprintf(`
-	select l.id from links l
+	-- Links that are in the topics in the transitive closure
+	select l.id
+	from links l
 	inner join link_topics lt on l.id = lt.child_id
 	where lt.parent_id = any($4)
 	and (
@@ -207,8 +220,31 @@ func (s Search) DescendantLinks(
 		)
 		end
 	)
+
+	union
+
+	-- Links that are tagged with all topics in the search string
+	select l.id
+	from links l
+	where l.id in (
+		select child_id
+		from link_topics
+		where parent_id = any($5)
+		group by child_id
+		having count(distinct parent_id) = array_length($5, 1)
+	)
+	and (
+		case $1
+		when '' then true
+		else (
+			to_tsvector('linksdict', l.title) @@ to_tsquery('linksdict', %s)
+			or l.url ~~* all($2)
+		)
+		end
+	)
+
 	limit $3
-	`, s.EscapedPostgresTsQueryInput())
+	`, tsquery, tsquery)
 
 	err := queries.Raw(
 		sql,
@@ -216,6 +252,7 @@ func (s Search) DescendantLinks(
 		s.WildcardStringArray(),
 		limit,
 		types.Array(s.TopicTransitiveClosure),
+		types.Array(s.ExplicitTopicIds()),
 	).Bind(ctx, exec, &rows)
 
 	if realError(err) {
@@ -232,6 +269,7 @@ func (s Search) DescendantLinks(
 		qm.Load("ParentTopics"),
 		qm.WhereIn("links.id in ?", ids...),
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
+		qm.Limit(limit),
 	})
 
 	links, err := models.Links(mods...).All(ctx, exec)
