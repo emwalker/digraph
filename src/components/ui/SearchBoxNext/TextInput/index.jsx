@@ -10,10 +10,16 @@ import styles from './styles.module.css'
 import TopicSuggestions from './TopicSuggestions'
 
 const mentionPlugin = createMentionPlugin({
-  mentionPrefix: 'in:',
+  mentionPrefix: '',
   mentionTrigger: 'in:',
   supportWhitespace: true,
+  mentionComponent: (mentionProps) => (
+    <span className="Label mr-1 Label--gray-darker">
+      { mentionProps.children }
+    </span>
+  ),
 })
+
 const singleLinePlugin = createSingleLinePlugin({ stripEntities: false })
 const { MentionSuggestions } = mentionPlugin
 const plugins = [mentionPlugin, singleLinePlugin]
