@@ -42,10 +42,10 @@ func (s SearchSpec) ExplicitTopicIds() []interface{} {
 // StartingTopicIds returns all of the parent topic ids that will be used in the search
 func (s SearchSpec) StartingTopicIds() []interface{} {
 	var ids []interface{}
-	ids = append(ids, s.parentTopic.ID)
 	for _, topicID := range s.ExplicitTopicIds() {
 		ids = append(ids, topicID)
 	}
+	ids = append(ids, s.parentTopic.ID)
 	return ids
 }
 
@@ -113,7 +113,7 @@ func (s *SearchSpec) Exec(ctx context.Context, exec boil.ContextExecutor) (*Sear
 	}{}
 
 	query := queries.Raw(s.toString(), s.queryParameters()...)
-	if err := query.Bind(ctx, exec, &rows); realError(err) {
+	if err := query.Bind(ctx, exec, &rows); isRealError(err) {
 		log.Printf("There was a problem with the sql: %s, using params %s and sql: %s", err, s.queryParameters(), s.toString())
 		return nil, errors.Wrap(err, "resolvers: failed to fetch descendant topics")
 	}
@@ -171,7 +171,7 @@ func (s Search) DescendantTopics(
 			limit,
 			types.Array(s.TopicTransitiveClosure),
 		).Bind(ctx, exec, &rows)
-		if realError(err) {
+		if isRealError(err) {
 			return nil, errors.Wrap(err, "resolvers: failed to fetch topics")
 		}
 
@@ -189,10 +189,23 @@ func (s Search) DescendantTopics(
 	})
 
 	topics, err := models.Topics(mods...).All(ctx, exec)
-	if realError(err) {
+	if isRealError(err) {
 		return nil, errors.Wrap(err, "resolvers: failed to fetch topics")
 	}
 	return topics, nil
+}
+
+func (s Search) linkQueryParameters(limit int) []interface{} {
+	var parameters []interface{}
+	parameters = append(parameters, s.TokenInput())
+	parameters = append(parameters, s.WildcardStringArray())
+	parameters = append(parameters, limit)
+
+	for _, topicID := range s.StartingTopicIds() {
+		parameters = append(parameters, topicID)
+	}
+
+	return parameters
 }
 
 // DescendantLinks returns links within matching topics that match the search terms provided.
@@ -203,37 +216,43 @@ func (s Search) DescendantLinks(
 		ID string
 	}{}
 
-	tsquery := s.EscapedPostgresTsQueryInput()
+	var buffer []string
+	topicIds := s.StartingTopicIds()
+	buffer = append(buffer, "with recursive")
 
-	sql := fmt.Sprintf(`
-	-- Links that are in the topics in the transitive closure
-	select l.id
-	from links l
-	inner join link_topics lt on l.id = lt.child_id
-	where lt.parent_id = any($4)
-	and (
-		case $1
-		when '' then true
-		else (
-			to_tsvector('linksdict', l.title) @@ to_tsquery('linksdict', %s)
-			or l.url ~~* all($2)
-		)
-		end
-	)
-
+	var commonTableExpressions []string
+	for idx := range topicIds {
+		pos := idx + 1
+		cte := fmt.Sprintf(`
+	child_topics%d as (
+		select $%d::uuid parent_id, $%d::uuid child_id
 	union
+		select pt.child_id, ct.child_id
+		from topic_topics ct
+		inner join child_topics%d pt on pt.child_id = ct.parent_id
+	),
+	descendant_links%d as (
+		select lt.child_id
+		from child_topics%d ct
+		inner join link_topics lt on lt.parent_id = ct.child_id
+	)`, pos, pos+3, pos+3, pos, pos, pos)
+		commonTableExpressions = append(commonTableExpressions, cte)
+	}
+	buffer = append(buffer, strings.Join(commonTableExpressions, ", "))
 
-	-- Links that are tagged with all topics in the search string
-	select l.id
+	buffer = append(buffer, `
+	select distinct l.id
 	from links l
-	where l.id in (
-		select child_id
-		from link_topics
-		where parent_id = any($5)
-		group by child_id
-		having count(distinct parent_id) = array_length($5, 1)
-	)
-	and (
+	`)
+
+	for idx := range topicIds {
+		pos := idx + 1
+		buffer = append(buffer, fmt.Sprintf(`
+	inner join descendant_links%d dl%d on dl%d.child_id = l.id`, pos, pos, pos))
+	}
+
+	buffer = append(buffer, fmt.Sprintf(`
+	where (
 		case $1
 		when '' then true
 		else (
@@ -244,18 +263,11 @@ func (s Search) DescendantLinks(
 	)
 
 	limit $3
-	`, tsquery, tsquery)
+	`, s.EscapedPostgresTsQueryInput()))
+	sql := strings.Join(buffer, "")
+	err := queries.Raw(sql, s.linkQueryParameters(limit)...).Bind(ctx, exec, &rows)
 
-	err := queries.Raw(
-		sql,
-		s.TokenInput(),
-		s.WildcardStringArray(),
-		limit,
-		types.Array(s.TopicTransitiveClosure),
-		types.Array(s.ExplicitTopicIds()),
-	).Bind(ctx, exec, &rows)
-
-	if realError(err) {
+	if isRealError(err) {
 		log.Printf("There was a problem with this sql: %s\n%s", sql, err)
 		return nil, errors.Wrap(err, "resolvers: failed to fetch descendant links")
 	}
@@ -273,7 +285,7 @@ func (s Search) DescendantLinks(
 	})
 
 	links, err := models.Links(mods...).All(ctx, exec)
-	if realError(err) {
+	if isRealError(err) {
 		return nil, err
 	}
 

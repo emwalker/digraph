@@ -5,6 +5,6 @@ const (
 	ErrSQLNoRows = "sql: no rows in result set"
 )
 
-func realError(err error) bool {
+func isRealError(err error) bool {
 	return err != nil && err.Error() != ErrSQLNoRows
 }
