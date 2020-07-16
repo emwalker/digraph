@@ -14,7 +14,7 @@ const mentionPlugin = createMentionPlugin({
   mentionTrigger: 'in:',
   supportWhitespace: true,
   mentionComponent: (mentionProps) => (
-    <span className="Label mr-1 Label--gray-darker">
+    <span className="Label mr-1">
       { mentionProps.children }
     </span>
   ),
