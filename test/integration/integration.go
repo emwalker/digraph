@@ -137,7 +137,7 @@ func NewTestDB() (*sql.DB, error) {
 func (m Mutator) MakeTopic(options TopicOptions) *models.TopicValue {
 	ctx := context.Background()
 	c := services.Connection{Exec: m.DB, Actor: m.Actor}
-	result, err := c.UpsertTopic(ctx, TestRepository, options.Name, nil, options.ParentTopicIds)
+	result, err := c.UpsertTopic(ctx, TestRepository, options.Name, nil, []string{})
 	Must(err)
 	return &models.TopicValue{result.Topic, true, TestView}
 }

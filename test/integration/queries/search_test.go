@@ -14,9 +14,9 @@ func TestSearchInTopic(t *testing.T) {
 	ctx := context.Background()
 	mutator := in.NewMutator(in.MutatorOptions{})
 
-	childTopic1 := mutator.MakeTopic(in.TopicOptions{
+	childTopic := mutator.MakeTopic(in.TopicOptions{
 		ParentTopicIds: []string{in.Everything.ID},
-		Name:           "Child topic 1",
+		Name:           "Child topic",
 	})
 
 	childTopic2 := mutator.MakeTopic(in.TopicOptions{
@@ -25,37 +25,26 @@ func TestSearchInTopic(t *testing.T) {
 	})
 
 	grandchildLink := mutator.MakeLink(in.LinkOptions{
-		ParentTopicIds: []string{childTopic1.ID, childTopic2.ID},
+		ParentTopicIds: []string{childTopic.ID, childTopic2.ID},
 		Title:          "New York Timely",
 		URL:            "http://nytimely.com",
 	})
 
 	mutator.MakeLink(in.LinkOptions{
-		ParentTopicIds: []string{childTopic1.ID},
+		ParentTopicIds: []string{childTopic.ID},
 		Title:          "Link with two parents",
 		URL:            "http://link-with-two-parents.com",
 	})
 
-	grandchildTopic1 := mutator.MakeTopic(in.TopicOptions{
-		Name:           "Grandchild topic 1abc",
-		ParentTopicIds: []string{childTopic1.ID},
+	mutator.MakeTopic(in.TopicOptions{
+		Name:           "Grandchild topic",
+		ParentTopicIds: []string{childTopic.ID},
 	})
 
-	grandchildTopic2 := mutator.MakeTopic(in.TopicOptions{
-		Name:           "Grandchild topic 2abc",
-		ParentTopicIds: []string{childTopic2.ID},
-	})
-
-	greatGrandchildLink1 := mutator.MakeLink(in.LinkOptions{
-		ParentTopicIds: []string{grandchildTopic1.ID},
-		Title:          "Great granchild link 1",
-		URL:            "http://great-grandchild-1.org",
-	})
-
-	greatGrandchildLink2 := mutator.MakeLink(in.LinkOptions{
-		ParentTopicIds: []string{grandchildTopic1.ID, grandchildTopic2.ID},
-		Title:          "Great granchild link 2",
-		URL:            "http://great-grandchild-2.org",
+	greatGrandchildLink := mutator.MakeLink(in.LinkOptions{
+		ParentTopicIds: []string{childTopic.ID},
+		Title:          "Great great granchild",
+		URL:            "http://great-great-grandchild.org",
 	})
 
 	testCases := []struct {
@@ -75,7 +64,7 @@ func TestSearchInTopic(t *testing.T) {
 		{
 			name:         "When a link matches",
 			searchString: "New York Timely",
-			parentTopic:  childTopic1,
+			parentTopic:  childTopic,
 			topics:       in.Condition{in.Exactly, 0},
 			links:        in.Condition{in.Exactly, 1},
 		},
@@ -88,7 +77,7 @@ func TestSearchInTopic(t *testing.T) {
 		},
 		{
 			name:         "When a descendant topic matches",
-			searchString: "Grandchild topic 1abc",
+			searchString: "Grandchild topic",
 			parentTopic:  in.Everything,
 			topics:       in.Condition{in.Exactly, 1},
 			links:        in.Condition{in.Exactly, 0},
@@ -96,34 +85,34 @@ func TestSearchInTopic(t *testing.T) {
 		{
 			name:         "When the search is for a URL and the parent topic is not the root",
 			searchString: grandchildLink.URL,
-			parentTopic:  childTopic1,
+			parentTopic:  childTopic,
 			topics:       in.Condition{in.Exactly, 0},
 			links:        in.Condition{in.Exactly, 1},
 		},
 		{
 			name:         "When the child topic is inlined in the query",
-			searchString: fmt.Sprintf("in:/wiki/topics/%s %s", childTopic1.ID, grandchildLink.URL),
+			searchString: fmt.Sprintf("in:/wiki/topics/%s %s", childTopic.ID, grandchildLink.URL),
 			parentTopic:  in.Everything,
 			topics:       in.Condition{in.Exactly, 0},
 			links:        in.Condition{in.Exactly, 1},
 		},
 		{
 			name:         "When there is no such url",
-			searchString: fmt.Sprintf("in:/wiki/topics/%s http://no-such-url", childTopic1.ID),
+			searchString: fmt.Sprintf("in:/wiki/topics/%s http://no-such-url", childTopic.ID),
 			parentTopic:  in.Everything,
 			topics:       in.Condition{in.Exactly, 0},
 			links:        in.Condition{in.Exactly, 0},
 		},
 		{
 			name:         "When the url is a descendant url",
-			searchString: fmt.Sprintf("in:/wiki/topics/%s %s", childTopic1.ID, greatGrandchildLink1.URL),
+			searchString: fmt.Sprintf("in:/wiki/topics/%s %s", childTopic.ID, greatGrandchildLink.URL),
 			parentTopic:  in.Everything,
 			topics:       in.Condition{in.Exactly, 0},
 			links:        in.Condition{in.Exactly, 1},
 		},
 		{
 			name:         "When the child topic is inlined and a link title matches",
-			searchString: fmt.Sprintf("in:/wiki/topics/%s New York Timely", childTopic1.ID),
+			searchString: fmt.Sprintf("in:/wiki/topics/%s New York Timely", childTopic.ID),
 			parentTopic:  in.Everything,
 			topics:       in.Condition{in.Exactly, 0},
 			links:        in.Condition{in.Exactly, 1},
@@ -132,26 +121,12 @@ func TestSearchInTopic(t *testing.T) {
 			name: "When two topics are inlined",
 			searchString: fmt.Sprintf(
 				"in:/wiki/topics/%s in:/wiki/topics/%s",
-				childTopic1.ID,
+				childTopic.ID,
 				childTopic2.ID,
 			),
 			parentTopic: in.Everything,
 			topics:      in.Condition{in.Exactly, 0},
-			// http://nytimely.com and http://great-grandchild-2.org
-			links: in.Condition{in.Exactly, 2},
-		},
-		{
-			name: "Descendant links from the intersection of the transitive closures are included",
-			searchString: fmt.Sprintf(
-				"in:/wiki/topics/%s in:/wiki/topics/%s %s",
-				childTopic1.ID,
-				childTopic2.ID,
-				greatGrandchildLink2.URL,
-			),
-			parentTopic: in.Everything,
-			topics:      in.Condition{in.Exactly, 0},
-			// http://great-grandchild-2.org
-			links: in.Condition{in.Exactly, 1},
+			links:       in.Condition{in.Exactly, 1},
 		},
 	}
 
