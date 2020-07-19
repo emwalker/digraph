@@ -10,6 +10,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	in "github.com/emwalker/digraph/test/integration"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
@@ -24,9 +25,7 @@ func TestUpsertTopic(t *testing.T) {
 	defer cleanup()
 
 	parent, err := t1.ParentTopics().One(m.ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if parent == nil {
 		t.Fatal("The topic should have a parent topic")
@@ -40,9 +39,7 @@ func TestUpsertTopic(t *testing.T) {
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 	t2 := payload.TopicEdge.Node
 
 	if t1.ID != t2.ID {
@@ -78,9 +75,7 @@ func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(payload.Alerts) == 0 {
 		t.Fatal("UpsertTopic should add an alert about not being able to create a cycle")
@@ -105,9 +100,7 @@ func TestUpsertTopicDoesNotAllowLinks(t *testing.T) {
 	}
 
 	payload, err := m.resolver.UpsertTopic(m.ctx, input)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if payload.TopicEdge != nil {
 		t.Fatal("UpsertTopic should not create a topic from a link")
@@ -140,9 +133,7 @@ func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
 	}
 
 	payload, err := m.resolver.UpdateTopicParentTopics(m.ctx, input)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(payload.Alerts) < 1 {
 		t.Fatal("Expected an alert that a topic could not be added as a parent")
@@ -165,9 +156,7 @@ func TestUpdateTopicPreventsOwnTopic(t *testing.T) {
 	}
 
 	result, err := m.resolver.UpdateTopicParentTopics(m.ctx, input)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(result.Alerts) < 1 {
 		t.Fatal("Expected an alert")
@@ -194,9 +183,7 @@ func TestUpdateTopic(t *testing.T) {
 	}
 
 	p2, err := m.resolver.UpdateTopic(m.ctx, input)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if topic.ID != p2.Topic.ID {
 		t.Fatal("Expected the topics to be the same")
@@ -232,9 +219,7 @@ func TestPreventingUpdateTopicFromCreatingADuplicate(t *testing.T) {
 	}
 
 	payload, err := m.resolver.UpdateTopic(m.ctx, input)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(payload.Alerts) < 1 {
 		t.Fatal("Expected an alert")
@@ -252,9 +237,7 @@ func TestTopicParentTopics(t *testing.T) {
 	defer cleanup()
 
 	parentTopics, err := topic2.ParentTopics().All(m.ctx, m.db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(parentTopics) != 1 {
 		t.Fatal("Expected one parent topic")
@@ -302,9 +285,7 @@ func TestChildTopicsDefaultOrdering(t *testing.T) {
 
 	topicResolver := rootResolver.Topic()
 	conn, err := topicResolver.ChildTopics(m.ctx, topic, nil, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(conn.Edges) < 2 {
 		t.Fatalf("Expected two results: %#v", conn.Edges)
@@ -314,9 +295,7 @@ func TestChildTopicsDefaultOrdering(t *testing.T) {
 
 	for _, edge := range conn.Edges {
 		synonyms, err := edge.Node.SynonymList()
-		if err != nil {
-			t.Fatal(err)
-		}
+		in.Must(err)
 
 		currName, ok := synonyms.NameForLocale("en")
 		if !ok {
@@ -380,9 +359,7 @@ func TestSearchChildTopics(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			conn, err := topicResolver.ChildTopics(m.ctx, topic, &td.SearchString, nil, nil, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			in.Must(err)
 
 			var count int
 			if count = len(conn.Edges); td.Count != count {
@@ -461,9 +438,7 @@ func TestSearchLinksInTopic(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			conn, err := topicResolver.Links(m.ctx, topic, nil, nil, nil, nil, &td.SearchString, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			in.Must(err)
 
 			if count := len(conn.Edges); td.Count != count {
 				t.Fatalf("Expected %d results, got %d", td.Count, count)
@@ -473,23 +448,26 @@ func TestSearchLinksInTopic(t *testing.T) {
 }
 
 func TestSearchInTopic(t *testing.T) {
-	m := newMutator(t, testViewer)
-	repoName := m.defaultRepo().Name
+	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
+	t1 := mutator.UpsertTopic(in.UpsertTopicOptions{Name: "News organizations"})
 
-	t1, cleanup := m.createTopic(testViewer.Login.String, repoName, "News organizations")
-	defer cleanup()
+	mutator.UpsertLink(in.UpsertLinkOptions{
+		Title:          "News",
+		URL:            "https://en.wikipedia.org/wiki/News",
+		ParentTopicIds: []string{t1.ID},
+	})
 
-	l1, cleanup := m.createLink(testViewer.Login.String, repoName, "News", "https://en.wikipedia.org/wiki/News")
-	defer cleanup()
-	m.addParentTopicToLink(l1, t1)
+	t2 := mutator.UpsertTopic(in.UpsertTopicOptions{
+		Name:           "New York Times",
+		ParentTopicIds: []string{t1.ID},
+	})
 
-	t2, cleanup := m.createTopic(testViewer.Login.String, repoName, "New York Times")
-	defer cleanup()
-	m.addParentTopicToTopic(t2, t1)
-
-	l2, cleanup := m.createLink(testViewer.Login.String, repoName, "New York Times", "https://www.nytimely.com")
-	defer cleanup()
-	m.addParentTopicToLink(l2, t2)
+	mutator.UpsertLink(in.UpsertLinkOptions{
+		Title:          "New York Times",
+		URL:            "https://www.nytimely.com",
+		ParentTopicIds: []string{t2.ID},
+	})
 
 	cases := []struct {
 		name         string
@@ -542,10 +520,8 @@ func TestSearchInTopic(t *testing.T) {
 
 	for _, td := range cases {
 		t.Run(td.name, func(t *testing.T) {
-			conn, err := topicResolver.Search(m.ctx, t1, td.searchString, nil, nil, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			conn, err := topicResolver.Search(ctx, t1, td.searchString, nil, nil, nil, nil)
+			in.Must(err)
 
 			var count int
 			if count = len(conn.Edges); td.count != count {
@@ -641,29 +617,25 @@ func TestParentTopicPreloading(t *testing.T) {
 }
 
 func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
+	ctx := context.Background()
+	_, err := models.Repositories(qm.Where("name = ?", "r1")).DeleteAll(ctx, in.DB)
+	in.Must(err)
+
 	m := newMutator(t, testViewer)
 	s := services.New(testDB, testViewer, rootResolver.Fetcher)
 
 	org1, err := models.Organizations(qm.Where("login = ?", testViewer.Login.String)).One(m.ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	org2, err := models.Organizations(qm.Where("login = ?", "wiki")).One(m.ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	r1, err := s.CreateRepository(m.ctx, org1, "r1", testViewer, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 	defer r1.Cleanup()
 
 	r2, err := s.CreateRepository(m.ctx, org2, "r2", testViewer, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 	defer r2.Cleanup()
 
 	_, cleanup := m.createTopic(testViewer.Login.String, r1.Repository.Name, "Topic 1")
@@ -675,9 +647,7 @@ func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 	query := rootResolver.Topic()
 
 	conn, err := query.AvailableParentTopics(m.ctx, topic2, nil, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(conn.Edges) < 2 {
 		t.Fatal("Expected at least one topic edge")
@@ -729,9 +699,7 @@ func TestAvailableTopicsForTopicWithFilter(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.name, func(t *testing.T) {
 			conn, err := query.AvailableParentTopics(m.ctx, t1, td.searchString, nil, nil, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			in.Must(err)
 
 			count := len(conn.Edges)
 
@@ -761,9 +729,7 @@ func TestAvailableParentTopicsDoesNotIncludeSelf(t *testing.T) {
 	query := rootResolver.Topic()
 
 	conn, err := query.AvailableParentTopics(m.ctx, t2, &matchingString, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	for _, edge := range conn.Edges {
 		if edge.Node.Name == matchingString {
@@ -805,29 +771,21 @@ func TestDeleteTopic(t *testing.T) {
 	mutator.addParentTopicToLink(childLink1, parentTopic)
 
 	rootTopic, err := repo.RootTopic(mutator.ctx, testDB, testViewer.DefaultView())
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	_, err = queries.Raw(`
 	delete from topic_topics
 		where parent_id in ($1, $2)
 		and child_id in ($3, $4)
 	`, services.PublicRootTopicID, rootTopic.ID, childTopic1.ID, childTopic2.ID).Exec(testDB)
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	_, err = queries.Raw(`
 	delete from link_topics
 		where parent_id in ($1, $2)
 		and child_id = $3
 	`, services.PublicRootTopicID, rootTopic.ID, childLink1.ID).Exec(testDB)
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if topics, _ := childTopic1.ParentTopics().All(mutator.ctx, testDB); len(topics) > 1 {
 		t.Fatalf("Expected there to be a single parent topic: %s", topicsToString(topics))
@@ -844,45 +802,35 @@ func TestDeleteTopic(t *testing.T) {
 	payload, err := mutator.resolver.DeleteTopic(mutator.ctx, models.DeleteTopicInput{
 		TopicID: parentTopic.ID,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if payload == nil {
 		t.Fatal("Expected a payload")
 	}
 
 	count, err := models.Topics(qm.Where("id = ?", parentTopic.ID)).Count(mutator.ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if count > 0 {
 		t.Fatal("Failed to delete topic")
 	}
 
 	newParentTopic, err := childTopic1.ParentTopics().One(mutator.ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if newParentTopic.ID != ancestorTopic.ID {
 		t.Fatalf("Expected child topic 1 to be placed under the ancestor topic, got: %s", newParentTopic)
 	}
 
 	newParentTopic, err = childTopic2.ParentTopics().One(mutator.ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if newParentTopic.ID != ancestorTopic.ID {
 		t.Fatalf("Expected child topic 2 to be placed under the ancestor topic, got: %s", newParentTopic)
 	}
 
 	newParentTopic, err = childLink1.ParentTopics().One(mutator.ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if newParentTopic.ID != ancestorTopic.ID {
 		t.Fatalf("Expected child link 1 to be placed under the ancestor topic, got: %s", newParentTopic)
@@ -910,9 +858,7 @@ func TestDeleteTopicTimeRange(t *testing.T) {
 	payload, err := m.resolver.DeleteTopicTimeRange(m.ctx, models.DeleteTopicTimeRangeInput{
 		TopicID: topic.ID,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if payload == nil {
 		t.Fatal("Expected a payload")
@@ -932,9 +878,7 @@ func TestChildTopicAndLinkVisibility(t *testing.T) {
 	c := services.Connection{Exec: testDB, Actor: testViewer}
 
 	result, err := c.CreateUser(ctx, "Gnusto", "gnusto@frotz.com", "http://avatar/url")
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 	defer result.Cleanup()
 	testViewer2 := result.User
 
@@ -987,9 +931,7 @@ func TestTopicNoSynonym(t *testing.T) {
 	defer cleanup()
 
 	synonyms, err := topic.SynonymList()
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(synonyms.Values) != 1 {
 		t.Fatal("Expected there to be a single synonym")
@@ -998,9 +940,7 @@ func TestTopicNoSynonym(t *testing.T) {
 	// Should never happen
 	topic.Synonyms.Marshal([]models.Synonym{})
 	_, err = topic.Update(ctx, testDB, boil.Whitelist("synonyms"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	// Todo: check display name
 }
@@ -1016,9 +956,7 @@ func TestViewerCanUpdate(t *testing.T) {
 	query := rootResolver.Topic()
 
 	canUpdate, err := query.ViewerCanUpdate(ctx, topic)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if !canUpdate {
 		t.Fatal("First viewer should be able to update the topic")
@@ -1029,9 +967,7 @@ func TestViewerCanUpdate(t *testing.T) {
 	c := services.New(testDB, testViewer, testFetcher)
 
 	result, err := c.CreateUser(ctx, "Gnusto", "gnusto@frotz.com", "http://avatar/url")
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 	defer result.Cleanup()
 	testActor2 := result.User
 
@@ -1039,9 +975,7 @@ func TestViewerCanUpdate(t *testing.T) {
 	topic.View.ViewerID = testActor2.ID
 
 	canUpdate, err = query.ViewerCanUpdate(ctx, topic)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if canUpdate {
 		t.Fatal("Second viewer should not be able to update the topic")
@@ -1061,9 +995,7 @@ func TestViewerCannotUpdateRootTopic(t *testing.T) {
 	topic.Root = true
 
 	canUpdate, err := query.ViewerCanUpdate(ctx, topic)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if canUpdate {
 		t.Fatal("Viewers should not be able to update root topic")
@@ -1081,9 +1013,7 @@ func TestViewerCanDeleteSynonymWhenLessThanTwoExist(t *testing.T) {
 	query := rootResolver.Topic()
 
 	canDelete, err := query.ViewerCanDeleteSynonyms(ctx, topic)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if canDelete {
 		t.Fatal("Viewer should not be able to delete a synonym, because there is only one")
@@ -1110,9 +1040,7 @@ func TestGuestViewTopic(t *testing.T) {
 
 	searchString := "topic"
 	conn, err := resolver.Links(ctx, topic, nil, nil, nil, nil, &searchString, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(conn.Edges) < 1 {
 		t.Fatal("Expected at least one result")
@@ -1128,9 +1056,7 @@ func TestUpdateSynonyms(t *testing.T) {
 	defer cleanup()
 
 	synonyms, err := topic.SynonymList()
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(synonyms.Values) != 1 {
 		t.Fatal("Expected there to be only one synonym")
@@ -1161,9 +1087,7 @@ func TestUpdateSynonyms(t *testing.T) {
 	}
 
 	actualSynonyms, err := topic.SynonymList()
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if !reflect.DeepEqual(expectedSynonyms, actualSynonyms) {
 		t.Fatalf("Expected %v, got %v", expectedSynonyms, actualSynonyms)
@@ -1198,9 +1122,7 @@ func TestTopicNameFromSynonyms(t *testing.T) {
 
 	query := rootResolver.Topic()
 	name, err := query.DisplayName(ctx, topic, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if name != "Excavator" {
 		t.Fatalf("Expected display name to be 'Excavator', got '%s'", name)
@@ -1227,9 +1149,7 @@ func TestGuestTopicQuery(t *testing.T) {
 	ctx = resolvers.WithRequestContext(ctx, rc)
 
 	conn, err := resolver.Links(ctx, topic, nil, nil, nil, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(conn.Edges) < 1 {
 		t.Fatal("Expected at least one topic")
@@ -1237,23 +1157,22 @@ func TestGuestTopicQuery(t *testing.T) {
 }
 
 func TestActivity(t *testing.T) {
-	m := newMutator(t, testViewer)
-	repo := m.defaultRepo()
+	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
 	resolver := rootResolver.Topic()
 
-	topic, cleanup := m.createTopic(testViewer.Login.String, repo.Name, "Gnusto")
-	defer cleanup()
+	topic := mutator.UpsertTopic(in.UpsertTopicOptions{
+		Name:           "Gnusto",
+		ParentTopicIds: []string{in.Everything.ID},
+	})
+	mutator.UpsertLink(in.UpsertLinkOptions{
+		Title:          "New York Times",
+		URL:            "https://www.nytimes.com",
+		ParentTopicIds: []string{topic.ID},
+	})
 
-	c := services.New(testDB, testViewer, testFetcher)
-
-	title := "New York Times"
-	result, err := c.UpsertLink(m.ctx, repo, "https://www.nytimes.com", &title, []string{topic.ID})
-	defer result.Cleanup()
-
-	connection, err := resolver.Activity(m.ctx, topic, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	connection, err := resolver.Activity(ctx, topic, nil, nil, nil, nil)
+	in.Must(err)
 
 	if len(connection.Edges) < 1 {
 		t.Fatal("Expected at least one activity line item")
@@ -1265,18 +1184,13 @@ func TestActivityVisibility(t *testing.T) {
 	c := services.New(testDB, testViewer, testFetcher)
 
 	result, err := c.CreateUser(ctx, "Frotz", "frotz@frotz.com", "http://avatar/url")
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 	defer result.Cleanup()
 
 	user2 := result.User
 
 	registrationResult, err := c.CompleteRegistration(ctx, user2, "frotz")
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 	defer registrationResult.Cleanup()
 
 	if err = user2.Reload(ctx, testDB); err != nil {
@@ -1305,9 +1219,7 @@ func TestActivityVisibility(t *testing.T) {
 	}
 
 	connection, err := resolver.Activity(ctx, root, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	for _, edge := range connection.Edges {
 		node := edge.Node
@@ -1332,9 +1244,7 @@ func TestUpsertTopicTimeline(t *testing.T) {
 	}
 
 	payload, err := resolver.UpsertTopicTimeRange(m.ctx, input)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if payload.TimeRangeEdge == nil {
 		t.Fatal("Expected a timeline edge")

@@ -17,6 +17,8 @@ delete from organizations where login not in ('wiki', 'emwalker');
 delete from links where repository_id = '34a020d6-fc1b-11e8-85cd-bbcf3ebdfe13';
 delete from topics where repository_id = '34a020d6-fc1b-11e8-85cd-bbcf3ebdfe13' and not root;
 delete from daily_snapshot;
+delete from topic_transitive_closure;
+delete from link_transitive_closure;
 delete from github_accounts where username not in ('emwalker');
 delete from google_accounts;
 SQL
@@ -42,6 +44,12 @@ echo "${count//[[:space:]]/} links"
 
 count=$(psql digraph_fixtures -t -c "select count(*) from topics")
 echo "${count//[[:space:]]/} topics"
+
+count=$(psql digraph_fixtures -t -c "select count(*) from topic_transitive_closure")
+echo "${count//[[:space:]]/} topic_transitive_closure"
+
+count=$(psql digraph_fixtures -t -c "select count(*) from link_transitive_closure")
+echo "${count//[[:space:]]/} link_transitive_closure"
 
 count=$(psql digraph_fixtures -t -c "select count(*) from daily_snapshot")
 echo "${count//[[:space:]]/} snapshots"

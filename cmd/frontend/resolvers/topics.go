@@ -121,14 +121,6 @@ func availableTopics(
 func (r *topicResolver) Activity(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 ) (*models.ActivityLineItemConnection, error) {
-	query, err := queries.NewSearch(topic, nil).Exec(ctx, r.DB)
-	if err != nil {
-		return nil, err
-	}
-
-	topicIds := query.TopicTransitiveClosure
-	topicIds = append(topicIds, topic.ID)
-
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.OrderBy("created_at desc"),
 		qm.Load("UserLinkTopics"),
@@ -137,7 +129,8 @@ func (r *topicResolver) Activity(
 		qm.Load("User"),
 		qm.InnerJoin("repositories r on user_links.repository_id = r.id"),
 		qm.InnerJoin("user_link_topics ult on user_links.id = ult.user_link_id"),
-		qm.WhereIn("ult.topic_id in ?", topicIds...),
+		qm.InnerJoin("link_transitive_closure ltc on user_links.link_id = ltc.child_id"),
+		qm.WhereIn("ltc.parent_id = ?", topic.ID),
 		qm.Limit(pageSizeOrDefault(first)),
 	})
 
@@ -255,15 +248,11 @@ func (r *topicResolver) Links(
 	mods := append(q.Mods(), qm.OrderBy("links.created_at desc"))
 
 	if descendants != nil && *descendants {
-		query, err := queries.NewSearch(topic, nil).Exec(ctx, r.DB)
-		if err != nil {
-			return nil, errors.Wrap(err, "resolvers: failed to fetch descendant topics")
-		}
-
 		mods = append(
 			mods,
 			qm.InnerJoin("link_topics lt on lt.child_id = links.id"),
-			qm.WhereIn("lt.parent_id in ?", query.TopicTransitiveClosure...),
+			qm.InnerJoin("link_transitive_closure lte on lt.link_id = lte.child_id"),
+			qm.Where("lte.parent_id = ?", topic.ID),
 		)
 	} else {
 		mods = append(
@@ -361,12 +350,7 @@ func (r *topicResolver) Search(
 		limit = *first
 	}
 	log.Printf("Searching topic %s for '%s'", topic.ID, searchString)
-
-	query, err := queries.NewSearch(topic, &searchString).Exec(ctx, r.DB)
-	if err != nil {
-		log.Printf("There was a problem: %s", err)
-		return nil, err
-	}
+	query := queries.NewSearch(topic, &searchString)
 
 	topics, err := query.DescendantTopics(ctx, r.DB, limit)
 	if err != nil {

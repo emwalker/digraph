@@ -97,6 +97,7 @@ fixtures: data/fixtures.sql
 
 load-fixtures:
 	bash ./scripts/load-fixtures
+	psql $(DBNAME) < queries/transitive-closure.sql
 
 build-client:
 	yarn relay

@@ -12,7 +12,6 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/queries"
 	"github.com/emwalker/digraph/cmd/frontend/services"
-	"github.com/emwalker/digraph/cmd/frontend/util"
 	perrors "github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -217,16 +216,16 @@ func (r *MutationResolver) DeleteTopic(
 	}
 
 	err = queries.Transact(r.DB, func(tx *sql.Tx) error {
-		c := services.New(tx, actor, nil)
-
-		if _, err = c.DeleteTopic(ctx, topic); err != nil {
+		service := services.DeleteTopic{
+			Actor: actor,
+			Topic: topic,
+		}
+		if _, err = service.Call(ctx, tx); err != nil {
 			log.Printf("There was a problem deleting topic: %#v", topic)
 			return err
 		}
-
 		return nil
 	})
-
 	if err != nil {
 		return nil, perrors.Wrap(err, "resolvers: failed to delete topic")
 	}
@@ -470,23 +469,28 @@ func (r *MutationResolver) UpdateLinkTopics(
 	ctx context.Context, input models.UpdateLinkTopicsInput,
 ) (*models.UpdateLinkTopicsPayload, error) {
 	actor := GetRequestContext(ctx).Viewer()
+	var result *services.UpdateLinkTopicsResult
 
-	link, err := models.FindLink(ctx, r.DB, input.LinkID)
+	err := queries.Transact(r.DB, func(tx *sql.Tx) error {
+		link, err := models.FindLink(ctx, tx, input.LinkID)
+		if err != nil {
+			return err
+		}
+
+		service := services.UpdateLinkTopics{
+			Actor:          actor,
+			ParentTopicIds: input.ParentTopicIds,
+			Link:           &models.LinkValue{link, true, actor.DefaultView()},
+		}
+		result, err = service.Call(ctx, tx)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	topics := util.TopicsFromIds(input.ParentTopicIds)
-	if err = link.SetParentTopics(ctx, r.DB, false, topics...); err != nil {
-		return nil, err
-	}
-
-	if err = link.Reload(ctx, r.DB); err != nil {
-		return nil, err
-	}
-
 	return &models.UpdateLinkTopicsPayload{
-		Link: &models.LinkValue{link, false, actor.DefaultView()},
+		Link: result.Link,
 	}, nil
 }
 
@@ -495,29 +499,29 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 	ctx context.Context, input models.UpdateTopicParentTopicsInput,
 ) (*models.UpdateTopicParentTopicsPayload, error) {
 	actor := GetRequestContext(ctx).Viewer()
-
 	var result *services.UpdateTopicParentTopicsResult
-	var topic *models.Topic
-	var err error
 
-	err = queries.Transact(r.DB, func(tx *sql.Tx) error {
-		c := services.Connection{Exec: tx, Actor: actor}
-
-		if topic, err = models.FindTopic(ctx, tx, input.TopicID); err != nil {
+	err := queries.Transact(r.DB, func(tx *sql.Tx) error {
+		topic, err := models.FindTopic(ctx, tx, input.TopicID)
+		if err != nil {
 			return err
 		}
 
-		result, err = c.UpdateTopicParentTopics(ctx, topic, input.ParentTopicIds)
+		service := services.UpdateTopicParentTopics{
+			Actor:          actor,
+			Topic:          &models.TopicValue{topic, false, actor.DefaultView()},
+			ParentTopicIds: input.ParentTopicIds,
+		}
+		result, err = service.Call(ctx, tx)
 		return err
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
 	return &models.UpdateTopicParentTopicsPayload{
 		Alerts: result.Alerts,
-		Topic:  &models.TopicValue{result.Topic, false, actor.DefaultView()},
+		Topic:  result.Topic,
 	}, nil
 }
 
@@ -526,25 +530,27 @@ func (r *MutationResolver) UpsertLink(
 	ctx context.Context, input models.UpsertLinkInput,
 ) (*models.UpsertLinkPayload, error) {
 	actor := GetRequestContext(ctx).Viewer()
-
 	var result *services.UpsertLinkResult
-	var err error
 
-	err = queries.Transact(r.DB, func(tx *sql.Tx) error {
+	err := queries.Transact(r.DB, func(tx *sql.Tx) error {
 		repo, err := findRepo(ctx, tx, actor, input.OrganizationLogin, input.RepositoryName)
 		if err != nil {
 			log.Printf("resolvers.UpsertLink: repo %s/%s not found", input.OrganizationLogin, input.RepositoryName)
 			return perrors.Wrap(err, "resolvers.UpsertLink")
 		}
 
-		s := services.New(tx, actor, r.Fetcher)
-		result, err = s.UpsertLink(
-			ctx, repo, input.URL, input.Title, input.AddParentTopicIds,
-		)
+		service := services.UpsertLink{
+			Actor:          actor,
+			Fetcher:        r.Fetcher,
+			ProvidedURL:    input.URL,
+			Repository:     repo,
+			ProvidedTitle:  input.Title,
+			ParentTopicIds: input.AddParentTopicIds,
+		}
+		result, err = service.Call(ctx, tx)
 
 		return perrors.Wrap(err, "resolvers.UpsertLink")
 	})
-
 	if err != nil {
 		return nil, err
 	}

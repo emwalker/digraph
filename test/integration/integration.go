@@ -32,25 +32,30 @@ type Mutator struct {
 
 type MutatorOptions struct{}
 
-type TopicOptions struct {
+type UpsertTopicOptions struct {
 	ParentTopicIds []string
 	Name           string
 }
 
-type LinkOptions struct {
+type UpsertLinkOptions struct {
 	ParentTopicIds []string
 	Title          string
 	URL            string
 }
 
+type UpdateLinkTopicsOptions struct {
+	Link           *models.LinkValue
+	ParentTopicIds []string
+}
+
 // Pre-loaded objects for common tasks
 var (
-	TestDB         *sql.DB
-	TestFetcher    *TestFetcherT
-	TestViewer     *models.User
-	TestView       *models.View
-	TestRepository *models.Repository
-	Everything     *models.TopicValue
+	DB         *sql.DB
+	Fetcher    *TestFetcherT
+	Actor      *models.User
+	View       *models.View
+	Repository *models.Repository
+	Everything *models.TopicValue
 )
 
 type Condition struct {
@@ -103,49 +108,90 @@ func init() {
 	var err error
 	ctx := context.Background()
 
-	TestDB, err = NewTestDB()
+	DB, err = NewTestDB()
 	Must(err)
 
-	TestViewer, err = models.Users(
+	Actor, err = models.Users(
 		qm.Load("SelectedRepository"),
 		qm.Where("users.selected_repository_id is not null"),
-	).One(context.Background(), TestDB)
+	).One(context.Background(), DB)
 	Must(err)
 
-	TestView = &models.View{ViewerID: TestViewer.ID}
+	View = &models.View{ViewerID: Actor.ID}
 
-	TestRepository, err = models.Repositories(
+	Repository, err = models.Repositories(
 		qm.Where("name like ?", "General collection"),
-	).One(ctx, TestDB)
+	).One(ctx, DB)
 	Must(err)
 
-	everything, err := models.Topics(qm.Where("name like 'Everything'")).One(ctx, TestDB)
+	everything, err := models.Topics(qm.Where("name like 'Everything'")).One(ctx, DB)
 	Must(err)
-	Everything = &models.TopicValue{everything, true, TestView}
+	Everything = &models.TopicValue{everything, true, View}
 
-	TestFetcher = &TestFetcherT{}
+	Fetcher = &TestFetcherT{}
 }
 
 func NewMutator(options MutatorOptions) *Mutator {
-	return &Mutator{TestViewer, TestView, TestDB, TestFetcher}
+	return &Mutator{Actor, View, DB, Fetcher}
 }
 
 func NewTestDB() (*sql.DB, error) {
 	return sql.Open("postgres", "dbname=digraph_dev user=postgres sslmode=disable")
 }
 
-func (m Mutator) MakeTopic(options TopicOptions) *models.TopicValue {
+func (m Mutator) UpsertTopic(options UpsertTopicOptions) *models.TopicValue {
 	ctx := context.Background()
-	c := services.Connection{Exec: m.DB, Actor: m.Actor}
-	result, err := c.UpsertTopic(ctx, TestRepository, options.Name, nil, options.ParentTopicIds)
+	conn := services.Connection{Exec: m.DB, Actor: m.Actor}
+	result, err := conn.UpsertTopic(ctx, Repository, options.Name, nil, options.ParentTopicIds)
 	Must(err)
-	return &models.TopicValue{result.Topic, true, TestView}
+	return &models.TopicValue{result.Topic, true, View}
 }
 
-func (m Mutator) MakeLink(options LinkOptions) *models.LinkValue {
-	ctx := context.Background()
-	c := services.Connection{Exec: m.DB, Actor: m.Actor, Fetcher: m.Fetcher}
-	result, err := c.UpsertLink(ctx, TestRepository, options.URL, &options.Title, options.ParentTopicIds)
+func (m Mutator) UpsertLink(options UpsertLinkOptions) *models.LinkValue {
+	service := services.UpsertLink{
+		Actor:          m.Actor,
+		Fetcher:        m.Fetcher,
+		Repository:     Repository,
+		ProvidedURL:    options.URL,
+		ProvidedTitle:  &options.Title,
+		ParentTopicIds: options.ParentTopicIds,
+	}
+	result, err := service.Call(context.Background(), m.DB)
 	Must(err)
-	return &models.LinkValue{result.Link, true, TestView}
+	return &models.LinkValue{result.Link, true, View}
+}
+
+func (m Mutator) UpdateLinkTopics(options UpdateLinkTopicsOptions) {
+	service := services.UpdateLinkTopics{
+		Actor:          m.Actor,
+		Link:           options.Link,
+		ParentTopicIds: options.ParentTopicIds,
+	}
+	_, err := service.Call(context.Background(), m.DB)
+	Must(err)
+}
+
+type UpdateTopicParentTopicsOptions struct {
+	Topic          *models.TopicValue
+	ParentTopicIds []string
+}
+
+func (m Mutator) UpdateTopicParentTopics(options UpdateTopicParentTopicsOptions) {
+	service := services.UpdateTopicParentTopics{
+		Actor:          m.Actor,
+		Topic:          options.Topic,
+		ParentTopicIds: options.ParentTopicIds,
+	}
+	_, err := service.Call(context.Background(), m.DB)
+	Must(err)
+}
+
+func (m Mutator) DeleteTopicsByName(name string) {
+	_, err := models.Topics(qm.Where("name like ?", name)).DeleteAll(context.Background(), m.DB)
+	Must(err)
+}
+
+func (m Mutator) DeleteLinksByURL(url string) {
+	_, err := models.Links(qm.Where("url = ?", url)).DeleteAll(context.Background(), m.DB)
+	Must(err)
 }

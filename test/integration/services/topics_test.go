@@ -8,27 +8,25 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	in "github.com/emwalker/digraph/test/integration"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func TestUpsertTopicEnsuresATopic(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
+	in.NewMutator(in.MutatorOptions{}).DeleteTopicsByName("62ce187241e")
 
-	result, err := c.UpsertTopic(ctx, defaultRepo, "62ce187241e", nil, []string{})
-	if err != nil {
-		t.Fatalf("There was a problem upserting the topic: %s", err)
-	}
-	defer result.Cleanup()
+	c := services.Connection{Exec: in.DB, Actor: in.Actor}
+
+	result, err := c.UpsertTopic(ctx, in.Repository, "62ce187241e", nil, []string{})
+	in.Must(err)
 
 	if result.TopicCreated != true {
 		t.Fatal("Expected topic to be a new one")
 	}
 
-	topics, err := result.Topic.ParentTopics().All(ctx, c.Exec)
-	if err != nil {
-		t.Fatalf("Unable to fetch parent topics: %s", err)
-	}
+	topics, err := result.Topic.ParentTopics().All(ctx, in.DB)
+	in.Must(err)
 
 	if len(topics) < 1 {
 		t.Fatal("Expected the topic to be added to the root topic")
@@ -36,14 +34,11 @@ func TestUpsertTopicEnsuresATopic(t *testing.T) {
 }
 
 func TestDisallowEmptyTopic(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
+	c := services.Connection{Exec: in.DB, Actor: in.Actor}
 	ctx := context.Background()
 
-	result, err := c.UpsertTopic(ctx, defaultRepo, "  ", nil, []string{})
-	if err != nil {
-		t.Fatalf("There was a problem upserting the topic: %s", err)
-	}
-	defer result.Cleanup()
+	result, err := c.UpsertTopic(ctx, in.Repository, "  ", nil, []string{})
+	in.Must(err)
 
 	if result.TopicCreated {
 		t.Fatal("An empty topic should not be created")
@@ -55,20 +50,15 @@ func TestDisallowEmptyTopic(t *testing.T) {
 }
 
 func TestSynonymCreated(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
+	c := services.Connection{Exec: in.DB, Actor: in.Actor}
 	ctx := context.Background()
 	name := "a0257068ede"
 
-	result, err := c.UpsertTopic(ctx, defaultRepo, name, nil, []string{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer result.Cleanup()
+	result, err := c.UpsertTopic(ctx, in.Repository, name, nil, []string{})
+	in.Must(err)
 
 	synonyms, err := result.Topic.SynonymList()
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if len(synonyms.Values) != 1 {
 		t.Fatalf("Expected a single synonym to be created, found %v", synonyms)
@@ -76,14 +66,13 @@ func TestSynonymCreated(t *testing.T) {
 }
 
 func TestUpdateSynonyms(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
+	in.NewMutator(in.MutatorOptions{}).DeleteTopicsByName("Backhoe")
 
-	result, err := c.UpsertTopic(ctx, defaultRepo, "Backhoe", nil, []string{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer result.Cleanup()
+	c := services.Connection{Exec: in.DB, Actor: in.Actor}
+
+	result, err := c.UpsertTopic(ctx, in.Repository, "Backhoe", nil, []string{})
+	in.Must(err)
 
 	topic := result.Topic
 
@@ -94,9 +83,7 @@ func TestUpdateSynonyms(t *testing.T) {
 	}
 
 	initialActual, err := topic.SynonymList()
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if !reflect.DeepEqual(initialActual, initialExpected) {
 		t.Fatalf("Expected %#v, got %#v", initialExpected, initialActual)
@@ -114,14 +101,11 @@ func TestUpdateSynonyms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = topic.Reload(ctx, testDB); err != nil {
-		t.Fatal(err)
-	}
+	err = topic.Reload(ctx, in.DB)
+	in.Must(err)
 
 	finalActual, err := topic.SynonymList()
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if !reflect.DeepEqual(finalActual, finalExpected) {
 		t.Fatalf("Expected %#v, got %#v", finalExpected, finalActual)
@@ -129,14 +113,11 @@ func TestUpdateSynonyms(t *testing.T) {
 }
 
 func TestDeduplicationOfSynonyms(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
+	c := services.Connection{Exec: in.DB, Actor: in.Actor}
 	ctx := context.Background()
 
-	result, err := c.UpsertTopic(ctx, defaultRepo, "Backhoe", nil, []string{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer result.Cleanup()
+	result, err := c.UpsertTopic(ctx, in.Repository, "Backhoe", nil, []string{})
+	in.Must(err)
 
 	topic := result.Topic
 
@@ -156,18 +137,14 @@ func TestDeduplicationOfSynonyms(t *testing.T) {
 
 	expected := &models.SynonymList{Values: dedupedSynonyms}
 
-	if _, err = c.UpdateSynonyms(ctx, topic, synonyms); err != nil {
-		t.Fatal(err)
-	}
+	_, err = c.UpdateSynonyms(ctx, topic, synonyms)
+	in.Must(err)
 
-	if err = topic.Reload(ctx, testDB); err != nil {
-		t.Fatal(err)
-	}
+	err = topic.Reload(ctx, in.DB)
+	in.Must(err)
 
 	actual, err := topic.SynonymList()
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Expected %#v, got %#v", expected, actual)
@@ -175,14 +152,11 @@ func TestDeduplicationOfSynonyms(t *testing.T) {
 }
 
 func TestNormalizationOfSynonyms(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
+	c := services.Connection{Exec: in.DB, Actor: in.Actor}
 	ctx := context.Background()
 
-	result, err := c.UpsertTopic(ctx, defaultRepo, "Backhoe", nil, []string{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer result.Cleanup()
+	result, err := c.UpsertTopic(ctx, in.Repository, "Backhoe", nil, []string{})
+	in.Must(err)
 
 	topic := result.Topic
 
@@ -199,18 +173,14 @@ func TestNormalizationOfSynonyms(t *testing.T) {
 
 	expected := &models.SynonymList{Values: normalizedSynonyms}
 
-	if _, err = c.UpdateSynonyms(ctx, topic, synonyms); err != nil {
-		t.Fatal(err)
-	}
+	_, err = c.UpdateSynonyms(ctx, topic, synonyms)
+	in.Must(err)
 
-	if err = topic.Reload(ctx, testDB); err != nil {
-		t.Fatal(err)
-	}
+	err = topic.Reload(ctx, in.DB)
+	in.Must(err)
 
 	actual, err := topic.SynonymList()
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Expected %#v, got %#v", expected, actual)
@@ -218,21 +188,20 @@ func TestNormalizationOfSynonyms(t *testing.T) {
 }
 
 func TestUpsertTopicTimeRange(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
+	mutator.DeleteTopicsByName("William invades England")
+	mutator.DeleteTopicsByName("1066 William invades England")
 
-	topicResult, err := c.UpsertTopic(ctx, defaultRepo, "William invades England", nil, []string{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer topicResult.Cleanup()
+	c := services.Connection{Exec: in.DB, Actor: in.Actor}
+
+	topicResult, err := c.UpsertTopic(ctx, in.Repository, "William invades England", nil, []string{})
+	in.Must(err)
 
 	topic := topicResult.Topic
 
-	count, err := topic.Timerange().Count(ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	count, err := topic.Timerange().Count(ctx, in.DB)
+	in.Must(err)
 
 	if count > 0 {
 		t.Fatal("Expected no timeline")
@@ -240,37 +209,26 @@ func TestUpsertTopicTimeRange(t *testing.T) {
 
 	t1 := time.Date(1066, time.October, 14, 0, 0, 0, 0, time.UTC)
 	result, err := c.UpsertTopicTimeRange(ctx, topic, t1, nil, models.TimeRangePrefixFormatStartYear)
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if result.TimeRange == nil {
 		t.Fatal("Expected a time range to be returned")
 	}
 
-	timerange, err := topic.Timerange().One(ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	timerange, err := topic.Timerange().One(ctx, in.DB)
+	in.Must(err)
 
 	if timerange == nil {
 		t.Fatal("Expected a timeline")
 	}
 
-	if err = topic.Reload(ctx, testDB); err != nil {
-		t.Fatal(err)
-	}
+	in.Must(topic.Reload(ctx, in.DB))
 
 	synonyms, err := topic.SynonymList()
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	displayName, err := services.DisplayName(timerange, synonyms, models.LocaleIdentifierEn)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	expectedDisplayName := "1066 William invades England"
 
@@ -280,10 +238,7 @@ func TestUpsertTopicTimeRange(t *testing.T) {
 
 	// The topic name should be updated as well.  The topic name will eventually go away, but for
 	// the moment it's used for sorting topics, which should take into account the time range prefix.
-
-	if err = topic.Reload(ctx, testDB); err != nil {
-		t.Fatal(err)
-	}
+	in.Must(topic.Reload(ctx, in.DB))
 
 	if topic.Name != expectedDisplayName {
 		t.Fatalf("Expected %s, got %s", expectedDisplayName, topic.Name)
@@ -291,13 +246,9 @@ func TestUpsertTopicTimeRange(t *testing.T) {
 }
 
 func TestDeleteTopicFailsForRoot(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
-
-	topics, err := models.Topics(qm.Where("root")).All(ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	topics, err := models.Topics(qm.Where("root")).All(ctx, in.DB)
+	in.Must(err)
 
 	if len(topics) < 1 {
 		t.Fatal("Expected at least one root topic")
@@ -308,13 +259,41 @@ func TestDeleteTopicFailsForRoot(t *testing.T) {
 			t.Fatalf("Expected a root topic: %s", topic)
 		}
 
-		result, err := c.DeleteTopic(ctx, topic)
+		service := services.DeleteTopic{Topic: topic, Actor: in.Actor}
+		result, err := service.Call(ctx, in.DB)
 		if err == nil {
-			t.Fatal("Expected an error")
+			t.Fatal("There should have been an error")
 		}
 
 		if result != nil {
 			t.Fatal("A result should not be returned")
 		}
+	}
+}
+
+func TestUpdateTopicParentTopics(t *testing.T) {
+	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
+
+	parent1 := mutator.UpsertTopic(in.UpsertTopicOptions{Name: "Parent 1"})
+	parent2 := mutator.UpsertTopic(in.UpsertTopicOptions{Name: "Parent 2"})
+	child := mutator.UpsertTopic(in.UpsertTopicOptions{
+		Name:           "Child",
+		ParentTopicIds: []string{parent1.ID, parent2.ID},
+	})
+
+	service := services.UpdateTopicParentTopics{
+		Actor:          in.Actor,
+		Topic:          child,
+		ParentTopicIds: []string{parent1.ID},
+	}
+	_, err := service.Call(ctx, in.DB)
+	in.Must(err)
+
+	parentTopics, err := child.ParentTopics().All(ctx, in.DB)
+	in.Must(err)
+
+	if len(parentTopics) != 1 {
+		t.Fatalf("Expected 1 parent topic for %s, got %d", child, len(parentTopics))
 	}
 }

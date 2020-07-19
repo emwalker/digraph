@@ -5,17 +5,20 @@ import (
 	"testing"
 
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	in "github.com/emwalker/digraph/test/integration"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func TestUpsertBadLink(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
-
-	result, err := c.UpsertLink(context.Background(), defaultRepo, "topic name", nil, []string{})
-	if err != nil {
-		t.Fatal(err)
+	title := "topic name"
+	service := services.UpsertLink{
+		Actor:         in.Actor,
+		Repository:    in.Repository,
+		ProvidedTitle: &title,
 	}
-	defer result.Cleanup()
+
+	result, err := service.Call(context.Background(), in.DB)
+	in.Must(err)
 
 	if len(result.Alerts) < 1 {
 		t.Fatal("Expected one or more alerts")
@@ -27,15 +30,19 @@ func TestUpsertBadLink(t *testing.T) {
 }
 
 func TestLinkHasATopic(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
+	in.NewMutator(in.MutatorOptions{}).DeleteLinksByURL("http://some.url.com/")
 
 	title := "A title"
-	result, err := c.UpsertLink(ctx, defaultRepo, "http://some.url.com/", &title, []string{})
-	if err != nil {
-		t.Fatal(err)
+	service := services.UpsertLink{
+		Actor:         in.Actor,
+		Repository:    in.Repository,
+		ProvidedTitle: &title,
+		ProvidedURL:   "http://some.url.com/",
 	}
-	defer result.Cleanup()
+
+	result, err := service.Call(ctx, in.DB)
+	in.Must(err)
 
 	if !result.LinkCreated {
 		t.Fatal("Expected link to be a new one")
@@ -45,10 +52,8 @@ func TestLinkHasATopic(t *testing.T) {
 		t.Fatal("There should be no preloads on the link")
 	}
 
-	topics, err := result.Link.ParentTopics().All(ctx, c.Exec)
-	if err != nil {
-		t.Fatal(err)
-	}
+	topics, err := result.Link.ParentTopics().All(ctx, in.DB)
+	in.Must(err)
 
 	if len(topics) < 1 {
 		t.Fatal("Expected the link to be added to the root topic")
@@ -57,38 +62,44 @@ func TestLinkHasATopic(t *testing.T) {
 
 func TestUpsertExistingLinkWithTopic(t *testing.T) {
 	// https://github.com/emwalker/digraph/issues/13
-	c := services.Connection{Exec: testDB, Actor: testActor}
+	in.NewMutator(in.MutatorOptions{}).DeleteLinksByURL("http://some.url.com/")
+	c := services.Connection{Exec: in.DB, Actor: in.Actor}
 	ctx := context.Background()
 
-	topicResult, err := c.UpsertTopic(ctx, defaultRepo, "62ce187241e", nil, []string{})
-	if err != nil {
-		t.Fatalf("There was a problem upserting the topic: %s", err)
-	}
-	defer topicResult.Cleanup()
+	topicResult, err := c.UpsertTopic(ctx, in.Repository, "62ce187241e", nil, []string{})
+	in.Must(err)
 
 	// Initial creation
 	title := "A title"
-	linkResult, err := c.UpsertLink(ctx, defaultRepo, "http://some.url.com/", &title, []string{topicResult.Topic.ID})
-	if err != nil {
-		t.Fatal(err)
+	service := services.UpsertLink{
+		Actor:          in.Actor,
+		Repository:     in.Repository,
+		ProvidedTitle:  &title,
+		ProvidedURL:    "http://some.url.com/",
+		ParentTopicIds: []string{topicResult.Topic.ID},
 	}
-	defer linkResult.Cleanup()
+
+	linkResult, err := service.Call(ctx, in.DB)
+	in.Must(err)
 
 	if !linkResult.LinkCreated {
 		t.Fatal("Expected link to be a new one")
 	}
 
-	// A second upsert
-	linkResult, err = c.UpsertLink(ctx, defaultRepo, "http://some.url.com/", &title, []string{})
-	if err != nil {
-		t.Fatal(err)
+	service = services.UpsertLink{
+		Actor:          in.Actor,
+		Repository:     in.Repository,
+		ProvidedTitle:  &title,
+		ProvidedURL:    "http://some.url.com/",
+		ParentTopicIds: []string{topicResult.Topic.ID},
 	}
-	defer linkResult.Cleanup()
 
-	topics, err := linkResult.Link.ParentTopics().All(ctx, c.Exec)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// A second upsert
+	linkResult, err = service.Call(ctx, in.DB)
+	in.Must(err)
+
+	topics, err := linkResult.Link.ParentTopics().All(ctx, in.DB)
+	in.Must(err)
 
 	for _, topic := range topics {
 		if topic.Root {
@@ -98,69 +109,76 @@ func TestUpsertExistingLinkWithTopic(t *testing.T) {
 }
 
 func TestUserLinkHistory(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
+	in.NewMutator(in.MutatorOptions{}).DeleteTopicsByName("62ce1872411")
+
+	c := services.Connection{Exec: in.DB, Actor: in.Actor}
 	ctx := context.Background()
 
-	result, err := c.UpsertTopic(ctx, defaultRepo, "62ce1872411", nil, []string{})
-	if err != nil {
-		t.Fatalf("There was a problem upserting the topic: %s", err)
-	}
-	defer result.Cleanup()
+	result, err := c.UpsertTopic(ctx, in.Repository, "62ce1872411", nil, []string{})
+	in.Must(err)
 
 	topic := result.Topic
+	actor := in.Actor
 
-	prevCount, _ := testActor.UserLinks().Count(ctx, testDB)
+	prevCount, _ := actor.UserLinks().Count(ctx, in.DB)
 	var nextCount int64
 
 	// A log is added for an upsert
 	title := "A title"
-	upsertResult, err := c.UpsertLink(ctx, defaultRepo, "http://frotz.com/", &title, []string{topic.ID})
-	if err != nil {
-		t.Fatal(err)
+	service := services.UpsertLink{
+		Actor:          in.Actor,
+		Repository:     in.Repository,
+		ProvidedTitle:  &title,
+		ProvidedURL:    "http://frotz.com/",
+		ParentTopicIds: []string{topic.ID},
 	}
-	defer upsertResult.Cleanup()
 
-	nextCount, _ = testActor.UserLinks().Count(ctx, testDB)
+	upsertResult, err := service.Call(ctx, in.DB)
+	in.Must(err)
+
+	nextCount, _ = actor.UserLinks().Count(ctx, in.DB)
 	if (prevCount + 1) != nextCount {
 		t.Fatal("Expected a new user link record to be created for the upsert")
 	}
 
-	userLink, err := testActor.UserLinks(qm.OrderBy("created_at desc")).One(ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	userLink, err := actor.UserLinks(qm.OrderBy("created_at desc")).One(ctx, in.DB)
+	in.Must(err)
 
-	linkTopicCount, err := userLink.UserLinkTopics().Count(ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	linkTopicCount, err := userLink.UserLinkTopics().Count(ctx, in.DB)
+	in.Must(err)
 
 	if linkTopicCount < 1 {
 		t.Fatal("Expected at least one row to be added to user_link_topics")
 	}
 
 	// A log is not added for a delete at this time
-	deleteResult, err := c.DeleteLink(ctx, defaultRepo, upsertResult.Link)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer deleteResult.Cleanup()
+	_, err = c.DeleteLink(ctx, in.Repository, upsertResult.Link)
+	in.Must(err)
 }
 
 func TestUserLinkReviewAdded(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
+	actor := in.Actor
 
-	prevCount, _ := testActor.UserLinkReviews().Count(ctx, testDB)
+	in.NewMutator(in.MutatorOptions{}).DeleteLinksByURL("http://frotz.com/")
+	_, err := actor.UserLinkReviews().DeleteAll(ctx, in.DB)
+	in.Must(err)
+
+	prevCount, err := actor.UserLinkReviews().Count(ctx, in.DB)
+	in.Must(err)
 
 	title := "A title"
-	upsertResult, err := c.UpsertLink(ctx, defaultRepo, "http://frotz.com/", &title, []string{})
-	if err != nil {
-		t.Fatalf("There was a problem upserting the topic: %s", err)
+	service := services.UpsertLink{
+		Actor:         in.Actor,
+		Repository:    in.Repository,
+		ProvidedTitle: &title,
+		ProvidedURL:   "http://frotz.com/",
 	}
-	defer upsertResult.Cleanup()
+	_, err = service.Call(ctx, in.DB)
+	in.Must(err)
 
-	nextCount, _ := testActor.UserLinkReviews().Count(ctx, testDB)
+	nextCount, err := actor.UserLinkReviews().Count(ctx, in.DB)
+	in.Must(err)
 
 	if prevCount+1 != nextCount {
 		t.Fatalf("Expected a user-link-review record to be created")
@@ -168,22 +186,24 @@ func TestUserLinkReviewAdded(t *testing.T) {
 }
 
 func TestReviewLink(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
+	actor := in.Actor
+	c := services.Connection{Exec: in.DB, Actor: actor}
 
 	title := "A title"
-	upsertResult, err := c.UpsertLink(ctx, defaultRepo, "http://frotz.com/", &title, []string{})
-	if err != nil {
-		t.Fatal(err)
+	service := services.UpsertLink{
+		Actor:         in.Actor,
+		Repository:    in.Repository,
+		ProvidedTitle: &title,
+		ProvidedURL:   "http://frotz.com/",
 	}
-	defer upsertResult.Cleanup()
+	upsertResult, err := service.Call(ctx, in.DB)
+	in.Must(err)
 
 	link := upsertResult.Link
 
-	reviews, err := testActor.UserLinkReviews(qm.Where("link_id = ?", link.ID)).All(ctx, c.Exec)
-	if err != nil {
-		t.Fatal(err)
-	}
+	reviews, err := actor.UserLinkReviews(qm.Where("link_id = ?", link.ID)).All(ctx, in.DB)
+	in.Must(err)
 
 	if len(reviews) != 1 {
 		t.Fatal("Expected there to be a single user-link-review")

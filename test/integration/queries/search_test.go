@@ -14,48 +14,71 @@ func TestSearchInTopic(t *testing.T) {
 	ctx := context.Background()
 	mutator := in.NewMutator(in.MutatorOptions{})
 
-	childTopic1 := mutator.MakeTopic(in.TopicOptions{
+	childTopic1 := mutator.UpsertTopic(in.UpsertTopicOptions{
 		ParentTopicIds: []string{in.Everything.ID},
 		Name:           "Child topic 1",
 	})
 
-	childTopic2 := mutator.MakeTopic(in.TopicOptions{
+	childTopic2 := mutator.UpsertTopic(in.UpsertTopicOptions{
 		ParentTopicIds: []string{in.Everything.ID},
 		Name:           "Child topic 2",
 	})
 
-	grandchildLink := mutator.MakeLink(in.LinkOptions{
+	childTopic3 := mutator.UpsertTopic(in.UpsertTopicOptions{
+		ParentTopicIds: []string{in.Everything.ID},
+		Name:           "Child topic 3",
+	})
+
+	grandchildLink := mutator.UpsertLink(in.UpsertLinkOptions{
 		ParentTopicIds: []string{childTopic1.ID, childTopic2.ID},
 		Title:          "New York Timely",
 		URL:            "http://nytimely.com",
 	})
 
-	mutator.MakeLink(in.LinkOptions{
+	mutator.UpsertLink(in.UpsertLinkOptions{
 		ParentTopicIds: []string{childTopic1.ID},
 		Title:          "Link with two parents",
 		URL:            "http://link-with-two-parents.com",
 	})
 
-	grandchildTopic1 := mutator.MakeTopic(in.TopicOptions{
+	grandchildTopic1 := mutator.UpsertTopic(in.UpsertTopicOptions{
 		Name:           "Grandchild topic 1abc",
-		ParentTopicIds: []string{childTopic1.ID},
+		ParentTopicIds: []string{childTopic1.ID, childTopic3.ID},
 	})
 
-	grandchildTopic2 := mutator.MakeTopic(in.TopicOptions{
+	grandchildTopic2 := mutator.UpsertTopic(in.UpsertTopicOptions{
 		Name:           "Grandchild topic 2abc",
 		ParentTopicIds: []string{childTopic2.ID},
 	})
 
-	greatGrandchildLink1 := mutator.MakeLink(in.LinkOptions{
+	greatGrandchildLink1 := mutator.UpsertLink(in.UpsertLinkOptions{
 		ParentTopicIds: []string{grandchildTopic1.ID},
 		Title:          "Great granchild link 1",
 		URL:            "http://great-grandchild-1.org",
 	})
 
-	greatGrandchildLink2 := mutator.MakeLink(in.LinkOptions{
+	greatGrandchildLink2 := mutator.UpsertLink(in.UpsertLinkOptions{
 		ParentTopicIds: []string{grandchildTopic1.ID, grandchildTopic2.ID},
 		Title:          "Great granchild link 2",
 		URL:            "http://great-grandchild-2.org",
+	})
+
+	greatGrandchildLink3 := mutator.UpsertLink(in.UpsertLinkOptions{
+		ParentTopicIds: []string{grandchildTopic1.ID, grandchildTopic2.ID},
+		Title:          "Great granchild link 3",
+		URL:            "http://great-grandchild-3.org",
+	})
+
+	// Remove the topics on greatGrandchildLink3
+	mutator.UpdateLinkTopics(in.UpdateLinkTopicsOptions{
+		Link:           greatGrandchildLink3,
+		ParentTopicIds: []string{in.Everything.ID},
+	})
+
+	// Remove childTopic3 from grandchildTopic1
+	mutator.UpdateTopicParentTopics(in.UpdateTopicParentTopicsOptions{
+		Topic:          grandchildTopic1,
+		ParentTopicIds: []string{childTopic1.ID},
 	})
 
 	testCases := []struct {
@@ -83,7 +106,7 @@ func TestSearchInTopic(t *testing.T) {
 			name:         "When a child topic matches",
 			searchString: "Child topic",
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.Exactly, 3}, // FIXME: should be 2
+			topics:       in.Condition{in.Exactly, 3},
 			links:        in.Condition{in.Anything, 0},
 		},
 		{
@@ -138,7 +161,7 @@ func TestSearchInTopic(t *testing.T) {
 			parentTopic: in.Everything,
 			topics:      in.Condition{in.Exactly, 0},
 			// http://nytimely.com and http://great-grandchild-2.org
-			links: in.Condition{in.Exactly, 1}, // FIXME: should be 2
+			links: in.Condition{in.Exactly, 2},
 		},
 		{
 			name: "Descendant links from the intersection of the transitive closures are included",
@@ -151,14 +174,13 @@ func TestSearchInTopic(t *testing.T) {
 			parentTopic: in.Everything,
 			topics:      in.Condition{in.Exactly, 0},
 			// http://great-grandchild-2.org
-			links: in.Condition{in.Exactly, 0}, // FIXME: should be 1
+			links: in.Condition{in.Exactly, 1},
 		},
 	}
 
 	for _, td := range testCases {
 		t.Run(td.name, func(t *testing.T) {
-			query, err := queries.NewSearch(td.parentTopic, &td.searchString).Exec(ctx, mutator.DB)
-			in.Must(err)
+			query := queries.NewSearch(td.parentTopic, &td.searchString)
 
 			topics, err := query.DescendantTopics(ctx, mutator.DB, 100)
 			in.Must(err)

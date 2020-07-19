@@ -26,12 +26,6 @@ var (
 	errInvalidSynonym        = coreerrors.New("invalid synonym")
 )
 
-// DeleteTopicResult holds the result of an attempt to delete a topic.
-type DeleteTopicResult struct {
-	Alerts         []*models.Alert
-	DeletedTopicID *string
-}
-
 // DeleteTopicTimeRangeResult holds the result of an attempt to delete the time range on a topic.
 type DeleteTopicTimeRangeResult struct {
 	Alerts             []*models.Alert
@@ -49,27 +43,6 @@ type UpdateSynonymsResult struct {
 type UpdateTopicResult struct {
 	Alerts []*models.Alert
 	Topic  *models.Topic
-}
-
-// UpdateTopicParentTopicsResult holds the result of an UpdateTopicParentTopics call.
-type UpdateTopicParentTopicsResult struct {
-	Alerts []*models.Alert
-	Topic  *models.Topic
-}
-
-// UpsertTopicResult holds the result of an UpsertTopic call.
-type UpsertTopicResult struct {
-	Alerts       []*models.Alert
-	Topic        *models.Topic
-	TopicCreated bool
-	Cleanup      CleanupFunc
-}
-
-// UpsertTopicTimeRangeResult returns the result of an upsert call.
-type UpsertTopicTimeRangeResult struct {
-	Alerts    []*models.Alert
-	Topic     *models.Topic
-	TimeRange *models.Timerange
 }
 
 func cycleWarning(descendant, ancestor *models.Topic) *models.Alert {
@@ -141,46 +114,65 @@ func DisplayName(
 	return name, nil
 }
 
-// DeleteTopic removes a time range from a topic.
-func (c Connection) DeleteTopic(
-	ctx context.Context, topic *models.Topic,
-) (*DeleteTopicResult, error) {
+// DeleteTopic deletes a topic and associated relations.
+type DeleteTopic struct {
+	Actor *models.User
+	Topic *models.Topic
+}
+
+// DeleteTopicResult holds the result of an attempt to delete a topic.
+type DeleteTopicResult struct {
+	Alerts         []*models.Alert
+	DeletedTopicID *string
+}
+
+// Call removes a time range from a topic.
+func (m DeleteTopic) Call(ctx context.Context, exec boil.ContextExecutor) (*DeleteTopicResult, error) {
+	topic := m.Topic
+
 	if topic.Root {
-		log.Printf("%s attempted to delete root %s", c.Actor, topic)
+		log.Printf("%s attempted to delete root %s", m.Actor, topic)
 		return nil, errCannotDeleteRootTopic
 	}
 
-	log.Printf("%s is deleting %s; moving its topics and links to its parent topics", c.Actor, topic)
+	log.Printf("%s is deleting %s; moving its topics and links to its parent topics", m.Actor, topic)
 
-	// Add any child topics to the parent topics of the topic to be deleted.
-	_, err := queries.Raw(`
-	insert into topic_topics (parent_id, child_id)
-		select gp.parent_id, pc.child_id
-		from topic_topics gp
-		join topic_topics pc on gp.child_id = pc.parent_id
-		where pc.parent_id = $1
-		on conflict do nothing;
-	`, topic.ID).Exec(c.Exec)
-
+	parentTopics, err := topic.ParentTopics().All(ctx, exec)
 	if err != nil {
-		return nil, errors.Wrap(err, "services: failed to re-seat child topics")
+		return nil, errors.Wrap(err, "services: failed to fetch parent topics")
 	}
 
-	// Add any child links to the parent topics of the topic to be deleted.
-	_, err = queries.Raw(`
-	insert into link_topics (parent_id, child_id)
-		select gp.parent_id, pc.child_id
-		from topic_topics gp
-		join link_topics pc on gp.child_id = pc.parent_id
-		where pc.parent_id = $1
-		on conflict do nothing;
-	`, topic.ID).Exec(c.Exec)
-
-	if err != nil {
-		return nil, errors.Wrap(err, "services: failed to re-seat child links")
+	childTopics, err := topic.ChildTopics().All(ctx, exec)
+	if dqueries.IsRealError(err) {
+		return nil, errors.Wrap(err, "services: failed to fetch child topics")
 	}
 
-	if _, err = topic.Delete(ctx, c.Exec); err != nil {
+	links, err := topic.ChildLinks().All(ctx, exec)
+	if dqueries.IsRealError(err) {
+		return nil, errors.Wrap(err, "services: failed to fetch child links")
+	}
+
+	for _, parentTopic := range parentTopics {
+		// Add any child topics to the parent topics of the topic to be deleted.
+		for _, childTopic := range childTopics {
+			values := []interface{}{parentTopic.ID, childTopic.ID}
+			_, err = exec.ExecContext(ctx, "select add_topic_to_topic($1, $2)", values...)
+			if err != nil {
+				return nil, errors.Wrap(err, "services: failed to re-seat child topics")
+			}
+		}
+
+		// Add any child links to the parent topics of the topic to be deleted.
+		for _, link := range links {
+			values := []interface{}{parentTopic.ID, link.ID}
+			_, err = exec.ExecContext(ctx, "select add_topic_to_link($1, $2)", values...)
+			if err != nil {
+				return nil, errors.Wrap(err, "services: failed to re-seat child links")
+			}
+		}
+	}
+
+	if _, err = topic.Delete(ctx, exec); err != nil {
 		return nil, errors.Wrap(err, "services: failed to delete topic")
 	}
 
@@ -290,21 +282,11 @@ func (c Connection) UpdateTopic(
 	return &UpdateTopicResult{Topic: topic}, nil
 }
 
-// UpdateTopicParentTopics updates the parent topics of a topic.
-func (c Connection) UpdateTopicParentTopics(
-	ctx context.Context, topic *models.Topic, parentTopicIds []string,
-) (*UpdateTopicParentTopicsResult, error) {
-	parentTopics, alerts, err := c.parentTopicsAndAlerts(ctx, topic, parentTopicIds)
-
-	if err = topic.SetParentTopics(ctx, c.Exec, false, parentTopics...); err != nil {
-		return nil, err
-	}
-
-	if err = topic.Reload(ctx, c.Exec); err != nil {
-		return nil, err
-	}
-
-	return &UpdateTopicParentTopicsResult{alerts, topic}, nil
+// UpsertTopicResult holds the result of an UpsertTopic call.
+type UpsertTopicResult struct {
+	Alerts       []*models.Alert
+	Topic        *models.Topic
+	TopicCreated bool
 }
 
 // UpsertTopic updates a topic if it exists and creates it if it does not exist.
@@ -316,8 +298,7 @@ func (c Connection) UpsertTopic(
 
 	if !ok {
 		return &UpsertTopicResult{
-			Alerts:  []*models.Alert{invalidNameWarning(name)},
-			Cleanup: noopCleanup,
+			Alerts: []*models.Alert{invalidNameWarning(name)},
 		}, nil
 	}
 
@@ -363,10 +344,11 @@ func (c Connection) UpsertTopic(
 		return &UpsertTopicResult{Alerts: alerts}, nil
 	}
 
-	if len(parents) > 0 {
-		err = topic.AddParentTopics(ctx, c.Exec, false, parents...)
+	for _, parentTopic := range parents {
+		values := []interface{}{parentTopic.ID, topic.ID}
+		_, err = c.Exec.ExecContext(ctx, "select add_topic_to_topic($1, $2)", values...)
 		if err != nil {
-			return nil, fmt.Errorf("upsertTopic: %s", err)
+			return nil, fmt.Errorf("UpsertTopic: %s", err)
 		}
 	}
 
@@ -380,31 +362,20 @@ func (c Connection) UpsertTopic(
 			alerts,
 			models.NewAlert(
 				models.AlertTypeSuccess,
-				fmt.Sprintf("A topic with the name \"%s\" was found", name),
+				fmt.Sprintf(`A topic with the name "%s" was found`, name),
 			),
 		)
 	}
 
-	cleanup := func() error {
-		if created {
-			log.Printf("Deleteing topic %s", topic.ID)
-			if _, err = topic.Delete(ctx, c.Exec); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
 	return &UpsertTopicResult{
 		Alerts:       alerts,
-		Cleanup:      cleanup,
 		Topic:        topic,
 		TopicCreated: created,
 	}, nil
 }
 
-func (c Connection) isDescendantOf(
-	ctx context.Context, topic, ancestor *models.Topic,
+func isDescendantOf(
+	ctx context.Context, exec boil.ContextExecutor, topic, ancestor *models.Topic,
 ) (bool, error) {
 	type resultInfo struct {
 		Count int `boil:"match_count"`
@@ -424,7 +395,7 @@ func (c Connection) isDescendantOf(
 	  inner join children pt on pt.child_id = ct.parent_id
 	)
 	select count(*) match_count from children c where c.child_id = $2
-	`, ancestor.ID, topic.ID).Bind(ctx, c.Exec, &result)
+	`, ancestor.ID, topic.ID).Bind(ctx, exec, &result)
 
 	if err != nil {
 		return false, err
@@ -433,38 +404,14 @@ func (c Connection) isDescendantOf(
 	return result.Count > 0, nil
 }
 
-func (c Connection) parentTopicsAndAlerts(
-	ctx context.Context, topic *models.Topic, parentIds []string,
-) ([]*models.Topic, []*models.Alert, error) {
-	maybeParentTopics := util.TopicsFromIds(parentIds)
-	var parentTopics []*models.Topic
-	var alerts []*models.Alert
-
-	for _, parent := range maybeParentTopics {
-		willHaveCycle, err := c.isDescendantOf(ctx, parent, topic)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if willHaveCycle {
-			parent.Reload(ctx, c.Exec)
-			alerts = append(alerts, cycleWarning(parent, topic))
-		} else {
-			parentTopics = append(parentTopics, parent)
-		}
-	}
-
-	return parentTopics, alerts, nil
-}
-
 func (c Connection) upsertTopic(
 	ctx context.Context, repo *models.Repository, topic *models.Topic,
 ) (*models.Topic, bool, error) {
 	existing, err := repo.Topics(
-		qm.Where(`topics.name like ?`, topic.Name),
+		qm.Where("topics.name like ?", topic.Name),
 	).One(ctx, c.Exec)
 
-	if err != nil && err.Error() != dqueries.ErrSQLNoRows {
+	if dqueries.IsRealError(err) {
 		return nil, false, fmt.Errorf("upsertTopic: %s", err)
 	}
 
@@ -517,7 +464,7 @@ func (c Connection) parentTopicsToAdd(
 			continue
 		}
 		parent := &models.Topic{ID: parentID}
-		willHaveCycle, err := c.isDescendantOf(ctx, parent, topic)
+		willHaveCycle, err := isDescendantOf(ctx, c.Exec, parent, topic)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -558,6 +505,13 @@ func (c Connection) updateTopicName(
 	return nil
 }
 
+// UpsertTopicTimeRangeResult returns the result of an upsert call.
+type UpsertTopicTimeRangeResult struct {
+	Alerts    []*models.Alert
+	Topic     *models.Topic
+	TimeRange *models.Timerange
+}
+
 // UpsertTopicTimeRange adds a timeline to a topic.
 func (c Connection) UpsertTopicTimeRange(
 	ctx context.Context, topic *models.Topic, startsAt time.Time, endsAt *time.Time, format models.TimeRangePrefixFormat,
@@ -596,7 +550,8 @@ func (c Connection) UpsertTopicTimeRange(
 	}
 
 	if err = c.updateTopicName(ctx, topic, timerange); err != nil {
-		return nil, errors.Wrap(err, "services: failed to update topic name")
+		log.Printf("services: failed to update name for %s", topic)
+		return nil, errors.Wrap(err, "services: failed to update name")
 	}
 
 	return &UpsertTopicTimeRangeResult{
@@ -604,4 +559,74 @@ func (c Connection) UpsertTopicTimeRange(
 		Topic:     topic,
 		TimeRange: timerange,
 	}, nil
+}
+
+// UpdateTopicParentTopics updates the parent topics of a topic
+type UpdateTopicParentTopics struct {
+	Actor          *models.User
+	Topic          *models.TopicValue
+	ParentTopicIds []string
+}
+
+// UpdateTopicParentTopicsResult holds the result of an UpdateTopicParentTopics call.
+type UpdateTopicParentTopicsResult struct {
+	Alerts []*models.Alert
+	Topic  *models.TopicValue
+}
+
+func (m UpdateTopicParentTopics) parentTopicsAndAlerts(
+	ctx context.Context, exec boil.ContextExecutor,
+) ([]*models.Topic, []*models.Alert, error) {
+	maybeParentTopics := util.TopicsFromIds(m.ParentTopicIds)
+	topic := m.Topic.Topic
+	var parentTopics []*models.Topic
+	var alerts []*models.Alert
+
+	for _, parent := range maybeParentTopics {
+		willHaveCycle, err := isDescendantOf(ctx, exec, parent, topic)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if willHaveCycle {
+			parent.Reload(ctx, exec)
+			alerts = append(alerts, cycleWarning(parent, topic))
+		} else {
+			parentTopics = append(parentTopics, parent)
+		}
+	}
+
+	return parentTopics, alerts, nil
+}
+
+// Call updates the parent topics of a topic.
+func (m UpdateTopicParentTopics) Call(ctx context.Context, exec boil.ContextExecutor) (*UpdateTopicParentTopicsResult, error) {
+	topic := m.Topic
+	parentTopics, alerts, err := m.parentTopicsAndAlerts(ctx, exec)
+
+	values := []interface{}{topic.ID}
+	sql := "delete from topic_transitive_closure where child_id = $1"
+	if _, err := exec.ExecContext(ctx, sql, values...); err != nil {
+		return nil, err
+	}
+
+	sql = "delete from topic_topics where child_id = $1"
+	if _, err := exec.ExecContext(ctx, sql, values...); err != nil {
+		return nil, err
+	}
+
+	for _, parent := range parentTopics {
+		sql := "select add_topic_to_topic($1, $2)"
+		values := []interface{}{parent.ID, topic.ID}
+		_, err := exec.ExecContext(ctx, sql, values...)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to upsert topic")
+		}
+	}
+
+	if err = topic.Reload(ctx, exec); err != nil {
+		return nil, err
+	}
+
+	return &UpdateTopicParentTopicsResult{alerts, topic}, nil
 }
