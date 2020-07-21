@@ -244,31 +244,16 @@ func (r *topicResolver) Links(
 	log.Printf("Fetching links for topic %s", topic)
 	viewer := GetRequestContext(ctx).Viewer()
 
-	q := queries.NewLinkQuery(topic.View, viewer, searchString, first, reviewed)
-	mods := append(q.Mods(), qm.OrderBy("links.created_at desc"))
-
-	if descendants != nil && *descendants {
-		mods = append(
-			mods,
-			qm.InnerJoin("link_topics lt on lt.child_id = links.id"),
-			qm.InnerJoin("link_transitive_closure lte on lt.link_id = lte.child_id"),
-			qm.Where("lte.parent_id = ?", topic.ID),
-		)
-	} else {
-		mods = append(
-			mods,
-			qm.InnerJoin("link_topics lt on lt.child_id = links.id"),
-			qm.Where("lt.parent_id = ?", topic.ID),
-		)
+	query := queries.LinkQuery{
+		First:              first,
+		IncludeDescendants: descendants != nil && *descendants,
+		Reviewed:           reviewed,
+		SearchString:       searchString,
+		Topic:              topic.Topic,
+		View:               topic.View,
+		Viewer:             viewer,
 	}
-
-	mods = append(
-		mods,
-		qm.GroupBy("links.id"),
-		qm.OrderBy("links.created_at desc"),
-	)
-
-	rows, err := models.Links(mods...).All(ctx, r.DB)
+	rows, err := query.Fetch(ctx, r.DB)
 	return linkConnection(topic.View, rows, len(rows), err)
 }
 

@@ -147,7 +147,14 @@ func (r *viewResolver) Links(
 ) (*models.LinkConnection, error) {
 	viewer := GetRequestContext(ctx).Viewer()
 
-	mods := queries.NewLinkQuery(view, viewer, searchString, first, reviewed).Mods()
+	query := queries.LinkQuery{
+		First:        first,
+		Reviewed:     reviewed,
+		SearchString: searchString,
+		View:         view,
+		Viewer:       viewer,
+	}
+	mods := query.Mods()
 
 	totalCount, err := models.Links(mods...).Count(ctx, r.DB)
 	if err != nil {

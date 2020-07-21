@@ -1,4 +1,4 @@
-package search_test
+package queries_test
 
 import (
 	"context"
@@ -13,6 +13,21 @@ import (
 func TestSearchInTopic(t *testing.T) {
 	ctx := context.Background()
 	mutator := in.NewMutator(in.MutatorOptions{})
+	mutator.DeleteTopicsByName(
+		"Child topic 1",
+		"Child topic 2",
+		"Child topic 3",
+		"Child topic",
+		"Grandchild topic 1abc",
+		"Grandchild topic 2abc",
+	)
+	mutator.DeleteLinksByURL(
+		"http://nytimely.com",
+		"http://link-with-two-parents.com",
+		"http://great-grandchild-1.org",
+		"http://great-grandchild-2.org",
+		"http://great-grandchild-3.org",
+	)
 
 	childTopic1 := mutator.UpsertTopic(in.UpsertTopicOptions{
 		ParentTopicIds: []string{in.Everything.ID},

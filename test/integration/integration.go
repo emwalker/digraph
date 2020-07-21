@@ -186,12 +186,16 @@ func (m Mutator) UpdateTopicParentTopics(options UpdateTopicParentTopicsOptions)
 	Must(err)
 }
 
-func (m Mutator) DeleteTopicsByName(name string) {
-	_, err := models.Topics(qm.Where("name like ?", name)).DeleteAll(context.Background(), m.DB)
-	Must(err)
+func (m Mutator) DeleteTopicsByName(names ...string) {
+	for _, name := range names {
+		_, err := models.Topics(qm.Where("name like ?", name)).DeleteAll(context.Background(), m.DB)
+		Must(err)
+	}
 }
 
-func (m Mutator) DeleteLinksByURL(url string) {
-	_, err := models.Links(qm.Where("url = ?", url)).DeleteAll(context.Background(), m.DB)
-	Must(err)
+func (m Mutator) DeleteLinksByURL(urls ...string) {
+	for _, url := range urls {
+		_, err := models.Links(qm.Where("url = ?", url)).DeleteAll(context.Background(), m.DB)
+		Must(err)
+	}
 }
