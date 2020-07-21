@@ -197,6 +197,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.southafrica.net/gl/en/travel/article/the-face-of-an-uprising-the-hector-pieterson-museum-soweto?gclid=CjwKCAjw_-D3BRBIEiwAjVMy7AR_6Aaw2XjWkV36MEbdlqaCY2sHqXCc655NWoMZ8NtDtI30KF1UCxoCF0IQAvD_BwE",
 			canonicalURL: "https://www.southafrica.net/gl/en/travel/article/the-face-of-an-uprising-the-hector-pieterson-museum-soweto",
 		},
+		{
+			name:         "A URL from Durham University",
+			inputURL:     "https://www.dur.ac.uk/research/news/item/?itemno=42260",
+			canonicalURL: "https://www.dur.ac.uk/research/news/item/?itemno=42260",
+		},
 	}
 
 	for _, testCase := range testCases {
