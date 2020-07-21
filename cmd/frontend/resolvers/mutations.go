@@ -477,15 +477,17 @@ func (r *MutationResolver) UpdateLinkTopics(
 			return err
 		}
 
+		log.Printf("Updating topics for %s to be %v", link, input.ParentTopicIds)
 		service := services.UpdateLinkTopics{
 			Actor:          actor,
 			ParentTopicIds: input.ParentTopicIds,
-			Link:           &models.LinkValue{link, true, actor.DefaultView()},
+			Link:           &models.LinkValue{link, false, actor.DefaultView()},
 		}
 		result, err = service.Call(ctx, tx)
 		return err
 	})
 	if err != nil {
+		log.Printf("There was a problem updating the topics: %s", err)
 		return nil, err
 	}
 

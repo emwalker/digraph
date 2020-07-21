@@ -219,3 +219,42 @@ func TestReviewLink(t *testing.T) {
 		t.Fatal("Expected the review to be pending")
 	}
 }
+
+func TestRemoveTopicFromLink(t *testing.T) {
+	ctx := context.Background()
+	actor := in.Actor
+	mutator := in.NewMutator(in.MutatorOptions{})
+	mutator.DeleteLinksByURL("https://www.nytimes.com")
+
+	topic1 := mutator.UpsertTopic(in.UpsertTopicOptions{Name: "Topic 1"})
+	topic2 := mutator.UpsertTopic(in.UpsertTopicOptions{Name: "Topic 2"})
+	link := mutator.UpsertLink(in.UpsertLinkOptions{
+		Title:          "Link title",
+		URL:            "https://www.nytimes.com",
+		ParentTopicIds: []string{topic1.ID, topic2.ID},
+	})
+
+	in.Must(link.Reload(ctx, in.DB))
+	parentTopics, err := link.ParentTopics().All(ctx, in.DB)
+	in.Must(err)
+
+	if len(parentTopics) != 2 {
+		t.Fatalf("Expected 2 parent topics, found %d", len(parentTopics))
+	}
+
+	service := services.UpdateLinkTopics{
+		Actor:          actor,
+		Link:           link,
+		ParentTopicIds: []string{topic1.ID},
+	}
+	_, err = service.Call(ctx, in.DB)
+	in.Must(err)
+
+	in.Must(link.Reload(ctx, in.DB))
+	parentTopics, err = link.ParentTopics().All(ctx, in.DB)
+	in.Must(err)
+
+	if len(parentTopics) != 1 {
+		t.Fatalf("Expected 1 parent topic, found %d", len(parentTopics))
+	}
+}

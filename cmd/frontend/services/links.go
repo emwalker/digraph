@@ -172,6 +172,7 @@ func (m UpsertLink) addTopics(
 		parentTopicIds = append(parentTopicIds, rootTopic.ID)
 	}
 
+	log.Printf("Adding topic ids %s", parentTopicIds)
 	for _, topicID := range parentTopicIds {
 		sql := "select add_topic_to_link($1, $2)"
 		log.Printf("adding topic to link: %s, %v", topicID, link)
@@ -341,6 +342,12 @@ func (s UpdateLinkTopics) Call(ctx context.Context, exec boil.ContextExecutor) (
 
 	values := []interface{}{link.ID}
 	sql := "delete from link_transitive_closure where child_id = $1"
+	if _, err := exec.ExecContext(ctx, sql, values...); err != nil {
+		return nil, err
+	}
+
+	values = []interface{}{link.ID}
+	sql = "delete from link_topics where child_id = $1"
 	if _, err := exec.ExecContext(ctx, sql, values...); err != nil {
 		return nil, err
 	}
