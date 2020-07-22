@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euf -o pipefail
+
+if [ ! -f data/production-backup.dump ]; then
+  echo >&2 data/production-backup.dump not found
+  exit 1
+fi
+
+dropdb digraph_dev
+createdb digraph_dev
+psql digraph_dev < data/production-backup.dump

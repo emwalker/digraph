@@ -17,3 +17,4 @@ app.yaml
 /data/*backup.*
 /cmd/frontend/models/*
 /build
+*.dump.gz

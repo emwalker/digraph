@@ -99,6 +99,13 @@ load-fixtures:
 	bash ./scripts/load-fixtures
 	psql $(DBNAME) < queries/transitive-closure.sql
 
+load-production:
+	bash ./scripts/load-production-db
+	psql $(DBNAME) < queries/transitive-closure.sql
+
+save-production:
+	bash ./scripts/save-production-db
+
 build-client:
 	yarn relay
 	yarn build

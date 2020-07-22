@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euf -o pipefail
+
+timestamp=$(date +"%Y%m%d")
+unarchived="${timestamp}-production-backup.dump"
+
+scripts/pg-dump > data/production-backup.dump.1
+cp data/production-backup.dump.1 data/production-backup.dump
+cp data/production-backup.dump "./${unarchived}"
+gzip -f ${unarchived}
+echo >&2 "Saved to ${unarchived}.gz"
