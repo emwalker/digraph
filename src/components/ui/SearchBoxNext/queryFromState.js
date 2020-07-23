@@ -18,10 +18,13 @@ class Query {
       entityRanges.forEach(({ offset, length, key }) => {
         if (offset !== lastStart) buffer.push(text.slice(lastStart, offset))
 
-        const { data: { mention: { link } } } = entityMap[key]
+        const { data: { mention } } = entityMap[key]
 
-        buffer.push(`in:${ link}`)
-        lastStart = offset + length
+        if (mention !== undefined) {
+          const { link } = mention
+          buffer.push(`in:${link}`)
+          lastStart = offset + length
+        }
       })
 
       if (lastStart !== text.length) buffer.push(text.slice(lastStart))
