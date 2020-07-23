@@ -191,6 +191,13 @@ func TestSearchInTopic(t *testing.T) {
 			// http://great-grandchild-2.org
 			links: in.Condition{in.Exactly, 1},
 		},
+		{
+			name:         "A topic appears in its own down set",
+			searchString: fmt.Sprintf("in:/wiki/topics/%s", grandchildTopic1.ID),
+			parentTopic:  in.Everything,
+			topics:       in.Condition{in.Exactly, 1},
+			links:        in.Condition{in.Anything, 2},
+		},
 	}
 
 	for _, td := range testCases {
