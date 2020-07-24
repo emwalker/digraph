@@ -54,6 +54,7 @@ const TextInput = ({ defaultValue, handleReturn }: Props) => {
         onFocus={onFocus}
         placeholder="Search"
         plugins={plugins}
+        stripPastedStyles
       />
       <TopicSuggestions
         Wrapped={MentionSuggestions}

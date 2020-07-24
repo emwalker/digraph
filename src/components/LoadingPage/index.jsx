@@ -4,7 +4,7 @@ import { GoRepo } from 'react-icons/go'
 
 import type { Location, Router } from 'components/types'
 import Page from 'components/ui/Page'
-import SearchBox from 'components/ui/SearchBoxNext'
+import SearchBox from 'components/ui/SearchBox'
 import Columns from 'components/ui/Columns'
 import LeftColumn from 'components/ui/LeftColumn'
 import RightColumn from 'components/ui/RightColumn'

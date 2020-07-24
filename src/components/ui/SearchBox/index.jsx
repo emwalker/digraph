@@ -1,10 +1,13 @@
 // @flow
 import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
+import { EditorState } from 'draft-js'
 
 import { everythingTopicPath } from 'components/constants'
 import type { Location, Router } from 'components/types'
+import TextInput from './TextInput'
 import styles from './styles.module.css'
+import queryFromState from './queryFromState'
 
 type Props = {
   className?: string,
@@ -27,14 +30,14 @@ const onFormSubmit = (event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
 const inputSelect = (pathname: string, selectedScope: string, onSelectChange: Function) => {
   if (atHomepage(pathname)) {
     return (
-      <button className="btn" type="button">
+      <button className={classNames('btn', styles.button)} type="button">
         Everything
       </button>
     )
   }
 
   return (
-    <select onChange={onSelectChange} value={selectedScope} className="btn">
+    <select onChange={onSelectChange} value={selectedScope} className={classNames('btn', styles.button)}>
       <option>Everything</option>
       <option>This topic</option>
     </select>
@@ -46,18 +49,16 @@ const SearchBox = ({ className, router, location, showButton }: Props) => {
   const searchString = location.search ? location.query.q : ''
   const [selectedScope, setSelectedScope] = useState('Everything')
 
-  const onKeyPress = useCallback((event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === 'Enter') {
-      const { value } = (event.target: window.HTMLInputElement)
-      const searchPathname = pathnameFor(pathname, selectedScope)
+  const handleReturn = useCallback((event, editorState: EditorState) => {
+    const query = queryFromState(editorState).toString()
+    const searchPathname = pathnameFor(pathname, selectedScope)
 
-      if (value === '') {
-        router.push({ pathname: searchPathname })
-        return
-      }
-
-      router.push({ pathname: searchPathname, query: { q: value } })
+    if (query === '') {
+      router.push({ pathname: searchPathname })
+      return
     }
+
+    router.push({ pathname: searchPathname, query: { q: query } })
   }, [router, pathname, selectedScope])
 
   const onSelectChange = useCallback((event: SyntheticKeyboardEvent<HTMLButtonElement>) => {
@@ -69,18 +70,14 @@ const SearchBox = ({ className, router, location, showButton }: Props) => {
 
   return (
     <form className={actualClassName} onSubmit={onFormSubmit}>
-      <input
-        aria-label="Search"
-        className={classNames('form-control', styles.searchInput)}
-        onKeyPress={onKeyPress}
-        placeholder="Search"
-        type="search"
+      <TextInput
+        handleReturn={handleReturn}
         defaultValue={searchString}
       />
       {showButton && (
-        <span className="input-group-button">
+        <div className={classNames('input-group-button', styles.buttonContainer)}>
           {inputSelect(pathname, selectedScope, onSelectChange)}
-        </span>
+        </div>
       )}
     </form>
   )
