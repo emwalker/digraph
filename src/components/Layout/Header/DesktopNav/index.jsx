@@ -2,7 +2,6 @@
 import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { Link } from 'found'
-import classNames from 'classnames'
 
 import type { Location, Router } from 'components/types'
 import { toEverything } from 'components/navigation'
@@ -17,6 +16,7 @@ type Props = {
   className?: ?string,
   location: Location,
   router: Router,
+  view: any,
   viewer: Viewer,
 }
 
@@ -26,7 +26,7 @@ class DesktopNav extends Component<Props> {
   }
 
   get className(): string {
-    return classNames('Header', this.props.className)
+    return `Header ${this.props.className || ''}`
   }
 
   get isGuest(): boolean {
@@ -44,15 +44,15 @@ class DesktopNav extends Component<Props> {
   renderUserNav = (viewer: Viewer) => <UserNav viewer={viewer} />
 
   render = () => {
-    const { viewer, router, location } = this.props
+    const { viewer, view, router, location } = this.props
 
     return (
-      <header className={classNames(header, 'px-sm-3 px-md-6 px-lg-4')}>
-        <nav className={classNames(navLeft, 'd-inline-block')}>
+      <header className={`${header} px-sm-3 px-md-6 px-lg-4`}>
+        <nav className={`${navLeft} d-inline-block`}>
           <h1 className="h3 text-normal">
             <a
               href="/"
-              className={classNames(primaryLogo, 'text-gray-dark n-link no-underline d-flex')}
+              className={`${primaryLogo} text-gray-dark n-link no-underline d-flex`}
             >
               <div className="mr-2 d-inline-block">
                 <DigraphLogo height="28px" width="28px" />
@@ -63,7 +63,7 @@ class DesktopNav extends Component<Props> {
           </h1>
         </nav>
         <div className={searchBox}>
-          <SearchBox router={router} location={location} />
+          <SearchBox router={router} location={location} view={view} />
         </div>
         <nav className={userNav}>
           <a

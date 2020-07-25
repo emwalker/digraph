@@ -60,6 +60,7 @@ func (r *queryResolver) fetchCurrentRepo(
 // View returns a resolver that filters results on the basis of one or more organizations.
 func (r *queryResolver) View(
 	ctx context.Context, viewerID, orgLogin string, repoName *string, repositoryIds []string,
+	searchString *string,
 ) (*models.View, error) {
 	viewer := GetRequestContext(ctx).Viewer()
 
@@ -74,6 +75,7 @@ func (r *queryResolver) View(
 		CurrentRepositoryName:    repoName,
 		CurrentRepository:        repo,
 		RepositoryIds:            repositoryIds,
+		SearchString:             searchString,
 	}
 
 	return view, nil

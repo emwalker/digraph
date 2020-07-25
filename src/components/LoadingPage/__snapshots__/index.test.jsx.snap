@@ -36,7 +36,7 @@ exports[`<LoadingPage /> renders 1`] = `
     >
       Some title
     </div>
-    <SearchBox
+    <Relay(SearchBox)
       className="col-lg-4 col-12"
       location={
         Object {
@@ -48,7 +48,6 @@ exports[`<LoadingPage /> renders 1`] = `
           },
         }
       }
-      showButton={true}
       value=""
     />
   </div>

@@ -23,6 +23,11 @@ exports[`<Layout /> renders 1`] = `
             "push": [MockFunction],
           }
         }
+        view={
+          Object {
+            "viewer": Object {},
+          }
+        }
         viewer={Object {}}
       />
       <div

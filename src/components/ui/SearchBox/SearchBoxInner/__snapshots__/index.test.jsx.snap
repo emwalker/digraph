@@ -6,8 +6,8 @@ exports[`<FilterInput /> renders 1`] = `
   onSubmit={[Function]}
 >
   <TextInput
-    defaultValue=""
     handleReturn={[Function]}
+    queryInfo={Object {}}
   />
   <div
     className="input-group-button buttonContainer"

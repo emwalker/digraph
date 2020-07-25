@@ -44,11 +44,9 @@ func (s TopicSpec) ID() string {
 
 // QuerySpec encapsulates a search query.
 type QuerySpec struct {
-	Input  *string
-	Tokens []string
-	// Eventually we'll want to handle OR's and AND's, so the following fields are implementation details that
-	// callers should not rely on.
-	stringTokens []string
+	Input        *string
+	Tokens       []string
+	StringTokens []string
 	Topics       []TopicSpec
 }
 
@@ -74,7 +72,7 @@ func randSeq(n int) string {
 
 // TokenInput returns the search string stripped of special search types
 func (s QuerySpec) TokenInput() string {
-	return strings.Join(s.stringTokens, " ")
+	return strings.Join(s.StringTokens, " ")
 }
 
 // WildcardStringArray returns an array of wildcard tokens that can be used in a SQL query. The assumption
@@ -82,7 +80,7 @@ func (s QuerySpec) TokenInput() string {
 // array that is returned are not safe to interpolate directly into a SQL query.
 func (s QuerySpec) WildcardStringArray() interface{} {
 	var tokens []string
-	for _, s := range s.stringTokens {
+	for _, s := range s.StringTokens {
 		if pageinfo.IsURL(s) {
 			url, err := pageinfo.NormalizeURL(s)
 			if err == nil {
@@ -100,7 +98,7 @@ func (s QuerySpec) EscapedPostgresTsQueryInput() interface{} {
 	var tokens []string
 	stringDelim := randSeq(40)
 
-	for _, token := range s.stringTokens {
+	for _, token := range s.StringTokens {
 		if token != "" {
 			if strings.Contains(stringDelim, token) {
 				log.Printf("Skipping token containing string delimiter: %s", token)
@@ -117,4 +115,13 @@ func (s QuerySpec) EscapedPostgresTsQueryInput() interface{} {
 		return "''"
 	}
 	return strings.Join(tokens, " || ' & ' || ")
+}
+
+// ExplicitTopicIds returns the topic ids explicitly specified in the query
+func (s QuerySpec) ExplicitTopicIds() []interface{} {
+	var ids []interface{}
+	for _, topic := range s.Topics {
+		ids = append(ids, topic.ID())
+	}
+	return ids
 }

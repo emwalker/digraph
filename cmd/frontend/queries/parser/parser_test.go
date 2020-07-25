@@ -46,8 +46,8 @@ func TestParsing(t *testing.T) {
 		t.Run(td.name, func(t *testing.T) {
 			s := Parse(&td.input)
 
-			if !reflect.DeepEqual(s.stringTokens, td.stringTokens) {
-				t.Fatalf("Expected %#v, got %#v", td.stringTokens, s.stringTokens)
+			if !reflect.DeepEqual(s.StringTokens, td.stringTokens) {
+				t.Fatalf("Expected %#v, got %#v", td.stringTokens, s.StringTokens)
 			}
 
 			if !reflect.DeepEqual(s.Topics, td.topics) {

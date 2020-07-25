@@ -29,10 +29,7 @@ exports[`<DesktopNav /> renders 1`] = `
   <div
     className="searchBox"
   >
-    <SearchBox
-      className=""
-      showButton={true}
-    />
+    <Relay(SearchBox) />
   </div>
   <nav
     className="userNav"

@@ -30,17 +30,9 @@ func NewSearch(parentTopic *models.TopicValue, searchString *string) *Search {
 	}
 }
 
-func (s Search) explicitTopicIds() []interface{} {
-	var ids []interface{}
-	for _, topic := range s.Topics {
-		ids = append(ids, topic.ID())
-	}
-	return ids
-}
-
 func (s Search) startingTopicIds() []interface{} {
 	var ids []interface{}
-	for _, topicID := range s.explicitTopicIds() {
+	for _, topicID := range s.ExplicitTopicIds() {
 		ids = append(ids, topicID)
 	}
 	ids = append(ids, s.parentTopic.ID)

@@ -38,7 +38,7 @@ func Parse(input *string) *QuerySpec {
 	return &QuerySpec{
 		Input:        input,
 		Tokens:       tokens,
-		stringTokens: stringTokens,
+		StringTokens: stringTokens,
 		Topics:       topics,
 	}
 }

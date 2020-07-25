@@ -6,6 +6,7 @@ type View struct {
 	CurrentRepository        *Repository
 	CurrentRepositoryName    *string
 	RepositoryIds            []string
+	SearchString             *string
 	SessionID                string
 	ViewerID                 string
 }

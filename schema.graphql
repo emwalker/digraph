@@ -219,6 +219,11 @@ type PageInfo {
   endCursor: String
 }
 
+type QueryInfo {
+  topics: TopicConnection!
+  stringTokens: [String!]!
+}
+
 enum TimeRangePrefixFormat {
   NONE
   START_YEAR
@@ -234,6 +239,7 @@ type Query {
     currentOrganizationLogin: String!,
     currentRepositoryName: String,
     repositoryIds: [ID!],
+    searchString: String,
   ): View!
 }
 
@@ -523,6 +529,7 @@ type View {
     last: Int,
     before: String
   ): ActivityLineItemConnection!
+  currentRepository: Repository
   defaultOrganization: Organization!
   link(id: ID!): Link
   linkCount: Int!
@@ -534,7 +541,8 @@ type View {
     before: String,
     reviewed: Boolean,
   ): LinkConnection!
-  currentRepository: Repository
+  queryInfo: QueryInfo!
+  searchString: String
   topic(id: ID!): Topic
   topicCount: Int!
   topicGraph: String

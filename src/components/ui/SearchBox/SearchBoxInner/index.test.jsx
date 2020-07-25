@@ -11,6 +11,9 @@ const props = {
   router: {
     push: () => {},
   },
+  view: {
+    queryInfo: {},
+  },
 }
 
 describe('<FilterInput />', () => {

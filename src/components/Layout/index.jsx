@@ -28,6 +28,7 @@ query LayoutQuery(
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
+  $searchString: String,
 ) {
   alerts {
     id
@@ -40,7 +41,10 @@ query LayoutQuery(
     currentOrganizationLogin: $orgLogin,
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
+    searchString: $searchString,
   ) {
+    ...SearchBox_view
+
     defaultOrganization {
       defaultRepository {
         rootTopic {
@@ -64,6 +68,7 @@ const Layout = ({ alerts, children, view, match, router }: Props) => (
           defaultOrganization={view.defaultOrganization}
           location={match.location}
           router={router}
+          view={view}
           viewer={view.viewer}
         />
         <div className="clearfix">

@@ -173,6 +173,43 @@ func (r *viewResolver) CurrentRepository(
 	return view.CurrentRepository, nil
 }
 
+// QueryInfo returns information about the query used to build the current view
+func (r *viewResolver) QueryInfo(ctx context.Context, view *models.View) (*models.QueryInfo, error) {
+	var edges []*models.TopicEdge
+	query := parser.Parse(view.SearchString)
+
+	explicitIds := query.ExplicitTopicIds()
+	if len(explicitIds) > 0 {
+		log.Printf("Fetching info for search topics: %v", query)
+		mods := view.Filter([]qm.QueryMod{
+			qm.Limit(10),
+			qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+			qm.WhereIn("topics.id = ?", explicitIds...),
+		})
+
+		topics, err := models.Topics(mods...).All(ctx, r.DB)
+		if err != nil {
+			log.Printf("Unable to fetch topics for search %#v: %s", view.SearchString, err)
+			return nil, err
+		}
+
+		for _, t := range topics {
+			topicValue := models.TopicValue{t, false, view}
+			edges = append(edges, &models.TopicEdge{Node: &topicValue})
+		}
+	}
+
+	return &models.QueryInfo{
+		Topics:       &models.TopicConnection{Edges: edges},
+		StringTokens: query.StringTokens,
+	}, nil
+}
+
+// SearchString returns a search string, if one was used
+func (r *viewResolver) SearchString(ctx context.Context, view *models.View) (*string, error) {
+	return view.SearchString, nil
+}
+
 // Topic returns a topic for a given id.
 func (r *viewResolver) Topic(
 	ctx context.Context, view *models.View, topicID string,
