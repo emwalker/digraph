@@ -105,6 +105,9 @@ func (s QuerySpec) EscapedPostgresTsQueryInput() interface{} {
 			if strings.Contains(stringDelim, token) {
 				log.Printf("Skipping token containing string delimiter: %s", token)
 			} else {
+				// Since we're inserting this directly into SQL, an unescaped "?" character" will be
+				// interpreted as a parameter
+				token = strings.Replace(token, "?", "%3F", -1)
 				newToken := fmt.Sprintf("quote_literal($%s$%s$%s$) || ':*'", stringDelim, token, stringDelim)
 				tokens = append(tokens, newToken)
 			}

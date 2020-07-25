@@ -220,3 +220,13 @@ func TestSearchInTopic(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchWithAUrlWithAQuery(t *testing.T) {
+	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
+
+	searchString := "https://some-url?parameter"
+	query := queries.NewSearch(in.Everything, &searchString)
+	_, err := query.DescendantTopics(ctx, mutator.DB, 100)
+	in.Must(err)
+}

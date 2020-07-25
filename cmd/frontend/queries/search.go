@@ -80,7 +80,7 @@ func (s Search) DescendantTopics(
 
 	topics, err := models.Topics(mods...).All(ctx, exec)
 	if IsRealError(err) {
-		log.Printf("There was a problem: %s", err)
+		log.Printf("There was a problem searching topics: %s", err)
 		return nil, errors.Wrap(err, "resolvers: failed to fetch topics")
 	}
 	return topics, nil
