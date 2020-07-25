@@ -71,6 +71,8 @@ class TopicSearchPage extends Component<Props> {
 
   render = () => {
     const { location, orgLogin, router, topic, view } = this.props
+    if (topic == null) return <div>Error parsing route</div>
+
     const {
       search: searchResults,
       name,
