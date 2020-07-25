@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math"
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
@@ -325,22 +324,17 @@ func (r *topicResolver) Search(
 	ctx context.Context, topic *models.TopicValue, searchString string, first *int, after *string,
 	last *int, before *string,
 ) (*models.SearchResultItemConnection, error) {
-	var (
-		err   error
-		edges []*models.SearchResultItemEdge
-	)
+	var err error
 
-	var limit = math.MaxInt32
-	if first != nil {
-		limit = *first
-	}
-	log.Printf("Searching topic %s for '%s'", topic.ID, searchString)
+	limit := queries.Limit(first)
+	log.Printf("Searching %s for %d items: %s", topic, limit, searchString)
 	query := queries.NewSearch(topic, &searchString)
 
 	topics, err := query.DescendantTopics(ctx, r.DB, limit)
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Found %d topics, with a requested limit of %d", len(topics), limit)
 
 	if limit < len(topics) {
 		limit = 0
@@ -352,17 +346,20 @@ func (r *topicResolver) Search(
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Found %d links, with a requested limit of %d", len(links), limit)
 
-	for _, t := range topics {
+	edges := make([]*models.SearchResultItemEdge, len(topics)+len(links))
+	for i, t := range topics {
 		topicValue := models.TopicValue{t, false, topic.View}
-		edges = append(edges, &models.SearchResultItemEdge{Node: topicValue})
+		edges[i] = &models.SearchResultItemEdge{Node: topicValue}
 	}
-
-	for _, l := range links {
+	linkStart := len(topics)
+	for i, l := range links {
 		linkValue := models.LinkValue{l, false, topic.View}
-		edges = append(edges, &models.SearchResultItemEdge{Node: linkValue})
+		edges[i+linkStart] = &models.SearchResultItemEdge{Node: linkValue}
 	}
 
+	log.Printf("Search within %s complete, returning %d results", topic, len(edges))
 	return &models.SearchResultItemConnection{Edges: edges}, nil
 }
 

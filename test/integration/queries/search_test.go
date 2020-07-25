@@ -228,22 +228,58 @@ func TestSearchBugFixes(t *testing.T) {
 	testCases := []struct {
 		name         string
 		searchString string
+		topics       in.Condition
+		links        in.Condition
+		topicLimit   int
+		linkLimit    int
 	}{
 		{
 			name:         "When there is a URL pararameter",
 			searchString: "https://some-url?parameter",
+			topicLimit:   1,
+			linkLimit:    1,
 		},
 		{
 			name:         "When the topic id is not good",
 			searchString: "in:/wiki/topics/96a68720-1415-4e29-8c91-c9a65c516a05https://www.nytimes.com/2020/07/15/world/asia/china-trump-hong-kong.html",
+			topicLimit:   1,
+			linkLimit:    1,
+		},
+		{
+			name:         "The limits are observed for when the topic is large",
+			searchString: "in:/wiki/topics/33b18df0-eec8-11e8-b9e7-270ae3464cf5",
+			topics:       in.Condition{in.Exactly, 0},
+			links:        in.Condition{in.Exactly, 0},
+			topicLimit:   0,
+			linkLimit:    0,
+		},
+		{
+			name:         "The limits are observed for when the topic is large",
+			searchString: "in:/wiki/topics/33b18df0-eec8-11e8-b9e7-270ae3464cf5",
+			topics:       in.Condition{in.Exactly, 10},
+			links:        in.Condition{in.Exactly, 10},
+			topicLimit:   10,
+			linkLimit:    10,
 		},
 	}
 
 	for _, td := range testCases {
 		t.Run(td.name, func(t *testing.T) {
 			query := queries.NewSearch(in.Everything, &td.searchString)
-			_, err := query.DescendantTopics(ctx, mutator.DB, 100)
+
+			topics, err := query.DescendantTopics(ctx, mutator.DB, td.topicLimit)
 			in.Must(err)
+
+			if !td.topics.Evaluate(len(topics)) {
+				t.Fatalf(td.topics.Describe(len(topics)))
+			}
+
+			links, err := query.DescendantTopics(ctx, mutator.DB, td.linkLimit)
+			in.Must(err)
+
+			if !td.links.Evaluate(len(links)) {
+				t.Fatalf(td.links.Describe(len(links)))
+			}
 		})
 	}
 }

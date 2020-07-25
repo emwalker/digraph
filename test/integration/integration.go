@@ -71,6 +71,8 @@ func (c Condition) Evaluate(actual int) bool {
 		return actual > c.Expected
 	case Anything:
 		return true
+	case "":
+		return true
 	default:
 		panic(fmt.Sprintf("Do not know how to handle operator: %v", c.Operator))
 	}
@@ -84,6 +86,8 @@ func (c Condition) Describe(actual int) string {
 		return fmt.Sprintf("Expected greater than %d, got %d", c.Expected, actual)
 	case Anything:
 		return "Expected anything"
+	case "":
+		return "Expected nothing"
 	default:
 		panic(fmt.Sprintf("Do not know how to handle operator: %v", c))
 	}

@@ -9,3 +9,11 @@ const (
 func IsRealError(err error) bool {
 	return err != nil && err.Error() != ErrSQLNoRows
 }
+
+// Limit passes the provided limit, or, if not is provided, a default limit of 30.
+func Limit(limit *int) int {
+	if limit == nil {
+		return 30
+	}
+	return *limit
+}

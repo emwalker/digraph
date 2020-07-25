@@ -51,6 +51,13 @@ func (s Search) startingTopicIds() []interface{} {
 func (s Search) DescendantTopics(
 	ctx context.Context, exec boil.ContextExecutor, limit int,
 ) ([]*models.Topic, error) {
+	var err error
+	var topics []*models.Topic
+
+	if limit < 1 {
+		return topics, nil
+	}
+
 	whereClause := fmt.Sprintf(`
 	(
 		case ?
@@ -78,7 +85,7 @@ func (s Search) DescendantTopics(
 		)
 	}
 
-	topics, err := models.Topics(mods...).All(ctx, exec)
+	topics, err = models.Topics(mods...).All(ctx, exec)
 	if IsRealError(err) {
 		log.Printf("There was a problem searching topics: %s", err)
 		return nil, errors.Wrap(err, "resolvers: failed to fetch topics")
@@ -90,6 +97,13 @@ func (s Search) DescendantTopics(
 func (s Search) DescendantLinks(
 	ctx context.Context, exec boil.ContextExecutor, limit int,
 ) ([]*models.Link, error) {
+	var err error
+	var links []*models.Link
+
+	if limit < 1 {
+		return links, nil
+	}
+
 	whereClause := fmt.Sprintf(`
 	(
 		case ?
@@ -117,7 +131,7 @@ func (s Search) DescendantLinks(
 		)
 	}
 
-	links, err := models.Links(mods...).All(ctx, exec)
+	links, err = models.Links(mods...).All(ctx, exec)
 	if IsRealError(err) {
 		log.Printf("There was a problem: %s", err)
 		return nil, errors.Wrap(err, "resolvers: failed to fetch links")
