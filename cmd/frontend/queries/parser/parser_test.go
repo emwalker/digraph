@@ -30,9 +30,15 @@ func TestParsing(t *testing.T) {
 		},
 		{
 			name:         "A topic",
-			input:        "in:/wiki/topics/1",
+			input:        "in:/wiki/topics/96a68720-1415-4e29-8c91-c9a65c516a05",
 			stringTokens: []string(nil),
-			topics:       []TopicSpec{{resourcePath: "/wiki/topics/1"}},
+			topics:       []TopicSpec{{resourcePath: "/wiki/topics/96a68720-1415-4e29-8c91-c9a65c516a05"}},
+		},
+		{
+			name:         "An incorrectly-specified topic",
+			input:        "in:/wiki/topics/96a68720-1415-4e29-8c91-c9a65c516a05https://www.nytimes.com/",
+			stringTokens: []string{"in:/wiki/topics/96a68720-1415-4e29-8c91-c9a65c516a05https://www.nytimes.com/"},
+			topics:       []TopicSpec(nil),
 		},
 	}
 

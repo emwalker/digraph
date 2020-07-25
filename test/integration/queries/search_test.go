@@ -221,14 +221,31 @@ func TestSearchInTopic(t *testing.T) {
 	}
 }
 
-func TestSearchWithAUrlWithAQuery(t *testing.T) {
+func TestSearchBugFixes(t *testing.T) {
 	ctx := context.Background()
 	mutator := in.NewMutator(in.MutatorOptions{})
 
-	searchString := "https://some-url?parameter"
-	query := queries.NewSearch(in.Everything, &searchString)
-	_, err := query.DescendantTopics(ctx, mutator.DB, 100)
-	in.Must(err)
+	testCases := []struct {
+		name         string
+		searchString string
+	}{
+		{
+			name:         "When there is a URL pararameter",
+			searchString: "https://some-url?parameter",
+		},
+		{
+			name:         "When the topic id is not good",
+			searchString: "in:/wiki/topics/96a68720-1415-4e29-8c91-c9a65c516a05https://www.nytimes.com/2020/07/15/world/asia/china-trump-hong-kong.html",
+		},
+	}
+
+	for _, td := range testCases {
+		t.Run(td.name, func(t *testing.T) {
+			query := queries.NewSearch(in.Everything, &td.searchString)
+			_, err := query.DescendantTopics(ctx, mutator.DB, 100)
+			in.Must(err)
+		})
+	}
 }
 
 func TestLinkDownSetAddedToNewParentTopic(t *testing.T) {
