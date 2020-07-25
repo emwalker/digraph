@@ -230,3 +230,59 @@ func TestSearchWithAUrlWithAQuery(t *testing.T) {
 	_, err := query.DescendantTopics(ctx, mutator.DB, 100)
 	in.Must(err)
 }
+
+func TestLinkDownSetAddedToNewParentTopic(t *testing.T) {
+	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
+
+	mutator.DeleteLinksByURL("http://nytimely.com")
+	mutator.DeleteTopicsByName("Topic 1", "Parent topic 1")
+
+	topic := mutator.UpsertTopic(in.UpsertTopicOptions{
+		ParentTopicIds: []string{in.Everything.ID},
+		Name:           "Topic 1",
+	})
+
+	parentTopic := mutator.UpsertTopic(in.UpsertTopicOptions{
+		ParentTopicIds: []string{in.Everything.ID},
+		Name:           "Parent topic 1",
+	})
+
+	link := mutator.UpsertLink(in.UpsertLinkOptions{
+		ParentTopicIds: []string{topic.ID},
+		Title:          "New York Timely",
+		URL:            "http://nytimely.com",
+	})
+
+	// The link is found under the topic
+	query := queries.NewSearch(topic, &link.URL)
+	links, err := query.DescendantLinks(ctx, mutator.DB, 100)
+	in.Must(err)
+
+	if len(links) < 1 {
+		t.Fatal("Expected at least one link")
+	}
+
+	// The link is not found under the (future) parent topic
+	query = queries.NewSearch(parentTopic, &link.URL)
+	links, err = query.DescendantLinks(ctx, mutator.DB, 100)
+	in.Must(err)
+
+	if len(links) > 0 {
+		t.Fatal("Expected the link not to be found under the future parent topic")
+	}
+
+	mutator.UpdateTopicParentTopics(in.UpdateTopicParentTopicsOptions{
+		Topic:          topic,
+		ParentTopicIds: []string{parentTopic.ID},
+	})
+
+	// Now that the parent topic is the parent of the other topic, the link should appear in searches of
+	// the parent topic
+	links, err = query.DescendantLinks(ctx, mutator.DB, 100)
+	in.Must(err)
+
+	if len(links) < 1 {
+		t.Fatal("Expected the link to be found under the parent topic now")
+	}
+}
