@@ -202,6 +202,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.dur.ac.uk/research/news/item/?itemno=42260",
 			canonicalURL: "https://www.dur.ac.uk/research/news/item/?itemno=42260",
 		},
+		{
+			name:         "A URL in PLOS Pathogens",
+			inputURL:     "https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1008672",
+			canonicalURL: "https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1008672",
+		},
 	}
 
 	for _, testCase := range testCases {

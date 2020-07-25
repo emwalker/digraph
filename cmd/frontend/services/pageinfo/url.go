@@ -64,6 +64,7 @@ var (
 		urlSpec{suffix: "facebook.com", keepParams: []string{"__xts__[0]"}},
 		urlSpec{suffix: "ycombinator.com", keepParams: []string{"id"}},
 		urlSpec{suffix: "dur.ac.uk", keepParams: []string{"itemno"}},
+		urlSpec{suffix: "plos.org", keepParams: []string{"id"}},
 		urlSpec{suffix: "amazon.com"},
 		urlSpec{suffix: "businessinsider.com"},
 		urlSpec{suffix: "dictionary.com"},
