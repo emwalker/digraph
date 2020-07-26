@@ -26,9 +26,10 @@ const singleLinePlugin = createSingleLinePlugin({ stripEntities: false })
 const { MentionSuggestions } = mentionPlugin
 const plugins = [mentionPlugin, singleLinePlugin]
 
-const stateFor = (queryInfo: QueryInfo) =>
-  // eslint-disable-next-line implicit-arrow-linebreak
-  EditorState.createWithContent(convertFromRaw(rawFromQuery(queryInfo, genKey)))
+const stateFor = (queryInfo: QueryInfo) => {
+  if (queryInfo == null) return EditorState.createEmpty()
+  return EditorState.createWithContent(convertFromRaw(rawFromQuery(queryInfo, genKey)))
+}
 
 type Props = {
   handleReturn: Function,

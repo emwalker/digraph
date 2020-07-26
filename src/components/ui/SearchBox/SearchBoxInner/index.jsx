@@ -76,7 +76,7 @@ const SearchBoxInner = ({ className, router, location, showButton, view }: Props
     <form className={actualClassName} onSubmit={onFormSubmit}>
       <TextInput
         handleReturn={handleReturn}
-        queryInfo={view.queryInfo}
+        queryInfo={view?.queryInfo}
       />
       {showButton && (
         <div className={classNames('input-group-button', styles.buttonContainer)}>
