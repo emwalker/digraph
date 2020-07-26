@@ -9,6 +9,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	in "github.com/emwalker/digraph/test/integration"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -486,4 +487,19 @@ func TestGuestViewer(t *testing.T) {
 	if !viewer.IsGuest() {
 		t.Fatalf("Expected the guest user: %v", viewer)
 	}
+}
+
+func TestQueryInfoWithTwoTopics(t *testing.T) {
+	ctx := context.Background()
+	resolver := resolvers.New(in.DB, in.Fetcher, rootResolver.Redis).View()
+	searchString := "in:/wiki/topics/ec9b5e22-b0e6-4421-ab7a-f02acbf33823 in:/wiki/topics/46fbd82a-63d6-475f-beea-973eac490e77"
+
+	view := &models.View{
+		ViewerID:      in.Actor.Login.String,
+		RepositoryIds: []string{in.Repository.ID},
+		SearchString:  &searchString,
+	}
+
+	_, err := resolver.QueryInfo(ctx, view)
+	in.Must(err)
 }

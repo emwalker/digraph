@@ -184,7 +184,7 @@ func (r *viewResolver) QueryInfo(ctx context.Context, view *models.View) (*model
 		mods := view.Filter([]qm.QueryMod{
 			qm.Limit(10),
 			qm.InnerJoin("repositories r on topics.repository_id = r.id"),
-			qm.WhereIn("topics.id = ?", explicitIds...),
+			qm.WhereIn("topics.id in ?", explicitIds...),
 		})
 
 		topics, err := models.Topics(mods...).All(ctx, r.DB)
