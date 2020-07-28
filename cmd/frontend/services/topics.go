@@ -383,18 +383,10 @@ func isDescendantOf(
 
 	var result resultInfo
 
-	// TODO: do a batch query and look for matching ids in the result instead of iterating over each
-	// individual topic.
 	err := queries.Raw(`
-	with recursive children as (
-	  select parent_id, child_id from topic_topics
-	  where child_id = $1
-	union
-	  select pt.child_id, ct.child_id
-	  from topic_topics ct
-	  inner join children pt on pt.child_id = ct.parent_id
-	)
-	select count(*) match_count from children c where c.child_id = $2
+	select count(*) match_count
+	from topic_down_set($1) tds
+	where tds.child_id = $2
 	`, ancestor.ID, topic.ID).Bind(ctx, exec, &result)
 
 	if err != nil {
@@ -599,26 +591,73 @@ func (m UpdateTopicParentTopics) parentTopicsAndAlerts(
 	return parentTopics, alerts, nil
 }
 
+func (m UpdateTopicParentTopics) cleanUpParentTopicLinks(
+	ctx context.Context, exec boil.ContextExecutor, parentTopicsBefore, parentTopicsAfter []*models.Topic,
+) error {
+	removedParentTopics := make(map[string]bool)
+	for _, topic := range parentTopicsBefore {
+		removedParentTopics[topic.ID] = true
+	}
+
+	for _, topic := range parentTopicsAfter {
+		removedParentTopics[topic.ID] = false
+	}
+
+	for topicID, removed := range removedParentTopics {
+		if !removed {
+			continue
+		}
+
+		for _, topic := range parentTopicsBefore {
+			if topic.ID != topicID {
+				continue
+			}
+
+			values := []interface{}{topic.ID}
+			sql := "delete from link_transitive_closure where parent_id = $1"
+			if _, err := exec.ExecContext(ctx, sql, values...); err != nil {
+				return err
+			}
+
+			sql = "select upsert_link_down_set($1)"
+			if _, err := exec.ExecContext(ctx, sql, values...); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // Call updates the parent topics of a topic.
 func (m UpdateTopicParentTopics) Call(ctx context.Context, exec boil.ContextExecutor) (*UpdateTopicParentTopicsResult, error) {
 	topic := m.Topic
 	parentTopics, alerts, err := m.parentTopicsAndAlerts(ctx, exec)
 
-	values := []interface{}{topic.ID}
-	sql := "delete from topic_transitive_closure where child_id = $1"
-	if _, err := exec.ExecContext(ctx, sql, values...); err != nil {
+	originalParentTopics, err := topic.ParentTopics().All(ctx, exec)
+	if err != nil {
 		return nil, err
 	}
 
-	sql = "delete from topic_topics where child_id = $1"
-	if _, err := exec.ExecContext(ctx, sql, values...); err != nil {
+	values := []interface{}{topic.ID}
+	_, err = exec.ExecContext(ctx, "delete from topic_transitive_closure where child_id = $1", values...)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = exec.ExecContext(ctx, "delete from topic_topics where child_id = $1", values...)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.cleanUpParentTopicLinks(ctx, exec, originalParentTopics, parentTopics)
+	if err != nil {
 		return nil, err
 	}
 
 	for _, parent := range parentTopics {
-		sql := "select add_topic_to_topic($1, $2)"
 		values := []interface{}{parent.ID, topic.ID}
-		_, err := exec.ExecContext(ctx, sql, values...)
+		_, err := exec.ExecContext(ctx, "select add_topic_to_topic($1, $2)", values...)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to upsert topic")
 		}

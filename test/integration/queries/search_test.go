@@ -339,3 +339,60 @@ func TestLinkDownSetAddedToNewParentTopic(t *testing.T) {
 		t.Fatal("Expected the link to be found under the parent topic now")
 	}
 }
+
+func TestLinkDownSetRemovedFromRemovedParentTopic(t *testing.T) {
+	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
+
+	mutator.DeleteLinksByURL("http://nytimely.com")
+	mutator.DeleteTopicsByName("Topic 1", "Parent topic 1")
+
+	parentTopic := mutator.UpsertTopic(in.UpsertTopicOptions{
+		ParentTopicIds: []string{in.Everything.ID},
+		Name:           "Parent topic 1",
+	})
+
+	topic := mutator.UpsertTopic(in.UpsertTopicOptions{
+		ParentTopicIds: []string{parentTopic.ID},
+		Name:           "Topic 1",
+	})
+
+	link := mutator.UpsertLink(in.UpsertLinkOptions{
+		ParentTopicIds: []string{topic.ID},
+		Title:          "New York Timely",
+		URL:            "http://nytimely.com",
+	})
+
+	// The link is found under the topic
+	query := queries.NewSearch(topic, &link.URL)
+	links, err := query.DescendantLinks(ctx, mutator.DB, 100)
+	in.Must(err)
+
+	if len(links) < 1 {
+		t.Fatal("Expected at least one link")
+	}
+
+	// The link is found under the parent topic
+	query = queries.NewSearch(parentTopic, &link.URL)
+	links, err = query.DescendantLinks(ctx, mutator.DB, 100)
+	in.Must(err)
+
+	if len(links) < 1 {
+		t.Fatal("Expected the link to be found under the parent topic")
+	}
+
+	mutator.UpdateTopicParentTopics(in.UpdateTopicParentTopicsOptions{
+		Topic:          topic,
+		ParentTopicIds: []string{in.Everything.ID},
+	})
+
+	// Now that the parent topic is no longer the parent of the other topic, the link should not appear in
+	// searches of the parent topic
+	query = queries.NewSearch(parentTopic, &link.URL)
+	links, err = query.DescendantLinks(ctx, mutator.DB, 100)
+	in.Must(err)
+
+	if len(links) > 0 {
+		t.Fatal("Expected the link to no longer be found under the parent topic")
+	}
+}

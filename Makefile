@@ -66,7 +66,7 @@ generate:
 .PHONY:
 
 test-integration: .PHONY
-	go test -count=1 ./test/integration/...
+	go test -p 1 -count=1 ./test/integration/...
 
 test-js: .PHONY
 	yarn jest
