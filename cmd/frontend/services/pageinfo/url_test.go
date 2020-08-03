@@ -212,6 +212,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.baylor.edu/mediacommunications/news.php?action=story&story=219716",
 			canonicalURL: "https://www.baylor.edu/mediacommunications/news.php?action=story&story=219716",
 		},
+		{
+			name:         "A URL from the University of Massachusetts",
+			inputURL:     "https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1004&context=eng_faculty_pubs",
+			canonicalURL: "https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1004&context=eng_faculty_pubs",
+		},
 	}
 
 	for _, testCase := range testCases {
