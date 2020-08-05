@@ -81,9 +81,8 @@ func (r *linkResolver) ParentTopics(
 	}
 
 	log.Printf("Fetching parent topics for %s", link)
-	mods := []qm.QueryMod{}
-
-	topics, err := link.ParentTopics(mods...).All(ctx, r.DB)
+	query := queries.LinkParentTopics{View: link.View, Link: link}
+	topics, err := query.Fetch(ctx, r.DB)
 	return topicConnection(link.View, topics, err)
 }
 

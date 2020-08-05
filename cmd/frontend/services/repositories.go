@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	coreerrors "errors"
+	"errors"
 	"fmt"
 	"log"
 
@@ -12,59 +12,60 @@ import (
 
 // Error constants.
 var (
-	ErrInvalidLogin = coreerrors.New("not a valid login")
+	ErrInvalidLogin = errors.New("not a valid login")
 )
 
 // CreateRepositoryResult holds the result of a CreateRepository service call.
 type CreateRepositoryResult struct {
-	Cleanup    CleanupFunc
 	Repository *models.Repository
 	RootTopic  *models.Topic
 }
 
-// CreateRepository adds a new repository to the database.
-func (c *Connection) CreateRepository(
-	ctx context.Context, org *models.Organization, name string, owner *models.User, system bool,
-) (*CreateRepositoryResult, error) {
-	if !owner.Login.Valid {
+// CreateRepository holds parameters for creating a new repository.
+type CreateRepository struct {
+	Organization *models.Organization
+	Name         string
+	Owner        *models.User
+	System       bool
+}
+
+// Call adds a new repository to the database.
+func (m *CreateRepository) Call(ctx context.Context, exec boil.ContextExecutor) (*CreateRepositoryResult, error) {
+	login := m.Owner.Login
+	name := m.Name
+
+	if !login.Valid {
 		return nil, ErrInvalidLogin
 	}
 
-	repoName := fmt.Sprintf("%s/%s", owner.Login.String, name)
+	repoName := fmt.Sprintf("%s/%s", login.String, name)
 
 	log.Printf("Creating repository %s", repoName)
 	repo := models.Repository{
-		OrganizationID: org.ID,
+		OrganizationID: m.Organization.ID,
 		Name:           name,
-		OwnerID:        owner.ID,
-		System:         system,
+		OwnerID:        m.Owner.ID,
+		System:         m.System,
 	}
 
-	if err := repo.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+	if err := repo.Insert(ctx, exec, boil.Infer()); err != nil {
 		return nil, err
 	}
 
 	log.Printf("Creating a root topic for %s", repoName)
 	topic := models.Topic{
-		OrganizationID: org.ID,
+		OrganizationID: m.Organization.ID,
 		RepositoryID:   repo.ID,
 		Name:           "Everything",
 		Root:           true,
 	}
 
-	if err := topic.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+	if err := topic.Insert(ctx, exec, boil.Infer()); err != nil {
 		return nil, err
 	}
 
-	cleanup := func() error {
-		if _, err := repo.Delete(ctx, c.Exec); err != nil {
-			return err
-		}
-		if _, err := topic.Delete(ctx, c.Exec); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	return &CreateRepositoryResult{cleanup, &repo, &topic}, nil
+	return &CreateRepositoryResult{
+		Repository: &repo,
+		RootTopic:  &topic,
+	}, nil
 }

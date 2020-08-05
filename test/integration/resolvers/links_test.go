@@ -5,6 +5,7 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	in "github.com/emwalker/digraph/test/integration"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -123,24 +124,34 @@ func TestAvailableTopicsForLinks(t *testing.T) {
 
 func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 	m := newMutator(t, testViewer)
-	s := services.New(testDB, testViewer, rootResolver.Fetcher)
 
 	org, err := models.Organizations(qm.Where("login = ?", testViewer.Login.String)).One(m.ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	r1, err := s.CreateRepository(m.ctx, org, "r1", testViewer, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer r1.Cleanup()
+	mutator := in.NewMutator(in.MutatorOptions{})
+	mutator.DeleteRepositoriesByName("r1", "r2")
 
-	r2, err := s.CreateRepository(m.ctx, org, "r2", testViewer, false)
+	service := services.CreateRepository{
+		Organization: org,
+		Name:         "r1",
+		Owner:        testViewer,
+	}
+	r1, err := service.Call(m.ctx, testDB)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer r2.Cleanup()
+
+	service = services.CreateRepository{
+		Organization: org,
+		Name:         "r2",
+		Owner:        testViewer,
+	}
+	r2, err := service.Call(m.ctx, testDB)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, cleanup := m.createTopic(testViewer.Login.String, r1.Repository.Name, "Something")
 	defer cleanup()

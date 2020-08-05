@@ -35,7 +35,8 @@ func (c Connection) CreateGithubSession(
 			return nil, errors.Wrap(err, "services: failed to upsert user")
 		}
 
-		result, err := c.CreateUser(ctx, name, primaryEmail, githubAvatarURL)
+		createUser := CreateUser{Name: name, Email: primaryEmail, AvatarURL: githubAvatarURL}
+		result, err := createUser.Call(ctx, c.Exec)
 		if err != nil {
 			return nil, err
 		}
@@ -49,7 +50,8 @@ func (c Connection) CreateGithubSession(
 			return nil, err
 		}
 
-		if _, err = c.CompleteRegistration(ctx, user, githubUsername); err != nil {
+		completeRegistration := CompleteRegistration{User: user, Login: githubUsername}
+		if _, err = completeRegistration.Call(ctx, c.Exec); err != nil {
 			return nil, err
 		}
 	} else {
@@ -102,7 +104,8 @@ func (c Connection) CreateGoogleSession(
 			return nil, errors.Wrap(err, "services: failed to upsert user")
 		}
 
-		result, err := c.CreateUser(ctx, name, primaryEmail, googleAvatarURL)
+		service := CreateUser{Name: name, Email: primaryEmail, AvatarURL: googleAvatarURL}
+		result, err := service.Call(ctx, c.Exec)
 		if err != nil {
 			return nil, err
 		}

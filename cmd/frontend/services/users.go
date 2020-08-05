@@ -12,18 +12,10 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-// CreateUserResult holds the result of a CreateUser call.
-type CreateUserResult struct {
-	Alerts  []*models.Alert
-	Cleanup CleanupFunc
-	User    *models.User
-}
-
 // CompleteRegistrationResult holds the result of a CreateUser call.
 type CompleteRegistrationResult struct {
 	*CreateRepositoryResult
 	Alerts       []*models.Alert
-	Cleanup      CleanupFunc
 	Organization *models.Organization
 }
 
@@ -98,53 +90,62 @@ func (c Connection) CreateGoogleAccount(
 	return &CreateGoogleAccountResult{Account: &account}, nil
 }
 
-// CreateUser creates a new user and provides a default organization and repo for him/her.
-func (c Connection) CreateUser(
-	ctx context.Context, name, email, avatarURL string,
-) (*CreateUserResult, error) {
+// CreateUser holds the information needed to create a new user.
+type CreateUser struct {
+	Name      string
+	Email     string
+	AvatarURL string
+}
+
+// CreateUserResult holds the result of a CreateUser call.
+type CreateUserResult struct {
+	Alerts []*models.Alert
+	User   *models.User
+}
+
+// Call creates a new user and provides a default organization and repo for him/her.
+func (m CreateUser) Call(ctx context.Context, exec boil.ContextExecutor) (*CreateUserResult, error) {
 	var err error
 
-	log.Printf("Creating user account (%s, %s)", name, email)
+	log.Printf("Creating user account (%s, %s)", m.Name, m.Email)
 	user := models.User{
-		AvatarURL:    null.StringFromPtr(&avatarURL),
-		Name:         name,
-		PrimaryEmail: email,
+		AvatarURL:    null.StringFromPtr(&m.AvatarURL),
+		Name:         m.Name,
+		PrimaryEmail: m.Email,
 	}
 
-	if err = user.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+	if err = user.Insert(ctx, exec, boil.Infer()); err != nil {
 		return nil, err
 	}
 
-	if err := addMember(ctx, c.Exec, PublicOrgID, user.ID, false); err != nil {
+	if err := addMember(ctx, exec, PublicOrgID, user.ID, false); err != nil {
 		return nil, errors.Wrap(err, "services: failed to add user as a member to the public organization")
 	}
 
-	cleanup := func() error {
-		if _, err := user.Delete(ctx, c.Exec); err != nil {
-			return err
-		}
-		return nil
-	}
-
 	return &CreateUserResult{
-		Alerts:  []*models.Alert{},
-		Cleanup: cleanup,
-		User:    &user,
+		Alerts: []*models.Alert{},
+		User:   &user,
 	}, nil
 }
 
-// CompleteRegistration finishes the registration process by creating an organization and a repo for
-// the user.
-func (c Connection) CompleteRegistration(
-	ctx context.Context, user *models.User, login string,
-) (*CompleteRegistrationResult, error) {
+// CompleteRegistration holds information for completing a registration.
+type CompleteRegistration struct {
+	User  *models.User
+	Login string
+}
+
+// Call finishes the registration process by creating an organization and a repo for the user.
+func (m CompleteRegistration) Call(ctx context.Context, exec boil.ContextExecutor) (*CompleteRegistrationResult, error) {
+	login := m.Login
+	user := m.User
+
 	log.Printf("Creating a default organization for %s", login)
 
 	dt := time.Now()
 	user.RegisteredAt = null.TimeFromPtr(&dt)
 	user.Login = null.StringFromPtr(&login)
 
-	if _, err := user.Update(ctx, c.Exec, boil.Whitelist("registered_at", "login")); err != nil {
+	if _, err := user.Update(ctx, exec, boil.Whitelist("registered_at", "login")); err != nil {
 		return nil, errors.Wrap(err, "services: failed to mark user account as completing registration")
 	}
 
@@ -155,34 +156,30 @@ func (c Connection) CompleteRegistration(
 		System: true,
 	}
 
-	if err := org.Insert(ctx, c.Exec, boil.Infer()); err != nil {
+	if err := org.Insert(ctx, exec, boil.Infer()); err != nil {
 		return nil, errors.Wrap(err, "services: failed to insert organization")
 	}
 
-	if err := addMember(ctx, c.Exec, org.ID, user.ID, true); err != nil {
+	if err := addMember(ctx, exec, org.ID, user.ID, true); err != nil {
 		return nil, errors.Wrap(err, "services: failed to add user as a member to new organization")
 	}
 
 	log.Printf("Creating a default repo for %s", login)
-	repoResult, err := c.CreateRepository(ctx, &org, "system:default", user, true)
-	if err != nil {
-		return nil, errors.Wrap(err, "services: failed to create a default repo for user")
+	service := CreateRepository{
+		Organization: &org,
+		Name:         "system:default",
+		Owner:        user,
+		System:       true,
 	}
 
-	cleanup := func() error {
-		if err := repoResult.Cleanup(); err != nil {
-			return err
-		}
-		if _, err := org.Delete(ctx, c.Exec); err != nil {
-			return err
-		}
-		return nil
+	repoResult, err := service.Call(ctx, exec)
+	if err != nil {
+		return nil, errors.Wrap(err, "services: failed to create a default repo for user")
 	}
 
 	return &CompleteRegistrationResult{
 		Alerts:                 []*models.Alert{},
 		CreateRepositoryResult: repoResult,
-		Cleanup:                cleanup,
 		Organization:           &org,
 	}, nil
 }

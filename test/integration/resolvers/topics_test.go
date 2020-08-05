@@ -618,11 +618,13 @@ func TestParentTopicPreloading(t *testing.T) {
 
 func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
+	mutator.DeleteRepositoriesByName("r1", "r2")
+
 	_, err := models.Repositories(qm.Where("name = ?", "r1")).DeleteAll(ctx, in.DB)
 	in.Must(err)
 
 	m := newMutator(t, testViewer)
-	s := services.New(testDB, testViewer, rootResolver.Fetcher)
 
 	org1, err := models.Organizations(qm.Where("login = ?", testViewer.Login.String)).One(m.ctx, testDB)
 	in.Must(err)
@@ -630,18 +632,22 @@ func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 	org2, err := models.Organizations(qm.Where("login = ?", "wiki")).One(m.ctx, testDB)
 	in.Must(err)
 
-	r1, err := s.CreateRepository(m.ctx, org1, "r1", testViewer, false)
-	in.Must(err)
-	defer r1.Cleanup()
+	r1 := mutator.CreateRepository(in.CreateRepositoryOptions{
+		Organization: org1,
+		Name:         "r1",
+		Owner:        testViewer,
+	})
 
-	r2, err := s.CreateRepository(m.ctx, org2, "r2", testViewer, false)
-	in.Must(err)
-	defer r2.Cleanup()
+	r2 := mutator.CreateRepository(in.CreateRepositoryOptions{
+		Organization: org2,
+		Name:         "r2",
+		Owner:        testViewer,
+	})
 
-	_, cleanup := m.createTopic(testViewer.Login.String, r1.Repository.Name, "Topic 1")
+	_, cleanup := m.createTopic(testViewer.Login.String, r1.Name, "Topic 1")
 	defer cleanup()
 
-	topic2, cleanup := m.createTopic("wiki", r2.Repository.Name, "Topic 2")
+	topic2, cleanup := m.createTopic("wiki", r2.Name, "Topic 2")
 	defer cleanup()
 
 	query := rootResolver.Topic()
@@ -747,30 +753,34 @@ func topicsToString(topics []*models.Topic) string {
 }
 
 func TestDeleteTopic(t *testing.T) {
-	mutator := newMutator(t, testViewer)
-	repo := mutator.defaultRepo()
-	repoName := repo.Name
+	ctx := context.Background()
+	repo := in.Repository
 
-	ancestorTopic, cleanup := mutator.createTopic(testViewer.Login.String, repoName, "Ancestor topic")
-	defer cleanup()
+	mutator := in.NewMutator(in.MutatorOptions{})
+	mutator.DeleteTopicsByName("Ancestor topic", "Parent topic", "Child topic 1", "Child topic 2")
+	mutator.DeleteLinksByURL("https://en.wikipedia.org/wiki/Child_link")
 
-	parentTopic, _ := mutator.createTopic(testViewer.Login.String, repoName, "Parent topic")
+	ancestorTopic := mutator.UpsertTopic(in.UpsertTopicOptions{Name: "Ancestor topic"})
+	parentTopic := mutator.UpsertTopic(in.UpsertTopicOptions{
+		Name:           "Parent topic",
+		ParentTopicIds: []string{ancestorTopic.ID},
+	})
+	childTopic1 := mutator.UpsertTopic(in.UpsertTopicOptions{
+		Name:           "Child topic 1",
+		ParentTopicIds: []string{parentTopic.ID},
+	})
+	childTopic2 := mutator.UpsertTopic(in.UpsertTopicOptions{
+		Name:           "Child topic 2",
+		ParentTopicIds: []string{parentTopic.ID},
+	})
 
-	childTopic1, cleanup := mutator.createTopic(testViewer.Login.String, repoName, "Child topic 1")
-	defer cleanup()
+	childLink1 := mutator.UpsertLink(in.UpsertLinkOptions{
+		Title:          "Child link",
+		URL:            "https://en.wikipedia.org/wiki/Child_link",
+		ParentTopicIds: []string{parentTopic.ID},
+	})
 
-	childTopic2, cleanup := mutator.createTopic(testViewer.Login.String, repoName, "Child topic 2")
-	defer cleanup()
-
-	childLink1, cleanup := mutator.createLink(testViewer.Login.String, repoName, "Child link", "https://en.wikipedia.org/wiki/Child_link")
-	defer cleanup()
-
-	mutator.addParentTopicToTopic(parentTopic, ancestorTopic)
-	mutator.addParentTopicToTopic(childTopic1, parentTopic)
-	mutator.addParentTopicToTopic(childTopic2, parentTopic)
-	mutator.addParentTopicToLink(childLink1, parentTopic)
-
-	rootTopic, err := repo.RootTopic(mutator.ctx, testDB, testViewer.DefaultView())
+	rootTopic, err := repo.RootTopic(ctx, testDB, testViewer.DefaultView())
 	in.Must(err)
 
 	_, err = queries.Raw(`
@@ -787,19 +797,23 @@ func TestDeleteTopic(t *testing.T) {
 	`, services.PublicRootTopicID, rootTopic.ID, childLink1.ID).Exec(testDB)
 	in.Must(err)
 
-	if topics, _ := childTopic1.ParentTopics().All(mutator.ctx, testDB); len(topics) > 1 {
+	if topics, _ := childTopic1.ParentTopics().All(ctx, testDB); len(topics) > 1 {
 		t.Fatalf("Expected there to be a single parent topic: %s", topicsToString(topics))
 	}
 
-	if topics, _ := childTopic2.ParentTopics().All(mutator.ctx, testDB); len(topics) > 1 {
+	if topics, _ := childTopic2.ParentTopics().All(ctx, testDB); len(topics) > 1 {
 		t.Fatalf("Expected there to be a single parent topic: %s", topicsToString(topics))
 	}
 
-	if topics, _ := childLink1.ParentTopics().All(mutator.ctx, testDB); len(topics) > 1 {
+	if topics, _ := childLink1.ParentTopics().All(ctx, testDB); len(topics) > 1 {
 		t.Fatalf("Expected there to be a single parent topic: %s", topicsToString(topics))
 	}
 
-	payload, err := mutator.resolver.DeleteTopic(mutator.ctx, models.DeleteTopicInput{
+	rc := resolvers.NewRequestContext(testViewer)
+	ctx = resolvers.WithRequestContext(ctx, rc)
+	resolver := &resolvers.MutationResolver{rootResolver}
+
+	payload, err := resolver.DeleteTopic(ctx, models.DeleteTopicInput{
 		TopicID: parentTopic.ID,
 	})
 	in.Must(err)
@@ -808,28 +822,28 @@ func TestDeleteTopic(t *testing.T) {
 		t.Fatal("Expected a payload")
 	}
 
-	count, err := models.Topics(qm.Where("id = ?", parentTopic.ID)).Count(mutator.ctx, testDB)
+	count, err := models.Topics(qm.Where("id = ?", parentTopic.ID)).Count(ctx, testDB)
 	in.Must(err)
 
 	if count > 0 {
 		t.Fatal("Failed to delete topic")
 	}
 
-	newParentTopic, err := childTopic1.ParentTopics().One(mutator.ctx, testDB)
+	newParentTopic, err := childTopic1.ParentTopics().One(ctx, testDB)
 	in.Must(err)
 
 	if newParentTopic.ID != ancestorTopic.ID {
 		t.Fatalf("Expected child topic 1 to be placed under the ancestor topic, got: %s", newParentTopic)
 	}
 
-	newParentTopic, err = childTopic2.ParentTopics().One(mutator.ctx, testDB)
+	newParentTopic, err = childTopic2.ParentTopics().One(ctx, testDB)
 	in.Must(err)
 
 	if newParentTopic.ID != ancestorTopic.ID {
 		t.Fatalf("Expected child topic 2 to be placed under the ancestor topic, got: %s", newParentTopic)
 	}
 
-	newParentTopic, err = childLink1.ParentTopics().One(mutator.ctx, testDB)
+	newParentTopic, err = childLink1.ParentTopics().One(ctx, testDB)
 	in.Must(err)
 
 	if newParentTopic.ID != ancestorTopic.ID {
@@ -871,34 +885,46 @@ func TestDeleteTopicTimeRange(t *testing.T) {
 }
 
 func TestChildTopicAndLinkVisibility(t *testing.T) {
-	m := newMutator(t, testViewer)
 	ctx := testContext()
-	repoName := m.defaultRepo().Name
+	mutator := in.NewMutator(in.MutatorOptions{})
+	var err error
 
-	c := services.Connection{Exec: testDB, Actor: testViewer}
+	mutator.DeleteUsersByEmail("gnusto@example.com")
+	mutator.DeleteOrganizationsByLogin("gnusto")
+	mutator.DeleteLinksByURL("https://example.com/private-link")
 
-	result, err := c.CreateUser(ctx, "Gnusto", "gnusto@frotz.com", "http://avatar/url")
-	in.Must(err)
-	defer result.Cleanup()
-	testViewer2 := result.User
+	m := newMutator(t, testViewer)
+
+	user2, _ := mutator.CreateUser(in.CreateUserOptions{
+		Name:  "Gnusto",
+		Email: "gnusto@example.com",
+		Login: "gnusto",
+	})
 
 	var root *models.TopicValue
-	if root, err = m.defaultRepo().RootTopic(ctx, testDB, testViewer2.DefaultView()); err != nil {
+	if root, err = m.defaultRepo().RootTopic(ctx, testDB, user2.DefaultView()); err != nil {
 		t.Fatal(err)
 	}
 
-	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "Child topic")
-	defer cleanup()
+	topic := mutator.UpsertTopic(in.UpsertTopicOptions{
+		Name:           "ChildTopic",
+		ParentTopicIds: []string{root.ID},
+	})
 
-	m.addParentTopicToTopic(topic, root)
+	privateRepo, err := in.Actor.DefaultRepo(ctx, in.DB)
+	in.Must(err)
 
-	_, cleanup = m.createLink(testViewer.Login.String, repoName, "Private link", "https://www.nytimes.com")
-	defer cleanup()
+	mutator.UpsertLink(in.UpsertLinkOptions{
+		Title:          "Private link",
+		URL:            "https://example.com/private-link",
+		ParentTopicIds: []string{topic.ID},
+		Repository:     privateRepo,
+	})
 
 	query := rootResolver.Topic()
 
 	var root2 *models.TopicValue
-	if root2, err = m.defaultRepo().RootTopic(ctx, testDB, testViewer2.DefaultView()); err != nil {
+	if root2, err = m.defaultRepo().RootTopic(ctx, testDB, user2.DefaultView()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -946,8 +972,12 @@ func TestTopicNoSynonym(t *testing.T) {
 }
 
 func TestViewerCanUpdate(t *testing.T) {
-	m := newMutator(t, testViewer)
 	ctx := testContext()
+	mutator := in.NewMutator(in.MutatorOptions{})
+	mutator.DeleteUsersByEmail("gnusto@example.com")
+	mutator.DeleteOrganizationsByLogin("gnusto")
+
+	m := newMutator(t, testViewer)
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "A topic")
@@ -964,15 +994,14 @@ func TestViewerCanUpdate(t *testing.T) {
 
 	query = rootResolver.Topic()
 
-	c := services.New(testDB, testViewer, testFetcher)
-
-	result, err := c.CreateUser(ctx, "Gnusto", "gnusto@frotz.com", "http://avatar/url")
-	in.Must(err)
-	defer result.Cleanup()
-	testActor2 := result.User
+	user2, _ := mutator.CreateUser(in.CreateUserOptions{
+		Name:  "Gnusto",
+		Email: "gnusto@example.com",
+		Login: "gnusto",
+	})
 
 	// Change out the viewer doing the query
-	topic.View.ViewerID = testActor2.ID
+	topic.View.ViewerID = user2.ID
 
 	canUpdate, err = query.ViewerCanUpdate(ctx, topic)
 	in.Must(err)
@@ -1161,13 +1190,15 @@ func TestActivity(t *testing.T) {
 	mutator := in.NewMutator(in.MutatorOptions{})
 	resolver := rootResolver.Topic()
 
+	mutator.DeleteTopicsByName("Gnusto")
+	mutator.DeleteLinksByURL("https://example.com/www.nytimes.com")
+
 	topic := mutator.UpsertTopic(in.UpsertTopicOptions{
-		Name:           "Gnusto",
-		ParentTopicIds: []string{in.Everything.ID},
+		Name: "Gnusto",
 	})
 	mutator.UpsertLink(in.UpsertLinkOptions{
 		Title:          "New York Times",
-		URL:            "https://www.nytimes.com",
+		URL:            "https://example.com/www.nytimes.com",
 		ParentTopicIds: []string{topic.ID},
 	})
 
@@ -1181,33 +1212,25 @@ func TestActivity(t *testing.T) {
 
 func TestActivityVisibility(t *testing.T) {
 	ctx := context.Background()
-	c := services.New(testDB, testViewer, testFetcher)
+	mutator := in.NewMutator(in.MutatorOptions{})
+	var err error
 
-	result, err := c.CreateUser(ctx, "Frotz", "frotz@frotz.com", "http://avatar/url")
-	in.Must(err)
-	defer result.Cleanup()
+	mutator.DeleteOrganizationsByLogin("frotz")
+	mutator.DeleteUsersByEmail("frotz@example.com")
 
-	user2 := result.User
-
-	registrationResult, err := c.CompleteRegistration(ctx, user2, "frotz")
-	in.Must(err)
-	defer registrationResult.Cleanup()
-
-	if err = user2.Reload(ctx, testDB); err != nil {
-		t.Fatal(err)
-	}
-
-	m2 := newMutator(t, user2)
-	repoName := m2.defaultRepo().Name
-
-	topic, cleanup := m2.createTopic(user2.Login.String, repoName, "Gnusto")
-	defer cleanup()
+	_, result := mutator.CreateUser(in.CreateUserOptions{
+		Name:  "Frotz",
+		Email: "frotz@example.com",
+		Login: "frotz",
+	})
+	topic := mutator.UpsertTopic(in.UpsertTopicOptions{Name: "Gnusto", Repository: result.Repository})
 
 	linkTitle := "4b517480670"
-	link, cleanup := m2.createLink(user2.Login.String, repoName, linkTitle, "https://www.4b517480670.com")
-	defer cleanup()
-
-	m2.addParentTopicToLink(link, topic)
+	link := mutator.UpsertLink(in.UpsertLinkOptions{
+		Title:          linkTitle,
+		URL:            "https://www.4b517480670.com",
+		ParentTopicIds: []string{topic.ID},
+	})
 
 	resolver := rootResolver.Topic()
 

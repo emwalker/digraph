@@ -6,18 +6,16 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
+	in "github.com/emwalker/digraph/test/integration"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func TestCreateUser(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
 
-	result, err := c.CreateUser(ctx, "Gnusto Frotz", "gnusto@gnusto.com", "http://avatar/url")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer result.Cleanup()
+	service := services.CreateUser{Name: "Gnusto Frotz", Email: "gnusto@gnusto.com", AvatarURL: "http://avatar/url"}
+	result, err := service.Call(ctx, testDB)
+	in.Must(err)
 
 	if result.User == nil {
 		t.Fatal("Expected a user to be present")
@@ -34,22 +32,22 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestCompleteRegistration(t *testing.T) {
-	c := services.Connection{Exec: testDB, Actor: testActor}
 	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
 
-	userResult, err := c.CreateUser(ctx, "Gnusto Frotz", "gnusto@gnusto.com", "http://avatar/url")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer userResult.Cleanup()
+	mutator.DeleteUsersByEmail("gnusto@example.com")
+	mutator.DeleteRepositoriesByName("gnusto")
+	mutator.DeleteOrganizationsByLogin("gnusto")
+
+	userService := services.CreateUser{Name: "Gnusto Frotz", Email: "gnusto@example.com", AvatarURL: "http://avatar/url"}
+	userResult, err := userService.Call(ctx, in.DB)
+	in.Must(err)
 
 	user := userResult.User
 
-	result, err := c.CompleteRegistration(ctx, user, "gnusto")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer result.Cleanup()
+	completeRegistrationService := services.CompleteRegistration{User: user, Login: "gnusto"}
+	result, err := completeRegistrationService.Call(ctx, in.DB)
+	in.Must(err)
 
 	if result.Organization == nil {
 		t.Fatal("Expected an organization to be present")
@@ -66,9 +64,7 @@ func TestCompleteRegistration(t *testing.T) {
 	membership, err := models.OrganizationMembers(
 		qm.Where("organization_id = ? and user_id = ?", result.Organization.ID, user.ID),
 	).One(ctx, testDB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	in.Must(err)
 
 	if !membership.Owner {
 		t.Fatal("Expected the user to be made owner of the new organization")

@@ -107,7 +107,7 @@ func (Topic) IsSearchResultItem() {}
 
 // String returns info on a user that can be printed to the log.
 func (t Topic) String() string {
-	return fmt.Sprintf("topic %s (%s)", t.Name, t.ID)
+	return fmt.Sprintf("%s (%s)", t.Name, t.ID)
 }
 
 // SynonymList returns the synonyms json field.
@@ -158,7 +158,6 @@ func NewAlert(typ AlertType, text string) *Alert {
 
 // DefaultRepo returns the user's default repo.
 func (u *User) DefaultRepo(ctx context.Context, exec boil.ContextExecutor) (*Repository, error) {
-	// log.Printf("Looking for %s and %s (%s)", u.Login, u.ID, u.Name)
 	return Repositories(
 		qm.InnerJoin("organizations o on o.id = repositories.organization_id"),
 		qm.Where("o.login = ? and repositories.system and repositories.owner_id = ?", u.Login, u.ID),
@@ -209,9 +208,9 @@ func (u User) IsGuest() bool {
 // String returns info on a user that can be printed to the log
 func (u User) String() string {
 	if u.PrimaryEmail == "" {
-		return fmt.Sprintf("user %s", u.DisplayName())
+		return fmt.Sprintf("%s (%s)", u.DisplayName(), u.ID)
 	}
-	return fmt.Sprintf("user %s (%s)", u.DisplayName(), u.PrimaryEmail)
+	return fmt.Sprintf("%s (%s, %s)", u.DisplayName(), u.PrimaryEmail, u.ID)
 }
 
 // DefaultView returns a view that can be used in return values for mutations and similar situations
@@ -237,6 +236,6 @@ func (v View) Filter(mods []qm.QueryMod) []qm.QueryMod {
 
 	return append(mods,
 		qm.InnerJoin("organization_members om on r.organization_id = om.organization_id"),
-		qm.WhereIn("om.user_id = ? ", v.ViewerID),
+		qm.Where("om.user_id = ?", v.ViewerID),
 	)
 }

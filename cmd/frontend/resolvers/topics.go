@@ -285,13 +285,8 @@ func (r *topicResolver) ParentTopics(
 		return topicConnection(topic.View, topic.R.ParentTopics, nil)
 	}
 
-	log.Printf("Fetching parent topics for topic %s", topic.ID)
-	mods := topic.View.Filter([]qm.QueryMod{
-		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
-		qm.OrderBy("topics.name"),
-	})
-
-	topics, err := topic.ParentTopics(mods...).All(ctx, r.DB)
+	query := queries.TopicParentTopics{View: topic.View, Topic: topic.Topic}
+	topics, err := query.Fetch(ctx, r.DB)
 	return topicConnection(topic.View, topics, err)
 }
 

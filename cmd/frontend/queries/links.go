@@ -2,6 +2,7 @@ package queries
 
 import (
 	"context"
+	"log"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/queries/parser"
@@ -101,4 +102,21 @@ func (q LinkQuery) Fetch(ctx context.Context, exec boil.ContextExecutor) ([]*mod
 		qm.OrderBy("links.created_at desc"),
 	)
 	return models.Links(mods...).All(ctx, exec)
+}
+
+// LinkParentTopics returns the parent topics of a topic.
+type LinkParentTopics struct {
+	*models.View
+	Link *models.LinkValue
+}
+
+// Fetch fetches the parent topics
+func (q LinkParentTopics) Fetch(ctx context.Context, exec boil.ContextExecutor) ([]*models.Topic, error) {
+	log.Printf("Fetching parent topics for topic %s", q.Link)
+	mods := q.Filter([]qm.QueryMod{
+		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+		qm.OrderBy("topics.name"),
+	})
+
+	return q.Link.ParentTopics(mods...).All(ctx, exec)
 }

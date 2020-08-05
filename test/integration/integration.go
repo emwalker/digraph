@@ -25,37 +25,22 @@ type TestFetcherT struct{}
 
 type Mutator struct {
 	Actor   *models.User
-	View    *models.View
 	DB      *sql.DB
 	Fetcher *TestFetcherT
+	View    *models.View
 }
 
 type MutatorOptions struct{}
 
-type UpsertTopicOptions struct {
-	ParentTopicIds []string
-	Name           string
-}
-
-type UpsertLinkOptions struct {
-	ParentTopicIds []string
-	Title          string
-	URL            string
-}
-
-type UpdateLinkTopicsOptions struct {
-	Link           *models.LinkValue
-	ParentTopicIds []string
-}
-
 // Pre-loaded objects for common tasks
 var (
-	DB         *sql.DB
-	Fetcher    *TestFetcherT
-	Actor      *models.User
-	View       *models.View
-	Repository *models.Repository
-	Everything *models.TopicValue
+	Actor        *models.User
+	DB           *sql.DB
+	Everything   *models.TopicValue
+	Fetcher      *TestFetcherT
+	Organization *models.Organization
+	Repository   *models.Repository
+	View         *models.View
 )
 
 type Condition struct {
@@ -117,7 +102,7 @@ func init() {
 
 	Actor, err = models.Users(
 		qm.Load("SelectedRepository"),
-		qm.Where("users.selected_repository_id is not null"),
+		qm.Where("id = ?", "461c87c8-fb8f-11e8-9cbc-afde6c54d881"),
 	).One(context.Background(), DB)
 	Must(err)
 
@@ -128,6 +113,9 @@ func init() {
 	).One(ctx, DB)
 	Must(err)
 
+	Organization, err = Repository.Organization().One(ctx, DB)
+	Must(err)
+
 	everything, err := models.Topics(qm.Where("name like 'Everything'")).One(ctx, DB)
 	Must(err)
 	Everything = &models.TopicValue{everything, true, View}
@@ -136,26 +124,55 @@ func init() {
 }
 
 func NewMutator(options MutatorOptions) *Mutator {
-	return &Mutator{Actor, View, DB, Fetcher}
+	return &Mutator{
+		Actor:   Actor,
+		DB:      DB,
+		Fetcher: Fetcher,
+		View:    View,
+	}
 }
 
 func NewTestDB() (*sql.DB, error) {
 	return sql.Open("postgres", "dbname=digraph_dev user=postgres sslmode=disable")
 }
 
+type UpsertTopicOptions struct {
+	Name           string
+	ParentTopicIds []string
+	Repository     *models.Repository
+}
+
 func (m Mutator) UpsertTopic(options UpsertTopicOptions) *models.TopicValue {
 	ctx := context.Background()
 	conn := services.Connection{Exec: m.DB, Actor: m.Actor}
-	result, err := conn.UpsertTopic(ctx, Repository, options.Name, nil, options.ParentTopicIds)
+
+	repo := options.Repository
+	if repo == nil {
+		repo = Repository
+	}
+
+	result, err := conn.UpsertTopic(ctx, repo, options.Name, nil, options.ParentTopicIds)
 	Must(err)
 	return &models.TopicValue{result.Topic, true, View}
 }
 
+type UpsertLinkOptions struct {
+	ParentTopicIds []string
+	Repository     *models.Repository
+	Title          string
+	URL            string
+}
+
 func (m Mutator) UpsertLink(options UpsertLinkOptions) *models.LinkValue {
+	repo := options.Repository
+	if repo == nil {
+		repo = Repository
+	}
+
 	service := services.UpsertLink{
 		Actor:          m.Actor,
 		Fetcher:        m.Fetcher,
-		Repository:     Repository,
+		Repository:     repo,
 		ProvidedURL:    options.URL,
 		ProvidedTitle:  &options.Title,
 		ParentTopicIds: options.ParentTopicIds,
@@ -163,6 +180,11 @@ func (m Mutator) UpsertLink(options UpsertLinkOptions) *models.LinkValue {
 	result, err := service.Call(context.Background(), m.DB)
 	Must(err)
 	return &models.LinkValue{result.Link, true, View}
+}
+
+type UpdateLinkTopicsOptions struct {
+	Link           *models.LinkValue
+	ParentTopicIds []string
 }
 
 func (m Mutator) UpdateLinkTopics(options UpdateLinkTopicsOptions) {
@@ -202,4 +224,79 @@ func (m Mutator) DeleteLinksByURL(urls ...string) {
 		_, err := models.Links(qm.Where("url = ?", url)).DeleteAll(context.Background(), m.DB)
 		Must(err)
 	}
+}
+
+type CreateRepositoryOptions struct {
+	Name         string
+	Organization *models.Organization
+	Owner        *models.User
+	System       bool
+}
+
+func (m Mutator) CreateRepository(options CreateRepositoryOptions) *models.Repository {
+	org := options.Organization
+	if org == nil {
+		org = Organization
+	}
+
+	owner := options.Owner
+	if owner == nil {
+		owner = Actor
+	}
+
+	service := services.CreateRepository{
+		Organization: org,
+		Name:         options.Name,
+		Owner:        owner,
+		System:       options.System,
+	}
+	repo, err := service.Call(context.Background(), m.DB)
+	Must(err)
+
+	return repo.Repository
+}
+
+func (m Mutator) DeleteRepositoriesByName(names ...string) {
+	for _, name := range names {
+		_, err := models.Repositories(qm.Where("name = ?", name)).DeleteAll(context.Background(), m.DB)
+		Must(err)
+	}
+}
+
+func (m Mutator) DeleteOrganizationsByLogin(logins ...string) {
+	for _, login := range logins {
+		_, err := models.Organizations(qm.Where("login = ?", login)).DeleteAll(context.Background(), m.DB)
+		Must(err)
+	}
+}
+
+func (m Mutator) DeleteUsersByEmail(emails ...string) {
+	for _, email := range emails {
+		_, err := models.Users(qm.Where("primary_email = ?", email)).DeleteAll(context.Background(), m.DB)
+		Must(err)
+	}
+}
+
+type CreateUserOptions struct {
+	Name  string
+	Email string
+	Login string
+}
+
+func (m Mutator) CreateUser(options CreateUserOptions) (*models.User, *services.CompleteRegistrationResult) {
+	createUser := services.CreateUser{
+		Name:      options.Name,
+		Email:     options.Email,
+		AvatarURL: "https://example.com/avatar-url",
+	}
+	createUserResult, err := createUser.Call(context.Background(), m.DB)
+	Must(err)
+
+	user := createUserResult.User
+	user.Login.Valid = true
+
+	completeRegistration := services.CompleteRegistration{User: user, Login: options.Login}
+	completeRegistrationResult, err := completeRegistration.Call(context.Background(), m.DB)
+	Must(err)
+	return user, completeRegistrationResult
 }

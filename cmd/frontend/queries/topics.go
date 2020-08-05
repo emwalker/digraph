@@ -37,3 +37,20 @@ func TimeRange(
 	}
 	return timerange, err
 }
+
+// TopicParentTopics returns the parent topics of a topic
+type TopicParentTopics struct {
+	*models.View
+	Topic *models.Topic
+}
+
+// Fetch fetches the parent topics
+func (q TopicParentTopics) Fetch(ctx context.Context, exec boil.ContextExecutor) ([]*models.Topic, error) {
+	log.Printf("Fetching parent topics for topic %s", q.Topic)
+	mods := q.Filter([]qm.QueryMod{
+		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+		qm.OrderBy("topics.name"),
+	})
+
+	return q.Topic.ParentTopics(mods...).All(ctx, exec)
+}

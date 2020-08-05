@@ -203,39 +203,25 @@ func TestSearchLinks(t *testing.T) {
 
 func TestTopicVisibility(t *testing.T) {
 	ctx1 := testContext()
+	mutator := in.NewMutator(in.MutatorOptions{})
+	var err error
 
-	c := services.New(testDB, testViewer, testFetcher)
+	mutator.DeleteOrganizationsByLogin("gnusto", "frotz")
+	mutator.DeleteUsersByEmail("gnusto@example.com", "frotz@example.com")
 
-	userResult1, err := c.CreateUser(ctx1, "Gnusto", "gnusto@gnusto.com", "http://avatar/url")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer userResult1.Cleanup()
+	user1, result := mutator.CreateUser(in.CreateUserOptions{
+		Name:  "Gnusto",
+		Email: "gnusto@example.com",
+		Login: "gnusto",
+	})
+	repo1 := result.Repository
 
-	userResult2, err := c.CreateUser(ctx1, "Frotz", "frotz@frotz.com", "http://avatar/url")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer userResult2.Cleanup()
-
-	user1 := userResult1.User
-	user2 := userResult2.User
-
-	if user1.ID == user2.ID {
-		t.Fatal("Two users should have been created")
-	}
-
-	r1, err := c.CompleteRegistration(ctx1, user1, "gnusto")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer r1.Cleanup()
-
-	r2, err := c.CompleteRegistration(ctx1, user2, "frotz")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer r2.Cleanup()
+	user2, result := mutator.CreateUser(in.CreateUserOptions{
+		Name:  "Frotz",
+		Email: "frotz@example.com",
+		Login: "frotz",
+	})
+	repo2 := result.Repository
 
 	ctx2 := context.Background()
 	rc := resolvers.NewRequestContext(user2)
@@ -255,8 +241,8 @@ func TestTopicVisibility(t *testing.T) {
 	}
 
 	r := rootResolver.View()
-	v1 := &models.View{ViewerID: user1.ID, RepositoryIds: []string{r1.Repository.ID}}
-	v2 := &models.View{ViewerID: user2.ID, RepositoryIds: []string{r2.Repository.ID}}
+	v1 := &models.View{ViewerID: user1.ID, RepositoryIds: []string{repo1.ID}}
+	v2 := &models.View{ViewerID: user2.ID, RepositoryIds: []string{repo2.ID}}
 	var topic *models.TopicValue
 
 	if topic, err = r.Topic(ctx1, v1, t1.ID); err != nil {
@@ -370,41 +356,30 @@ func TestViewActivity(t *testing.T) {
 
 func TestViewActivityVisibility(t *testing.T) {
 	ctx := context.Background()
-	c := services.New(testDB, testViewer, testFetcher)
+	mutator := in.NewMutator(in.MutatorOptions{})
 
-	result, err := c.CreateUser(ctx, "Frotz", "frotz@frotz.com", "http://avatar/url")
+	mutator.DeleteUsersByEmail("frotz@example.com")
+	mutator.DeleteOrganizationsByLogin("frotz")
+	mutator.DeleteLinksByURL("https://www.4b517480670.com")
 
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer result.Cleanup()
-
-	user2 := result.User
-
-	registrationResult, err := c.CompleteRegistration(ctx, user2, "frotz")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer registrationResult.Cleanup()
-
-	if err = user2.Reload(ctx, testDB); err != nil {
-		t.Fatal(err)
-	}
-
-	m2 := newMutator(t, user2)
+	_, result := mutator.CreateUser(in.CreateUserOptions{
+		Name:  "Frotz",
+		Email: "frotz@example.com",
+		Login: "frotz",
+	})
 
 	linkTitle := "4b517480670"
-	link, cleanup := m2.createLink(user2.Login.String, m2.defaultRepo().Name, linkTitle, "https://www.4b517480670.com")
-	defer cleanup()
+	link := mutator.UpsertLink(in.UpsertLinkOptions{
+		Title:      linkTitle,
+		URL:        "https://www.4b517480670.com",
+		Repository: result.Repository,
+	})
 
-	m := newMutator(t, testViewer)
-	r := rootResolver.View()
-	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
+	resolver := rootResolver.View()
+	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{in.Repository.ID}}
 
-	connection, err := r.Activity(ctx, view, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	connection, err := resolver.Activity(ctx, view, nil, nil, nil, nil)
+	in.Must(err)
 
 	for _, edge := range connection.Edges {
 		node := edge.Node
@@ -415,12 +390,20 @@ func TestViewActivityVisibility(t *testing.T) {
 }
 
 func TestReviewNeeded(t *testing.T) {
-	m := newMutator(t, testViewer)
 	ctx := testContext()
+	mutator := in.NewMutator(in.MutatorOptions{})
+
+	m := newMutator(t, testViewer)
+
+	_, err := models.UserLinkReviews(qm.Where("user_id = ?", testViewer.ID)).DeleteAll(ctx, in.DB)
+	in.Must(err)
 
 	linkTitle := "4b517480670"
-	link, cleanup := m.createLink(testViewer.Login.String, m.defaultRepo().Name, linkTitle, "https://www.4b517480670.com")
-	defer cleanup()
+	link := mutator.UpsertLink(in.UpsertLinkOptions{
+		Title:      linkTitle,
+		URL:        "https://www.4b517480670.com",
+		Repository: m.defaultRepo(),
+	})
 
 	count, err := link.UserLinkReviews(qm.Where("user_id = ?", testViewer.ID)).Count(ctx, m.db)
 	if err != nil {
