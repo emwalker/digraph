@@ -18,6 +18,7 @@ type linkResolver struct {
 
 func linkConnection(view *models.View, rows []*models.Link, totalCount int, err error) (*models.LinkConnection, error) {
 	if err != nil {
+		log.Printf("There was a problem: %s", err)
 		return nil, perrors.Wrap(err, "resolvers.linkConnection")
 	}
 

@@ -31,31 +31,50 @@ func (q LinkQuery) pageSize() int {
 
 // Mods returns a set of query mods that can be used for querying for links.
 func (q LinkQuery) Mods() []qm.QueryMod {
-	mods := []qm.QueryMod{
-		qm.Load("ParentTopics"),
-		qm.Limit(q.pageSize()),
-	}
-
-	mods = append(
-		mods,
+	mods := q.View.Filter([]qm.QueryMod{
 		qm.InnerJoin("repositories r on links.repository_id = r.id"),
-	)
+		qm.Limit(q.pageSize()),
+	})
+	parentTopicMods := []qm.QueryMod{}
 
-	mods = q.View.Filter(mods)
-
-	if !q.Viewer.IsGuest() {
+	if q.Viewer.IsGuest() {
+		// Filter out parent topics that are not publicly visible
+		parentTopicMods = append(
+			parentTopicMods,
+			qm.LeftOuterJoin("repositories r on topics.repository_id = r.id"),
+			qm.LeftOuterJoin("organizations o on r.organization_id = o.id"),
+			qm.Where("o.public"),
+		)
+	} else {
 		mods = append(
 			mods,
 			qm.Load(
-				models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", q.Viewer.ID), qm.Limit(1),
+				models.LinkRels.UserLinkReviews,
+				qm.Where("user_link_reviews.user_id = ?", q.Viewer.ID),
+				qm.Limit(1),
 			),
 		)
+
+		// Filter out parent topics that the viewer does not have permission to see
+		parentTopicMods = append(
+			parentTopicMods,
+			qm.InnerJoin("repositories r on topics.repository_id = r.id"),
+			qm.InnerJoin("organizations o on r.organization_id = o.id"),
+			qm.InnerJoin("organization_members om on om.organization_id = o.id"),
+			qm.Where("om.user_id = ?", q.Viewer.ID),
+		)
 	}
+
+	mods = append(mods, qm.Load("ParentTopics", parentTopicMods...))
 
 	if q.Reviewed != nil {
 		mods = append(
 			mods,
-			qm.Load(models.LinkRels.UserLinkReviews, qm.Where("user_link_reviews.user_id = ?", q.Viewer.ID), qm.Limit(1)),
+			qm.Load(
+				models.LinkRels.UserLinkReviews,
+				qm.Where("user_link_reviews.user_id = ?", q.Viewer.ID),
+				qm.Limit(1),
+			),
 			qm.InnerJoin("user_link_reviews ulr on links.id = ulr.link_id"),
 			qm.Where("ulr.user_id = ?", q.Viewer.ID),
 		)
