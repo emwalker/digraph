@@ -10,8 +10,8 @@ GIT_HASH         = $(shell git rev-parse HEAD)
 LDFLAGS          = -w -X main.commitHash=$(GIT_HASH)
 GLIDE            := $(shell command -v glide 2> /dev/null)
 TIMESTAMP        = $(shell date -u +%s)
-DBNAME           = digraph_dev
 LINT_DIRECTORIES = $(shell find cmd -type d ! -name "loaders" ! -name "server")
+DBNAME           := $(if $(DBNAME),$(DBNAME),digraph_dev)
 
 kill:
 	@killall server 2>/dev/null || true
@@ -101,6 +101,10 @@ load-fixtures:
 
 load-production:
 	bash ./scripts/load-production-db
+	psql $(DBNAME) < queries/transitive-closure.sql
+
+recreate-transitive-closures:
+	psql $(DBNAME) < queries/clear-transitive-closure.sql
 	psql $(DBNAME) < queries/transitive-closure.sql
 
 save-production:
