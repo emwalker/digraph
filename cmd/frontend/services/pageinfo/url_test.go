@@ -222,6 +222,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://newscenter.sdsu.edu/sdsu_newscenter/news_story.aspx?sid=78119",
 			canonicalURL: "https://newscenter.sdsu.edu/sdsu_newscenter/news_story.aspx?sid=78119",
 		},
+		{
+			name:         "A Human Rights Ukraine link",
+			inputURL:     "http://khpg.org/en/index.php?id=1597789267&fbclid=IwAR0TszHB5J_sEHt6ZRBnzMWuVCH_Ec2t8stvpSs8vt32sUnZYkVOlRXYnoY",
+			canonicalURL: "http://khpg.org/en/index.php?id=1597789267",
+		},
 	}
 
 	for _, testCase := range testCases {
