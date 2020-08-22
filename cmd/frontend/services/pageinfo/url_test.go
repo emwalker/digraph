@@ -227,6 +227,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "http://khpg.org/en/index.php?id=1597789267&fbclid=IwAR0TszHB5J_sEHt6ZRBnzMWuVCH_Ec2t8stvpSs8vt32sUnZYkVOlRXYnoY",
 			canonicalURL: "http://khpg.org/en/index.php?id=1597789267",
 		},
+		{
+			name:         "A document at a government website",
+			inputURL:     "https://www.greenbeltmd.gov/home/showdocument?id=2656",
+			canonicalURL: "https://www.greenbeltmd.gov/home/showdocument?id=2656",
+		},
 	}
 
 	for _, testCase := range testCases {

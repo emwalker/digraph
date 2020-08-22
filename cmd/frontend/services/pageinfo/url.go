@@ -35,7 +35,7 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 	pl.FlagSortQuery
 
 var (
-	omitFields = []string{
+	stripParams = []string{
 		"__twitter_impression",
 		"_osource",
 		"_returnURL",
@@ -57,18 +57,18 @@ var (
 		"ssh",
 	}
 
+	// Applies to any URL that does not have a specific config.
+	generalURLSpec = urlSpec{keepParams: []string{"id"}}
+
 	urlSpecs = []urlSpec{
 		urlSpec{suffix: "youtube.com", keepParams: []string{"v"}},
 		urlSpec{suffix: "urbandictionary.com", keepParams: []string{"term"}},
-		urlSpec{suffix: "abcnews.go.com", keepParams: []string{"id"}},
 		urlSpec{suffix: "facebook.com", keepParams: []string{"__xts__[0]"}},
 		urlSpec{suffix: "ycombinator.com", keepParams: []string{"id"}},
 		urlSpec{suffix: "dur.ac.uk", keepParams: []string{"itemno"}},
-		urlSpec{suffix: "plos.org", keepParams: []string{"id"}},
 		urlSpec{suffix: "baylor.edu", keepParams: []string{"action", "story"}},
 		urlSpec{suffix: "umass.edu", keepParams: []string{"article", "context"}},
 		urlSpec{suffix: "sdsu.edu", keepParams: []string{"sid"}},
-		urlSpec{suffix: "khpg.org", keepParams: []string{"id"}},
 		urlSpec{suffix: "amazon.com"},
 		urlSpec{suffix: "businessinsider.com"},
 		urlSpec{suffix: "dictionary.com"},
@@ -129,13 +129,13 @@ func stripFragment(parsed *url.URL) bool {
 	return !strings.HasSuffix(parsed.Host, "mail.google.com")
 }
 
-func removeQueryParam(field string) bool {
-	if strings.HasPrefix(field, "utm") {
+func removeQueryParam(param string) bool {
+	if strings.HasPrefix(param, "utm") {
 		return true
 	}
 
-	for _, omittedField := range omitFields {
-		if omittedField == field {
+	for _, omittedParam := range stripParams {
+		if omittedParam == param {
 			return true
 		}
 	}
@@ -143,13 +143,13 @@ func removeQueryParam(field string) bool {
 	return false
 }
 
-func urlSpecFor(host string) *urlSpec {
+func urlSpecFor(host string) urlSpec {
 	for _, spec := range urlSpecs {
 		if spec.matchesHost(host) {
-			return &spec
+			return spec
 		}
 	}
-	return nil
+	return generalURLSpec
 }
 
 // NewURL returns a URL with a canonicalized form and a SHA1.
@@ -176,15 +176,7 @@ func NormalizeURL(rawURL string) (*URL, error) {
 	}
 
 	spec := urlSpecFor(parsed.Host)
-
-	if spec != nil {
-		copiedURL = spec.normalizeURL(parsed)
-	} else {
-		// By default, strip all query parameters.  In special cases, override this behavior with
-		// whitelisted parameters.
-		parsed.RawQuery = ""
-		copiedURL = parsed.String()
-	}
+	copiedURL = spec.normalizeURL(parsed)
 
 	flags := normalizationFlags
 	if stripFragment(parsed) {
