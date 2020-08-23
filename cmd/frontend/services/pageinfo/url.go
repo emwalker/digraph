@@ -69,6 +69,7 @@ var (
 		urlSpec{suffix: "baylor.edu", keepParams: []string{"action", "story"}},
 		urlSpec{suffix: "umass.edu", keepParams: []string{"article", "context"}},
 		urlSpec{suffix: "sdsu.edu", keepParams: []string{"sid"}},
+		urlSpec{suffix: "nzherald.co.nz", keepParams: []string{"objectid"}},
 		urlSpec{suffix: "amazon.com"},
 		urlSpec{suffix: "businessinsider.com"},
 		urlSpec{suffix: "dictionary.com"},
