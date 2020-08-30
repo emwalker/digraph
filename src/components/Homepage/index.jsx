@@ -46,6 +46,11 @@ const Homepage = ({ view, router }: Props) => {
           <p className={styles.subtitle}>
             Organize the world
           </p>
+          <p className={styles.description}>
+            Save links in a mind-map-like network of topics.
+            Keep track of everything you&rsquo;ve read or might want to read in the future.
+            Gain control over your reading and turn the deluge of information into knowledge.
+          </p>
         </div>
       </div>
 
