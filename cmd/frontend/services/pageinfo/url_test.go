@@ -237,6 +237,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.nzherald.co.nz/world/news/article.cfm?c_id=2&objectid=12358821",
 			canonicalURL: "https://www.nzherald.co.nz/world/news/article.cfm?objectid=12358821",
 		},
+		{
+			name:         "A video on Facebook",
+			inputURL:     "https://www.facebook.com/watch/?v=781916212211423",
+			canonicalURL: "https://www.facebook.com/watch/?v=781916212211423",
+		},
 	}
 
 	for _, testCase := range testCases {

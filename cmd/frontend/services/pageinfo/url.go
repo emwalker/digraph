@@ -63,7 +63,7 @@ var (
 	urlSpecs = []urlSpec{
 		urlSpec{suffix: "youtube.com", keepParams: []string{"v"}},
 		urlSpec{suffix: "urbandictionary.com", keepParams: []string{"term"}},
-		urlSpec{suffix: "facebook.com", keepParams: []string{"__xts__[0]"}},
+		urlSpec{suffix: "facebook.com", keepParams: []string{"__xts__[0]", "v"}},
 		urlSpec{suffix: "ycombinator.com", keepParams: []string{"id"}},
 		urlSpec{suffix: "dur.ac.uk", keepParams: []string{"itemno"}},
 		urlSpec{suffix: "baylor.edu", keepParams: []string{"action", "story"}},
