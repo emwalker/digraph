@@ -70,6 +70,7 @@ var (
 		urlSpec{suffix: "umass.edu", keepParams: []string{"article", "context"}},
 		urlSpec{suffix: "sdsu.edu", keepParams: []string{"sid"}},
 		urlSpec{suffix: "nzherald.co.nz", keepParams: []string{"objectid"}},
+		urlSpec{suffix: "sourcewatch.org", keepParams: []string{"title"}},
 		urlSpec{suffix: "amazon.com"},
 		urlSpec{suffix: "businessinsider.com"},
 		urlSpec{suffix: "dictionary.com"},

@@ -242,6 +242,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.facebook.com/watch/?v=781916212211423",
 			canonicalURL: "https://www.facebook.com/watch/?v=781916212211423",
 		},
+		{
+			name:         "A Source Watch page",
+			inputURL:     "https://www.sourcewatch.org/index.php?title=Honest_Elections_Project",
+			canonicalURL: "https://www.sourcewatch.org/index.php?title=Honest_Elections_Project",
+		},
 	}
 
 	for _, testCase := range testCases {
