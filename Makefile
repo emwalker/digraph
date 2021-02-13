@@ -117,8 +117,8 @@ build-client:
 build-executables:
 	GOOS=linux GARCH=amd64 CGO_ENABLED=0 go install ./...
 	mkdir -p tmp/stage
-	cp $(shell go env GOPATH)/bin/linux_amd64/frontend tmp/stage/
-	cp $(shell go env GOPATH)/bin/linux_amd64/cron tmp/stage/
+	cp $(shell go env GOPATH)/bin/frontend tmp/stage/
+	cp $(shell go env GOPATH)/bin/cron tmp/stage/
 
 build-container-api:
 	docker-compose build api
