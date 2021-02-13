@@ -1,6 +1,6 @@
 // @flow
 import React, { useState, useCallback } from 'react'
-import { graphql, fetchQuery, useRelayEnvironment } from 'react-relay/hooks'
+import { graphql, fetchQuery, useRelayEnvironment } from 'relay-hooks'
 
 import type { TopicSuggestionsQuery } from './__generated__/TopicSuggestionsQuery.graphql'
 

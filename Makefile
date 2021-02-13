@@ -22,7 +22,6 @@ kill:
 
 start:
 	@yarn relay --watch &
-	#@redis-server /usr/local/etc/redis.conf &
 	@go run cmd/frontend/frontend.go --dev --log 1 &
 	@yarn start
 
@@ -83,8 +82,10 @@ format: lint format-js
 	go fmt ./...
 	git diff --quiet
 
-check-js: format-js test-js
+relay:
 	yarn relay
+
+check-js: relay format-js test-js
 	yarn outdated
 
 check: generate format test test-integration
