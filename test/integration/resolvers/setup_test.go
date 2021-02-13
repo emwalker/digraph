@@ -15,7 +15,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	_ "github.com/lib/pq"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const orgID = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"

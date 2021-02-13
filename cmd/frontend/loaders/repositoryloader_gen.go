@@ -9,6 +9,27 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 )
 
+// RepositoryLoaderConfig captures the config to create a new RepositoryLoader
+type RepositoryLoaderConfig struct {
+	// Fetch is a method that provides the data for the loader
+	Fetch func(keys []string) ([]*models.Repository, []error)
+
+	// Wait is how long wait before sending a batch
+	Wait time.Duration
+
+	// MaxBatch will limit the maximum number of keys to send in one batch, 0 = not limit
+	MaxBatch int
+}
+
+// NewRepositoryLoader creates a new RepositoryLoader given a fetch, wait, and maxBatch
+func NewRepositoryLoader(config RepositoryLoaderConfig) *RepositoryLoader {
+	return &RepositoryLoader{
+		fetch:    config.Fetch,
+		wait:     config.Wait,
+		maxBatch: config.MaxBatch,
+	}
+}
+
 // RepositoryLoader batches and caches requests
 type RepositoryLoader struct {
 	// this method provides the data for the loader
@@ -27,13 +48,13 @@ type RepositoryLoader struct {
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
-	batch *repositoryBatch
+	batch *repositoryLoaderBatch
 
 	// mutex to prevent races
 	mu sync.Mutex
 }
 
-type repositoryBatch struct {
+type repositoryLoaderBatch struct {
 	keys    []string
 	data    []*models.Repository
 	error   []error
@@ -41,12 +62,12 @@ type repositoryBatch struct {
 	done    chan struct{}
 }
 
-// Load a repository by key, batching and caching will be applied automatically
+// Load a Repository by key, batching and caching will be applied automatically
 func (l *RepositoryLoader) Load(key string) (*models.Repository, error) {
 	return l.LoadThunk(key)()
 }
 
-// LoadThunk returns a function that when called will block waiting for a repository.
+// LoadThunk returns a function that when called will block waiting for a Repository.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
 func (l *RepositoryLoader) LoadThunk(key string) func() (*models.Repository, error) {
@@ -58,7 +79,7 @@ func (l *RepositoryLoader) LoadThunk(key string) func() (*models.Repository, err
 		}
 	}
 	if l.batch == nil {
-		l.batch = &repositoryBatch{done: make(chan struct{})}
+		l.batch = &repositoryLoaderBatch{done: make(chan struct{})}
 	}
 	batch := l.batch
 	pos := batch.keyIndex(l, key)
@@ -107,6 +128,24 @@ func (l *RepositoryLoader) LoadAll(keys []string) ([]*models.Repository, []error
 	return repositorys, errors
 }
 
+// LoadAllThunk returns a function that when called will block waiting for a Repositorys.
+// This method should be used if you want one goroutine to make requests to many
+// different data loaders without blocking until the thunk is called.
+func (l *RepositoryLoader) LoadAllThunk(keys []string) func() ([]*models.Repository, []error) {
+	results := make([]func() (*models.Repository, error), len(keys))
+	for i, key := range keys {
+		results[i] = l.LoadThunk(key)
+	}
+	return func() ([]*models.Repository, []error) {
+		repositorys := make([]*models.Repository, len(keys))
+		errors := make([]error, len(keys))
+		for i, thunk := range results {
+			repositorys[i], errors[i] = thunk()
+		}
+		return repositorys, errors
+	}
+}
+
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
@@ -139,7 +178,7 @@ func (l *RepositoryLoader) unsafeSet(key string, value *models.Repository) {
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *repositoryBatch) keyIndex(l *RepositoryLoader, key string) int {
+func (b *repositoryLoaderBatch) keyIndex(l *RepositoryLoader, key string) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i
@@ -163,7 +202,7 @@ func (b *repositoryBatch) keyIndex(l *RepositoryLoader, key string) int {
 	return pos
 }
 
-func (b *repositoryBatch) startTimer(l *RepositoryLoader) {
+func (b *repositoryLoaderBatch) startTimer(l *RepositoryLoader) {
 	time.Sleep(l.wait)
 	l.mu.Lock()
 
@@ -179,7 +218,7 @@ func (b *repositoryBatch) startTimer(l *RepositoryLoader) {
 	b.end(l)
 }
 
-func (b *repositoryBatch) end(l *RepositoryLoader) {
+func (b *repositoryLoaderBatch) end(l *RepositoryLoader) {
 	b.data, b.error = l.fetch(b.keys)
 	close(b.done)
 }

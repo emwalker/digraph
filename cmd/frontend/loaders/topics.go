@@ -1,6 +1,6 @@
 package loaders
 
-//go:generate dataloaden -keys string github.com/emwalker/digraph/cmd/frontend/models.Topic
+//go:generate go run github.com/vektah/dataloaden TopicLoader string "*github.com/emwalker/digraph/cmd/frontend/models.Topic"
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 // TopicLoaderKey is the key under which the topic loader is stored in the session.
@@ -33,10 +33,10 @@ func fetchTopicsFromDB(ctx context.Context, c *config) topicFetcher {
 }
 
 // NewTopicLoader returns a new topic loader.
-func NewTopicLoader(ctx context.Context, exec boil.ContextExecutor, wait time.Duration) *TopicLoader {
-	return &TopicLoader{
-		maxBatch: 100,
-		wait:     wait,
-		fetch:    fetchTopicsFromDB(ctx, &config{exec}),
-	}
+func newTopicLoader(ctx context.Context, exec boil.ContextExecutor, wait time.Duration) *TopicLoader {
+	return NewTopicLoader(TopicLoaderConfig{
+		MaxBatch: 100,
+		Wait:     wait,
+		Fetch:    fetchTopicsFromDB(ctx, &config{exec}),
+	})
 }

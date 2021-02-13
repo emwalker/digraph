@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 type config struct {
@@ -20,8 +20,8 @@ func convertIds(ids []string) []interface{} {
 }
 
 func AddToContext(ctx context.Context, exec boil.ContextExecutor, wait time.Duration) context.Context {
-	ctx = context.WithValue(ctx, TopicLoaderKey, NewTopicLoader(ctx, exec, wait))
-	ctx = context.WithValue(ctx, OrganizationLoaderKey, NewOrganizationLoader(ctx, exec, wait))
-	ctx = context.WithValue(ctx, RepositoryLoaderKey, NewRepositoryLoader(ctx, exec, wait))
+	ctx = context.WithValue(ctx, TopicLoaderKey, newTopicLoader(ctx, exec, wait))
+	ctx = context.WithValue(ctx, OrganizationLoaderKey, newOrganizationLoader(ctx, exec, wait))
+	ctx = context.WithValue(ctx, RepositoryLoaderKey, newRepositoryLoader(ctx, exec, wait))
 	return ctx
 }

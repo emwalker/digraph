@@ -6,7 +6,7 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/loaders"
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type organizationResolver struct {

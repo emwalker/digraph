@@ -9,7 +9,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	in "github.com/emwalker/digraph/test/integration"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func TestUpsertTopicEnsuresATopic(t *testing.T) {

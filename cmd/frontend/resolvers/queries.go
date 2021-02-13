@@ -7,7 +7,7 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	perrors "github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type queryResolver struct{ *Resolver }

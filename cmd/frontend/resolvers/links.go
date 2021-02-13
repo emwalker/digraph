@@ -9,7 +9,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/emwalker/digraph/cmd/frontend/queries"
 	perrors "github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type linkResolver struct {
@@ -140,7 +140,7 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 	}
 
 	reviewedAt := review.ReviewedAt
-	if reviewedAt.IsZero() {
+	if !reviewedAt.Valid {
 		return &models.LinkReview{User: viewer}, nil
 	}
 

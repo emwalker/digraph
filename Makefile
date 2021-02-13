@@ -13,15 +13,16 @@ TIMESTAMP        = $(shell date -u +%s)
 LINT_DIRECTORIES = $(shell find cmd -type d ! -name "loaders" ! -name "server")
 DBNAME           := $(if $(DBNAME),$(DBNAME),digraph_dev)
 
+# Might core dump on Linux
 kill:
 	@killall server 2>/dev/null || true
 	@killall node 2>/dev/null || true
 	@pkill -ABRT -f node || true
 	@pkill -TERM -f frontend || true
 
-start: kill
+start:
 	@yarn relay --watch &
-	@redis-server /usr/local/etc/redis.conf &
+	#@redis-server /usr/local/etc/redis.conf &
 	@go run cmd/frontend/frontend.go --dev --log 1 &
 	@yarn start
 
@@ -61,7 +62,6 @@ migrate-down:
 generate:
 	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml --no-hooks
 	go generate ./...
-	rm -f cmd/frontend/resolvers/resolver.go
 
 .PHONY:
 

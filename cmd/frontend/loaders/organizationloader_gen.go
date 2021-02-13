@@ -9,6 +9,27 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 )
 
+// OrganizationLoaderConfig captures the config to create a new OrganizationLoader
+type OrganizationLoaderConfig struct {
+	// Fetch is a method that provides the data for the loader
+	Fetch func(keys []string) ([]*models.Organization, []error)
+
+	// Wait is how long wait before sending a batch
+	Wait time.Duration
+
+	// MaxBatch will limit the maximum number of keys to send in one batch, 0 = not limit
+	MaxBatch int
+}
+
+// NewOrganizationLoader creates a new OrganizationLoader given a fetch, wait, and maxBatch
+func NewOrganizationLoader(config OrganizationLoaderConfig) *OrganizationLoader {
+	return &OrganizationLoader{
+		fetch:    config.Fetch,
+		wait:     config.Wait,
+		maxBatch: config.MaxBatch,
+	}
+}
+
 // OrganizationLoader batches and caches requests
 type OrganizationLoader struct {
 	// this method provides the data for the loader
@@ -27,13 +48,13 @@ type OrganizationLoader struct {
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
-	batch *organizationBatch
+	batch *organizationLoaderBatch
 
 	// mutex to prevent races
 	mu sync.Mutex
 }
 
-type organizationBatch struct {
+type organizationLoaderBatch struct {
 	keys    []string
 	data    []*models.Organization
 	error   []error
@@ -41,12 +62,12 @@ type organizationBatch struct {
 	done    chan struct{}
 }
 
-// Load a organization by key, batching and caching will be applied automatically
+// Load a Organization by key, batching and caching will be applied automatically
 func (l *OrganizationLoader) Load(key string) (*models.Organization, error) {
 	return l.LoadThunk(key)()
 }
 
-// LoadThunk returns a function that when called will block waiting for a organization.
+// LoadThunk returns a function that when called will block waiting for a Organization.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
 func (l *OrganizationLoader) LoadThunk(key string) func() (*models.Organization, error) {
@@ -58,7 +79,7 @@ func (l *OrganizationLoader) LoadThunk(key string) func() (*models.Organization,
 		}
 	}
 	if l.batch == nil {
-		l.batch = &organizationBatch{done: make(chan struct{})}
+		l.batch = &organizationLoaderBatch{done: make(chan struct{})}
 	}
 	batch := l.batch
 	pos := batch.keyIndex(l, key)
@@ -107,6 +128,24 @@ func (l *OrganizationLoader) LoadAll(keys []string) ([]*models.Organization, []e
 	return organizations, errors
 }
 
+// LoadAllThunk returns a function that when called will block waiting for a Organizations.
+// This method should be used if you want one goroutine to make requests to many
+// different data loaders without blocking until the thunk is called.
+func (l *OrganizationLoader) LoadAllThunk(keys []string) func() ([]*models.Organization, []error) {
+	results := make([]func() (*models.Organization, error), len(keys))
+	for i, key := range keys {
+		results[i] = l.LoadThunk(key)
+	}
+	return func() ([]*models.Organization, []error) {
+		organizations := make([]*models.Organization, len(keys))
+		errors := make([]error, len(keys))
+		for i, thunk := range results {
+			organizations[i], errors[i] = thunk()
+		}
+		return organizations, errors
+	}
+}
+
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
@@ -139,7 +178,7 @@ func (l *OrganizationLoader) unsafeSet(key string, value *models.Organization) {
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *organizationBatch) keyIndex(l *OrganizationLoader, key string) int {
+func (b *organizationLoaderBatch) keyIndex(l *OrganizationLoader, key string) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i
@@ -163,7 +202,7 @@ func (b *organizationBatch) keyIndex(l *OrganizationLoader, key string) int {
 	return pos
 }
 
-func (b *organizationBatch) startTimer(l *OrganizationLoader) {
+func (b *organizationLoaderBatch) startTimer(l *OrganizationLoader) {
 	time.Sleep(l.wait)
 	l.mu.Lock()
 
@@ -179,7 +218,7 @@ func (b *organizationBatch) startTimer(l *OrganizationLoader) {
 	b.end(l)
 }
 
-func (b *organizationBatch) end(l *OrganizationLoader) {
+func (b *organizationLoaderBatch) end(l *OrganizationLoader) {
 	b.data, b.error = l.fetch(b.keys)
 	close(b.done)
 }

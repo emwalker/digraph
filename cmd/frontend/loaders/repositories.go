@@ -1,6 +1,6 @@
 package loaders
 
-//go:generate dataloaden -keys string github.com/emwalker/digraph/cmd/frontend/models.Repository
+//go:generate go run github.com/vektah/dataloaden RepositoryLoader string "*github.com/emwalker/digraph/cmd/frontend/models.Repository"
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 // RepositoryLoaderKey is the key under which the repository loader is stored in the session.
@@ -42,11 +42,10 @@ func fetchRepositoriesFromDB(ctx context.Context, c *config) repositoryFetcher {
 	}
 }
 
-// NewRepositoryLoader returns a new repository loader.
-func NewRepositoryLoader(ctx context.Context, exec boil.ContextExecutor, wait time.Duration) *RepositoryLoader {
-	return &RepositoryLoader{
-		maxBatch: 100,
-		wait:     wait,
-		fetch:    fetchRepositoriesFromDB(ctx, &config{exec}),
-	}
+func newRepositoryLoader(ctx context.Context, exec boil.ContextExecutor, wait time.Duration) *RepositoryLoader {
+	return NewRepositoryLoader(RepositoryLoaderConfig{
+		Wait:     2 * time.Millisecond,
+		MaxBatch: 100,
+		Fetch:    fetchRepositoriesFromDB(ctx, &config{exec}),
+	})
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	in "github.com/emwalker/digraph/test/integration"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func TestUpsertBadLink(t *testing.T) {
@@ -210,12 +210,12 @@ func TestReviewLink(t *testing.T) {
 	}
 
 	review := reviews[0]
-	if !review.ReviewedAt.IsZero() {
+	if review.ReviewedAt.Valid {
 		t.Fatal("Expected the review to be pending")
 	}
 
 	result, err := c.ReviewLink(ctx, link, true)
-	if result.Review.ReviewedAt.IsZero() {
+	if !result.Review.ReviewedAt.Valid {
 		t.Fatal("Expected the review to be pending")
 	}
 }

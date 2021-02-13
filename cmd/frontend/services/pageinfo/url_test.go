@@ -247,6 +247,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.sourcewatch.org/index.php?title=Honest_Elections_Project",
 			canonicalURL: "https://www.sourcewatch.org/index.php?title=Honest_Elections_Project",
 		},
+		{
+			name:         "A LENR Forum page",
+			inputURL:     "https://www.lenr-forum.com/forum/thread/6017-mizuno-replication-and-materials-only/?pageNo=2",
+			canonicalURL: "https://www.lenr-forum.com/forum/thread/6017-mizuno-replication-and-materials-only/?pageNo=2",
+		},
 	}
 
 	for _, testCase := range testCases {

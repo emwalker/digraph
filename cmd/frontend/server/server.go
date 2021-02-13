@@ -16,7 +16,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/resolvers"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	"github.com/gorilla/handlers"
-	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 const requestTimeout = 15

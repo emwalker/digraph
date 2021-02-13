@@ -9,6 +9,27 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/models"
 )
 
+// TopicLoaderConfig captures the config to create a new TopicLoader
+type TopicLoaderConfig struct {
+	// Fetch is a method that provides the data for the loader
+	Fetch func(keys []string) ([]*models.Topic, []error)
+
+	// Wait is how long wait before sending a batch
+	Wait time.Duration
+
+	// MaxBatch will limit the maximum number of keys to send in one batch, 0 = not limit
+	MaxBatch int
+}
+
+// NewTopicLoader creates a new TopicLoader given a fetch, wait, and maxBatch
+func NewTopicLoader(config TopicLoaderConfig) *TopicLoader {
+	return &TopicLoader{
+		fetch:    config.Fetch,
+		wait:     config.Wait,
+		maxBatch: config.MaxBatch,
+	}
+}
+
 // TopicLoader batches and caches requests
 type TopicLoader struct {
 	// this method provides the data for the loader
@@ -27,13 +48,13 @@ type TopicLoader struct {
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
-	batch *topicBatch
+	batch *topicLoaderBatch
 
 	// mutex to prevent races
 	mu sync.Mutex
 }
 
-type topicBatch struct {
+type topicLoaderBatch struct {
 	keys    []string
 	data    []*models.Topic
 	error   []error
@@ -41,12 +62,12 @@ type topicBatch struct {
 	done    chan struct{}
 }
 
-// Load a topic by key, batching and caching will be applied automatically
+// Load a Topic by key, batching and caching will be applied automatically
 func (l *TopicLoader) Load(key string) (*models.Topic, error) {
 	return l.LoadThunk(key)()
 }
 
-// LoadThunk returns a function that when called will block waiting for a topic.
+// LoadThunk returns a function that when called will block waiting for a Topic.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
 func (l *TopicLoader) LoadThunk(key string) func() (*models.Topic, error) {
@@ -58,7 +79,7 @@ func (l *TopicLoader) LoadThunk(key string) func() (*models.Topic, error) {
 		}
 	}
 	if l.batch == nil {
-		l.batch = &topicBatch{done: make(chan struct{})}
+		l.batch = &topicLoaderBatch{done: make(chan struct{})}
 	}
 	batch := l.batch
 	pos := batch.keyIndex(l, key)
@@ -107,6 +128,24 @@ func (l *TopicLoader) LoadAll(keys []string) ([]*models.Topic, []error) {
 	return topics, errors
 }
 
+// LoadAllThunk returns a function that when called will block waiting for a Topics.
+// This method should be used if you want one goroutine to make requests to many
+// different data loaders without blocking until the thunk is called.
+func (l *TopicLoader) LoadAllThunk(keys []string) func() ([]*models.Topic, []error) {
+	results := make([]func() (*models.Topic, error), len(keys))
+	for i, key := range keys {
+		results[i] = l.LoadThunk(key)
+	}
+	return func() ([]*models.Topic, []error) {
+		topics := make([]*models.Topic, len(keys))
+		errors := make([]error, len(keys))
+		for i, thunk := range results {
+			topics[i], errors[i] = thunk()
+		}
+		return topics, errors
+	}
+}
+
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
@@ -139,7 +178,7 @@ func (l *TopicLoader) unsafeSet(key string, value *models.Topic) {
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *topicBatch) keyIndex(l *TopicLoader, key string) int {
+func (b *topicLoaderBatch) keyIndex(l *TopicLoader, key string) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i
@@ -163,7 +202,7 @@ func (b *topicBatch) keyIndex(l *TopicLoader, key string) int {
 	return pos
 }
 
-func (b *topicBatch) startTimer(l *TopicLoader) {
+func (b *topicLoaderBatch) startTimer(l *TopicLoader) {
 	time.Sleep(l.wait)
 	l.mu.Lock()
 
@@ -179,7 +218,7 @@ func (b *topicBatch) startTimer(l *TopicLoader) {
 	b.end(l)
 }
 
-func (b *topicBatch) end(l *TopicLoader) {
+func (b *topicLoaderBatch) end(l *TopicLoader) {
 	b.data, b.error = l.fetch(b.keys)
 	close(b.done)
 }

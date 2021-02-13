@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/null"
 )
 
 func TestSessionHexID(t *testing.T) {

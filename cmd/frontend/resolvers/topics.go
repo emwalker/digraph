@@ -14,9 +14,9 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"github.com/volatiletech/sqlboiler/v4/types"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/types"
 )
 
 type topicResolver struct{ *Resolver }

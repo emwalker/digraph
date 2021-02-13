@@ -1,6 +1,6 @@
 package loaders
 
-//go:generate dataloaden -keys string github.com/emwalker/digraph/cmd/frontend/models.Organization
+//go:generate go run github.com/vektah/dataloaden OrganizationLoader string "*github.com/emwalker/digraph/cmd/frontend/models.Organization"
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 // OrganizationLoaderKey is the key under which the topic loader is stored in the session.
@@ -42,11 +42,10 @@ func fetchOrganizationsFromDB(ctx context.Context, c *config) organizationFetche
 	}
 }
 
-// NewOrganizationLoader returns a loader that can be used to batch load organizations.
-func NewOrganizationLoader(ctx context.Context, exec boil.ContextExecutor, wait time.Duration) *OrganizationLoader {
-	return &OrganizationLoader{
-		maxBatch: 1000,
-		wait:     wait,
-		fetch:    fetchOrganizationsFromDB(ctx, &config{exec}),
-	}
+func newOrganizationLoader(ctx context.Context, exec boil.ContextExecutor, wait time.Duration) *OrganizationLoader {
+	return NewOrganizationLoader(OrganizationLoaderConfig{
+		MaxBatch: 1000,
+		Wait:     wait,
+		Fetch:    fetchOrganizationsFromDB(ctx, &config{exec}),
+	})
 }
