@@ -23,6 +23,13 @@ var (
 	serverSecret = os.Getenv("DIGRAPH_SERVER_SECRET")
 )
 
+func serverSecretOrDefault() string {
+	if serverSecret == "" {
+		return "keyboard cat"
+	}
+	return serverSecret
+}
+
 func must(err error) {
 	if err != nil {
 		log.Fatal("there was a problem: ", err)
@@ -42,7 +49,7 @@ func (s *Server) withBasicAuth(next http.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 		rc := resolvers.NewRequestContext(resolvers.GuestViewer)
-		rc.SetServerSecret(serverSecret)
+		rc.SetServerSecret(serverSecretOrDefault())
 		ctx = resolvers.WithRequestContext(ctx, rc)
 
 		if !ok {

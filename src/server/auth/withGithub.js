@@ -22,6 +22,7 @@ const onAuthSuccessFn = (environment) => async (accessToken, refreshToken, profi
   // eslint-disable-next-line camelcase
   const { displayName, emails, username, _json: { avatar_url } } = profile
   const email = primaryOrFirstEmail(emails)
+  console.log(`User ${email || '(no email)'} logging in`)
   if (!email) return
 
   const input: Input = {
@@ -66,7 +67,7 @@ export default (app: App, environment: Environment) => {
       {
         clientID: process.env.DIGRAPH_GITHUB_CLIENT_ID || 'GitHub client id needed',
         clientSecret: process.env.DIGRAPH_GITHUB_CLIENT_SECRET || 'GitHub client secret needed',
-        callbackURL: process.env.DIGRAPH_GITHUB_CALLBACK_URL || 'GitHub callback url needed',
+        callbackURL: process.env.DIGRAPH_GITHUB_CALLBACK_URL,
         scope: 'user:email',
       },
       onAuthSuccessFn(environment),
