@@ -2,7 +2,7 @@
 import 'core-js'
 import 'regenerator-runtime/runtime'
 import React from 'react'
-import { RelayEnvironmentProvider } from 'relay-hooks'
+import { RelayEnvironmentProvider } from 'react-relay/hooks'
 import { BrowserProtocol } from 'farce'
 import { createInitialFarceRouter } from 'found'
 import { hydrate } from 'react-dom'
