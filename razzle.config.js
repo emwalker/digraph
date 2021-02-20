@@ -3,8 +3,8 @@
 const path = require('path');
 
 module.exports = {
-  modify(config, { target, dev }, webpack) {
-    const appConfig = Object.assign({}, config);
+  modifyWebpackConfig(opts) {
+    const appConfig = Object.assign({}, opts.webpackConfig);
 
     appConfig.resolve.alias = {
       components: path.resolve(__dirname, './src/components'),
