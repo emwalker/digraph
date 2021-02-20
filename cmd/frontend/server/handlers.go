@@ -53,7 +53,7 @@ func (s *Server) withBasicAuth(next http.Handler) http.HandlerFunc {
 		ctx = resolvers.WithRequestContext(ctx, rc)
 
 		if !ok {
-			log.Printf("Basic auth not ok, continuing as guest: %s", r.Header.Get("Authorization"))
+			log.Print("Basic auth not ok, continuing as guest")
 		} else if viewerID != "" {
 			session, err := models.FindSession(ctx, s.db, sessionID)
 
