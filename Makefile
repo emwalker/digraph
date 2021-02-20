@@ -13,6 +13,9 @@ TIMESTAMP        = $(shell date -u +%s)
 LINT_DIRECTORIES = $(shell find cmd -type d ! -name "loaders" ! -name "server")
 DBNAME           := $(if $(DBNAME),$(DBNAME),digraph_dev)
 
+codeql:
+	@echo "Good to go"
+
 # Might core dump on Linux
 kill:
 	@killall server 2>/dev/null || true
@@ -58,7 +61,7 @@ migrate-down:
 	)
 
 generate:
-	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml --no-hooks
+	$(GOPATH)/bin/sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml --no-hooks
 	go generate ./...
 
 .PHONY:
