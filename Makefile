@@ -22,18 +22,17 @@ kill:
 
 start:
 	@yarn relay --watch &
-	@go run cmd/frontend/frontend.go --dev --log 1 &
+	@go run cmd/frontend/frontend.go --log 1 &
 	@yarn start
 
-start-prod: kill
+start-prod:
 	@redis-server /usr/local/etc/redis.conf &
-	@go run cmd/frontend/frontend.go --dev --log 1 &
+	@go run cmd/frontend/frontend.go --log 1 &
 	@yarn start:prod
 
-start-debug: kill
+start-debug:
 	@yarn relay --watch &
-	@redis-server /usr/local/etc/redis.conf &
-	@go run cmd/frontend/frontend.go --dev --log 2 &
+	@go run cmd/frontend/frontend.go --log 2 &
 	@yarn start
 
 lint-js:

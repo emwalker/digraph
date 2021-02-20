@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"strconv"
 
 	"github.com/emwalker/digraph/cmd/frontend/server"
 	// Load the PQ drivers
@@ -17,6 +18,18 @@ func getPlaygroundPort() string {
 		port = defaultPort
 	}
 	return port
+}
+
+func getLogLevel(logLevel int) int {
+	str := os.Getenv("DIGRAPH_LOG_LEVEL")
+	if str != "" {
+		i, err := strconv.Atoi(str)
+		if err != nil {
+			return logLevel
+		}
+		logLevel = i
+	}
+	return logLevel
 }
 
 func main() {
@@ -42,7 +55,7 @@ func main() {
 		os.Getenv("DIGRAPH_BASIC_AUTH_PASSWORD"),
 		redisHost,
 		os.Getenv("DIGRAPH_REDIS_PASSWORD"),
-		*logLevel,
+		getLogLevel(*logLevel),
 		connectionString,
 	)
 
