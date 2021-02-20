@@ -4,15 +4,15 @@ const path = require('path');
 
 module.exports = {
   modifyWebpackConfig(opts) {
-    const appConfig = Object.assign({}, opts.webpackConfig);
+    const config = Object.assign({}, opts.webpackConfig);
 
-    appConfig.resolve.alias = {
+    config.resolve.alias = {
       components: path.resolve(__dirname, './src/components'),
       mutations: path.resolve(__dirname, './src/mutations'),
       utils: path.resolve(__dirname, './src/utils'),
     };
 
-    return appConfig;
+    return config;
   },
 
   plugins: ['scss']
