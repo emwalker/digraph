@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"strconv"
 
@@ -23,11 +24,15 @@ func getPlaygroundPort() string {
 func getLogLevel(logLevel int) int {
 	str := os.Getenv("DIGRAPH_LOG_LEVEL")
 	if str != "" {
+		log.Print("DIGRAPH_LOG_LEVEL found, overriding the command line flag")
 		i, err := strconv.Atoi(str)
 		if err != nil {
+			log.Printf("Unable to parse DIGRAPH_LOG_LEVEL: %s", err)
 			return logLevel
 		}
 		logLevel = i
+	} else {
+		log.Print("No DIGRAPH_LOG_LEVEL found, falling back to the command line flag")
 	}
 	return logLevel
 }
