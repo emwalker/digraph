@@ -44,6 +44,11 @@ func New(
 	db, err := sql.Open("postgres", connectionString)
 	must(err)
 
+	// https://www.alexedwards.net/blog/configuring-sqldb
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
 	client := &http.Client{
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
