@@ -3,6 +3,7 @@
 /pkg
 /public/webpack
 /vendor
+/cache
 
 .pid
 .DS_Store
@@ -17,3 +18,4 @@ app.yaml
 /data/*backup.*
 /build
 *.dump.gz
+*.code-workspace
