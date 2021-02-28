@@ -40,7 +40,7 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.2.0
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	github.com/volatiletech/null v8.0.0+incompatible
-	github.com/volatiletech/null/v8 v8.1.1
+	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/randomize v0.0.1
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	github.com/volatiletech/sqlboiler/v4 v4.4.0
@@ -48,7 +48,7 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20200603152657-dc2b0ca8b37e // indirect
 	golang.org/x/exp v0.0.0-20210212053707-62dc52270d37 // indirect
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
-	golang.org/x/net v0.0.0-20210220033124-5f55cee0dc0d
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
