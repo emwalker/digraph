@@ -107,8 +107,8 @@ func TestSearchInTopic(t *testing.T) {
 			name:         "When an empty string is provided",
 			searchString: "",
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.Exactly, 100},
-			links:        in.Condition{in.Exactly, 100},
+			topics:       in.Condition{in.GreaterThan, 5},
+			links:        in.Condition{in.GreaterThan, 5},
 		},
 		{
 			name:         "When a link matches",

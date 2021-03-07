@@ -450,6 +450,16 @@ func TestSearchLinksInTopic(t *testing.T) {
 func TestSearchInTopic(t *testing.T) {
 	ctx := context.Background()
 	mutator := in.NewMutator(in.MutatorOptions{})
+
+	mutator.DeleteTopicsByName(
+		"News organizations",
+		"New York Times",
+	)
+	mutator.DeleteLinksByURL(
+		"https://en.wikipedia.org/wiki/News",
+		"https://www.nytimely.com",
+	)
+
 	t1 := mutator.UpsertTopic(in.UpsertTopicOptions{Name: "News organizations"})
 
 	mutator.UpsertLink(in.UpsertLinkOptions{
