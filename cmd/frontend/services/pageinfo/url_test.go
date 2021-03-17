@@ -252,6 +252,11 @@ func TestNormalizeURL(t *testing.T) {
 			inputURL:     "https://www.lenr-forum.com/forum/thread/6017-mizuno-replication-and-materials-only/?pageNo=2",
 			canonicalURL: "https://www.lenr-forum.com/forum/thread/6017-mizuno-replication-and-materials-only/?pageNo=2",
 		},
+		{
+			name:         "An article in the Korea Herald",
+			inputURL:     "http://www.koreaherald.com/view.php?ud=20210316000213",
+			canonicalURL: "http://www.koreaherald.com/view.php?ud=20210316000213",
+		},
 	}
 
 	for _, testCase := range testCases {

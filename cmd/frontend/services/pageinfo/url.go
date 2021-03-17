@@ -72,6 +72,7 @@ var (
 		urlSpec{suffix: "nzherald.co.nz", keepParams: []string{"objectid"}},
 		urlSpec{suffix: "sourcewatch.org", keepParams: []string{"title"}},
 		urlSpec{suffix: "lenr-forum.com", keepParams: []string{"pageNo"}},
+		urlSpec{suffix: "koreaherald.com", keepParams: []string{"ud"}},
 		urlSpec{suffix: "amazon.com"},
 		urlSpec{suffix: "businessinsider.com"},
 		urlSpec{suffix: "dictionary.com"},
