@@ -6,11 +6,11 @@ type Props = {
   width: string,
 }
 
-export default ({ height, width }: Props) => (
+export default ({ height, width, fill }: Props) => (
   <svg
     height={height}
     width={width}
-    fill="#000000"
+    fill={fill}
     xmlns="http://www.w3.org/2000/svg"
     xmlnsXlink="http://www.w3.org/1999/xlink"
     viewBox="0 0 60 60"
@@ -21,7 +21,7 @@ export default ({ height, width }: Props) => (
     <title>Digraph</title>
     <desc>Never lose a bookmark again.</desc>
     <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-      <g transform="translate(-601.000000, -1070.000000)" fill="#000000">
+      <g transform="translate(-601.000000, -1070.000000)" fill={fill}>
         <g transform="translate(601.000000, 1070.000000)">
           <path d="M5,32 C5.552,32 6,31.553 6,31 L6,28 C6,27.447 5.552,27 5,27 C4.448,27 4,27.447 4,28 L4,31 C4,31.553 4.448,32 5,32" />
           <path d="M20.2837,51.2041 L17.5697,49.9271 C17.0707,49.6941 16.4737,49.9061 16.2387,50.4061 C16.0037,50.9061 16.2187,51.5021 16.7177,51.7371 L19.4317,53.0151 C19.5697,53.0791 19.7147,53.1091 19.8577,53.1091 C20.2327,53.1091 20.5927,52.8971 20.7627,52.5351 C20.9977,52.0351 20.7837,51.4391 20.2837,51.2041" />

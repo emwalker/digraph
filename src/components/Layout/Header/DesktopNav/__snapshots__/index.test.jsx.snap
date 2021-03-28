@@ -18,6 +18,7 @@ exports[`<DesktopNav /> renders 1`] = `
           className="mr-2 d-inline-block"
         >
           <_default
+            fill="#000"
             height="28px"
             width="28px"
           />

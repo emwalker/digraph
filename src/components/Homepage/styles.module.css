@@ -12,21 +12,38 @@
 }
 
 .search {
-  margin-top: 5em !important;
+  margin-top: 3em !important;
 }
 
 .hero {
   font-family: Avenir Next, Verdana, Helvetica;
-  font-weight: 500;
+  font-weight: 600;
   position: relative;
   width: 100%;
-  margin: auto auto 3em auto;
-  background-color: rgba(218, 234, 255, 0.26);
+  margin: auto auto 2em auto;
   padding: 3em;
+  overflow: hidden;
+  color: white;
+}
+
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("hero.jpg");
+  background-size: cover;
+  background-position: left 0 bottom 400px;
+  opacity: 0.85;
+  filter: blur(4.5px);
+  z-index: -1;
+  transform: scale(1.03);
 }
 
 .appName {
   font-size: 30px;
+  font-weight: 600;
   letter-spacing: 6px;
   margin-bottom: 9px;
 }
@@ -38,13 +55,16 @@
 
 .description {
   font-size: 16px;
-  margin: auto;
+  margin: auto auto 2em auto;
+  text-align: center;
+  max-width: 732px;
 }
 
 .content {
-  max-width: 530px;
+  max-width: 804px;
   text-align: center;
   margin: auto;
+  margin-top: 16px;
 }
 
 @media (max-width: 1280px) {
@@ -57,9 +77,14 @@
   .content {
     width: 95%;
   }
+
+  .background {
+    background-position: left 0 bottom 0;
+  }
 }
 
 .logo, .logo:hover {
   text-decoration: none;
   color: inherit;
+  filter: blur(0);
 }

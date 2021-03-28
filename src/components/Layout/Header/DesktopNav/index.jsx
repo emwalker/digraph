@@ -55,7 +55,7 @@ class DesktopNav extends Component<Props> {
               className={`${primaryLogo} text-gray-dark n-link no-underline d-flex`}
             >
               <div className="mr-2 d-inline-block">
-                <DigraphLogo height="28px" width="28px" />
+                <DigraphLogo height="28px" width="28px" fill="#000" />
               </div>
 
               Digraph

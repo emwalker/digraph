@@ -33,6 +33,8 @@ const Homepage = ({ view, router }: Props) => {
   return (
     <div className="f4">
       <div className={styles.hero}>
+        <div className={styles.background} />
+
         <div className={styles.content}>
           <a className={styles.logo} href="/">
             <div className={styles.appName}>
@@ -40,21 +42,22 @@ const Homepage = ({ view, router }: Props) => {
             </div>
 
             <div className="mb-3">
-              <DigraphLogo height="60px" width="60px" />
+              <DigraphLogo height="60px" width="60px" fill="#fff" />
             </div>
           </a>
           <p className={styles.subtitle}>
             Organize the world
           </p>
-          <p className={styles.description}>
-            Save links in a mind-map-like network of topics.
-            Keep track of everything you&rsquo;ve read or might want to read in the future.
-            Gain control over your reading and turn the deluge of information into knowledge.
-          </p>
         </div>
       </div>
 
       <Page>
+        <p className={styles.description}>
+          Save links in a mind-map-like network of topics.
+          Keep track of everything you&rsquo;ve read or might want to read in the future.
+          Gain control over your reading and turn the deluge of information into knowledge.
+        </p>
+
         <h3>Recent updates</h3>
         <div>
           {recents.length > 0

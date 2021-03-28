@@ -18,6 +18,10 @@ const config = {
   module: {
     rules: [
       {
+        test: /\.(gif|jpe?g|png|ico)$/,
+        loader: 'url-loader?limit=10000'
+      },
+      {
         test: /\.css$/i,
         use: [MiniCssExtractPlugin.loader, 'css-loader'],
       },

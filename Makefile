@@ -143,7 +143,7 @@ push:
 	docker push emwalker/digraph-node:$(shell cat k8s/release)
 
 deploy:
-	kubectl config use-context do-sfo2-do-cluster
+	kubectl config use-context digraph-production
 	kubectl apply -f k8s/cluster
 
 proxy:

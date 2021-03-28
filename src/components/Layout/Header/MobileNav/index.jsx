@@ -50,7 +50,7 @@ class MobileNav extends Component<Props, State> {
             )}
           >
             <div className="mr-1 d-inline-block">
-              <DigraphLogo width="32px" height="32px" />
+              <DigraphLogo width="32px" height="32px" fill="#000" />
             </div>
             {' '}
             Digraph
