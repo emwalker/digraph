@@ -4,6 +4,7 @@ import React from 'react'
 type Props = {
   height: string,
   width: string,
+  fill: string,
 }
 
 export default ({ height, width, fill }: Props) => (
