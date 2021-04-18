@@ -113,7 +113,7 @@ select {
   @extend .f4;
 
   a, a:hover {
-    @extend .link-gray-dark;
+    @extend .Link--primary;
     @extend .text-underline;
   }
 }

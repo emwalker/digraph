@@ -7,8 +7,12 @@
 }
 
 .description p a {
-  color: inherit !important;
+  color: inherit;
   text-decoration: underline;
+}
+
+.description p a:hover {
+  color: #0366d6;
 }
 
 .timeAgo {

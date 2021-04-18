@@ -15,7 +15,7 @@ type Props = {
 class Menu extends Component<Props> {
   renderSignIn = () => (
     <Link
-      className="menu-item p-3 text-gray-dark"
+      className="menu-item p-3 Link--primary"
       to="/login"
     >
       Sign in
@@ -24,33 +24,33 @@ class Menu extends Component<Props> {
 
   renderUserNav = () => (
     <>
-      <Link className="menu-item text-gray-dark p-3" to="/review">
+      <Link className="menu-item Link--primary p-3" to="/review">
         Review
       </Link>
-      <Link className="menu-item text-gray-dark p-3" to="/settings/account">
+      <Link className="menu-item Link--primary p-3" to="/settings/account">
         Settings
       </Link>
-      <a className="menu-item text-gray-dark p-3" href="/logout">Sign out</a>
+      <a className="menu-item Link--primary p-3" href="/logout">Sign out</a>
     </>
   )
 
   render = () => (
     <nav className={classNames(styles.menu, 'menu')} aria-label="Person settings">
       <a
-        className="menu-item text-gray-dark p-3"
+        className="menu-item Link--primary p-3"
         href="https://blog.digraph.app"
       >
         Blog
       </a>
       <Link
-        className="menu-item text-gray-dark p-3"
+        className="menu-item Link--primary p-3"
         id="recent-activity"
         to="/recent"
       >
         Recent
       </Link>
       <Link
-        className="menu-item text-gray-dark p-3"
+        className="menu-item Link--primary p-3"
         to={toEverything}
       >
         Everything

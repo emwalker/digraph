@@ -12,7 +12,7 @@ type Props = {
 
 const UserNav = ({ viewer }: Props) => (
   <>
-    <Link className="text-gray-dark px-2" to="/review">
+    <Link className="Link--primary px-2" to="/review">
       Review
     </Link>
     <UserDropdown viewer={viewer} />

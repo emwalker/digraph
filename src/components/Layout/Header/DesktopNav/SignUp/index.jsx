@@ -6,7 +6,7 @@ import { Link } from 'found'
 const className = classNames(
   'SignUp',
   'px-3',
-  'text-gray-dark',
+  'Link--primary',
   'HeaderMenu-link',
   'd-inline-block',
   'no-underline',

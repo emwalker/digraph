@@ -46,7 +46,7 @@ class MobileNav extends Component<Props, State> {
             to="/"
             className={classNames(
               styles.link,
-              'menu-logo text-gray-dark n-link no-underline d-flex flex-items-center',
+              'menu-logo Link--primary n-link no-underline d-flex flex-items-center',
             )}
           >
             <div className="mr-1 d-inline-block">

@@ -54,7 +54,7 @@ class Review extends Component<Props, State> {
       <li className={this.className}>
         <div className="overflow-hidden flex-auto pr-3">
           <div>
-            <a className="link-gray-dark" href={url}>
+            <a className="Link--primary" href={url}>
               { title }
             </a>
           </div>

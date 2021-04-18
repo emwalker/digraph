@@ -52,7 +52,7 @@ class DesktopNav extends Component<Props> {
           <h1 className="h3 text-normal">
             <a
               href="/"
-              className={`${primaryLogo} text-gray-dark n-link no-underline d-flex`}
+              className={`${primaryLogo} Link--primary n-link no-underline d-flex`}
             >
               <div className="mr-2 d-inline-block">
                 <DigraphLogo height="28px" width="28px" fill="#000" />
@@ -67,20 +67,20 @@ class DesktopNav extends Component<Props> {
         </div>
         <nav className={userNav}>
           <a
-            className="text-gray-dark px-2"
+            className="Link--primary px-2"
             href="https://blog.digraph.app"
           >
             Blog
           </a>
           <Link
-            className="text-gray-dark px-2"
+            className="Link--primary px-2"
             id="recent-activity"
             to="/recent"
           >
             Recent
           </Link>
           <Link
-            className="text-gray-dark px-2"
+            className="Link--primary px-2"
             to={toEverything}
           >
             Everything

@@ -11,7 +11,7 @@ exports[`<DesktopNav /> renders 1`] = `
       className="h3 text-normal"
     >
       <a
-        className="primaryLogo text-gray-dark n-link no-underline d-flex"
+        className="primaryLogo Link--primary n-link no-underline d-flex"
         href="/"
       >
         <div
@@ -36,20 +36,20 @@ exports[`<DesktopNav /> renders 1`] = `
     className="userNav"
   >
     <a
-      className="text-gray-dark px-2"
+      className="Link--primary px-2"
       href="https://blog.digraph.app"
     >
       Blog
     </a>
     <Link
-      className="text-gray-dark px-2"
+      className="Link--primary px-2"
       id="recent-activity"
       to="/recent"
     >
       Recent
     </Link>
     <Link
-      className="text-gray-dark px-2"
+      className="Link--primary px-2"
       to={
         Object {
           "pathname": "/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8",
