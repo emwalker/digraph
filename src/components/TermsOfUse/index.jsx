@@ -24,7 +24,7 @@ export default () => (
     </div>
 
     <div className="markdown-body mt-3">
-      <Markdown source={terms} />
+      <Markdown>{terms}</Markdown>
     </div>
   </Page>
 )

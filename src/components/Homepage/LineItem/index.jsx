@@ -17,7 +17,7 @@ const LineItem = ({ item }: Props) => {
 
   return (
     <div className={classNames(styles.lineItem, 'my-3')}>
-      <Markdown className={styles.description} source={description} />
+      <Markdown className={styles.description}>{description}</Markdown>
       <TimeAgo className={styles.timeAgo} date={createdAt} />
     </div>
   )

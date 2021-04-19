@@ -16,7 +16,7 @@ export default ({ item }: Props) => (
       <TimeAgo date={item.createdAt} />
     </div>
     <div className="float-left col-lg-10 col-8">
-      <Markdown source={item.description} />
+      <Markdown>{item.description}</Markdown>
     </div>
   </div>
 )
