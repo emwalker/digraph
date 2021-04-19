@@ -11,7 +11,7 @@ exports[`<DesktopNav /> renders 1`] = `
       className="h3 text-normal"
     >
       <a
-        className="primaryLogo Link--primary n-link no-underline d-flex"
+        className="primaryLogo n-link no-underline d-flex"
         href="/"
       >
         <div

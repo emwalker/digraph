@@ -1898,19 +1898,10 @@
     hoist-non-react-statics "^3.3.0"
     redux "^4.0.0"
 
-"@types/react@*":
+"@types/react@*", "@types/react@>=16.9.31":
   version "17.0.3"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.3.tgz#ba6e215368501ac3826951eef2904574c262cc79"
   integrity sha512-wYOUxIgs2HZZ0ACNiIayItyluADNbONl7kt8lkLjVK8IitMH5QMyAh75Fwhmo37r1m7L2JaFj03sIfxBVDvRAg==
-  dependencies:
-    "@types/prop-types" "*"
-    "@types/scheduler" "*"
-    csstype "^3.0.2"
-
-"@types/react@^16.9.31":
-  version "16.14.5"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-16.14.5.tgz#2c39b5cadefaf4829818f9219e5e093325979f4d"
-  integrity sha512-YRRv9DNZhaVTVRh9Wmmit7Y0UFhEVqXqCSw3uazRWMxa2x85hWQZ5BN24i7GXZbaclaLXEcodEeIHsjBA8eAMw==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"
@@ -5694,7 +5685,7 @@ extsprintf@^1.2.0:
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.4.0.tgz#e2689f8f356fad62cca65a3a91c5df5f9551692f"
   integrity sha1-4mifjzVvrWLMplo6kcXfX5VRaS8=
 
-farce@^0.4.1, farce@~0.4.1:
+farce@^0.4.5, farce@~0.4.1:
   version "0.4.5"
   resolved "https://registry.yarnpkg.com/farce/-/farce-0.4.5.tgz#610cefaaa76d57dbd723d2d6df30a72e3ea5d842"
   integrity sha512-PK3eWFYBicrelTh/ZAM8KCto3c2hwo+9PKxtkSS5EhmLP3Y+m2l5r56MF8+m/htlojQpY2uHwmMDtdb0cNWrSw==
@@ -6050,7 +6041,7 @@ found@~0.5.3:
   resolved "https://registry.yarnpkg.com/found/-/found-0.5.10.tgz#93d7dc159c8df07c1a6a9ef25a926fffa654b248"
   integrity sha512-aOUCTkixE9apUXgCiO29re1am+i5aUkt9S4NBoYXtOalO6SmX8bPRcMto5XTW+l2nBqLYecZN9Hc/tn6/Gv7fQ==
   dependencies:
-    "@babel/runtime-corejs3" "^7.6.2"
+    "@babel/runtime" "^7.12.5"
     "@restart/context" "^2.1.4"
     "@types/react" ">=16.9.31"
     farce "^0.4.5"
@@ -11816,7 +11807,7 @@ react-markdown@^5.0.3:
     unist-util-visit "^2.0.0"
     xtend "^4.0.1"
 
-react-redux@^7.0.0, react-redux@^7.2.0:
+react-redux@^7.2.0, react-redux@^7.2.2:
   version "7.2.3"
   resolved "https://registry.yarnpkg.com/react-redux/-/react-redux-7.2.3.tgz#4c084618600bb199012687da9e42123cca3f0be9"
   integrity sha512-ZhAmQ1lrK+Pyi0ZXNMUZuYxYAZd59wFuVDGUt536kSGdD0ya9Q7BfsE95E3TsFLE3kOSFp5m6G5qbatE+Ic1+w==
@@ -11899,16 +11890,6 @@ react-static-container@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/react-static-container/-/react-static-container-1.0.2.tgz#30a4f7548860be1d55d5eb4c20645b835c2bdf34"
   integrity sha512-rxlZtZk5t6Y3gqqpaZ1lxY3RqlQcBU5uGsSoZj/hbF3ZweDqPbFHDkczT4emAxeaw37OD96RAAoayFGFQZCdWg==
-
-react-test-renderer@17.0.2:
-  version "17.0.2"
-  resolved "https://registry.yarnpkg.com/react-test-renderer/-/react-test-renderer-17.0.2.tgz#4cd4ae5ef1ad5670fc0ef776e8cc7e1231d9866c"
-  integrity sha512-yaQ9cB89c17PUb0x6UfWRs7kQCorVdHlutU1boVPEsB8IDZH6n9tHxMacc3y0JoXOJUsZb/t/Mb8FUWMKaM7iQ==
-  dependencies:
-    object-assign "^4.1.1"
-    react-is "^17.0.2"
-    react-shallow-renderer "^16.13.1"
-    scheduler "^0.20.2"
 
 react-test-renderer@17.0.1, react-test-renderer@^17.0.0:
   version "17.0.1"

@@ -52,7 +52,7 @@ class DesktopNav extends Component<Props> {
           <h1 className="h3 text-normal">
             <a
               href="/"
-              className={`${primaryLogo} Link--primary n-link no-underline d-flex`}
+              className={`${primaryLogo} n-link no-underline d-flex`}
             >
               <div className="mr-2 d-inline-block">
                 <DigraphLogo height="28px" width="28px" fill="#000" />
