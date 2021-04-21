@@ -46,3 +46,4 @@ deprecated-type
 [ignore]
 .*/vendor/.*
 .*/node_modules/polished/**/.*
+<PROJECT_ROOT>/node_modules/webpack-cli/lib/utils/__tests__/.*
