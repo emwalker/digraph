@@ -1126,6 +1126,14 @@
     core-js-pure "^3.0.0"
     regenerator-runtime "^0.13.4"
 
+"@babel/runtime-corejs3@^7.6.3":
+  version "7.13.17"
+  resolved "https://registry.yarnpkg.com/@babel/runtime-corejs3/-/runtime-corejs3-7.13.17.tgz#9baf45f03d4d013f021760b992d6349a9d27deaf"
+  integrity sha512-RGXINY1YvduBlGrP+vHjJqd/nK7JVpfM4rmZLGMx77WoL3sMrhheA0qxii9VNn1VHnxJLEyxmvCB+Wqc+x/FMw==
+  dependencies:
+    core-js-pure "^3.0.0"
+    regenerator-runtime "^0.13.4"
+
 "@babel/runtime@^7.0.0", "@babel/runtime@^7.10.2", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.0", "@babel/runtime@^7.2.0", "@babel/runtime@^7.5.5", "@babel/runtime@^7.7.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2":
   version "7.12.18"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.12.18.tgz#af137bd7e7d9705a412b3caaf991fe6aaa97831b"
@@ -1133,7 +1141,7 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.10.4", "@babel/runtime@^7.13.9":
+"@babel/runtime@^7.10.4":
   version "7.13.17"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.13.17.tgz#8966d1fc9593bf848602f0662d6b4d0069e3a7ec"
   integrity sha512-NCdgJEelPTSh+FEFylhnP1ylq848l1z9t9N0j1Lfbcw0+KXGjsTvUmkxy+voLLXB5SOKMbLLx4jxYliGrYQseA==
@@ -6091,14 +6099,14 @@ forwarded@~0.1.2:
   resolved "https://registry.yarnpkg.com/forwarded/-/forwarded-0.1.2.tgz#98c23dab1175657b8c0573e8ceccd91b0ff18c84"
   integrity sha1-mMI9qxF1ZXuMBXPozszZGw/xjIQ=
 
-found-relay@^0.9.1:
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/found-relay/-/found-relay-0.9.1.tgz#d8ec624b5f46e4d4b665cf5489768a14687e1e81"
-  integrity sha512-43Tqv3mmWfXBVVwkLZrsIkXm0ZIxtsL3DOHZjhmiR8FW4f6ZZTwfk2TgxhwhS85K5TEDI6PLlsLU+DEhw0rd6w==
+found-relay@^0.8.3:
+  version "0.8.3"
+  resolved "https://registry.yarnpkg.com/found-relay/-/found-relay-0.8.3.tgz#ca8870ab6285edb393550d224aca5cbf96a40e54"
+  integrity sha512-fCR/ziq/DCTN6EIsC/iRcjvVh0n+ProRMc8x58Ou4KhILEMzAF4ElInKXat5Gb4QICaWyCh9bOl6UUg/80Fgpw==
   dependencies:
-    "@babel/runtime" "^7.13.9"
+    "@babel/runtime-corejs3" "^7.6.3"
     is-promise "^4.0.0"
-    lodash "^4.17.21"
+    lodash "^4.17.15"
     prop-types "^15.7.2"
     warning "^4.0.3"
 
