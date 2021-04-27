@@ -1,3 +1,4 @@
 /src/flow-typed
 /src/static
 /src/**/types.js
+/src/**/*.d.ts

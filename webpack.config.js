@@ -3,7 +3,7 @@ const path = require('path')
 
 const config = {
   resolve: {
-    extensions: ['.mjs', '.js', '.jsx', '.css', '.scss'],
+    extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.css', '.scss'],
 
     alias: {
       components: path.resolve('src/components'),

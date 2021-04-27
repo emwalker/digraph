@@ -1,9 +1,9 @@
 {
   "presets": [
     "razzle/babel",
-    "@babel/flow"
+    "@babel/typescript"
   ],
   "plugins": [
-    "relay"
+    ["relay", { "artifactDirectory": "./src/__generated__" }]
   ]
 }

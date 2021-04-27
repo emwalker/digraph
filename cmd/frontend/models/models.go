@@ -11,6 +11,10 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// GuestUserID is the UUID to be used for the guest viewer.  A genuine UUID is convenient, so
+// that it can be included in some queries that require a UUID.
+const GuestUserID = "89677bdc-0f82-439e-bd67-406b06e10a5a"
+
 // LinkValue wraps a link with additional fields that are not obtained from the database.
 type LinkValue struct {
 	*Link
@@ -202,7 +206,7 @@ func (u User) DisplayName() string {
 
 // IsGuest returns true if the user is not backed by a row in the database.
 func (u User) IsGuest() bool {
-	return u.ID == ""
+	return u.ID == GuestUserID
 }
 
 // String returns info on a user that can be printed to the log
@@ -221,8 +225,8 @@ func (u User) DefaultView() *View {
 // Filter filters a query according to the repos that have been selected and that the user can
 // access.
 func (v View) Filter(mods []qm.QueryMod) []qm.QueryMod {
-	if v.ViewerID == "" {
-		log.Print("No viewer id provided, restricting results to the general repo")
+	if v.ViewerID == GuestUserID {
+		log.Print("Guest viewer, restricting results to the general repo")
 		return append(mods,
 			qm.InnerJoin("organizations o on o.id = r.organization_id"),
 			qm.Where("r.system and o.public"),

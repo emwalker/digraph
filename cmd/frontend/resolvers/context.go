@@ -25,7 +25,7 @@ var requestKey key = "requestKey"
 
 // Default constants for use in a guest context.
 var (
-	GuestViewer         = &models.User{Name: "Anonymous", ID: ""}
+	GuestViewer         = &models.User{Name: "Anonymous", ID: models.GuestUserID}
 	GuestView           = &models.View{}
 	GuestRequestContext = &RequestContext{view: GuestView, viewer: GuestViewer}
 )

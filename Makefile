@@ -78,7 +78,7 @@ test-go: .PHONY
 test: test-js test-go
 
 format-js: lint-js
-	yarn flow
+	yarn tsc
 
 format: lint format-js
 	go fmt ./...

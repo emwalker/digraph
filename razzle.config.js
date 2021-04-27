@@ -15,5 +15,13 @@ module.exports = {
     return config;
   },
 
-  plugins: ['scss']
+  plugins: [
+    'scss',
+    {
+      name: 'typescript',
+      options: {
+        useBabel: true,
+      },
+    }
+  ],
 };
