@@ -2,8 +2,7 @@ import React from 'react'
 import { Express } from 'express'
 import { RouteMatch, Route, RedirectException, createRender, makeRouteConfig } from 'found'
 import { queryMiddleware } from 'farce'
-
-import { Store, Action } from 'redux'
+import { Store, Action, Middleware, Dispatch, AnyAction } from 'redux'
 import { Resolver } from 'found-relay'
 
 import { defaultRootTopicId, defaultOrganizationLogin } from 'components/constants'
@@ -25,7 +24,7 @@ import { createEnvironment } from './environment'
 
 type RouteStore = Store<any, Action<any>>
 
-export const historyMiddlewares = [queryMiddleware]
+export const historyMiddlewares: Middleware<{}, any, Dispatch<AnyAction>>[] = [queryMiddleware]
 
 export function createResolver(fetcher: FetcherBase) {
   const environment = createEnvironment(fetcher)
