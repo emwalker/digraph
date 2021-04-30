@@ -7,7 +7,7 @@
     "eslint": "eslint --ext .ts --ext .tsx src",
     "relay": "relay-compiler --src ./src --schema ./schema.graphql --artifactDirectory ./src/__generated__ --language typescript --extensions ts tsx",
     "start": "PORT=3001 razzle start",
-    "start:prod": "PORT=3001 NODE_ENV=production node build/server.js"
+    "start:prod": "PORT=3001 NODE_ENV=production node --trace-deprecation build/server.js"
   },
   "author": "Eric Walker",
   "license": "MIT",
