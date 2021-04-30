@@ -17,7 +17,6 @@ import { query as topicSearchPageQuery } from 'components/TopicSearchPage'
 import Layout, { query as layoutQuery } from 'components/Layout'
 import withErrorBoundary from 'components/withErrorBoundary'
 import SignInPage from 'components/SignInPage'
-import SignUpPage from 'components/SignUpPage'
 import { FetcherBase } from './FetcherBase'
 import { FoundRelayVariables } from './types'
 import { createEnvironment } from './environment'
@@ -72,12 +71,8 @@ export const createRouteConfig = (store: RouteStore) => {
         prepareVariables={prepareVariables}
       />
       <Route
-        render={withErrorBoundary(SignInPage)}
+        render={({ props }) => <SignInPage {...props} />}
         path="/login"
-      />
-      <Route
-        render={withErrorBoundary(SignUpPage)}
-        path="/join"
       />
       <Route
         path="/recent"

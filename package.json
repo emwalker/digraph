@@ -12,7 +12,7 @@
   "author": "Eric Walker",
   "license": "MIT",
   "dependencies": {
-    "@babel/runtime": "^7.10.4",
+    "@babel/runtime": "^7.14.0",
     "@emotion/serialize": "^1.0.2",
     "@primer/css": "^16.3.0",
     "array-move": "^3.0.0",
@@ -73,7 +73,7 @@
   "main": "index.js",
   "repository": "git@github.com:olebedev/go-starter-kit.git",
   "devDependencies": {
-    "@babel/core": "^7.10.4",
+    "@babel/core": "^7.14.0",
     "@babel/plugin-proposal-throw-expressions": "^7.10.4",
     "@babel/plugin-transform-react-jsx": "^7.10.4",
     "@babel/preset-react": "^7.10.4",
