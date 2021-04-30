@@ -67,7 +67,7 @@
     "relay-runtime": "^11.0.2",
     "sass": "^1.32.12",
     "serialize-javascript": "^5.0.1",
-    "use-debounce": "^4.0.0",
+    "use-debounce": "^6.0.1",
     "uuid": "^8.3.2"
   },
   "main": "index.js",

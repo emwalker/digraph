@@ -21,8 +21,8 @@ const TopicTimeRangeForm = ({ relay, topic: { id: topicId, timeRange } }: Props)
   const [startsAt, setStartsAt] = useState(moment(timeRange?.startsAt as string))
   const prefixFormat = timeRange?.prefixFormat
 
-  const [updateStartsAt] = useDebouncedCallback(
-    async (dt: Moment) => {
+  const updateStartsAt = useDebouncedCallback(
+    (dt: Moment) => {
       if (dt.isValid() && prefixFormat) {
         setMutationInFlight(true)
         const input: Input = {
@@ -30,7 +30,7 @@ const TopicTimeRangeForm = ({ relay, topic: { id: topicId, timeRange } }: Props)
           startsAt: dt.toISOString(),
           topicId,
         }
-        await upsertTopicTimeRangeMutation(relay.environment, input)
+        upsertTopicTimeRangeMutation(relay.environment, input)
       } else {
         // eslint-disable-next-line no-console
         console.log('invalid date:', dt)
