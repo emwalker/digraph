@@ -131,7 +131,6 @@
     "jest-matcher-utils": "^26.0.1",
     "jest-snapshot": "^26.0.1",
     "normalize.css": "~8.0.1",
-    "postcss-loader": "~3.0.0",
     "precss": "~4.0.0",
     "razzle": "^3.3.13",
     "razzle-plugin-scss": "^3.3.13",
