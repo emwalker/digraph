@@ -1,5 +1,8 @@
 import React, { useState, useCallback, ComponentType } from 'react'
 import { graphql, fetchQuery, useRelayEnvironment } from 'react-relay/hooks'
+import {
+  MentionSuggestionsPubProps,
+} from '@draft-js-plugins/mention/lib/MentionSuggestions/MentionSuggestions'
 
 import { NodeTypeOf, liftNodes } from 'components/types'
 import {
@@ -28,16 +31,19 @@ const query = graphql`
 `
 
 type Props = {
-  Suggestions: ComponentType<any>,
+  Suggestions: ComponentType<MentionSuggestionsPubProps>,
   setMentionListOpen: (open: boolean) => void,
+  isOpen: boolean,
 }
 
-const TopicSuggestions = ({ Suggestions, setMentionListOpen }: Props) => {
+const TopicSuggestions = ({ Suggestions, isOpen, setMentionListOpen }: Props) => {
   const environment = useRelayEnvironment()
   const [suggestions, setSuggestions] = useState([] as TopicType[])
 
   const onSearchChange = useCallback(({ value }) => {
-    fetchQuery<Query>(environment, query, { searchString: value })
+    // Workaround for a draft-js-plugins/mention issue
+    const modifiedValue = value.replace(/^n:/i, '')
+    fetchQuery<Query>(environment, query, { searchString: modifiedValue })
       .subscribe({
         next: (data) => {
           const mentions = liftNodes<TopicType>(data?.view?.topics).filter(Boolean)
@@ -48,10 +54,10 @@ const TopicSuggestions = ({ Suggestions, setMentionListOpen }: Props) => {
 
   return (
     <Suggestions
+      onOpenChange={setMentionListOpen}
       onSearchChange={onSearchChange}
+      open={isOpen}
       suggestions={suggestions}
-      onOpen={() => setMentionListOpen(true)}
-      onClose={() => setMentionListOpen(false)}
     />
   )
 }

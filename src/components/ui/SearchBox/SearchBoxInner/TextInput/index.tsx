@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useRef, KeyboardEvent, ReactNode } from 'react'
 import { EditorState, convertFromRaw, genKey, DraftHandleValue } from 'draft-js'
-import Editor from 'draft-js-plugins-editor'
+import Editor from '@draft-js-plugins/editor'
 import createSingleLinePlugin from 'draft-js-single-line-plugin'
-import createMentionPlugin from 'draft-js-mention-plugin'
-import 'draft-js-mention-plugin/lib/plugin.css'
+import createMentionPlugin from '@draft-js-plugins/mention'
+import '@draft-js-plugins/mention/lib/plugin.css'
 
 import { SearchBox_view as ViewType } from '__generated__/SearchBox_view.graphql'
 import rawFromQuery from './rawFromQuery'
@@ -72,6 +72,7 @@ const TextInput = ({ handleReturn, queryInfo }: Props) => {
       <TopicSuggestions
         Suggestions={MentionSuggestions}
         setMentionListOpen={setMentionListOpen}
+        isOpen={mentionListOpen}
       />
     </div>
   )
