@@ -3,12 +3,13 @@ import { EditorState, convertFromRaw, genKey, DraftHandleValue } from 'draft-js'
 import Editor from '@draft-js-plugins/editor'
 import createSingleLinePlugin from 'draft-js-single-line-plugin'
 import createMentionPlugin from '@draft-js-plugins/mention'
-import '@draft-js-plugins/mention/lib/plugin.css'
 
 import { SearchBox_view as ViewType } from '__generated__/SearchBox_view.graphql'
 import rawFromQuery from './rawFromQuery'
 import styles from './styles.module.css'
 import TopicSuggestions from './TopicSuggestions'
+
+require('@draft-js-plugins/mention/lib/plugin.css')
 
 type ReturnHandler = (e: KeyboardEvent, editorState: EditorState) => DraftHandleValue
 type QueryInfo = ViewType['queryInfo']
