@@ -29,7 +29,6 @@ start:
 	@yarn start
 
 start-prod:
-	@redis-server /usr/local/etc/redis.conf &
 	@go run cmd/frontend/frontend.go --log 1 &
 	@yarn start:prod
 
