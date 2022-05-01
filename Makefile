@@ -72,7 +72,7 @@ test-js: .PHONY
 	yarn jest
 
 test-go: .PHONY
-	go test ./cmd/frontend/...
+	go test ./cmd/frontend/... -count=1
 
 test: test-js test-go
 
