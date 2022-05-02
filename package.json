@@ -47,7 +47,7 @@
     "postcss": "^8.2.6",
     "proxy-middleware": "~>0.15.0",
     "ramda": "~0.27.0",
-    "razzle-plugin-typescript": "^4.0.4",
+    "razzle-plugin-typescript": "^4.2.16",
     "react": "~17.0.1",
     "react-async-ssr": "^0.7.2",
     "react-dom": "~17.0.1",
