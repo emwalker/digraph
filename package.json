@@ -131,6 +131,7 @@
     "jest-enzyme": "~7.1.1",
     "jest-matcher-utils": "^26.0.1",
     "jest-snapshot": "^26.0.1",
+    "mini-css-extract-plugin": "^2.6.0",
     "normalize.css": "~8.0.1",
     "precss": "~4.0.0",
     "razzle": "^3.3.13",
