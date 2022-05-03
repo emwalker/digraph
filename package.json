@@ -64,7 +64,7 @@
     "redis": "^3.1.2",
     "redux": "^4.1.0",
     "regenerator-runtime": "^0.13.5",
-    "relay-hooks": "^4.2.0",
+    "relay-hooks": "^5.0.1",
     "relay-runtime": "^11.0.2",
     "sass": "^1.32.12",
     "serialize-javascript": "^5.0.1",
