@@ -12274,10 +12274,10 @@ razzle-plugin-scss@^3.3.13:
     resolve-url-loader "^2.3.0"
     sass-loader "8.0.2"
 
-razzle-plugin-typescript@^4.0.4:
-  version "4.0.4"
-  resolved "https://registry.yarnpkg.com/razzle-plugin-typescript/-/razzle-plugin-typescript-4.0.4.tgz#a01383579ff62f6f044026c1e01656541a7cab38"
-  integrity sha512-JxMhZI6DmzHz9/N8+Gq6/VjZOPpZ7p1kBHYqkKDTBRVyYicLyu7SwtbznapgdjCyEXqI2or/6dY04osGPrXNdw==
+razzle-plugin-typescript@^4.2.16:
+  version "4.2.16"
+  resolved "https://registry.yarnpkg.com/razzle-plugin-typescript/-/razzle-plugin-typescript-4.2.16.tgz#5e5c2a63601dda58729925dfac10ba0781daf5c0"
+  integrity sha512-m9osfgrOtZ6vZwH7MZEJ8pRVQIzDMfQ+8fhBqdphagtJmUbruqm2K1gnC8My4NBgviGWdH4qaUC/+XsFwctjXA==
   dependencies:
     fork-ts-checker-webpack-plugin "^5.2.0"
     ts-loader "^8.0.4"
