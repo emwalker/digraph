@@ -110,7 +110,7 @@
     "autoprefixer": "~10.2.4",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "10.1.0",
-    "babel-jest": "^26.6.3",
+    "babel-jest": "^28.0.3",
     "babel-loader": "^8.1.0",
     "babel-plugin-react-css-modules": "~5.2.6",
     "babel-plugin-relay": "^11.0.2",
