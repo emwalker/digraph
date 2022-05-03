@@ -130,7 +130,7 @@
     "jest": "^26.6.3",
     "jest-enzyme": "~7.1.1",
     "jest-matcher-utils": "^26.0.1",
-    "jest-snapshot": "^26.0.1",
+    "jest-snapshot": "^28.0.3",
     "normalize.css": "~8.0.1",
     "precss": "~4.0.0",
     "razzle": "^3.3.13",
