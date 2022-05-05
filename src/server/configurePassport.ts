@@ -15,7 +15,7 @@ const redisClient = createClient({
   url: process.env.DIGRAPH_NODE_REDIS_URL || 'redis://localhost:6379',
   legacyMode: true,
 })
-// eslint-ignore-next-line no-console
+// eslint-disable-next-line no-console
 redisClient.connect().catch(console.error)
 
 export default (app: Express, fetcher: FetcherBase): Express => {

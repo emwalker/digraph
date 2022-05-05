@@ -43,9 +43,7 @@ class SignUpPage extends Component<Props, State> {
           {'Keep track of everything you\'ve ever read on the Internet.'}
         </p>
 
-        <GithubLogin className="mb-5">
-          Log in with GitHub
-        </GithubLogin>
+        <GithubLogin className="mb-5" />
 
         <h2 className="f2-light mb-1">Or create an account</h2>
 
