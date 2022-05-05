@@ -6,7 +6,7 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "gomod"
-    directory: "/cmd"
+    directory: "/"
     schedule:
       interval: "daily"
 
