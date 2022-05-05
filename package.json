@@ -93,7 +93,7 @@
     "@types/passport": "^1.0.7",
     "@types/passport-github2": "^1.2.4",
     "@types/ramda": "^0.27.40",
-    "@types/react": "^17.0.4",
+    "@types/react": "^18.0.8",
     "@types/react-google-recaptcha": "^2.1.0",
     "@types/react-relay": "^11.0.1",
     "@types/react-select": "^4.0.15",
