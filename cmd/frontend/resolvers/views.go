@@ -12,9 +12,9 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/util"
 	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack/v5"
-	"github.com/volatiletech/sqlboiler/boil"
-	squeries "github.com/volatiletech/sqlboiler/queries"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	squeries "github.com/volatiletech/sqlboiler/v4/queries"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type viewResolver struct{ *Resolver }

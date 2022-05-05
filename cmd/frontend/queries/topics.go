@@ -6,8 +6,8 @@ import (
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // Topic looks for a topic within the topics that are visible to the current user.

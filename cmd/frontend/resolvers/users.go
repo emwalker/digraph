@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/emwalker/digraph/cmd/frontend/models"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type userResolver struct {

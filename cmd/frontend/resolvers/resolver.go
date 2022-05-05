@@ -1,6 +1,6 @@
 package resolvers
 
-//go:generate go run ../../../scripts/gqlgen.go
+//go:generate go run github.com/99designs/gqlgen -config gqlgen.yml
 
 import (
 	"database/sql"

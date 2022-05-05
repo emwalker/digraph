@@ -9,7 +9,7 @@ import (
 	"github.com/emwalker/digraph/cmd/frontend/services"
 	"github.com/emwalker/digraph/cmd/frontend/services/pageinfo"
 	_ "github.com/lib/pq"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type Operator string
