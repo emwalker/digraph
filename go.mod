@@ -13,7 +13,7 @@ require (
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-redis/redis/v8 v8.6.0
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
-	github.com/google/uuid v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/grokify/html-strip-tags-go v0.0.1
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
