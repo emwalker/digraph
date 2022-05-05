@@ -101,7 +101,7 @@
     "@types/regenerator-runtime": "^0.13.0",
     "@types/relay-runtime": "^11.0.0",
     "@types/serialize-javascript": "^5.0.2",
-    "@types/uuid": "^8.3.0",
+    "@types/uuid": "^8.3.4",
     "@types/webpack-env": "^1.16.0",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@wojtekmaj/enzyme-adapter-react-17": "^0.6.1",
