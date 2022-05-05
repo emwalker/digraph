@@ -1,4 +1,4 @@
-FROM mhart/alpine-node:12
+FROM mhart/alpine-node:14
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ COPY yarn.lock ./
 RUN yarn install --production
 
 
-FROM mhart/alpine-node:slim-12
+FROM mhart/alpine-node:slim-14
 
 WORKDIR /app
 
