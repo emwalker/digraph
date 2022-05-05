@@ -40,7 +40,7 @@ services:
       - "3001:3001"
     environment:
       - DIGRAPH_API_BASE_URL=http://api:8080
-      - DIGRAPH_NODE_REDIS_HOST=redis
+      - DIGRAPH_NODE_REDIS_URL=redis://redis:6379
       - DIGRAPH_SERVER_SECRET
       - DIGRAPH_COOKIE_SECRET
       - DIGRAPH_GITHUB_CLIENT_ID
