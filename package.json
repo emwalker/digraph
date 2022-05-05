@@ -99,7 +99,6 @@
     "@types/react-relay": "^11.0.1",
     "@types/react-select": "^4.0.15",
     "@types/react-timeago": "^4.1.2",
-    "@types/redis": "^2.8.28",
     "@types/regenerator-runtime": "^0.13.0",
     "@types/relay-runtime": "^11.0.0",
     "@types/serialize-javascript": "^5.0.0",

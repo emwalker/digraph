@@ -2,7 +2,7 @@ import passport from 'passport'
 import { Express } from 'express'
 import { createClient } from 'redis'
 import session from 'express-session'
-import connectRedis from 'connect-redis'
+import store from 'connect-redis'
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser'
 
@@ -11,28 +11,21 @@ import { createEnvironment } from '../environment'
 import withGithub from './auth/withGithub'
 import { FetcherBase } from '../FetcherBase'
 
-/* eslint no-console: 0 */
-
-const RedisStore = connectRedis(session)
-
-const options: connectRedis.RedisStoreOptions = {
-  client: undefined,
-}
-
-if (process.env.DIGRAPH_REDIS_PASSWORD) {
-  options.client = createClient({
-    host: process.env.DIGRAPH_NODE_REDIS_HOST,
-    password: process.env.DIGRAPH_REDIS_PASSWORD,
-  })
-} else {
-  options.client = createClient()
-}
+const RedisStore = store(session)
+const redisClient = createClient({
+  url: process.env.DIGRAPH_NODE_REDIS_URL || 'redis://localhost:6379',
+  legacyMode: true,
+})
+redisClient.connect().catch(console.error)
 
 export default (app: Express, fetcher: FetcherBase): Express => {
   const environment = createEnvironment(fetcher)
 
   app.use(session({
-    store: new RedisStore(options),
+    store: new RedisStore({
+      client: redisClient,
+      logErrors: true,
+    }),
     secret: process.env.DIGRAPH_COOKIE_SECRET || 'keyboard cat',
     resave: true,
     saveUninitialized: true,
@@ -51,6 +44,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
   app.get('/logout', (req, res) => {
     const sessionId = req.user?.sessionId
     if (!sessionId) {
+      // eslint-disable-next-line no-console
       console.log('No session id, cannot log out:', sessionId)
       return
     }
@@ -61,6 +55,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
       input,
       {
         onCompleted() {
+          // eslint-disable-next-line no-console
           console.log('Deleted session for user', req.user?.id)
           req.logout()
           res.redirect('/')
@@ -68,6 +63,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
 
         onError(error: Error) {
           const userId = req.user?.id
+          // eslint-disable-next-line no-console
           console.log(`Failed to delete session for user ${userId}`, error)
           req.logout()
         },
@@ -76,6 +72,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
   })
 
   passport.serializeUser((viewer, done) => {
+    // eslint-disable-next-line no-console
     console.log('serializeUser', viewer)
     done(null, [viewer.id, viewer.sessionId])
   })
@@ -83,6 +80,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
   passport.deserializeUser((ids: string[], done) => {
     const [id, sessionId] = ids
     const viewer = { id, sessionId }
+    // eslint-disable-next-line no-console
     console.log('deserializeUser', id)
     done(null, viewer)
   })
