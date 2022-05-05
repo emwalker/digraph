@@ -1,10 +1,9 @@
 import passport from 'passport'
-import { Express } from 'express'
+import { Express, urlencoded, RequestHandler } from 'express'
 import { createClient } from 'redis'
 import session from 'express-session'
 import store from 'connect-redis'
 import cookieParser from 'cookie-parser'
-import bodyParser from 'body-parser'
 
 import deleteSessionMutation, { Input } from 'mutations/deleteSessionMutation'
 import { createEnvironment } from '../environment'
@@ -16,6 +15,7 @@ const redisClient = createClient({
   url: process.env.DIGRAPH_NODE_REDIS_URL || 'redis://localhost:6379',
   legacyMode: true,
 })
+// eslint-ignore-next-line no-console
 redisClient.connect().catch(console.error)
 
 export default (app: Express, fetcher: FetcherBase): Express => {
@@ -36,7 +36,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
   app
     .use(passport.initialize())
     .use(passport.session())
-    .use(bodyParser.urlencoded({ extended: true }))
+    .use(urlencoded({ extended: true }) as RequestHandler)
     .use(cookieParser())
 
   withGithub(app, environment)
