@@ -90,7 +90,7 @@
     "@types/express-session": "^1.17.3",
     "@types/isomorphic-fetch": "^0.0.35",
     "@types/jest": "^26.0.23",
-    "@types/node": "^15.0.1",
+    "@types/node": "^17.0.31",
     "@types/passport": "^1.0.7",
     "@types/passport-github2": "^1.2.4",
     "@types/ramda": "^0.27.40",
