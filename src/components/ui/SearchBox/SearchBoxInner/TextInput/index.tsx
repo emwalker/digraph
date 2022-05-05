@@ -45,7 +45,7 @@ const TextInput = ({ handleReturn, queryInfo }: Props) => {
   const [hasFocus, setHasFocus] = useState(false)
   const editor = useRef(null)
 
-  const wrappedHandleReturn = useCallback((event, nextEditorState) => {
+  const wrappedHandleReturn = useCallback((event: KeyboardEvent, nextEditorState: EditorState) => {
     if (!mentionListOpen) {
       handleReturn(event, nextEditorState)
       return 'handled'

@@ -45,6 +45,7 @@ const init = async () => {
   if (element) {
     hydrate(
       <RelayEnvironmentProvider environment={resolver.environment}>
+        {/* @ts-ignore */}
         <Provider store={store}>
           <Router resolver={resolver} />
         </Provider>

@@ -11,9 +11,7 @@ const GoogleLogin = ({ className }: Props) => {
   }, [])
 
   return (
-    <GoogleLoginButton className={className} onClick={onClick}>
-      Log in with Google
-    </GoogleLoginButton>
+    <GoogleLoginButton className={className} onClick={onClick} text="Log in with Google" />
   )
 }
 

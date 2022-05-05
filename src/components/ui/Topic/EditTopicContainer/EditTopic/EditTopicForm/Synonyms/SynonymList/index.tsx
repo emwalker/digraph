@@ -39,6 +39,7 @@ const SortableList = SortableContainer(({ onDelete, items }: ContainerProps) => 
     {
       items.map((synonym, index) => (
         <SortableSynonym
+          // @ts-ignore
           dragHandle={<DragHandle />}
           index={index}
           key={synonym.name}
@@ -77,6 +78,7 @@ class SynonymList extends Component<Props> {
 
   renderUpdatableList = () => (
     <SortableList
+      // @ts-ignore
       items={this.props.synonyms}
       lockAxis="y"
       onDelete={this.deleteFn()}

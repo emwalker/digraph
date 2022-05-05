@@ -17,9 +17,7 @@ class GithubLogin extends Component<Props> {
 
   render = () => (
     <div className={classNames('GithubLogin', this.props.className)}>
-      <GithubLoginButton {...this.props} onClick={this.onClick}>
-        Log in with GitHub
-      </GithubLoginButton>
+      <GithubLoginButton {...this.props} onClick={this.onClick} text="Log in with GitHub" />
     </div>
   )
 }

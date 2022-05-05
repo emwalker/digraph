@@ -7,10 +7,6 @@ declare type Props = {
     onUpdate: Function;
     synonyms: readonly SynonymType[];
 };
-declare type ContainerProps = {
-    items: readonly SynonymType[];
-    onDelete: Function | null;
-};
 declare class SynonymList extends Component<Props> {
     onSortEnd: ({ oldIndex, newIndex }: {
         oldIndex: number;
@@ -22,5 +18,5 @@ declare class SynonymList extends Component<Props> {
     renderUpdatableList: () => JSX.Element;
     render: () => JSX.Element | JSX.Element[];
 }
-export declare const UnwrappedSynonymList: React.ComponentClass<ContainerProps & import("react-sortable-hoc").SortableContainerProps, any>;
+export declare const UnwrappedSynonymList: React.ComponentClass<import("react-sortable-hoc").SortableContainerProps, any>;
 export default SynonymList;

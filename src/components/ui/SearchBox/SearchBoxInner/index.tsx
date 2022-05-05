@@ -1,4 +1,4 @@
-import React, { useCallback, useState, FormEvent, ChangeEvent } from 'react'
+import React, { useCallback, useState, FormEvent, ChangeEvent, KeyboardEvent } from 'react'
 import { Router } from 'found'
 import classNames from 'classnames'
 import { EditorState, DraftHandleValue } from 'draft-js'
@@ -58,18 +58,20 @@ const SearchBoxInner = ({ className, router, location, showButton, view }: Props
   const { pathname } = location
   const [selectedScope, setSelectedScope] = useState('Everything')
 
-  const handleReturn = useCallback((event, editorState: EditorState): DraftHandleValue => {
-    const query = queryFromState(editorState).toString()
-    const searchPathname = pathnameFor(pathname, selectedScope)
+  const handleReturn = useCallback(
+    (event: KeyboardEvent<Element>, editorState: EditorState): DraftHandleValue => {
+      const query = queryFromState(editorState).toString()
+      const searchPathname = pathnameFor(pathname, selectedScope)
 
-    if (query === '') {
-      router.push({ pathname: searchPathname })
+      if (query === '') {
+        router.push({ pathname: searchPathname })
+        return 'handled'
+      }
+
+      router.push({ pathname: searchPathname, query: { q: query } })
       return 'handled'
-    }
-
-    router.push({ pathname: searchPathname, query: { q: query } })
-    return 'handled'
-  }, [router, pathname, selectedScope])
+    }, [router, pathname, selectedScope],
+  )
 
   const onSelectChange = useCallback((event: FormEvent<HTMLSelectElement>) => {
     const { value } = event.currentTarget

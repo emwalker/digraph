@@ -40,7 +40,7 @@ const TopicSuggestions = ({ Suggestions, isOpen, setMentionListOpen }: Props) =>
   const environment = useRelayEnvironment()
   const [suggestions, setSuggestions] = useState([] as TopicType[])
 
-  const onSearchChange = useCallback(({ value }) => {
+  const onSearchChange = useCallback(({ value }: { value: string }) => {
     // Workaround for a draft-js-plugins/mention issue
     const modifiedValue = value.replace(/^n:/i, '')
     fetchQuery<Query>(environment, query, { searchString: modifiedValue })

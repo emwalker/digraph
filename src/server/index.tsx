@@ -82,6 +82,7 @@ app.get('*', async (req, res): Promise<void> => {
     const { element, status } = result
 
     const wrapped = (
+      // @ts-ignore
       <Provider store={store}>
         { element }
       </Provider>

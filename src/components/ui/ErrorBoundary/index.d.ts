@@ -11,6 +11,6 @@ declare class ErrorBoundary extends Component<Props, State> {
     };
     constructor(props: Props);
     componentDidCatch(error: Error, info: Object): void;
-    render: () => React.ReactNode;
+    render: () => string | number | boolean | React.ReactFragment | JSX.Element | null | undefined;
 }
 export default ErrorBoundary;
