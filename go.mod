@@ -13,7 +13,7 @@ require (
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-redis/redis/v8 v8.6.0
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
-	github.com/google/uuid v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/grokify/html-strip-tags-go v0.0.1
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
@@ -24,8 +24,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/volatiletech/null v8.0.0+incompatible
-	github.com/volatiletech/null/v8 v8.1.2 // indirect
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
-	github.com/volatiletech/sqlboiler/v4 v4.4.0
+	github.com/volatiletech/sqlboiler/v4 v4.11.0
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
 )
