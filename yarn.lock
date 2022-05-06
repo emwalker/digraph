@@ -1985,17 +1985,17 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.9.2.tgz#adea7b6953cbb34651766b0548468e743c6a2353"
   integrity sha512-VZMYa7+fXHdwIq1TDhSXoVmSPEGM/aa+6Aiq3nVVJ9bXr24zScr+NlKFKC3iPljA7ho/GAZr+d2jOf5GIRC30Q==
 
-"@primer/css@^18.2.0":
-  version "18.2.0"
-  resolved "https://registry.yarnpkg.com/@primer/css/-/css-18.2.0.tgz#9390915c7a40ab51ce07e34f8b1d0b0fffe1072e"
-  integrity sha512-tU84BKF4HfhyyW7eB/BijcSf862JGIKcm5Z/dFdoZW7AFM1PpMDYiUp8h4j5XtsWxtXSqe3xxqTGTFXsmKGPtw==
+"@primer/css@^19.1.1":
+  version "19.1.1"
+  resolved "https://registry.yarnpkg.com/@primer/css/-/css-19.1.1.tgz#c05a2fc5e5f6950472b4ff3bdd70cda6fe1c13f1"
+  integrity sha512-QVwdNOJsLxOD6eTR5LDIdLWg2SIy+eZWMK4ywlLd8qZXJCngtJyTNO5PtSzgs0D9jlMS+dzxvlOOV6GcfLu1hw==
   dependencies:
-    "@primer/primitives" "^6.1.0"
+    "@primer/primitives" "^7.2.0"
 
-"@primer/primitives@^6.1.0":
-  version "6.1.0"
-  resolved "https://registry.yarnpkg.com/@primer/primitives/-/primitives-6.1.0.tgz#9fe385913b922b4e48cac19fe5e560e4ae9e284d"
-  integrity sha512-gwSVf5rVf2CMa/bU3/47LZosDHNfODMRJfKi7uJOqHWABVNl6Lf+thDM7Jb8tS9sEQQsUnrLDiGNjCScS81IXA==
+"@primer/primitives@^7.2.0":
+  version "7.8.3"
+  resolved "https://registry.yarnpkg.com/@primer/primitives/-/primitives-7.8.3.tgz#de7e03492cf977e99f2417490d76421db9715e9f"
+  integrity sha512-04ZwfJhpZ0QFwDrJfCuLX6iOh0BflWDTvuoRA80lQH9xk0RtIg16INbruwwtnbSgnKKXXRSykRRJ5BbxnqufRA==
 
 "@redis/bloom@1.0.2":
   version "1.0.2"
@@ -7796,6 +7796,11 @@ immutable@^3.7.4:
   version "3.8.2"
   resolved "https://registry.yarnpkg.com/immutable/-/immutable-3.8.2.tgz#c2439951455bb39913daf281376f1530e104adf3"
   integrity sha1-wkOZUUVbs5kT2vKBN28VMOEErfM=
+
+immutable@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/immutable/-/immutable-4.0.0.tgz#b86f78de6adef3608395efb269a91462797e2c23"
+  integrity sha512-zIE9hX70qew5qTUjSS7wi1iwj/l7+m54KWU247nhM3v806UdGj1yDndXj+IOYxxtW9zyLI+xqFNZjTuDaLUqFw==
 
 immutable@^4.0.0-rc.12:
   version "4.0.0-rc.12"
@@ -13793,12 +13798,14 @@ sass@^1.26.5:
   dependencies:
     chokidar ">=3.0.0 <4.0.0"
 
-sass@^1.32.12:
-  version "1.32.12"
-  resolved "https://registry.yarnpkg.com/sass/-/sass-1.32.12.tgz#a2a47ad0f1c168222db5206444a30c12457abb9f"
-  integrity sha512-zmXn03k3hN0KaiVTjohgkg98C3UowhL1/VSGdj4/VAAiMKGQOE80PFPxFP2Kyq0OUskPKcY5lImkhBKEHlypJA==
+sass@^1.51.0:
+  version "1.51.0"
+  resolved "https://registry.yarnpkg.com/sass/-/sass-1.51.0.tgz#25ea36cf819581fe1fe8329e8c3a4eaaf70d2845"
+  integrity sha512-haGdpTgywJTvHC2b91GSq+clTKGbtkkZmVAb82jZQN/wTy6qs8DdFm2lhEQbEwrY0QDRgSQ3xDurqM977C3noA==
   dependencies:
     chokidar ">=3.0.0 <4.0.0"
+    immutable "^4.0.0"
+    source-map-js ">=0.6.2 <2.0.0"
 
 sax@^1.2.4, sax@~1.2.4:
   version "1.2.4"
@@ -14203,6 +14210,11 @@ source-list-map@^2.0.0, source-list-map@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/source-list-map/-/source-list-map-2.0.1.tgz#3993bd873bfc48479cca9ea3a547835c7c154b34"
   integrity sha512-qnQ7gVMxGNxsiL4lEuJwe/To8UnK7fAnmbGEEH8RpLouuKbeEm0lhbQVFIrNSuB+G7tVrAlVsZgETT5nljf+Iw==
+
+"source-map-js@>=0.6.2 <2.0.0":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/source-map-js/-/source-map-js-1.0.2.tgz#adbc361d9c62df380125e7f161f71c826f1e490c"
+  integrity sha512-R0XvVJ9WusLiqTCEiGCmICCMplcCkIwwR11mOSD9CR5u+IXYdiseeEuXCVAjS54zqwkLcPNnmU4OeJ6tUrWhDw==
 
 source-map-resolve@^0.5.0, source-map-resolve@^0.5.2:
   version "0.5.3"
