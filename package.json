@@ -62,7 +62,7 @@
     "react-sortable-hoc": "^2.0.0",
     "react-timeago": "^5.2.0",
     "redis": "^4.1.0",
-    "redux": "^4.1.0",
+    "redux": "^4.2.0",
     "regenerator-runtime": "^0.13.5",
     "relay-hooks": "^5.0.1",
     "relay-runtime": "^11.0.2",
