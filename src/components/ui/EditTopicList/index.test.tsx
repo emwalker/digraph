@@ -35,7 +35,7 @@ describe('<EditTopicList />', () => {
     })
 
     it('disables the ClearIndicator component', () => {
-      expect(select().prop('components')).toEqual({ ClearIndicator: null })
+      expect(select().prop('components')).toEqual({ ClearIndicator: undefined })
     })
   })
 })

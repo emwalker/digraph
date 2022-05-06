@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { OptionsType, ActionMeta } from 'react-select';
+import { ActionMeta } from 'react-select';
 import { TopicOption, Connection } from 'components/types';
 export declare const makeOptions: <T>(conn: Connection<T>) => ((T & {
     color: string;
@@ -8,21 +8,21 @@ export declare const makeOptions: <T>(conn: Connection<T>) => ((T & {
     label: string;
     color: string;
 })[];
-declare type LoadOptionsType = (str: string) => Promise<OptionsType<TopicOption>>;
+declare type LoadOptionsType = (str: string) => Promise<readonly TopicOption[]>;
 declare type Props = {
     loadOptions: LoadOptionsType;
-    selectedTopics: OptionsType<TopicOption>;
+    selectedTopics: readonly TopicOption[];
     updateTopics: (topics: string[]) => void;
 };
 declare type State = {
     inputValue: string;
-    selectedTopics: OptionsType<TopicOption>;
+    selectedTopics: readonly TopicOption[];
 };
 declare class EditTopicList extends Component<Props, State> {
     loadOptions: LoadOptionsType;
     constructor(props: Props);
     onInputChange: (newValue: string) => void;
-    onChange: (selectedTopics: OptionsType<TopicOption>, action: ActionMeta<TopicOption>) => void;
+    onChange: (selectedTopics: readonly TopicOption[], action: ActionMeta<TopicOption>) => void;
     render: () => JSX.Element;
 }
 export default EditTopicList;
