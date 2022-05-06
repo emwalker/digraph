@@ -2461,10 +2461,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/regenerator-runtime@^0.13.0":
-  version "0.13.0"
-  resolved "https://registry.yarnpkg.com/@types/regenerator-runtime/-/regenerator-runtime-0.13.0.tgz#8b81e6047da0fbb71927c23d749e2a9edf9aad9b"
-  integrity sha512-U5osy6qZU3lOPGQRHGDIAt/hC/jAE7zP4Aq258UMXnF8/htmZ+72ALrSsmWTtqML7lCztKkKaPz6Pb5XHJF0Vw==
+"@types/regenerator-runtime@^0.13.1":
+  version "0.13.1"
+  resolved "https://registry.yarnpkg.com/@types/regenerator-runtime/-/regenerator-runtime-0.13.1.tgz#1285f0b1b0508e0ead609104b9a42409473122d1"
+  integrity sha512-Wr4Kopo+zs7kl1mxveVrP7Hl5nEzauQKdSNFN5Eg27Ze11MAgJYKgidYc9AAkQzGXXWH9lqVzPbXUGH6M8VY6g==
 
 "@types/relay-runtime@*", "@types/relay-runtime@^11.0.0":
   version "11.0.0"
