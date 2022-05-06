@@ -54,7 +54,7 @@
     "react-google-recaptcha": "^2.1.0",
     "react-icons": "^4.2.0",
     "react-markdown": "^6.0.2",
-    "react-redux": "^7.2.4",
+    "react-redux": "^8.0.1",
     "react-relay": "^11.0.2",
     "react-responsive-hoc": "^1.0.0",
     "react-select": "^5.0.0",
