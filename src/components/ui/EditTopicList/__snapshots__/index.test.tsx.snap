@@ -9,21 +9,19 @@ exports[`<EditTopicList /> renders 1`] = `
   >
     Parent topics
   </label>
-  <Async
+  <ForwardRef
     backspaceRemovesValue={false}
     cacheOptions={false}
     className="mt-1"
     components={
       Object {
-        "ClearIndicator": null,
+        "ClearIndicator": undefined,
       }
     }
     defaultOptions={Array []}
     escapeClearsValue={false}
-    filterOption={null}
     id="parent-topics"
     isClearable={false}
-    isLoading={false}
     isMulti={true}
     loadOptions={[Function]}
     onChange={[Function]}

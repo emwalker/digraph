@@ -1,5 +1,5 @@
 import { Location } from 'found';
-import { OptionTypeBase } from 'react-select';
+import { OptionProps } from 'react-select';
 export declare type Edge<T> = {
     node: T | null;
 } | null;
@@ -17,12 +17,12 @@ declare type LocationState = {
     itemTitle: string;
 };
 export declare type LocationType = Pick<Location<LocationState>, 'pathname' | 'query' | 'search' | 'state'>;
-export interface TopicOption extends OptionTypeBase {
+export interface TopicOption extends OptionProps {
     value: string;
     label: string;
     color: string;
 }
-export interface LinkOption extends OptionTypeBase {
+export interface LinkOption extends OptionProps {
     value: string;
     label: string;
 }

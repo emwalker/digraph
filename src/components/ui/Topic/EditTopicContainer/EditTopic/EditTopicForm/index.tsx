@@ -71,6 +71,7 @@ class EditTopicForm extends Component<Props, State> {
 
   get selectedTopics(): TopicOption[] | null {
     const { selectedTopics } = this.props.topic
+    // @ts-ignore
     return selectedTopics ? makeOptions(selectedTopics) : null
   }
 
@@ -95,7 +96,7 @@ class EditTopicForm extends Component<Props, State> {
       this.props.relay.refetch(variables, null, () => {
         const { availableTopics } = this.props.topic
         const options = availableTopics ? makeOptions(availableTopics) : []
-        resolve(options)
+        resolve(options as TopicOption[])
       })
     })
   }

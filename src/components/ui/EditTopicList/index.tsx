@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/comma-dangle */
 import React, { Component } from 'react'
-import { OptionsType, ActionMeta } from 'react-select'
+import { ActionMeta } from 'react-select'
 import AsyncSelect from 'react-select/async'
 import debounce from 'es6-promise-debounce'
 
@@ -19,17 +19,17 @@ const makeOption = <T,>(edge: Edge<T>) => (
 
 export const makeOptions = <T,>(conn: Connection<T>) => liftEdges(conn).map(makeOption)
 
-type LoadOptionsType = (str: string) => Promise<OptionsType<TopicOption>>
+type LoadOptionsType = (str: string) => Promise<readonly TopicOption[]>
 
 type Props = {
   loadOptions: LoadOptionsType,
-  selectedTopics: OptionsType<TopicOption>,
+  selectedTopics: readonly TopicOption[],
   updateTopics: (topics: string[]) => void,
 }
 
 type State = {
   inputValue: string,
-  selectedTopics: OptionsType<TopicOption>,
+  selectedTopics: readonly TopicOption[],
 }
 
 class EditTopicList extends Component<Props, State> {
@@ -39,7 +39,7 @@ class EditTopicList extends Component<Props, State> {
     super(props)
     this.state = {
       inputValue: '',
-      selectedTopics: props.selectedTopics.map((option) => ({ ...option, color })),
+      selectedTopics: props.selectedTopics.map((option: TopicOption) => ({ ...option, color })),
     }
     this.loadOptions = debounce(this.props.loadOptions, 500)
   }
@@ -50,9 +50,9 @@ class EditTopicList extends Component<Props, State> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onChange = (selectedTopics: OptionsType<TopicOption>, action: ActionMeta<TopicOption>) => {
+  onChange = (selectedTopics: readonly TopicOption[], action: ActionMeta<TopicOption>) => {
     this.setState({ selectedTopics }, () => {
-      this.props.updateTopics(selectedTopics.map((option) => option.value))
+      this.props.updateTopics(selectedTopics.map((option: TopicOption) => option.value))
     })
   }
 
@@ -66,7 +66,7 @@ class EditTopicList extends Component<Props, State> {
         cacheOptions={false}
         className="mt-1"
         components={{
-          ClearIndicator: null,
+          ClearIndicator: undefined,
         }}
         defaultOptions={this.state.selectedTopics}
         escapeClearsValue={false}

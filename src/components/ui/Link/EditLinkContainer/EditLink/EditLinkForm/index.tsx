@@ -1,7 +1,7 @@
 import React, { Component, FormEvent } from 'react'
 import { createRefetchContainer, graphql, RelayRefetchProp } from 'react-relay'
 
-import { TopicOption } from 'components/types'
+import { NodeTypeOf } from 'components/types'
 import Input from 'components/ui/Input'
 import deleteLinkMutation, { Input as DeleteInput } from 'mutations/deleteLinkMutation'
 import upsertLinkMutation, { Input as UpsertInput } from 'mutations/upsertLinkMutation'
@@ -10,6 +10,11 @@ import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
 import DeleteButton from 'components/ui/DeleteButton'
 import { EditLinkForm_link as LinkType } from '__generated__/EditLinkForm_link.graphql'
+
+type SelectedTopicsType = LinkType['selectedTopics']
+type SelectedTopicType = NodeTypeOf<SelectedTopicsType>
+type AvailableTopicsType = LinkType['availableTopics']
+type AvailableTopicType = NodeTypeOf<AvailableTopicsType>
 
 type Props = {
   isOpen: boolean,
@@ -66,7 +71,7 @@ class EditLinkForm extends Component<Props, State> {
     return this.props.link.id
   }
 
-  get selectedTopics() {
+  get selectedTopics(): readonly SelectedTopicType[] {
     const { link } = this.props
     return link.selectedTopics && makeOptions(link.selectedTopics)
   }
@@ -83,7 +88,7 @@ class EditLinkForm extends Component<Props, State> {
     updateLinkTopicsMutation(this.props.relay.environment, input)
   }
 
-  loadOptions = (searchString: string): Promise<TopicOption[]> => {
+  loadOptions = (searchString: string): Promise<readonly AvailableTopicType[]> => {
     if (!this.props.relay) return new Promise(() => [])
 
     return new Promise((resolve) => {
@@ -137,7 +142,9 @@ class EditLinkForm extends Component<Props, State> {
             />
           </div>
           <EditTopicList
+            // @ts-ignore
             loadOptions={this.loadOptions}
+            // @ts-ignore
             selectedTopics={selectedTopics}
             updateTopics={this.updateTopics}
           />
