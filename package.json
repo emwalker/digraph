@@ -16,7 +16,7 @@
     "@draft-js-plugins/editor": "^4.1.0",
     "@draft-js-plugins/mention": "^4.5.0",
     "@emotion/serialize": "^1.0.3",
-    "@primer/css": "^16.3.0",
+    "@primer/css": "^17.11.1",
     "@types/react-dom": "^17.0.16",
     "array-move": "^3.0.0",
     "chroma-js": "~2.1.0",
