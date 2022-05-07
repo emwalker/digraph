@@ -44,7 +44,6 @@
     "passport": "^0.5.2",
     "passport-github2": "^0.1.12",
     "path": "^0.12.7",
-    "postcss": "^8.2.6",
     "proxy-middleware": "~>0.15.0",
     "ramda": "~0.28.0",
     "razzle-plugin-typescript": "^4.2.16",
