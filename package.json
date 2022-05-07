@@ -131,7 +131,6 @@
     "precss": "~4.0.0",
     "razzle": "^3.3.13",
     "razzle-plugin-scss": "^3.3.13",
-    "react-test-renderer": "17.0.2",
     "relay-compiler": "^11.0.2",
     "relay-compiler-language-typescript": "^14.0.0",
     "sass-loader": "^11.0.1",
