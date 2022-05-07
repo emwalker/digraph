@@ -113,7 +113,7 @@ save-production:
 	bash ./scripts/save-production-db
 
 build-client:
-	yarn relay
+	yarn relay || yarn relay
 	yarn build
 
 build-executables:
