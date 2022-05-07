@@ -1359,18 +1359,18 @@
     immutable "~3.7.4"
     prop-types "^15.8.1"
 
-"@draft-js-plugins/mention@^4.5.0":
-  version "4.5.0"
-  resolved "https://registry.yarnpkg.com/@draft-js-plugins/mention/-/mention-4.5.0.tgz#739a79142bd6d93f27d9f4280aaa240aa40dabe2"
-  integrity sha512-ZxsRH63wFAF3Q2/ahCr1jjy9sTtrAEPG7ziepC7Y1p2QK24x+FOxrxl/0MZ8j94Nsc58v306K30StpSRGdPVpQ==
+"@draft-js-plugins/mention@^5.2.1":
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/@draft-js-plugins/mention/-/mention-5.2.1.tgz#d641b68f7db2b168d479c9164a4b11f3bb0b206c"
+  integrity sha512-toegJW/iY+/SVsbLtfGC46ApJ7EhTyd1iN47iYVOp+fMuFMC18GNeu4uJxz49hZ6qHkhxOFeEFevJ2TcK1CBhQ==
   dependencies:
-    "@popperjs/core" "^2.9.2"
-    "@types/lodash" "^4.14.168"
+    "@popperjs/core" "^2.11.5"
+    "@types/lodash" "^4.14.181"
     clsx "^1.0.4"
     immutable "~3.7.4"
     lodash "^4.17.21"
     lodash-es "^4.17.21"
-    prop-types "^15.5.8"
+    prop-types "^15.8.1"
     react-popper "^2.2.5"
 
 "@emotion/babel-plugin@^11.7.1":
@@ -1947,10 +1947,10 @@
     native-url "^0.2.6"
     schema-utils "^2.6.5"
 
-"@popperjs/core@^2.9.2":
-  version "2.9.2"
-  resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.9.2.tgz#adea7b6953cbb34651766b0548468e743c6a2353"
-  integrity sha512-VZMYa7+fXHdwIq1TDhSXoVmSPEGM/aa+6Aiq3nVVJ9bXr24zScr+NlKFKC3iPljA7ho/GAZr+d2jOf5GIRC30Q==
+"@popperjs/core@^2.11.5":
+  version "2.11.5"
+  resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.5.tgz#db5a11bf66bdab39569719555b0f76e138d7bd64"
+  integrity sha512-9X2obfABZuDVLCgPK9aX0a/x4jaOEweTTWE2+9sr0Qqqevj2Uv5XorvusThmc9XGYpS9yI+fhh8RTafBtGposw==
 
 "@primer/css@^19.1.1":
   version "19.1.1"
@@ -2294,10 +2294,10 @@
   resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz"
   integrity sha1-7ihweulOEdK4J7y+UnC86n8+ce4=
 
-"@types/lodash@^4.14.168":
-  version "4.14.168"
-  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.168.tgz#fe24632e79b7ade3f132891afff86caa5e5ce008"
-  integrity sha512-oVfRvqHV/V6D1yifJbVRU3TMp8OT6o6BG+U9MkwuJ3U8/CsDHvalRpsxBqivn71ztOFZBTfJMvETbqHiaNSj7Q==
+"@types/lodash@^4.14.181":
+  version "4.14.182"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.182.tgz#05301a4d5e62963227eaafe0ce04dd77c54ea5c2"
+  integrity sha512-/THyiqyQAP9AfARo4pF+aCGcyiQ94tX/Is2I7HofNRqoYLgN1PBoOWu2/zTA5zMxzP5EFutMtWtGAFRKUe961Q==
 
 "@types/mdast@^3.0.0":
   version "3.0.3"
@@ -12794,7 +12794,7 @@ prompts@^2.0.1:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
-prop-types@^15.5.0, prop-types@^15.5.7, prop-types@^15.5.8, prop-types@^15.6.0, prop-types@^15.6.2, prop-types@^15.7.0, prop-types@^15.7.2:
+prop-types@^15.5.0, prop-types@^15.5.7, prop-types@^15.6.0, prop-types@^15.6.2, prop-types@^15.7.0, prop-types@^15.7.2:
   version "15.7.2"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.7.2.tgz"
   integrity sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==
