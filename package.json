@@ -132,7 +132,6 @@
     "razzle-plugin-scss": "^3.3.13",
     "relay-compiler": "^11.0.2",
     "relay-compiler-language-typescript": "^14.0.0",
-    "sass-loader": "^11.0.1",
     "semver": "~7.3.7",
     "styled-components": "^5.3.5",
     "ts-jest": "^26.5.5",
