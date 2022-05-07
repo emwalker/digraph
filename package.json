@@ -105,7 +105,7 @@
     "@types/uuid": "^8.3.4",
     "@types/webpack-env": "^1.16.4",
     "@typescript-eslint/eslint-plugin": "^5.22.0",
-    "@wojtekmaj/enzyme-adapter-react-17": "^0.6.1",
+    "@zarconontol/enzyme-adapter-react-18": "^0.7.3",
     "autoprefixer": "~10.2.4",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "10.1.0",
@@ -126,10 +126,10 @@
     "eslint-plugin-react-hooks": "^4.5.0",
     "expose-loader": "^2.0.0",
     "identity-obj-proxy": "~>3.0.0",
-    "jest": "^26.6.3",
+    "jest": "^28.1.0",
     "jest-enzyme": "~7.1.1",
     "jest-matcher-utils": "^28.1.0",
-    "jest-snapshot": "^28.0.3",
+    "jest-snapshot": "^28.1.0",
     "normalize.css": "~8.0.1",
     "precss": "~4.0.0",
     "razzle": "^3.3.13",
@@ -152,32 +152,6 @@
     "webpack-hot-middleware": "~2.25.1",
     "webpack-manifest-plugin": "~3.1.1",
     "when": "~>3.7.8"
-  },
-  "jest": {
-    "roots": [
-      "<rootDir>/src/"
-    ],
-    "moduleDirectories": [
-      "<rootDir>/node_modules",
-      "<rootDir>/src/"
-    ],
-    "moduleFileExtensions": [
-      "js",
-      "jsx"
-    ],
-    "moduleNameMapper": {
-      "\\.(css|less)$": "identity-obj-proxy"
-    },
-    "setupFiles": [
-      "<rootDir>/src/__mock__/jestSetup.ts"
-    ],
-    "setupFilesAfterEnv": [
-      "./node_modules/jest-enzyme/lib/index.js"
-    ],
-    "snapshotSerializers": [
-      "enzyme-to-json/serializer"
-    ],
-    "testURL": "http://localhost/"
   },
   "peerDependencies": {}
 }
