@@ -7,5 +7,7 @@ declare type Props = {
     topic: TopicType;
     viewer: ViewerType;
 };
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Pick<Omit<Props, "relay">, "topic" | "viewer"> & {
+    disabled?: boolean | undefined;
+} & {}>;
 export default _default;

@@ -7,5 +7,5 @@ declare type Props = {
     view: ViewType;
 };
 export declare const query: import("react-relay").GraphQLTaggedNode;
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

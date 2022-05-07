@@ -34,5 +34,5 @@ declare class Link extends Component<Props, State> {
     render: () => JSX.Element;
 }
 export declare const UnwrappedLink: typeof Link;
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

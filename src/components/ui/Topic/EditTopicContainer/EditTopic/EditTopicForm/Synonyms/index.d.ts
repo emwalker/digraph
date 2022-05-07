@@ -41,5 +41,5 @@ declare class Synonyms extends Component<Props, State> {
     render: () => JSX.Element;
 }
 export declare const UnwrappedSynonyms: typeof Synonyms;
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

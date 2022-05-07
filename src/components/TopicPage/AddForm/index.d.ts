@@ -5,5 +5,5 @@ declare type Props = {
     topic: Topic;
     viewer: Viewer;
 };
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

@@ -20,5 +20,7 @@ declare class MobileNav extends Component<Props, State> {
     render: () => JSX.Element;
 }
 export declare const UnwrappedMobileNav: typeof MobileNav;
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Pick<Omit<Props, "relay">, "router" | "location" | "viewer"> & {
+    showButton?: boolean | undefined;
+} & {}>;
 export default _default;

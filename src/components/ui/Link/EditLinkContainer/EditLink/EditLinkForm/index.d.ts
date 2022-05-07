@@ -7,5 +7,5 @@ declare type Props = {
     relay: RelayRefetchProp;
     toggleForm: () => void;
 };
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

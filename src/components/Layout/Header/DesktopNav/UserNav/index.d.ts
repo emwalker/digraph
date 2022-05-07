@@ -3,5 +3,5 @@ declare type Props = {
     viewer: Viewer;
 };
 export declare const UnwrappedUserNav: ({ viewer }: Props) => JSX.Element;
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

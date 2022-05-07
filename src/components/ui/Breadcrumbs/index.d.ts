@@ -3,5 +3,5 @@ declare type Props = {
     orgLogin: string;
     repository: Repository | null;
 };
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

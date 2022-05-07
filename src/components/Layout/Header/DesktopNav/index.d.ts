@@ -20,5 +20,7 @@ declare class DesktopNav extends Component<Props> {
     render: () => JSX.Element;
 }
 export declare const UnwrappedDesktopNav: typeof DesktopNav;
-declare const _default: import("react-relay").Container<Props>;
+declare const _default: import("react-relay").Container<Pick<Omit<Props, "relay">, "view" | "router" | "location" | "viewer"> & {
+    className?: string | undefined;
+} & {}>;
 export default _default;
