@@ -22,7 +22,6 @@ class Synonym extends Component<Props> {
   }
 
   renderDeleteButton = () => (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <span tabIndex={0} role="button" onClick={this.onClick}>
       <GoTrashcan />
     </span>

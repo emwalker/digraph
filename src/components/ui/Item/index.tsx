@@ -73,7 +73,6 @@ class Item extends Component<Props> {
   get titleLink() {
     if (!this.props.url) {
       return (
-        // eslint-disable-next-line jsx-a11y/anchor-is-valid
         <a
           className="Box-row-link"
           href="#"

@@ -10,8 +10,6 @@ import LeftColumn from 'components/ui/LeftColumn'
 import RightColumn from 'components/ui/RightColumn'
 import SidebarList from 'components/ui/SidebarList'
 
-/* eslint jsx-a11y/anchor-is-valid: 0 */
-
 type Props = {
   location: LocationType,
   router: Router,

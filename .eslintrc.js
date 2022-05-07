@@ -15,6 +15,7 @@ module.exports = {
     'react/static-property-placement': ['error', 'static public field'],
     semi: ['error', 'never'],
     'template-curly-spacing': 'off',
+    '@typescript-eslint/no-redeclare': 'off',
     indent: 'off',
 
     // Typescript
@@ -40,10 +41,14 @@ module.exports = {
   plugins: [
     'react',
     'jest',
-    '@typescript-eslint'
+    '@typescript-eslint',
+    'import',
   ],
 
   settings: {
     'import/resolver': 'webpack',
+    react: {
+      version: 'detect',
+    },
   },
 }
