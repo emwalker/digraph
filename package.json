@@ -19,7 +19,7 @@
     "@primer/css": "^19.1.1",
     "@types/react-dom": "^17.0.16",
     "array-move": "^3.0.0",
-    "chroma-js": "~2.1.0",
+    "chroma-js": "~2.4.2",
     "classnames": "~2.3.1",
     "compression": "^1.7.4",
     "connect-redis": "^5.2.0",
