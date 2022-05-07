@@ -86,7 +86,13 @@ format: lint format-js
 relay:
 	yarn relay
 
-check-js: relay format-js test-js
+reinstall-javacript:
+	rm -rf node_modules
+	yarn install
+	rm -rf src/__generated__
+	yarn relay
+
+check-js: reinstall-javacript format-js test-js build-client
 	yarn outdated
 
 check: generate format test test-integration
