@@ -57,7 +57,7 @@
     "react-redux": "^8.0.1",
     "react-relay": "^11.0.2",
     "react-responsive-hoc": "^1.0.0",
-    "react-select": "^5.0.0",
+    "react-select": "^5.3.1",
     "react-social-login-buttons": "^3.4.0",
     "react-sortable-hoc": "^2.0.0",
     "react-timeago": "^6.2.1",
