@@ -1,5 +1,4 @@
 import { Component } from 'react';
-import { RelayProp } from 'react-relay';
 import { LocationType, NodeTypeOf } from 'components/types';
 import { TopicPage_query_QueryResponse as Response } from '__generated__/TopicPage_query_Query.graphql';
 import { TopicPage_topic as TopicType } from '__generated__/TopicPage_topic.graphql';
@@ -10,8 +9,6 @@ declare type Props = {
     alerts: Object[];
     location: LocationType;
     orgLogin: string;
-    relay: RelayProp;
-    router: Object;
     topic: TopicType;
     view: ViewType;
 };

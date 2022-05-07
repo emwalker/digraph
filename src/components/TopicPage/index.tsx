@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
+import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 import classNames from 'classnames'
 import { Link as FoundLink } from 'found'
@@ -30,8 +30,6 @@ type Props = {
   alerts: Object[],
   location: LocationType,
   orgLogin: string,
-  relay: RelayProp,
-  router: Object,
   topic: TopicType,
   view: ViewType,
 }

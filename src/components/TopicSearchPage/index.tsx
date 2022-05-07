@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
+import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
 
 import Page from 'components/ui/Page'
@@ -25,10 +25,7 @@ type SearchItemType = NodeTypeOf<TopicType['search']>
 /* eslint no-underscore-dangle: 0 */
 
 type Props = {
-  location: Object,
   orgLogin: string,
-  relay: RelayProp,
-  router: Object,
   topic: TopicType,
   view: ViewType,
 }

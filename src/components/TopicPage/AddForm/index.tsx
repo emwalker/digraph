@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
+import { createFragmentContainer, graphql } from 'react-relay'
 import classNames from 'classnames'
 
 import { AddForm_topic as Topic } from '__generated__/AddForm_topic.graphql'
@@ -10,7 +10,6 @@ import SelectRepository from './SelectRepository'
 import './index.css'
 
 type Props = {
-  relay: RelayProp,
   topic: Topic,
   viewer: Viewer,
 }
