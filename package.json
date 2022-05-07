@@ -60,7 +60,7 @@
     "react-select": "^5.0.0",
     "react-social-login-buttons": "^3.4.0",
     "react-sortable-hoc": "^2.0.0",
-    "react-timeago": "^5.2.0",
+    "react-timeago": "^6.2.1",
     "redis": "^4.1.0",
     "redux": "^4.2.0",
     "regenerator-runtime": "^0.13.5",
