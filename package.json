@@ -142,7 +142,6 @@
     "webpack-dev-middleware": "~5.3.1",
     "webpack-dev-server": "^3.11.2",
     "webpack-hot-middleware": "~2.25.1",
-    "webpack-manifest-plugin": "~3.1.1",
     "when": "~>3.7.8"
   },
   "peerDependencies": {}
