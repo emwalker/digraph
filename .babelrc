@@ -1,6 +1,6 @@
 {
   "presets": [
-    "razzle/babel",
+    ["razzle/babel", { "absoluteRuntime": false }],
     "@babel/typescript"
   ],
   "plugins": [

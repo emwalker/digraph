@@ -7,7 +7,7 @@ import { Topic_topic as TopicType } from '__generated__/Topic_topic.graphql'
 import { Topic_view as ViewType } from '__generated__/Topic_view.graphql'
 import Item from '../Item'
 import EditTopic from './EditTopicContainer'
-import { topicRow } from './styles.module.css'
+import styles from './styles.module.css'
 
 type ParentTopicType = NodeTypeOf<TopicType['parentTopics']>
 
@@ -67,7 +67,7 @@ class Topic extends Component<Props, State> {
     return (
       <Item
         canEdit={this.props.topic.viewerCanUpdate}
-        className={classNames(topicRow, 'Box-row--topic')}
+        className={classNames(styles.topicRow, 'Box-row--topic')}
         description={this.props.topic.description}
         displayColor={this.displayColor}
         formIsOpen={this.state.formIsOpen}

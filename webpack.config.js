@@ -19,6 +19,11 @@ const config = {
         loader: 'url-loader?limit=10000'
       }
     ],
+
+    modules: [
+      'node_modules',
+      path.resolve(__dirname, 'public'),
+    ]
   }
 }
 

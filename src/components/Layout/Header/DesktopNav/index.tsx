@@ -9,7 +9,7 @@ import SearchBox from 'components/ui/SearchBox'
 import { DesktopNav_viewer as Viewer } from '__generated__/DesktopNav_viewer.graphql'
 import UserNav from './UserNav'
 import SignIn from './SignIn'
-import { header, primaryLogo, userNav, navLeft, searchBox } from './styles.module.css'
+import styles from './styles.module.css'
 
 type Props = {
   className?: string | undefined,
@@ -46,12 +46,12 @@ class DesktopNav extends Component<Props> {
     const { viewer, view, router, location } = this.props
 
     return (
-      <header className={`${header} px-sm-3 px-md-6 px-lg-4`}>
-        <nav className={`${navLeft} d-inline-block`}>
+      <header className={`${styles.header} px-sm-3 px-md-6 px-lg-4`}>
+        <nav className={`${styles.navLeft} d-inline-block`}>
           <h1 className="h3 text-normal">
             <a
               href="/"
-              className={`${primaryLogo} n-link no-underline d-flex`}
+              className={`${styles.primaryLogo} n-link no-underline d-flex`}
             >
               <div className="mr-2 d-inline-block">
                 <DigraphLogo height="28px" width="28px" fill="#000" />
@@ -61,10 +61,10 @@ class DesktopNav extends Component<Props> {
             </a>
           </h1>
         </nav>
-        <div className={searchBox}>
+        <div className={styles.searchBox}>
           <SearchBox router={router} location={location} view={view} />
         </div>
-        <nav className={userNav}>
+        <nav className={styles.userNav}>
           <a
             className="Link--primary px-2"
             href="https://blog.digraph.app"
