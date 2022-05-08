@@ -10,7 +10,7 @@ Organize the world. Save links in a mind map-like network of topics. Keep track 
 * GraphQL backend written in Golang
 * Postgres
 * React/Relay client
-* Webpack 4
+* Webpack 5
 * Server-side rendering with [Razzle](https://github.com/jaredpalmer/razzle)
 * [volatiletech/sqlboiler](https://github.com/volatiletech/sqlboiler)
 * [99designs/gqlgen](https://github.com/99designs/gqlgen)
