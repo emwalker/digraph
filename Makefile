@@ -13,108 +13,10 @@ TIMESTAMP        = $(shell date -u +%s)
 LINT_DIRECTORIES = $(shell find cmd -type d ! -name "loaders" ! -name "server")
 DBNAME           := $(if $(DBNAME),$(DBNAME),digraph_dev)
 
-codeql:
-	@echo "Good to go"
-
-# Might core dump on Linux
-kill:
-	@killall server 2>/dev/null || true
-	@killall node 2>/dev/null || true
-	@pkill -ABRT -f node || true
-	@pkill -TERM -f frontend || true
-
-start:
-	@yarn relay --watch &
-	@go run cmd/frontend/frontend.go --log 1 &
-	@yarn start
-
-start-prod:
-	@go run cmd/frontend/frontend.go --log 1 &
-	@yarn start:prod
-
-start-debug:
-	@yarn relay --watch &
-	@go run cmd/frontend/frontend.go --log 2 &
-	@yarn start
-
-lint-js:
-	yarn eslint
-
-lint: lint-js
-	golint -set_exit_status $(LINT_DIRECTORIES)
-
-install:
-	@yarn install
-	@dep ensure
-
-migrate-up:
-	$(foreach database,$(DBNAME),\
-		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
-			-source file://migrations up 1 ;\
-	)
-
-migrate-down:
-	$(foreach database,$(DBNAME),\
-		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
-			-source file://migrations down 1 ;\
-	)
-
-generate:
-	$(MAKE) -C golang $@
-
-test-js:
-	yarn jest
-
-test-go:
-	$(MAKE) -C golang test
-
-test: test-js test-go
-
-format-js: lint-js
-	yarn tsc
-
-format: lint format-js
-	go fmt ./...
-	git diff --quiet
-
-relay:
-	yarn relay
-
-reinstall-javacript:
-	rm -rf node_modules
-	yarn install
-	rm -rf src/__generated__
-	yarn relay
-
-check-js: reinstall-javacript format-js test-js build-client
-	yarn outdated
-
-check: generate format test test-integration
-
-dump:
-	pg_dump -d $(DBNAME) > data/digraph.sql
-
-fixtures: data/fixtures.sql
-	bash ./scripts/make-fixtures
-
-load-fixtures:
-	bash ./scripts/load-fixtures
-	psql $(DBNAME) < queries/transitive-closure.sql
-
-load-production:
-	bash ./scripts/load-production-db
-	psql $(DBNAME) < queries/transitive-closure.sql
-
-recreate-transitive-closures:
-	psql $(DBNAME) < queries/clear-transitive-closure.sql
-	psql $(DBNAME) < queries/transitive-closure.sql
-
-save-production:
-	bash ./scripts/save-production-db
+build: build-executables build-container-cron build-container-api build-container-node
 
 build-client:
-	yarn relay || yarn relay
-	yarn build
+	$(MAKE) -C javascript build
 
 build-container-api:
 	docker-compose build api
@@ -131,16 +33,58 @@ build-container-node: build-client
 build-executables:
 	$(MAKE) -C golang build
 
-build: build-executables build-container-cron build-container-api build-container-node
+deploy:
+	kubectl config use-context digraph-production
+	kubectl apply -f k8s/cluster
+
+dump:
+	pg_dump -d $(DBNAME) > data/digraph.sql
+
+fixtures: data/fixtures.sql
+	bash ./scripts/make-fixtures
+
+generate:
+	$(MAKE) -C golang $@
+
+load-fixtures:
+	bash ./scripts/load-fixtures
+	psql $(DBNAME) < queries/transitive-closure.sql
+
+load-production:
+	bash ./scripts/load-production-db
+	psql $(DBNAME) < queries/transitive-closure.sql
+
+migrate-up:
+	$(foreach database,$(DBNAME),\
+		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
+			-source file://migrations up 1 ;\
+	)
+
+migrate-down:
+	$(foreach database,$(DBNAME),\
+		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
+			-source file://migrations down 1 ;\
+	)
+
+proxy:
+	kubectl port-forward --namespace default svc/postgres-postgresql 5433:5432
 
 push:
 	docker push emwalker/digraph-cron:$(shell cat k8s/release)
 	docker push emwalker/digraph-api:$(shell cat k8s/release)
 	docker push emwalker/digraph-node:$(shell cat k8s/release)
 
-deploy:
-	kubectl config use-context digraph-production
-	kubectl apply -f k8s/cluster
+recreate-transitive-closures:
+	psql $(DBNAME) < queries/clear-transitive-closure.sql
+	psql $(DBNAME) < queries/transitive-closure.sql
 
-proxy:
-	kubectl port-forward --namespace default svc/postgres-postgresql 5433:5432
+save-production:
+	bash ./scripts/save-production-db
+
+test-go:
+	$(MAKE) -C golang test
+
+test-js:
+	$(MAKE) -C javascript test
+
+test: test-js test-go
