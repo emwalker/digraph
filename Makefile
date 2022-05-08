@@ -60,19 +60,13 @@ migrate-down:
 	)
 
 generate:
-	$(GOPATH)/bin/sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml --no-hooks
-	go generate ./...
+	$(MAKE) -C golang $@
 
-.PHONY:
-
-test-integration: .PHONY
-	go test -p 1 -count=1 ./test/integration/...
-
-test-js: .PHONY
+test-js:
 	yarn jest
 
-test-go: .PHONY
-	go test ./cmd/frontend/... -count=1
+test-go:
+	$(MAKE) -C golang test
 
 test: test-js test-go
 
@@ -122,23 +116,20 @@ build-client:
 	yarn relay || yarn relay
 	yarn build
 
-build-executables:
-	GOOS=linux GARCH=amd64 CGO_ENABLED=0 go install ./...
-	mkdir -p tmp/stage
-	cp $(shell go env GOPATH)/bin/frontend tmp/stage/
-	cp $(shell go env GOPATH)/bin/cron tmp/stage/
-
 build-container-api:
 	docker-compose build api
 	docker tag emwalker/digraph-api:latest emwalker/digraph-api:$(shell cat k8s/release)
+
+build-container-cron:
+	docker-compose build cron
+	docker tag emwalker/digraph-cron:latest emwalker/digraph-cron:$(shell cat k8s/release)
 
 build-container-node: build-client
 	docker-compose build node
 	docker tag emwalker/digraph-node:latest emwalker/digraph-node:$(shell cat k8s/release)
 
-build-container-cron:
-	docker-compose build cron
-	docker tag emwalker/digraph-cron:latest emwalker/digraph-cron:$(shell cat k8s/release)
+build-executables:
+	$(MAKE) -C golang build
 
 build: build-executables build-container-cron build-container-api build-container-node
 

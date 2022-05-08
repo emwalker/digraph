@@ -10,7 +10,7 @@
 
 yarn-error.log
 app.yaml
-/tmp
+tmp/
 *__generated__*
 /scratchpad
 /data/personal.nq

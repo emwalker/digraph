@@ -1,0 +1,29 @@
+schema:
+- ../schema.graphql
+exec:
+  filename: cmd/frontend/models/generated.go
+  package: models
+model:
+  filename: cmd/frontend/models/models_gen.go
+  package: models
+models:
+  Link:
+    model: github.com/emwalker/digraph/golang/cmd/frontend/models.LinkValue
+  Organization:
+    model: github.com/emwalker/digraph/golang/cmd/frontend/models.Organization
+  Repository:
+    model: github.com/emwalker/digraph/golang/cmd/frontend/models.Repository
+  Session:
+    model: github.com/emwalker/digraph/golang/cmd/frontend/models.Session
+  Synonym:
+    model: github.com/emwalker/digraph/golang/cmd/frontend/models.Synonym
+  Topic:
+    model: github.com/emwalker/digraph/golang/cmd/frontend/models.TopicValue
+  User:
+    model: github.com/emwalker/digraph/golang/cmd/frontend/models.User
+  View:
+    model: github.com/emwalker/digraph/golang/cmd/frontend/models.View
+resolver:
+  filename: cmd/frontend/resolvers/resolver.go
+  type: Resolver
+  package: resolvers
