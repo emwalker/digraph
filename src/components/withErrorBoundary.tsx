@@ -3,18 +3,19 @@ import { RouteRenderArgs, RenderProps } from 'found'
 
 import ErrorBoundary from './ui/ErrorBoundary'
 
-interface ViewRenderProps extends RenderProps {
-  view: any,
+interface ViewRenderProps<V> extends RenderProps {
+  view: V,
 }
 
-function withErrorBoundary(Wrapped: ComponentType<any>) {
-  return ({ props }: RouteRenderArgs) => {
-    const renderProps = props as ViewRenderProps
+function withErrorBoundary<V>(Wrapped: ComponentType<any>) {
+  return (routeProps: RouteRenderArgs) => {
+    const { props, match } = routeProps
+    const renderProps = props as ViewRenderProps<V>
     const view = renderProps?.view
     return (
       view && (
       <ErrorBoundary>
-        <Wrapped view={view} />
+        <Wrapped view={view} match={match} />
       </ErrorBoundary>
       )
     )

@@ -30,14 +30,14 @@ export function createResolver(fetcher: FetcherBase) {
   return new Resolver(environment)
 }
 
-const prepareVariablesFn = (viewer: Express.User) => (params: FoundRelayVariables) => {
+const prepareVariablesFn = (viewer: Express.User) => (variables: FoundRelayVariables) => {
   const viewerId = viewer?.id || ''
   const sessionId = viewer?.sessionId || ''
 
   return {
     topicId: defaultRootTopicId,
     orgLogin: defaultOrganizationLogin,
-    ...params,
+    ...variables,
     sessionId,
     viewerId,
   }
@@ -121,7 +121,7 @@ export const createRouteConfig = (store: RouteStore) => {
               path=""
               render={renderTopicPage}
               prepareVariables={prepareVariables}
-              getQuery={({ location }) => (
+              getQuery={({ location }: RouteMatch) => (
                 location.query.q
                   ? topicSearchPageQuery
                   : topicPageQuery

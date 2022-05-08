@@ -5,5 +5,3 @@ declare module 'react-async-ssr';
 declare module 'found-relay';
 declare module 'react-responsive-hoc';
 declare module 'es6-promise-debounce';
-declare module 'draft-js-mention-plugin';
-declare module 'draft-js-plugins-editor';
