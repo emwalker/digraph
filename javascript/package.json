@@ -36,7 +36,7 @@
     "found-relay": "^0.9.1",
     "graphql": "^15.3.0",
     "http": "^0.0.1-security",
-    "http-proxy-middleware": "^2.0.0",
+    "http-proxy-middleware": "^2.0.6",
     "immutability-helper": "~3.1.1",
     "isomorphic-fetch": "^3.0.0",
     "jest-diff": "^28.1.0",
