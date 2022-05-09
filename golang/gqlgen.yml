@@ -1,29 +1,29 @@
 schema:
 - ../schema.graphql
 exec:
-  filename: cmd/frontend/models/generated.go
+  filename: internal/models/generated.go
   package: models
 model:
-  filename: cmd/frontend/models/models_gen.go
+  filename: internal/models/models_gen.go
   package: models
 models:
   Link:
-    model: github.com/emwalker/digraph/golang/cmd/frontend/models.LinkValue
+    model: github.com/emwalker/digraph/golang/internal/models.LinkValue
   Organization:
-    model: github.com/emwalker/digraph/golang/cmd/frontend/models.Organization
+    model: github.com/emwalker/digraph/golang/internal/models.Organization
   Repository:
-    model: github.com/emwalker/digraph/golang/cmd/frontend/models.Repository
+    model: github.com/emwalker/digraph/golang/internal/models.Repository
   Session:
-    model: github.com/emwalker/digraph/golang/cmd/frontend/models.Session
+    model: github.com/emwalker/digraph/golang/internal/models.Session
   Synonym:
-    model: github.com/emwalker/digraph/golang/cmd/frontend/models.Synonym
+    model: github.com/emwalker/digraph/golang/internal/models.Synonym
   Topic:
-    model: github.com/emwalker/digraph/golang/cmd/frontend/models.TopicValue
+    model: github.com/emwalker/digraph/golang/internal/models.TopicValue
   User:
-    model: github.com/emwalker/digraph/golang/cmd/frontend/models.User
+    model: github.com/emwalker/digraph/golang/internal/models.User
   View:
-    model: github.com/emwalker/digraph/golang/cmd/frontend/models.View
+    model: github.com/emwalker/digraph/golang/internal/models.View
 resolver:
-  filename: cmd/frontend/resolvers/resolver.go
+  filename: internal/resolvers/resolver.go
   type: Resolver
   package: resolvers

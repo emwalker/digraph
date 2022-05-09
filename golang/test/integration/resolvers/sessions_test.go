@@ -3,9 +3,9 @@ package resolvers_test
 import (
 	"testing"
 
-	"github.com/emwalker/digraph/golang/cmd/frontend/models"
-	"github.com/emwalker/digraph/golang/cmd/frontend/resolvers"
-	"github.com/emwalker/digraph/golang/cmd/frontend/services"
+	"github.com/emwalker/digraph/golang/internal/models"
+	"github.com/emwalker/digraph/golang/internal/resolvers"
+	"github.com/emwalker/digraph/golang/internal/services"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 

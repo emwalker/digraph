@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/emwalker/digraph/golang/cmd/frontend/models"
-	"github.com/emwalker/digraph/golang/cmd/frontend/resolvers"
-	"github.com/emwalker/digraph/golang/cmd/frontend/services"
+	"github.com/emwalker/digraph/golang/internal/models"
+	"github.com/emwalker/digraph/golang/internal/resolvers"
+	"github.com/emwalker/digraph/golang/internal/services"
 	in "github.com/emwalker/digraph/golang/test/integration"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"

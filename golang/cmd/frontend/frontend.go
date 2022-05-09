@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/emwalker/digraph/golang/cmd/frontend/server"
+	"github.com/emwalker/digraph/golang/internal/server"
 	// Load the PQ drivers
 	_ "github.com/lib/pq"
 )

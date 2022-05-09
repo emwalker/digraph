@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/emwalker/digraph/golang/cmd/frontend/models"
-	"github.com/emwalker/digraph/golang/cmd/frontend/queries"
+	"github.com/emwalker/digraph/golang/internal/models"
+	"github.com/emwalker/digraph/golang/internal/queries"
 	in "github.com/emwalker/digraph/golang/test/integration"
 )
 

@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/emwalker/digraph/golang/cmd/frontend/loaders"
-	"github.com/emwalker/digraph/golang/cmd/frontend/models"
-	"github.com/emwalker/digraph/golang/cmd/frontend/redis"
-	"github.com/emwalker/digraph/golang/cmd/frontend/resolvers"
-	"github.com/emwalker/digraph/golang/cmd/frontend/services"
-	"github.com/emwalker/digraph/golang/cmd/frontend/services/pageinfo"
+	"github.com/emwalker/digraph/golang/internal/loaders"
+	"github.com/emwalker/digraph/golang/internal/models"
+	"github.com/emwalker/digraph/golang/internal/redis"
+	"github.com/emwalker/digraph/golang/internal/resolvers"
+	"github.com/emwalker/digraph/golang/internal/services"
+	"github.com/emwalker/digraph/golang/internal/services/pageinfo"
 	_ "github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/emwalker/digraph/golang/cmd/frontend/services"
+	"github.com/emwalker/digraph/golang/internal/services"
 	in "github.com/emwalker/digraph/golang/test/integration"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )

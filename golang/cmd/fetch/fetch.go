@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/emwalker/digraph/golang/cmd/frontend/services/pageinfo"
+	"github.com/emwalker/digraph/golang/internal/services/pageinfo"
 )
 
 func main() {

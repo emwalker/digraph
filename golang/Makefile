@@ -9,7 +9,7 @@ format:
 	go fmt ./...
 
 generate:
-	sqlboiler psql --output cmd/frontend/models --config ./sqlboiler.yaml --no-hooks
+	sqlboiler psql --output internal/models --config ./sqlboiler.yaml --no-hooks
 	go run github.com/99designs/gqlgen -config gqlgen.yml
 	go generate ./...
 
@@ -17,4 +17,4 @@ test-integration: .PHONY
 	go test -p 1 -count=1 ./test/integration/...
 
 test: .PHONY
-	go test ./cmd/frontend/... -count=1
+	go test ./internal/... -count=1

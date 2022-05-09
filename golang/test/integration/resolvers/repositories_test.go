@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/emwalker/digraph/golang/cmd/frontend/models"
+	"github.com/emwalker/digraph/golang/internal/models"
 )
 
 func TestRootTopic(t *testing.T) {
