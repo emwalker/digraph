@@ -2,10 +2,10 @@ import { Express, Request } from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 
 export interface IGetUserAuthInfoRequest extends Request {
-  user: {
-    id: string,
-    sessionId: string,
-  } | undefined,
+  user?: {
+    id?: string,
+    sessionId?: string,
+  },
 }
 
 /* eslint no-console: 0, implicit-arrow-linebreak: 0 */
@@ -24,16 +24,16 @@ export default (app: Express) => {
       onProxyReq(proxyReq, req: IGetUserAuthInfoRequest) {
         const { user } = req
 
-        if (user) {
+        if (user && user.id && user.sessionId) {
           const { id, sessionId } = user
           const secret = basicAuthSecret(id, sessionId)
           proxyReq.setHeader('Authorization', `Basic ${secret}`)
         } else {
-          console.log('No user found with the request, omitting basic auth header')
+          console.log('no user found with the request, omitting basic auth header:', user)
         }
       },
       onError(err) {
-        console.log('There was a problem proxying request to api server:', err)
+        console.log('problem proxying request to api server:', err)
       },
     }),
   )
