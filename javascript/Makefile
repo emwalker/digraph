@@ -4,15 +4,11 @@ build: .PHONY
 	yarn relay || yarn relay
 	yarn build
 
-check-js: reinstall-javacript format-js test-js build-client
-	yarn outdated
+check: reinstall-javacript format test build
 
-format-js: lint-js
+format:
+	yarn eslint
 	yarn tsc
-
-format: lint format-js
-	go fmt ./...
-	git diff --quiet
 
 relay:
 	yarn relay
@@ -39,6 +35,3 @@ start-debug:
 
 test:
 	yarn jest
-
-lint:
-	yarn eslint

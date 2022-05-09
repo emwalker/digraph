@@ -74,7 +74,7 @@ func TestDisplayName(t *testing.T) {
 			name:      "When there is no time range",
 			timerange: nil,
 			synonyms: &models.SynonymList{
-				Values: []models.Synonym{{"en", "Gnusto"}},
+				Values: []models.Synonym{{Locale: "en", Name: "Gnusto"}},
 			},
 			displayName: "Gnusto",
 		},
@@ -85,7 +85,7 @@ func TestDisplayName(t *testing.T) {
 				PrefixFormat: string(models.TimeRangePrefixFormatNone),
 			},
 			synonyms: &models.SynonymList{
-				Values: []models.Synonym{{"en", "Gnusto"}},
+				Values: []models.Synonym{{Locale: "en", Name: "Gnusto"}},
 			},
 			displayName: "Gnusto",
 		},
@@ -96,7 +96,7 @@ func TestDisplayName(t *testing.T) {
 				PrefixFormat: string(models.TimeRangePrefixFormatStartYear),
 			},
 			synonyms: &models.SynonymList{
-				Values: []models.Synonym{{"en", "Gnusto"}},
+				Values: []models.Synonym{{Locale: "en", Name: "Gnusto"}},
 			},
 			displayName: "2020 Gnusto",
 		},
@@ -107,7 +107,7 @@ func TestDisplayName(t *testing.T) {
 				PrefixFormat: string(models.TimeRangePrefixFormatStartYearMonth),
 			},
 			synonyms: &models.SynonymList{
-				Values: []models.Synonym{{"en", "Gnusto"}},
+				Values: []models.Synonym{{Locale: "en", Name: "Gnusto"}},
 			},
 			displayName: "2020-10 Gnusto",
 		},

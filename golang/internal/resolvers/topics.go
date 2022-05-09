@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/emwalker/digraph/golang/internal/loaders"
 	"github.com/emwalker/digraph/golang/internal/models"
 	"github.com/emwalker/digraph/golang/internal/queries"
 	"github.com/emwalker/digraph/golang/internal/queries/parser"
@@ -24,7 +23,6 @@ type topicResolver struct{ *Resolver }
 // ByName provides a way to sort a topic by name.
 type ByName struct {
 	topics []*models.Topic
-	locale models.LocaleIdentifier
 }
 
 func (b ByName) Len() int {
@@ -37,10 +35,6 @@ func (b ByName) Swap(i, j int) {
 
 func (b ByName) Less(i, j int) bool {
 	return b.topics[i].Name < b.topics[j].Name
-}
-
-func getTopicLoader(ctx context.Context) *loaders.TopicLoader {
-	return ctx.Value(loaders.TopicLoaderKey).(*loaders.TopicLoader)
 }
 
 func fetchTopic(
@@ -60,7 +54,13 @@ func topicConnection(view *models.View, rows []*models.Topic, err error) (*model
 
 	edges := make([]*models.TopicEdge, len(rows))
 	for i, topic := range rows {
-		edges[i] = &models.TopicEdge{Node: &models.TopicValue{topic, false, view}}
+		edges[i] = &models.TopicEdge{
+			Node: &models.TopicValue{
+				Topic:      topic,
+				NewlyAdded: false,
+				View:       view,
+			},
+		}
 	}
 
 	return &models.TopicConnection{
@@ -145,13 +145,13 @@ func (r *topicResolver) Activity(
 
 		for j, linkTopic := range userLink.R.UserLinkTopics {
 			topic := linkTopic.R.Topic
-			topics[j] = activity.Topic{topic.Name, topic.ID}
+			topics[j] = activity.Topic{Name: topic.Name, ID: topic.ID}
 		}
 
 		logData[i] = activity.UpsertLink{
 			CreatedAt: userLink.CreatedAt,
-			User:      activity.User{userLink.R.User.DisplayName()},
-			Link:      activity.Link{userLink.R.Link.Title, userLink.R.Link.URL},
+			User:      activity.User{Name: userLink.R.User.DisplayName()},
+			Link:      activity.Link{Title: userLink.R.Link.Title, URL: userLink.R.Link.URL},
 			Topics:    topics,
 		}
 	}
@@ -345,12 +345,12 @@ func (r *topicResolver) Search(
 
 	edges := make([]*models.SearchResultItemEdge, len(topics)+len(links))
 	for i, t := range topics {
-		topicValue := models.TopicValue{t, false, topic.View}
+		topicValue := models.TopicValue{Topic: t, NewlyAdded: false, View: topic.View}
 		edges[i] = &models.SearchResultItemEdge{Node: topicValue}
 	}
 	linkStart := len(topics)
 	for i, l := range links {
-		linkValue := models.LinkValue{l, false, topic.View}
+		linkValue := models.LinkValue{Link: l, NewlyAdded: false, View: topic.View}
 		edges[i+linkStart] = &models.SearchResultItemEdge{Node: linkValue}
 	}
 

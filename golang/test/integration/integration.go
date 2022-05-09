@@ -118,7 +118,7 @@ func init() {
 
 	everything, err := models.Topics(qm.Where("name like 'Everything'")).One(ctx, DB)
 	Must(err)
-	Everything = &models.TopicValue{everything, true, View}
+	Everything = &models.TopicValue{Topic: everything, NewlyAdded: true, View: View}
 
 	Fetcher = &TestFetcherT{}
 }
@@ -153,7 +153,7 @@ func (m Mutator) UpsertTopic(options UpsertTopicOptions) *models.TopicValue {
 
 	result, err := conn.UpsertTopic(ctx, repo, options.Name, nil, options.ParentTopicIds)
 	Must(err)
-	return &models.TopicValue{result.Topic, true, View}
+	return &models.TopicValue{Topic: result.Topic, NewlyAdded: true, View: View}
 }
 
 type UpsertLinkOptions struct {
@@ -179,7 +179,7 @@ func (m Mutator) UpsertLink(options UpsertLinkOptions) *models.LinkValue {
 	}
 	result, err := service.Call(context.Background(), m.DB)
 	Must(err)
-	return &models.LinkValue{result.Link, true, View}
+	return &models.LinkValue{Link: result.Link, NewlyAdded: true, View: View}
 }
 
 type UpdateLinkTopicsOptions struct {

@@ -33,6 +33,10 @@ build-container-node: build-client
 build-executables:
 	$(MAKE) -C golang build
 
+check:
+	$(MAKE) -C golang check
+	$(MAKE) -C javascript check
+
 deploy:
 	kubectl config use-context digraph-production
 	kubectl apply -f k8s/cluster

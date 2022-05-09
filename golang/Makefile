@@ -8,6 +8,11 @@ build:
 format:
 	go fmt ./...
 
+check: test
+	go mod tidy
+	echo test -z "$(shell git diff-index --name-only HEAD --)"
+	go vet ./...
+
 generate:
 	sqlboiler psql --output internal/models --config ./sqlboiler.yaml --no-hooks
 	go run github.com/99designs/gqlgen -config gqlgen.yml

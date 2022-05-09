@@ -291,7 +291,7 @@ func (r *MutationResolver) ReviewLink(
 	}
 
 	return &models.ReviewLinkPayload{
-		Link: &models.LinkValue{result.Link, false, actor.DefaultView()},
+		Link: &models.LinkValue{Link: result.Link, NewlyAdded: false, View: actor.DefaultView()},
 	}, nil
 }
 
@@ -307,10 +307,10 @@ func (r *MutationResolver) SelectRepository(
 	var repo *models.Repository
 
 	if repoID == nil {
-		exists, err := actor.SelectedRepository().Exists(ctx, r.DB)
+		exists, _ := actor.SelectedRepository().Exists(ctx, r.DB)
 		if exists {
 			log.Printf("Unselecting repository from %s", actor.ID)
-			repo, err = actor.SelectedRepository().One(ctx, r.DB)
+			repo, _ = actor.SelectedRepository().One(ctx, r.DB)
 
 			if err = actor.RemoveSelectedRepository(ctx, r.DB, repo); err != nil {
 				return nil, err
@@ -320,7 +320,7 @@ func (r *MutationResolver) SelectRepository(
 				return nil, err
 			}
 		}
-		return &models.SelectRepositoryPayload{nil, actor}, nil
+		return &models.SelectRepositoryPayload{Repository: nil, Viewer: actor}, nil
 	}
 
 	repo = &models.Repository{ID: *repoID}
@@ -339,7 +339,7 @@ func (r *MutationResolver) SelectRepository(
 		return nil, err
 	}
 
-	return &models.SelectRepositoryPayload{repo, actor}, nil
+	return &models.SelectRepositoryPayload{Repository: repo, Viewer: actor}, nil
 }
 
 // UpsertTopic creates a new topic.
@@ -381,7 +381,11 @@ func (r *MutationResolver) UpsertTopic(
 	return &models.UpsertTopicPayload{
 		Alerts: result.Alerts,
 		TopicEdge: &models.TopicEdge{
-			Node: &models.TopicValue{result.Topic, result.TopicCreated, actor.DefaultView()},
+			Node: &models.TopicValue{
+				Topic:      result.Topic,
+				NewlyAdded: result.TopicCreated,
+				View:       actor.DefaultView(),
+			},
 		},
 	}, nil
 }
@@ -460,7 +464,11 @@ func (r *MutationResolver) UpdateTopic(
 
 	return &models.UpdateTopicPayload{
 		Alerts: result.Alerts,
-		Topic:  &models.TopicValue{topic, false, actor.DefaultView()},
+		Topic: &models.TopicValue{
+			Topic:      topic,
+			NewlyAdded: false,
+			View:       actor.DefaultView(),
+		},
 	}, nil
 }
 
@@ -481,7 +489,11 @@ func (r *MutationResolver) UpdateLinkTopics(
 		service := services.UpdateLinkTopics{
 			Actor:          actor,
 			ParentTopicIds: input.ParentTopicIds,
-			Link:           &models.LinkValue{link, false, actor.DefaultView()},
+			Link: &models.LinkValue{
+				Link:       link,
+				NewlyAdded: false,
+				View:       actor.DefaultView(),
+			},
 		}
 		result, err = service.Call(ctx, tx)
 		return err
@@ -510,8 +522,12 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 		}
 
 		service := services.UpdateTopicParentTopics{
-			Actor:          actor,
-			Topic:          &models.TopicValue{topic, false, actor.DefaultView()},
+			Actor: actor,
+			Topic: &models.TopicValue{
+				Topic:      topic,
+				NewlyAdded: false,
+				View:       actor.DefaultView(),
+			},
 			ParentTopicIds: input.ParentTopicIds,
 		}
 		result, err = service.Call(ctx, tx)
@@ -564,7 +580,11 @@ func (r *MutationResolver) UpsertLink(
 	return &models.UpsertLinkPayload{
 		Alerts: result.Alerts,
 		LinkEdge: &models.LinkEdge{
-			Node: &models.LinkValue{result.Link, result.LinkCreated, actor.DefaultView()},
+			Node: &models.LinkValue{
+				Link:       result.Link,
+				NewlyAdded: result.LinkCreated,
+				View:       actor.DefaultView(),
+			},
 		},
 	}, nil
 }

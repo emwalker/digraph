@@ -25,7 +25,7 @@ func linkConnection(view *models.View, rows []*models.Link, totalCount int, err 
 	var edges []*models.LinkEdge
 	for _, link := range rows {
 		edges = append(edges, &models.LinkEdge{
-			Node: &models.LinkValue{link, false, view},
+			Node: &models.LinkValue{Link: link, NewlyAdded: false, View: view},
 		})
 	}
 

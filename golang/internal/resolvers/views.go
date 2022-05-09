@@ -12,30 +12,11 @@ import (
 	"github.com/emwalker/digraph/golang/internal/util"
 	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack/v5"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 	squeries "github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type viewResolver struct{ *Resolver }
-
-func newViewFromTopic(ctx context.Context, exec boil.ContextExecutor, topic *models.Topic) (*models.View, error) {
-	repo, err := fetchRepository(ctx, topic.RepositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	org, err := fetchOrganization(ctx, repo.OrganizationID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &models.View{
-		CurrentOrganizationLogin: org.Login,
-		CurrentRepositoryName:    &repo.Name,
-		CurrentRepository:        repo,
-	}, nil
-}
 
 func pageSizeOrDefault(first *int) int {
 	if first == nil {
@@ -90,13 +71,13 @@ func (r *viewResolver) Activity(
 
 		for j, linkTopic := range userLink.R.UserLinkTopics {
 			topic := linkTopic.R.Topic
-			topics[j] = activity.Topic{topic.Name, topic.ID}
+			topics[j] = activity.Topic{Name: topic.Name, ID: topic.ID}
 		}
 
 		logData[i] = activity.UpsertLink{
 			CreatedAt: userLink.CreatedAt,
-			User:      activity.User{userLink.R.User.DisplayName()},
-			Link:      activity.Link{userLink.R.Link.Title, userLink.R.Link.URL},
+			User:      activity.User{Name: userLink.R.User.DisplayName()},
+			Link:      activity.Link{Title: userLink.R.Link.Title, URL: userLink.R.Link.URL},
 			Topics:    topics,
 		}
 	}
@@ -130,7 +111,7 @@ func (r *viewResolver) Link(
 	})
 
 	link, err := models.Links(mods...).One(ctx, r.DB)
-	return &models.LinkValue{link, false, view}, err
+	return &models.LinkValue{Link: link, NewlyAdded: false, View: view}, err
 }
 
 // LinkCount returns the number of links the general collection.  Eventually it wll return the
@@ -194,7 +175,7 @@ func (r *viewResolver) QueryInfo(ctx context.Context, view *models.View) (*model
 		}
 
 		for _, t := range topics {
-			topicValue := models.TopicValue{t, false, view}
+			topicValue := models.TopicValue{Topic: t, NewlyAdded: false, View: view}
 			edges = append(edges, &models.TopicEdge{Node: &topicValue})
 		}
 	}
@@ -225,7 +206,7 @@ func (r *viewResolver) Topic(
 		return nil, err
 	}
 
-	return &models.TopicValue{topic, false, view}, nil
+	return &models.TopicValue{Topic: topic, NewlyAdded: false, View: view}, nil
 }
 
 // TopicCount returns the number of topics the general collection.  Eventually it wll return the
@@ -247,7 +228,7 @@ func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*stri
 		topics := topicResult{}
 
 		// TODO - search within the repositories specified in view.RepositoryIds
-		err := squeries.Raw(`
+		squeries.Raw(`
 		select jsonb_build_object('links', (
 		  select jsonb_agg(a) from (
 		    select tt.parent_id source, tt.child_id target, count(distinct lt.child_id) "linkCount"

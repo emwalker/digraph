@@ -18,8 +18,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-const orgID = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb"
-
 type testFetcherT struct{}
 
 var (
@@ -103,7 +101,7 @@ func newTestDb() *sql.DB {
 
 func newMutator(t *testing.T, actor *models.User) mutator {
 	resolver := &resolvers.MutationResolver{
-		&resolvers.Resolver{DB: testDB, Fetcher: rootResolver.Fetcher},
+		Resolver: &resolvers.Resolver{DB: testDB, Fetcher: rootResolver.Fetcher},
 	}
 
 	ctx := context.Background()

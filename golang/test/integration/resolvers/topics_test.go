@@ -821,7 +821,7 @@ func TestDeleteTopic(t *testing.T) {
 
 	rc := resolvers.NewRequestContext(testViewer)
 	ctx = resolvers.WithRequestContext(ctx, rc)
-	resolver := &resolvers.MutationResolver{rootResolver}
+	resolver := &resolvers.MutationResolver{Resolver: rootResolver}
 
 	payload, err := resolver.DeleteTopic(ctx, models.DeleteTopicInput{
 		TopicID: parentTopic.ID,

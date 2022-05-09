@@ -10,6 +10,10 @@ import (
 	in "github.com/emwalker/digraph/golang/test/integration"
 )
 
+func condition(op in.Operator, expected int) in.Condition {
+	return in.Condition{Operator: op, Expected: expected}
+}
+
 func TestSearchInTopic(t *testing.T) {
 	ctx := context.Background()
 	mutator := in.NewMutator(in.MutatorOptions{})
@@ -107,64 +111,64 @@ func TestSearchInTopic(t *testing.T) {
 			name:         "When an empty string is provided",
 			searchString: "",
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.GreaterThan, 5},
-			links:        in.Condition{in.GreaterThan, 5},
+			topics:       condition(in.GreaterThan, 5),
+			links:        condition(in.GreaterThan, 5),
 		},
 		{
 			name:         "When a link matches",
 			searchString: "New York Timely",
 			parentTopic:  childTopic1,
-			topics:       in.Condition{in.Exactly, 0},
-			links:        in.Condition{in.Exactly, 1},
+			topics:       condition(in.Exactly, 0),
+			links:        condition(in.Exactly, 1),
 		},
 		{
 			name:         "When a child topic matches",
 			searchString: "Child topic",
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.Exactly, 3},
-			links:        in.Condition{in.Anything, 0},
+			topics:       condition(in.Exactly, 3),
+			links:        condition(in.Anything, 0),
 		},
 		{
 			name:         "When a descendant topic matches",
 			searchString: "Grandchild topic 1abc",
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.Exactly, 1},
-			links:        in.Condition{in.Exactly, 0},
+			topics:       condition(in.Exactly, 1),
+			links:        condition(in.Exactly, 0),
 		},
 		{
 			name:         "When the search is for a URL and the parent topic is not the root",
 			searchString: grandchildLink.URL,
 			parentTopic:  childTopic1,
-			topics:       in.Condition{in.Exactly, 0},
-			links:        in.Condition{in.Exactly, 1},
+			topics:       condition(in.Exactly, 0),
+			links:        condition(in.Exactly, 1),
 		},
 		{
 			name:         "When the child topic is inlined in the query",
 			searchString: fmt.Sprintf("in:/wiki/topics/%s %s", childTopic1.ID, grandchildLink.URL),
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.Exactly, 0},
-			links:        in.Condition{in.Exactly, 1},
+			topics:       condition(in.Exactly, 0),
+			links:        condition(in.Exactly, 1),
 		},
 		{
 			name:         "When there is no such url",
 			searchString: fmt.Sprintf("in:/wiki/topics/%s http://no-such-url", childTopic1.ID),
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.Exactly, 0},
-			links:        in.Condition{in.Exactly, 0},
+			topics:       condition(in.Exactly, 0),
+			links:        condition(in.Exactly, 0),
 		},
 		{
 			name:         "When the url is a descendant url",
 			searchString: fmt.Sprintf("in:/wiki/topics/%s %s", childTopic1.ID, greatGrandchildLink1.URL),
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.Exactly, 0},
-			links:        in.Condition{in.Exactly, 1},
+			topics:       condition(in.Exactly, 0),
+			links:        condition(in.Exactly, 1),
 		},
 		{
 			name:         "When the child topic is inlined and a link title matches",
 			searchString: fmt.Sprintf("in:/wiki/topics/%s New York Timely", childTopic1.ID),
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.Exactly, 0},
-			links:        in.Condition{in.Exactly, 1},
+			topics:       condition(in.Exactly, 0),
+			links:        condition(in.Exactly, 1),
 		},
 		{
 			name: "When two topics are inlined",
@@ -174,9 +178,9 @@ func TestSearchInTopic(t *testing.T) {
 				childTopic2.ID,
 			),
 			parentTopic: in.Everything,
-			topics:      in.Condition{in.Exactly, 0},
+			topics:      condition(in.Exactly, 0),
 			// http://nytimely.com and http://great-grandchild-2.org
-			links: in.Condition{in.Exactly, 2},
+			links: condition(in.Exactly, 2),
 		},
 		{
 			name: "Descendant links from the intersection of the transitive closures are included",
@@ -187,16 +191,16 @@ func TestSearchInTopic(t *testing.T) {
 				greatGrandchildLink2.URL,
 			),
 			parentTopic: in.Everything,
-			topics:      in.Condition{in.Exactly, 0},
+			topics:      condition(in.Exactly, 0),
 			// http://great-grandchild-2.org
-			links: in.Condition{in.Exactly, 1},
+			links: condition(in.Exactly, 1),
 		},
 		{
 			name:         "A topic appears in its own down set",
 			searchString: fmt.Sprintf("in:/wiki/topics/%s", grandchildTopic1.ID),
 			parentTopic:  in.Everything,
-			topics:       in.Condition{in.Exactly, 1},
-			links:        in.Condition{in.Anything, 2},
+			topics:       condition(in.Exactly, 1),
+			links:        condition(in.Anything, 2),
 		},
 	}
 
@@ -248,16 +252,16 @@ func TestSearchBugFixes(t *testing.T) {
 		{
 			name:         "The limits are observed for when the topic is large",
 			searchString: "in:/wiki/topics/33b18df0-eec8-11e8-b9e7-270ae3464cf5",
-			topics:       in.Condition{in.Exactly, 0},
-			links:        in.Condition{in.Exactly, 0},
+			topics:       condition(in.Exactly, 0),
+			links:        condition(in.Exactly, 0),
 			topicLimit:   0,
 			linkLimit:    0,
 		},
 		{
 			name:         "The limits are observed for when the topic is large",
 			searchString: "in:/wiki/topics/33b18df0-eec8-11e8-b9e7-270ae3464cf5",
-			topics:       in.Condition{in.Exactly, 10},
-			links:        in.Condition{in.Exactly, 10},
+			topics:       condition(in.Exactly, 10),
+			links:        condition(in.Exactly, 10),
 			topicLimit:   10,
 			linkLimit:    10,
 		},
