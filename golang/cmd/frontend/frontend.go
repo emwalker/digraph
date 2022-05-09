@@ -13,7 +13,7 @@ import (
 
 const defaultPort = "8080"
 
-func getPlaygroundPort() string {
+func getPort() string {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
@@ -53,8 +53,11 @@ func main() {
 		redisHost = "localhost:6379"
 	}
 
+	port := getPort()
+	log.Printf("Backend server listening on port %s", port)
+
 	s := server.New(
-		getPlaygroundPort(),
+		port,
 		*devMode,
 		os.Getenv("DIGRAPH_BASIC_AUTH_USERNAME"),
 		os.Getenv("DIGRAPH_BASIC_AUTH_PASSWORD"),

@@ -85,6 +85,9 @@ recreate-transitive-closures:
 save-production:
 	bash ./scripts/save-production-db
 
+start:
+	overmind start -f Procfile
+
 test-go:
 	$(MAKE) -C golang test
 

@@ -18,6 +18,9 @@ generate:
 	go run github.com/99designs/gqlgen -config gqlgen.yml
 	go generate ./...
 
+start:
+	PORT=8080 go run cmd/frontend/frontend.go --log 1
+
 test-integration: .PHONY
 	go test -p 1 -count=1 ./test/integration/...
 

@@ -20,18 +20,10 @@ reinstall-javacript:
 	yarn relay
 
 start:
-	@yarn relay --watch &
-	@go run cmd/frontend/frontend.go --log 1 &
-	@yarn start
+	yarn start:prod
 
-start-prod:
-	@go run cmd/frontend/frontend.go --log 1 &
-	@yarn start:prod
-
-start-debug:
-	@yarn relay --watch &
-	@go run cmd/frontend/frontend.go --log 2 &
-	@yarn start
+start-dev:
+	yarn start
 
 test:
 	yarn jest
