@@ -1321,7 +1321,7 @@
     core-js-pure "^3.0.0"
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.0.0", "@babel/runtime@^7.10.2", "@babel/runtime@^7.12.0", "@babel/runtime@^7.12.1", "@babel/runtime@^7.13.10", "@babel/runtime@^7.13.9", "@babel/runtime@^7.15.4", "@babel/runtime@^7.16.3", "@babel/runtime@^7.16.5", "@babel/runtime@^7.17.9", "@babel/runtime@^7.2.0", "@babel/runtime@^7.5.5", "@babel/runtime@^7.7.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2":
+"@babel/runtime@^7.0.0", "@babel/runtime@^7.10.2", "@babel/runtime@^7.12.0", "@babel/runtime@^7.12.1", "@babel/runtime@^7.13.10", "@babel/runtime@^7.15.4", "@babel/runtime@^7.16.3", "@babel/runtime@^7.16.5", "@babel/runtime@^7.17.9", "@babel/runtime@^7.2.0", "@babel/runtime@^7.5.5", "@babel/runtime@^7.7.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2":
   version "7.17.9"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.17.9.tgz#d19fbf802d01a8cb6cf053a64e472d42c434ba72"
   integrity sha512-lSiBBvodq29uShpWGNbgFdKYNiFDo5/HIYsaCEY9ff4sb10x9jizo2+pRrSyF4jKZCXqgzuqBOQKbUm90gQwJg==
@@ -2622,6 +2622,14 @@
     hoist-non-react-statics "^3.3.0"
     redux "^4.0.0"
 
+"@types/react-relay@^11.0.1":
+  version "11.0.3"
+  resolved "https://registry.yarnpkg.com/@types/react-relay/-/react-relay-11.0.3.tgz#95097049203f2f814e1330453d037841a2a310e5"
+  integrity sha512-hgKmTCswmZclKOqju/3pcVgJG3FtNrwfLLq4wtpZuQ/UJAyVeQ90SS6GiGZBr6hDZmcxNMIQCNyJ0YK5eE9Ceg==
+  dependencies:
+    "@types/react" "*"
+    "@types/relay-runtime" "*"
+
 "@types/react-relay@^13.0.2":
   version "13.0.2"
   resolved "https://registry.yarnpkg.com/@types/react-relay/-/react-relay-13.0.2.tgz#85ac65b13b7a67f8c75fc32dd175160c28d3cc9b"
@@ -2681,7 +2689,12 @@
   resolved "https://registry.yarnpkg.com/@types/regenerator-runtime/-/regenerator-runtime-0.13.1.tgz#1285f0b1b0508e0ead609104b9a42409473122d1"
   integrity sha512-Wr4Kopo+zs7kl1mxveVrP7Hl5nEzauQKdSNFN5Eg27Ze11MAgJYKgidYc9AAkQzGXXWH9lqVzPbXUGH6M8VY6g==
 
-"@types/relay-runtime@*", "@types/relay-runtime@^11.0.0":
+"@types/relay-runtime@*", "@types/relay-runtime@^12.0.0":
+  version "12.0.2"
+  resolved "https://registry.yarnpkg.com/@types/relay-runtime/-/relay-runtime-12.0.2.tgz#2d4162a23753f1ee27014a61d95a26ccae02dcc3"
+  integrity sha512-TXHpHL4VFjCQfBDTXA8A7NMkANXRRNJISM/LewfwtqEKjaikFrPj70LLI/JVWthLcdQMhp0hw5RtO57i6gEcvw==
+
+"@types/relay-runtime@^11.0.0":
   version "11.0.0"
   resolved "https://registry.yarnpkg.com/@types/relay-runtime/-/relay-runtime-11.0.0.tgz"
   integrity sha512-D5JNxDhkcPSIMZc2j3N/fh61399O309ph9RVmzbF+Fsyvepsqy7FirFKcJ2CMfYxE/kb8ZD/Xdzs3CYZEiQc4w==
@@ -6840,14 +6853,16 @@ forwarded@0.2.0:
   resolved "https://registry.yarnpkg.com/forwarded/-/forwarded-0.2.0.tgz#2269936428aad4c15c7ebe9779a84bf0b2a81811"
   integrity sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==
 
-found-relay@^0.9.1:
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/found-relay/-/found-relay-0.9.1.tgz#d8ec624b5f46e4d4b665cf5489768a14687e1e81"
-  integrity sha512-43Tqv3mmWfXBVVwkLZrsIkXm0ZIxtsL3DOHZjhmiR8FW4f6ZZTwfk2TgxhwhS85K5TEDI6PLlsLU+DEhw0rd6w==
+found-relay@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/found-relay/-/found-relay-1.0.1.tgz#32418de466e562e6132ad2cc8c6e9ef56c659f68"
+  integrity sha512-uLLsx70kX4NFXp3Av+tz1PnLfDowN0vWxHdyIthCadTamPedFk4gRMgDZYmuMDaTNkvBQGvvWE9/Az8V1VCtww==
   dependencies:
-    "@babel/runtime" "^7.13.9"
+    "@babel/runtime" "^7.17.9"
+    "@types/react-relay" "^11.0.1"
+    "@types/relay-runtime" "^12.0.0"
+    dequal "^2.0.2"
     is-promise "^4.0.0"
-    lodash "^4.17.21"
     prop-types "^15.7.2"
     warning "^4.0.3"
 
