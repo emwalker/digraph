@@ -88,6 +88,9 @@ save-production:
 start:
 	overmind start -f Procfile
 
+start-dev:
+	overmind start -f Procfile.dev
+
 test-go:
 	$(MAKE) -C golang test
 
