@@ -10,7 +10,7 @@ format:
 
 check: test
 	go mod tidy
-	echo test -z "$(shell git diff-index --name-only HEAD --)"
+	test -z "$(shell git diff-index --name-only HEAD --)"
 	go vet ./...
 
 generate:
