@@ -21,7 +21,8 @@
     "razzle/**/browserslist": "^4.16.5",
     "razzle/**/immer": "^9.0.6",
     "razzle/**/nth-check": "^2.0.1",
-    "razzle-dev-utils/**/immer": "^9.0.6"
+    "razzle-dev-utils/**/immer": "^9.0.6",
+    "typescript-plugin-css-modules/**/postcss": "^7.0.36"
   },
   "dependencies": {
     "@babel/runtime": "^7.17.9",
