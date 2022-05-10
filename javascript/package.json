@@ -12,6 +12,8 @@
   "author": "Eric Walker",
   "license": "MIT",
   "resolutions": {
+    "babel-plugin-react-css-modules/**/postcss": "^7.0.36",
+    "precss/**/postcss": "^7.0.36",
     "razzle/**/ansi-html": "^0.0.8"
   },
   "dependencies": {
