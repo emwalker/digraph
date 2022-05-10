@@ -11,6 +11,9 @@
   },
   "author": "Eric Walker",
   "license": "MIT",
+  "resolutions": {
+    "razzle/**/ansi-html": "^0.0.8"
+  },
   "dependencies": {
     "@babel/runtime": "^7.17.9",
     "@draft-js-plugins/editor": "^4.1.3",
