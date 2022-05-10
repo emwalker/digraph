@@ -13,6 +13,7 @@
   "license": "MIT",
   "resolutions": {
     "babel-plugin-react-css-modules/**/postcss": "^7.0.36",
+    "jest-enzyme/**/json-schema": "^0.4.0",
     "precss/**/postcss": "^7.0.36",
     "razzle/**/ansi-html": "^0.0.8"
   },
