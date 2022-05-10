@@ -30,7 +30,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
     resave: true,
     saveUninitialized: true,
     // Expire in one month
-    cookie: { maxAge: 1000 * 3600 * 24 * 30, secure: true },
+    cookie: { maxAge: 1000 * 3600 * 24 * 30 },
   }))
 
   app
