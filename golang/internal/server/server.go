@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -90,11 +91,16 @@ func New(
 	}
 }
 
+func sanitize(input string) string {
+	escaped := strings.Replace(input, "\n", "", -1)
+	return strings.Replace(escaped, "\r", "", -1)
+}
+
 // https://forum.golangbridge.org/t/how-to-create-custom-timeout-handler-based-on-request-path/7135/2
 func logAndTimeout(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ua := r.Header.Get("User-Agent")
-		log.Printf("User-Agent: %s", ua)
+		log.Printf("User-Agent: [%s]", sanitize(ua))
 		timeoutHandler := http.TimeoutHandler(h, requestTimeout*time.Second, "Your request has timed out.")
 		loggingHandler := handlers.LoggingHandler(os.Stdout, timeoutHandler)
 		loggingHandler.ServeHTTP(w, r)
