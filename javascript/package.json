@@ -17,7 +17,9 @@
     "jest-enzyme/**/json-schema": "^0.4.0",
     "precss/**/postcss": "^7.0.36",
     "razzle/**/ansi-html": "^0.0.8",
-    "razzle/**/nth-check": "^2.0.1"
+    "razzle/**/immer": "^9.0.6",
+    "razzle/**/nth-check": "^2.0.1",
+    "razzle-dev-utils/**/immer": "^9.0.6"
   },
   "dependencies": {
     "@babel/runtime": "^7.17.9",
