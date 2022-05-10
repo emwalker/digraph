@@ -13,9 +13,11 @@
   "license": "MIT",
   "resolutions": {
     "babel-plugin-react-css-modules/**/postcss": "^7.0.36",
+    "enzyme/**/nth-check": "^2.0.1",
     "jest-enzyme/**/json-schema": "^0.4.0",
     "precss/**/postcss": "^7.0.36",
-    "razzle/**/ansi-html": "^0.0.8"
+    "razzle/**/ansi-html": "^0.0.8",
+    "razzle/**/nth-check": "^2.0.1"
   },
   "dependencies": {
     "@babel/runtime": "^7.17.9",
