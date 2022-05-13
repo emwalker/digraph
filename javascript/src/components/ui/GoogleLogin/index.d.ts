@@ -1,3 +1,4 @@
+/// <reference types="react" />
 declare type Props = {
     className?: string | undefined;
 };

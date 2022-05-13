@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import { Match } from 'found';
 declare type Props = {
     match: Match;

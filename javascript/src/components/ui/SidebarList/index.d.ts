@@ -1,3 +1,4 @@
+/// <reference types="react" />
 declare type ItemType = {
     display: string;
     resourcePath: string;

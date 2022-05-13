@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import { RecentPage_recent_QueryResponse as Response } from '__generated__/RecentPage_recent_Query.graphql';
 declare type ViewType = Response['view'];
 declare type Props = {

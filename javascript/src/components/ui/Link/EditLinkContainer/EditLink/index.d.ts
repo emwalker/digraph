@@ -1,3 +1,4 @@
+/// <reference types="react" />
 declare type CallerProps = {
     isOpen: boolean;
     orgLogin: string;

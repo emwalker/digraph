@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import { Router } from 'found';
 import { LocationType } from 'components/types';
 declare type Props = {
