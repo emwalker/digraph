@@ -71,7 +71,7 @@ migrate-down:
 	)
 
 proxy:
-	kubectl port-forward --namespace default svc/postgres-postgresql 5433:5432
+	kubectl port-forward --namespace default svc/postgres-postgresql 5431:5432
 
 push:
 	docker push emwalker/digraph-cron:$(shell cat k8s/release)
