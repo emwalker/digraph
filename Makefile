@@ -58,6 +58,9 @@ load-production:
 	bash ./scripts/load-production-db
 	psql $(DBNAME) < queries/transitive-closure.sql
 
+logs:
+	overmind start -f Procfile.logs
+
 migrate-up:
 	$(foreach database,$(DBNAME),\
 		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \

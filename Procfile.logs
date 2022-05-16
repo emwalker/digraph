@@ -1,0 +1,3 @@
+postgres: kubectl logs -f -l app.kubernetes.io/name=postgresql
+api: kubectl logs -f -l app=digraph -c api
+frontend: kubectl logs -f -l app=digraph -c frontend
