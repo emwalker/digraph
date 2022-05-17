@@ -16,7 +16,7 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/grokify/html-strip-tags-go v0.0.1
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
-	github.com/lib/pq v1.10.5
+	github.com/lib/pq v1.10.6
 	github.com/pkg/errors v0.9.1
 	github.com/rs/cors v1.8.2
 	github.com/spf13/viper v1.11.0
