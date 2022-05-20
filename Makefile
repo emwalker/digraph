@@ -37,7 +37,10 @@ check:
 	$(MAKE) -C golang check
 	$(MAKE) -C javascript check
 
-deploy:
+check-git-clean:
+	test -z "$(shell git diff-index --name-only HEAD --)"
+
+deploy-k8s:
 	kubectl config use-context digraph-production
 	kubectl apply -f k8s/cluster
 
@@ -76,10 +79,15 @@ migrate-down:
 proxy:
 	kubectl port-forward --namespace default svc/postgres-postgresql 5431:5432
 
-push:
+push-docker:
 	docker push emwalker/digraph-cron:$(shell cat k8s/release)
 	docker push emwalker/digraph-api:$(shell cat k8s/release)
 	docker push emwalker/digraph-node:$(shell cat k8s/release)
+
+push-deploy: check-git-clean build push-docker push-git deploy-k8s
+
+push-git:
+	git push origin master
 
 recreate-transitive-closures:
 	psql $(DBNAME) < queries/clear-transitive-closure.sql
