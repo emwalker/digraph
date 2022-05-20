@@ -6487,20 +6487,7 @@ fbjs@^2.0.0:
     setimmediate "^1.0.5"
     ua-parser-js "^0.7.18"
 
-fbjs@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/fbjs/-/fbjs-3.0.0.tgz"
-  integrity sha512-dJd4PiDOFuhe7vk4F80Mba83Vr2QuK86FoxtgPmzBqEJahncp+13YCmfoa53KHCo6OnlXLG7eeMWPfB5CrpVKg==
-  dependencies:
-    cross-fetch "^3.0.4"
-    fbjs-css-vars "^1.0.0"
-    loose-envify "^1.0.0"
-    object-assign "^4.1.0"
-    promise "^7.1.1"
-    setimmediate "^1.0.5"
-    ua-parser-js "^0.7.18"
-
-fbjs@^3.0.2:
+fbjs@^3.0.0, fbjs@^3.0.2:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/fbjs/-/fbjs-3.0.4.tgz#e1871c6bd3083bac71ff2da868ad5067d37716c6"
   integrity sha512-ucV0tDODnGV3JCnnkmoszb5lf4bNpzjv80K41wd4k798Etq+UYD0y0TIfalLjZoKgjive6/adkRnszwapiDgBQ==
@@ -12456,10 +12443,10 @@ relay-compiler@^12.0.0:
     signedsource "^1.0.0"
     yargs "^15.3.1"
 
-relay-hooks@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/relay-hooks/-/relay-hooks-7.0.0.tgz#e1154f61cbfa2e916241838b41301eeab0f49e30"
-  integrity sha512-g4g9qCmVEdMluUng2RLnbjvF4YPrDPcxJnVY+T7aBoQN8WP3rcOjYcypyk3DtqpzqUDu4sQYWzuU9HOg+jX9/A==
+relay-hooks@^7.1.0:
+  version "7.1.0"
+  resolved "https://registry.yarnpkg.com/relay-hooks/-/relay-hooks-7.1.0.tgz#884ae7d62d03236edc8199d7b63bd38ca12d8959"
+  integrity sha512-FhpjjjKK24gQ/FXEfpQkHzwmI55LhaDflGc7BbMaBcIJK75ZVKz/TWO1Jws3szQo3v5PMCIxQ43776qwqDk9/Q==
   dependencies:
     "@restart/hooks" "^0.3.1"
     fbjs "^3.0.0"
