@@ -54,7 +54,7 @@
     "isomorphic-fetch": "^3.0.0",
     "jest-diff": "^28.1.0",
     "moment": "^2.29.3",
-    "passport": "^0.5.2",
+    "passport": "^0.6.0",
     "passport-github2": "^0.1.12",
     "path": "^0.12.7",
     "proxy-middleware": "~>0.15.0",
