@@ -116,7 +116,7 @@
     "@types/relay-runtime": "^11.0.0",
     "@types/serialize-javascript": "^5.0.2",
     "@types/uuid": "^8.3.4",
-    "@types/webpack-env": "^1.16.4",
+    "@types/webpack-env": "^1.17.0",
     "@typescript-eslint/eslint-plugin": "^5.25.0",
     "@typescript-eslint/parser": "^5.25.0",
     "@zarconontol/enzyme-adapter-react-18": "^0.7.3",
