@@ -37,18 +37,6 @@ func (b ByName) Less(i, j int) bool {
 	return b.topics[i].Name < b.topics[j].Name
 }
 
-func fetchTopic(
-	ctx context.Context, exec boil.ContextExecutor, topicID string, actor *models.User,
-) (*models.Topic, error) {
-	topic, err := models.Topics(
-		qm.Load("Repository"),
-		qm.Load("Repository.Owner"),
-		qm.InnerJoin("organization_members om on topics.organization_id = om.organization_id"),
-		qm.Where("topics.id = ? and om.user_id = ?", topicID, actor.ID),
-	).One(ctx, exec)
-	return topic, err
-}
-
 func topicConnection(view *models.View, rows []*models.Topic, err error) (*models.TopicConnection, error) {
 	if err != nil {
 		return nil, err

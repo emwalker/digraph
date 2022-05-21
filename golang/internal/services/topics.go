@@ -185,6 +185,8 @@ func (m DeleteTopic) Call(ctx context.Context, exec boil.ContextExecutor) (*Dele
 func (c Connection) DeleteTopicTimeRange(
 	ctx context.Context, topic *models.Topic,
 ) (*DeleteTopicTimeRangeResult, error) {
+	log.Printf("services: deleting topic time range: %s", topic)
+
 	timerange, err := dqueries.TimeRange(ctx, c.Exec, topic)
 	if err != nil && err.Error() != dqueries.ErrSQLNoRows {
 		return nil, errors.Wrap(err, "services: failed to fetch time range")
@@ -203,7 +205,8 @@ func (c Connection) DeleteTopicTimeRange(
 		return nil, errors.Wrap(err, "services: failed to update topic name")
 	}
 
-	if err = topic.Reload(ctx, c.Exec); err != nil {
+	topic, err = dqueries.FetchTopic(ctx, c.Exec, topic.ID, c.Actor)
+	if err != nil {
 		return nil, errors.Wrap(err, "services: failed to reload topic")
 	}
 

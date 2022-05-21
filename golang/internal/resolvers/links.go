@@ -81,7 +81,7 @@ func (r *linkResolver) ParentTopics(
 		return topicConnection(link.View, link.R.ParentTopics, nil)
 	}
 
-	log.Printf("Fetching parent topics for %s", link)
+	log.Printf("resolvers: fetching parent topics for %s", link)
 	query := queries.LinkParentTopics{View: link.View, Link: link}
 	topics, err := query.Fetch(ctx, r.DB)
 	return topicConnection(link.View, topics, err)

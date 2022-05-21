@@ -131,7 +131,7 @@ type LinkParentTopics struct {
 
 // Fetch fetches the parent topics
 func (q LinkParentTopics) Fetch(ctx context.Context, exec boil.ContextExecutor) ([]*models.Topic, error) {
-	log.Printf("Fetching parent topics for topic %s", q.Link)
+	log.Printf("queries: fetching parent topics for topic %s", q.Link)
 	mods := q.Filter([]qm.QueryMod{
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.OrderBy("topics.name"),

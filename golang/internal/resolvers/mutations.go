@@ -209,7 +209,7 @@ func (r *MutationResolver) DeleteTopic(
 		return nil, ErrNoAnonymousMutations
 	}
 
-	topic, err := fetchTopic(ctx, r.DB, input.TopicID, actor)
+	topic, err := queries.FetchTopic(ctx, r.DB, input.TopicID, actor)
 	if err != nil {
 		log.Printf("There was a problem looking up topic: %s", input.TopicID)
 		return nil, perrors.Wrap(err, "resolvers: failed to fetch topic")
@@ -246,7 +246,7 @@ func (r *MutationResolver) DeleteTopicTimeRange(
 		return nil, ErrNoAnonymousMutations
 	}
 
-	topic, err := fetchTopic(ctx, r.DB, input.TopicID, actor)
+	topic, err := queries.FetchTopic(ctx, r.DB, input.TopicID, actor)
 	if err != nil {
 		log.Printf("There was a problem looking up topic: %s", input.TopicID)
 		return nil, err
@@ -379,7 +379,7 @@ func (r *MutationResolver) UpsertTopic(
 		return &models.UpsertTopicPayload{Alerts: result.Alerts}, nil
 	}
 
-	topic, err := fetchTopic(ctx, r.DB, result.Topic.ID, actor)
+	topic, err := queries.FetchTopic(ctx, r.DB, result.Topic.ID, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +396,6 @@ func (r *MutationResolver) UpsertTopic(
 	}, nil
 }
 
-// UpdateSynonyms updates the synonyms for a topic.
 func (r *MutationResolver) UpdateSynonyms(
 	ctx context.Context, input models.UpdateSynonymsInput,
 ) (*models.UpdateSynonymsPayload, error) {
@@ -405,7 +404,7 @@ func (r *MutationResolver) UpdateSynonyms(
 	var result *services.UpdateSynonymsResult
 	var err error
 
-	topic, err := fetchTopic(ctx, r.DB, input.TopicID, actor)
+	topic, err := queries.FetchTopic(ctx, r.DB, input.TopicID, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +446,6 @@ func (r *MutationResolver) UpdateSynonyms(
 	}, nil
 }
 
-// UpdateTopic updates the fields on a topic.
 func (r *MutationResolver) UpdateTopic(
 	ctx context.Context, input models.UpdateTopicInput,
 ) (*models.UpdateTopicPayload, error) {
@@ -478,7 +476,6 @@ func (r *MutationResolver) UpdateTopic(
 	}, nil
 }
 
-// UpdateLinkTopics sets the parent topics on a link.
 func (r *MutationResolver) UpdateLinkTopics(
 	ctx context.Context, input models.UpdateLinkTopicsInput,
 ) (*models.UpdateLinkTopicsPayload, error) {
@@ -543,7 +540,7 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 		return nil, err
 	}
 
-	topic, err := fetchTopic(ctx, r.DB, result.Topic.ID, actor)
+	topic, err := queries.FetchTopic(ctx, r.DB, result.Topic.ID, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -554,7 +551,6 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 	}, nil
 }
 
-// UpsertLink adds a new link to the database.
 func (r *MutationResolver) UpsertLink(
 	ctx context.Context, input models.UpsertLinkInput,
 ) (*models.UpsertLinkPayload, error) {
@@ -600,7 +596,6 @@ func (r *MutationResolver) UpsertLink(
 	}, nil
 }
 
-// UpsertTopicTimeRange adds a timeline to a topic.
 func (r *MutationResolver) UpsertTopicTimeRange(
 	ctx context.Context, input models.UpsertTopicTimeRangeInput,
 ) (*models.UpsertTopicTimeRangePayload, error) {
@@ -627,7 +622,8 @@ func (r *MutationResolver) UpsertTopicTimeRange(
 		PrefixFormat: models.TimeRangePrefixFormat(result.TimeRange.PrefixFormat),
 	}
 
-	if err = topic.Reload(ctx, r.DB); err != nil {
+	topic, err = queries.FetchTopic(ctx, r.DB, topic.ID, actor)
+	if err != nil {
 		return nil, perrors.Wrap(err, "resolvers: failed to reload topic")
 	}
 
