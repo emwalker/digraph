@@ -61,6 +61,8 @@ func (s Search) DescendantTopics(
 
 	mods := s.parentTopic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
+		qm.Load("Repository"),
+		qm.Load("Repository.Owner"),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.Where(whereClause, s.TokenInput()),
 		qm.OrderBy("char_length(topics.name), topics.name"),

@@ -400,3 +400,29 @@ func TestLinkDownSetRemovedFromRemovedParentTopic(t *testing.T) {
 		t.Fatal("Expected the link to no longer be found under the parent topic")
 	}
 }
+
+func TestDescendantTopicsLoadsOwner(t *testing.T) {
+	ctx := context.Background()
+	mutator := in.NewMutator(in.MutatorOptions{})
+	mutator.DeleteTopicsByName("Topic 1", "Parent topic 1")
+
+	parentTopic := mutator.UpsertTopic(in.UpsertTopicOptions{
+		ParentTopicIds: []string{in.Everything.ID},
+		Name:           "Parent topic 1",
+	})
+
+	searchString := "parent topic"
+	query := queries.NewSearch(parentTopic, &searchString)
+	topics, err := query.DescendantTopics(ctx, mutator.DB, 100)
+	if err != nil {
+		t.Fatalf("error: %s", err)
+	}
+
+	if len(topics) < 1 {
+		t.Fatal("expected at least one topic")
+	}
+
+	if topics[0].GetRepo().GetOwner() == nil {
+		t.Fatal("owner not loaded")
+	}
+}

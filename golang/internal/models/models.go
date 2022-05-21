@@ -252,7 +252,7 @@ func (v View) Filter(mods []qm.QueryMod) []qm.QueryMod {
 	)
 }
 
-func (t *TopicValue) GetRepo() *Repository {
+func (t *Topic) GetRepo() *Repository {
 	if t == nil || t.R == nil || t.R.Repository == nil {
 		log.Printf("models: no repo loaded for topic: %s", t)
 		return nil
