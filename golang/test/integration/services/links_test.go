@@ -214,7 +214,7 @@ func TestReviewLink(t *testing.T) {
 		t.Fatal("Expected the review to be pending")
 	}
 
-	result, err := c.ReviewLink(ctx, link, true)
+	result, _ := c.ReviewLink(ctx, link, true)
 	if !result.Review.ReviewedAt.Valid {
 		t.Fatal("Expected the review to be pending")
 	}

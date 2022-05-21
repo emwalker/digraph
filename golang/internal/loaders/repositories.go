@@ -12,9 +12,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-// RepositoryLoaderKey is the key under which the repository loader is stored in the session.
-const RepositoryLoaderKey = "repositoryLoader"
-
 type repositoryFetcher func(ids []string) ([]*models.Repository, []error)
 
 func fetchRepositoriesFromDB(ctx context.Context, c *config) repositoryFetcher {

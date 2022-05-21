@@ -253,7 +253,7 @@ func TestTopicVisibility(t *testing.T) {
 		t.Fatal("User 1 unable to fetch own topic")
 	}
 
-	if topic, err = r.Topic(ctx1, v1, t2.ID); err == nil {
+	if _, err = r.Topic(ctx1, v1, t2.ID); err == nil {
 		t.Fatal("User 1 able to see topic in private repo of user 2")
 	}
 
@@ -265,7 +265,7 @@ func TestTopicVisibility(t *testing.T) {
 		t.Fatal("User 2 unable to fetch own topic")
 	}
 
-	if topic, err = r.Topic(ctx2, v2, t1.ID); err == nil {
+	if _, err = r.Topic(ctx2, v2, t1.ID); err == nil {
 		t.Fatal("User 2 able to see topic in private repo of user 1")
 	}
 }

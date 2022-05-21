@@ -58,7 +58,7 @@ func TestTitle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			doc, err := html.Parse(strings.NewReader(testCase.body))
+			doc, _ := html.Parse(strings.NewReader(testCase.body))
 
 			title, err := pageinfo.GetHTMLTitle(doc)
 			if err != nil {

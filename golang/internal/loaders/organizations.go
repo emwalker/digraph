@@ -12,9 +12,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-// OrganizationLoaderKey is the key under which the topic loader is stored in the session.
-const OrganizationLoaderKey = "organizationLoader"
-
 type organizationFetcher func(ids []string) ([]*models.Organization, []error)
 
 func fetchOrganizationsFromDB(ctx context.Context, c *config) organizationFetcher {

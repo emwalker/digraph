@@ -18,7 +18,6 @@ require (
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/lib/pq v1.10.6
 	github.com/pkg/errors v0.9.1
-	github.com/rs/cors v1.8.2
 	github.com/spf13/viper v1.11.0
 	github.com/vektah/dataloaden v0.3.0
 	github.com/vektah/gqlparser/v2 v2.4.2
@@ -29,4 +28,5 @@ require (
 	github.com/volatiletech/strmangle v0.0.4
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
+	honnef.co/go/tools v0.0.1-2020.1.4
 )

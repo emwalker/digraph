@@ -35,19 +35,6 @@ const normalizationFlags = pl.FlagRemoveDefaultPort |
 	pl.FlagSortQuery
 
 var (
-	stripParams = []string{
-		"__twitter_impression",
-		"_osource",
-		"_returnURL",
-		"amp",
-		"fbclid",
-		"mbid",
-		"rss",
-		"s_cid",
-		"via",
-		"redirectedFrom",
-	}
-
 	schemes = []string{
 		"ftp",
 		"git",
@@ -131,20 +118,6 @@ func IsURL(str string) bool {
 
 func stripFragment(parsed *url.URL) bool {
 	return !strings.HasSuffix(parsed.Host, "mail.google.com")
-}
-
-func removeQueryParam(param string) bool {
-	if strings.HasPrefix(param, "utm") {
-		return true
-	}
-
-	for _, omittedParam := range stripParams {
-		if omittedParam == param {
-			return true
-		}
-	}
-
-	return false
 }
 
 func urlSpecFor(host string) urlSpec {

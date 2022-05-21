@@ -22,8 +22,6 @@ type Connection struct {
 // CleanupFunc is a function that can be called to roll back the effects of a service call.
 type CleanupFunc func() error
 
-var noopCleanup = func() error { return nil }
-
 // New returns a new service connection
 func New(
 	exec boil.ContextExecutor, actor *models.User, fetcher pageinfo.Fetcher,

@@ -153,7 +153,7 @@ func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue)
 	ts, ok := value.(time.Time)
 	if !ok {
 		log.Printf("Not a timestamp: %v", ts)
-		return nil, errors.New("Expected a timestamp")
+		return nil, errors.New("expected a timestamp")
 	}
 
 	str := ts.Format(time.RFC3339)

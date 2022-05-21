@@ -7,16 +7,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/99designs/gqlgen/handler"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/emwalker/digraph/golang/internal/loaders"
 	"github.com/emwalker/digraph/golang/internal/models"
 	"github.com/emwalker/digraph/golang/internal/resolvers"
 	"github.com/gorilla/handlers"
-	"github.com/rs/cors"
-)
-
-const (
-	userSessionKey = "userSessionKey"
 )
 
 var (
@@ -61,11 +57,9 @@ func (s *Server) withBasicAuth(next http.Handler) http.HandlerFunc {
 			case err != nil:
 				log.Printf("There was a problem looking up session: %s", err)
 				rejectBasicAuth(next, w, r)
-				break
 			case session.UserID != viewerID:
 				log.Printf("Viewer %s did not match user id %s on session %s", viewerID, session.UserID, session.ID)
 				rejectBasicAuth(next, w, r)
-				break
 			default:
 				viewer, err := session.User().One(ctx, s.db)
 				if err != nil {
@@ -92,16 +86,16 @@ func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 }
 
 func (s *Server) handleGraphqlRequest() http.Handler {
-	handler := cors.Default().Handler(handler.GraphQL(s.schema))
-	handler = handlers.CompressHandler(handler)
+	srv := handler.NewDefaultServer(s.schema)
+	h := handlers.CompressHandler(srv)
 	if s.LogLevel > 0 {
-		handler = handlers.CombinedLoggingHandler(os.Stdout, handler)
+		h = handlers.CombinedLoggingHandler(os.Stdout, h)
 	}
-	return s.withLoaders(handler)
+	return s.withLoaders(h)
 }
 
 func (s *Server) handleGraphqlPlayground() http.Handler {
-	return handler.Playground("GraphQL playground", "/graphql")
+	return playground.Handler("GraphQL playground", "/graphql")
 }
 
 func (s *Server) handleHealthCheck() http.Handler {

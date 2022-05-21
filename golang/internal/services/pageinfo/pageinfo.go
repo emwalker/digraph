@@ -3,7 +3,6 @@ package pageinfo
 import (
 	"bytes"
 	"crypto/sha1"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,11 +10,6 @@ import (
 
 	strip "github.com/grokify/html-strip-tags-go"
 	"golang.org/x/net/html"
-)
-
-var (
-	errPageFetch    = errors.New("unable to fetch page")
-	userAgentString = "Digraph Agent"
 )
 
 // PageInfo holds information about a page that has been fetched.
@@ -87,6 +81,10 @@ func (f *HTMLFetcher) FetchPage(url string) (*PageInfo, error) {
 	log.Println("Attempting to fetch url:", url)
 
 	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	req.Header.Set("User-Agent", browserUserAgent)
 
 	resp, err := f.client.Do(req)
@@ -124,7 +122,7 @@ func (p *PageInfo) Sha1String() string {
 
 // WriteToFile writes the contents of the page that was fetched to the path provided.
 func (p *PageInfo) WriteToFile(path string) error {
-	log.Println(fmt.Sprintf("Writing %s to %s", p.URL, path))
+	log.Printf("Writing %s to %s", p.URL, path)
 
 	f, err := os.Create(path)
 	if err != nil {

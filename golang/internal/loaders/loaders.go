@@ -11,6 +11,14 @@ type config struct {
 	exec boil.ContextExecutor
 }
 
+type loaderKey string
+
+const (
+	OrganizationLoaderKey loaderKey = "organizationLoader"
+	RepositoryLoaderKey   loaderKey = "repositoryLoader"
+	TopicLoaderKey        loaderKey = "topicLoader"
+)
+
 func convertIds(ids []string) []interface{} {
 	var translatedIds []interface{}
 	for _, id := range ids {

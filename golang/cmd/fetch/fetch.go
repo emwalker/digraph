@@ -20,9 +20,9 @@ func main() {
 		}
 
 		if info.MissingTitle() {
-			log.Println(fmt.Sprintf("%s: no title", url))
+			log.Printf("%s: no title", url)
 		} else {
-			log.Println(fmt.Sprintf("%s: %s", url, *info.Title))
+			log.Printf("%s: %s", url, *info.Title)
 		}
 
 		info.WriteToFile(fmt.Sprintf("%s.html", info.Sha1String()))

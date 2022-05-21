@@ -12,9 +12,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-// TopicLoaderKey is the key under which the topic loader is stored in the session.
-const TopicLoaderKey = "topicLoader"
-
 type topicFetcher func(ids []string) ([]*models.Topic, []error)
 
 func fetchTopicsFromDB(ctx context.Context, c *config) topicFetcher {

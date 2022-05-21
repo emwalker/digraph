@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 
 func newTestDb() *sql.DB {
 	var err error
-	if testDB, err = sql.Open("postgres", "dbname=digraph_dev user=postgres sslmode=disable"); err != nil {
+	if testDB, err = sql.Open("postgres", "dbname=digraph_dev user=postgres password=postgres sslmode=disable"); err != nil {
 		log.Fatal("Unable to connect to the database", err)
 	}
 	return testDB

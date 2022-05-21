@@ -133,7 +133,7 @@ func NewMutator(options MutatorOptions) *Mutator {
 }
 
 func NewTestDB() (*sql.DB, error) {
-	return sql.Open("postgres", "dbname=digraph_dev user=postgres sslmode=disable")
+	return sql.Open("postgres", "dbname=digraph_dev user=postgres password=postgres sslmode=disable")
 }
 
 type UpsertTopicOptions struct {

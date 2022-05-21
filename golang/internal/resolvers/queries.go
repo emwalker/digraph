@@ -32,7 +32,7 @@ func (r *queryResolver) fetchCurrentRepo(
 	ctx context.Context, orgLogin string, repoName *string,
 ) (*models.Repository, error) {
 	if orgLogin == "" {
-		return nil, errors.New("No current organization login provided")
+		return nil, errors.New("no current organization login provided")
 	}
 
 	mods := []qm.QueryMod{

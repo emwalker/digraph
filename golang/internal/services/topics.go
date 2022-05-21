@@ -633,6 +633,9 @@ func (m UpdateTopicParentTopics) cleanUpParentTopicLinks(
 func (m UpdateTopicParentTopics) Call(ctx context.Context, exec boil.ContextExecutor) (*UpdateTopicParentTopicsResult, error) {
 	topic := m.Topic
 	parentTopics, alerts, err := m.parentTopicsAndAlerts(ctx, exec)
+	if err != nil {
+		return nil, err
+	}
 
 	originalParentTopics, err := topic.ParentTopics().All(ctx, exec)
 	if err != nil {

@@ -35,7 +35,7 @@ func TestCreateGithubSession(t *testing.T) {
 	}
 
 	// Doesn't work if we do not have an admin session
-	payload, err := m.resolver.CreateGithubSession(ctx, input)
+	_, err = m.resolver.CreateGithubSession(ctx, input)
 	if err != resolvers.ErrUnauthorized {
 		t.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestCreateGithubSession(t *testing.T) {
 	rc := resolvers.GetRequestContext(ctx)
 	rc.SetServerSecret("keyboard cat")
 
-	payload, err = m.resolver.CreateGithubSession(ctx, input)
+	payload, err := m.resolver.CreateGithubSession(ctx, input)
 	if err != nil {
 		t.Fatal(err)
 	}

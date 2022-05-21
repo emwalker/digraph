@@ -21,7 +21,7 @@ func TestCreateUser(t *testing.T) {
 		t.Fatal("Expected a user to be present")
 	}
 
-	count, err := models.OrganizationMembers(
+	count, _ := models.OrganizationMembers(
 		qm.Where("user_id = ?", result.User.ID),
 		qm.Where("organization_id = ?", services.PublicOrgID),
 	).Count(ctx, testDB)

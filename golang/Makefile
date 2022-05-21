@@ -8,7 +8,7 @@ build:
 format:
 	go fmt ./...
 
-check: test
+check: test lint
 	go mod tidy
 	test -z "$(shell git diff-index --name-only HEAD --)"
 	go vet ./...
@@ -17,6 +17,9 @@ generate:
 	sqlboiler psql --output internal/models --config ./sqlboiler.yaml --no-hooks
 	go run github.com/99designs/gqlgen -config gqlgen.yml
 	go generate ./...
+
+lint:
+	staticcheck ./...
 
 start:
 	PORT=8080 go run cmd/frontend/frontend.go --log 1

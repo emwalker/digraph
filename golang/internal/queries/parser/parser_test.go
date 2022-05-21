@@ -5,10 +5,6 @@ import (
 	"testing"
 )
 
-func ptr(str string) *string {
-	return &str
-}
-
 func TestParsing(t *testing.T) {
 	testData := []struct {
 		name         string

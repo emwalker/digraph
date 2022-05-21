@@ -213,7 +213,7 @@ func TestReviewLink(t *testing.T) {
 	}
 
 	resolver := rootResolver.Mutation()
-	_, err = resolver.ReviewLink(m.ctx, models.ReviewLinkInput{
+	resolver.ReviewLink(m.ctx, models.ReviewLinkInput{
 		LinkID:   link.ID,
 		Reviewed: true,
 	})
