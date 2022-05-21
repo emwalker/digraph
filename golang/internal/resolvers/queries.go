@@ -41,10 +41,10 @@ func (r *queryResolver) fetchCurrentRepo(
 	}
 
 	if repoName == nil {
-		log.Printf("Fetching repository for %s/<system>", orgLogin)
+		log.Printf("resolvers: fetching repository: %s/<system>", orgLogin)
 		mods = append(mods, qm.Where("repositories.system"))
 	} else {
-		log.Printf("Fetching repository for %s/%s", orgLogin, *repoName)
+		log.Printf("resolvers: fetching repository: %s/%s", orgLogin, *repoName)
 		mods = append(mods, qm.Where("repositories.name = ?", repoName))
 	}
 
@@ -53,7 +53,7 @@ func (r *queryResolver) fetchCurrentRepo(
 		return nil, err
 	}
 
-	log.Print("Repository found")
+	log.Print("resolvers: repository found")
 	return repo, nil
 }
 

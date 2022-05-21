@@ -28,7 +28,7 @@ func serverSecretOrDefault() string {
 
 func must(err error) {
 	if err != nil {
-		log.Fatal("there was a problem: ", err)
+		log.Fatal("server: there was a problem: ", err)
 	}
 }
 
@@ -49,24 +49,24 @@ func (s *Server) withBasicAuth(next http.Handler) http.HandlerFunc {
 		ctx = resolvers.WithRequestContext(ctx, rc)
 
 		if !ok {
-			log.Print("Basic auth not ok, continuing as guest")
+			log.Print("server: basic auth not ok, continuing as guest")
 		} else if viewerID != "" {
 			session, err := models.FindSession(ctx, s.db, sessionID)
 
 			switch {
 			case err != nil:
-				log.Printf("There was a problem looking up session: %s", err)
+				log.Printf("server: viewer %s: problem looking up session: %s", viewerID, err)
 				rejectBasicAuth(next, w, r)
 			case session.UserID != viewerID:
-				log.Printf("Viewer %s did not match user id %s on session %s", viewerID, session.UserID, session.ID)
+				log.Printf("server: viewer %s: did not match user id %s on session %s", viewerID, session.UserID, session.ID)
 				rejectBasicAuth(next, w, r)
 			default:
 				viewer, err := session.User().One(ctx, s.db)
 				if err != nil {
-					log.Printf("There was a problem looking up viewer: %s", err)
+					log.Printf("server: viewer %s: there was a problem looking up viewer: %s", viewerID, err)
 					rejectBasicAuth(next, w, r)
 				} else {
-					log.Printf("Viewer %s added to request context", viewer)
+					log.Printf("server: viewer %s: viewer added to request context", viewer)
 					rc.SetViewer(viewer)
 				}
 			}
@@ -106,6 +106,6 @@ func (s *Server) handleHealthCheck() http.Handler {
 
 func (s *Server) handleMock500() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "There was a problem", 500)
+		http.Error(w, "server: there was a problem", 500)
 	})
 }

@@ -16,7 +16,7 @@ type repositoryFetcher func(ids []string) ([]*models.Repository, []error)
 
 func fetchRepositoriesFromDB(ctx context.Context, c *config) repositoryFetcher {
 	return func(ids []string) ([]*models.Repository, []error) {
-		log.Printf("Fetching repository ids %v", ids)
+		log.Printf("loaders: fetching repository ids %v", ids)
 		repos, err := models.Repositories(
 			qm.WhereIn("id in ?", convertIds(ids)...),
 		).All(ctx, c.exec)

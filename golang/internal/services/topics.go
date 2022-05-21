@@ -553,14 +553,12 @@ func (c Connection) UpsertTopicTimeRange(
 	}, nil
 }
 
-// UpdateTopicParentTopics updates the parent topics of a topic
 type UpdateTopicParentTopics struct {
 	Actor          *models.User
 	Topic          *models.TopicValue
 	ParentTopicIds []string
 }
 
-// UpdateTopicParentTopicsResult holds the result of an UpdateTopicParentTopics call.
 type UpdateTopicParentTopicsResult struct {
 	Alerts []*models.Alert
 	Topic  *models.TopicValue
@@ -632,6 +630,8 @@ func (m UpdateTopicParentTopics) cleanUpParentTopicLinks(
 // Call updates the parent topics of a topic.
 func (m UpdateTopicParentTopics) Call(ctx context.Context, exec boil.ContextExecutor) (*UpdateTopicParentTopicsResult, error) {
 	topic := m.Topic
+	log.Printf("services: UpdateTopicParentTopics: updating topics for %s", topic)
+
 	parentTopics, alerts, err := m.parentTopicsAndAlerts(ctx, exec)
 	if err != nil {
 		return nil, err

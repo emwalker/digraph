@@ -988,7 +988,13 @@ func TestViewerCanUpdate(t *testing.T) {
 	mutator.DeleteOrganizationsByLogin("gnusto")
 
 	m := newMutator(t, testViewer)
-	repoName := m.defaultRepo().Name
+
+	repo := m.defaultRepo()
+	if !repo.IsPrivate() {
+		t.Fatalf("test requires a private repo: %v", repo)
+	}
+
+	repoName := repo.Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "A topic")
 	defer cleanup()
@@ -999,7 +1005,7 @@ func TestViewerCanUpdate(t *testing.T) {
 	in.Must(err)
 
 	if !canUpdate {
-		t.Fatal("First viewer should be able to update the topic")
+		t.Fatal("First viewer should be able to update the private topic")
 	}
 
 	query = rootResolver.Topic()
@@ -1010,9 +1016,12 @@ func TestViewerCanUpdate(t *testing.T) {
 		Login: "gnusto",
 	})
 
-	// Change out the viewer doing the query
-	topic.View.ViewerID = user2.ID
+	if m.actor.ID == user2.ID {
+		t.Fatalf("users must be different: %v, %v", m.actor, user2)
+	}
 
+	// Change out the viewer doing the query
+	resolvers.GetRequestContext(ctx).SetViewer(user2)
 	canUpdate, err = query.ViewerCanUpdate(ctx, topic)
 	in.Must(err)
 

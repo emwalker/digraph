@@ -347,6 +347,7 @@ func (r *MutationResolver) UpsertTopic(
 	ctx context.Context, input models.UpsertTopicInput,
 ) (*models.UpsertTopicPayload, error) {
 	actor := GetRequestContext(ctx).Viewer()
+	log.Printf("resolvers: upserting topic: %v", input)
 
 	var result *services.UpsertTopicResult
 	var err error
@@ -378,11 +379,16 @@ func (r *MutationResolver) UpsertTopic(
 		return &models.UpsertTopicPayload{Alerts: result.Alerts}, nil
 	}
 
+	topic, err := fetchTopic(ctx, r.DB, result.Topic.ID, actor)
+	if err != nil {
+		return nil, err
+	}
+
 	return &models.UpsertTopicPayload{
 		Alerts: result.Alerts,
 		TopicEdge: &models.TopicEdge{
 			Node: &models.TopicValue{
-				Topic:      result.Topic,
+				Topic:      topic,
 				NewlyAdded: result.TopicCreated,
 				View:       actor.DefaultView(),
 			},
@@ -508,11 +514,11 @@ func (r *MutationResolver) UpdateLinkTopics(
 	}, nil
 }
 
-// UpdateTopicParentTopics sets the parent topics on a topic.
 func (r *MutationResolver) UpdateTopicParentTopics(
 	ctx context.Context, input models.UpdateTopicParentTopicsInput,
 ) (*models.UpdateTopicParentTopicsPayload, error) {
 	actor := GetRequestContext(ctx).Viewer()
+	view := actor.DefaultView()
 	var result *services.UpdateTopicParentTopicsResult
 
 	err := queries.Transact(r.DB, func(tx *sql.Tx) error {
@@ -526,7 +532,7 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 			Topic: &models.TopicValue{
 				Topic:      topic,
 				NewlyAdded: false,
-				View:       actor.DefaultView(),
+				View:       view,
 			},
 			ParentTopicIds: input.ParentTopicIds,
 		}
@@ -537,9 +543,14 @@ func (r *MutationResolver) UpdateTopicParentTopics(
 		return nil, err
 	}
 
+	topic, err := fetchTopic(ctx, r.DB, result.Topic.ID, actor)
+	if err != nil {
+		return nil, err
+	}
+
 	return &models.UpdateTopicParentTopicsPayload{
 		Alerts: result.Alerts,
-		Topic:  result.Topic,
+		Topic:  &models.TopicValue{Topic: topic, NewlyAdded: false, View: view},
 	}, nil
 }
 

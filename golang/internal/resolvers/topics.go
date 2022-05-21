@@ -41,6 +41,8 @@ func fetchTopic(
 	ctx context.Context, exec boil.ContextExecutor, topicID string, actor *models.User,
 ) (*models.Topic, error) {
 	topic, err := models.Topics(
+		qm.Load("Repository"),
+		qm.Load("Repository.Owner"),
 		qm.InnerJoin("organization_members om on topics.organization_id = om.organization_id"),
 		qm.Where("topics.id = ? and om.user_id = ?", topicID, actor.ID),
 	).One(ctx, exec)
@@ -164,7 +166,6 @@ func (r *topicResolver) Activity(
 	return &models.ActivityLineItemConnection{Edges: edges}, nil
 }
 
-// AvailableParentTopics returns the topics that can be added to the link.
 func (r *topicResolver) AvailableParentTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
@@ -172,7 +173,6 @@ func (r *topicResolver) AvailableParentTopics(
 	return availableTopics(ctx, r.DB, topic.View, searchString, first, []string{topic.ID})
 }
 
-// ChildTopics returns a set of topics.
 func (r *topicResolver) ChildTopics(
 	ctx context.Context, topic *models.TopicValue, searchString *string, first *int, after *string,
 	last *int, before *string,
@@ -182,6 +182,8 @@ func (r *topicResolver) ChildTopics(
 	mods := topic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
 		qm.Load("ParentTopics.Timerange"),
+		qm.Load("Repository"),
+		qm.Load("Repository.Owner"),
 		qm.Load("Timerange"),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.OrderBy("topics.name"),
@@ -240,7 +242,7 @@ func (r *topicResolver) Links(
 	ctx context.Context, topic *models.TopicValue, first *int, after *string, last *int, before *string,
 	searchString *string, reviewed, descendants *bool,
 ) (*models.LinkConnection, error) {
-	log.Printf("Fetching links for topic %s", topic)
+	log.Printf("resovlers: fetching links for topic %s", topic)
 	viewer := GetRequestContext(ctx).Viewer()
 
 	query := queries.LinkQuery{
@@ -322,14 +324,14 @@ func (r *topicResolver) Search(
 	var err error
 
 	limit := queries.Limit(first)
-	log.Printf("Searching %s for %d items: %s", topic, limit, searchString)
+	log.Printf("resolvers: searching %s for %d items: %s", topic, limit, searchString)
 	query := queries.NewSearch(topic, &searchString)
 
 	topics, err := query.DescendantTopics(ctx, r.DB, limit)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Found %d topics, with a requested limit of %d", len(topics), limit)
+	log.Printf("resolvers: found %d topics, with a requested limit of %d", len(topics), limit)
 
 	if limit < len(topics) {
 		limit = 0
@@ -341,7 +343,7 @@ func (r *topicResolver) Search(
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Found %d links, with a requested limit of %d", len(links), limit)
+	log.Printf("resolvers: found %d links, with a requested limit of %d", len(links), limit)
 
 	edges := make([]*models.SearchResultItemEdge, len(topics)+len(links))
 	for i, t := range topics {
@@ -354,7 +356,7 @@ func (r *topicResolver) Search(
 		edges[i+linkStart] = &models.SearchResultItemEdge{Node: linkValue}
 	}
 
-	log.Printf("Search within %s complete, returning %d results", topic, len(edges))
+	log.Printf("resolvers: search within %s complete, returning %d results", topic, len(edges))
 	return &models.SearchResultItemConnection{Edges: edges}, nil
 }
 
@@ -397,7 +399,6 @@ func (r *topicResolver) UpdatedAt(_ context.Context, topic *models.TopicValue) (
 	return topic.UpdatedAt.Format(time.RFC3339), nil
 }
 
-// ViewerCanAddSynonym returns true if the viewer can add a synonym.
 func (r *topicResolver) ViewerCanUpdate(ctx context.Context, topic *models.TopicValue) (bool, error) {
 	viewer := GetRequestContext(ctx).Viewer()
 
@@ -405,17 +406,23 @@ func (r *topicResolver) ViewerCanUpdate(ctx context.Context, topic *models.Topic
 		return false, nil
 	}
 
-	log.Printf("Fetching value for ViewerCanAddSynonym for %s", topic.ID)
-	mods := topic.View.Filter([]qm.QueryMod{
-		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
-		qm.Where("topics.id = ?", topic.ID),
-	})
+	repo := topic.GetRepo()
+	if repo == nil {
+		return false, nil
+	}
 
-	count, err := models.Topics(mods...).Count(ctx, r.DB)
-	return count > 0, err
+	owner := repo.GetOwner()
+	if owner == nil {
+		return false, nil
+	}
+
+	if repo.IsPrivate() && owner.ID != viewer.ID {
+		return false, nil
+	}
+
+	return true, nil
 }
 
-// ViewerCanAddSynonym returns true if the viewer can delete a synonym.
 func (r *topicResolver) ViewerCanDeleteSynonyms(ctx context.Context, topic *models.TopicValue) (bool, error) {
 	synonyms, err := topic.SynonymList()
 	if err != nil {

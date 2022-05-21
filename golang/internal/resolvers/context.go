@@ -104,7 +104,6 @@ func (c *RequestContext) SetView(view *models.View) {
 	c.view = view
 }
 
-// SetViewer sets the current viewer.
 func (c *RequestContext) SetViewer(viewer *models.User) {
 	c.mux.Lock()
 	defer c.mux.Unlock()

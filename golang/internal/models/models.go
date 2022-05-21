@@ -176,6 +176,14 @@ func (r *Repository) RootTopic(
 	return &TopicValue{Topic: topic, View: view}, err
 }
 
+func (r *Repository) GetOwner() *User {
+	if r == nil || r.R == nil || r.R.Owner == nil {
+		log.Printf("models: no owner loaded for %s", r)
+		return nil
+	}
+	return r.R.Owner
+}
+
 // IsPrivate is true if the repository is a private repo.
 func (r *Repository) IsPrivate() bool {
 	return r.System && r.Name == "system:default"
@@ -242,4 +250,12 @@ func (v View) Filter(mods []qm.QueryMod) []qm.QueryMod {
 		qm.InnerJoin("organization_members om on r.organization_id = om.organization_id"),
 		qm.Where("om.user_id = ?", v.ViewerID),
 	)
+}
+
+func (t *TopicValue) GetRepo() *Repository {
+	if t == nil || t.R == nil || t.R.Repository == nil {
+		log.Printf("models: no repo loaded for topic: %s", t)
+		return nil
+	}
+	return t.R.Repository
 }
