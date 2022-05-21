@@ -19,7 +19,7 @@ export default ({ height, width, fill }: Props) => (
     y="0px"
   >
     <title>Digraph</title>
-    <desc>Never lose a bookmark again.</desc>
+    <desc>Organize the world</desc>
     <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
       <g transform="translate(-601.000000, -1070.000000)" fill={fill}>
         <g transform="translate(601.000000, 1070.000000)">

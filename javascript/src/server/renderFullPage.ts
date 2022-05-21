@@ -49,7 +49,7 @@ const template = (vo: Variables) => `
     <meta charset="utf-8">
     <meta http-equiv="Content-Language" content="en">
     <title>Digraph</title>
-    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+    <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml" sizes="any">
     ${joinArray(getStylesheet, vo.vendorCSSBundle)}
     ${getStylesheet(vo.mainCSSBundle)}
   </head>

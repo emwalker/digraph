@@ -1,4 +1,5 @@
 const path = require('path')
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 const config = {
   resolve: {
@@ -24,7 +25,15 @@ const config = {
       'node_modules',
       path.resolve(__dirname, 'public'),
     ]
-  }
+  },
+
+  plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'javascript/public' }
+      ],
+    }),
+  ],
 }
 
 module.exports = config

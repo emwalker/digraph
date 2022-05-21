@@ -45,11 +45,10 @@ app
   .use(compression())
   .use('/static/images', express.static(imagesDir))
   .use('/static', express.static(publicDir))
-
-app.use('/robots.txt', (req, res) => {
-  res.type('text/plain')
-  res.send('User-agent: *\nAllow: /\n')
-})
+  .use('/robots.txt', (req, res) => {
+    res.type('text/plain')
+    res.send('User-agent: *\nAllow: /\n')
+  })
 
 app.get('*', async (req, res): Promise<void> => {
   fetcher.clear()
