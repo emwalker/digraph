@@ -16,7 +16,7 @@ type topicFetcher func(ids []string) ([]*models.Topic, []error)
 
 func fetchTopicsFromDB(ctx context.Context, c *config) topicFetcher {
 	return func(ids []string) ([]*models.Topic, []error) {
-		log.Print("Fetching topic ids", ids)
+		log.Print("loaders: fetching topic ids", ids)
 		topics, err := models.Topics(
 			qm.WhereIn("id in ?", convertIds(ids)...),
 			qm.Load("ParentTopics"),

@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
 // Search helps with the fetching of child topics and links
@@ -37,7 +38,6 @@ func (s Search) startingTopicIds() []interface{} {
 	return ids
 }
 
-// DescendantTopics returns subtopics within matching topics that match the search terms provided.
 func (s Search) DescendantTopics(
 	ctx context.Context, exec boil.ContextExecutor, limit int,
 ) ([]*models.Topic, error) {
@@ -59,17 +59,22 @@ func (s Search) DescendantTopics(
 	)
 	`, s.EscapedPostgresTsQueryInput())
 
+	topicIds := s.startingTopicIds()
+
 	mods := s.parentTopic.View.Filter([]qm.QueryMod{
 		qm.Load("ParentTopics"),
 		qm.Load("Repository"),
 		qm.Load("Repository.Owner"),
 		qm.InnerJoin("repositories r on topics.repository_id = r.id"),
 		qm.Where(whereClause, s.TokenInput()),
-		qm.OrderBy("char_length(topics.name), topics.name"),
+		qm.OrderBy(
+			"topics.id = any (?) desc, char_length(topics.name), topics.name",
+			types.Array(topicIds),
+		),
 		qm.Limit(limit),
 	})
 
-	for idx, topicID := range s.startingTopicIds() {
+	for idx, topicID := range topicIds {
 		mods = append(
 			mods,
 			qm.InnerJoin(fmt.Sprintf("topic_transitive_closure ttc%d on topics.id = ttc%d.child_id", idx, idx)),
@@ -77,10 +82,12 @@ func (s Search) DescendantTopics(
 		)
 	}
 
+	boil.DebugMode = true
 	topics, err = models.Topics(mods...).All(ctx, exec)
+	boil.DebugMode = false
 	if IsRealError(err) {
-		log.Printf("There was a problem searching topics: %s", err)
-		return nil, errors.Wrap(err, "resolvers: failed to fetch topics")
+		log.Printf("queries: problem searching topics: %s", err)
+		return nil, errors.Wrap(err, "queries: failed to fetch topics")
 	}
 	return topics, nil
 }

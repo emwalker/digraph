@@ -197,14 +197,14 @@ func (r *viewResolver) SearchString(ctx context.Context, view *models.View) (*st
 func (r *viewResolver) Topic(
 	ctx context.Context, view *models.View, topicID string,
 ) (*models.TopicValue, error) {
-	log.Printf("Fetching topic %s", topicID)
+	log.Printf("resolvers: fetching topic %s", topicID)
 
 	topic, err := models.Topics(
 		topicQueryMods(view, qm.Where("topics.id = ?", topicID), nil, nil)...,
 	).One(ctx, r.DB)
 
 	if err != nil {
-		log.Printf("There was a problem fetching topic %s: %s", topicID, err)
+		log.Printf("resolvers: problem fetching topic %s: %s", topicID, err)
 		return nil, err
 	}
 
