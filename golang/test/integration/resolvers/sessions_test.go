@@ -6,6 +6,7 @@ import (
 	"github.com/emwalker/digraph/golang/internal/models"
 	"github.com/emwalker/digraph/golang/internal/resolvers"
 	"github.com/emwalker/digraph/golang/internal/services"
+	in "github.com/emwalker/digraph/golang/test/integration"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -50,7 +51,7 @@ func TestCreateGithubSession(t *testing.T) {
 	}
 
 	user := payload.UserEdge.Node
-	defer func() error {
+	defer func() {
 		if _, err := user.Delete(m.ctx, m.db); err != nil {
 			t.Fatal(err)
 		}
@@ -59,8 +60,6 @@ func TestCreateGithubSession(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		return err
 	}()
 
 	if payload.UserEdge == nil || payload.UserEdge.Node == nil {
@@ -110,7 +109,7 @@ func TestDestroySession(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer result.Cleanup()
+	defer in.Must(result.Cleanup())
 
 	session := result.Session
 

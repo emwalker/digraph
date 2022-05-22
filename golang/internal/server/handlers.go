@@ -35,7 +35,10 @@ func must(err error) {
 func rejectBasicAuth(next http.Handler, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("WWW-Authenticate", `Basic realm="Digraph"`)
 	w.WriteHeader(401)
-	w.Write([]byte("Unauthorized.\n"))
+	_, err := w.Write([]byte("Unauthorized.\n"))
+	if err != nil {
+		log.Fatalf("server: failed to reject basic auth: %s", err)
+	}
 }
 
 // https://stackoverflow.com/a/39591234/61048

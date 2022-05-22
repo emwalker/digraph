@@ -9,4 +9,5 @@ import (
 	_ "github.com/99designs/gqlgen/internal/imports"
 	_ "github.com/vektah/dataloaden"
 	_ "honnef.co/go/tools/cmd/staticcheck"
+	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 )

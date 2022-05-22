@@ -5,6 +5,7 @@ import (
 
 	"github.com/emwalker/digraph/golang/internal/models"
 	"github.com/emwalker/digraph/golang/internal/services"
+	in "github.com/emwalker/digraph/golang/test/integration"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -19,7 +20,7 @@ func TestDeleteAccount(t *testing.T) {
 	result, _ := c.CreateGithubSession(
 		ctx, name, email, login, "https://some/url",
 	)
-	defer result.Cleanup()
+	defer in.Must(result.Cleanup())
 
 	count, err := models.Users(qm.Where("primary_email = ?", email)).Count(ctx, testDB)
 	if err != nil {

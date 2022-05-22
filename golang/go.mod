@@ -12,6 +12,7 @@ require (
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/golangci/golangci-lint v1.46.2
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/grokify/html-strip-tags-go v0.0.1
@@ -28,5 +29,5 @@ require (
 	github.com/volatiletech/strmangle v0.0.4
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
-	honnef.co/go/tools v0.0.1-2020.1.4
+	honnef.co/go/tools v0.3.1
 )

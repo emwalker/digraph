@@ -230,7 +230,7 @@ func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*stri
 		topics := topicResult{}
 
 		// TODO - search within the repositories specified in view.RepositoryIds
-		squeries.Raw(`
+		err := squeries.Raw(`
 		select jsonb_build_object('links', (
 		  select jsonb_agg(a) from (
 		    select tt.parent_id source, tt.child_id target, count(distinct lt.child_id) "linkCount"
@@ -256,6 +256,9 @@ func (r *viewResolver) TopicGraph(ctx context.Context, view *models.View) (*stri
 		  ) b
 		)) payload
 		`, generalRepositoryID).Bind(ctx, r.DB, &topics)
+		if err != nil {
+			return nil, err
+		}
 
 		bytes, err := msgpack.Marshal(&topics)
 		if err != nil {

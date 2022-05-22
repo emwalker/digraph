@@ -25,6 +25,9 @@ func main() {
 			log.Printf("%s: %s", url, *info.Title)
 		}
 
-		info.WriteToFile(fmt.Sprintf("%s.html", info.Sha1String()))
+		err = info.WriteToFile(fmt.Sprintf("%s.html", info.Sha1String()))
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }

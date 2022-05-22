@@ -94,7 +94,10 @@ func (f *HTMLFetcher) FetchPage(url string) (*PageInfo, error) {
 	defer resp.Body.Close()
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(resp.Body)
+	_, err = buf.ReadFrom(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	body := buf.Bytes()
 
 	doc, err := html.Parse(bytes.NewReader(body))

@@ -465,7 +465,10 @@ func (c Connection) parentTopicsToAdd(
 		}
 
 		if willHaveCycle {
-			parent.Reload(ctx, c.Exec)
+			err = parent.Reload(ctx, c.Exec)
+			if err != nil {
+				return nil, nil, err
+			}
 			alerts = append(alerts, cycleWarning(parent, topic))
 		} else {
 			parents = append(parents, parent)
@@ -582,7 +585,10 @@ func (m UpdateTopicParentTopics) parentTopicsAndAlerts(
 		}
 
 		if willHaveCycle {
-			parent.Reload(ctx, exec)
+			err = parent.Reload(ctx, exec)
+			if err != nil {
+				return nil, nil, err
+			}
 			alerts = append(alerts, cycleWarning(parent, topic))
 		} else {
 			parentTopics = append(parentTopics, parent)

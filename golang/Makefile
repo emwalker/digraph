@@ -20,6 +20,7 @@ generate:
 
 lint:
 	staticcheck ./...
+	golangci-lint run
 
 start:
 	PORT=8080 go run cmd/frontend/frontend.go --log 1
