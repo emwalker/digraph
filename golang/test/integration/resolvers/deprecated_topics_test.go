@@ -22,7 +22,7 @@ func TestUpsertTopic(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	t1, cleanup := m.createTopic(testViewer.Login.String, repoName, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	parent, err := t1.ParentTopics().One(m.ctx, testDB)
 	in.Must(err)
@@ -60,10 +60,10 @@ func TestUpsertTopicDoesNotAllowCycles(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	t1, cleanup := m.createTopic(testViewer.Login.String, repoName, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	t2, cleanup := m.createTopic(testViewer.Login.String, repoName, "Husbandry")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToTopic(t2, t1)
 
@@ -116,13 +116,13 @@ func TestUpdateParentTopicsDoesNotAllowCycles(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	t1, cleanup := m.createTopic(testViewer.Login.String, repoName, "Grandparent")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	t2, cleanup := m.createTopic(testViewer.Login.String, repoName, "Parent")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	t3, cleanup := m.createTopic(testViewer.Login.String, repoName, "Child")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToTopic(t2, t1)
 	m.addParentTopicToTopic(t3, t2)
@@ -144,7 +144,7 @@ func TestUpdateTopicPreventsOwnTopic(t *testing.T) {
 	m := newMutator(t, testViewer)
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, m.defaultRepo().Name, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	if topic.Name != "Agriculture" {
 		t.Fatal("Expected the name 'Agriculture'")
@@ -167,7 +167,7 @@ func TestUpdateTopic(t *testing.T) {
 	m := newMutator(t, testViewer)
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, m.defaultRepo().Name, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	if topic.Name != "Agriculture" {
 		t.Fatal("Expected the name 'Agriculture'")
@@ -203,14 +203,14 @@ func TestPreventingUpdateTopicFromCreatingADuplicate(t *testing.T) {
 	m := newMutator(t, testViewer)
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, m.defaultRepo().Name, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	if topic.Name != "Agriculture" {
 		t.Fatalf("Expected new topic to have the name 'Agriculture': %s", topic.Name)
 	}
 
 	_, cleanup = m.createTopic(testViewer.Login.String, m.defaultRepo().Name, "Agricultura")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	// Try to give our first topic the same name as the second topic
 	input := models.UpdateTopicInput{
@@ -231,10 +231,10 @@ func TestTopicParentTopics(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic1, cleanup := m.createTopic(testViewer.Login.String, repoName, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	topic2, cleanup := m.createTopic(testViewer.Login.String, repoName, "Crop rotation")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	parentTopics, err := topic2.ParentTopics().All(m.ctx, m.db)
 	in.Must(err)
@@ -259,13 +259,13 @@ func TestChildTopicsDefaultOrdering(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	childTopic1, cleanup := m.createTopic(testViewer.Login.String, repoName, "A")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	childTopic2, cleanup := m.createTopic(testViewer.Login.String, repoName, "B")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToTopic(childTopic1, topic)
 	m.addParentTopicToTopic(childTopic2, topic)
@@ -315,10 +315,10 @@ func TestSearchChildTopics(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	childTopic, cleanup := m.createTopic(testViewer.Login.String, repoName, "Crop rotation")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToTopic(childTopic, topic)
 
@@ -374,10 +374,10 @@ func TestSearchLinksInTopic(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "News organizations")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	link, cleanup := m.createLink(testViewer.Login.String, repoName, "New York Timely", "https://www.nytimely.com")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
 
@@ -566,7 +566,7 @@ func TestRootTopicIncludedInResults(t *testing.T) {
 	}
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, m.defaultRepo().Name, "News organizations")
-	defer in.Must(cleanup())
+	defer cleanup()
 	m.addParentTopicToTopic(topic, root)
 
 	topicResolver := rootResolver.Topic()
@@ -603,10 +603,10 @@ func TestParentTopicPreloading(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	t1, cleanup := m.createTopic(testViewer.Login.String, repoName, "News organizations")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	t2, cleanup := m.createTopic(testViewer.Login.String, repoName, "New York Times")
-	defer in.Must(cleanup())
+	defer cleanup()
 	m.addParentTopicToTopic(t2, t1)
 
 	var err error
@@ -655,10 +655,10 @@ func TestAvailableTopicsForTopicsFromOtherRepos(t *testing.T) {
 	})
 
 	_, cleanup := m.createTopic(testViewer.Login.String, r1.Name, "Topic 1")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	topic2, cleanup := m.createTopic("wiki", r2.Name, "Topic 2")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	query := rootResolver.Topic()
 
@@ -677,10 +677,10 @@ func TestAvailableTopicsForTopicWithFilter(t *testing.T) {
 	nonMatchingString := "doesn't match"
 
 	t1, cleanup := m.createTopic(testViewer.Login.String, repoName, "Topic 1")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	t2, cleanup := m.createTopic(testViewer.Login.String, repoName, matchingString)
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToTopic(t2, t1)
 
@@ -736,10 +736,10 @@ func TestAvailableParentTopicsDoesNotIncludeSelf(t *testing.T) {
 	matchingString := "695be58"
 
 	t1, cleanup := m.createTopic(testViewer.Login.String, repoName, "Topic 1")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	t2, cleanup := m.createTopic(testViewer.Login.String, repoName, matchingString)
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToTopic(t2, t1)
 	query := rootResolver.Topic()
@@ -964,7 +964,7 @@ func TestTopicNoSynonym(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "A topic")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	synonyms, err := topic.SynonymList()
 	in.Must(err)
@@ -974,7 +974,7 @@ func TestTopicNoSynonym(t *testing.T) {
 	}
 
 	// Should never happen
-	in.Must(topic.Synonyms.Marshal([]models.Synonym{}))
+	topic.Synonyms.Marshal([]models.Synonym{})
 	_, err = topic.Update(ctx, testDB, boil.Whitelist("synonyms"))
 	in.Must(err)
 
@@ -997,7 +997,7 @@ func TestViewerCanUpdate(t *testing.T) {
 	repoName := repo.Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "A topic")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	query := rootResolver.Topic()
 
@@ -1036,7 +1036,7 @@ func TestViewerCannotUpdateRootTopic(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "A topic")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	query := rootResolver.Topic()
 
@@ -1056,7 +1056,7 @@ func TestViewerCanDeleteSynonymWhenLessThanTwoExist(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "A topic")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	query := rootResolver.Topic()
 
@@ -1074,10 +1074,10 @@ func TestGuestViewTopic(t *testing.T) {
 	repo := m.defaultRepo()
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repo.Name, "A topic")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	link, cleanup := m.createLink(testViewer.Login.String, repo.Name, "Public topic", "https://www.nytimes.com")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
 	if err := topic.Reload(ctx, testDB); err != nil {
@@ -1101,7 +1101,7 @@ func TestUpdateSynonyms(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "Backhoe")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	synonyms, err := topic.SynonymList()
 	in.Must(err)
@@ -1148,7 +1148,7 @@ func TestTopicNameFromSynonyms(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "Backhoe")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	input := models.UpdateSynonymsInput{
 		Synonyms: []*models.SynonymInput{
@@ -1182,11 +1182,11 @@ func TestGuestTopicQuery(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	linkTitle := "4b517480670"
 	link, cleanup := m.createLink(testViewer.Login.String, m.defaultRepo().Name, linkTitle, "https://www.4b517480670.com")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
 
@@ -1277,7 +1277,7 @@ func TestUpsertTopicTimeline(t *testing.T) {
 	resolver := rootResolver.Mutation()
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repo.Name, "Gnusto")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	input := models.UpsertTopicTimeRangeInput{
 		TopicID:      topic.ID,

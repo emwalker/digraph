@@ -56,7 +56,7 @@ func TestUpdateParentTopics(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	link, cleanup := m.createLink(testViewer.Login.String, repoName, "Gnusto's Blog", "https://gnusto.blog")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	var topics []*models.Topic
 	var err error
@@ -105,10 +105,10 @@ func TestAvailableTopicsForLinks(t *testing.T) {
 	m := newMutator(t, testViewer)
 
 	_, cleanup := m.createTopic(testViewer.Login.String, m.defaultRepo().Name, "Something")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	link, cleanup := m.createLink(testViewer.Login.String, m.defaultRepo().Name, "Gnusto's Blog", "https://gnusto.blog")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	query := rootResolver.Link()
 
@@ -154,10 +154,10 @@ func TestAvailableTopicsForLinksFromOtherRepos(t *testing.T) {
 	}
 
 	_, cleanup := m.createTopic(testViewer.Login.String, r1.Repository.Name, "Something")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	link, cleanup := m.createLink(testViewer.Login.String, r2.Repository.Name, "Gnusto's Blog", "https://gnusto.blog")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	query := rootResolver.Link()
 
@@ -175,7 +175,7 @@ func TestDeleteLink(t *testing.T) {
 	m := newMutator(t, testViewer)
 
 	link, cleanup := m.createLink(testViewer.Login.String, m.defaultRepo().Name, "Some link", "http://some.com/link")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	payload, err := m.resolver.DeleteLink(m.ctx, models.DeleteLinkInput{LinkID: link.ID})
 	if err != nil {
@@ -201,7 +201,7 @@ func TestReviewLink(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	link, cleanup := m.createLink(testViewer.Login.String, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	review, err := link.UserLinkReviews(qm.Where("user_id = ?", testViewer.ID)).One(m.ctx, m.db)
 	if err != nil {
@@ -213,13 +213,10 @@ func TestReviewLink(t *testing.T) {
 	}
 
 	resolver := rootResolver.Mutation()
-	_, err = resolver.ReviewLink(m.ctx, models.ReviewLinkInput{
+	resolver.ReviewLink(m.ctx, models.ReviewLinkInput{
 		LinkID:   link.ID,
 		Reviewed: true,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	if err = review.Reload(m.ctx, m.db); err != nil {
 		t.Fatal(err)
@@ -235,7 +232,7 @@ func TestViewerReview(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	link, cleanup := m.createLink(testViewer.Login.String, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e.com")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	if err := link.Reload(m.ctx, testDB); err != nil {
 		t.Fatal(err)
@@ -262,10 +259,10 @@ func TestTotalCount(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	link, cleanup := m.createLink(testViewer.Login.String, repoName, "b64c9bf1c62e", "http://b64c9bf1c62e")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "A")
-	defer in.Must(cleanup())
+	defer cleanup()
 	m.addParentTopicToLink(link, topic)
 
 	query := rootResolver.Topic()

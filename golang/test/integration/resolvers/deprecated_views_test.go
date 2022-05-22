@@ -72,10 +72,10 @@ func TestSearchTopics(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "Agriculture")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	childTopic, cleanup := m.createTopic(testViewer.Login.String, repoName, "Crop rotation")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToTopic(childTopic, topic)
 
@@ -139,10 +139,10 @@ func TestSearchLinks(t *testing.T) {
 	repoName := m.defaultRepo().Name
 
 	topic, cleanup := m.createTopic(testViewer.Login.String, repoName, "News organizations")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	link, cleanup := m.createLink(testViewer.Login.String, repoName, "New York Times", "https://www.nytimes.com")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	m.addParentTopicToLink(link, topic)
 
@@ -231,10 +231,10 @@ func TestTopicVisibility(t *testing.T) {
 	m2 := newMutator(t, user2)
 
 	t1, cleanup := m1.createTopic(user1.Login.String, m1.defaultRepo().Name, "News organizations")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	t2, cleanup := m2.createTopic(user2.Login.String, m2.defaultRepo().Name, "News organizations")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	if t1.ID == t2.ID {
 		t.Fatal("Topics should not be de-duped between repos")
@@ -342,7 +342,7 @@ func TestViewActivity(t *testing.T) {
 	view := &models.View{ViewerID: testViewer.ID, RepositoryIds: []string{m.defaultRepo().ID}}
 
 	_, cleanup := m.createLink(testViewer.Login.String, m.defaultRepo().Name, "New York Times", "https://www.nytimes.com")
-	defer in.Must(cleanup())
+	defer cleanup()
 
 	connection, err := r.Activity(ctx, view, nil, nil, nil, nil)
 	if err != nil {
