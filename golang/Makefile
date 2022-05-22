@@ -11,7 +11,6 @@ format:
 check: test lint
 	go mod tidy
 	test -z "$(shell git diff-index --name-only HEAD --)"
-	go vet ./...
 
 generate:
 	sqlboiler psql --output internal/models --config ./sqlboiler.yaml --no-hooks
@@ -19,6 +18,7 @@ generate:
 	go generate ./...
 
 lint:
+	go vet ./...
 	staticcheck ./...
 	golangci-lint run
 
