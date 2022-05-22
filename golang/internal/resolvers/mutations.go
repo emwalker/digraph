@@ -301,7 +301,7 @@ func (r *MutationResolver) SelectRepository(
 ) (*models.SelectRepositoryPayload, error) {
 	repoID := input.RepositoryID
 	actor := GetRequestContext(ctx).Viewer()
-	log.Printf("Atempting to select repository %v for %#v", repoID, actor)
+	log.Printf("mutations: atempting to select repository %v for %#v", repoID, actor)
 
 	var err error
 	var repo *models.Repository
@@ -309,7 +309,7 @@ func (r *MutationResolver) SelectRepository(
 	if repoID == nil {
 		exists, _ := actor.SelectedRepository().Exists(ctx, r.DB)
 		if exists {
-			log.Printf("Unselecting repository from %s", actor.ID)
+			log.Printf("mutations: unselecting repository from %s", actor.ID)
 			repo, _ = actor.SelectedRepository().One(ctx, r.DB)
 
 			if err = actor.RemoveSelectedRepository(ctx, r.DB, repo); err != nil {
@@ -501,9 +501,14 @@ func (r *MutationResolver) UpdateLinkTopics(
 		result, err = service.Call(ctx, tx)
 		return err
 	})
+
 	if err != nil {
 		log.Printf("There was a problem updating the topics: %s", err)
 		return nil, err
+	}
+
+	if result == nil {
+		return nil, fmt.Errorf("weird, no result")
 	}
 
 	return &models.UpdateLinkTopicsPayload{

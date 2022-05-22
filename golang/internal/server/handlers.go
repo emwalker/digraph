@@ -5,12 +5,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/emwalker/digraph/golang/internal/loaders"
 	"github.com/emwalker/digraph/golang/internal/models"
+	"github.com/emwalker/digraph/golang/internal/pg"
 	"github.com/emwalker/digraph/golang/internal/resolvers"
 	"github.com/gorilla/handlers"
 )
@@ -83,7 +83,8 @@ func (s *Server) withBasicAuth(next http.Handler) http.HandlerFunc {
 func (s *Server) withLoaders(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		ctx = loaders.AddToContext(ctx, s.db, 1*time.Millisecond)
+		repo := pg.NewRepo(s.db)
+		ctx = loaders.AddToContext(ctx, repo)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

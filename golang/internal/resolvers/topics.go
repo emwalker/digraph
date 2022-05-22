@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/emwalker/digraph/golang/internal/loaders"
 	"github.com/emwalker/digraph/golang/internal/models"
 	"github.com/emwalker/digraph/golang/internal/queries"
 	"github.com/emwalker/digraph/golang/internal/queries/parser"
@@ -57,20 +58,6 @@ func topicConnection(view *models.View, rows []*models.Topic, err error) (*model
 		Edges:    edges,
 		PageInfo: &models.PageInfo{},
 	}, nil
-}
-
-func topicRepository(ctx context.Context, topic *models.TopicValue) (*models.Repository, error) {
-	if topic.R != nil && topic.R.Repository != nil {
-		return topic.R.Repository, nil
-	}
-	return fetchRepository(ctx, topic.RepositoryID)
-}
-
-func topicOrganization(ctx context.Context, topic *models.TopicValue) (*models.Organization, error) {
-	if topic.R != nil && topic.R.Organization != nil {
-		return topic.R.Organization, nil
-	}
-	return fetchOrganization(ctx, topic.OrganizationID)
 }
 
 func availableTopics(
@@ -264,7 +251,7 @@ func (r *topicResolver) NewlyAdded(_ context.Context, topic *models.TopicValue) 
 func (r *topicResolver) Organization(
 	ctx context.Context, topic *models.TopicValue,
 ) (*models.Organization, error) {
-	return topicOrganization(ctx, topic)
+	return loaders.GetOrg(ctx, topic.OrganizationID)
 }
 
 // ParentTopics returns a set of topics.
@@ -284,17 +271,17 @@ func (r *topicResolver) ParentTopics(
 func (r *topicResolver) Repository(
 	ctx context.Context, topic *models.TopicValue,
 ) (*models.Repository, error) {
-	return topicRepository(ctx, topic)
+	return loaders.GetRepo(ctx, topic.RepositoryID)
 }
 
 // ResourcePath returns a path to the item.
 func (r *topicResolver) ResourcePath(ctx context.Context, topic *models.TopicValue) (string, error) {
-	repo, err := topicRepository(ctx, topic)
+	repo, err := loaders.GetRepo(ctx, topic.RepositoryID)
 	if err != nil {
 		return "", err
 	}
 
-	org, err := topicOrganization(ctx, topic)
+	org, err := loaders.GetOrg(ctx, topic.OrganizationID)
 	if err != nil {
 		return "", err
 	}

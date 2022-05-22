@@ -153,6 +153,7 @@ func (r *viewResolver) Links(
 func (r *viewResolver) CurrentRepository(
 	ctx context.Context, view *models.View,
 ) (*models.Repository, error) {
+	log.Printf("resolvers: current repo is %s", view.CurrentRepository)
 	return view.CurrentRepository, nil
 }
 

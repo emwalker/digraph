@@ -12,19 +12,6 @@ type repositoryResolver struct {
 	*Resolver
 }
 
-func getRepositoryLoader(ctx context.Context) *loaders.RepositoryLoader {
-	return ctx.Value(loaders.RepositoryLoaderKey).(*loaders.RepositoryLoader)
-}
-
-func fetchRepository(ctx context.Context, repoID string) (*models.Repository, error) {
-	loader := getRepositoryLoader(ctx)
-	repo, err := loader.Load(repoID)
-	if err != nil {
-		return nil, err
-	}
-	return repo, nil
-}
-
 // DisplayColor returns a color by which to display the topic.
 func (r *repositoryResolver) DisplayColor(ctx context.Context, repo *models.Repository) (string, error) {
 	color := repo.DisplayColor()
@@ -45,7 +32,7 @@ func (r *repositoryResolver) FullName(
 	var org *models.Organization
 	var err error
 
-	if org, err = fetchOrganization(ctx, repo.OrganizationID); err != nil {
+	if org, err = loaders.GetOrg(ctx, repo.OrganizationID); err != nil {
 		return "", err
 	}
 
@@ -72,7 +59,7 @@ func (r *repositoryResolver) IsPrivate(
 func (r *repositoryResolver) Organization(
 	ctx context.Context, repo *models.Repository,
 ) (*models.Organization, error) {
-	return fetchOrganization(ctx, repo.OrganizationID)
+	return loaders.GetOrg(ctx, repo.OrganizationID)
 }
 
 // Organization returns a set of links.

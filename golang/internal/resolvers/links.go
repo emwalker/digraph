@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/emwalker/digraph/golang/internal/loaders"
 	"github.com/emwalker/digraph/golang/internal/models"
 	"github.com/emwalker/digraph/golang/internal/queries"
 	perrors "github.com/pkg/errors"
@@ -36,20 +37,6 @@ func linkConnection(view *models.View, rows []*models.Link, totalCount int, err 
 	}, nil
 }
 
-func linkRepository(ctx context.Context, link *models.LinkValue) (*models.Repository, error) {
-	if link.R != nil && link.R.Repository != nil {
-		return link.R.Repository, nil
-	}
-	return fetchRepository(ctx, link.RepositoryID)
-}
-
-func linkOrganization(ctx context.Context, link *models.LinkValue) (*models.Organization, error) {
-	if link.R != nil && link.R.Organization != nil {
-		return link.R.Organization, nil
-	}
-	return fetchOrganization(ctx, link.OrganizationID)
-}
-
 // AvailableParentTopics returns the topics that can be added to the link.
 func (r *linkResolver) AvailableParentTopics(
 	ctx context.Context, link *models.LinkValue, searchString *string, first *int, after *string,
@@ -70,7 +57,7 @@ func (r *linkResolver) Loading(_ context.Context, link *models.LinkValue) (bool,
 
 // Organization returns the organization for a link.
 func (r *linkResolver) Organization(ctx context.Context, link *models.LinkValue) (*models.Organization, error) {
-	return linkOrganization(ctx, link)
+	return loaders.GetOrg(ctx, link.OrganizationID)
 }
 
 // ParentTopics returns the topics under which the link is categorized.
@@ -89,7 +76,7 @@ func (r *linkResolver) ParentTopics(
 
 // Repository returns the repository of the link.
 func (r *linkResolver) Repository(ctx context.Context, link *models.LinkValue) (*models.Repository, error) {
-	return linkRepository(ctx, link)
+	return loaders.GetRepo(ctx, link.RepositoryID)
 }
 
 // ResourcePath returns a path to the item.
@@ -117,7 +104,7 @@ func (r *linkResolver) URL(_ context.Context, link *models.LinkValue) (string, e
 	return link.URL, nil
 }
 
-// ReviewedAt is the time at which the link was reviewed.
+// ViewerReview is the time at which the link was reviewed.
 func (r *linkResolver) ViewerReview(ctx context.Context, link *models.LinkValue) (*models.LinkReview, error) {
 	viewer := GetRequestContext(ctx).Viewer()
 

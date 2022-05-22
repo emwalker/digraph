@@ -151,6 +151,13 @@ func (s *SynonymList) NameForLocale(locale LocaleIdentifier) (string, bool) {
 // IsResourceIdentifiable tags Organization as implementing the ResourceIdentifiable interface.
 func (Organization) IsResourceIdentifiable() {}
 
+func (o *Organization) GetID() string {
+	if o == nil {
+		return ""
+	}
+	return o.ID
+}
+
 // NewAlert returns an initialized alert.
 func NewAlert(typ AlertType, text string) *Alert {
 	return &Alert{
@@ -174,6 +181,13 @@ func (r *Repository) RootTopic(
 ) (*TopicValue, error) {
 	topic, err := r.Topics(qm.Where("root")).One(ctx, exec)
 	return &TopicValue{Topic: topic, View: view}, err
+}
+
+func (o *Repository) GetID() string {
+	if o == nil {
+		return ""
+	}
+	return o.ID
 }
 
 func (r *Repository) GetOwner() *User {
@@ -258,4 +272,11 @@ func (t *Topic) GetRepo() *Repository {
 		return nil
 	}
 	return t.R.Repository
+}
+
+func (t *Topic) GetID() string {
+	if t == nil {
+		return ""
+	}
+	return t.ID
 }

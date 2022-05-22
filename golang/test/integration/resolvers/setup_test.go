@@ -6,10 +6,10 @@ import (
 	"log"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/emwalker/digraph/golang/internal/loaders"
 	"github.com/emwalker/digraph/golang/internal/models"
+	"github.com/emwalker/digraph/golang/internal/pg"
 	"github.com/emwalker/digraph/golang/internal/redis"
 	"github.com/emwalker/digraph/golang/internal/resolvers"
 	"github.com/emwalker/digraph/golang/internal/services"
@@ -107,7 +107,8 @@ func newMutator(t *testing.T, actor *models.User) mutator {
 	ctx := context.Background()
 	rc := resolvers.NewRequestContext(actor)
 	ctx = resolvers.WithRequestContext(ctx, rc)
-	ctx = loaders.AddToContext(ctx, testDB, 1*time.Millisecond)
+	repo := pg.NewRepo(testDB)
+	ctx = loaders.AddToContext(ctx, repo)
 
 	return mutator{
 		actor:    actor,

@@ -6,24 +6,10 @@ import (
 
 	"github.com/emwalker/digraph/golang/internal/loaders"
 	"github.com/emwalker/digraph/golang/internal/models"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type organizationResolver struct {
 	*Resolver
-}
-
-func getOrganizationLoader(ctx context.Context) *loaders.OrganizationLoader {
-	return ctx.Value(loaders.OrganizationLoaderKey).(*loaders.OrganizationLoader)
-}
-
-func fetchOrganization(ctx context.Context, organizationID string) (*models.Organization, error) {
-	loader := getOrganizationLoader(ctx)
-	org, err := loader.Load(organizationID)
-	if err != nil {
-		return nil, err
-	}
-	return org, nil
 }
 
 // CreatedAt returns the time of the organization's creation.
@@ -33,11 +19,7 @@ func (r *organizationResolver) CreatedAt(_ context.Context, org *models.Organiza
 
 // DefaultRepository returns the default repository for the organization.
 func (r *organizationResolver) DefaultRepository(ctx context.Context, org *models.Organization) (*models.Repository, error) {
-	repo, err := org.Repositories(qm.Where("system")).One(ctx, r.DB)
-	if err != nil {
-		return nil, err
-	}
-	return repo, nil
+	return loaders.GetDefaultRepoByOrgID(ctx, org.ID)
 }
 
 // ResourcePath returns a path to the item.

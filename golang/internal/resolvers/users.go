@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/emwalker/digraph/golang/internal/loaders"
 	"github.com/emwalker/digraph/golang/internal/models"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -85,7 +86,7 @@ func (r *userResolver) SelectedRepository(
 	if repoID == nil {
 		return nil, nil
 	}
-	return fetchRepository(ctx, *repoID)
+	return loaders.GetRepo(ctx, *repoID)
 }
 
 // UpdatedAt returns the time of the most recent update.
