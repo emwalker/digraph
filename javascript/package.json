@@ -22,6 +22,7 @@
     "razzle/**/immer": "^9.0.6",
     "razzle/**/nth-check": "^2.0.1",
     "razzle-dev-utils/**/immer": "^9.0.6",
+    "razzle-dev-utils/**/eventsource": "^2.0.2",
     "typescript-plugin-css-modules/**/postcss": "^7.0.36"
   },
   "dependencies": {
