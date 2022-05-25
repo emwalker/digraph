@@ -1926,7 +1926,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../schema.graphql", Input: `type ActivityLineItem {
+	{Name: "../../../schema.graphql", Input: `type ActivityLineItem {
   description: String!
   createdAt: DateTime!
 }
