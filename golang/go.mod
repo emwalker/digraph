@@ -3,7 +3,7 @@ module github.com/emwalker/digraph/golang
 go 1.18
 
 require (
-	github.com/99designs/gqlgen v0.17.8
+	github.com/99designs/gqlgen v0.17.9
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/purell v1.1.1
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
