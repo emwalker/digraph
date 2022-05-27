@@ -19,3 +19,5 @@ tmp/
 /data/*backup.*
 *.dump.gz
 *.code-workspace
+target/
+.env

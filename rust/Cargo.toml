@@ -1,0 +1,20 @@
+[package]
+name = "digraph"
+version = "0.0.1"
+authors = ["Eric Walker <eric.walker@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+actix-web = "4"
+async-graphql = { version = "3", features = ["apollo_tracing", "dataloader", "uuid"] }
+async-graphql-actix-web = "3"
+async-std = "1"
+async-trait = "0"
+chrono = "0"
+dataloader = "0"
+dotenv = "0"
+env_logger = "0"
+futures = "0"
+log = "0"
+sqlx = { version = "0", features = ["chrono", "postgres", "macros", "uuid", "runtime-async-std-native-tls"] }
+uuid = { version = "1", features = ["v4", "fast-rng"]}
