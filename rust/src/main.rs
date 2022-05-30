@@ -1,4 +1,5 @@
 use actix_web::{guard, web, App, HttpResponse, HttpServer, Result};
+use async_graphql::extensions::ApolloTracing;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptyMutation, EmptySubscription};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
@@ -35,6 +36,7 @@ async fn main() -> async_graphql::Result<()> {
     let state = State::new(conn);
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
         .data(state)
+        .extension(ApolloTracing)
         .finish();
 
     let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8000".to_owned());

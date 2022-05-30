@@ -12,7 +12,7 @@ use super::{
 };
 use crate::psql::shared::unload;
 use crate::psql::shared::BatchKey;
-use crate::schema::Topic;
+use crate::schema::{Synonyms, Topic};
 use crate::server::ports::outgoing::topic;
 
 #[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
@@ -20,6 +20,7 @@ pub struct TopicRow {
     pub id: Uuid,
     pub name: String,
     pub resource_path: String,
+    pub synonyms: serde_json::Value,
 }
 
 impl BatchKey for TopicRow {
@@ -33,6 +34,7 @@ pub fn row_to_topic(row: &TopicRow) -> Topic {
         id: ID(row.id.to_string()),
         name: row.name.to_owned(),
         resource_path: row.resource_path.to_owned(),
+        synonyms: Synonyms(row.synonyms.clone()),
     }
 }
 
@@ -42,6 +44,7 @@ pub struct ChildTopicRow {
     pub name: String,
     pub parent_id: Uuid,
     pub resource_path: String,
+    pub synonyms: serde_json::Value,
 }
 
 impl BatchKey for ChildTopicRow {
@@ -55,6 +58,7 @@ pub fn child_row_to_topic(row: &ChildTopicRow) -> Topic {
         id: ID(row.id.to_string()),
         name: row.name.to_owned(),
         resource_path: row.resource_path.to_owned(),
+        synonyms: Synonyms(row.synonyms.clone()),
     }
 }
 
@@ -64,6 +68,7 @@ pub struct ParentTopicRow {
     pub id: Uuid,
     pub name: String,
     pub resource_path: String,
+    pub synonyms: serde_json::Value,
 }
 
 impl BatchKey for ParentTopicRow {
@@ -77,21 +82,24 @@ pub fn parent_row_to_topic(row: &ParentTopicRow) -> Topic {
         id: ID(row.id.to_string()),
         name: row.name.to_owned(),
         resource_path: row.resource_path.to_owned(),
+        synonyms: Synonyms(row.synonyms.clone()),
     }
 }
 
 pub struct Repo {
     topics: Loader<String, TopicValue, loader::Topics>,
-    child_topics: Loader<String, ChildTopicsValue, loader::ChildTopics>,
-    parent_topics: Loader<String, ParentTopicsValue, loader::ParentTopics>,
+    child_topics: Loader<String, ChildTopicsValue, loader::TopicChildTopics>,
+    parent_topics: Loader<String, ParentTopicsValue, loader::TopicParentTopics>,
+    parent_topics_for_link: Loader<String, ParentTopicsValue, loader::LinkParentTopics>,
 }
 
 impl Repo {
     pub fn new(pool: PgPool) -> Self {
         Self {
-            child_topics: Loader::new(loader::ChildTopics::new(pool.clone())),
+            child_topics: Loader::new(loader::TopicChildTopics::new(pool.clone())),
             topics: Loader::new(loader::Topics::new(pool.clone())),
-            parent_topics: Loader::new(loader::ParentTopics::new(pool)),
+            parent_topics: Loader::new(loader::TopicParentTopics::new(pool.clone())),
+            parent_topics_for_link: Loader::new(loader::LinkParentTopics::new(pool)),
         }
     }
 }
@@ -114,5 +122,12 @@ impl topic::Port for Repo {
         unload(self.parent_topics.try_load(topic_id).await?, |rows| {
             rows.iter().map(parent_row_to_topic).collect::<Vec<Topic>>()
         })
+    }
+
+    async fn parent_topics_for_link(&self, link_id: String) -> Result<Option<Vec<Topic>>> {
+        unload(
+            self.parent_topics_for_link.try_load(link_id).await?,
+            |rows| rows.iter().map(parent_row_to_topic).collect::<Vec<Topic>>(),
+        )
     }
 }

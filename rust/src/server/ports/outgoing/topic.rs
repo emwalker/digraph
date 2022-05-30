@@ -8,4 +8,5 @@ pub trait Port {
     async fn child_topics(&self, topic_id: String) -> Result<Option<Vec<Topic>>>;
     async fn get(&self, topic_id: String) -> Result<Option<Topic>>;
     async fn parent_topics(&self, topic_id: String) -> Result<Option<Vec<Topic>>>;
+    async fn parent_topics_for_link(&self, link_id: String) -> Result<Option<Vec<Topic>>>;
 }

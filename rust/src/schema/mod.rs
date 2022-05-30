@@ -1,13 +1,15 @@
+mod synonym;
+pub use synonym::Synonyms;
 mod relay;
 pub use relay::*;
 mod link;
-pub use link::Link;
+pub use link::*;
 mod organization;
 pub use organization::Organization;
 mod repository;
 pub use repository::Repository;
 mod topic;
-pub use topic::Topic;
+pub use topic::*;
 mod user;
 pub use user::User;
 mod view;
