@@ -1,8 +1,9 @@
 use async_graphql::connection::*;
 use async_graphql::*;
+use futures::executor;
 
-pub async fn conn<N>(results: Vec<N>) -> Result<Connection<usize, N, EmptyFields, EmptyFields>> {
-    query(
+pub fn conn<N>(results: Vec<N>) -> Result<Connection<usize, N, EmptyFields, EmptyFields>> {
+    executor::block_on(query(
         None,
         None,
         None,
@@ -12,10 +13,9 @@ pub async fn conn<N>(results: Vec<N>) -> Result<Connection<usize, N, EmptyFields
             connection.append(
                 results
                     .into_iter()
-                    .map(|n| Edge::with_additional_fields(0 as usize, n, EmptyFields)),
+                    .map(|n| Edge::with_additional_fields(0_usize, n, EmptyFields)),
             );
             Ok::<_, Error>(connection)
         },
-    )
-    .await
+    ))
 }

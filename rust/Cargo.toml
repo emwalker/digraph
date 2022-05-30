@@ -16,5 +16,7 @@ dotenv = "0"
 env_logger = "0"
 futures = "0"
 log = "0"
-sqlx = { version = "0", features = ["chrono", "postgres", "macros", "uuid", "runtime-async-std-native-tls"] }
+serde = "1"
+serde_json = "1"
+sqlx = { version = "0", features = ["chrono", "json", "postgres", "macros", "uuid", "runtime-async-std-native-tls"] }
 uuid = { version = "1", features = ["v4", "fast-rng"]}
