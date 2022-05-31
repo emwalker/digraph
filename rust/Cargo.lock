@@ -898,16 +898,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dataloader"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9aa4240e00a8a3341eaffbb37780ac1450040c8dc72c78b7616ec5f12c91faf7"
-dependencies = [
- "async-std",
- "async-trait",
-]
-
-[[package]]
 name = "derive_more"
 version = "0.99.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -950,11 +940,12 @@ dependencies = [
  "async-std",
  "async-trait",
  "chrono",
- "dataloader",
  "dotenv",
  "env_logger",
  "futures",
+ "itertools",
  "log",
+ "quick-error",
  "serde",
  "serde_json",
  "sqlx",
@@ -1874,6 +1865,12 @@ checksum = "c54b25569025b7fc9651de43004ae593a75ad88543b17178aa5e1b9c4f15f56f"
 dependencies = [
  "unicode-ident",
 ]
+
+[[package]]
+name = "quick-error"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a993555f31e5a609f617c12db6250dedcac1b0a85076912c436e6fc9b2c8e6a3"
 
 [[package]]
 name = "quote"

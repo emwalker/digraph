@@ -1,12 +1,14 @@
 use async_graphql::connection::*;
 use async_graphql::*;
 
+use super::relay::conn;
 use super::topic::TopicConnection;
-use crate::state::State;
+use crate::psql::Repo;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Link {
     pub id: ID,
+    pub parent_topic_ids: Vec<String>,
     pub title: String,
     pub url: String,
 }
@@ -28,11 +30,11 @@ impl Link {
     }
 
     async fn parent_topics(&self, ctx: &Context<'_>) -> Result<TopicConnection> {
-        ctx.data_unchecked::<State>()
-            .topics
-            .parent_topics_for_link_id(self.id.to_string())
-            .await
-            .into()
+        conn(
+            ctx.data_unchecked::<Repo>()
+                .parent_topics_for_link(self.id.to_string())
+                .await?,
+        )
     }
 
     async fn title(&self) -> String {
