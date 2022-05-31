@@ -1,5 +1,5 @@
 mod synonym;
-pub use synonym::Synonyms;
+pub use synonym::*;
 mod relay;
 pub use relay::*;
 mod link;

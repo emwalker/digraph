@@ -1,14 +1,19 @@
 use async_graphql::connection::*;
 use async_graphql::*;
+use itertools::Itertools;
 
 use super::link::LinkConnection;
+use super::relay::conn;
 use super::synonym::{Synonym, Synonyms};
-use crate::state::State;
+use crate::psql::Repo;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
+    pub child_link_ids: Vec<String>,
+    pub child_topic_ids: Vec<String>,
     pub id: ID,
     pub name: String,
+    pub parent_topic_ids: Vec<String>,
     pub resource_path: String,
     pub synonyms: Synonyms,
 }
@@ -18,19 +23,19 @@ pub type TopicConnection = Connection<usize, Topic, EmptyFields, EmptyFields>;
 #[Object]
 impl Topic {
     async fn child_links(&self, ctx: &Context<'_>) -> Result<LinkConnection> {
-        ctx.data::<State>()?
-            .links
-            .child_links_by_topic_id(self.id.to_string())
-            .await
-            .into()
+        conn(
+            ctx.data::<Repo>()?
+                .child_links_for_topic(self.id.to_string())
+                .await?,
+        )
     }
 
     async fn child_topics(&self, ctx: &Context<'_>) -> Result<TopicConnection> {
-        ctx.data_unchecked::<State>()
-            .topics
-            .child_topics_by_id(self.id.to_string())
-            .await
-            .into()
+        conn(
+            ctx.data_unchecked::<Repo>()
+                .child_topics_for_topic(self.id.to_string())
+                .await?,
+        )
     }
 
     async fn display_name(&self) -> String {
@@ -46,15 +51,15 @@ impl Topic {
     }
 
     async fn parent_topics(&self, ctx: &Context<'_>) -> Result<TopicConnection> {
-        ctx.data_unchecked::<State>()
-            .topics
-            .parent_topics_by_id(self.id.to_string())
-            .await
-            .into()
+        conn(
+            ctx.data_unchecked::<Repo>()
+                .parent_topics_for_topic(self.id.to_string())
+                .await?,
+        )
     }
 
     async fn synonyms(&self) -> Vec<Synonym> {
-        self.synonyms.to_vec()
+        self.synonyms.into_iter().collect_vec()
     }
 
     async fn resource_path(&self) -> &str {

@@ -1,14 +1,13 @@
 use async_graphql::SimpleObject;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::value::Value;
 
-use serde_json::Value::Array;
-
-#[derive(Deserialize, Serialize, sqlx::Type, Clone, Debug)]
+#[derive(Deserialize, Serialize, sqlx::Type, Clone, Debug, PartialEq, Eq, Hash)]
 #[sqlx(transparent)]
-pub struct Synonyms(pub serde_json::Value);
+pub struct Synonyms(pub Vec<Synonym>);
 
-#[derive(Clone, Deserialize, Debug, SimpleObject)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash, SimpleObject)]
 pub struct Synonym {
     #[serde(alias = "Name")]
     name: String,
@@ -17,20 +16,33 @@ pub struct Synonym {
     locale: String,
 }
 
+impl Synonym {
+    pub fn from_json(value: &Value) -> Result<Self, serde_json::Error> {
+        serde_json::from_value::<Synonym>(value.clone())
+    }
+}
+
+impl IntoIterator for &Synonyms {
+    type Item = Synonym;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.clone().into_iter()
+    }
+}
+
 impl Synonyms {
+    pub fn from_json(value: &serde_json::value::Value) -> Self {
+        let l = match value {
+            Value::Array(l) => l.iter().flat_map(Synonym::from_json).collect(),
+            _ => vec![],
+        };
+        Self(l)
+    }
+
     #[allow(dead_code)]
     pub fn from_str(input: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(input).map(Self)
-    }
-
-    pub fn to_vec(&self) -> Vec<Synonym> {
-        match &self.0 {
-            Array(l) => l
-                .iter()
-                .flat_map(|v| serde_json::from_value::<Synonym>(v.clone()).ok())
-                .collect::<Vec<Synonym>>(),
-            _ => vec![],
-        }
     }
 
     pub fn display_name(
@@ -40,7 +52,7 @@ impl Synonyms {
         start: Option<DateTime<Utc>>,
     ) -> String {
         let name = {
-            for synonym in self.to_vec() {
+            for synonym in self.into_iter() {
                 if synonym.locale == locale {
                     continue;
                 }
@@ -65,7 +77,7 @@ mod tests {
     fn test_from_str() {
         let syn = Synonyms::from_str(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
-        assert_eq!(2, syn.to_vec().len());
+        assert_eq!(2, syn.into_iter().len());
     }
 
     #[test]
