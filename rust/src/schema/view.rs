@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-use super::{Topic, User};
+use super::{Topic, User, Viewer};
 use crate::psql::Repo;
 
 pub struct View {
@@ -17,11 +17,15 @@ impl View {
         ctx.data_unchecked::<Repo>().topic(id.to_string()).await
     }
 
-    async fn viewer(&self, ctx: &Context<'_>) -> Result<User> {
-        Ok(ctx
+    async fn viewer(&self, ctx: &Context<'_>) -> Result<Viewer> {
+        let user = ctx
             .data_unchecked::<Repo>()
             .user(self.viewer_id.to_string())
             .await?
-            .unwrap_or(User::Guest))
+            .unwrap_or(User::Guest);
+        Ok(Viewer {
+            user,
+            selected_repository_id: None,
+        })
     }
 }
