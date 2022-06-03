@@ -1,6 +1,5 @@
-use async_graphql::*;
-
-use super::{relay::conn, ActivityLineItemConnection, QueryInfo, Topic, User};
+use super::{relay::conn, ActivityLineItemConnection, QueryInfo, Repository, Topic, User};
+use crate::prelude::*;
 use crate::psql::Repo;
 
 #[derive(Clone)]
@@ -14,15 +13,25 @@ pub struct View {
 
 #[Object]
 impl View {
-    #[allow(unused_variables)]
     async fn activity(
         &self,
-        first: Option<i32>,
         after: Option<String>,
-        last: Option<i32>,
         before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        conn(vec![])
+        conn(after, before, first, last, vec![])
+    }
+
+    async fn current_repository(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
+        match &self.current_repository_name {
+            Some(name) => ctx
+                .data_unchecked::<Repo>()
+                .repository_by_name(name.to_string())
+                .await
+                .map_err(|_e| Error::NotFound),
+            None => Ok(None),
+        }
     }
 
     async fn link_count(&self) -> i32 {

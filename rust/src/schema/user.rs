@@ -1,9 +1,10 @@
-use async_graphql::*;
+use async_graphql::connection::*;
+
+use super::{Repository, RepositoryConnection, RepositoryEdgeFields};
+use crate::prelude::*;
+use crate::psql::Repo;
 
 static GUEST_ID: &str = "11a13e26-ee64-4c31-8af1-d1e953899ee0";
-
-use super::Repository;
-use crate::psql::Repo;
 
 #[derive(Clone)]
 pub enum User {
@@ -46,6 +47,35 @@ impl User {
         }
     }
 
+    pub async fn repositories(
+        &self,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> Result<RepositoryConnection> {
+        let results: Vec<Repository> = vec![];
+        query(
+            after,
+            before,
+            first,
+            last,
+            |_after, _before, _first, _last| async move {
+                let mut connection = Connection::new(false, false);
+                connection.append(results.into_iter().map(|n| {
+                    Edge::with_additional_fields(
+                        0_usize,
+                        n,
+                        RepositoryEdgeFields { is_selected: false },
+                    )
+                }));
+                Ok::<_, Error>(connection)
+            },
+        )
+        .await
+        .map_err(Error::Resolver)
+    }
+
     pub async fn selected_repository(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
         match self {
             Self::Guest => Ok(None),
@@ -53,11 +83,11 @@ impl User {
                 selected_repository_id,
                 ..
             } => match selected_repository_id {
-                Some(id) => {
-                    ctx.data_unchecked::<Repo>()
-                        .repository(id.to_string())
-                        .await
-                }
+                Some(id) => ctx
+                    .data_unchecked::<Repo>()
+                    .repository(id.to_string())
+                    .await
+                    .map_err(|_e| Error::NotFound),
                 None => Ok(None),
             },
         }

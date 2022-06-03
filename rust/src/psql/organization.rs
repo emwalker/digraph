@@ -1,12 +1,11 @@
 use async_graphql::dataloader::*;
-use async_graphql::types::ID;
 use async_graphql::SimpleObject;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use super::shared::uuids;
+use crate::prelude::*;
 use crate::schema::Organization;
 
 #[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
@@ -14,6 +13,7 @@ pub struct Row {
     id: Uuid,
     name: String,
     login: String,
+    default_repository_id: Uuid,
 }
 
 impl Row {
@@ -22,6 +22,7 @@ impl Row {
             id: ID(self.id.to_string()),
             name: self.name.to_owned(),
             login: self.login.to_owned(),
+            default_repository_id: ID(self.default_repository_id.to_string()),
         }
     }
 }
@@ -37,9 +38,9 @@ impl OrganizationLoader {
 #[async_trait::async_trait]
 impl Loader<String> for OrganizationLoader {
     type Value = Organization;
-    type Error = Arc<sqlx::Error>;
+    type Error = Error;
 
-    async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>> {
         log::debug!("load links by batch {:?}", ids);
 
         let uuids = uuids(ids);
@@ -48,9 +49,11 @@ impl Loader<String> for OrganizationLoader {
             r#"select
                 o.id as "id!: Uuid",
                 o.name as "name!",
-                o.login as "login!"
+                o.login as "login!",
+                r.id as "default_repository_id!"
 
             from organizations o
+            join repositories r on r.organization_id = o.id and r.system
             where o.id = any($1)"#,
             &uuids,
         )
