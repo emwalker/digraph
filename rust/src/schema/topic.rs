@@ -4,7 +4,9 @@ use itertools::Itertools;
 
 use super::link::LinkConnection;
 use super::relay::conn;
+use super::repository::Repository;
 use super::synonym::{Synonym, Synonyms};
+use super::timerange::Prefix;
 use crate::psql::Repo;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -14,6 +16,8 @@ pub struct Topic {
     pub id: ID,
     pub name: String,
     pub parent_topic_ids: Vec<String>,
+    pub prefix: Prefix,
+    pub repository_id: String,
     pub resource_path: String,
     pub synonyms: Synonyms,
 }
@@ -39,15 +43,23 @@ impl Topic {
     }
 
     async fn display_name(&self) -> String {
-        self.synonyms.display_name("en", &self.name, None)
+        self.synonyms.display_name("en", &self.name, &self.prefix)
     }
 
-    async fn id(&self) -> &str {
-        self.id.as_str()
+    async fn id(&self) -> ID {
+        self.id.to_owned()
+    }
+
+    async fn loading(&self) -> bool {
+        false
     }
 
     async fn name(&self) -> &str {
         self.name.as_str()
+    }
+
+    async fn newly_added(&self) -> bool {
+        false
     }
 
     async fn parent_topics(&self, ctx: &Context<'_>) -> Result<TopicConnection> {
@@ -58,11 +70,21 @@ impl Topic {
         )
     }
 
+    async fn repository(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
+        ctx.data_unchecked::<Repo>()
+            .repository(self.repository_id.clone())
+            .await
+    }
+
     async fn synonyms(&self) -> Vec<Synonym> {
         self.synonyms.into_iter().collect_vec()
     }
 
     async fn resource_path(&self) -> &str {
         self.resource_path.as_str()
+    }
+
+    async fn viewer_can_update(&self) -> bool {
+        false
     }
 }

@@ -8,6 +8,7 @@ mod organization;
 pub use organization::Organization;
 mod repository;
 pub use repository::Repository;
+pub mod timerange;
 mod topic;
 pub use topic::*;
 mod user;
