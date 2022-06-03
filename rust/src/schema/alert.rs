@@ -1,0 +1,40 @@
+use async_graphql::*;
+
+#[derive(Enum, Copy, Clone, PartialEq, Eq)]
+pub enum AlertType {
+    Success,
+    Warning,
+    Error,
+}
+
+impl std::fmt::Display for AlertType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Success => write!(f, "success"),
+            Self::Warning => write!(f, "warn"),
+            Self::Error => write!(f, "error"),
+        }
+    }
+}
+
+pub struct Alert {
+    pub text: String,
+    pub alert_type: AlertType,
+    pub id: String,
+}
+
+#[Object]
+impl Alert {
+    #[graphql(name = "type")]
+    async fn alert_type(&self) -> AlertType {
+        self.alert_type
+    }
+
+    async fn id(&self) -> String {
+        self.id.to_owned()
+    }
+
+    async fn text(&self) -> String {
+        self.text.to_owned()
+    }
+}
