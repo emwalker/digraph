@@ -1,7 +1,8 @@
 use async_graphql::SimpleObject;
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
+
+use super::timerange::Prefix;
 
 #[derive(Deserialize, Serialize, sqlx::Type, Clone, Debug, PartialEq, Eq, Hash)]
 #[sqlx(transparent)]
@@ -45,33 +46,26 @@ impl Synonyms {
         serde_json::from_str(input).map(Self)
     }
 
-    pub fn display_name(
-        &self,
-        locale: &str,
-        default: &str,
-        start: Option<DateTime<Utc>>,
-    ) -> String {
-        let name = {
-            for synonym in self.into_iter() {
-                if synonym.locale == locale {
-                    continue;
-                }
-                return synonym.name;
-            }
-            default.to_string()
-        };
-        start
-            .map(|dt| {
-                let prefix = dt.format("%Y-%m");
-                format!("{} {}", prefix, name)
-            })
-            .unwrap_or(name)
+    pub fn display_name(&self, locale: &str, default: &str, prefix: &Prefix) -> String {
+        let name = self
+            .into_iter()
+            .find(|s| s.locale == locale)
+            .map(|s| s.name)
+            .unwrap_or_else(|| default.to_owned());
+        prefix.display(&name)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::{DateTime, Utc};
+
+    fn valid_date() -> Option<DateTime<Utc>> {
+        DateTime::parse_from_rfc2822("Sat, 1 Jan 2000 00:00:00 +0000")
+            .ok()
+            .map(|dt| dt.with_timezone(&Utc))
+    }
 
     #[test]
     fn test_from_str() {
@@ -84,16 +78,30 @@ mod tests {
     fn test_simple_display_name() {
         let syn = Synonyms::from_str(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
-        assert_eq!(syn.display_name("en", "a", None), "a");
+        assert_eq!(syn.display_name("en", "c", &Prefix::new(None, None)), "a");
     }
 
     #[test]
-    fn test_display_name_with_start_date() {
+    fn test_display_name_with_start_year_month_format() {
         let syn = Synonyms::from_str(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
-        let dt = DateTime::parse_from_rfc2822("Sat, 1 Jan 2000 00:00:00 +0000")
-            .ok()
-            .map(|dt| dt.with_timezone(&Utc));
-        assert_eq!(syn.display_name("en", "a", dt), "2000-01 a");
+        assert_eq!(
+            syn.display_name(
+                "en",
+                "c",
+                &Prefix::new(Some("START_YEAR_MONTH"), valid_date())
+            ),
+            "2000-01 a"
+        );
+    }
+
+    #[test]
+    fn test_display_name_with_start_year_format() {
+        let syn = Synonyms::from_str(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
+            .unwrap();
+        assert_eq!(
+            syn.display_name("en", "c", &Prefix::new(Some("START_YEAR"), valid_date())),
+            "2000 a"
+        );
     }
 }
