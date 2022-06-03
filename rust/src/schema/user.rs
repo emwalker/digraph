@@ -14,28 +14,28 @@ pub enum User {
 
 #[Object]
 impl User {
-    async fn avatar_url(&self) -> Option<String> {
+    pub async fn avatar_url(&self) -> Option<String> {
         match self {
             Self::Guest => None,
             Self::Registered { avatar_url, .. } => Some(avatar_url.to_owned()),
         }
     }
 
-    async fn id(&self) -> ID {
+    pub async fn id(&self) -> ID {
         match self {
             Self::Guest => ID(GUEST_ID.to_string()),
             Self::Registered { id, .. } => id.to_owned(),
         }
     }
 
-    async fn is_guest(&self) -> bool {
+    pub async fn is_guest(&self) -> bool {
         match self {
             Self::Guest => true,
             Self::Registered { .. } => false,
         }
     }
 
-    async fn name(&self) -> String {
+    pub async fn name(&self) -> String {
         match self {
             Self::Guest => "Guest".to_owned(),
             Self::Registered { name, .. } => name.to_owned(),

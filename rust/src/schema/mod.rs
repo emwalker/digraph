@@ -17,3 +17,5 @@ mod user;
 pub use user::*;
 mod view;
 pub use view::*;
+mod viewer;
+pub use viewer::*;
