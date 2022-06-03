@@ -13,6 +13,7 @@ use crate::schema::Link;
 pub struct Row {
     id: Uuid,
     parent_topic_ids: Vec<Uuid>,
+    repository_id: Uuid,
     title: String,
     url: String,
 }
@@ -25,6 +26,7 @@ impl Row {
             id: ID(self.id.to_string()),
             parent_topic_ids,
             title: self.title.to_owned(),
+            repository_id: ID(self.repository_id.to_string()),
             url: self.url.to_owned(),
         }
     }
@@ -50,9 +52,10 @@ impl Loader<String> for LinkLoader {
         let rows = sqlx::query_as!(
             Row,
             r#"select
-                l.id as "id!: Uuid",
-                l.title as "title!: String",
-                l.url as "url!: String",
+                l.id as "id!",
+                l.title as "title!",
+                l.url as "url!",
+                l.repository_id as "repository_id!",
                 array_remove(array_agg(distinct parent_topics.parent_id), null)
                     as "parent_topic_ids!"
 

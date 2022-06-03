@@ -1,8 +1,8 @@
 use async_graphql::connection::*;
-use async_graphql::*;
 use itertools::Itertools;
 
 use super::{relay::conn, timerange::Prefix, LinkConnection, Repository, Synonym, Synonyms};
+use crate::prelude::*;
 use crate::psql::Repo;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -22,20 +22,29 @@ pub type TopicConnection = Connection<usize, Topic, EmptyFields, EmptyFields>;
 
 #[Object]
 impl Topic {
-    async fn child_links(&self, ctx: &Context<'_>) -> Result<LinkConnection> {
+    #[allow(unused_variables)]
+    async fn child_topics(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+        search_string: Option<String>,
+    ) -> Result<TopicConnection> {
         conn(
-            ctx.data::<Repo>()?
-                .child_links_for_topic(self.id.to_string())
-                .await?,
-        )
-    }
-
-    async fn child_topics(&self, ctx: &Context<'_>) -> Result<TopicConnection> {
-        conn(
+            after,
+            before,
+            first,
+            last,
             ctx.data_unchecked::<Repo>()
                 .child_topics_for_topic(self.id.to_string())
                 .await?,
         )
+    }
+
+    async fn description(&self) -> Option<String> {
+        None
     }
 
     async fn display_name(&self) -> String {
@@ -44,6 +53,28 @@ impl Topic {
 
     async fn id(&self) -> ID {
         self.id.to_owned()
+    }
+
+    // TODO: rename to childLinks
+    #[allow(unused_variables)]
+    async fn links(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+        search_string: Option<String>,
+    ) -> Result<LinkConnection> {
+        conn(
+            after,
+            before,
+            first,
+            last,
+            ctx.data::<Repo>()?
+                .child_links_for_topic(self.id.to_string())
+                .await?,
+        )
     }
 
     async fn loading(&self) -> bool {
@@ -58,8 +89,19 @@ impl Topic {
         false
     }
 
-    async fn parent_topics(&self, ctx: &Context<'_>) -> Result<TopicConnection> {
+    async fn parent_topics(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> Result<TopicConnection> {
         conn(
+            after,
+            before,
+            first,
+            last,
             ctx.data_unchecked::<Repo>()
                 .parent_topics_for_topic(self.id.to_string())
                 .await?,
@@ -70,6 +112,7 @@ impl Topic {
         ctx.data_unchecked::<Repo>()
             .repository(self.repository_id.clone())
             .await
+            .map_err(|_e| Error::NotFound)
     }
 
     async fn synonyms(&self) -> Vec<Synonym> {

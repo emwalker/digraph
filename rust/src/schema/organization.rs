@@ -1,4 +1,6 @@
-use async_graphql::*;
+use super::Repository;
+use crate::prelude::*;
+use crate::psql::Repo;
 
 const WIKI_ID: &str = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb";
 
@@ -7,14 +9,29 @@ pub enum Organization {
     #[allow(dead_code)]
     Wiki,
     Selected {
+        default_repository_id: ID,
         id: ID,
-        name: String,
         login: String,
+        name: String,
     },
 }
 
 #[Object]
 impl Organization {
+    async fn default_repository(&self, ctx: &Context<'_>) -> Result<Repository> {
+        match self {
+            Self::Wiki => Ok(Repository::Default),
+            Self::Selected {
+                default_repository_id,
+                ..
+            } => ctx
+                .data_unchecked::<Repo>()
+                .repository(default_repository_id.to_string())
+                .await?
+                .ok_or(Error::NotFound),
+        }
+    }
+
     async fn id(&self) -> ID {
         match self {
             Self::Wiki => ID(WIKI_ID.to_string()),

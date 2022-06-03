@@ -2,13 +2,17 @@ use async_graphql::dataloader::*;
 use async_graphql::Result;
 use sqlx::postgres::PgPool;
 
-use super::{LinkLoader, OrganizationLoader, RepositoryLoader, TopicLoader, UserLoader};
+use super::{
+    LinkLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader, TopicLoader,
+    UserLoader,
+};
 use crate::schema::{Link, Organization, Repository, Topic, User};
 
 pub struct Repo {
     link_loader: DataLoader<LinkLoader, HashMapCache>,
     organization_loader: DataLoader<OrganizationLoader, HashMapCache>,
     repository_loader: DataLoader<RepositoryLoader, HashMapCache>,
+    repository_by_name_loader: DataLoader<RepositoryByNameLoader, HashMapCache>,
     topic_loader: DataLoader<TopicLoader, HashMapCache>,
     user_loader: DataLoader<UserLoader, HashMapCache>,
 }
@@ -18,6 +22,7 @@ impl Repo {
         let link_loader = LinkLoader::new(pool.clone());
         let organization_loader = OrganizationLoader::new(pool.clone());
         let repository_loader = RepositoryLoader::new(pool.clone());
+        let repository_by_name_loader = RepositoryByNameLoader::new(pool.clone());
         let topic_loader = TopicLoader::new(pool.clone());
         let user_loader = UserLoader::new(pool);
 
@@ -34,6 +39,11 @@ impl Repo {
             ),
             repository_loader: DataLoader::with_cache(
                 repository_loader,
+                actix_web::rt::spawn,
+                HashMapCache::default(),
+            ),
+            repository_by_name_loader: DataLoader::with_cache(
+                repository_by_name_loader,
                 actix_web::rt::spawn,
                 HashMapCache::default(),
             ),
@@ -115,6 +125,10 @@ impl Repo {
 
     pub async fn repository(&self, id: String) -> Result<Option<Repository>> {
         Ok(self.repository_loader.load_one(id).await?)
+    }
+
+    pub async fn repository_by_name(&self, name: String) -> Result<Option<Repository>> {
+        Ok(self.repository_by_name_loader.load_one(name).await?)
     }
 
     pub async fn topic(&self, id: String) -> Result<Option<Topic>> {

@@ -1,14 +1,15 @@
 use async_graphql::connection::*;
-use async_graphql::*;
 
-use super::relay::conn;
-use super::topic::TopicConnection;
+use super::{relay::conn, Repository, TopicConnection};
+use crate::prelude::*;
 use crate::psql::Repo;
+use crate::Result;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Link {
     pub id: ID,
     pub parent_topic_ids: Vec<String>,
+    pub repository_id: ID,
     pub title: String,
     pub url: String,
 }
@@ -29,12 +30,30 @@ impl Link {
         false
     }
 
-    async fn parent_topics(&self, ctx: &Context<'_>) -> Result<TopicConnection> {
+    async fn parent_topics(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> Result<TopicConnection> {
         conn(
+            after,
+            before,
+            first,
+            last,
             ctx.data_unchecked::<Repo>()
                 .parent_topics_for_link(self.id.to_string())
                 .await?,
         )
+    }
+
+    async fn repository(&self, ctx: &Context<'_>) -> Result<Repository> {
+        ctx.data_unchecked::<Repo>()
+            .repository(self.repository_id.to_string())
+            .await?
+            .ok_or(Error::NotFound)
     }
 
     async fn title(&self) -> String {

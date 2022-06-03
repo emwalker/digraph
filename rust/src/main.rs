@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate quick_error;
 
-use actix_web::{guard, web, App, HttpResponse, HttpServer, Result};
+use actix_web::{guard, web, App, HttpResponse, HttpServer};
 use async_graphql::extensions::ApolloTracing;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptyMutation, EmptySubscription};
@@ -10,9 +10,14 @@ use futures::lock::Mutex;
 use std::env;
 
 mod db;
+mod errors;
+mod prelude;
 mod psql;
 mod query;
 mod schema;
+use errors::Error;
+
+pub type Result<T> = std::result::Result<T, Error>;
 
 use query::{QueryRoot, Schema, State};
 use schema::View;
