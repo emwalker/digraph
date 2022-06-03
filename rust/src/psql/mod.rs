@@ -1,8 +1,13 @@
 mod repo;
 pub use repo::*;
-
-pub mod link;
-pub mod organization;
-pub mod repository;
+mod link;
+pub use link::*;
+mod organization;
+pub use organization::*;
+mod repository;
+pub use repository::*;
 pub mod shared;
-pub mod topic;
+mod topic;
+pub use topic::*;
+mod user;
+pub use user::*;

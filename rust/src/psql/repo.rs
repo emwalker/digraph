@@ -2,17 +2,15 @@ use async_graphql::dataloader::*;
 use async_graphql::Result;
 use sqlx::postgres::PgPool;
 
-use super::link::LinkLoader;
-use super::organization::OrganizationLoader;
-use super::repository::RepositoryLoader;
-use super::topic::TopicLoader;
-use crate::schema::{Link, Organization, Repository, Topic};
+use super::{LinkLoader, OrganizationLoader, RepositoryLoader, TopicLoader, UserLoader};
+use crate::schema::{Link, Organization, Repository, Topic, User};
 
 pub struct Repo {
     link_loader: DataLoader<LinkLoader, HashMapCache>,
     organization_loader: DataLoader<OrganizationLoader, HashMapCache>,
     repository_loader: DataLoader<RepositoryLoader, HashMapCache>,
     topic_loader: DataLoader<TopicLoader, HashMapCache>,
+    user_loader: DataLoader<UserLoader, HashMapCache>,
 }
 
 impl Repo {
@@ -20,7 +18,8 @@ impl Repo {
         let link_loader = LinkLoader::new(pool.clone());
         let organization_loader = OrganizationLoader::new(pool.clone());
         let repository_loader = RepositoryLoader::new(pool.clone());
-        let topic_loader = TopicLoader::new(pool);
+        let topic_loader = TopicLoader::new(pool.clone());
+        let user_loader = UserLoader::new(pool);
 
         Self {
             link_loader: DataLoader::with_cache(
@@ -40,6 +39,11 @@ impl Repo {
             ),
             topic_loader: DataLoader::with_cache(
                 topic_loader,
+                actix_web::rt::spawn,
+                HashMapCache::default(),
+            ),
+            user_loader: DataLoader::with_cache(
+                user_loader,
                 actix_web::rt::spawn,
                 HashMapCache::default(),
             ),
@@ -126,5 +130,9 @@ impl Repo {
             topics.push(topic);
         }
         Ok(topics)
+    }
+
+    pub async fn user(&self, id: String) -> Result<Option<User>> {
+        Ok(self.user_loader.load_one(id).await?)
     }
 }
