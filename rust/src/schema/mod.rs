@@ -1,5 +1,5 @@
-mod synonym;
-pub use synonym::*;
+mod alert;
+pub use alert::*;
 mod relay;
 pub use relay::*;
 mod link;
@@ -8,6 +8,8 @@ mod organization;
 pub use organization::*;
 mod repository;
 pub use repository::*;
+mod synonym;
+pub use synonym::*;
 pub mod timerange;
 mod topic;
 pub use topic::*;
