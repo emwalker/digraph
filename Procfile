@@ -1,2 +1,2 @@
 frontend: make -C javascript start
-backend: make -C golang start
+backend: make -C rust start

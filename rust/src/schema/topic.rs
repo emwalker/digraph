@@ -2,11 +2,7 @@ use async_graphql::connection::*;
 use async_graphql::*;
 use itertools::Itertools;
 
-use super::link::LinkConnection;
-use super::relay::conn;
-use super::repository::Repository;
-use super::synonym::{Synonym, Synonyms};
-use super::timerange::Prefix;
+use super::{relay::conn, timerange::Prefix, LinkConnection, Repository, Synonym, Synonyms};
 use crate::psql::Repo;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
