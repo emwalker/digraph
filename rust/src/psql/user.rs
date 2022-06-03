@@ -11,9 +11,10 @@ use crate::schema::User;
 
 #[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
 pub struct Row {
+    avatar_url: String,
     id: Uuid,
     name: String,
-    avatar_url: String,
+    selected_repository_id: Option<Uuid>,
 }
 
 impl Row {
@@ -22,6 +23,7 @@ impl Row {
             id: ID(self.id.to_string()),
             name: self.name.to_owned(),
             avatar_url: self.avatar_url.to_owned(),
+            selected_repository_id: self.selected_repository_id.map(|uuid| ID(uuid.to_string())),
         }
     }
 }
@@ -48,7 +50,8 @@ impl Loader<String> for UserLoader {
             r#"select
                 u.id as "id!",
                 u.name as "name!",
-                u.avatar_url as "avatar_url!"
+                u.avatar_url as "avatar_url!",
+                u.selected_repository_id
 
             from users u
             where u.id = any($1)"#,

@@ -1,3 +1,5 @@
+mod activity;
+pub use activity::*;
 mod alert;
 pub use alert::*;
 mod relay;
@@ -6,6 +8,8 @@ mod link;
 pub use link::*;
 mod organization;
 pub use organization::*;
+mod query;
+pub use query::*;
 mod repository;
 pub use repository::*;
 mod synonym;

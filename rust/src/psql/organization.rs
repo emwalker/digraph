@@ -18,7 +18,7 @@ pub struct Row {
 
 impl Row {
     fn to_link(&self) -> Organization {
-        Organization {
+        Organization::Selected {
             id: ID(self.id.to_string()),
             name: self.name.to_owned(),
             login: self.login.to_owned(),

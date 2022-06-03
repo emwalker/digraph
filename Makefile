@@ -34,7 +34,7 @@ build-executables:
 	$(MAKE) -C golang build
 
 check:
-	$(MAKE) -C golang check
+	$(MAKE) -C rust check
 	$(MAKE) -C javascript check
 
 check-git-clean:

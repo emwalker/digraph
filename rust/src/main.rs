@@ -6,6 +6,7 @@ use async_graphql::extensions::ApolloTracing;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptyMutation, EmptySubscription};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use futures::lock::Mutex;
 use std::env;
 
 mod db;
@@ -14,12 +15,14 @@ mod query;
 mod schema;
 
 use query::{QueryRoot, Schema, State};
+use schema::View;
 
 async fn index(state: web::Data<State>, req: GraphQLRequest) -> GraphQLResponse {
     let repo = state.create_repo();
+    let view = Mutex::<Option<View>>::new(None);
     state
         .schema
-        .execute(req.into_inner().data(repo))
+        .execute(req.into_inner().data(repo).data(view))
         .await
         .into()
 }
@@ -43,8 +46,8 @@ async fn main() -> async_graphql::Result<()> {
         .finish();
     let state = State::new(pool, schema);
 
-    let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8000".to_owned());
-    println!("Playground: http://localhost:8000");
+    let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_owned());
+    println!("Playground: http://localhost:8080");
 
     // TODO: Look into switching to https://github.com/poem-web/poem
     HttpServer::new(move || {
