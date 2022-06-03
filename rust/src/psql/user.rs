@@ -7,38 +7,36 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::shared::uuids;
-use crate::schema::Repository;
+use crate::schema::User;
 
 #[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
 pub struct Row {
     id: Uuid,
     name: String,
-    organization_id: Uuid,
-    root_topic_id: Uuid,
+    avatar_url: String,
 }
 
 impl Row {
-    fn to_repository(&self) -> Repository {
-        Repository {
+    fn to_user(&self) -> User {
+        User::Registered {
             id: ID(self.id.to_string()),
             name: self.name.to_owned(),
-            organization_id: self.organization_id.to_string(),
-            root_topic_id: self.root_topic_id.to_string(),
+            avatar_url: self.avatar_url.to_owned(),
         }
     }
 }
 
-pub struct RepositoryLoader(PgPool);
+pub struct UserLoader(PgPool);
 
-impl RepositoryLoader {
+impl UserLoader {
     pub fn new(pool: PgPool) -> Self {
         Self(pool)
     }
 }
 
 #[async_trait::async_trait]
-impl Loader<String> for RepositoryLoader {
-    type Value = Repository;
+impl Loader<String> for UserLoader {
+    type Value = User;
     type Error = Arc<sqlx::Error>;
 
     async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
@@ -48,16 +46,12 @@ impl Loader<String> for RepositoryLoader {
         let rows = sqlx::query_as!(
             Row,
             r#"select
-                r.id as "id!: Uuid",
-                r.name as "name!",
-                r.organization_id as "organization_id!",
-                t.id as "root_topic_id!"
+                u.id as "id!",
+                u.name as "name!",
+                u.avatar_url as "avatar_url!"
 
-            from repositories r
-            join topics t on r.id = t.repository_id
-            where r.id = any($1)
-              and t.root = true
-            group by r.id, t.id"#,
+            from users u
+            where u.id = any($1)"#,
             &uuids,
         )
         .fetch_all(&self.0)
@@ -65,7 +59,7 @@ impl Loader<String> for RepositoryLoader {
 
         Ok(rows?
             .iter()
-            .map(|r| (r.id.to_string(), r.to_repository()))
+            .map(|r| (r.id.to_string(), r.to_user()))
             .collect::<HashMap<_, _>>())
     }
 }
