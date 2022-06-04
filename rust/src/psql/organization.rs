@@ -17,7 +17,7 @@ pub struct Row {
 }
 
 impl Row {
-    fn to_link(&self) -> Organization {
+    fn to_organization(&self) -> Organization {
         Organization::Selected {
             id: ID(self.id.to_string()),
             name: self.name.to_owned(),
@@ -41,7 +41,7 @@ impl Loader<String> for OrganizationLoader {
     type Error = Error;
 
     async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>> {
-        log::debug!("load links by batch {:?}", ids);
+        log::debug!("batch load organizations: {:?}", ids);
 
         let uuids = uuids(ids);
         let rows = sqlx::query_as!(
@@ -58,11 +58,52 @@ impl Loader<String> for OrganizationLoader {
             &uuids,
         )
         .fetch_all(&self.0)
-        .await;
+        .await
+        .map_err(Error::from)?;
 
-        Ok(rows?
+        Ok(rows
             .iter()
-            .map(|r| (r.id.to_string(), r.to_link()))
+            .map(|r| (r.id.to_string(), r.to_organization()))
+            .collect::<HashMap<_, _>>())
+    }
+}
+
+pub struct OrganizationByLoginLoader(PgPool);
+
+impl OrganizationByLoginLoader {
+    pub fn new(pool: PgPool) -> Self {
+        Self(pool)
+    }
+}
+
+#[async_trait::async_trait]
+impl Loader<String> for OrganizationByLoginLoader {
+    type Value = Organization;
+    type Error = Error;
+
+    async fn load(&self, logins: &[String]) -> Result<HashMap<String, Self::Value>> {
+        log::debug!("batch load organizations by login: {:?}", logins);
+
+        let rows = sqlx::query_as!(
+            Row,
+            r#"select
+                o.id as "id!",
+                o.name as "name!",
+                o.login as "login!",
+                r.id as "default_repository_id!"
+
+            from organizations o
+            join repositories r on r.organization_id = o.id and r.system
+            where o.login = any($1)"#,
+            &logins,
+        )
+        .fetch_all(&self.0)
+        .await
+        .map_err(Error::from)?;
+
+        Ok(rows
+            .iter()
+            .map(|r| (r.id.to_string(), r.to_organization()))
             .collect::<HashMap<_, _>>())
     }
 }

@@ -6,8 +6,9 @@ use crate::prelude::*;
 use crate::psql::Repo;
 
 const PRIVATE_REPO_COLOR: &str = "#dbedff";
-const DEFAULT_REPO_ID: &str = "23862a92-07d7-47b3-8dad-347b5c2d3557";
-const DEFAULT_REPO_NAME: &str = "system:default";
+const DEFAULT_REPO_ID: &str = "32212616-fc1b-11e8-8eda-b70af6d8d09f";
+const DEFAULT_REPO_NAME: &str = "General collection";
+const DEFAULT_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
 
 #[derive(Clone)]
 pub enum Repository {
@@ -38,15 +39,16 @@ impl Repository {
 
     async fn display_name(&self, ctx: &Context<'_>) -> String {
         match self {
-            Self::Default => "missing repo".to_string(),
+            Self::Default => DEFAULT_REPO_NAME,
             Self::Fetched { name, .. } => {
                 if self.is_private(ctx).await.unwrap_or(false) {
-                    "Private repository".to_string()
+                    "Private repository"
                 } else {
-                    name.to_string()
+                    name
                 }
             }
         }
+        .to_string()
     }
 
     pub async fn full_name(&self, ctx: &Context<'_>) -> Result<String> {
@@ -61,11 +63,12 @@ impl Repository {
                 let org = ctx
                     .data_unchecked::<Repo>()
                     .organization(organization_id.to_string())
-                    .await?;
+                    .await?
+                    .ok_or_else(|| Error::NotFound(format!("no org found: {}", organization_id)))?;
 
                 match org {
-                    Some(Organization::Wiki) => Ok("wiki/wiki".to_string()),
-                    Some(Organization::Selected { login, .. }) => {
+                    Organization::Wiki => Ok("wiki/wiki".to_string()),
+                    Organization::Selected { login, .. } => {
                         let name = if self.is_private(ctx).await? {
                             "private"
                         } else if *system {
@@ -75,7 +78,6 @@ impl Repository {
                         };
                         Ok(format!("{}/{}", login, name))
                     }
-                    None => Err(Error::NotFound),
                 }
             }
         }
@@ -111,18 +113,18 @@ impl Repository {
                 .data_unchecked::<Repo>()
                 .organization(organization_id.clone())
                 .await?
-                .ok_or(Error::NotFound),
+                .ok_or_else(|| Error::NotFound(format!("no org found: {}", organization_id))),
         }
     }
 
-    async fn root_topic(&self, ctx: &Context<'_>) -> Result<Option<Topic>> {
-        match self {
-            Self::Default => Ok(None),
-            Self::Fetched { root_topic_id, .. } => ctx
-                .data_unchecked::<Repo>()
-                .topic(root_topic_id.clone())
-                .await
-                .map_err(|_e| Error::NotFound),
-        }
+    async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
+        let topic_id = match self {
+            Self::Default => DEFAULT_ROOT_TOPIC_ID,
+            Self::Fetched { root_topic_id, .. } => root_topic_id,
+        };
+        ctx.data_unchecked::<Repo>()
+            .topic(topic_id.to_string())
+            .await?
+            .ok_or_else(|| Error::NotFound(format!("root topic id: {}", topic_id)))
     }
 }

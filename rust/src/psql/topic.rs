@@ -12,20 +12,20 @@ use crate::schema::{timerange, Synonyms, Topic};
 
 #[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
 pub struct Row {
-    child_link_ids: Vec<Uuid>,
-    child_topic_ids: Vec<Uuid>,
-    id: Uuid,
-    name: String,
-    parent_topic_ids: Vec<Uuid>,
-    prefix_format: Vec<String>,
-    repository_id: Uuid,
-    resource_path: String,
-    starts_at: Vec<DateTime<Utc>>,
-    synonyms: serde_json::Value,
+    pub child_link_ids: Vec<Uuid>,
+    pub child_topic_ids: Vec<Uuid>,
+    pub id: Uuid,
+    pub name: String,
+    pub parent_topic_ids: Vec<Uuid>,
+    pub prefix_format: Vec<String>,
+    pub repository_id: Uuid,
+    pub resource_path: String,
+    pub starts_at: Vec<DateTime<Utc>>,
+    pub synonyms: serde_json::Value,
 }
 
 impl Row {
-    fn to_topic(&self) -> Topic {
+    pub fn to_topic(&self) -> Topic {
         let child_link_ids = self.child_link_ids.iter().map(Uuid::to_string).collect();
         let child_topic_ids = self.child_topic_ids.iter().map(Uuid::to_string).collect();
         let parent_topic_ids = self.parent_topic_ids.iter().map(Uuid::to_string).collect();

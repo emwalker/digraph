@@ -53,7 +53,7 @@ impl Link {
         ctx.data_unchecked::<Repo>()
             .repository(self.repository_id.to_string())
             .await?
-            .ok_or(Error::NotFound)
+            .ok_or_else(|| Error::NotFound(format!("repo id {}", *self.repository_id)))
     }
 
     async fn title(&self) -> String {

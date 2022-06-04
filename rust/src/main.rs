@@ -2,7 +2,7 @@
 extern crate quick_error;
 
 use actix_web::{guard, web, App, HttpResponse, HttpServer};
-use async_graphql::extensions::ApolloTracing;
+// use async_graphql::extensions::ApolloTracing;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptyMutation, EmptySubscription};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
@@ -47,7 +47,7 @@ async fn main() -> async_graphql::Result<()> {
 
     let pool = db::db_connection().await?;
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
-        .extension(ApolloTracing)
+        // .extension(ApolloTracing)
         .finish();
     let state = State::new(pool, schema);
 

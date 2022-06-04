@@ -1,16 +1,18 @@
 use async_graphql::dataloader::*;
-use async_graphql::Result;
 use sqlx::postgres::PgPool;
 
 use super::{
-    LinkLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader, TopicLoader,
-    UserLoader,
+    LinkLoader, LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader,
+    RepositoryByNameLoader, RepositoryLoader, TopicLoader, UserLoader,
 };
-use crate::schema::{Link, Organization, Repository, Topic, User};
+use crate::prelude::*;
+use crate::schema::{Link, Organization, Repository, Topic, User, View};
 
 pub struct Repo {
+    pool: PgPool,
     link_loader: DataLoader<LinkLoader, HashMapCache>,
     organization_loader: DataLoader<OrganizationLoader, HashMapCache>,
+    organization_by_login_loader: DataLoader<OrganizationByLoginLoader, HashMapCache>,
     repository_loader: DataLoader<RepositoryLoader, HashMapCache>,
     repository_by_name_loader: DataLoader<RepositoryByNameLoader, HashMapCache>,
     topic_loader: DataLoader<TopicLoader, HashMapCache>,
@@ -21,12 +23,14 @@ impl Repo {
     pub fn new(pool: PgPool) -> Self {
         let link_loader = LinkLoader::new(pool.clone());
         let organization_loader = OrganizationLoader::new(pool.clone());
+        let organization_by_login_loader = OrganizationByLoginLoader::new(pool.clone());
         let repository_loader = RepositoryLoader::new(pool.clone());
         let repository_by_name_loader = RepositoryByNameLoader::new(pool.clone());
         let topic_loader = TopicLoader::new(pool.clone());
-        let user_loader = UserLoader::new(pool);
+        let user_loader = UserLoader::new(pool.clone());
 
         Self {
+            pool,
             link_loader: DataLoader::with_cache(
                 link_loader,
                 actix_web::rt::spawn,
@@ -34,6 +38,11 @@ impl Repo {
             ),
             organization_loader: DataLoader::with_cache(
                 organization_loader,
+                actix_web::rt::spawn,
+                HashMapCache::default(),
+            ),
+            organization_by_login_loader: DataLoader::with_cache(
+                organization_by_login_loader,
                 actix_web::rt::spawn,
                 HashMapCache::default(),
             ),
@@ -89,12 +98,16 @@ impl Repo {
     }
 
     pub async fn link(&self, id: String) -> Result<Option<Link>> {
-        Ok(self.link_loader.load_one(id).await?)
+        self.link_loader.load_one(id).await.map_err(Error::DB)
     }
 
     pub async fn links(&self, ids: &[String]) -> Result<Vec<Option<Link>>> {
         let ids: Vec<String> = ids.iter().map(String::to_string).collect();
-        let map = self.link_loader.load_many(ids.clone()).await?;
+        let map = self
+            .link_loader
+            .load_many(ids.clone())
+            .await
+            .map_err(Error::DB)?;
         let mut links: Vec<Option<Link>> = Vec::new();
         for id in ids {
             let link = map.get(&id).cloned();
@@ -104,7 +117,11 @@ impl Repo {
     }
 
     pub async fn organization(&self, id: String) -> Result<Option<Organization>> {
-        Ok(self.organization_loader.load_one(id).await?)
+        self.organization_loader.load_one(id).await
+    }
+
+    pub async fn organization_by_login(&self, login: String) -> Result<Option<Organization>> {
+        self.organization_by_login_loader.load_one(login).await
     }
 
     pub async fn parent_topics_for_topic(&self, topic_id: String) -> Result<Vec<Topic>> {
@@ -124,20 +141,37 @@ impl Repo {
     }
 
     pub async fn repository(&self, id: String) -> Result<Option<Repository>> {
-        Ok(self.repository_loader.load_one(id).await?)
+        self.repository_loader.load_one(id).await.map_err(Error::DB)
     }
 
     pub async fn repository_by_name(&self, name: String) -> Result<Option<Repository>> {
-        Ok(self.repository_by_name_loader.load_one(name).await?)
+        self.repository_by_name_loader
+            .load_one(name)
+            .await
+            .map_err(Error::DB)
+    }
+
+    pub async fn search_topics(
+        &self,
+        view: View,
+        search_string: Option<String>,
+    ) -> Result<Vec<Topic>> {
+        LiveSearchTopics::new(view, search_string.clone())
+            .call(&self.pool)
+            .await
     }
 
     pub async fn topic(&self, id: String) -> Result<Option<Topic>> {
-        Ok(self.topic_loader.load_one(id).await?)
+        self.topic_loader.load_one(id).await.map_err(Error::DB)
     }
 
     pub async fn topics(&self, ids: &[String]) -> Result<Vec<Option<Topic>>> {
         let ids: Vec<String> = ids.iter().map(String::to_string).collect();
-        let map = self.topic_loader.load_many(ids.clone()).await?;
+        let map = self
+            .topic_loader
+            .load_many(ids.clone())
+            .await
+            .map_err(Error::DB)?;
         let mut topics: Vec<Option<Topic>> = Vec::new();
         for id in ids {
             let topic = map.get(&id).cloned();
@@ -147,6 +181,6 @@ impl Repo {
     }
 
     pub async fn user(&self, id: String) -> Result<Option<User>> {
-        Ok(self.user_loader.load_one(id).await?)
+        self.user_loader.load_one(id).await.map_err(Error::DB)
     }
 }
