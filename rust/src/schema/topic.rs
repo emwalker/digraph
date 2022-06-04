@@ -112,7 +112,7 @@ impl Topic {
         ctx.data_unchecked::<Repo>()
             .repository(self.repository_id.clone())
             .await
-            .map_err(|_e| Error::NotFound)
+            .map_err(|_e| Error::NotFound(format!("repo id {}", self.repository_id)))
     }
 
     async fn synonyms(&self) -> Vec<Synonym> {

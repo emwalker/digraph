@@ -42,7 +42,7 @@ impl Loader<String> for UserLoader {
     type Error = Arc<sqlx::Error>;
 
     async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
-        log::debug!("load links by batch {:?}", ids);
+        log::debug!("batch load users: {:?}", ids);
 
         let uuids = uuids(ids);
         let rows = sqlx::query_as!(

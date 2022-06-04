@@ -17,6 +17,12 @@ pub enum User {
     },
 }
 
+impl Default for User {
+    fn default() -> Self {
+        Self::Guest
+    }
+}
+
 #[Object]
 impl User {
     pub async fn avatar_url(&self) -> Option<String> {
@@ -87,7 +93,7 @@ impl User {
                     .data_unchecked::<Repo>()
                     .repository(id.to_string())
                     .await
-                    .map_err(|_e| Error::NotFound),
+                    .map_err(|_e| Error::NotFound(format!("repo id {}", **id))),
                 None => Ok(None),
             },
         }

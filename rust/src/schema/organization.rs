@@ -16,9 +16,15 @@ pub enum Organization {
     },
 }
 
+impl Default for Organization {
+    fn default() -> Self {
+        Self::Wiki
+    }
+}
+
 #[Object]
 impl Organization {
-    async fn default_repository(&self, ctx: &Context<'_>) -> Result<Repository> {
+    pub async fn default_repository(&self, ctx: &Context<'_>) -> Result<Repository> {
         match self {
             Self::Wiki => Ok(Repository::Default),
             Self::Selected {
@@ -28,7 +34,7 @@ impl Organization {
                 .data_unchecked::<Repo>()
                 .repository(default_repository_id.to_string())
                 .await?
-                .ok_or(Error::NotFound),
+                .ok_or_else(|| Error::NotFound(format!("repo id {}", **default_repository_id,))),
         }
     }
 
