@@ -3,10 +3,10 @@ use sqlx::postgres::PgPool;
 
 use super::{
     LinkLoader, LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader,
-    RepositoryByNameLoader, RepositoryLoader, TopicLoader, UserLoader,
+    RepositoryByNameLoader, RepositoryLoader, Search, TopicLoader, UserLoader,
 };
 use crate::prelude::*;
-use crate::schema::{Link, Organization, Repository, Topic, User, View};
+use crate::schema::{Link, Organization, Repository, SearchResultItem, Topic, User, View};
 
 pub struct Repo {
     pool: PgPool,
@@ -151,6 +151,16 @@ impl Repo {
             .map_err(Error::DB)
     }
 
+    pub async fn search(
+        &self,
+        parent_topic: Topic,
+        search_string: String,
+    ) -> Result<Vec<SearchResultItem>> {
+        Search::new(parent_topic, search_string.clone())
+            .call(&self.pool)
+            .await
+    }
+
     pub async fn search_topics(
         &self,
         view: View,
@@ -162,16 +172,12 @@ impl Repo {
     }
 
     pub async fn topic(&self, id: String) -> Result<Option<Topic>> {
-        self.topic_loader.load_one(id).await.map_err(Error::DB)
+        self.topic_loader.load_one(id).await
     }
 
     pub async fn topics(&self, ids: &[String]) -> Result<Vec<Option<Topic>>> {
         let ids: Vec<String> = ids.iter().map(String::to_string).collect();
-        let map = self
-            .topic_loader
-            .load_many(ids.clone())
-            .await
-            .map_err(Error::DB)?;
+        let map = self.topic_loader.load_many(ids.clone()).await?;
         let mut topics: Vec<Option<Topic>> = Vec::new();
         for id in ids {
             let topic = map.get(&id).cloned();

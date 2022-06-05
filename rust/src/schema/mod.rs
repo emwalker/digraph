@@ -12,6 +12,8 @@ mod query;
 pub use query::*;
 mod repository;
 pub use repository::*;
+mod search;
+pub use search::*;
 mod synonym;
 pub use synonym::*;
 pub mod timerange;

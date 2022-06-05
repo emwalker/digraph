@@ -3,13 +3,15 @@ use std::sync::Arc;
 quick_error! {
     #[derive(Debug, Clone)]
     pub enum Error {
+        Load(err: String) {
+            display("problem loading: {}", err)
+        }
+
         NotFound(err: String) {
             display("not found: {}", err)
         }
 
-        Load(err: String) {
-            display("problem loading: {}", err)
-        }
+        Parse(err: String) {}
 
         Resolver(err: async_graphql::Error) {
             from()

@@ -76,11 +76,11 @@ impl View {
     async fn topics(
         &self,
         ctx: &Context<'_>,
+        search_string: Option<String>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-        search_string: Option<String>,
     ) -> Result<TopicConnection> {
         conn(
             after,

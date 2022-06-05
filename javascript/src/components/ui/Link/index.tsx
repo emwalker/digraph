@@ -119,7 +119,7 @@ export default createFragmentContainer(Link, {
         id
       }
 
-      parentTopics(first: 1000) {
+      parentTopics(first: 100) {
         edges {
           node {
             displayName: name
