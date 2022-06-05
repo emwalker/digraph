@@ -1,7 +1,10 @@
 use async_graphql::connection::*;
 use itertools::Itertools;
 
-use super::{relay::conn, timerange::Prefix, LinkConnection, Repository, Synonym, Synonyms};
+use super::{
+    relay::conn, timerange::Prefix, LinkConnection, Repository, SearchResultItemConnection,
+    Synonym, Synonyms,
+};
 use crate::prelude::*;
 use crate::psql::Repo;
 
@@ -113,6 +116,26 @@ impl Topic {
             .repository(self.repository_id.clone())
             .await
             .map_err(|_e| Error::NotFound(format!("repo id {}", self.repository_id)))
+    }
+
+    async fn search(
+        &self,
+        ctx: &Context<'_>,
+        first: Option<i32>,
+        after: Option<String>,
+        last: Option<i32>,
+        before: Option<String>,
+        search_string: String,
+    ) -> Result<SearchResultItemConnection> {
+        conn(
+            after,
+            before,
+            first,
+            last,
+            ctx.data_unchecked::<Repo>()
+                .search(self.clone(), search_string)
+                .await?,
+        )
     }
 
     async fn synonyms(&self) -> Vec<Synonym> {

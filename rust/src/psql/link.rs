@@ -6,8 +6,9 @@ use sqlx::types::Uuid;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::shared::uuids;
-use crate::schema::Link;
+use super::queries::{LINK_FIELDS, LINK_JOINS};
+
+use crate::schema::{Link, SearchResultItem};
 
 #[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
 pub struct Row {
@@ -30,6 +31,10 @@ impl Row {
             url: self.url.to_owned(),
         }
     }
+
+    pub fn to_search_result_item(&self) -> SearchResultItem {
+        SearchResultItem::Link(self.to_link())
+    }
 }
 
 pub struct LinkLoader(PgPool);
@@ -48,25 +53,18 @@ impl Loader<String> for LinkLoader {
     async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         log::debug!("batch links: {:?}", ids);
 
-        let uuids = uuids(ids);
-        let rows = sqlx::query_as!(
-            Row,
+        let query = format!(
             r#"select
-                l.id as "id!",
-                l.title as "title!",
-                l.url as "url!",
-                l.repository_id as "repository_id!",
-                array_remove(array_agg(distinct parent_topics.parent_id), null)
-                    as "parent_topic_ids!"
-
-            from links l
-            left join link_topics parent_topics on l.id = parent_topics.child_id
-            where l.id = any($1)
+                {LINK_FIELDS}
+                {LINK_JOINS}
+            where l.id = any($1::uuid[])
             group by l.id"#,
-            &uuids,
-        )
-        .fetch_all(&self.0)
-        .await;
+        );
+
+        let rows = sqlx::query_as::<_, Row>(&query)
+            .bind(ids)
+            .fetch_all(&self.0)
+            .await;
 
         Ok(rows?
             .iter()
