@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use super::queries::{LINK_FIELDS, LINK_JOINS};
 
-use crate::schema::{Link, SearchResultItem};
+use crate::schema::{Link, SearchResultItem, Viewer};
 
 #[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
 pub struct Row {
@@ -37,11 +37,14 @@ impl Row {
     }
 }
 
-pub struct LinkLoader(PgPool);
+pub struct LinkLoader {
+    viewer: Viewer,
+    pool: PgPool,
+}
 
 impl LinkLoader {
-    pub fn new(pool: PgPool) -> Self {
-        Self(pool)
+    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+        Self { viewer, pool }
     }
 }
 
@@ -55,15 +58,16 @@ impl Loader<String> for LinkLoader {
 
         let query = format!(
             r#"select
-                {LINK_FIELDS}
-                {LINK_JOINS}
-            where l.id = any($1::uuid[])
+            {LINK_FIELDS}
+            {LINK_JOINS}
+            where l.id = any($1::uuid[]) and om.user_id = any($2::uuid[])
             group by l.id"#,
         );
 
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(ids)
-            .fetch_all(&self.0)
+            .bind(&self.viewer.query_ids)
+            .fetch_all(&self.pool)
             .await;
 
         Ok(rows?

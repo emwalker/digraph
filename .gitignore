@@ -20,4 +20,4 @@ tmp/
 *.dump.gz
 *.code-workspace
 target/
-.env
+.env*

@@ -1,29 +1,37 @@
 #[macro_use]
 extern crate quick_error;
 
-use actix_web::{guard, web, App, HttpResponse, HttpServer};
+use actix_web::{
+    cookie::{time::Duration, SameSite},
+    guard, post, web, App, HttpResponse, HttpServer,
+};
 // use async_graphql::extensions::ApolloTracing;
+use actix_identity::{CookieIdentityPolicy, IdentityService};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use async_graphql::{EmptyMutation, EmptySubscription};
+use async_graphql::EmptySubscription;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use futures::lock::Mutex;
 use std::env;
 
+mod config;
 mod db;
 mod errors;
 mod prelude;
 mod psql;
-mod query;
 mod schema;
+use actix_identity::Identity;
+use config::Config;
 use errors::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-use query::{QueryRoot, Schema, State};
-use schema::View;
+use schema::{MutationRoot, QueryRoot, Schema, Session, State, View};
 
-async fn index(state: web::Data<State>, req: GraphQLRequest) -> GraphQLResponse {
-    let repo = state.create_repo();
+#[post("/graphql")]
+async fn index(state: web::Data<State>, req: GraphQLRequest, id: Identity) -> GraphQLResponse {
+    let session = Session::from(&id).unwrap();
+    let viewer = state.viewer(session.id).await;
+    let repo = state.create_repo(viewer);
     let view = Mutex::<Option<View>>::new(None);
     state
         .schema
@@ -42,11 +50,11 @@ async fn index_playground() -> Result<HttpResponse> {
 
 #[actix_web::main]
 async fn main() -> async_graphql::Result<()> {
-    dotenv::dotenv().ok();
+    let config = Config::load()?;
     env_logger::init();
 
     let pool = db::db_connection().await?;
-    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         // .extension(ApolloTracing)
         .finish();
     let state = State::new(pool, schema);
@@ -57,8 +65,15 @@ async fn main() -> async_graphql::Result<()> {
     // TODO: Look into switching to https://github.com/poem-web/poem
     HttpServer::new(move || {
         App::new()
+            .wrap(IdentityService::new(
+                CookieIdentityPolicy::new(config.session_key.as_bytes())
+                    .name("auth-cookie")
+                    .max_age(Duration::days(356))
+                    .same_site(SameSite::Strict)
+                    .secure(true),
+            ))
             .app_data(web::Data::new(state.clone()))
-            .service(web::resource("/graphql").guard(guard::Post()).to(index))
+            .service(index)
             .service(
                 web::resource("/graphql")
                     .guard(guard::Get())

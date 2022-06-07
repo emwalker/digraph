@@ -16,7 +16,7 @@ pub mod shared;
 pub use search::*;
 mod topic;
 pub use topic::*;
-mod user;
+pub mod user;
 pub use user::*;
 
 #[derive(Debug, PartialEq)]

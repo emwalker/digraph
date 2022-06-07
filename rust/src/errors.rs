@@ -3,6 +3,14 @@ use std::sync::Arc;
 quick_error! {
     #[derive(Debug, Clone)]
     pub enum Error {
+        Deserialization(err: String) {
+            from(err: serde_json::Error) -> (format!("{:?}", err))
+        }
+
+        Config(err: envy::Error) {
+            from()
+        }
+
         Load(err: String) {
             display("problem loading: {}", err)
         }
