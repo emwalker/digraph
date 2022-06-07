@@ -18,7 +18,7 @@ pub struct Row {
 }
 
 impl Row {
-    fn to_user(&self) -> User {
+    pub fn to_user(&self) -> User {
         User::Registered {
             id: ID(self.id.to_string()),
             name: self.name.to_owned(),

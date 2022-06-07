@@ -6,10 +6,11 @@ use super::{
     RepositoryByNameLoader, RepositoryLoader, Search, TopicLoader, UserLoader,
 };
 use crate::prelude::*;
-use crate::schema::{Link, Organization, Repository, SearchResultItem, Topic, User, View};
+use crate::schema::{Link, Organization, Repository, SearchResultItem, Topic, User, Viewer};
 
 pub struct Repo {
     pool: PgPool,
+    viewer: Viewer,
     link_loader: DataLoader<LinkLoader, HashMapCache>,
     organization_loader: DataLoader<OrganizationLoader, HashMapCache>,
     organization_by_login_loader: DataLoader<OrganizationByLoginLoader, HashMapCache>,
@@ -20,17 +21,18 @@ pub struct Repo {
 }
 
 impl Repo {
-    pub fn new(pool: PgPool) -> Self {
-        let link_loader = LinkLoader::new(pool.clone());
+    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+        let link_loader = LinkLoader::new(viewer.clone(), pool.clone());
         let organization_loader = OrganizationLoader::new(pool.clone());
         let organization_by_login_loader = OrganizationByLoginLoader::new(pool.clone());
         let repository_loader = RepositoryLoader::new(pool.clone());
         let repository_by_name_loader = RepositoryByNameLoader::new(pool.clone());
-        let topic_loader = TopicLoader::new(pool.clone());
+        let topic_loader = TopicLoader::new(viewer.clone(), pool.clone());
         let user_loader = UserLoader::new(pool.clone());
 
         Self {
             pool,
+            viewer,
             link_loader: DataLoader::with_cache(
                 link_loader,
                 actix_web::rt::spawn,
@@ -156,17 +158,17 @@ impl Repo {
         parent_topic: Topic,
         search_string: String,
     ) -> Result<Vec<SearchResultItem>> {
-        Search::new(parent_topic, search_string.clone())
-            .call(&self.pool)
-            .await
+        Search::new(
+            self.viewer.query_ids.clone(),
+            parent_topic,
+            search_string.clone(),
+        )
+        .call(&self.pool)
+        .await
     }
 
-    pub async fn search_topics(
-        &self,
-        view: View,
-        search_string: Option<String>,
-    ) -> Result<Vec<Topic>> {
-        LiveSearchTopics::new(view, search_string.clone())
+    pub async fn search_topics(&self, search_string: Option<String>) -> Result<Vec<Topic>> {
+        LiveSearchTopics::new(self.viewer.query_ids.clone(), search_string.clone())
             .call(&self.pool)
             .await
     }

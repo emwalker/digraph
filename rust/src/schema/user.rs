@@ -4,7 +4,7 @@ use super::{Repository, RepositoryConnection, RepositoryEdgeFields};
 use crate::prelude::*;
 use crate::psql::Repo;
 
-static GUEST_ID: &str = "11a13e26-ee64-4c31-8af1-d1e953899ee0";
+pub static GUEST_ID: &str = "11a13e26-ee64-4c31-8af1-d1e953899ee0";
 
 #[derive(Clone)]
 pub enum User {

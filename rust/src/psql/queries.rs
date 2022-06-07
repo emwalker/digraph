@@ -20,6 +20,7 @@ const TOPIC_FIELDS: &str = r#"
 const TOPIC_JOINS: &str = r#"
     from topics t
     join organizations o on o.id = t.organization_id
+    join organization_members om on om.organization_id = t.organization_id
     left join timeranges tr on tr.id = t.timerange_id
     left join link_topics child_links on t.id = child_links.parent_id
     left join topic_topics child_topics on t.id = child_topics.parent_id
@@ -37,17 +38,21 @@ pub const LINK_FIELDS: &str = r#"
 
 pub const LINK_JOINS: &str = r#"
     from links l
+    join repositories r on r.id = l.repository_id
+    join organization_members om on om.organization_id = r.organization_id
     left join link_topics parent_topics on l.id = parent_topics.child_id
 "#;
 
 pub struct TopicQuery {
+    viewer_ids: Vec<String>,
     topic_ids: Vec<String>,
     limit: i32,
 }
 
 impl TopicQuery {
-    pub fn from(topic_ids: Vec<String>) -> Self {
+    pub fn from(viewer_ids: Vec<String>, topic_ids: Vec<String>) -> Self {
         Self {
+            viewer_ids,
             topic_ids,
             limit: 10000,
         }
@@ -57,6 +62,7 @@ impl TopicQuery {
         let sql = self.topic_sql();
         let rows = sqlx::query_as::<_, topic::Row>(&sql)
             .bind(&self.topic_ids)
+            .bind(&self.viewer_ids)
             .bind(self.limit)
             .fetch_all(pool)
             .await?;
@@ -65,9 +71,16 @@ impl TopicQuery {
     }
 
     fn topic_sql(&self) -> String {
+        let mut wheres: Vec<String> = Vec::new();
         let mut index = 1;
-        let where_clause = format!("t.id = any(${index}::uuid[])");
+
+        wheres.push(format!("t.id = any(${index}::uuid[])"));
         index += 1;
+
+        wheres.push(format!("om.user_id = any(${index}::uuid[])"));
+        index += 1;
+
+        let where_clause = wheres.join(" and ");
 
         format!(
             r#"select
@@ -81,13 +94,15 @@ impl TopicQuery {
 }
 
 pub struct LiveTopicQuery {
+    viewer_ids: Vec<String>,
     query_spec: QuerySpec,
     limit: i32,
 }
 
 impl LiveTopicQuery {
-    pub fn from(query_spec: QuerySpec) -> Self {
+    pub fn from(viewer_ids: Vec<String>, query_spec: QuerySpec) -> Self {
         Self {
+            viewer_ids,
             query_spec,
             limit: 15,
         }
@@ -100,6 +115,7 @@ impl LiveTopicQuery {
         let sql = self.topic_sql();
         let rows = sqlx::query_as::<_, topic::Row>(&sql)
             .bind(tokens)
+            .bind(&self.viewer_ids)
             .bind(self.limit)
             .fetch_all(pool)
             .await?;
@@ -109,8 +125,13 @@ impl LiveTopicQuery {
 
     pub fn topic_sql(&self) -> String {
         let mut index = 1;
-        let where_clause = format!("t.name ~~* all(${index})");
+        let mut wheres = vec![format!("t.name ~~* all(${index})")];
         index += 1;
+
+        wheres.push(format!("om.user_id = any(${index}::uuid[])"));
+        index += 1;
+
+        let where_clause = wheres.join(" and ");
 
         format!(
             r#"select
@@ -125,14 +146,16 @@ impl LiveTopicQuery {
 }
 
 pub struct SearchQuery {
+    viewer_ids: Vec<String>,
     parent_topic: Topic,
     query_spec: QuerySpec,
     limit: i32,
 }
 
 impl SearchQuery {
-    pub fn from(parent_topic: Topic, query_spec: QuerySpec) -> Self {
+    pub fn from(viewer_ids: Vec<String>, parent_topic: Topic, query_spec: QuerySpec) -> Self {
         Self {
+            viewer_ids,
             parent_topic,
             query_spec,
             limit: 100,
@@ -154,7 +177,7 @@ impl SearchQuery {
     }
 
     fn topic_sql(&self, topic_ids: &Vec<String>) -> String {
-        let mut wheres: Vec<String> = vec!["true".to_string()];
+        let mut wheres: Vec<String> = vec![];
         let mut joins: Vec<String> = vec![];
         let mut index = 1;
 
@@ -172,6 +195,9 @@ impl SearchQuery {
 
         let order_by =
             format!(r#"order by t.id = any (${index}::uuid[]) desc, char_length(t.name), t.name"#);
+        index += 1;
+
+        wheres.push(format!("om.user_id = any(${index}::uuid[])"));
         index += 1;
 
         let where_clauses = wheres.join(" and ");
@@ -211,6 +237,7 @@ impl SearchQuery {
         let rows = q
             .bind(tokens)
             .bind(topic_ids)
+            .bind(&self.viewer_ids)
             .bind(limit)
             .fetch_all(pool)
             .await?;
@@ -223,7 +250,7 @@ impl SearchQuery {
     }
 
     fn link_sql(&self, topic_ids: &Vec<String>) -> String {
-        let mut wheres: Vec<String> = vec!["true".to_string()];
+        let mut wheres: Vec<String> = vec![];
         let mut joins: Vec<String> = vec![];
         let mut index = 1;
 
@@ -238,6 +265,9 @@ impl SearchQuery {
             wheres.push(format!("l.title ~~* all(${index})"));
             index += 1;
         }
+
+        wheres.push(format!("om.user_id = any(${index}::uuid[])"));
+        index += 1;
 
         let where_clauses = wheres.join(" and ");
         let join_clauses = joins.join("\n");
@@ -267,7 +297,12 @@ impl SearchQuery {
         for topic_id in topic_ids {
             q = q.bind(topic_id);
         }
-        let rows = q.bind(tokens).bind(limit).fetch_all(pool).await?;
+        let rows = q
+            .bind(tokens)
+            .bind(&self.viewer_ids)
+            .bind(limit)
+            .fetch_all(pool)
+            .await?;
 
         let links: Vec<SearchResultItem> =
             rows.iter().map(link::Row::to_search_result_item).collect();

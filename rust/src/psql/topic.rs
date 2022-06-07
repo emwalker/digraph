@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use super::queries::TopicQuery;
 use crate::prelude::*;
-use crate::schema::{timerange, SearchResultItem, Synonyms, Topic};
+use crate::schema::{timerange, SearchResultItem, Synonyms, Topic, Viewer};
 
 #[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
 pub struct Row {
@@ -53,11 +53,14 @@ impl Row {
     }
 }
 
-pub struct TopicLoader(PgPool);
+pub struct TopicLoader {
+    viewer: Viewer,
+    pool: PgPool,
+}
 
 impl TopicLoader {
-    pub fn new(pool: PgPool) -> Self {
-        Self(pool)
+    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+        Self { viewer, pool }
     }
 }
 
@@ -68,7 +71,9 @@ impl Loader<String> for TopicLoader {
 
     async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>> {
         log::debug!("load topics by batch {:?}", ids);
-        let topics = TopicQuery::from(ids.to_vec()).execute(&self.0).await?;
+        let topics = TopicQuery::from(self.viewer.query_ids.clone(), ids.to_vec())
+            .execute(&self.pool)
+            .await?;
         Ok(topics
             .iter()
             .map(|t| (t.id.to_string(), t.clone()))

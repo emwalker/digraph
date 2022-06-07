@@ -88,7 +88,7 @@ impl View {
             first,
             last,
             ctx.data_unchecked::<Repo>()
-                .search_topics(self.clone(), search_string)
+                .search_topics(search_string)
                 .await?,
         )
     }
