@@ -30,6 +30,7 @@ if (typeof window === 'undefined') global.window = {}
 // @ts-ignore-end
 
 // eslint-disable-next-line import/no-dynamic-require
+const oneMonth = 2629800000;
 const assets = require(process.env.RAZZLE_ASSETS_MANIFEST || '')
 const reducer = (state: any) => state
 const fetcher = new ServerFetcher()
@@ -43,8 +44,8 @@ app = configureApiProxy(app)
 app
   .disable('x-powered-by')
   .use(compression())
-  .use('/static/images', express.static(imagesDir))
-  .use('/static', express.static(publicDir))
+  .use('/static/images', express.static(imagesDir, { maxAge: oneMonth }))
+  .use('/static', express.static(publicDir,  { maxAge: oneMonth }))
   .use('/robots.txt', (req, res) => {
     res.type('text/plain')
     res.send('User-agent: *\nAllow: /\n')
