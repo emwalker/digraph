@@ -5,7 +5,7 @@ use crate::prelude::*;
 use crate::psql::Repo;
 use crate::Result;
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Link {
     pub id: ID,
     pub parent_topic_ids: Vec<String>,
@@ -14,10 +14,31 @@ pub struct Link {
     pub url: String,
 }
 
-pub type LinkConnection = Connection<usize, Link, EmptyFields, EmptyFields>;
+pub type LinkEdge = Edge<String, Link, EmptyFields>;
+pub type LinkConnection = Connection<String, Link, EmptyFields, EmptyFields>;
 
 #[Object]
 impl Link {
+    async fn available_parent_topics(
+        &self,
+        ctx: &Context<'_>,
+        search_string: Option<String>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> Result<TopicConnection> {
+        conn(
+            after,
+            before,
+            first,
+            last,
+            ctx.data_unchecked::<Repo>()
+                .search_topics(search_string)
+                .await?,
+        )
+    }
+
     async fn id(&self) -> ID {
         self.id.to_owned()
     }

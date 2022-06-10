@@ -25,7 +25,15 @@ quick_error! {
 
         Parse(err: String) {}
 
+        Reqwest(err: String) {
+            from(err: reqwest::Error) -> (format!("{:?}", err))
+        }
+
         Resolver(err: async_graphql::Error) {
+            from()
+        }
+
+        UrlParse(err: url::ParseError) {
             from()
         }
 

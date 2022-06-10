@@ -6,3 +6,9 @@ use crate::prelude::*;
 pub struct Session {
     pub id: String,
 }
+
+#[derive(Debug, SimpleObject)]
+pub struct SessionEdge {
+    pub cursor: String,
+    pub node: Session,
+}

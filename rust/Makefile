@@ -6,7 +6,7 @@ format:
 	cargo fmt
 
 start:
-	RUST_LOG=debug cargo run
+	RUST_LOG=info,digraph=debug cargo run
 
 test:
 	cargo test

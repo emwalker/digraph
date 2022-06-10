@@ -4,11 +4,12 @@ use sqlx::postgres::PgPool;
 use super::{
     CreateGithubSession, CreateSessionResult, LinkLoader, LiveSearchTopics,
     OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader,
-    Search, TopicLoader, UserLoader,
+    Search, TopicLoader, UpsertLink, UpsertLinkResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
-    CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem, Topic, User, Viewer,
+    CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem, Topic,
+    UpsertLinkInput, User, Viewer,
 };
 
 pub struct Repo {
@@ -103,16 +104,12 @@ impl Repo {
     }
 
     pub async fn link(&self, id: String) -> Result<Option<Link>> {
-        self.link_loader.load_one(id).await.map_err(Error::DB)
+        self.link_loader.load_one(id).await
     }
 
     pub async fn links(&self, ids: &[String]) -> Result<Vec<Option<Link>>> {
         let ids: Vec<String> = ids.iter().map(String::to_string).collect();
-        let map = self
-            .link_loader
-            .load_many(ids.clone())
-            .await
-            .map_err(Error::DB)?;
+        let map = self.link_loader.load_many(ids.clone()).await?;
         let mut links: Vec<Option<Link>> = Vec::new();
         for id in ids {
             let link = map.get(&id).cloned();
@@ -189,6 +186,10 @@ impl Repo {
             topics.push(topic);
         }
         Ok(topics)
+    }
+
+    pub async fn upsert_link(&self, input: UpsertLinkInput) -> Result<UpsertLinkResult> {
+        UpsertLink::new(input).call(&self.pool).await
     }
 
     pub async fn upsert_session(
