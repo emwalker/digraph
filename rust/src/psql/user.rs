@@ -11,10 +11,10 @@ use crate::schema::User;
 
 #[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
 pub struct Row {
-    avatar_url: String,
-    id: Uuid,
-    name: String,
-    selected_repository_id: Option<Uuid>,
+    pub avatar_url: String,
+    pub id: Uuid,
+    pub name: String,
+    pub selected_repository_id: Option<Uuid>,
 }
 
 impl Row {

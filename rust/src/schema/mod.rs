@@ -1,7 +1,7 @@
 use async_graphql::EmptySubscription;
 use async_graphql::*;
 use futures::lock::Mutex;
-use sqlx::{postgres::PgPool, types::Uuid, FromRow};
+use sqlx::postgres::PgPool;
 
 use crate::psql::Repo;
 mod activity;
@@ -43,11 +43,6 @@ pub struct Viewer {
     pub query_ids: Vec<String>,
 }
 
-#[derive(FromRow, Clone, Debug)]
-pub struct DatabaseSession {
-    user_id: Uuid,
-}
-
 #[derive(Clone)]
 pub struct State {
     pool: PgPool,
@@ -63,32 +58,12 @@ impl State {
         Repo::new(viewer, self.pool.clone())
     }
 
-    pub async fn viewer(&self, session_id: String) -> Viewer {
-        let session_id = session_id.as_bytes();
-        let result = sqlx::query_as!(
-            DatabaseSession,
-            r#"select user_id from sessions where session_id = $1"#,
-            &session_id,
-        )
-        .fetch_optional(&self.pool)
-        .await;
-
-        match result {
-            Ok(row) => match row {
-                Some(session) => Viewer {
-                    query_ids: vec![GUEST_ID.to_string(), session.user_id.to_string()],
-                },
-                None => Viewer {
-                    query_ids: vec![GUEST_ID.to_string()],
-                },
-            },
-            Err(_) => {
-                log::warn!("problem fetching session: {:?}", session_id);
-                Viewer {
-                    query_ids: vec![GUEST_ID.to_string()],
-                }
-            }
+    pub async fn viewer(&self, user_id: Option<String>) -> Viewer {
+        let mut query_ids = vec![GUEST_ID.to_string()];
+        if user_id.is_some() {
+            query_ids.push(user_id.unwrap_or_default());
         }
+        Viewer { query_ids }
     }
 }
 
@@ -123,19 +98,19 @@ impl QueryRoot {
     }
 }
 
-#[derive(SimpleObject)]
+#[derive(Debug, SimpleObject)]
 pub struct UserEdge {
     cursor: String,
     node: User,
 }
 
-#[derive(SimpleObject)]
+#[derive(Debug, SimpleObject)]
 pub struct SessionEdge {
     cursor: String,
     node: Session,
 }
 
-#[derive(SimpleObject)]
+#[derive(SimpleObject, Debug)]
 pub struct CreateSessionPayload {
     alerts: Vec<Alert>,
     user_edge: Option<UserEdge>,
@@ -143,10 +118,10 @@ pub struct CreateSessionPayload {
 }
 
 #[derive(InputObject, Debug)]
-struct CreateGithubSessionInput {
+pub struct CreateGithubSessionInput {
     client_mutation_id: Option<String>,
     github_avatar_url: String,
-    github_username: String,
+    pub github_username: String,
     name: String,
     primary_email: String,
     server_secret: String,
@@ -156,13 +131,24 @@ struct CreateGithubSessionInput {
 impl MutationRoot {
     async fn create_github_session(
         &self,
+        ctx: &Context<'_>,
         input: CreateGithubSessionInput,
     ) -> Result<CreateSessionPayload> {
         log::info!("creating GitHub session: {:?}", input);
+        let result = ctx.data_unchecked::<Repo>().upsert_session(input).await?;
+
         Ok(CreateSessionPayload {
-            alerts: vec![],
-            user_edge: None,
-            session_edge: None,
+            alerts: result.alerts,
+            user_edge: Some(UserEdge {
+                cursor: String::from("0"),
+                node: result.user,
+            }),
+            session_edge: Some(SessionEdge {
+                cursor: String::from("0"),
+                node: Session {
+                    id: result.session_id,
+                },
+            }),
         })
     }
 }

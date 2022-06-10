@@ -1,6 +1,7 @@
-use crate::prelude::*;
 use lazy_static::lazy_static;
 use regex::Regex;
+
+use crate::prelude::*;
 
 mod queries;
 mod repo;
@@ -14,6 +15,8 @@ pub use repository::*;
 mod search;
 pub mod shared;
 pub use search::*;
+mod session;
+pub use session::*;
 mod topic;
 pub use topic::*;
 pub mod user;

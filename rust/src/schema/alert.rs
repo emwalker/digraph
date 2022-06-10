@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-#[derive(Enum, Copy, Clone, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Enum, PartialEq, Eq)]
 pub enum AlertType {
     Success,
     Warning,
@@ -17,6 +17,7 @@ impl std::fmt::Display for AlertType {
     }
 }
 
+#[derive(Debug)]
 pub struct Alert {
     pub text: String,
     pub alert_type: AlertType,

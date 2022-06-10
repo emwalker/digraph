@@ -6,7 +6,7 @@ use crate::psql::Repo;
 
 pub static GUEST_ID: &str = "11a13e26-ee64-4c31-8af1-d1e953899ee0";
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum User {
     Guest,
     Registered {

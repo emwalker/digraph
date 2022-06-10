@@ -3,12 +3,16 @@ use std::sync::Arc;
 quick_error! {
     #[derive(Debug, Clone)]
     pub enum Error {
-        Deserialization(err: String) {
-            from(err: serde_json::Error) -> (format!("{:?}", err))
-        }
-
         Config(err: envy::Error) {
             from()
+        }
+
+        DB(err: Arc<sqlx::Error>) {
+            from(err: sqlx::Error) -> (Arc::new(err))
+        }
+
+        Deserialization(err: String) {
+            from(err: serde_json::Error) -> (format!("{:?}", err))
         }
 
         Load(err: String) {
@@ -25,8 +29,8 @@ quick_error! {
             from()
         }
 
-        DB(err: Arc<sqlx::Error>) {
-            from(err: sqlx::Error) -> (Arc::new(err))
+        Utf8(err: std::string::FromUtf8Error) {
+            from()
         }
     }
 }
