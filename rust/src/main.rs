@@ -1,12 +1,8 @@
 #[macro_use]
 extern crate quick_error;
 
-use actix_web::{
-    cookie::{time::Duration, SameSite},
-    guard, post, web, App, HttpResponse, HttpServer,
-};
+use actix_web::{guard, post, web, App, HttpRequest, HttpResponse, HttpServer};
 // use async_graphql::extensions::ApolloTracing;
-use actix_identity::{CookieIdentityPolicy, IdentityService};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
@@ -19,20 +15,42 @@ mod errors;
 mod prelude;
 mod psql;
 mod schema;
-use actix_identity::Identity;
 use config::Config;
 use errors::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-use schema::{MutationRoot, QueryRoot, Schema, Session, State, View};
+use schema::{MutationRoot, QueryRoot, Schema, State, View};
+
+fn user_id_from_header(req: HttpRequest) -> Option<String> {
+    match req.headers().get("authorization") {
+        Some(value) => match value.to_str() {
+            Ok(value) => {
+                let parts = value.split(':').collect::<Vec<&str>>();
+                if parts.len() == 2 {
+                    Some(parts[0].to_string())
+                } else {
+                    None
+                }
+            }
+            Err(_) => None,
+        },
+        None => None,
+    }
+}
 
 #[post("/graphql")]
-async fn index(state: web::Data<State>, req: GraphQLRequest, id: Identity) -> GraphQLResponse {
-    let session = Session::from(&id).unwrap();
-    let viewer = state.viewer(session.id).await;
+async fn index(
+    state: web::Data<State>,
+    req: GraphQLRequest,
+    http_req: HttpRequest,
+) -> GraphQLResponse {
+    let user_id = user_id_from_header(http_req);
+    log::debug!("user id: {:?}", user_id);
+    let viewer = state.viewer(user_id).await;
     let repo = state.create_repo(viewer);
     let view = Mutex::<Option<View>>::new(None);
+
     state
         .schema
         .execute(req.into_inner().data(repo).data(view))
@@ -50,7 +68,7 @@ async fn index_playground() -> Result<HttpResponse> {
 
 #[actix_web::main]
 async fn main() -> async_graphql::Result<()> {
-    let config = Config::load()?;
+    let _config = Config::load()?;
     env_logger::init();
 
     let pool = db::db_connection().await?;
@@ -65,13 +83,6 @@ async fn main() -> async_graphql::Result<()> {
     // TODO: Look into switching to https://github.com/poem-web/poem
     HttpServer::new(move || {
         App::new()
-            .wrap(IdentityService::new(
-                CookieIdentityPolicy::new(config.session_key.as_bytes())
-                    .name("auth-cookie")
-                    .max_age(Duration::days(356))
-                    .same_site(SameSite::Strict)
-                    .secure(true),
-            ))
             .app_data(web::Data::new(state.clone()))
             .service(index)
             .service(
