@@ -1,6 +1,6 @@
 use super::TopicConnection;
 use super::{
-    relay::conn, ActivityLineItemConnection, Organization, QueryInfo, Repository, Topic, User,
+    relay::conn, ActivityLineItemConnection, Link, Organization, QueryInfo, Repository, Topic, User,
 };
 use crate::prelude::*;
 use crate::psql::Repo;
@@ -49,6 +49,10 @@ impl View {
                     .await
             }
         }
+    }
+
+    async fn link(&self, ctx: &Context<'_>, id: ID) -> Result<Option<Link>> {
+        ctx.data_unchecked::<Repo>().link(id.to_string()).await
     }
 
     async fn link_count(&self) -> i32 {

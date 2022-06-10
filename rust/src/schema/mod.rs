@@ -12,6 +12,8 @@ mod relay;
 pub use relay::*;
 mod link;
 pub use link::*;
+mod mutation;
+pub use mutation::*;
 mod organization;
 pub use organization::*;
 mod query;
@@ -31,8 +33,6 @@ mod user;
 pub use user::*;
 mod view;
 pub use view::*;
-
-pub struct MutationRoot;
 
 pub struct QueryRoot;
 
@@ -95,60 +95,5 @@ impl QueryRoot {
         *mutex.lock().await = Some(view.clone());
 
         Ok(view)
-    }
-}
-
-#[derive(Debug, SimpleObject)]
-pub struct UserEdge {
-    cursor: String,
-    node: User,
-}
-
-#[derive(Debug, SimpleObject)]
-pub struct SessionEdge {
-    cursor: String,
-    node: Session,
-}
-
-#[derive(SimpleObject, Debug)]
-pub struct CreateSessionPayload {
-    alerts: Vec<Alert>,
-    user_edge: Option<UserEdge>,
-    session_edge: Option<SessionEdge>,
-}
-
-#[derive(InputObject, Debug)]
-pub struct CreateGithubSessionInput {
-    client_mutation_id: Option<String>,
-    github_avatar_url: String,
-    pub github_username: String,
-    name: String,
-    primary_email: String,
-    server_secret: String,
-}
-
-#[Object]
-impl MutationRoot {
-    async fn create_github_session(
-        &self,
-        ctx: &Context<'_>,
-        input: CreateGithubSessionInput,
-    ) -> Result<CreateSessionPayload> {
-        log::info!("creating GitHub session: {:?}", input);
-        let result = ctx.data_unchecked::<Repo>().upsert_session(input).await?;
-
-        Ok(CreateSessionPayload {
-            alerts: result.alerts,
-            user_edge: Some(UserEdge {
-                cursor: String::from("0"),
-                node: result.user,
-            }),
-            session_edge: Some(SessionEdge {
-                cursor: String::from("0"),
-                node: Session {
-                    id: result.session_id,
-                },
-            }),
-        })
     }
 }

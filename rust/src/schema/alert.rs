@@ -17,7 +17,7 @@ impl std::fmt::Display for AlertType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Alert {
     pub text: String,
     pub alert_type: AlertType,

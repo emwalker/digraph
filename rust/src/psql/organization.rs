@@ -1,5 +1,4 @@
 use async_graphql::dataloader::*;
-use async_graphql::SimpleObject;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
@@ -8,7 +7,7 @@ use super::shared::uuids;
 use crate::prelude::*;
 use crate::schema::Organization;
 
-#[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
+#[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
     id: Uuid,
     name: String,

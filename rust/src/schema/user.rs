@@ -23,6 +23,12 @@ impl Default for User {
     }
 }
 
+#[derive(Debug, SimpleObject)]
+pub struct UserEdge {
+    pub cursor: String,
+    pub node: User,
+}
+
 #[Object]
 impl User {
     pub async fn avatar_url(&self) -> Option<String> {
@@ -68,7 +74,7 @@ impl User {
             last,
             |_after, _before, _first, _last| async move {
                 let mut connection = Connection::new(false, false);
-                connection.append(results.into_iter().map(|n| {
+                connection.edges.extend(results.into_iter().map(|n| {
                     Edge::with_additional_fields(
                         0_usize,
                         n,

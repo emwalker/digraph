@@ -8,4 +8,5 @@ pub enum SearchResultItem {
     Topic(Topic),
 }
 
-pub type SearchResultItemConnection = Connection<usize, SearchResultItem, EmptyFields, EmptyFields>;
+pub type SearchResultItemConnection =
+    Connection<String, SearchResultItem, EmptyFields, EmptyFields>;

@@ -1,16 +1,17 @@
-use async_graphql::connection::*;
+use async_graphql::{connection::*, OutputType};
 
 use futures::executor;
 
 use crate::prelude::*;
 
-pub fn conn<N>(
+pub fn conn<N: OutputType>(
     after: Option<String>,
     before: Option<String>,
     first: Option<i32>,
     last: Option<i32>,
     results: Vec<N>,
-) -> Result<Connection<usize, N, EmptyFields, EmptyFields>> {
+) -> Result<Connection<String, N, EmptyFields, EmptyFields, DefaultConnectionName, DefaultEdgeName>>
+{
     let result = query(
         after,
         before,
@@ -18,10 +19,10 @@ pub fn conn<N>(
         last,
         |_after, _before, _first, _last| async move {
             let mut connection = Connection::new(false, false);
-            connection.append(
+            connection.edges.extend(
                 results
                     .into_iter()
-                    .map(|n| Edge::with_additional_fields(0_usize, n, EmptyFields)),
+                    .map(|n| Edge::with_additional_fields(String::from("0"), n, EmptyFields)),
             );
             Ok::<_, Error>(connection)
         },

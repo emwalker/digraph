@@ -21,7 +21,7 @@ pub struct Topic {
     pub synonyms: Synonyms,
 }
 
-pub type TopicConnection = Connection<usize, Topic, EmptyFields, EmptyFields>;
+pub type TopicConnection = Connection<String, Topic, EmptyFields, EmptyFields>;
 
 #[Object]
 impl Topic {

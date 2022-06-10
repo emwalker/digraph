@@ -1,6 +1,5 @@
 use async_graphql::dataloader::*;
 use async_graphql::types::ID;
-use async_graphql::SimpleObject;
 use chrono::{DateTime, Utc};
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
@@ -10,7 +9,7 @@ use super::queries::TopicQuery;
 use crate::prelude::*;
 use crate::schema::{timerange, SearchResultItem, Synonyms, Topic, Viewer};
 
-#[derive(sqlx::FromRow, Clone, Debug, SimpleObject)]
+#[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
     pub child_link_ids: Vec<Uuid>,
     pub child_topic_ids: Vec<Uuid>,

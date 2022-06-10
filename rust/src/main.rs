@@ -1,6 +1,9 @@
 #[macro_use]
 extern crate quick_error;
 
+#[macro_use]
+extern crate derivative;
+
 use actix_web::{guard, post, web, App, HttpRequest, HttpResponse, HttpServer};
 // use async_graphql::extensions::ApolloTracing;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
@@ -12,6 +15,7 @@ use std::env;
 mod config;
 mod db;
 mod errors;
+mod http;
 mod prelude;
 mod psql;
 mod schema;

@@ -8,4 +8,5 @@ pub struct ActivityLineItem {
     pub created_at: DateTime<Utc>,
 }
 
-pub type ActivityLineItemConnection = Connection<usize, ActivityLineItem, EmptyFields, EmptyFields>;
+pub type ActivityLineItemConnection =
+    Connection<String, ActivityLineItem, EmptyFields, EmptyFields>;
