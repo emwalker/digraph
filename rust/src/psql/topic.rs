@@ -5,14 +5,12 @@ use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 
-use super::queries::TopicQuery;
+use super::queries::{TopicQuery, TOPIC_FIELDS, TOPIC_JOINS};
 use crate::prelude::*;
 use crate::schema::{timerange, SearchResultItem, Synonyms, Topic, Viewer};
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
-    pub child_link_ids: Vec<Uuid>,
-    pub child_topic_ids: Vec<Uuid>,
     pub id: Uuid,
     pub name: String,
     pub parent_topic_ids: Vec<Uuid>,
@@ -25,8 +23,6 @@ pub struct Row {
 
 impl Row {
     pub fn to_topic(&self) -> Topic {
-        let child_link_ids = self.child_link_ids.iter().map(Uuid::to_string).collect();
-        let child_topic_ids = self.child_topic_ids.iter().map(Uuid::to_string).collect();
         let parent_topic_ids = self.parent_topic_ids.iter().map(Uuid::to_string).collect();
         let synonyms = Synonyms::from_json(&self.synonyms);
 
@@ -35,8 +31,6 @@ impl Row {
         let prefix = timerange::Prefix::new(prefix_format, starts_at);
 
         Topic {
-            child_link_ids,
-            child_topic_ids,
             id: ID(self.id.to_string()),
             name: self.name.to_owned(),
             parent_topic_ids,
@@ -77,5 +71,46 @@ impl Loader<String> for TopicLoader {
             .iter()
             .map(|t| (t.id.to_string(), t.clone()))
             .collect::<HashMap<_, _>>())
+    }
+}
+
+pub struct FetchTopics {
+    viewer_ids: Vec<String>,
+    parent_topic_id: String,
+    limit: i32,
+}
+
+impl FetchTopics {
+    pub fn new(viewer_ids: Vec<String>, parent_topic_id: String) -> Self {
+        Self {
+            viewer_ids,
+            parent_topic_id,
+            limit: 100,
+        }
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<Vec<Topic>> {
+        log::debug!("fetching linkes for topic: {}", self.parent_topic_id);
+
+        let query = format!(
+            r#"
+            select
+                {TOPIC_FIELDS}
+                {TOPIC_JOINS}
+                where parent_topics.parent_id = $1::uuid
+                    and om.user_id = any($2::uuid[])
+                group by t.id, t.name, o.login
+                order by t.name asc
+                limit $3
+            "#
+        );
+
+        let rows = sqlx::query_as::<_, Row>(&query)
+            .bind(&self.parent_topic_id)
+            .bind(&self.viewer_ids)
+            .bind(self.limit)
+            .fetch_all(pool)
+            .await?;
+        Ok(rows.iter().map(Row::to_topic).collect())
     }
 }

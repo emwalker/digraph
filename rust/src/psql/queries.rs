@@ -4,26 +4,22 @@ use super::{link, topic, QuerySpec, TopicSpec};
 use crate::prelude::*;
 use crate::schema::{SearchResultItem, Topic};
 
-const TOPIC_FIELDS: &str = r#"
+pub const TOPIC_FIELDS: &str = r#"
     t.id,
     t.name,
     concat('/', o.login, '/topics/', t.id) resource_path,
     t.synonyms,
     t.repository_id,
-    array_remove(array_agg(distinct child_links.child_id), null) child_link_ids,
-    array_remove(array_agg(distinct child_topics.child_id), null) child_topic_ids,
     array_remove(array_agg(distinct parent_topics.parent_id), null) parent_topic_ids,
     array_remove(array_agg(distinct tr.starts_at), null) starts_at,
     array_remove(array_agg(distinct tr.prefix_format), null) prefix_format
 "#;
 
-const TOPIC_JOINS: &str = r#"
+pub const TOPIC_JOINS: &str = r#"
     from topics t
     join organizations o on o.id = t.organization_id
     join organization_members om on om.organization_id = t.organization_id
     left join timeranges tr on tr.id = t.timerange_id
-    left join link_topics child_links on t.id = child_links.parent_id
-    left join topic_topics child_topics on t.id = child_topics.parent_id
     left join topic_topics parent_topics on t.id = parent_topics.child_id
 "#;
 
