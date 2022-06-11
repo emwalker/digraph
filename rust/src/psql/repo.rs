@@ -2,14 +2,15 @@ use async_graphql::dataloader::*;
 use sqlx::postgres::PgPool;
 
 use super::{
-    CreateGithubSession, CreateSessionResult, LinkLoader, LiveSearchTopics,
-    OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader,
-    Search, FetchLinks, FetchTopics, TopicLoader, UpsertLink, UpsertLinkResult, UserLoader,
+    CreateGithubSession, CreateSessionResult, FetchLinks, FetchTopics, LinkLoader,
+    LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader,
+    RepositoryLoader, Search, TopicLoader, UpsertLink, UpsertLinkResult, UpsertTopic,
+    UpsertTopicResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
     CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem, Topic,
-    UpsertLinkInput, User, Viewer,
+    UpsertLinkInput, UpsertTopicInput, User, Viewer,
 };
 
 pub struct Repo {
@@ -177,6 +178,10 @@ impl Repo {
         input: CreateGithubSessionInput,
     ) -> Result<CreateSessionResult> {
         CreateGithubSession::new(input).call(&self.pool).await
+    }
+
+    pub async fn upsert_topic(&self, input: UpsertTopicInput) -> Result<UpsertTopicResult> {
+        UpsertTopic::new(input).call(&self.pool).await
     }
 
     pub async fn user(&self, id: String) -> Result<Option<User>> {

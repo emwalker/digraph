@@ -19,6 +19,7 @@ pub struct Topic {
     pub synonyms: Synonyms,
 }
 
+pub type TopicEdge = Edge<String, Topic, EmptyFields>;
 pub type TopicConnection = Connection<String, Topic, EmptyFields, EmptyFields>;
 
 #[Object]

@@ -1,13 +1,17 @@
 use async_graphql::dataloader::*;
 use async_graphql::types::ID;
 use chrono::{DateTime, Utc};
+use serde_json::json;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 
 use super::queries::{TopicQuery, TOPIC_FIELDS, TOPIC_JOINS};
+use crate::http::repo_url::Url;
 use crate::prelude::*;
-use crate::schema::{timerange, SearchResultItem, Synonyms, Topic, Viewer};
+use crate::schema::{
+    timerange, Alert, AlertType, SearchResultItem, Synonyms, Topic, UpsertTopicInput, Viewer,
+};
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
@@ -112,5 +116,95 @@ impl FetchTopics {
             .fetch_all(pool)
             .await?;
         Ok(rows.iter().map(Row::to_topic).collect())
+    }
+}
+
+pub struct UpsertTopic {
+    input: UpsertTopicInput,
+}
+
+pub struct UpsertTopicResult {
+    pub alerts: Vec<Alert>,
+    pub topic: Option<Topic>,
+}
+
+impl UpsertTopic {
+    pub fn new(input: UpsertTopicInput) -> Self {
+        Self { input }
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<UpsertTopicResult> {
+        let name = self.input.name.to_owned();
+
+        if name.is_empty() || Url::is_valid_url(&name) {
+            let result = UpsertTopicResult {
+                alerts: vec![Alert {
+                    text: format!("Not a valid topic name: {}", name),
+                    alert_type: AlertType::Warning,
+                    id: String::from("0"),
+                }],
+                topic: None,
+            };
+            return Ok(result);
+        }
+
+        let synonyms = json!([
+            { "Locale": "en", "Name": name },
+        ])
+        .to_string();
+
+        let mut tx = pool.begin().await?;
+
+        let query = r#"
+            insert
+            into topics
+                (organization_id, repository_id, name, synonyms)
+                select
+                    o.id, r.id, $3, $4::jsonb
+                from organizations o
+                join repositories r on o.id = r.organization_id
+                where o.login = $1 and r.name = $2
+
+            on conflict on constraint topics_repository_name_idx do
+                -- No-op to ensure that an id is returned
+                update set name = $3
+            returning id
+            "#;
+
+        let row = sqlx::query_as::<_, (Uuid,)>(query)
+            .bind(&self.input.organization_login)
+            .bind(&self.input.repository_name)
+            .bind(&name)
+            .bind(&synonyms)
+            .fetch_one(&mut tx)
+            .await?;
+
+        for topic_id in &self.input.topic_ids {
+            sqlx::query("select add_topic_to_topic($1::uuid, $2::uuid)")
+                .bind(&topic_id)
+                .bind(&row.0)
+                .fetch_one(&mut tx)
+                .await?;
+        }
+
+        tx.commit().await?;
+
+        let query = format!(
+            r#"select
+            {TOPIC_FIELDS}
+            {TOPIC_JOINS}
+            where t.id = $1::uuid
+            group by t.id, o.login"#,
+        );
+
+        let row = sqlx::query_as::<_, Row>(&query)
+            .bind(row.0)
+            .fetch_one(pool)
+            .await?;
+
+        Ok(UpsertTopicResult {
+            alerts: vec![],
+            topic: Some(row.to_topic()),
+        })
     }
 }
