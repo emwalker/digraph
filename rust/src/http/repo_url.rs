@@ -79,6 +79,10 @@ impl Url {
             sha1,
         })
     }
+
+    pub fn is_valid_url(input: &str) -> bool {
+        Self::parse(input).is_ok()
+    }
 }
 
 #[cfg(test)]
@@ -127,5 +131,11 @@ mod tests {
         let url = Url::parse("http://some.url.com").unwrap();
         assert_eq!(url.normalized, "http://some.url.com");
         assert_eq!(url.sha1, "85cdd80985b9fef9ec0bc1d1ab2aeb7bd4efef86");
+    }
+
+    #[test]
+    fn test_is_valid() {
+        assert!(Url::is_valid_url("https://www.google.com"));
+        assert!(!Url::is_valid_url("Some name"));
     }
 }

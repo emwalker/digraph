@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use super::queries::{LINK_FIELDS, LINK_JOINS};
 use crate::http::{repo_url::Url, Page};
 use crate::prelude::*;
-use crate::schema::{Link, SearchResultItem, UpsertLinkInput, Viewer};
+use crate::schema::{Alert, Link, SearchResultItem, UpsertLinkInput, Viewer};
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
@@ -122,7 +122,8 @@ pub struct UpsertLink {
 }
 
 pub struct UpsertLinkResult {
-    pub link: Link,
+    pub alerts: Vec<Alert>,
+    pub link: Option<Link>,
 }
 
 impl UpsertLink {
@@ -194,7 +195,8 @@ impl UpsertLink {
             .await?;
 
         Ok(UpsertLinkResult {
-            link: row.to_link(),
+            alerts: vec![],
+            link: Some(row.to_link()),
         })
     }
 }

@@ -1,6 +1,6 @@
 use async_graphql::{Context, InputObject, Object, SimpleObject};
 
-use super::{Alert, LinkEdge, Session, SessionEdge, UserEdge};
+use super::{Alert, LinkEdge, Session, SessionEdge, TopicEdge, UserEdge};
 use crate::prelude::*;
 use crate::psql::Repo;
 
@@ -37,6 +37,22 @@ pub struct UpsertLinkPayload {
     link_edge: Option<LinkEdge>,
 }
 
+#[derive(Debug, InputObject)]
+pub struct UpsertTopicInput {
+    pub client_mutation_id: Option<String>,
+    pub description: Option<String>,
+    pub name: String,
+    pub organization_login: String,
+    pub repository_name: String,
+    pub topic_ids: Vec<String>,
+}
+
+#[derive(SimpleObject)]
+pub struct UpsertTopicPayload {
+    alerts: Vec<Alert>,
+    topic_edge: Option<TopicEdge>,
+}
+
 pub struct MutationRoot;
 
 #[Object]
@@ -71,10 +87,30 @@ impl MutationRoot {
     ) -> Result<UpsertLinkPayload> {
         log::info!("upserting link: {:?}", input);
         let result = ctx.data_unchecked::<Repo>().upsert_link(input).await?;
-
+        let edge = result
+            .link
+            .as_ref()
+            .map(|link| LinkEdge::new(String::from("0"), link.clone()));
         Ok(UpsertLinkPayload {
-            alerts: vec![],
-            link_edge: Some(LinkEdge::new(String::from("0"), result.link)),
+            alerts: result.alerts,
+            link_edge: edge,
+        })
+    }
+
+    async fn upsert_topic(
+        &self,
+        ctx: &Context<'_>,
+        input: UpsertTopicInput,
+    ) -> Result<UpsertTopicPayload> {
+        log::info!("upserting topic: {:?}", input);
+        let result = ctx.data_unchecked::<Repo>().upsert_topic(input).await?;
+        let edge = result
+            .topic
+            .as_ref()
+            .map(|topic| TopicEdge::new(String::from("0"), topic.clone()));
+        Ok(UpsertTopicPayload {
+            alerts: result.alerts,
+            topic_edge: edge,
         })
     }
 }
