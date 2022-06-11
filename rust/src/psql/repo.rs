@@ -4,7 +4,7 @@ use sqlx::postgres::PgPool;
 use super::{
     CreateGithubSession, CreateSessionResult, LinkLoader, LiveSearchTopics,
     OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader,
-    Search, TopicLoader, UpsertLink, UpsertLinkResult, UserLoader,
+    Search, FetchLinks, FetchTopics, TopicLoader, UpsertLink, UpsertLinkResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
@@ -82,40 +82,20 @@ impl Repo {
         Ok(result.iter().flatten().cloned().collect())
     }
 
-    async fn flat_links(&self, ids: &[String]) -> Result<Vec<Link>> {
-        let result = self.links(ids).await?;
-        Ok(result.iter().flatten().cloned().collect())
-    }
-
     pub async fn child_links_for_topic(&self, topic_id: String) -> Result<Vec<Link>> {
-        let topic = self.topic(topic_id).await?;
-        match topic {
-            Some(topic) => self.flat_links(&topic.child_link_ids).await,
-            None => Ok(vec![]),
-        }
+        FetchLinks::new(self.viewer.query_ids.clone(), topic_id)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn child_topics_for_topic(&self, topic_id: String) -> Result<Vec<Topic>> {
-        let topic = self.topic(topic_id).await?;
-        match topic {
-            Some(topic) => self.flat_topics(&topic.child_topic_ids).await,
-            None => Ok(vec![]),
-        }
+        FetchTopics::new(self.viewer.query_ids.clone(), topic_id)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn link(&self, id: String) -> Result<Option<Link>> {
         self.link_loader.load_one(id).await
-    }
-
-    pub async fn links(&self, ids: &[String]) -> Result<Vec<Option<Link>>> {
-        let ids: Vec<String> = ids.iter().map(String::to_string).collect();
-        let map = self.link_loader.load_many(ids.clone()).await?;
-        let mut links: Vec<Option<Link>> = Vec::new();
-        for id in ids {
-            let link = map.get(&id).cloned();
-            links.push(link);
-        }
-        Ok(links)
     }
 
     pub async fn organization(&self, id: String) -> Result<Option<Organization>> {

@@ -10,8 +10,6 @@ use crate::psql::Repo;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
-    pub child_link_ids: Vec<String>,
-    pub child_topic_ids: Vec<String>,
     pub id: ID,
     pub name: String,
     pub parent_topic_ids: Vec<String>,
