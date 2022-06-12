@@ -23,11 +23,12 @@ pub struct Row {
 }
 
 impl Row {
-    fn to_link(&self) -> Link {
+    fn to_link(&self, newly_added: bool) -> Link {
         let parent_topic_ids = self.parent_topic_ids.iter().map(Uuid::to_string).collect();
 
         Link {
             id: ID(self.id.to_string()),
+            newly_added,
             parent_topic_ids,
             title: self.title.to_owned(),
             repository_id: ID(self.repository_id.to_string()),
@@ -36,7 +37,7 @@ impl Row {
     }
 
     pub fn to_search_result_item(&self) -> SearchResultItem {
-        SearchResultItem::Link(self.to_link())
+        SearchResultItem::Link(self.to_link(false))
     }
 }
 
@@ -75,7 +76,7 @@ impl Loader<String> for LinkLoader {
 
         Ok(rows?
             .iter()
-            .map(|r| (r.id.to_string(), r.to_link()))
+            .map(|r| (r.id.to_string(), r.to_link(false)))
             .collect::<HashMap<_, _>>())
     }
 }
@@ -117,7 +118,8 @@ impl FetchChildLinksForTopic {
             .bind(self.limit)
             .fetch_all(pool)
             .await?;
-        Ok(rows.iter().map(Row::to_link).collect())
+
+        Ok(rows.iter().map(|r| r.to_link(false)).collect())
     }
 }
 
@@ -150,7 +152,7 @@ impl UpdateLinkParentTopics {
             .fetch_one(pool)
             .await?;
 
-        Ok(row.to_link())
+        Ok(row.to_link(false))
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpdateLinkTopicsResult> {
@@ -236,10 +238,10 @@ impl UpsertLink {
             on conflict on constraint links_repository_sha1_idx do
                 update set title = $5
 
-            returning id
+            returning id, (xmax = 0) inserted
             "#;
 
-        let row = sqlx::query_as::<_, (Uuid,)>(query)
+        let row = sqlx::query_as::<_, (Uuid, bool)>(query)
             .bind(&self.input.organization_login)
             .bind(&self.input.repository_name)
             .bind(&url.normalized)
@@ -247,6 +249,7 @@ impl UpsertLink {
             .bind(&title)
             .fetch_one(&mut tx)
             .await?;
+        let (link_id, inserted) = (row.0, row.1);
 
         for topic_id in &self.input.add_parent_topic_ids {
             sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
@@ -267,13 +270,13 @@ impl UpsertLink {
         );
 
         let row = sqlx::query_as::<_, Row>(&query)
-            .bind(row.0)
+            .bind(link_id)
             .fetch_one(pool)
             .await?;
 
         Ok(UpsertLinkResult {
             alerts: vec![],
-            link: Some(row.to_link()),
+            link: Some(row.to_link(inserted)),
         })
     }
 }

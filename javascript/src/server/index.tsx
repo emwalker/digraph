@@ -30,7 +30,7 @@ if (typeof window === 'undefined') global.window = {}
 // @ts-ignore-end
 
 // eslint-disable-next-line import/no-dynamic-require
-const oneMonth = 2629800000;
+const oneMonth = 2629800000
 const assets = require(process.env.RAZZLE_ASSETS_MANIFEST || '')
 const reducer = (state: any) => state
 const fetcher = new ServerFetcher()

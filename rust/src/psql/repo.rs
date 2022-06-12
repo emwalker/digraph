@@ -5,13 +5,13 @@ use super::{
     CreateGithubSession, CreateSessionResult, FetchChildLinksForTopic, FetchChildTopicsForTopic,
     LinkLoader, LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader,
     RepositoryByNameLoader, RepositoryLoader, Search, TopicLoader, UpdateLinkParentTopics,
-    UpdateLinkTopicsResult, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
-    UserLoader,
+    UpdateLinkTopicsResult, UpdateSynonyms, UpdateSynonymsResult, UpsertLink, UpsertLinkResult,
+    UpsertTopic, UpsertTopicResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
     CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem, Topic,
-    UpdateLinkTopicsInput, UpsertLinkInput, UpsertTopicInput, User, Viewer,
+    UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput, User, Viewer,
 };
 
 pub struct Repo {
@@ -175,6 +175,13 @@ impl Repo {
         input: UpdateLinkTopicsInput,
     ) -> Result<UpdateLinkTopicsResult> {
         UpdateLinkParentTopics::new(input).call(&self.pool).await
+    }
+
+    pub async fn update_synonyms(
+        &self,
+        input: UpdateSynonymsInput,
+    ) -> Result<UpdateSynonymsResult> {
+        UpdateSynonyms::new(input).call(&self.pool).await
     }
 
     pub async fn upsert_link(&self, input: UpsertLinkInput) -> Result<UpsertLinkResult> {

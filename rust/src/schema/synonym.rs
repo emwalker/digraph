@@ -17,10 +17,10 @@ impl Synonyms {
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash, SimpleObject)]
 pub struct Synonym {
     #[serde(alias = "Name")]
-    name: String,
+    pub name: String,
     // TOOD: Change into a string enum
     #[serde(alias = "Locale")]
-    locale: String,
+    pub locale: String,
 }
 
 impl Synonym {
