@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
+use crate::http::repo_url;
 use crate::prelude::*;
 
 mod queries;
@@ -95,7 +96,10 @@ impl QuerySpec {
                 let spec = TopicSpec::parse(token)?;
                 topics.push(spec);
             } else {
-                string_tokens.push(token);
+                match repo_url::Url::parse(&token) {
+                    Ok(url) => string_tokens.push(url.normalized),
+                    Err(_) => string_tokens.push(token),
+                }
             }
         }
 
@@ -192,6 +196,12 @@ mod tests {
         assert_eq!(s.tokens.len(), 1);
         assert_eq!(s.string_tokens.len(), 0);
         assert_eq!(s.topics.len(), 1);
+    }
+
+    #[test]
+    fn test_urls_are_normalized() {
+        let s = QuerySpec::parse("https://www.google.com/?s=1234").unwrap();
+        assert_eq!(s.string_tokens, ["https://www.google.com"]);
     }
 
     #[test]
