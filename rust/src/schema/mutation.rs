@@ -28,6 +28,18 @@ pub struct CreateSessionPayload {
 }
 
 #[derive(Debug, InputObject)]
+pub struct DeleteTopicInput {
+    client_mutation_id: Option<String>,
+    topic_id: ID,
+}
+
+#[derive(Debug, SimpleObject)]
+pub struct DeleteTopicPayload {
+    client_mutation_id: Option<String>,
+    deleted_topic_id: ID,
+}
+
+#[derive(Debug, InputObject)]
 pub struct DeleteTopicTimeRangeInput {
     client_mutation_id: Option<String>,
     topic_id: ID,
@@ -157,6 +169,25 @@ impl MutationRoot {
                     id: result.session_id,
                 },
             }),
+        })
+    }
+
+    async fn delete_topic(
+        &self,
+        ctx: &Context<'_>,
+        input: DeleteTopicInput,
+    ) -> Result<DeleteTopicPayload> {
+        let DeleteTopicInput {
+            client_mutation_id,
+            topic_id,
+        } = input;
+        ctx.data_unchecked::<Repo>()
+            .delete_topic(topic_id.to_string())
+            .await?;
+
+        Ok(DeleteTopicPayload {
+            client_mutation_id,
+            deleted_topic_id: topic_id,
         })
     }
 
