@@ -12,6 +12,10 @@ impl Synonyms {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+
+    pub fn first(&self) -> Option<&Synonym> {
+        self.0.first()
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash, SimpleObject)]

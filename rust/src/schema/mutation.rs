@@ -1,9 +1,14 @@
 use async_graphql::{Context, InputObject, Object, SimpleObject};
 
-use super::{Alert, Link, LinkEdge, Session, SessionEdge, Synonym, Topic, TopicEdge, UserEdge};
+use super::{
+    Alert, DateTime, Link, LinkEdge, Session, SessionEdge, Synonym, TimeRangeEdge,
+    TimeRangePrefixFormat, Topic, TopicEdge, UserEdge,
+};
 use crate::http::repo_url;
 use crate::prelude::*;
-use crate::psql::{DeleteTopicTimeRangeResult, Repo, UpdateSynonymsResult};
+use crate::psql::{
+    DeleteTopicTimeRangeResult, Repo, UpdateSynonymsResult, UpsertTopicTimeRangeResult,
+};
 
 #[derive(Debug, InputObject)]
 pub struct CreateGithubSessionInput {
@@ -112,6 +117,22 @@ pub struct UpsertTopicPayload {
     topic_edge: Option<TopicEdge>,
 }
 
+#[derive(Debug, InputObject)]
+pub struct UpsertTopicTimeRangeInput {
+    pub client_mutation_id: Option<String>,
+    pub topic_id: ID,
+    pub starts_at: DateTime,
+    pub ends_at: Option<DateTime>,
+    pub prefix_format: TimeRangePrefixFormat,
+}
+
+#[derive(SimpleObject)]
+pub struct UpsertTopicTimeRangePayload {
+    alerts: Vec<Alert>,
+    time_range_edge: Option<TimeRangeEdge>,
+    topic: Topic,
+}
+
 pub struct MutationRoot;
 
 #[Object]
@@ -173,6 +194,7 @@ impl MutationRoot {
             .data_unchecked::<Repo>()
             .update_link_topics(input)
             .await?;
+
         Ok(UpdateLinkTopicsPayload { link: result.link })
     }
 
@@ -184,6 +206,7 @@ impl MutationRoot {
         let client_mutation_id = input.client_mutation_id.clone();
         let UpdateSynonymsResult { alerts, topic } =
             ctx.data_unchecked::<Repo>().update_synonyms(input).await?;
+
         Ok(UpdateSynonymsPayload {
             alerts,
             client_mutation_id,
@@ -202,6 +225,7 @@ impl MutationRoot {
             .link
             .as_ref()
             .map(|link| LinkEdge::new(String::from("0"), link.clone()));
+
         Ok(UpsertLinkPayload {
             alerts: result.alerts,
             link_edge: edge,
@@ -219,9 +243,31 @@ impl MutationRoot {
             .topic
             .as_ref()
             .map(|topic| TopicEdge::new(String::from("0"), topic.clone()));
+
         Ok(UpsertTopicPayload {
             alerts: result.alerts,
             topic_edge: edge,
+        })
+    }
+
+    async fn upsert_topic_time_range(
+        &self,
+        ctx: &Context<'_>,
+        input: UpsertTopicTimeRangeInput,
+    ) -> Result<UpsertTopicTimeRangePayload> {
+        let UpsertTopicTimeRangeResult {
+            alerts,
+            topic,
+            time_range,
+        } = ctx
+            .data_unchecked::<Repo>()
+            .upsert_topic_time_range(input)
+            .await?;
+
+        Ok(UpsertTopicTimeRangePayload {
+            alerts,
+            topic,
+            time_range_edge: Some(TimeRangeEdge::new(String::from("0"), time_range)),
         })
     }
 }
