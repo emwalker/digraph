@@ -1,4 +1,5 @@
 Following are some changes I'd like to get around to eventually:
+* Verification of server secret
 * Add in actor join clauses to all mutations.
 * Add in viewer join clauses to all fetching code.
 * Rename Topic.links to Topic.childLinks
