@@ -1,5 +1,4 @@
 use async_graphql::dataloader::*;
-use async_graphql::types::ID;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
@@ -13,6 +12,7 @@ pub struct Row {
     id: Uuid,
     name: String,
     organization_id: Uuid,
+    owner_id: Uuid,
     root_topic_id: Uuid,
     system: bool,
 }
@@ -20,9 +20,10 @@ pub struct Row {
 impl Row {
     fn to_repository(&self) -> Repository {
         Repository::Fetched {
-            id: ID(self.id.to_string()),
+            id: self.id.to_string(),
             name: self.name.to_owned(),
             organization_id: self.organization_id.to_string(),
+            owner_id: self.owner_id.to_string(),
             root_topic_id: self.root_topic_id.to_string(),
             system: self.system,
         }
@@ -53,6 +54,7 @@ impl Loader<String> for RepositoryLoader {
                 r.name as "name!",
                 r.organization_id as "organization_id!",
                 r.system as "system!",
+                r.owner_id as "owner_id!",
                 t.id as "root_topic_id!"
 
             from repositories r
@@ -95,6 +97,7 @@ impl Loader<String> for RepositoryByNameLoader {
                 r.name as "name!",
                 r.organization_id as "organization_id!",
                 r.system as "system!",
+                r.owner_id as "owner_id!",
                 t.id as "root_topic_id!"
 
             from repositories r

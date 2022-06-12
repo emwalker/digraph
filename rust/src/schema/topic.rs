@@ -10,12 +10,15 @@ use crate::psql::Repo;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
-    pub id: ID,
+    pub id: String,
     pub name: String,
     pub parent_topic_ids: Vec<String>,
     pub prefix: Prefix,
     pub repository_id: String,
+    pub repository_is_private: bool,
+    pub repository_owner_id: String,
     pub resource_path: String,
+    pub root: bool,
     pub synonyms: Synonyms,
 }
 
@@ -54,7 +57,7 @@ impl Topic {
     }
 
     async fn id(&self) -> ID {
-        self.id.to_owned()
+        ID(self.id.to_owned())
     }
 
     // TODO: rename to childLinks
@@ -145,7 +148,20 @@ impl Topic {
         self.resource_path.as_str()
     }
 
-    async fn viewer_can_update(&self) -> bool {
-        false
+    async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
+        let repo = ctx.data_unchecked::<Repo>();
+        if repo.viewer.is_guest() {
+            log::debug!("viewer is guest");
+            return Ok(false);
+        }
+        if self.repository_is_private {
+            log::debug!(
+                "viewer: {}, owner: {}",
+                repo.viewer.user_id,
+                self.repository_owner_id
+            );
+            return Ok(self.repository_owner_id == repo.viewer.user_id);
+        }
+        Ok(true)
     }
 }

@@ -40,7 +40,14 @@ pub type Schema = async_graphql::Schema<QueryRoot, MutationRoot, EmptySubscripti
 
 #[derive(Clone, Debug)]
 pub struct Viewer {
+    pub user_id: String,
     pub query_ids: Vec<String>,
+}
+
+impl Viewer {
+    pub fn is_guest(&self) -> bool {
+        self.user_id == GUEST_ID
+    }
 }
 
 #[derive(Clone)]
@@ -59,11 +66,14 @@ impl State {
     }
 
     pub async fn viewer(&self, user_id: Option<String>) -> Viewer {
-        let mut query_ids = vec![GUEST_ID.to_string()];
-        if user_id.is_some() {
-            query_ids.push(user_id.unwrap_or_default());
+        log::debug!("loading viewer from user id: {:?}", user_id);
+        let not_guest = user_id.is_some();
+        let user_id = user_id.unwrap_or_else(|| GUEST_ID.to_string());
+        let mut query_ids = vec![user_id.clone()];
+        if not_guest {
+            query_ids.push(GUEST_ID.to_string());
         }
-        Viewer { query_ids }
+        Viewer { user_id, query_ids }
     }
 }
 
