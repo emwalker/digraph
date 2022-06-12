@@ -267,7 +267,9 @@ impl SearchQuery {
         }
 
         if !self.query_spec.tokens.is_empty() {
-            wheres.push(format!("l.title ~~* all(${index})"));
+            wheres.push(format!(
+                "(l.title ~~* all(${index}) or l.url ~~* all(${index}))"
+            ));
             index += 1;
         }
 
