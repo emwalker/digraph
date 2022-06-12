@@ -3,7 +3,7 @@ use async_graphql::{Context, InputObject, Object, SimpleObject};
 use super::{Alert, Link, LinkEdge, Session, SessionEdge, Synonym, Topic, TopicEdge, UserEdge};
 use crate::http::repo_url;
 use crate::prelude::*;
-use crate::psql::{Repo, UpdateSynonymsResult};
+use crate::psql::{DeleteTopicTimeRangeResult, Repo, UpdateSynonymsResult};
 
 #[derive(Debug, InputObject)]
 pub struct CreateGithubSessionInput {
@@ -20,6 +20,19 @@ pub struct CreateSessionPayload {
     alerts: Vec<Alert>,
     user_edge: Option<UserEdge>,
     session_edge: Option<SessionEdge>,
+}
+
+#[derive(Debug, InputObject)]
+pub struct DeleteTopicTimeRangeInput {
+    client_mutation_id: Option<String>,
+    topic_id: ID,
+}
+
+#[derive(Debug, SimpleObject)]
+pub struct DeleteTopicTimeRangePayload {
+    client_mutation_id: Option<String>,
+    deleted_time_range_id: Option<ID>,
+    topic: Topic,
 }
 
 #[derive(Debug, InputObject)]
@@ -123,6 +136,31 @@ impl MutationRoot {
                     id: result.session_id,
                 },
             }),
+        })
+    }
+
+    async fn delete_topic_time_range(
+        &self,
+        ctx: &Context<'_>,
+        input: DeleteTopicTimeRangeInput,
+    ) -> Result<DeleteTopicTimeRangePayload> {
+        let DeleteTopicTimeRangeInput {
+            client_mutation_id,
+            topic_id,
+        } = input;
+
+        let DeleteTopicTimeRangeResult {
+            topic,
+            deleted_time_range_id,
+        } = ctx
+            .data_unchecked::<Repo>()
+            .delete_topic_time_range(topic_id.to_string())
+            .await?;
+
+        Ok(DeleteTopicTimeRangePayload {
+            client_mutation_id,
+            topic,
+            deleted_time_range_id: deleted_time_range_id.map(ID),
         })
     }
 

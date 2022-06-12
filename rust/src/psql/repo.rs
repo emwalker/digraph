@@ -2,11 +2,11 @@ use async_graphql::dataloader::*;
 use sqlx::postgres::PgPool;
 
 use super::{
-    CreateGithubSession, CreateSessionResult, FetchChildLinksForTopic, FetchChildTopicsForTopic,
-    LinkLoader, LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader,
-    RepositoryByNameLoader, RepositoryLoader, Search, TopicLoader, UpdateLinkParentTopics,
-    UpdateLinkTopicsResult, UpdateSynonyms, UpdateSynonymsResult, UpsertLink, UpsertLinkResult,
-    UpsertTopic, UpsertTopicResult, UserLoader,
+    CreateGithubSession, CreateSessionResult, DeleteTopicTimeRange, DeleteTopicTimeRangeResult,
+    FetchChildLinksForTopic, FetchChildTopicsForTopic, LinkLoader, LiveSearchTopics,
+    OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader,
+    Search, TopicLoader, UpdateLinkParentTopics, UpdateLinkTopicsResult, UpdateSynonyms,
+    UpdateSynonymsResult, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
@@ -94,6 +94,13 @@ impl Repo {
         FetchChildTopicsForTopic::new(self.viewer.query_ids.clone(), topic_id)
             .call(&self.pool)
             .await
+    }
+
+    pub async fn delete_topic_time_range(
+        &self,
+        topic_id: String,
+    ) -> Result<DeleteTopicTimeRangeResult> {
+        DeleteTopicTimeRange::new(topic_id).call(&self.pool).await
     }
 
     pub async fn link(&self, id: String) -> Result<Option<Link>> {
