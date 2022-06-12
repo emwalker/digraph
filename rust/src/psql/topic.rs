@@ -78,13 +78,13 @@ impl Loader<String> for TopicLoader {
     }
 }
 
-pub struct FetchTopics {
+pub struct FetchChildTopicsForTopic {
     viewer_ids: Vec<String>,
     parent_topic_id: String,
     limit: i32,
 }
 
-impl FetchTopics {
+impl FetchChildTopicsForTopic {
     pub fn new(viewer_ids: Vec<String>, parent_topic_id: String) -> Self {
         Self {
             viewer_ids,
@@ -181,7 +181,7 @@ impl UpsertTopic {
 
         for topic_id in &self.input.topic_ids {
             sqlx::query("select add_topic_to_topic($1::uuid, $2::uuid)")
-                .bind(&topic_id)
+                .bind(topic_id.as_str())
                 .bind(&row.0)
                 .fetch_one(&mut tx)
                 .await?;
