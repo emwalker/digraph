@@ -9,6 +9,7 @@ use actix_web::{guard, post, web, App, HttpRequest, HttpResponse, HttpServer};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+
 use futures::lock::Mutex;
 use std::env;
 
@@ -26,20 +27,51 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 use schema::{MutationRoot, QueryRoot, Schema, State, View};
 
+struct AuthHeader(String);
+
+impl AuthHeader {
+    fn decode(&self) -> Result<(String, String)> {
+        let encoded = self.0.split(' ').last().unwrap_or_default();
+        let decoded = base64::decode(&encoded)?;
+        let decoded = String::from_utf8_lossy(&decoded);
+        let parts = decoded
+            .split(':')
+            .map(str::to_string)
+            .collect::<Vec<String>>();
+
+        if parts.len() != 2 {
+            return Err(Error::AuthHeader(format!(
+                "unexpected message: {}",
+                self.0
+            )));
+        }
+
+        Ok((parts[0].clone(), parts[1].clone()))
+    }
+}
+
 fn user_id_from_header(req: HttpRequest) -> Option<String> {
     match req.headers().get("authorization") {
         Some(value) => match value.to_str() {
-            Ok(value) => {
-                let parts = value.split(':').collect::<Vec<&str>>();
-                if parts.len() == 2 {
-                    Some(parts[0].to_string())
-                } else {
+            Ok(value) => match AuthHeader(value.into()).decode() {
+                Ok((user_id, _session_id)) => {
+                    log::info!("user id found in auth header: {}", user_id);
+                    Some(user_id)
+                }
+                Err(err) => {
+                    log::info!("failed to decode auth header, proceeding as guest: {}", err);
                     None
                 }
+            },
+            Err(err) => {
+                log::warn!("problem fetching authorization header value: {}", err);
+                None
             }
-            Err(_) => None,
         },
-        None => None,
+        None => {
+            log::warn!("no authorization header, proceeding as guest");
+            None
+        }
     }
 }
 
@@ -50,7 +82,6 @@ async fn index(
     http_req: HttpRequest,
 ) -> GraphQLResponse {
     let user_id = user_id_from_header(http_req);
-    log::debug!("user id: {:?}", user_id);
     let viewer = state.viewer(user_id).await;
     let repo = state.create_repo(viewer);
     let view = Mutex::<Option<View>>::new(None);
@@ -101,4 +132,20 @@ async fn main() -> async_graphql::Result<()> {
     .await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_auth_header_parsing() {
+        let auth = AuthHeader("Bearer NDYxYzg3YzgtZmI4Zi0xMWU4LTljYmMtYWZkZTZjNTRkODgxOmFiM2Q1MTYwYWFlNjMyYTUxNzNjMDVmOGNiMGVmMDg2ODY2ZGFkMTAzNTE3ZGQwMTRmMzhhNWIxY2E2OWI5YWE=".into());
+        let (user_id, session_id) = auth.decode().unwrap();
+        assert_eq!(user_id, "461c87c8-fb8f-11e8-9cbc-afde6c54d881");
+        assert_eq!(
+            session_id,
+            "ab3d5160aae632a5173c05f8cb0ef086866dad103517dd014f38a5b1ca69b9aa"
+        );
+    }
 }

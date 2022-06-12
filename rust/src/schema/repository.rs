@@ -1,7 +1,6 @@
 use async_graphql::connection::*;
 
-use super::organization::Organization;
-use super::topic::Topic;
+use super::{Organization, Topic, User};
 use crate::prelude::*;
 use crate::psql::Repo;
 
@@ -14,9 +13,10 @@ const DEFAULT_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
 pub enum Repository {
     Default,
     Fetched {
-        id: ID,
+        id: String,
         name: String,
         organization_id: String,
+        owner_id: String,
         root_topic_id: String,
         system: bool,
     },
@@ -64,7 +64,9 @@ impl Repository {
                     .data_unchecked::<Repo>()
                     .organization(organization_id.to_string())
                     .await?
-                    .ok_or_else(|| Error::NotFound(format!("no org found: {}", organization_id)))?;
+                    .ok_or_else(|| {
+                        Error::NotFound(format!("no org found: {}", organization_id.as_str()))
+                    })?;
 
                 match org {
                     Organization::Wiki => Ok("wiki/wiki".to_string()),
@@ -86,11 +88,11 @@ impl Repository {
     async fn id(&self) -> ID {
         match self {
             Self::Default => ID(DEFAULT_REPO_ID.to_string()),
-            Self::Fetched { id, .. } => id.to_owned(),
+            Self::Fetched { id, .. } => ID(id.to_owned()),
         }
     }
 
-    async fn is_private(&self) -> bool {
+    pub async fn is_private(&self) -> bool {
         match self {
             Self::Default => false,
             Self::Fetched { system, name, .. } => *system && name == DEFAULT_REPO_NAME,
@@ -111,9 +113,24 @@ impl Repository {
                 organization_id, ..
             } => ctx
                 .data_unchecked::<Repo>()
-                .organization(organization_id.clone())
+                .organization(organization_id.to_string())
                 .await?
-                .ok_or_else(|| Error::NotFound(format!("no org found: {}", organization_id))),
+                .ok_or_else(|| {
+                    Error::NotFound(format!("no org found: {}", organization_id.as_str()))
+                }),
+        }
+    }
+
+    pub async fn owner(&self, ctx: &Context<'_>) -> Result<Option<User>> {
+        match self {
+            Repository::Default => Ok(None),
+            Repository::Fetched { owner_id, .. } => {
+                let user = ctx
+                    .data_unchecked::<Repo>()
+                    .user(owner_id.to_string())
+                    .await?;
+                Ok(user)
+            }
         }
     }
 

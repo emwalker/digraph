@@ -1,5 +1,4 @@
 use async_graphql::dataloader::*;
-use async_graphql::types::ID;
 use chrono::{DateTime, Utc};
 use serde_json::json;
 use sqlx::postgres::PgPool;
@@ -20,7 +19,10 @@ pub struct Row {
     pub parent_topic_ids: Vec<Uuid>,
     pub prefix_format: Vec<String>,
     pub repository_id: Uuid,
+    pub repository_is_private: bool,
+    pub repository_owner_id: Uuid,
     pub resource_path: String,
+    pub root: bool,
     pub starts_at: Vec<DateTime<Utc>>,
     pub synonyms: serde_json::Value,
 }
@@ -35,12 +37,15 @@ impl Row {
         let prefix = timerange::Prefix::new(prefix_format, starts_at);
 
         Topic {
-            id: ID(self.id.to_string()),
+            id: self.id.to_string(),
             name: self.name.to_owned(),
             parent_topic_ids,
             prefix,
             repository_id: self.repository_id.to_string(),
+            repository_is_private: self.repository_is_private,
+            repository_owner_id: self.repository_owner_id.to_string(),
             resource_path: self.resource_path.to_owned(),
+            root: self.root,
             synonyms,
         }
     }
@@ -68,7 +73,7 @@ impl Loader<String> for TopicLoader {
 
     async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>> {
         log::debug!("load topics by batch {:?}", ids);
-        let topics = TopicQuery::from(self.viewer.query_ids.clone(), ids.to_vec())
+        let topics = TopicQuery::from(self.viewer.clone(), ids.to_vec())
             .execute(&self.pool)
             .await?;
         Ok(topics
@@ -103,7 +108,7 @@ impl FetchChildTopicsForTopic {
                 {TOPIC_JOINS}
                 where parent_topics.parent_id = $1::uuid
                     and om.user_id = any($2::uuid[])
-                group by t.id, t.name, o.login
+                group by t.id, o.login, r.system, r.name, r.owner_id
                 order by t.name asc
                 limit $3
             "#

@@ -3,6 +3,8 @@ use std::sync::Arc;
 quick_error! {
     #[derive(Debug, Clone)]
     pub enum Error {
+        AuthHeader(err: String) { }
+
         Config(err: envy::Error) {
             from()
         }
@@ -11,8 +13,16 @@ quick_error! {
             from(err: sqlx::Error) -> (Arc::new(err))
         }
 
+        DecodeBase64(err: base64::DecodeError) {
+            from()
+        }
+
         Deserialization(err: String) {
             from(err: serde_json::Error) -> (format!("{:?}", err))
+        }
+
+        HeaderValue(err: String) {
+            from(err: actix_web::http::header::ToStrError) -> (format!("{:?}", err))
         }
 
         Load(err: String) {

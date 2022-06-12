@@ -15,13 +15,13 @@ use crate::schema::{
 };
 
 pub struct Repo {
-    pool: PgPool,
-    viewer: Viewer,
     link_loader: DataLoader<LinkLoader, HashMapCache>,
-    organization_loader: DataLoader<OrganizationLoader, HashMapCache>,
     organization_by_login_loader: DataLoader<OrganizationByLoginLoader, HashMapCache>,
-    repository_loader: DataLoader<RepositoryLoader, HashMapCache>,
+    organization_loader: DataLoader<OrganizationLoader, HashMapCache>,
+    pool: PgPool,
+    pub viewer: Viewer,
     repository_by_name_loader: DataLoader<RepositoryByNameLoader, HashMapCache>,
+    repository_loader: DataLoader<RepositoryLoader, HashMapCache>,
     topic_loader: DataLoader<TopicLoader, HashMapCache>,
     user_loader: DataLoader<UserLoader, HashMapCache>,
 }

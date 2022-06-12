@@ -2,7 +2,7 @@ use sqlx::postgres::PgPool;
 
 use super::{link, topic, QuerySpec, TopicSpec};
 use crate::prelude::*;
-use crate::schema::{SearchResultItem, Topic};
+use crate::schema::{SearchResultItem, Topic, Viewer};
 
 pub const TOPIC_FIELDS: &str = r#"
     t.id,
@@ -10,6 +10,9 @@ pub const TOPIC_FIELDS: &str = r#"
     concat('/', o.login, '/topics/', t.id) resource_path,
     t.synonyms,
     t.repository_id,
+    t.root,
+    (r.system and (r.name = 'system:default')) repository_is_private,
+    r.owner_id repository_owner_id,
     array_remove(array_agg(distinct parent_topics.parent_id), null) parent_topic_ids,
     array_remove(array_agg(distinct tr.starts_at), null) starts_at,
     array_remove(array_agg(distinct tr.prefix_format), null) prefix_format
@@ -19,6 +22,7 @@ pub const TOPIC_JOINS: &str = r#"
     from topics t
     join organizations o on o.id = t.organization_id
     join organization_members om on om.organization_id = t.organization_id
+    join repositories r on r.id = t.repository_id
     left join timeranges tr on tr.id = t.timerange_id
     left join topic_topics parent_topics on t.id = parent_topics.child_id
 "#;
@@ -40,15 +44,15 @@ pub const LINK_JOINS: &str = r#"
 "#;
 
 pub struct TopicQuery {
-    viewer_ids: Vec<String>,
+    viewer: Viewer,
     topic_ids: Vec<String>,
     limit: i32,
 }
 
 impl TopicQuery {
-    pub fn from(viewer_ids: Vec<String>, topic_ids: Vec<String>) -> Self {
+    pub fn from(viewer: Viewer, topic_ids: Vec<String>) -> Self {
         Self {
-            viewer_ids,
+            viewer,
             topic_ids,
             limit: 10000,
         }
@@ -58,7 +62,7 @@ impl TopicQuery {
         let sql = self.topic_sql();
         let rows = sqlx::query_as::<_, topic::Row>(&sql)
             .bind(&self.topic_ids)
-            .bind(&self.viewer_ids)
+            .bind(&self.viewer.query_ids)
             .bind(self.limit)
             .fetch_all(pool)
             .await?;
@@ -83,7 +87,7 @@ impl TopicQuery {
             {TOPIC_FIELDS}
             {TOPIC_JOINS}
             where {where_clause}
-            group by t.id, o.login
+            group by t.id, o.login, r.system, r.name, r.owner_id
             limit ${index}"#
         )
     }
@@ -134,7 +138,7 @@ impl LiveTopicQuery {
             {TOPIC_FIELDS}
             {TOPIC_JOINS}
             where {where_clause}
-            group by t.id, o.login
+            group by t.id, o.login, r.system, r.name, r.owner_id
             order by char_length(t.name), t.name
             limit ${index}"#
         )
@@ -205,7 +209,7 @@ impl SearchQuery {
             {TOPIC_JOINS}
             {join_clauses}
             where {where_clauses}
-            group by t.id, o.login
+            group by t.id, o.login, r.system, r.name, r.owner_id
             {order_by}
             limit ${index}"#
         )
