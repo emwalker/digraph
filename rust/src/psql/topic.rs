@@ -9,7 +9,7 @@ use super::queries::{TopicQuery, TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
 use crate::http::repo_url::Url;
 use crate::prelude::*;
 use crate::schema::{
-    Alert, AlertType, DateTime, Prefix, SearchResultItem, Synonyms, TimeRange,
+    alert, Alert, AlertType, DateTime, Prefix, SearchResultItem, Synonyms, TimeRange,
     TimeRangePrefixFormat, Topic, UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
 };
 
@@ -165,6 +165,102 @@ impl FetchChildTopicsForTopic {
     }
 }
 
+pub struct DeleteTopic {
+    pub topic_id: String,
+}
+
+pub struct DeleteTopicResult {
+    pub alerts: Vec<Alert>,
+    pub deleted_topic_id: Option<String>,
+}
+
+impl DeleteTopic {
+    pub fn new(topic_id: String) -> Self {
+        Self { topic_id }
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<DeleteTopicResult> {
+        log::info!("attempting to delete topic: {}", self.topic_id);
+        let topic_id = self.topic_id.clone();
+        let topic = fetch_topic(pool, &topic_id).await?;
+        let mut alerts: Vec<Alert> = vec![];
+
+        if topic.root {
+            log::warn!(
+                "attempting to delete root topic, bailing: {}",
+                self.topic_id
+            );
+            alerts.push(alert::warning("Cannot delete root topic".into()));
+            return Ok(DeleteTopicResult {
+                alerts,
+                deleted_topic_id: None,
+            });
+        }
+
+        let parent_topic_ids: Vec<String> = sqlx::query_as::<_, (Uuid,)>(
+            r#"select parent_id from topic_topics where child_id = $1::uuid"#,
+        )
+        .bind(&topic_id)
+        .fetch_all(pool)
+        .await?
+        .iter()
+        .map(|t| t.0.to_string())
+        .collect();
+
+        let child_topic_ids: Vec<String> = sqlx::query_as::<_, (Uuid,)>(
+            r#"select child_id from topic_topics where parent_id = $1::uuid"#,
+        )
+        .bind(&topic_id)
+        .fetch_all(pool)
+        .await?
+        .iter()
+        .map(|t| t.0.to_string())
+        .collect();
+
+        let child_link_ids: Vec<String> = sqlx::query_as::<_, (Uuid,)>(
+            r#"select child_id from link_topics where parent_id = $1::uuid"#,
+        )
+        .bind(&topic_id)
+        .fetch_all(pool)
+        .await?
+        .iter()
+        .map(|t| t.0.to_string())
+        .collect();
+
+        let mut tx = pool.begin().await?;
+
+        for parent_topic_id in parent_topic_ids {
+            for child_topic_id in &child_topic_ids {
+                sqlx::query("select add_topic_to_topic($1::uuid, $2::uuid)")
+                    .bind(&parent_topic_id)
+                    .bind(&child_topic_id)
+                    .execute(&mut tx)
+                    .await?;
+            }
+
+            for child_link_id in &child_link_ids {
+                sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
+                    .bind(&parent_topic_id)
+                    .bind(&child_link_id)
+                    .execute(&mut tx)
+                    .await?;
+            }
+        }
+
+        sqlx::query("delete from topics where id = $1::uuid")
+            .bind(&topic_id)
+            .execute(&mut tx)
+            .await?;
+
+        tx.commit().await?;
+
+        Ok(DeleteTopicResult {
+            alerts,
+            deleted_topic_id: Some(topic_id),
+        })
+    }
+}
+
 pub struct DeleteTopicTimeRange {
     pub topic_id: String,
 }
@@ -193,7 +289,7 @@ impl DeleteTopicTimeRange {
                 .0
                 .first()
                 .map(|s| s.name.clone())
-                .unwrap_or("Missing name".into());
+                .unwrap_or_else(|| "Missing name".into());
 
             sqlx::query(
                 r#"
@@ -375,7 +471,7 @@ impl UpsertTopicTimeRange {
             .synonyms
             .first()
             .map(|s| s.name.clone())
-            .unwrap_or("Missing name".into());
+            .unwrap_or_else(|| "Missing name".into());
         let name = prefix.display(&synonym);
 
         sqlx::query("update topics set name = $1 where id = $2::uuid")
