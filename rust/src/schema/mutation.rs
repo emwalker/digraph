@@ -1,8 +1,9 @@
 use async_graphql::{Context, InputObject, Object, SimpleObject};
 
-use super::{Alert, Link, LinkEdge, Session, SessionEdge, TopicEdge, UserEdge};
+use super::{Alert, Link, LinkEdge, Session, SessionEdge, Synonym, Topic, TopicEdge, UserEdge};
+use crate::http::repo_url;
 use crate::prelude::*;
-use crate::psql::Repo;
+use crate::psql::{Repo, UpdateSynonymsResult};
 
 #[derive(Debug, InputObject)]
 pub struct CreateGithubSessionInput {
@@ -31,6 +32,39 @@ pub struct UpdateLinkTopicsInput {
 #[derive(Debug, SimpleObject)]
 pub struct UpdateLinkTopicsPayload {
     link: Link,
+}
+
+#[derive(Debug, InputObject)]
+pub struct SynonymInput {
+    pub name: String,
+    pub locale: String,
+}
+
+impl SynonymInput {
+    pub fn is_valid(&self) -> bool {
+        !self.name.is_empty() && !repo_url::Url::is_valid_url(&self.name)
+    }
+
+    pub fn to_synonym(&self) -> Synonym {
+        Synonym {
+            name: self.name.clone(),
+            locale: self.locale.clone(),
+        }
+    }
+}
+
+#[derive(Debug, InputObject)]
+pub struct UpdateSynonymsInput {
+    pub client_mutation_id: Option<String>,
+    pub synonyms: Vec<SynonymInput>,
+    pub topic_id: ID,
+}
+
+#[derive(SimpleObject)]
+pub struct UpdateSynonymsPayload {
+    alerts: Vec<Alert>,
+    client_mutation_id: Option<String>,
+    topic: Option<Topic>,
 }
 
 #[derive(Debug, InputObject)]
@@ -102,6 +136,21 @@ impl MutationRoot {
             .update_link_topics(input)
             .await?;
         Ok(UpdateLinkTopicsPayload { link: result.link })
+    }
+
+    async fn update_synonyms(
+        &self,
+        ctx: &Context<'_>,
+        input: UpdateSynonymsInput,
+    ) -> Result<UpdateSynonymsPayload> {
+        let client_mutation_id = input.client_mutation_id.clone();
+        let UpdateSynonymsResult { alerts, topic } =
+            ctx.data_unchecked::<Repo>().update_synonyms(input).await?;
+        Ok(UpdateSynonymsPayload {
+            alerts,
+            client_mutation_id,
+            topic: Some(topic),
+        })
     }
 
     async fn upsert_link(

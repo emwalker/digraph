@@ -62,6 +62,21 @@ impl Row {
     }
 }
 
+pub async fn fetch_topic(pool: &PgPool, topic_id: String) -> Result<Row> {
+    let query = format!(
+        r#"select
+        {TOPIC_FIELDS}
+        {TOPIC_JOINS}
+        where t.id = $1::uuid
+        group by t.id, o.login, r.system, r.owner_id, r.name"#,
+    );
+
+    Ok(sqlx::query_as::<_, Row>(&query)
+        .bind(&topic_id)
+        .fetch_one(pool)
+        .await?)
+}
+
 pub struct TopicLoader {
     viewer: Viewer,
     pool: PgPool,
@@ -201,18 +216,7 @@ impl UpsertTopic {
 
         tx.commit().await?;
 
-        let query = format!(
-            r#"select
-            {TOPIC_FIELDS}
-            {TOPIC_JOINS}
-            where t.id = $1::uuid
-            group by t.id, o.login"#,
-        );
-
-        let row = sqlx::query_as::<_, Row>(&query)
-            .bind(row.0)
-            .fetch_one(pool)
-            .await?;
+        let row = fetch_topic(pool, row.0.to_string()).await?;
 
         Ok(UpsertTopicResult {
             alerts: vec![],

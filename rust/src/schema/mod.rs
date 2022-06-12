@@ -6,7 +6,7 @@ use sqlx::postgres::PgPool;
 use crate::psql::Repo;
 mod activity;
 pub use activity::*;
-mod alert;
+pub mod alert;
 pub use alert::*;
 mod relay;
 pub use relay::*;

@@ -8,6 +8,7 @@ use crate::Result;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Link {
     pub id: ID,
+    pub newly_added: bool,
     pub parent_topic_ids: Vec<String>,
     pub repository_id: ID,
     pub title: String,
@@ -48,7 +49,7 @@ impl Link {
     }
 
     async fn newly_added(&self) -> bool {
-        false
+        self.newly_added
     }
 
     async fn parent_topics(

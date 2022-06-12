@@ -39,3 +39,11 @@ impl Alert {
         self.text.to_owned()
     }
 }
+
+pub fn warning(text: String) -> Alert {
+    Alert {
+        text,
+        alert_type: AlertType::Warning,
+        id: String::from("0"),
+    }
+}
