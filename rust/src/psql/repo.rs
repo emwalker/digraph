@@ -2,15 +2,16 @@ use async_graphql::dataloader::*;
 use sqlx::postgres::PgPool;
 
 use super::{
-    CreateGithubSession, CreateSessionResult, FetchLinks, FetchTopics, LinkLoader,
-    LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader,
-    RepositoryLoader, Search, TopicLoader, UpsertLink, UpsertLinkResult, UpsertTopic,
-    UpsertTopicResult, UserLoader,
+    CreateGithubSession, CreateSessionResult, FetchChildLinksForTopic, FetchChildTopicsForTopic,
+    LinkLoader, LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader,
+    RepositoryByNameLoader, RepositoryLoader, Search, TopicLoader, UpdateLinkParentTopics,
+    UpdateLinkTopicsResult, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
+    UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
     CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem, Topic,
-    UpsertLinkInput, UpsertTopicInput, User, Viewer,
+    UpdateLinkTopicsInput, UpsertLinkInput, UpsertTopicInput, User, Viewer,
 };
 
 pub struct Repo {
@@ -84,13 +85,13 @@ impl Repo {
     }
 
     pub async fn child_links_for_topic(&self, topic_id: String) -> Result<Vec<Link>> {
-        FetchLinks::new(self.viewer.query_ids.clone(), topic_id)
+        FetchChildLinksForTopic::new(self.viewer.query_ids.clone(), topic_id)
             .call(&self.pool)
             .await
     }
 
     pub async fn child_topics_for_topic(&self, topic_id: String) -> Result<Vec<Topic>> {
-        FetchTopics::new(self.viewer.query_ids.clone(), topic_id)
+        FetchChildTopicsForTopic::new(self.viewer.query_ids.clone(), topic_id)
             .call(&self.pool)
             .await
     }
@@ -167,6 +168,13 @@ impl Repo {
             topics.push(topic);
         }
         Ok(topics)
+    }
+
+    pub async fn update_link_topics(
+        &self,
+        input: UpdateLinkTopicsInput,
+    ) -> Result<UpdateLinkTopicsResult> {
+        UpdateLinkParentTopics::new(input).call(&self.pool).await
     }
 
     pub async fn upsert_link(&self, input: UpsertLinkInput) -> Result<UpsertLinkResult> {

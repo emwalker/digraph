@@ -7,7 +7,11 @@ use std::collections::HashMap;
 use super::queries::{LINK_FIELDS, LINK_JOINS};
 use crate::http::{repo_url::Url, Page};
 use crate::prelude::*;
-use crate::schema::{Alert, Link, SearchResultItem, UpsertLinkInput, Viewer};
+use crate::schema::{
+    Alert, Link, SearchResultItem, UpdateLinkTopicsInput, UpsertLinkInput, Viewer,
+};
+
+const PUBLIC_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
@@ -76,13 +80,13 @@ impl Loader<String> for LinkLoader {
     }
 }
 
-pub struct FetchLinks {
+pub struct FetchChildLinksForTopic {
     viewer_ids: Vec<String>,
     parent_topic_id: String,
     limit: i32,
 }
 
-impl FetchLinks {
+impl FetchChildLinksForTopic {
     pub fn new(viewer_ids: Vec<String>, parent_topic_id: String) -> Self {
         Self {
             viewer_ids,
@@ -114,6 +118,79 @@ impl FetchLinks {
             .fetch_all(pool)
             .await?;
         Ok(rows.iter().map(Row::to_link).collect())
+    }
+}
+
+pub struct UpdateLinkParentTopics {
+    input: UpdateLinkTopicsInput,
+}
+
+pub struct UpdateLinkTopicsResult {
+    pub link: Link,
+}
+
+impl UpdateLinkParentTopics {
+    pub fn new(input: UpdateLinkTopicsInput) -> Self {
+        Self { input }
+    }
+
+    async fn fetch_link(&self, link_id: &str, pool: &PgPool) -> Result<Link> {
+        let query = format!(
+            r#"
+            select
+                {LINK_FIELDS}
+                {LINK_JOINS}
+                where l.id = $1::uuid
+                group by l.id
+            "#
+        );
+
+        let row = sqlx::query_as::<_, Row>(&query)
+            .bind(link_id)
+            .fetch_one(pool)
+            .await?;
+
+        Ok(row.to_link())
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<UpdateLinkTopicsResult> {
+        let link_id = self.input.link_id.as_str();
+
+        let mut topic_ids = self
+            .input
+            .parent_topic_ids
+            .iter()
+            .map(|id| id.to_string())
+            .collect::<Vec<String>>();
+
+        if topic_ids.is_empty() {
+            topic_ids.push(PUBLIC_ROOT_TOPIC_ID.to_string());
+        }
+
+        let mut tx = pool.begin().await?;
+
+        sqlx::query("delete from link_transitive_closure where child_id = $1::uuid")
+            .bind(link_id)
+            .execute(&mut tx)
+            .await?;
+
+        sqlx::query("delete from link_topics where child_id = $1::uuid")
+            .bind(link_id)
+            .execute(&mut tx)
+            .await?;
+
+        for topic_id in &topic_ids {
+            sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
+                .bind(&topic_id)
+                .bind(link_id)
+                .execute(&mut tx)
+                .await?;
+        }
+
+        tx.commit().await?;
+
+        let link = self.fetch_link(link_id, pool).await?;
+        Ok(UpdateLinkTopicsResult { link })
     }
 }
 
@@ -173,7 +250,7 @@ impl UpsertLink {
 
         for topic_id in &self.input.add_parent_topic_ids {
             sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
-                .bind(&topic_id)
+                .bind(topic_id.as_str())
                 .bind(&row.0)
                 .fetch_one(&mut tx)
                 .await?;

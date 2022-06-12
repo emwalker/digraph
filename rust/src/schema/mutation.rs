@@ -1,6 +1,6 @@
 use async_graphql::{Context, InputObject, Object, SimpleObject};
 
-use super::{Alert, LinkEdge, Session, SessionEdge, TopicEdge, UserEdge};
+use super::{Alert, Link, LinkEdge, Session, SessionEdge, TopicEdge, UserEdge};
 use crate::prelude::*;
 use crate::psql::Repo;
 
@@ -22,8 +22,20 @@ pub struct CreateSessionPayload {
 }
 
 #[derive(Debug, InputObject)]
+pub struct UpdateLinkTopicsInput {
+    pub client_mutation_id: Option<String>,
+    pub link_id: ID,
+    pub parent_topic_ids: Vec<ID>,
+}
+
+#[derive(Debug, SimpleObject)]
+pub struct UpdateLinkTopicsPayload {
+    link: Link,
+}
+
+#[derive(Debug, InputObject)]
 pub struct UpsertLinkInput {
-    pub add_parent_topic_ids: Vec<String>,
+    pub add_parent_topic_ids: Vec<ID>,
     pub client_mutation_id: Option<String>,
     pub organization_login: String,
     pub repository_name: String,
@@ -44,7 +56,7 @@ pub struct UpsertTopicInput {
     pub name: String,
     pub organization_login: String,
     pub repository_name: String,
-    pub topic_ids: Vec<String>,
+    pub topic_ids: Vec<ID>,
 }
 
 #[derive(SimpleObject)]
@@ -78,6 +90,18 @@ impl MutationRoot {
                 },
             }),
         })
+    }
+
+    async fn update_link_topics(
+        &self,
+        ctx: &Context<'_>,
+        input: UpdateLinkTopicsInput,
+    ) -> Result<UpdateLinkTopicsPayload> {
+        let result = ctx
+            .data_unchecked::<Repo>()
+            .update_link_topics(input)
+            .await?;
+        Ok(UpdateLinkTopicsPayload { link: result.link })
     }
 
     async fn upsert_link(
