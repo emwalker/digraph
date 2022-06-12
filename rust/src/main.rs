@@ -40,10 +40,7 @@ impl AuthHeader {
             .collect::<Vec<String>>();
 
         if parts.len() != 2 {
-            return Err(Error::AuthHeader(format!(
-                "unexpected message: {}",
-                self.0
-            )));
+            return Err(Error::AuthHeader(format!("unexpected message: {}", self.0)));
         }
 
         Ok((parts[0].clone(), parts[1].clone()))

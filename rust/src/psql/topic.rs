@@ -1,5 +1,4 @@
 use async_graphql::dataloader::*;
-use chrono::{DateTime, Utc};
 use serde_json::json;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
@@ -9,7 +8,8 @@ use super::queries::{TopicQuery, TOPIC_FIELDS, TOPIC_JOINS};
 use crate::http::repo_url::Url;
 use crate::prelude::*;
 use crate::schema::{
-    timerange, Alert, AlertType, SearchResultItem, Synonyms, Topic, UpsertTopicInput, Viewer,
+    Alert, AlertType, DateTime, Prefix, SearchResultItem, Synonyms, TimeRange, Topic,
+    UpsertTopicInput, Viewer,
 };
 
 #[derive(sqlx::FromRow, Clone, Debug)]
@@ -23,7 +23,7 @@ pub struct Row {
     pub repository_owner_id: Uuid,
     pub resource_path: String,
     pub root: bool,
-    pub starts_at: Vec<DateTime<Utc>>,
+    pub starts_at: Vec<chrono::DateTime<chrono::Utc>>,
     pub synonyms: serde_json::Value,
 }
 
@@ -32,9 +32,15 @@ impl Row {
         let parent_topic_ids = self.parent_topic_ids.iter().map(Uuid::to_string).collect();
         let synonyms = Synonyms::from_json(&self.synonyms);
 
-        let starts_at = self.starts_at.first().map(DateTime::to_owned);
+        let starts_at = self.starts_at.first().map(chrono::DateTime::to_owned);
         let prefix_format = self.prefix_format.first().map(String::as_ref);
-        let prefix = timerange::Prefix::new(prefix_format, starts_at);
+        let prefix = Prefix::new(prefix_format, starts_at);
+
+        let time_range = starts_at.map(|starts_at| TimeRange {
+            starts_at: DateTime(starts_at),
+            ends_at: None,
+            prefix_format: prefix.to_format(),
+        });
 
         Topic {
             id: self.id.to_string(),
@@ -47,6 +53,7 @@ impl Row {
             resource_path: self.resource_path.to_owned(),
             root: self.root,
             synonyms,
+            time_range,
         }
     }
 
