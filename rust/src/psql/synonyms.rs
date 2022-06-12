@@ -42,7 +42,7 @@ impl UpdateSynonyms {
             seen.insert(&synonym_input.name);
         }
 
-        let topic = fetch_topic(pool, topic_id.to_string()).await?.to_topic();
+        let topic = fetch_topic(pool, topic_id).await?.to_topic();
 
         let synonyms = Synonyms(serialize);
         let synonym_string = serde_json::to_string(&synonyms)?;
@@ -55,7 +55,7 @@ impl UpdateSynonyms {
             .execute(pool)
             .await?;
 
-        let topic = fetch_topic(pool, topic_id.to_string()).await?.to_topic();
+        let topic = fetch_topic(pool, topic_id).await?.to_topic();
         Ok(UpdateSynonymsResult { alerts, topic })
     }
 }

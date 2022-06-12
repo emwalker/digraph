@@ -13,9 +13,10 @@ pub const TOPIC_FIELDS: &str = r#"
     t.root,
     (r.system and (r.name = 'system:default')) repository_is_private,
     r.owner_id repository_owner_id,
-    array_remove(array_agg(distinct parent_topics.parent_id), null) parent_topic_ids,
-    array_remove(array_agg(distinct tr.starts_at), null) starts_at,
-    array_remove(array_agg(distinct tr.prefix_format), null) prefix_format
+    tr.starts_at timerange_starts_at,
+    tr.id timerange_id,
+    tr.prefix_format timerange_prefix_format,
+    array_remove(array_agg(distinct parent_topics.parent_id), null) parent_topic_ids
 "#;
 
 pub const TOPIC_JOINS: &str = r#"
@@ -25,6 +26,10 @@ pub const TOPIC_JOINS: &str = r#"
     join repositories r on r.id = t.repository_id
     left join timeranges tr on tr.id = t.timerange_id
     left join topic_topics parent_topics on t.id = parent_topics.child_id
+"#;
+
+pub const TOPIC_GROUP_BY: &str = r#"
+    group by t.id, o.login, r.system, r.name, r.owner_id, tr.id, tr.starts_at, tr.prefix_format
 "#;
 
 pub const LINK_FIELDS: &str = r#"
@@ -87,7 +92,7 @@ impl TopicQuery {
             {TOPIC_FIELDS}
             {TOPIC_JOINS}
             where {where_clause}
-            group by t.id, o.login, r.system, r.name, r.owner_id
+            {TOPIC_GROUP_BY}
             limit ${index}"#
         )
     }
@@ -138,7 +143,7 @@ impl LiveTopicQuery {
             {TOPIC_FIELDS}
             {TOPIC_JOINS}
             where {where_clause}
-            group by t.id, o.login, r.system, r.name, r.owner_id
+            {TOPIC_GROUP_BY}
             order by char_length(t.name), t.name
             limit ${index}"#
         )
@@ -209,7 +214,7 @@ impl SearchQuery {
             {TOPIC_JOINS}
             {join_clauses}
             where {where_clauses}
-            group by t.id, o.login, r.system, r.name, r.owner_id
+            {TOPIC_GROUP_BY}
             {order_by}
             limit ${index}"#
         )

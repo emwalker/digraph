@@ -4,12 +4,12 @@ use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 
-use super::queries::{TopicQuery, TOPIC_FIELDS, TOPIC_JOINS};
+use super::queries::{TopicQuery, TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
 use crate::http::repo_url::Url;
 use crate::prelude::*;
 use crate::schema::{
-    Alert, AlertType, DateTime, Prefix, SearchResultItem, Synonyms, TimeRange, Topic,
-    UpsertTopicInput, Viewer,
+    Alert, AlertType, DateTime, Prefix, SearchResultItem, Synonyms, TimeRange,
+    TimeRangePrefixFormat, Topic, UpsertTopicInput, Viewer,
 };
 
 #[derive(sqlx::FromRow, Clone, Debug)]
@@ -17,30 +17,23 @@ pub struct Row {
     pub id: Uuid,
     pub name: String,
     pub parent_topic_ids: Vec<Uuid>,
-    pub prefix_format: Vec<String>,
     pub repository_id: Uuid,
     pub repository_is_private: bool,
     pub repository_owner_id: Uuid,
     pub resource_path: String,
     pub root: bool,
-    pub starts_at: Vec<chrono::DateTime<chrono::Utc>>,
     pub synonyms: serde_json::Value,
+    pub timerange_id: Option<Uuid>,
+    pub timerange_prefix_format: Option<String>,
+    pub timerange_starts_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 impl Row {
     pub fn to_topic(&self) -> Topic {
         let parent_topic_ids = self.parent_topic_ids.iter().map(Uuid::to_string).collect();
         let synonyms = Synonyms::from_json(&self.synonyms);
-
-        let starts_at = self.starts_at.first().map(chrono::DateTime::to_owned);
-        let prefix_format = self.prefix_format.first().map(String::as_ref);
-        let prefix = Prefix::new(prefix_format, starts_at);
-
-        let time_range = starts_at.map(|starts_at| TimeRange {
-            starts_at: DateTime(starts_at),
-            ends_at: None,
-            prefix_format: prefix.to_format(),
-        });
+        let time_range = self.time_range();
+        let prefix = Prefix::from(&time_range);
 
         Topic {
             id: self.id.to_string(),
@@ -60,15 +53,40 @@ impl Row {
     pub fn to_search_result_item(&self) -> SearchResultItem {
         SearchResultItem::Topic(self.to_topic())
     }
+
+    pub fn time_range(&self) -> Option<TimeRange> {
+        match (
+            self.timerange_id,
+            self.timerange_starts_at,
+            self.timerange_prefix_format.clone(),
+        ) {
+            (Some(id), Some(starts_at), Some(prefix_format)) => {
+                let prefix_format = match prefix_format.as_str() {
+                    "NONE" => TimeRangePrefixFormat::None,
+                    "START_YEAR" => TimeRangePrefixFormat::StartYear,
+                    "START_YEAR_MONTH" => TimeRangePrefixFormat::StartYearMonth,
+                    _ => TimeRangePrefixFormat::None,
+                };
+
+                Some(TimeRange {
+                    id: ID(id.to_string()),
+                    starts_at: DateTime(starts_at),
+                    ends_at: None,
+                    prefix_format,
+                })
+            }
+            _ => None,
+        }
+    }
 }
 
-pub async fn fetch_topic(pool: &PgPool, topic_id: String) -> Result<Row> {
+pub async fn fetch_topic(pool: &PgPool, topic_id: &String) -> Result<Row> {
     let query = format!(
         r#"select
         {TOPIC_FIELDS}
         {TOPIC_JOINS}
         where t.id = $1::uuid
-        group by t.id, o.login, r.system, r.owner_id, r.name"#,
+        {TOPIC_GROUP_BY}"#,
     );
 
     Ok(sqlx::query_as::<_, Row>(&query)
@@ -130,7 +148,7 @@ impl FetchChildTopicsForTopic {
                 {TOPIC_JOINS}
                 where parent_topics.parent_id = $1::uuid
                     and om.user_id = any($2::uuid[])
-                group by t.id, o.login, r.system, r.name, r.owner_id
+                {TOPIC_GROUP_BY}
                 order by t.name asc
                 limit $3
             "#
@@ -143,6 +161,65 @@ impl FetchChildTopicsForTopic {
             .fetch_all(pool)
             .await?;
         Ok(rows.iter().map(Row::to_topic).collect())
+    }
+}
+
+pub struct DeleteTopicTimeRange {
+    pub topic_id: String,
+}
+
+pub struct DeleteTopicTimeRangeResult {
+    pub topic: Topic,
+    pub deleted_time_range_id: Option<String>,
+}
+
+impl DeleteTopicTimeRange {
+    pub fn new(topic_id: String) -> Self {
+        Self { topic_id }
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<DeleteTopicTimeRangeResult> {
+        log::info!("deleting topic time range: {}", self.topic_id);
+
+        let topic = fetch_topic(pool, &self.topic_id).await?.to_topic();
+        let mut deleted_time_range_id = None;
+
+        if let Some(time_range) = topic.time_range {
+            deleted_time_range_id = Some(time_range.id.to_string());
+            let mut tx = pool.begin().await?;
+            let name = topic
+                .synonyms
+                .0
+                .first()
+                .map(|s| s.name.clone())
+                .unwrap_or("Missing name".into());
+
+            sqlx::query(
+                r#"
+                update topics
+                    set timerange_id = null, name = $1
+                where id = $2::uuid
+                "#,
+            )
+            .bind(&name)
+            .bind(&self.topic_id)
+            .execute(&mut tx)
+            .await?;
+
+            sqlx::query("delete from timeranges where id = $1::uuid")
+                .bind(&time_range.id.to_string())
+                .execute(&mut tx)
+                .await?;
+
+            tx.commit().await?;
+        }
+
+        let topic = fetch_topic(pool, &self.topic_id).await?.to_topic();
+
+        Ok(DeleteTopicTimeRangeResult {
+            topic,
+            deleted_time_range_id,
+        })
     }
 }
 
@@ -216,7 +293,7 @@ impl UpsertTopic {
 
         tx.commit().await?;
 
-        let row = fetch_topic(pool, row.0.to_string()).await?;
+        let row = fetch_topic(pool, &row.0.to_string()).await?;
 
         Ok(UpsertTopicResult {
             alerts: vec![],

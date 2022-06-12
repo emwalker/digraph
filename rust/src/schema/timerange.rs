@@ -1,4 +1,4 @@
-use async_graphql::{scalar, Enum, SimpleObject};
+use async_graphql::{scalar, Enum, SimpleObject, ID};
 
 use serde::{Deserialize, Serialize};
 
@@ -10,6 +10,21 @@ pub enum Prefix {
 }
 
 impl Prefix {
+    pub fn from(time_range: &Option<TimeRange>) -> Self {
+        match &time_range {
+            Some(TimeRange {
+                starts_at,
+                prefix_format,
+                ..
+            }) => match prefix_format {
+                TimeRangePrefixFormat::None => Self::None,
+                TimeRangePrefixFormat::StartYear => Self::StartYear(starts_at.0),
+                TimeRangePrefixFormat::StartYearMonth => Self::StartYearMonth(starts_at.0),
+            },
+            None => Self::None,
+        }
+    }
+
     pub fn new(
         prefix_format: Option<&str>,
         starts_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -40,14 +55,6 @@ impl Prefix {
             }
         }
     }
-
-    pub fn to_format(&self) -> TimeRangePrefixFormat {
-        match self {
-            Self::None => TimeRangePrefixFormat::None,
-            Self::StartYear(_) => TimeRangePrefixFormat::StartYear,
-            Self::StartYearMonth(_) => TimeRangePrefixFormat::StartYearMonth,
-        }
-    }
 }
 
 #[derive(Enum, Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -63,9 +70,10 @@ scalar!(DateTime);
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, SimpleObject)]
 pub struct TimeRange {
-    pub starts_at: DateTime,
     pub ends_at: Option<DateTime>,
+    pub id: ID,
     pub prefix_format: TimeRangePrefixFormat,
+    pub starts_at: DateTime,
 }
 
 #[cfg(test)]
