@@ -1,4 +1,5 @@
 use async_graphql::dataloader::*;
+use async_graphql::ID;
 use serde_json::json;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
@@ -9,7 +10,7 @@ use crate::http::repo_url::Url;
 use crate::prelude::*;
 use crate::schema::{
     Alert, AlertType, DateTime, Prefix, SearchResultItem, Synonyms, TimeRange,
-    TimeRangePrefixFormat, Topic, UpsertTopicInput, Viewer,
+    TimeRangePrefixFormat, Topic, UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
 };
 
 #[derive(sqlx::FromRow, Clone, Debug)]
@@ -298,6 +299,100 @@ impl UpsertTopic {
         Ok(UpsertTopicResult {
             alerts: vec![],
             topic: Some(row.to_topic()),
+        })
+    }
+}
+
+pub struct UpsertTopicTimeRange {
+    input: UpsertTopicTimeRangeInput,
+}
+
+pub struct UpsertTopicTimeRangeResult {
+    pub alerts: Vec<Alert>,
+    pub time_range: TimeRange,
+    pub topic: Topic,
+}
+
+impl UpsertTopicTimeRange {
+    pub fn new(input: UpsertTopicTimeRangeInput) -> Self {
+        Self { input }
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<UpsertTopicTimeRangeResult> {
+        log::info!("upserting time range for topic: {:?}", self.input);
+
+        let topic_id = self.input.topic_id.to_string();
+        let topic = fetch_topic(pool, &topic_id).await?.to_topic();
+        let prefix_format = format!("{}", self.input.prefix_format);
+        let mut tx = pool.begin().await?;
+
+        let time_range_id = if let Some(time_range) = &topic.time_range {
+            sqlx::query(
+                r#"
+                update timeranges set starts_at = $1, prefix_format = $2
+                    where id = $3::uuid
+                "#,
+            )
+            .bind(&self.input.starts_at.0)
+            .bind(&prefix_format)
+            .bind(&time_range.id.to_string())
+            .execute(&mut tx)
+            .await?;
+
+            time_range.id.to_string()
+        } else {
+            let row = sqlx::query_as::<_, (Uuid,)>(
+                r#"
+                insert into timeranges (starts_at, prefix_format)
+                    values ($1, $2)
+                returning id
+                "#,
+            )
+            .bind(&self.input.starts_at.0)
+            .bind(&prefix_format)
+            .fetch_one(&mut tx)
+            .await?;
+            let time_range_id = row.0.to_string();
+
+            sqlx::query("update topics set timerange_id = $1::uuid where id = $2::uuid")
+                .bind(&time_range_id)
+                .bind(&topic_id)
+                .execute(&mut tx)
+                .await?;
+
+            time_range_id
+        };
+
+        let time_range = TimeRange {
+            id: ID(time_range_id),
+            starts_at: self.input.starts_at.clone(),
+            ends_at: None,
+            prefix_format: self.input.prefix_format,
+        };
+
+        let prefix = Prefix::from(&Some(time_range.clone()));
+        let synonym = topic
+            .synonyms
+            .first()
+            .map(|s| s.name.clone())
+            .unwrap_or("Missing name".into());
+        let name = prefix.display(&synonym);
+
+        sqlx::query("update topics set name = $1 where id = $2::uuid")
+            .bind(&name)
+            .bind(&topic_id)
+            .execute(&mut tx)
+            .await?;
+
+        tx.commit().await?;
+
+        // Reload to pick up changes
+        let topic = fetch_topic(pool, &topic_id).await?.to_topic();
+
+        Ok(UpsertTopicTimeRangeResult {
+            alerts: vec![],
+            time_range,
+            topic,
         })
     }
 }

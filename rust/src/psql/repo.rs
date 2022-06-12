@@ -6,12 +6,14 @@ use super::{
     FetchChildLinksForTopic, FetchChildTopicsForTopic, LinkLoader, LiveSearchTopics,
     OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader,
     Search, TopicLoader, UpdateLinkParentTopics, UpdateLinkTopicsResult, UpdateSynonyms,
-    UpdateSynonymsResult, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult, UserLoader,
+    UpdateSynonymsResult, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
+    UpsertTopicTimeRange, UpsertTopicTimeRangeResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
     CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem, Topic,
-    UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput, User, Viewer,
+    UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput,
+    UpsertTopicTimeRangeInput, User, Viewer,
 };
 
 pub struct Repo {
@@ -204,6 +206,13 @@ impl Repo {
 
     pub async fn upsert_topic(&self, input: UpsertTopicInput) -> Result<UpsertTopicResult> {
         UpsertTopic::new(input).call(&self.pool).await
+    }
+
+    pub async fn upsert_topic_time_range(
+        &self,
+        input: UpsertTopicTimeRangeInput,
+    ) -> Result<UpsertTopicTimeRangeResult> {
+        UpsertTopicTimeRange::new(input).call(&self.pool).await
     }
 
     pub async fn user(&self, id: String) -> Result<Option<User>> {

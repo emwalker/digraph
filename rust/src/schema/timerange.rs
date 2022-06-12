@@ -1,4 +1,5 @@
-use async_graphql::{scalar, Enum, SimpleObject, ID};
+use async_graphql::connection::*;
+use async_graphql::{connection::EmptyFields, scalar, Enum, SimpleObject, ID};
 
 use serde::{Deserialize, Serialize};
 
@@ -64,6 +65,17 @@ pub enum TimeRangePrefixFormat {
     StartYearMonth,
 }
 
+impl std::fmt::Display for TimeRangePrefixFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        let string = match self {
+            Self::None => "NONE",
+            Self::StartYear => "START_YEAR",
+            Self::StartYearMonth => "START_YEAR_MONTH",
+        };
+        write!(f, "{}", string)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct DateTime(pub chrono::DateTime<chrono::Utc>);
 scalar!(DateTime);
@@ -75,6 +87,8 @@ pub struct TimeRange {
     pub prefix_format: TimeRangePrefixFormat,
     pub starts_at: DateTime,
 }
+
+pub type TimeRangeEdge = Edge<String, TimeRange, EmptyFields>;
 
 #[cfg(test)]
 mod tests {
