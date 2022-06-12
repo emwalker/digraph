@@ -11,7 +11,7 @@ async-graphql-actix-web = "4"
 async-std = "1"
 async-trait = "0"
 base64 = "0"
-chrono = "0"
+chrono = { version = "0", features = ["serde"] }
 derivative = "2"
 dotenv = "0"
 env_logger = "0"

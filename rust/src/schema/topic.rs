@@ -2,8 +2,8 @@ use async_graphql::connection::*;
 use itertools::Itertools;
 
 use super::{
-    relay::conn, timerange::Prefix, LinkConnection, Repository, SearchResultItemConnection,
-    Synonym, Synonyms,
+    relay::conn, LinkConnection, Prefix, Repository, SearchResultItemConnection, Synonym, Synonyms,
+    TimeRange,
 };
 use crate::prelude::*;
 use crate::psql::Repo;
@@ -20,6 +20,7 @@ pub struct Topic {
     pub resource_path: String,
     pub root: bool,
     pub synonyms: Synonyms,
+    pub time_range: Option<TimeRange>,
 }
 
 pub type TopicEdge = Edge<String, Topic, EmptyFields>;
@@ -27,6 +28,26 @@ pub type TopicConnection = Connection<String, Topic, EmptyFields, EmptyFields>;
 
 #[Object]
 impl Topic {
+    async fn available_parent_topics(
+        &self,
+        ctx: &Context<'_>,
+        search_string: Option<String>,
+        first: Option<i32>,
+        after: Option<String>,
+        last: Option<i32>,
+        before: Option<String>,
+    ) -> Result<TopicConnection> {
+        conn(
+            after,
+            before,
+            first,
+            last,
+            ctx.data_unchecked::<Repo>()
+                .search_topics(search_string)
+                .await?,
+        )
+    }
+
     #[allow(unused_variables)]
     async fn child_topics(
         &self,
@@ -120,6 +141,10 @@ impl Topic {
             .map_err(|_e| Error::NotFound(format!("repo id {}", self.repository_id)))
     }
 
+    async fn resource_path(&self) -> &str {
+        self.resource_path.as_str()
+    }
+
     async fn search(
         &self,
         ctx: &Context<'_>,
@@ -144,22 +169,23 @@ impl Topic {
         self.synonyms.into_iter().collect_vec()
     }
 
-    async fn resource_path(&self) -> &str {
-        self.resource_path.as_str()
+    async fn time_range(&self) -> Option<TimeRange> {
+        self.time_range.clone()
+    }
+
+    async fn viewer_can_delete_synonyms(&self, ctx: &Context<'_>) -> Result<bool> {
+        if self.synonyms.len() < 2 {
+            return Ok(false);
+        }
+        self.viewer_can_update(ctx).await
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
         let repo = ctx.data_unchecked::<Repo>();
         if repo.viewer.is_guest() {
-            log::debug!("viewer is guest");
             return Ok(false);
         }
         if self.repository_is_private {
-            log::debug!(
-                "viewer: {}, owner: {}",
-                repo.viewer.user_id,
-                self.repository_owner_id
-            );
             return Ok(self.repository_owner_id == repo.viewer.user_id);
         }
         Ok(true)

@@ -8,6 +8,12 @@ use super::timerange::Prefix;
 #[sqlx(transparent)]
 pub struct Synonyms(pub Vec<Synonym>);
 
+impl Synonyms {
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash, SimpleObject)]
 pub struct Synonym {
     #[serde(alias = "Name")]
