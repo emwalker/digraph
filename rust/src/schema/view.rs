@@ -41,6 +41,7 @@ impl View {
                 .repository_by_name(name.to_string())
                 .await?
                 .ok_or_else(|| Error::NotFound(format!("repo name {}", name))),
+
             None => {
                 log::info!("no repository specified, fetching default repo for org");
                 self.current_organization(ctx)
