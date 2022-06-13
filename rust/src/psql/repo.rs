@@ -3,9 +3,10 @@ use sqlx::postgres::PgPool;
 
 use super::{
     CreateGithubSession, CreateSessionResult, DeleteTopic, DeleteTopicResult, DeleteTopicTimeRange,
-    DeleteTopicTimeRangeResult, FetchChildLinksForTopic, FetchChildTopicsForTopic, LinkLoader,
-    LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader,
-    RepositoryLoader, Search, TopicLoader, UpdateLinkParentTopics, UpdateLinkTopicsResult,
+    DeleteTopicTimeRangeResult, FetchChildLinksForTopic, FetchChildTopicsForTopic,
+    FetchRepositoriesForUser, LinkLoader, LiveSearchTopics, OrganizationByLoginLoader,
+    OrganizationLoader, RepositoryByNameLoader, RepositoryLoader, Search, SelectRepository,
+    SelectRepositoryResult, TopicLoader, UpdateLinkParentTopics, UpdateLinkTopicsResult,
     UpdateSynonyms, UpdateSynonymsResult, UpsertLink, UpsertLinkResult, UpsertTopic,
     UpsertTopicResult, UpsertTopicTimeRange, UpsertTopicTimeRangeResult, UserLoader,
 };
@@ -137,15 +138,18 @@ impl Repo {
         }
     }
 
+    pub async fn repositories_for_user(&self, user_id: String) -> Result<Vec<Repository>> {
+        FetchRepositoriesForUser::new(user_id)
+            .call(&self.pool)
+            .await
+    }
+
     pub async fn repository(&self, id: String) -> Result<Option<Repository>> {
-        self.repository_loader.load_one(id).await.map_err(Error::DB)
+        self.repository_loader.load_one(id).await
     }
 
     pub async fn repository_by_name(&self, name: String) -> Result<Option<Repository>> {
-        self.repository_by_name_loader
-            .load_one(name)
-            .await
-            .map_err(Error::DB)
+        self.repository_by_name_loader.load_one(name).await
     }
 
     pub async fn search(
@@ -164,6 +168,15 @@ impl Repo {
 
     pub async fn search_topics(&self, search_string: Option<String>) -> Result<Vec<Topic>> {
         LiveSearchTopics::new(self.viewer.query_ids.clone(), search_string.clone())
+            .call(&self.pool)
+            .await
+    }
+
+    pub async fn select_repository(
+        &self,
+        repository_id: Option<String>,
+    ) -> Result<SelectRepositoryResult> {
+        SelectRepository::new(self.viewer.clone(), repository_id)
             .call(&self.pool)
             .await
     }

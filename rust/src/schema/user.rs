@@ -61,12 +61,27 @@ impl User {
 
     pub async fn repositories(
         &self,
+        ctx: &Context<'_>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<RepositoryConnection> {
-        let results: Vec<Repository> = vec![];
+        let (selected_repository_id, results) = match self {
+            Self::Guest => (ID("".into()), vec![]),
+            Self::Registered {
+                id,
+                selected_repository_id,
+                ..
+            } => {
+                let results = ctx
+                    .data_unchecked::<Repo>()
+                    .repositories_for_user(id.to_string())
+                    .await?;
+                (selected_repository_id.clone().unwrap_or_default(), results)
+            }
+        };
+
         query(
             after,
             before,
@@ -75,17 +90,24 @@ impl User {
             |_after, _before, _first, _last| async move {
                 let mut connection = Connection::new(false, false);
                 connection.edges.extend(results.into_iter().map(|n| {
+                    let repository_id = match &n {
+                        Repository::Default => ID("".to_string()),
+                        Repository::Fetched { id, .. } => ID(id.clone()),
+                    };
+
                     Edge::with_additional_fields(
                         0_usize,
                         n,
-                        RepositoryEdgeFields { is_selected: false },
+                        RepositoryEdgeFields {
+                            is_selected: repository_id == selected_repository_id,
+                        },
                     )
                 }));
                 Ok::<_, Error>(connection)
             },
         )
         .await
-        .map_err(Error::Resolver)
+        .map_err(Error::from)
     }
 
     pub async fn selected_repository(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
@@ -95,11 +117,11 @@ impl User {
                 selected_repository_id,
                 ..
             } => match selected_repository_id {
-                Some(id) => ctx
-                    .data_unchecked::<Repo>()
-                    .repository(id.to_string())
-                    .await
-                    .map_err(|_e| Error::NotFound(format!("repo id {}", **id))),
+                Some(id) => {
+                    ctx.data_unchecked::<Repo>()
+                        .repository(id.to_string())
+                        .await
+                }
                 None => Ok(None),
             },
         }

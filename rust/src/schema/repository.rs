@@ -6,10 +6,10 @@ use crate::psql::Repo;
 
 const PRIVATE_REPO_COLOR: &str = "#dbedff";
 const DEFAULT_REPO_ID: &str = "32212616-fc1b-11e8-8eda-b70af6d8d09f";
-const DEFAULT_REPO_NAME: &str = "General collection";
+const DEFAULT_REPO_NAME: &str = "system:default";
 const DEFAULT_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Repository {
     Default,
     Fetched {
@@ -53,11 +53,10 @@ impl Repository {
 
     pub async fn full_name(&self, ctx: &Context<'_>) -> Result<String> {
         match self {
-            Self::Default => Ok("wiki/general".to_string()),
+            Self::Default => Ok("wiki/General collection".to_string()),
             Self::Fetched {
                 organization_id,
                 name,
-                system,
                 ..
             } => {
                 let org = ctx
@@ -69,12 +68,10 @@ impl Repository {
                     })?;
 
                 match org {
-                    Organization::Wiki => Ok("wiki/wiki".to_string()),
+                    Organization::Wiki => Ok("wiki/General collection".to_string()),
                     Organization::Selected { login, .. } => {
                         let name = if self.is_private(ctx).await? {
                             "private"
-                        } else if *system {
-                            "general"
                         } else {
                             name
                         };
@@ -85,7 +82,7 @@ impl Repository {
         }
     }
 
-    async fn id(&self) -> ID {
+    pub async fn id(&self) -> ID {
         match self {
             Self::Default => ID(DEFAULT_REPO_ID.to_string()),
             Self::Fetched { id, .. } => ID(id.to_owned()),

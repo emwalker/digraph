@@ -1,13 +1,14 @@
 use async_graphql::{Context, InputObject, Object, SimpleObject};
 
 use super::{
-    Alert, DateTime, Link, LinkEdge, Session, SessionEdge, Synonym, TimeRangeEdge,
-    TimeRangePrefixFormat, Topic, TopicEdge, UserEdge,
+    Alert, DateTime, Link, LinkEdge, Repository, Session, SessionEdge, Synonym, TimeRangeEdge,
+    TimeRangePrefixFormat, Topic, TopicEdge, User, UserEdge,
 };
 use crate::http::repo_url;
 use crate::prelude::*;
 use crate::psql::{
-    DeleteTopicTimeRangeResult, Repo, UpdateSynonymsResult, UpsertTopicTimeRangeResult,
+    DeleteTopicTimeRangeResult, Repo, SelectRepositoryResult, UpdateLinkTopicsResult,
+    UpdateSynonymsResult, UpsertTopicTimeRangeResult,
 };
 
 #[derive(Debug, InputObject)]
@@ -50,6 +51,18 @@ pub struct DeleteTopicTimeRangePayload {
     client_mutation_id: Option<String>,
     deleted_time_range_id: Option<ID>,
     topic: Topic,
+}
+
+#[derive(Debug, InputObject)]
+pub struct SelectRepositoryInput {
+    pub client_mutation_id: Option<String>,
+    pub repository_id: Option<ID>,
+}
+
+#[derive(Debug, SimpleObject)]
+pub struct SelectRepositoryPayload {
+    repository: Option<Repository>,
+    viewer: User,
 }
 
 #[derive(Debug, InputObject)]
@@ -216,17 +229,28 @@ impl MutationRoot {
         })
     }
 
+    async fn select_repository(
+        &self,
+        ctx: &Context<'_>,
+        input: SelectRepositoryInput,
+    ) -> Result<SelectRepositoryPayload> {
+        let SelectRepositoryResult { repository, viewer } = ctx
+            .data_unchecked::<Repo>()
+            .select_repository(input.repository_id.map(|id| id.to_string()))
+            .await?;
+        Ok(SelectRepositoryPayload { repository, viewer })
+    }
+
     async fn update_link_topics(
         &self,
         ctx: &Context<'_>,
         input: UpdateLinkTopicsInput,
     ) -> Result<UpdateLinkTopicsPayload> {
-        let result = ctx
+        let UpdateLinkTopicsResult { link } = ctx
             .data_unchecked::<Repo>()
             .update_link_topics(input)
             .await?;
-
-        Ok(UpdateLinkTopicsPayload { link: result.link })
+        Ok(UpdateLinkTopicsPayload { link })
     }
 
     async fn update_synonyms(
