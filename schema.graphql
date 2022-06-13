@@ -75,7 +75,7 @@ input DeleteLinkInput {
 
 type DeleteLinkPayload {
   clientMutationId: String
-  deletedLinkId: ID!
+  deletedLinkId: ID
 }
 
 input DeleteSessionInput {

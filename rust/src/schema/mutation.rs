@@ -7,8 +7,8 @@ use super::{
 use crate::http::repo_url;
 use crate::prelude::*;
 use crate::psql::{
-    DeleteTopicTimeRangeResult, Repo, SelectRepositoryResult, UpdateLinkTopicsResult,
-    UpdateSynonymsResult, UpsertTopicTimeRangeResult,
+    DeleteLinkResult, DeleteTopicTimeRangeResult, Repo, SelectRepositoryResult,
+    UpdateLinkTopicsResult, UpdateSynonymsResult, UpsertTopicTimeRangeResult,
 };
 
 #[derive(Debug, InputObject)]
@@ -26,6 +26,18 @@ pub struct CreateSessionPayload {
     alerts: Vec<Alert>,
     user_edge: Option<UserEdge>,
     session_edge: Option<SessionEdge>,
+}
+
+#[derive(Debug, InputObject)]
+pub struct DeleteLinkInput {
+    client_mutation_id: Option<String>,
+    link_id: ID,
+}
+
+#[derive(Debug, SimpleObject)]
+pub struct DeleteLinkPayload {
+    client_mutation_id: Option<String>,
+    deleted_link_id: Option<ID>,
 }
 
 #[derive(Debug, InputObject)]
@@ -182,6 +194,26 @@ impl MutationRoot {
                     id: result.session_id,
                 },
             }),
+        })
+    }
+
+    async fn delete_link(
+        &self,
+        ctx: &Context<'_>,
+        input: DeleteLinkInput,
+    ) -> Result<DeleteLinkPayload> {
+        let DeleteLinkInput {
+            client_mutation_id,
+            link_id,
+        } = input;
+        let DeleteLinkResult { deleted_link_id } = ctx
+            .data_unchecked::<Repo>()
+            .delete_link(link_id.to_string())
+            .await?;
+
+        Ok(DeleteLinkPayload {
+            client_mutation_id,
+            deleted_link_id: Some(ID(deleted_link_id)),
         })
     }
 

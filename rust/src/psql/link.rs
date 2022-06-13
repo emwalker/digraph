@@ -123,6 +123,30 @@ impl FetchChildLinksForTopic {
     }
 }
 
+pub struct DeleteLink {
+    link_id: String,
+}
+
+pub struct DeleteLinkResult {
+    pub deleted_link_id: String,
+}
+
+impl DeleteLink {
+    pub fn new(link_id: String) -> Self {
+        Self { link_id }
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<DeleteLinkResult> {
+        sqlx::query("delete from links where id = $1::uuid")
+            .bind(&self.link_id)
+            .execute(pool)
+            .await?;
+        Ok(DeleteLinkResult {
+            deleted_link_id: self.link_id.clone(),
+        })
+    }
+}
+
 pub struct UpdateLinkParentTopics {
     input: UpdateLinkTopicsInput,
 }

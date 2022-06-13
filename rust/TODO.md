@@ -4,6 +4,7 @@ Following are some changes I'd like to get around to eventually:
 * Add in actor join clauses to all mutations.
 * Add in viewer join clauses to all fetching code.
 * Fix upserting of users when a person logs in for the first time.
+* Get activity feed working again
 * Rename Topic.links to Topic.childLinks
 * Unify the search and the topic code.  When there's paging, you should be paging through the topics and then the links on a topic page, which implies a single ordered list, with topics ordered at the start.  What we're doing right now is showing a section of topics and a section of links.
 * Check for cycles before adding a parent topic.
