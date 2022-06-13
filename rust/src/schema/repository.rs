@@ -4,8 +4,8 @@ use super::{Organization, Topic, User};
 use crate::prelude::*;
 use crate::psql::Repo;
 
+pub const DEFAULT_REPO_ID: &str = "32212616-fc1b-11e8-8eda-b70af6d8d09f";
 const PRIVATE_REPO_COLOR: &str = "#dbedff";
-const DEFAULT_REPO_ID: &str = "32212616-fc1b-11e8-8eda-b70af6d8d09f";
 const DEFAULT_REPO_NAME: &str = "system:default";
 const DEFAULT_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
 

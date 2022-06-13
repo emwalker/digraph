@@ -1,6 +1,7 @@
 use super::TopicConnection;
 use super::{
-    relay::conn, ActivityLineItemConnection, Link, Organization, QueryInfo, Repository, Topic, User,
+    relay::conn, ActivityLineItemConnection, Link, Organization, QueryInfo, Repository, Topic,
+    User, DEFAULT_REPO_ID,
 };
 use crate::prelude::*;
 use crate::psql::Repo;
@@ -42,13 +43,11 @@ impl View {
                 .await?
                 .ok_or_else(|| Error::NotFound(format!("repo name {}", name))),
 
-            None => {
-                log::info!("no repository specified, fetching default repo for org");
-                self.current_organization(ctx)
-                    .await?
-                    .default_repository(ctx)
-                    .await
-            }
+            None => ctx
+                .data_unchecked::<Repo>()
+                .repository(DEFAULT_REPO_ID.to_string())
+                .await?
+                .ok_or_else(|| Error::NotFound(format!("repo id {}", DEFAULT_REPO_ID))),
         }
     }
 
@@ -56,8 +55,8 @@ impl View {
         ctx.data_unchecked::<Repo>().link(id.to_string()).await
     }
 
-    async fn link_count(&self) -> i32 {
-        45000
+    async fn link_count(&self, ctx: &Context<'_>) -> Result<i64> {
+        ctx.data_unchecked::<Repo>().link_count().await
     }
 
     async fn query_info(&self) -> QueryInfo {
@@ -74,8 +73,8 @@ impl View {
         ctx.data_unchecked::<Repo>().topic(id.to_string()).await
     }
 
-    async fn topic_count(&self) -> i32 {
-        12000
+    async fn topic_count(&self, ctx: &Context<'_>) -> Result<i64> {
+        ctx.data_unchecked::<Repo>().topic_count().await
     }
 
     async fn topics(

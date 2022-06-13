@@ -118,6 +118,13 @@ impl Repo {
         self.link_loader.load_one(id).await
     }
 
+    pub async fn link_count(&self) -> Result<i64> {
+        let row = sqlx::query_as::<_, (i64,)>("select count(*) from links")
+            .fetch_one(&self.pool)
+            .await?;
+        Ok(row.0)
+    }
+
     pub async fn organization(&self, id: String) -> Result<Option<Organization>> {
         self.organization_loader.load_one(id).await
     }
@@ -187,6 +194,13 @@ impl Repo {
 
     pub async fn topic(&self, id: String) -> Result<Option<Topic>> {
         self.topic_loader.load_one(id).await
+    }
+
+    pub async fn topic_count(&self) -> Result<i64> {
+        let row = sqlx::query_as::<_, (i64,)>("select count(*) from topics")
+            .fetch_one(&self.pool)
+            .await?;
+        Ok(row.0)
     }
 
     pub async fn topics(&self, ids: &[String]) -> Result<Vec<Option<Topic>>> {
