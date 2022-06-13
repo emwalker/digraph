@@ -118,7 +118,7 @@
     "@types/serialize-javascript": "^5.0.2",
     "@types/uuid": "^8.3.4",
     "@types/webpack-env": "^1.17.0",
-    "@typescript-eslint/eslint-plugin": "^5.26.0",
+    "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.26.0",
     "@zarconontol/enzyme-adapter-react-18": "^0.7.3",
     "babel-core": "^7.0.0-bridge.0",
