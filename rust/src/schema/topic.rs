@@ -1,6 +1,7 @@
 use async_graphql::connection::*;
 use itertools::Itertools;
 
+use super::ActivityLineItemConnection;
 use super::{
     relay::conn, LinkConnection, Prefix, Repository, SearchResultItemConnection, Synonym, Synonyms,
     TimeRange,
@@ -28,6 +29,21 @@ pub type TopicConnection = Connection<String, Topic, EmptyFields, EmptyFields>;
 
 #[Object]
 impl Topic {
+    async fn activity(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> Result<ActivityLineItemConnection> {
+        let results = ctx
+            .data_unchecked::<Repo>()
+            .activity(Some(self.id.clone()), first.unwrap_or(3))
+            .await?;
+        conn(after, before, first, last, results)
+    }
+
     async fn available_parent_topics(
         &self,
         ctx: &Context<'_>,
@@ -37,15 +53,11 @@ impl Topic {
         last: Option<i32>,
         before: Option<String>,
     ) -> Result<TopicConnection> {
-        conn(
-            after,
-            before,
-            first,
-            last,
-            ctx.data_unchecked::<Repo>()
-                .search_topics(search_string)
-                .await?,
-        )
+        let results = ctx
+            .data_unchecked::<Repo>()
+            .search_topics(search_string)
+            .await?;
+        conn(after, before, first, last, results)
     }
 
     #[allow(unused_variables)]
@@ -58,15 +70,11 @@ impl Topic {
         last: Option<i32>,
         search_string: Option<String>,
     ) -> Result<TopicConnection> {
-        conn(
-            after,
-            before,
-            first,
-            last,
-            ctx.data_unchecked::<Repo>()
-                .child_topics_for_topic(self.id.to_string())
-                .await?,
-        )
+        let results = ctx
+            .data_unchecked::<Repo>()
+            .child_topics_for_topic(self.id.to_string())
+            .await?;
+        conn(after, before, first, last, results)
     }
 
     async fn description(&self) -> Option<String> {

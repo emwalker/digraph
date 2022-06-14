@@ -19,12 +19,17 @@ pub struct View {
 impl View {
     async fn activity(
         &self,
+        ctx: &Context<'_>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        conn(after, before, first, last, vec![])
+        let results = ctx
+            .data_unchecked::<Repo>()
+            .activity(None, first.unwrap_or(3))
+            .await?;
+        conn(after, before, first, last, results)
     }
 
     async fn current_organization(&self, ctx: &Context<'_>) -> Result<Organization> {
@@ -86,15 +91,11 @@ impl View {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<TopicConnection> {
-        conn(
-            after,
-            before,
-            first,
-            last,
-            ctx.data_unchecked::<Repo>()
-                .search_topics(search_string)
-                .await?,
-        )
+        let results = ctx
+            .data_unchecked::<Repo>()
+            .search_topics(search_string)
+            .await?;
+        conn(after, before, first, last, results)
     }
 
     async fn viewer(&self, ctx: &Context<'_>) -> Result<User> {

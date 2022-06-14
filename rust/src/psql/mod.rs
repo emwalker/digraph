@@ -4,6 +4,8 @@ use regex::Regex;
 use crate::http::repo_url;
 use crate::prelude::*;
 
+mod activity;
+pub use activity::*;
 mod queries;
 mod repo;
 pub use repo::*;
