@@ -221,6 +221,7 @@ impl UpdateLinkParentTopics {
 }
 
 pub struct UpsertLink {
+    actor: Viewer,
     input: UpsertLinkInput,
 }
 
@@ -230,8 +231,8 @@ pub struct UpsertLinkResult {
 }
 
 impl UpsertLink {
-    pub fn new(input: UpsertLinkInput) -> Self {
-        Self { input }
+    pub fn new(actor: Viewer, input: UpsertLinkInput) -> Self {
+        Self { actor, input }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpsertLinkResult> {
@@ -247,8 +248,10 @@ impl UpsertLink {
             }
         };
 
+        // TODO: Figure out how to pass a transaction around to helper methods
         let mut tx = pool.begin().await?;
 
+        // Upsert link
         let query = r#"
             insert
             into links
@@ -262,26 +265,60 @@ impl UpsertLink {
             on conflict on constraint links_repository_sha1_idx do
                 update set title = $5
 
-            returning id, (xmax = 0) inserted
+            returning id, repository_id, organization_id, (xmax = 0) inserted
             "#;
 
-        let row = sqlx::query_as::<_, (Uuid, bool)>(query)
-            .bind(&self.input.organization_login)
-            .bind(&self.input.repository_name)
-            .bind(&url.normalized)
-            .bind(&url.sha1)
-            .bind(&title)
-            .fetch_one(&mut tx)
-            .await?;
-        let (link_id, inserted) = (row.0, row.1);
+        let (link_id, repository_id, organization_id, inserted) =
+            sqlx::query_as::<_, (Uuid, Uuid, Uuid, bool)>(query)
+                .bind(&self.input.organization_login)
+                .bind(&self.input.repository_name)
+                .bind(&url.normalized)
+                .bind(&url.sha1)
+                .bind(&title)
+                .fetch_one(&mut tx)
+                .await?;
 
         for topic_id in &self.input.add_parent_topic_ids {
             sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
                 .bind(topic_id.as_str())
-                .bind(&row.0)
+                .bind(&link_id)
                 .fetch_one(&mut tx)
                 .await?;
         }
+
+        // Upsert link activity
+        let (user_link_id,) = sqlx::query_as::<_, (Uuid,)>(
+            r#"insert into user_links
+                (organization_id, repository_id, link_id, user_id, action)
+                values ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'upsert_link')
+                returning id
+            "#,
+        )
+        .bind(&organization_id)
+        .bind(&repository_id)
+        .bind(&link_id)
+        .bind(&self.actor.user_id)
+        .fetch_one(&mut tx)
+        .await?;
+
+        for topic_id in &self.input.add_parent_topic_ids {
+            sqlx::query(
+                r#"insert into user_link_topics
+                    (user_link_id, topic_id, action)
+                    values ($1::uuid, $2::uuid, 'topic_added')
+                "#,
+            )
+            .bind(&user_link_id)
+            .bind(topic_id.as_str())
+            .execute(&mut tx)
+            .await?;
+        }
+
+        // Upsert user link review record
+        // if err = m.addUserLinkReview(ctx, exec, link); err != nil {
+        //     log.Printf("There was a problem creating a user link review record: %s", err)
+        //     return nil, errors.Wrap(err, "services.UpsertLink")
+        // }
 
         tx.commit().await?;
 
