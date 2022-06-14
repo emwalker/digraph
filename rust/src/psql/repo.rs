@@ -3,17 +3,18 @@ use sqlx::postgres::PgPool;
 
 use super::{
     CreateGithubSession, CreateSessionResult, DeleteLink, DeleteLinkResult, DeleteTopic,
-    DeleteTopicResult, DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchChildLinksForTopic,
-    FetchChildTopicsForTopic, FetchRepositoriesForUser, LinkLoader, LiveSearchTopics,
-    OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader,
-    Search, SelectRepository, SelectRepositoryResult, TopicLoader, UpdateLinkParentTopics,
-    UpdateLinkTopicsResult, UpdateSynonyms, UpdateSynonymsResult, UpsertLink, UpsertLinkResult,
-    UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange, UpsertTopicTimeRangeResult, UserLoader,
+    DeleteTopicResult, DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity,
+    FetchChildLinksForTopic, FetchChildTopicsForTopic, FetchRepositoriesForUser, LinkLoader,
+    LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader,
+    RepositoryLoader, Search, SelectRepository, SelectRepositoryResult, TopicLoader,
+    UpdateLinkParentTopics, UpdateLinkTopicsResult, UpdateSynonyms, UpdateSynonymsResult,
+    UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange,
+    UpsertTopicTimeRangeResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
-    CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem, Topic,
-    UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput,
+    ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem,
+    Topic, UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput,
     UpsertTopicTimeRangeInput, User, Viewer,
 };
 
@@ -82,6 +83,16 @@ impl Repo {
 }
 
 impl Repo {
+    pub async fn activity(
+        &self,
+        topic_id: Option<String>,
+        first: i32,
+    ) -> Result<Vec<ActivityLineItem>> {
+        FetchActivity::new(self.viewer.clone(), topic_id, first)
+            .call(&self.pool)
+            .await
+    }
+
     async fn flat_topics(&self, ids: &[String]) -> Result<Vec<Topic>> {
         let result = self.topics(ids).await?;
         Ok(result.iter().flatten().cloned().collect())
