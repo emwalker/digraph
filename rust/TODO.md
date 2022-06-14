@@ -1,17 +1,21 @@
-Following are some changes I'd like to get around to eventually:
-* Get activity feed working again
+Feature parity:
+* Verify server secret
 * Use session id sent with cookie
-* Verification of server secret
 * Add in actor join clauses to all mutations.
+* Check for cycles before adding a parent topic.
 * Add in viewer join clauses to all fetching code.
 * Fix upserting of users when a person logs in for the first time.
-* Get query info working again (the text and topics that appear in the search bar)
-* Rename Topic.links to Topic.childLinks
-* Unify the search and the topic code.  When there's paging, you should be paging through the topics and then the links on a topic page, which implies a single ordered list, with topics ordered at the start.  What we're doing right now is showing a section of topics and a section of links.
 * Get user deletion working again
-* Check for cycles before adding a parent topic.
-* Add in role directives to the Graphql schema.
-* Revisit how the Topic.viewerCanUpdate boolean is evaluated.  Right now we're just looking at whether a repo is private or not.  We also need to take into account things like whether the repo is in an org the viewer is a member of, etc.
-* Move the stats job to rust (?)
+* Move the stats job to rust
+* Get query info working again (the text and topics that appear in the search bar)
+* Add user link reviews
+* Look into whether the cookie is signed / encrypted
+
+Things that would be nice to eventually get to:
+* Drop trigram indexes if they're not being used
 * Add a resource_path column to the topics table
 * Simplify the table used for recent activity
+* Rename Topic.links to Topic.childLinks
+* Unify the search and the topic code.  When there's paging, you should be paging through the topics and then the links on a topic page, which implies a single ordered list, with topics ordered at the start.  What we're doing right now is showing a section of topics and a section of links.
+* Add in role directives to the Graphql schema.
+* Revisit how the Topic.viewerCanUpdate boolean is evaluated.  Right now we're just looking at whether a repo is private or not.  We also need to take into account things like whether the repo is in an org the viewer is a member of, etc.

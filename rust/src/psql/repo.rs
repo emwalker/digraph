@@ -240,7 +240,9 @@ impl Repo {
     }
 
     pub async fn upsert_link(&self, input: UpsertLinkInput) -> Result<UpsertLinkResult> {
-        UpsertLink::new(input).call(&self.pool).await
+        UpsertLink::new(self.viewer.clone(), input)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn upsert_session(
