@@ -8,8 +8,9 @@ use super::{
     FetchRepositoriesForUser, LinkLoader, LiveSearchTopics, OrganizationByLoginLoader,
     OrganizationLoader, RepositoryByNameLoader, RepositoryLoader, Search, SelectRepository,
     SelectRepositoryResult, TopicLoader, UpdateLinkParentTopics, UpdateLinkTopicsResult,
-    UpdateSynonyms, UpdateSynonymsResult, UpsertLink, UpsertLinkResult, UpsertTopic,
-    UpsertTopicResult, UpsertTopicTimeRange, UpsertTopicTimeRangeResult, UserLoader,
+    UpdateSynonyms, UpdateSynonymsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult,
+    UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange,
+    UpsertTopicTimeRangeResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
@@ -250,6 +251,16 @@ impl Repo {
 
     pub async fn upsert_link(&self, input: UpsertLinkInput) -> Result<UpsertLinkResult> {
         UpsertLink::new(self.viewer.clone(), input)
+            .call(&self.pool)
+            .await
+    }
+
+    pub async fn update_topic_parent_topics(
+        &self,
+        topic_id: String,
+        parent_topic_ids: Vec<String>,
+    ) -> Result<UpdateTopicParentTopicsResult> {
+        UpdateTopicParentTopics::new(topic_id, parent_topic_ids)
             .call(&self.pool)
             .await
     }

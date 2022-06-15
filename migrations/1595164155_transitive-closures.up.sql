@@ -36,8 +36,8 @@ end;
 $$
 language plpgsql;
 
--- Return all of the links associated with subtopics of this topic, as well as links associated with the
--- topic itself.
+-- Return all of the links associated with subtopics of this topic, as well as links associated with
+-- the topic itself.
 create or replace function link_down_set(topic_id uuid)
   returns table (parent_id uuid, child_id uuid)
 as
@@ -55,7 +55,7 @@ create or replace function upsert_link_down_set(topic_id uuid) returns void as
 $$
 begin
   insert into link_transitive_closure (parent_id, child_id)
-    select * from link_down_set(topic_id)
+    select parent_id, child_id from link_down_set(topic_id)
     on conflict do nothing;
 end;
 $$
@@ -71,7 +71,7 @@ end;
 $$
 language plpgsql;
 
--- Return all of the subtopics of this topic, including the topic itself.
+-- Return all of the parent topics of this topic, including the topic itself.
 create or replace function topic_upper_set(topic_id uuid)
   returns table (parent_id uuid, child_id uuid)
 as
@@ -96,9 +96,13 @@ create or replace function add_topic_to_topic(parent_id uuid, initial_child_id u
 as
 $$
 begin
+  -- Add the new parent topic to the topic
   insert into topic_topics (parent_id, child_id)
     values (parent_id, initial_child_id)
     on conflict do nothing;
+
+  -- Include the child topic in the topic transitive closure of the ancestor topics of the new
+  -- parent topic.
   insert into topic_transitive_closure (parent_id, child_id)
     select us.parent_id, initial_child_id
     from topic_upper_set(parent_id) us
@@ -115,6 +119,7 @@ begin
   insert into link_topics (parent_id, child_id)
     values (topic_id, link_id)
     on conflict do nothing;
+
   insert into link_transitive_closure (parent_id, child_id)
     select us.parent_id, link_id
     from topic_upper_set(topic_id) us
