@@ -85,7 +85,7 @@ input DeleteSessionInput {
 
 type DeleteSessionPayload {
   clientMutationId: String
-  deletedSessionId: ID!
+  deletedSessionId: ID
 }
 
 input DeleteTopicInput {

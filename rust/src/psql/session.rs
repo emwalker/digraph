@@ -2,7 +2,7 @@ use sqlx::{postgres::PgPool, types::Uuid, FromRow};
 
 use super::user;
 use crate::prelude::*;
-use crate::schema::{Alert, CreateGithubSessionInput, User};
+use crate::schema::{Alert, CreateGithubSessionInput, User, Viewer};
 
 #[derive(FromRow, Clone, Debug)]
 pub struct DatabaseSession {
@@ -28,16 +28,14 @@ impl CreateGithubSession {
     pub async fn call(&self, pool: &PgPool) -> Result<CreateSessionResult> {
         let user = sqlx::query_as!(
             user::Row,
-            r#"
-            select
+            r#"select
                 u.id "id!",
                 u.name "name!",
                 u.avatar_url "avatar_url!",
                 u.selected_repository_id
             from users u
             join github_accounts ga on u.id = ga.user_id
-            where ga.username = $1
-            "#,
+            where ga.username = $1"#,
             &self.input.github_username,
         )
         .fetch_one(pool)
@@ -58,6 +56,37 @@ impl CreateGithubSession {
             alerts: vec![],
             user: user.to_user(),
             session_id: result.session_id,
+        })
+    }
+}
+
+pub struct DeleteSession {
+    viewer: Viewer,
+    session_id: String,
+}
+
+pub struct DeleteSessionResult {
+    pub deleted_session_id: String,
+}
+
+impl DeleteSession {
+    pub fn new(viewer: Viewer, session_id: String) -> Self {
+        Self { viewer, session_id }
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<DeleteSessionResult> {
+        sqlx::query(
+            r#"delete from sessions
+                where session_id = decode($1, 'hex') and user_id = $2::uuid
+                returning id"#,
+        )
+        .bind(&self.session_id)
+        .bind(&self.viewer.user_id)
+        .execute(pool)
+        .await?;
+
+        Ok(DeleteSessionResult {
+            deleted_session_id: self.session_id.clone(),
         })
     }
 }
