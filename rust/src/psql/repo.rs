@@ -26,12 +26,13 @@ pub struct Repo {
     pub viewer: Viewer,
     repository_by_name_loader: DataLoader<RepositoryByNameLoader, HashMapCache>,
     repository_loader: DataLoader<RepositoryLoader, HashMapCache>,
+    pub server_secret: String,
     topic_loader: DataLoader<TopicLoader, HashMapCache>,
     user_loader: DataLoader<UserLoader, HashMapCache>,
 }
 
 impl Repo {
-    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+    pub fn new(viewer: Viewer, pool: PgPool, server_secret: String) -> Self {
         let link_loader = LinkLoader::new(viewer.clone(), pool.clone());
         let organization_loader = OrganizationLoader::new(pool.clone());
         let organization_by_login_loader = OrganizationByLoginLoader::new(pool.clone());
@@ -43,6 +44,8 @@ impl Repo {
         Self {
             pool,
             viewer,
+            server_secret,
+
             link_loader: DataLoader::with_cache(
                 link_loader,
                 actix_web::rt::spawn,

@@ -3,7 +3,7 @@ use std::sync::Arc;
 quick_error! {
     #[derive(Debug, Clone)]
     pub enum Error {
-        AuthHeader(err: String) { }
+        Auth(err: String) { }
 
         Config(err: envy::Error) {
             from()
