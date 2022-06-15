@@ -2,14 +2,14 @@ use async_graphql::dataloader::*;
 use sqlx::postgres::PgPool;
 
 use super::{
-    CreateGithubSession, CreateSessionResult, DeleteLink, DeleteLinkResult, DeleteTopic,
-    DeleteTopicResult, DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity,
-    FetchChildLinksForTopic, FetchChildTopicsForTopic, FetchRepositoriesForUser, LinkLoader,
-    LiveSearchTopics, OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader,
-    RepositoryLoader, Search, SelectRepository, SelectRepositoryResult, TopicLoader,
-    UpdateLinkParentTopics, UpdateLinkTopicsResult, UpdateSynonyms, UpdateSynonymsResult,
-    UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange,
-    UpsertTopicTimeRangeResult, UserLoader,
+    CreateGithubSession, CreateSessionResult, DeleteLink, DeleteLinkResult, DeleteSession,
+    DeleteSessionResult, DeleteTopic, DeleteTopicResult, DeleteTopicTimeRange,
+    DeleteTopicTimeRangeResult, FetchActivity, FetchChildLinksForTopic, FetchChildTopicsForTopic,
+    FetchRepositoriesForUser, LinkLoader, LiveSearchTopics, OrganizationByLoginLoader,
+    OrganizationLoader, RepositoryByNameLoader, RepositoryLoader, Search, SelectRepository,
+    SelectRepositoryResult, TopicLoader, UpdateLinkParentTopics, UpdateLinkTopicsResult,
+    UpdateSynonyms, UpdateSynonymsResult, UpsertLink, UpsertLinkResult, UpsertTopic,
+    UpsertTopicResult, UpsertTopicTimeRange, UpsertTopicTimeRangeResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
@@ -115,6 +115,12 @@ impl Repo {
 
     pub async fn delete_link(&self, link_id: String) -> Result<DeleteLinkResult> {
         DeleteLink::new(link_id).call(&self.pool).await
+    }
+
+    pub async fn delete_session(&self, session_id: String) -> Result<DeleteSessionResult> {
+        DeleteSession::new(self.viewer.clone(), session_id)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn delete_topic(&self, topic_id: String) -> Result<DeleteTopicResult> {
