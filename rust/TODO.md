@@ -7,7 +7,8 @@ Feature parity:
 * Move the stats job to rust
 * Get query info working again (the text and topics that appear in the search bar)
 * Add user link reviews
-* Look into whether the cookie is signed / encrypted
+* Go through rest of pageinfo test cases
+
 
 Things that would be nice to eventually get to:
 * Drop trigram indexes if they're not being used
