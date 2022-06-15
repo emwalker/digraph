@@ -1,8 +1,7 @@
 use async_graphql::EmptySubscription;
-use async_graphql::*;
-use futures::lock::Mutex;
 use sqlx::postgres::PgPool;
 
+use crate::prelude::*;
 use crate::psql::Repo;
 mod activity;
 pub use activity::*;
@@ -41,19 +40,29 @@ pub type Schema = async_graphql::Schema<QueryRoot, MutationRoot, EmptySubscripti
 
 #[derive(Clone, Debug)]
 pub struct Viewer {
-    pub user_id: String,
     pub query_ids: Vec<String>,
+    pub session_id: Option<String>,
+    pub user_id: String,
 }
 
 impl Viewer {
+    pub fn guest() -> Self {
+        let user_id = GUEST_ID.to_string();
+        Viewer {
+            query_ids: vec![user_id.clone()],
+            session_id: None,
+            user_id,
+        }
+    }
+
     pub fn is_guest(&self) -> bool {
-        self.user_id == GUEST_ID
+        self.session_id.is_none()
     }
 }
 
 #[derive(Clone)]
 pub struct State {
-    pool: PgPool,
+    pub pool: PgPool,
     pub schema: Schema,
     pub server_secret: String,
 }
@@ -71,15 +80,45 @@ impl State {
         Repo::new(viewer, self.pool.clone(), self.server_secret.clone())
     }
 
-    pub async fn viewer(&self, user_id: Option<String>) -> Viewer {
-        log::debug!("loading viewer from user id: {:?}", user_id);
-        let not_guest = user_id.is_some();
-        let user_id = user_id.unwrap_or_else(|| GUEST_ID.to_string());
-        let mut query_ids = vec![user_id.clone()];
-        if not_guest {
-            query_ids.push(GUEST_ID.to_string());
+    pub async fn authenticate(&self, user_info: Option<(String, String)>) -> Viewer {
+        match user_info {
+            Some((user_id, session_id)) => {
+                let result = sqlx::query_as::<_, (i64,)>(
+                    r#"select count(*)
+                    from sessions
+                    where user_id = $1::uuid and session_id = decode($2, 'hex')"#,
+                )
+                .bind(&user_id)
+                .bind(&session_id)
+                .fetch_one(&self.pool)
+                .await;
+
+                match result {
+                    Ok((count,)) => {
+                        if count == 0 {
+                            log::warn!(
+                                "no user session found in database: {}, {}",
+                                user_id,
+                                session_id
+                            );
+                            return Viewer::guest();
+                        }
+                        log::info!("found user and session in database: {}", user_id);
+                        Viewer {
+                            query_ids: vec![user_id.clone(), GUEST_ID.to_string()],
+                            session_id: Some(session_id),
+                            user_id,
+                        }
+                    }
+                    Err(err) => {
+                        log::warn!("failed to fetch session info: {}", err);
+                        Viewer::guest()
+                    }
+                }
+            }
+
+            None => Viewer::guest(),
         }
-        Viewer { user_id, query_ids }
     }
 }
 
@@ -91,7 +130,6 @@ impl QueryRoot {
 
     async fn view(
         &self,
-        ctx: &Context<'_>,
         viewer_id: ID,
         current_organization_login: String,
         current_repository_name: Option<String>,
@@ -105,10 +143,6 @@ impl QueryRoot {
             search_string,
             viewer_id,
         };
-
-        // Add the view to the context
-        let mutex = ctx.data::<Mutex<Option<View>>>()?;
-        *mutex.lock().await = Some(view.clone());
 
         Ok(view)
     }
