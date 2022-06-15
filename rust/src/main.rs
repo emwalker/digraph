@@ -10,7 +10,6 @@ use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 
-use futures::lock::Mutex;
 use std::env;
 
 mod config;
@@ -25,7 +24,7 @@ use errors::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-use schema::{MutationRoot, QueryRoot, Schema, State, View};
+use schema::{MutationRoot, QueryRoot, Schema, State};
 
 struct AuthHeader(String);
 
@@ -47,13 +46,13 @@ impl AuthHeader {
     }
 }
 
-fn user_id_from_header(req: HttpRequest) -> Option<String> {
+fn user_id_from_header(req: HttpRequest) -> Option<(String, String)> {
     match req.headers().get("authorization") {
         Some(value) => match value.to_str() {
             Ok(value) => match AuthHeader(value.into()).decode() {
-                Ok((user_id, _session_id)) => {
-                    log::info!("user id found in auth header: {}", user_id);
-                    Some(user_id)
+                Ok((user_id, session_id)) => {
+                    log::info!("user and session id found in auth header: {}", user_id);
+                    Some((user_id, session_id))
                 }
                 Err(err) => {
                     log::info!("failed to decode auth header, proceeding as guest: {}", err);
@@ -78,14 +77,13 @@ async fn index(
     req: GraphQLRequest,
     http_req: HttpRequest,
 ) -> GraphQLResponse {
-    let user_id = user_id_from_header(http_req);
-    let viewer = state.viewer(user_id).await;
+    let user_info = user_id_from_header(http_req);
+    let viewer = state.authenticate(user_info).await;
     let repo = state.create_repo(viewer);
-    let view = Mutex::<Option<View>>::new(None);
 
     state
         .schema
-        .execute(req.into_inner().data(repo).data(view))
+        .execute(req.into_inner().data(repo))
         .await
         .into()
 }

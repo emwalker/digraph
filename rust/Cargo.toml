@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
-async-graphql = { version = "4", features = ["apollo_tracing", "dataloader", "uuid"] }
+async-graphql = { version = "4", features = ["apollo_tracing", "cbor", "dataloader", "uuid"] }
 async-graphql-actix-web = "4"
 async-std = "1"
 async-trait = "0"

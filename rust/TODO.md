@@ -1,9 +1,7 @@
 Feature parity:
-* Use session id sent with cookie
-* Add in actor join clauses to all mutations.
 * Check for cycles before adding a parent topic.
+* Add in actor join clauses to all mutations.
 * Add in viewer join clauses to all fetching code.
-* Activity for anonymous viewers
 * Fix upserting of users when a person logs in for the first time.
 * Get user deletion working again
 * Move the stats job to rust
