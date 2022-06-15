@@ -55,15 +55,20 @@ impl Viewer {
 pub struct State {
     pool: PgPool,
     pub schema: Schema,
+    pub server_secret: String,
 }
 
 impl State {
-    pub fn new(pool: PgPool, schema: Schema) -> Self {
-        Self { pool, schema }
+    pub fn new(pool: PgPool, schema: Schema, server_secret: String) -> Self {
+        Self {
+            pool,
+            schema,
+            server_secret,
+        }
     }
 
     pub fn create_repo(&self, viewer: Viewer) -> Repo {
-        Repo::new(viewer, self.pool.clone())
+        Repo::new(viewer, self.pool.clone(), self.server_secret.clone())
     }
 
     pub async fn viewer(&self, user_id: Option<String>) -> Viewer {

@@ -40,7 +40,7 @@ impl AuthHeader {
             .collect::<Vec<String>>();
 
         if parts.len() != 2 {
-            return Err(Error::AuthHeader(format!("unexpected message: {}", self.0)));
+            return Err(Error::Auth(format!("unexpected message: {}", self.0)));
         }
 
         Ok((parts[0].clone(), parts[1].clone()))
@@ -100,14 +100,14 @@ async fn index_playground() -> Result<HttpResponse> {
 
 #[actix_web::main]
 async fn main() -> async_graphql::Result<()> {
-    let _config = Config::load()?;
+    let config = Config::load()?;
     env_logger::init();
 
     let pool = db::db_connection().await?;
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         // .extension(ApolloTracing)
         .finish();
-    let state = State::new(pool, schema);
+    let state = State::new(pool, schema, config.digraph_server_secret);
 
     let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_owned());
     println!("Playground: http://localhost:8080");

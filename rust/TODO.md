@@ -1,5 +1,5 @@
 Feature parity:
-* Verify server secret
+* deleteSessionMutation
 * Use session id sent with cookie
 * Add in actor join clauses to all mutations.
 * Check for cycles before adding a parent topic.

@@ -5,9 +5,10 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     pub database_url: String,
-    pub session_key: String,
-    pub session_domain: String,
     pub rust_log: String,
+    pub digraph_server_secret: String,
+    pub session_domain: String,
+    pub session_key: String,
 }
 
 impl Config {
