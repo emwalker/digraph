@@ -9,7 +9,7 @@ use crate::prelude::*;
 use crate::psql::{
     DeleteLinkResult, DeleteSessionResult, DeleteTopicTimeRangeResult, Repo,
     SelectRepositoryResult, UpdateLinkTopicsResult, UpdateSynonymsResult,
-    UpsertTopicTimeRangeResult,
+    UpdateTopicParentTopicsResult, UpsertTopicTimeRangeResult,
 };
 
 #[derive(Debug, InputObject)]
@@ -133,6 +133,19 @@ pub struct UpdateSynonymsPayload {
     alerts: Vec<Alert>,
     client_mutation_id: Option<String>,
     topic: Option<Topic>,
+}
+
+#[derive(Debug, InputObject)]
+pub struct UpdateTopicParentTopicsInput {
+    client_mutation_id: Option<String>,
+    topic_id: ID,
+    parent_topic_ids: Vec<ID>,
+}
+
+#[derive(SimpleObject)]
+pub struct UpdateTopicParentTopicsPayload {
+    alerts: Vec<Alert>,
+    topic: Topic,
 }
 
 #[derive(Debug, InputObject)]
@@ -327,6 +340,27 @@ impl MutationRoot {
             .update_link_topics(input)
             .await?;
         Ok(UpdateLinkTopicsPayload { link })
+    }
+
+    async fn update_topic_parent_topics(
+        &self,
+        ctx: &Context<'_>,
+        input: UpdateTopicParentTopicsInput,
+    ) -> Result<UpdateTopicParentTopicsPayload> {
+        let UpdateTopicParentTopicsInput {
+            topic_id,
+            parent_topic_ids,
+            ..
+        } = input;
+        let UpdateTopicParentTopicsResult { alerts, topic } = ctx
+            .data_unchecked::<Repo>()
+            .update_topic_parent_topics(
+                topic_id.to_string(),
+                parent_topic_ids.iter().map(|id| id.to_string()).collect(),
+            )
+            .await?;
+
+        Ok(UpdateTopicParentTopicsPayload { alerts, topic })
     }
 
     async fn update_synonyms(

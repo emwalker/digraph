@@ -3,7 +3,7 @@ use async_graphql::ID;
 use serde_json::json;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::queries::{TopicQuery, TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
 use crate::http::repo_url::Url;
@@ -320,6 +320,135 @@ impl DeleteTopicTimeRange {
     }
 }
 
+pub struct UpdateTopicParentTopics {
+    pub topic_id: String,
+    pub parent_topic_ids: Vec<String>,
+}
+
+pub struct UpdateTopicParentTopicsResult {
+    pub alerts: Vec<Alert>,
+    pub topic: Topic,
+}
+
+impl UpdateTopicParentTopics {
+    pub fn new(topic_id: String, parent_topic_ids: Vec<String>) -> Self {
+        Self {
+            topic_id,
+            parent_topic_ids,
+        }
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<UpdateTopicParentTopicsResult> {
+        let topic_id = &self.topic_id;
+
+        let topic = fetch_topic(pool, topic_id).await?.to_topic();
+        let before = topic
+            .parent_topic_ids
+            .iter()
+            .map(String::to_owned)
+            .collect::<HashSet<String>>();
+
+        let (update, mut alerts) = self.valid_parent_topic_ids(&topic, pool).await?;
+
+        if update.is_empty() {
+            let alert = alert::warning("at least one valid topic is needed".to_string());
+            alerts.push(alert);
+            return Ok(UpdateTopicParentTopicsResult { topic, alerts });
+        }
+
+        if &update == &before {
+            log::info!("no change in parent topics, skipping update of {}", topic.name);
+            return Ok(UpdateTopicParentTopicsResult { topic, alerts });
+        }
+
+        let mut tx = pool.begin().await?;
+
+        sqlx::query("delete from topic_transitive_closure where child_id = $1::uuid")
+            .bind(topic_id)
+            .execute(&mut tx)
+            .await?;
+
+        sqlx::query("delete from topic_topics where child_id = $1::uuid")
+            .bind(topic_id)
+            .execute(&mut tx)
+            .await?;
+
+        for parent_topic_id in &update {
+            sqlx::query("select add_topic_to_topic($1::uuid, $2::uuid)")
+                .bind(parent_topic_id.as_str())
+                .bind(&topic_id)
+                .execute(&mut tx)
+                .await?;
+        }
+
+        let removed = &before - &update;
+
+        for removed_topic_id in &removed {
+            sqlx::query("delete from link_transitive_closure where parent_id = $1::uuid")
+                .bind(removed_topic_id)
+                .execute(&mut tx)
+                .await?;
+
+            sqlx::query("select upsert_link_down_set($1::uuid)")
+                .bind(removed_topic_id)
+                .execute(&mut tx)
+                .await?;
+        }
+
+        tx.commit().await?;
+
+        let topic = fetch_topic(pool, topic_id).await?.to_topic();
+        Ok(UpdateTopicParentTopicsResult { topic, alerts })
+    }
+
+    async fn valid_parent_topic_ids(
+        &self,
+        topic: &Topic,
+        pool: &PgPool,
+    ) -> Result<(HashSet<String>, Vec<Alert>)> {
+        let mut valid: HashSet<String> = HashSet::new();
+        let mut alerts = vec![];
+        let desired = self
+            .parent_topic_ids
+            .iter()
+            .map(String::to_owned)
+            .collect::<HashSet<String>>();
+
+        for parent_topic_id in &desired {
+            if parent_topic_id == &topic.id {
+                let alert = alert::warning("cannot add a topic to itself".to_string());
+                alerts.push(alert);
+                continue;
+            }
+
+            // If the topic whose parents are being updated is itself a parent topic of a desired
+            // parent topic, we must skip that desired parent topic to avoid a cycle.
+            let (count,) = sqlx::query_as::<_, (i64,)>(
+                r#"select count(*) match_count
+                    from topic_down_set($1::uuid) tds
+                    where tds.child_id = $2::uuid"#,
+            )
+            .bind(&topic.id)
+            .bind(&parent_topic_id)
+            .fetch_one(pool)
+            .await?;
+
+            if count.is_positive() {
+                let alert = alert::warning(format!(
+                    r#""{}" is a descendant of "{}" and cannot be added as a parent topic"#,
+                    parent_topic_id, topic.name,
+                ));
+                alerts.push(alert);
+                continue;
+            }
+
+            valid.insert(parent_topic_id.to_string());
+        }
+
+        Ok((valid, alerts))
+    }
+}
+
 pub struct UpsertTopic {
     input: UpsertTopicInput,
 }
@@ -335,13 +464,14 @@ impl UpsertTopic {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpsertTopicResult> {
+        let mut alerts = vec![];
         let name = self.input.name.to_owned();
 
         if name.is_empty() || Url::is_valid_url(&name) {
             let result = UpsertTopicResult {
                 alerts: vec![Alert {
                     text: format!("Not a valid topic name: {}", name),
-                    alert_type: AlertType::Warning,
+                    alert_type: AlertType::Warn,
                     id: String::from("0"),
                 }],
                 topic: None,
@@ -372,7 +502,7 @@ impl UpsertTopic {
             returning id
             "#;
 
-        let row = sqlx::query_as::<_, (Uuid,)>(query)
+        let (topic_id,) = sqlx::query_as::<_, (Uuid,)>(query)
             .bind(&self.input.organization_login)
             .bind(&self.input.repository_name)
             .bind(&name)
@@ -380,20 +510,40 @@ impl UpsertTopic {
             .fetch_one(&mut tx)
             .await?;
 
-        for topic_id in &self.input.topic_ids {
+        for parent_topic_id in &self.input.topic_ids {
+            let parent_topic_id = parent_topic_id.to_string();
+            let (count,) = sqlx::query_as::<_, (i64,)>(
+                r#"select count(*) match_count
+                    from topic_down_set($1) tds
+                    where tds.child_id = $2"#,
+            )
+            .bind(&parent_topic_id)
+            .bind(&topic_id)
+            .fetch_one(&mut tx)
+            .await?;
+
+            if count.is_positive() {
+                let alert = alert::warning(format!(
+                    r#""{}" is a descendant of "{}" and cannot be added as a parent topic"#,
+                    parent_topic_id, name,
+                ));
+                alerts.push(alert);
+                continue;
+            }
+
             sqlx::query("select add_topic_to_topic($1::uuid, $2::uuid)")
-                .bind(topic_id.as_str())
-                .bind(&row.0)
+                .bind(parent_topic_id.as_str())
+                .bind(&topic_id)
                 .fetch_one(&mut tx)
                 .await?;
         }
 
         tx.commit().await?;
 
-        let row = fetch_topic(pool, &row.0.to_string()).await?;
+        let row = fetch_topic(pool, &topic_id.to_string()).await?;
 
         Ok(UpsertTopicResult {
-            alerts: vec![],
+            alerts,
             topic: Some(row.to_topic()),
         })
     }
