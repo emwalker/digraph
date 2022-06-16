@@ -1,6 +1,4 @@
 Feature parity:
-* Updating the parent topics of a topic
-* Check for cycles before adding a parent topic.
 * Add in actor join clauses to all mutations.
 * Add in viewer join clauses to all fetching code.
 * Fix upserting of users when a person logs in for the first time.
