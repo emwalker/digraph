@@ -3,9 +3,10 @@ use std::collections::HashSet;
 
 use super::fetch_topic;
 use crate::prelude::*;
-use crate::schema::{alert, Alert, Synonym, Synonyms, Topic, UpdateSynonymsInput};
+use crate::schema::{alert, Alert, Synonym, Synonyms, Topic, UpdateSynonymsInput, Viewer};
 
 pub struct UpdateSynonyms {
+    actor: Viewer,
     input: UpdateSynonymsInput,
 }
 
@@ -15,14 +16,17 @@ pub struct UpdateSynonymsResult {
 }
 
 impl UpdateSynonyms {
-    pub fn new(input: UpdateSynonymsInput) -> Self {
-        Self { input }
+    pub fn new(actor: Viewer, input: UpdateSynonymsInput) -> Self {
+        Self { actor, input }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpdateSynonymsResult> {
         log::info!("updating synonyms for topic: {:?}", self.input);
 
         let topic_id = &self.input.topic_id;
+        // Verify that the user can see the topic
+        fetch_topic(&self.actor, pool, topic_id).await?.to_topic();
+
         let mut alerts: Vec<Alert> = vec![];
         let mut serialize: Vec<Synonym> = vec![];
         let mut seen: HashSet<&String> = HashSet::new();
@@ -42,7 +46,7 @@ impl UpdateSynonyms {
             seen.insert(&synonym_input.name);
         }
 
-        let topic = fetch_topic(pool, topic_id).await?.to_topic();
+        let topic = fetch_topic(&self.actor, pool, topic_id).await?.to_topic();
 
         let synonyms = Synonyms(serialize);
         let synonym_string = serde_json::to_string(&synonyms)?;
@@ -55,7 +59,7 @@ impl UpdateSynonyms {
             .execute(pool)
             .await?;
 
-        let topic = fetch_topic(pool, topic_id).await?.to_topic();
+        let topic = fetch_topic(&self.actor, pool, topic_id).await?.to_topic();
         Ok(UpdateSynonymsResult { alerts, topic })
     }
 }

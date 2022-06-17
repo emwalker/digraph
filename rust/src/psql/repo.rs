@@ -35,12 +35,13 @@ pub struct Repo {
 impl Repo {
     pub fn new(viewer: Viewer, pool: PgPool, server_secret: String) -> Self {
         let link_loader = LinkLoader::new(viewer.clone(), pool.clone());
-        let organization_loader = OrganizationLoader::new(pool.clone());
-        let organization_by_login_loader = OrganizationByLoginLoader::new(pool.clone());
-        let repository_loader = RepositoryLoader::new(pool.clone());
-        let repository_by_name_loader = RepositoryByNameLoader::new(pool.clone());
+        let organization_loader = OrganizationLoader::new(viewer.clone(), pool.clone());
+        let organization_by_login_loader =
+            OrganizationByLoginLoader::new(viewer.clone(), pool.clone());
+        let repository_loader = RepositoryLoader::new(viewer.clone(), pool.clone());
+        let repository_by_name_loader = RepositoryByNameLoader::new(viewer.clone(), pool.clone());
         let topic_loader = TopicLoader::new(viewer.clone(), pool.clone());
-        let user_loader = UserLoader::new(pool.clone());
+        let user_loader = UserLoader::new(viewer.clone(), pool.clone());
 
         Self {
             pool,
@@ -125,14 +126,18 @@ impl Repo {
     }
 
     pub async fn delete_topic(&self, topic_id: String) -> Result<DeleteTopicResult> {
-        DeleteTopic::new(topic_id).call(&self.pool).await
+        DeleteTopic::new(self.viewer.clone(), topic_id)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn delete_topic_time_range(
         &self,
         topic_id: String,
     ) -> Result<DeleteTopicTimeRangeResult> {
-        DeleteTopicTimeRange::new(topic_id).call(&self.pool).await
+        DeleteTopicTimeRange::new(self.viewer.clone(), topic_id)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn link(&self, id: String) -> Result<Option<Link>> {
@@ -140,10 +145,16 @@ impl Repo {
     }
 
     pub async fn link_count(&self) -> Result<i64> {
-        let row = sqlx::query_as::<_, (i64,)>("select count(*) from links")
-            .fetch_one(&self.pool)
-            .await?;
-        Ok(row.0)
+        let (count,) = sqlx::query_as::<_, (i64,)>(
+            r#"select count(*)
+            from links l
+            join organization_members om on l.organization_id = om.organization_id
+            where om.user_id = any($1::uuid[])"#,
+        )
+        .bind(&self.viewer.query_ids)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(count)
     }
 
     pub async fn organization(&self, id: String) -> Result<Option<Organization>> {
@@ -218,10 +229,17 @@ impl Repo {
     }
 
     pub async fn topic_count(&self) -> Result<i64> {
-        let row = sqlx::query_as::<_, (i64,)>("select count(*) from topics")
-            .fetch_one(&self.pool)
-            .await?;
-        Ok(row.0)
+        let (count,) = sqlx::query_as::<_, (i64,)>(
+            r#"select count(*)
+            from topics t
+            join organization_members om on t.organization_id = om.organization_id
+            where om.user_id = any($1::uuid[])
+            "#,
+        )
+        .bind(&self.viewer.query_ids)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(count)
     }
 
     pub async fn topics(&self, ids: &[String]) -> Result<Vec<Option<Topic>>> {
@@ -239,14 +257,18 @@ impl Repo {
         &self,
         input: UpdateLinkTopicsInput,
     ) -> Result<UpdateLinkTopicsResult> {
-        UpdateLinkParentTopics::new(input).call(&self.pool).await
+        UpdateLinkParentTopics::new(self.viewer.clone(), input)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn update_synonyms(
         &self,
         input: UpdateSynonymsInput,
     ) -> Result<UpdateSynonymsResult> {
-        UpdateSynonyms::new(input).call(&self.pool).await
+        UpdateSynonyms::new(self.viewer.clone(), input)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn upsert_link(&self, input: UpsertLinkInput) -> Result<UpsertLinkResult> {
@@ -260,7 +282,7 @@ impl Repo {
         topic_id: String,
         parent_topic_ids: Vec<String>,
     ) -> Result<UpdateTopicParentTopicsResult> {
-        UpdateTopicParentTopics::new(topic_id, parent_topic_ids)
+        UpdateTopicParentTopics::new(self.viewer.clone(), topic_id, parent_topic_ids)
             .call(&self.pool)
             .await
     }
@@ -273,17 +295,21 @@ impl Repo {
     }
 
     pub async fn upsert_topic(&self, input: UpsertTopicInput) -> Result<UpsertTopicResult> {
-        UpsertTopic::new(input).call(&self.pool).await
+        UpsertTopic::new(self.viewer.clone(), input)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn upsert_topic_time_range(
         &self,
         input: UpsertTopicTimeRangeInput,
     ) -> Result<UpsertTopicTimeRangeResult> {
-        UpsertTopicTimeRange::new(input).call(&self.pool).await
+        UpsertTopicTimeRange::new(self.viewer.clone(), input)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn user(&self, id: String) -> Result<Option<User>> {
-        self.user_loader.load_one(id).await.map_err(Error::DB)
+        self.user_loader.load_one(id).await
     }
 }
