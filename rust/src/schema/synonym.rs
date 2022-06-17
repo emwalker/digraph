@@ -13,6 +13,10 @@ impl Synonyms {
         self.0.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     pub fn first(&self) -> Option<&Synonym> {
         self.0.first()
     }
@@ -52,7 +56,7 @@ impl Synonyms {
     }
 
     #[allow(dead_code)]
-    pub fn from_str(input: &str) -> Result<Self, serde_json::Error> {
+    pub fn from_ref(input: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(input).map(Self)
     }
 
@@ -78,22 +82,22 @@ mod tests {
     }
 
     #[test]
-    fn test_from_str() {
-        let syn = Synonyms::from_str(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
+    fn test_from_ref() {
+        let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(2, syn.into_iter().len());
     }
 
     #[test]
     fn test_simple_display_name() {
-        let syn = Synonyms::from_str(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
+        let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(syn.display_name("en", "c", &Prefix::new(None, None)), "a");
     }
 
     #[test]
     fn test_display_name_with_start_year_month_format() {
-        let syn = Synonyms::from_str(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
+        let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(
             syn.display_name(
@@ -107,7 +111,7 @@ mod tests {
 
     #[test]
     fn test_display_name_with_start_year_format() {
-        let syn = Synonyms::from_str(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
+        let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(
             syn.display_name("en", "c", &Prefix::new(Some("START_YEAR"), valid_date())),

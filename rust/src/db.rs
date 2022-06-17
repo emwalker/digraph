@@ -1,10 +1,10 @@
 use sqlx::postgres::Postgres;
 use sqlx::Error;
 use sqlx::Pool;
-use std::env;
 
-pub async fn db_connection() -> Result<Pool<Postgres>, Error> {
-    let database_url = env::var("DATABASE_URL").expect("Required a database url");
+use crate::config::Config;
 
+pub async fn db_connection(config: &Config) -> Result<Pool<Postgres>, Error> {
+    let database_url = config.database_url.clone();
     Pool::<Postgres>::connect(&*database_url).await
 }

@@ -1,9 +1,3 @@
-#[macro_use]
-extern crate quick_error;
-
-#[macro_use]
-extern crate derivative;
-
 use actix_web::{guard, post, web, App, HttpRequest, HttpResponse, HttpServer};
 // use async_graphql::extensions::ApolloTracing;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
@@ -12,19 +6,10 @@ use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 
 use std::env;
 
-mod config;
-mod db;
-mod errors;
-mod http;
-mod prelude;
-mod psql;
-mod schema;
-use config::Config;
-use errors::Error;
-
-pub type Result<T> = std::result::Result<T, Error>;
-
-use schema::{MutationRoot, QueryRoot, Schema, State};
+use digraph::config::Config;
+use digraph::db;
+use digraph::prelude::*;
+use digraph::schema::{MutationRoot, QueryRoot, Schema, State};
 
 struct AuthHeader(String);
 
@@ -101,7 +86,7 @@ async fn main() -> async_graphql::Result<()> {
     let config = Config::load()?;
     env_logger::init();
 
-    let pool = db::db_connection().await?;
+    let pool = db::db_connection(&config).await?;
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         // .extension(ApolloTracing)
         .finish();
