@@ -7,13 +7,11 @@ Organize the world. Save links in a mind map-like network of topics. Keep track 
 
 ## Technical details
 
-* GraphQL backend written in Golang
+* GraphQL backend written in Rust
 * Postgres
 * React/Relay client
 * Webpack 5
 * Server-side rendering with [Razzle](https://github.com/jaredpalmer/razzle)
-* [volatiletech/sqlboiler](https://github.com/volatiletech/sqlboiler)
-* [99designs/gqlgen](https://github.com/99designs/gqlgen)
 * [GitHub Primer](https://styleguide.github.com/primer/) CSS
 
 Steps for getting started with development [here](https://github.com/emwalker/digraph/wiki/Getting-started-with-development).

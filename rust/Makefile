@@ -1,3 +1,6 @@
+build:
+	cargo build --release
+
 check: format test
 	cargo check
 
@@ -6,7 +9,7 @@ format:
 	cargo fmt
 
 start:
-	RUST_LOG=info,digraph=debug cargo run backend
+	RUST_LOG=info,digraph=debug cargo run --bin frontend
 
 test:
 	cargo test

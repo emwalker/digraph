@@ -1,14 +1,14 @@
 Feature parity:
 * Upserting of user when a person logs in for the first time
 * Get user deletion working again
-* Ensure that the guest user can never update
-* Get query info working again (the text and topics that appear in the search bar)
 * Add user link reviews
 * Go through rest of pageinfo test cases
 * See if session problems go away if all sessions are deleted before switchover
+* Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 
 
 Things that would be nice to eventually get to:
+* Get query info working again (the text and topics that appear in the search bar)
 * Get migrations working on app startup
 * Verify the server secret before deleting a session
 * Drop trigram indexes if they're not being used
