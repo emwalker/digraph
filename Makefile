@@ -31,7 +31,7 @@ build-container-node: build-client
 	docker tag emwalker/digraph-node:latest emwalker/digraph-node:$(shell cat k8s/release)
 
 build-executables:
-	$(MAKE) -C golang build
+	$(MAKE) -C rust build
 
 check:
 	$(MAKE) -C rust check
