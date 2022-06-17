@@ -1,2 +1,2 @@
-frontend: make -C javascript start-dev
-backend: make -C rust start
+node: make -C javascript start-dev
+frontend: make -C rust start
