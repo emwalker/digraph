@@ -1,5 +1,4 @@
 Feature parity:
-* Move the stats job to rust
 * Upserting of user when a person logs in for the first time
 * Get user deletion working again
 * Ensure that the guest user can never update

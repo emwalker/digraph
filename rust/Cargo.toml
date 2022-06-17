@@ -4,6 +4,14 @@ version = "0.0.1"
 authors = ["Eric Walker <eric.walker@gmail.com>"]
 edition = "2021"
 
+[[bin]]
+name = "backend"
+path = "src/bin/backend.rs"
+
+# [[bin]]
+# name = "cron"
+# path = "src/bin/cron.rs"
+
 [dependencies]
 actix-web = "4"
 async-graphql = { version = "4", features = ["apollo_tracing", "cbor", "dataloader", "uuid"] }
