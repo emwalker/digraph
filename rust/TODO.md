@@ -19,3 +19,5 @@ Things that would be nice to eventually get to:
 * Add in role directives to the Graphql schema.
 * Revisit how the Topic.viewerCanUpdate boolean is evaluated.  Right now we're just looking at whether a repo is private or not.  We also need to take into account things like whether the repo is in an org the viewer is a member of, etc.
 * Bugfix for Time / Science / Agriculture and farming test case
+* Always show dates in topics with a date in alll contexts
+* Live search shows synonyms
