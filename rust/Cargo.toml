@@ -14,7 +14,7 @@ path = "src/bin/cron.rs"
 
 [dependencies]
 actix-web = "4"
-async-graphql = { version = "4", features = ["apollo_tracing", "cbor", "dataloader", "uuid"] }
+async-graphql = { version = "4", features = ["apollo_tracing", "cbor", "dataloader", "log", "uuid"] }
 async-graphql-actix-web = "4"
 async-std = "1"
 async-trait = "0"
@@ -35,7 +35,7 @@ scraper = "0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha1 = "0"
-sqlx = { version = "0", features = ["chrono", "json", "postgres", "macros", "uuid", "runtime-actix-native-tls"] }
+sqlx = { version = "0.6", features = ["chrono", "json", "postgres", "macros", "uuid", "runtime-actix-native-tls"] }
 time = "0"
 url = "2"
 uuid = { version = "1", features = ["v4", "fast-rng"]}

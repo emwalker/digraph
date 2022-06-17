@@ -4,10 +4,10 @@ use super::{Organization, Topic, User};
 use crate::prelude::*;
 use crate::psql::Repo;
 
-pub const DEFAULT_REPO_ID: &str = "32212616-fc1b-11e8-8eda-b70af6d8d09f";
-const PRIVATE_REPO_COLOR: &str = "#dbedff";
-const DEFAULT_REPO_NAME: &str = "system:default";
-const DEFAULT_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
+const PRIVATE_REPOSITORY_COLOR: &str = "#dbedff";
+pub const DEFAULT_REPOSITORY_NAME: &str = "system:default";
+pub const WIKI_REPOSITORY_ID: &str = "32212616-fc1b-11e8-8eda-b70af6d8d09f";
+pub const WIKI_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
 
 #[derive(Clone, Debug)]
 pub enum Repository {
@@ -34,12 +34,12 @@ pub type RepositoryConnection = Connection<usize, Repository, EmptyFields, Repos
 #[Object]
 impl Repository {
     async fn display_color(&self) -> &str {
-        PRIVATE_REPO_COLOR
+        PRIVATE_REPOSITORY_COLOR
     }
 
     async fn display_name(&self, ctx: &Context<'_>) -> String {
         match self {
-            Self::Default => DEFAULT_REPO_NAME,
+            Self::Default => DEFAULT_REPOSITORY_NAME,
             Self::Fetched { name, .. } => {
                 if self.is_private(ctx).await.unwrap_or(false) {
                     "Private repository"
@@ -84,7 +84,7 @@ impl Repository {
 
     pub async fn id(&self) -> ID {
         match self {
-            Self::Default => ID(DEFAULT_REPO_ID.to_string()),
+            Self::Default => ID(WIKI_REPOSITORY_ID.to_string()),
             Self::Fetched { id, .. } => ID(id.to_owned()),
         }
     }
@@ -92,7 +92,7 @@ impl Repository {
     pub async fn is_private(&self) -> bool {
         match self {
             Self::Default => false,
-            Self::Fetched { system, name, .. } => *system && name == DEFAULT_REPO_NAME,
+            Self::Fetched { system, name, .. } => *system && name == DEFAULT_REPOSITORY_NAME,
         }
     }
 
@@ -133,7 +133,7 @@ impl Repository {
 
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
         let topic_id = match self {
-            Self::Default => DEFAULT_ROOT_TOPIC_ID,
+            Self::Default => WIKI_ROOT_TOPIC_ID,
             Self::Fetched { root_topic_id, .. } => root_topic_id,
         };
         ctx.data_unchecked::<Repo>()

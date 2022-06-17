@@ -2,7 +2,8 @@ use super::Repository;
 use crate::prelude::*;
 use crate::psql::Repo;
 
-const WIKI_ID: &str = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb";
+pub const DEFAULT_ORGANIZATION_NAME: &str = "system:default";
+pub const WIKI_ORGANIZATION_ID: &str = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb";
 
 #[derive(Clone)]
 pub enum Organization {
@@ -40,7 +41,7 @@ impl Organization {
 
     async fn id(&self) -> ID {
         match self {
-            Self::Wiki => ID(WIKI_ID.to_string()),
+            Self::Wiki => ID(WIKI_ORGANIZATION_ID.to_string()),
             Self::Selected { id, .. } => id.to_owned(),
         }
     }

@@ -9,6 +9,8 @@ use super::{
 use crate::prelude::*;
 use crate::psql::Repo;
 
+pub const DEFAULT_ROOT_TOPIC_NAME: &str = "Everything";
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
     pub id: String,

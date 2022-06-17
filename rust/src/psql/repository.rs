@@ -3,7 +3,7 @@ use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 
-use super::{repository, user};
+use super::{fetch_user, repository};
 use crate::prelude::*;
 use crate::schema::{Repository, User, Viewer};
 
@@ -67,9 +67,8 @@ impl FetchRepositoriesForUser {
             select
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
-                join organization_members om1 on r.organization_id = om1.organization_id
-                join organization_members om2 on om1.organization_id = om2.organization_id
-                where om1.user_id = $1::uuid
+                join organization_members om2 on om.organization_id = om2.organization_id
+                where om.user_id = $1::uuid
                     and om2.user_id = any($2::uuid[])
                     and t.root = true
                 {REPOSITORY_GROUP_BY}
@@ -232,10 +231,7 @@ impl SelectRepository {
             None
         };
 
-        let row = sqlx::query_as::<_, user::Row>("select * from users where id = $1::uuid")
-            .bind(&self.actor.user_id)
-            .fetch_one(pool)
-            .await?;
+        let row = fetch_user(&self.actor.mutation_ids, &self.actor.user_id, pool).await?;
 
         Ok(SelectRepositoryResult {
             actor: row.to_user(),
