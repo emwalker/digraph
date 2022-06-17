@@ -1,5 +1,4 @@
 Feature parity:
-* Add in actor join clauses to all mutations.
 * Move the stats job to rust
 * Upserting of user when a person logs in for the first time
 * Get user deletion working again
@@ -12,6 +11,7 @@ Feature parity:
 
 Things that would be nice to eventually get to:
 * Get migrations working on app startup
+* Verify the server secret before deleting a session
 * Drop trigram indexes if they're not being used
 * Add a resource_path column to the topics table
 * Simplify the table used for recent activity

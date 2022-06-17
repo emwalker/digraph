@@ -44,6 +44,7 @@ pub struct DeleteLinkPayload {
 #[derive(Debug, InputObject)]
 pub struct DeleteSessionInput {
     client_mutation_id: Option<String>,
+    // TODO: add server secret
     session_id: ID,
 }
 
@@ -263,6 +264,12 @@ impl MutationRoot {
             client_mutation_id,
             session_id,
         } = input;
+
+        // if repo.server_secret != input.server_secret {
+        //     log::warn!("server secret did not match secret provided by client");
+        //     return Err(Error::Auth("failed to authenticate request".to_string()));
+        // }
+
         let DeleteSessionResult { deleted_session_id } = ctx
             .data_unchecked::<Repo>()
             .delete_session(session_id.to_string())
@@ -323,11 +330,14 @@ impl MutationRoot {
         ctx: &Context<'_>,
         input: SelectRepositoryInput,
     ) -> Result<SelectRepositoryPayload> {
-        let SelectRepositoryResult { repository, viewer } = ctx
+        let SelectRepositoryResult { repository, actor } = ctx
             .data_unchecked::<Repo>()
             .select_repository(input.repository_id.map(|id| id.to_string()))
             .await?;
-        Ok(SelectRepositoryPayload { repository, viewer })
+        Ok(SelectRepositoryPayload {
+            repository,
+            viewer: actor,
+        })
     }
 
     async fn update_link_topics(

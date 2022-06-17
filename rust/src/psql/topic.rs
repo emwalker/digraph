@@ -81,7 +81,7 @@ impl Row {
     }
 }
 
-pub async fn fetch_topic(viewer: &Viewer, pool: &PgPool, topic_id: &String) -> Result<Row> {
+pub async fn fetch_topic(query_ids: &Vec<String>, pool: &PgPool, topic_id: &String) -> Result<Row> {
     let query = format!(
         r#"select
         {TOPIC_FIELDS}
@@ -93,7 +93,7 @@ pub async fn fetch_topic(viewer: &Viewer, pool: &PgPool, topic_id: &String) -> R
 
     let row = sqlx::query_as::<_, Row>(&query)
         .bind(&topic_id)
-        .bind(&viewer.query_ids)
+        .bind(query_ids)
         .fetch_one(pool)
         .await?;
     Ok(row)
@@ -129,15 +129,15 @@ impl Loader<String> for TopicLoader {
 }
 
 pub struct FetchChildTopicsForTopic {
-    viewer_ids: Vec<String>,
+    viewer: Viewer,
     parent_topic_id: String,
     limit: i32,
 }
 
 impl FetchChildTopicsForTopic {
-    pub fn new(viewer_ids: Vec<String>, parent_topic_id: String) -> Self {
+    pub fn new(viewer: Viewer, parent_topic_id: String) -> Self {
         Self {
-            viewer_ids,
+            viewer,
             parent_topic_id,
             limit: 100,
         }
@@ -161,7 +161,7 @@ impl FetchChildTopicsForTopic {
 
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&self.parent_topic_id)
-            .bind(&self.viewer_ids)
+            .bind(&self.viewer.query_ids)
             .bind(self.limit)
             .fetch_all(pool)
             .await?;
@@ -185,11 +185,9 @@ impl DeleteTopic {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<DeleteTopicResult> {
-        // TODO: actor join
-
         log::info!("attempting to delete topic: {}", self.topic_id);
         let topic_id = self.topic_id.clone();
-        let topic = fetch_topic(&self.actor, pool, &topic_id).await?;
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_id).await?;
         let mut alerts: Vec<Alert> = vec![];
 
         if topic.root {
@@ -284,11 +282,9 @@ impl DeleteTopicTimeRange {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<DeleteTopicTimeRangeResult> {
-        // TODO: actor join
-
         log::info!("deleting topic time range: {}", self.topic_id);
 
-        let topic = fetch_topic(&self.actor, pool, &self.topic_id)
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic_id)
             .await?
             .to_topic();
         let mut deleted_time_range_id = None;
@@ -323,7 +319,7 @@ impl DeleteTopicTimeRange {
             tx.commit().await?;
         }
 
-        let topic = fetch_topic(&self.actor, pool, &self.topic_id)
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic_id)
             .await?
             .to_topic();
 
@@ -355,11 +351,11 @@ impl UpdateTopicParentTopics {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpdateTopicParentTopicsResult> {
-        // TODO: actor join
-
         let topic_id = &self.topic_id;
 
-        let topic = fetch_topic(&self.actor, pool, topic_id).await?.to_topic();
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+            .await?
+            .to_topic();
         let before = topic
             .parent_topic_ids
             .iter()
@@ -418,7 +414,9 @@ impl UpdateTopicParentTopics {
 
         tx.commit().await?;
 
-        let topic = fetch_topic(&self.actor, pool, topic_id).await?.to_topic();
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+            .await?
+            .to_topic();
         Ok(UpdateTopicParentTopicsResult { topic, alerts })
     }
 
@@ -486,8 +484,6 @@ impl UpsertTopic {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpsertTopicResult> {
-        // TODO: actor join
-
         let mut alerts = vec![];
         let name = self.input.name.to_owned();
 
@@ -517,22 +513,29 @@ impl UpsertTopic {
                     select
                         o.id, r.id, $3, $4::jsonb
                     from organizations o
+                    join organization_members om on o.id = om.organization_id
                     join repositories r on o.id = r.organization_id
-                    where o.login = $1 and r.name = $2
+                    where o.login = $1
+                        and r.name = $2
+                        and om.user_id = any($3::uuid[])
 
                 on conflict on constraint topics_repository_name_idx do
                     -- No-op to ensure that an id is returned
-                    update set name = $3
+                    update set name = $4
                 returning id"#,
         )
         .bind(&self.input.organization_login)
         .bind(&self.input.repository_name)
         .bind(&name)
+        .bind(&self.actor.mutation_ids)
         .bind(&synonyms)
         .fetch_one(&mut tx)
         .await?;
 
         for parent_topic_id in &self.input.topic_ids {
+            // Ensure that we can update the parent topic
+            fetch_topic(&self.actor.mutation_ids, pool, parent_topic_id).await?;
+
             let parent_topic_id = parent_topic_id.to_string();
             let (count,) = sqlx::query_as::<_, (i64,)>(
                 r#"select count(*) match_count
@@ -562,7 +565,7 @@ impl UpsertTopic {
 
         tx.commit().await?;
 
-        let row = fetch_topic(&self.actor, pool, &topic_id.to_string()).await?;
+        let row = fetch_topic(&self.actor.mutation_ids, pool, &topic_id.to_string()).await?;
 
         Ok(UpsertTopicResult {
             alerts,
@@ -591,7 +594,9 @@ impl UpsertTopicTimeRange {
         log::info!("upserting time range for topic: {:?}", self.input);
 
         let topic_id = self.input.topic_id.to_string();
-        let topic = fetch_topic(&self.actor, pool, &topic_id).await?.to_topic();
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_id)
+            .await?
+            .to_topic();
         let prefix_format = format!("{}", self.input.prefix_format);
         let mut tx = pool.begin().await?;
 
@@ -656,7 +661,9 @@ impl UpsertTopicTimeRange {
         tx.commit().await?;
 
         // Reload to pick up changes
-        let topic = fetch_topic(&self.actor, pool, &topic_id).await?.to_topic();
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_id)
+            .await?
+            .to_topic();
 
         Ok(UpsertTopicTimeRangeResult {
             alerts: vec![],
