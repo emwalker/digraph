@@ -41,6 +41,7 @@ pub type Schema = async_graphql::Schema<QueryRoot, MutationRoot, EmptySubscripti
 #[derive(Clone, Debug)]
 pub struct Viewer {
     pub query_ids: Vec<String>,
+    pub mutation_ids: Vec<String>,
     pub session_id: Option<String>,
     pub user_id: String,
 }
@@ -49,6 +50,7 @@ impl Viewer {
     pub fn guest() -> Self {
         let user_id = GUEST_ID.to_string();
         Viewer {
+            mutation_ids: vec![],
             query_ids: vec![user_id.clone()],
             session_id: None,
             user_id,
@@ -97,7 +99,7 @@ impl State {
                     Ok((count,)) => {
                         if count == 0 {
                             log::warn!(
-                                "no user session found in database: {}, {}",
+                                "no user session found in database, proceeding as guest: {}, {}",
                                 user_id,
                                 session_id
                             );
@@ -105,19 +107,23 @@ impl State {
                         }
                         log::info!("found user and session in database: {}", user_id);
                         Viewer {
+                            mutation_ids: vec![user_id.clone()],
                             query_ids: vec![user_id.clone(), GUEST_ID.to_string()],
                             session_id: Some(session_id),
                             user_id,
                         }
                     }
                     Err(err) => {
-                        log::warn!("failed to fetch session info: {}", err);
+                        log::warn!("failed to fetch session info, proceeding as guest: {}", err);
                         Viewer::guest()
                     }
                 }
             }
 
-            None => Viewer::guest(),
+            None => {
+                log::info!("no session info provided, proceeding as guest");
+                Viewer::guest()
+            }
         }
     }
 }

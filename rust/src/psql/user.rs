@@ -28,6 +28,7 @@ impl Row {
 
 pub struct UserLoader {
     pool: PgPool,
+    #[allow(dead_code)]
     viewer: Viewer,
 }
 
@@ -53,12 +54,9 @@ impl Loader<String> for UserLoader {
                 u.selected_repository_id
 
             from users u
-            join organization_members om1 on u.id = om1.organization_id
-            join organization_members om2 on om1.organization_id = om2.organization_id 
-            where u.id = any($1::uuid[]) and om2.user_id = $2::uuid"#,
+            where u.id = any($1::uuid[])"#,
         )
         .bind(&ids)
-        .bind(&self.viewer.user_id)
         .fetch_all(&self.pool)
         .await;
 

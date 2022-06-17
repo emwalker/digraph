@@ -110,13 +110,15 @@ impl Repo {
     }
 
     pub async fn child_topics_for_topic(&self, topic_id: String) -> Result<Vec<Topic>> {
-        FetchChildTopicsForTopic::new(self.viewer.query_ids.clone(), topic_id)
+        FetchChildTopicsForTopic::new(self.viewer.clone(), topic_id)
             .call(&self.pool)
             .await
     }
 
     pub async fn delete_link(&self, link_id: String) -> Result<DeleteLinkResult> {
-        DeleteLink::new(link_id).call(&self.pool).await
+        DeleteLink::new(self.viewer.clone(), link_id)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn delete_session(&self, session_id: String) -> Result<DeleteSessionResult> {
@@ -182,7 +184,7 @@ impl Repo {
     }
 
     pub async fn repositories_for_user(&self, user_id: String) -> Result<Vec<Repository>> {
-        FetchRepositoriesForUser::new(user_id)
+        FetchRepositoriesForUser::new(self.viewer.clone(), user_id)
             .call(&self.pool)
             .await
     }

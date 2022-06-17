@@ -25,7 +25,9 @@ impl UpdateSynonyms {
 
         let topic_id = &self.input.topic_id;
         // Verify that the user can see the topic
-        fetch_topic(&self.actor, pool, topic_id).await?.to_topic();
+        fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+            .await?
+            .to_topic();
 
         let mut alerts: Vec<Alert> = vec![];
         let mut serialize: Vec<Synonym> = vec![];
@@ -46,7 +48,9 @@ impl UpdateSynonyms {
             seen.insert(&synonym_input.name);
         }
 
-        let topic = fetch_topic(&self.actor, pool, topic_id).await?.to_topic();
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+            .await?
+            .to_topic();
 
         let synonyms = Synonyms(serialize);
         let synonym_string = serde_json::to_string(&synonyms)?;
@@ -59,7 +63,9 @@ impl UpdateSynonyms {
             .execute(pool)
             .await?;
 
-        let topic = fetch_topic(&self.actor, pool, topic_id).await?.to_topic();
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+            .await?
+            .to_topic();
         Ok(UpdateSynonymsResult { alerts, topic })
     }
 }

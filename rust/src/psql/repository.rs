@@ -51,11 +51,12 @@ impl Row {
 
 pub struct FetchRepositoriesForUser {
     user_id: String,
+    viewer: Viewer,
 }
 
 impl FetchRepositoriesForUser {
-    pub fn new(user_id: String) -> Self {
-        Self { user_id }
+    pub fn new(viewer: Viewer, user_id: String) -> Self {
+        Self { viewer, user_id }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<Vec<Repository>> {
@@ -66,14 +67,17 @@ impl FetchRepositoriesForUser {
             select
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
-                join organization_members om on r.organization_id = om.organization_id
-                where om.user_id = $1::uuid
+                join organization_members om1 on r.organization_id = om1.organization_id
+                join organization_members om2 on om1.organization_id = om2.organization_id
+                where om1.user_id = $1::uuid
+                    and om2.user_id = any($2::uuid[])
                     and t.root = true
                 {REPOSITORY_GROUP_BY}
             "#,
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&self.user_id)
+            .bind(&self.viewer.query_ids)
             .fetch_all(pool)
             .await?;
 
@@ -168,37 +172,35 @@ impl Loader<String> for RepositoryByNameLoader {
 }
 
 pub struct SelectRepository {
-    viewer: Viewer,
+    actor: Viewer,
     repository_id: Option<String>,
 }
 
 pub struct SelectRepositoryResult {
     pub repository: Option<Repository>,
-    pub viewer: User,
+    pub actor: User,
 }
 
 impl SelectRepository {
-    pub fn new(viewer: Viewer, repository_id: Option<String>) -> Self {
+    pub fn new(actor: Viewer, repository_id: Option<String>) -> Self {
         Self {
-            viewer,
+            actor,
             repository_id,
         }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<SelectRepositoryResult> {
-        // TODO: actor join
-
         log::info!(
             "selecting repository {:?} for viewer {:?}",
             self.repository_id,
-            self.viewer
+            self.actor
         );
         let repository_id = &self.repository_id;
 
         let repository = if let Some(repository_id) = repository_id {
             sqlx::query("update users set selected_repository_id = $1::uuid where id = $2::uuid")
                 .bind(repository_id)
-                .bind(&self.viewer.user_id)
+                .bind(&self.actor.user_id)
                 .execute(pool)
                 .await?;
 
@@ -208,6 +210,7 @@ impl SelectRepository {
                     {REPOSITORY_FIELDS}
                     {REPOSITORY_JOINS}
                     where r.id = $1::uuid
+                        and om.user_id = any($2::uuid[])
                         and t.root = true
                     {REPOSITORY_GROUP_BY}
                 "#
@@ -215,13 +218,14 @@ impl SelectRepository {
 
             let row = sqlx::query_as::<_, repository::Row>(&query)
                 .bind(repository_id)
+                .bind(&self.actor.mutation_ids)
                 .fetch_one(pool)
                 .await?;
 
             Some(row.to_repository())
         } else {
             sqlx::query("update users set selected_repository_id = null where id = $::uuid")
-                .bind(&self.viewer.user_id)
+                .bind(&self.actor.user_id)
                 .execute(pool)
                 .await?;
 
@@ -229,12 +233,12 @@ impl SelectRepository {
         };
 
         let row = sqlx::query_as::<_, user::Row>("select * from users where id = $1::uuid")
-            .bind(&self.viewer.user_id)
+            .bind(&self.actor.user_id)
             .fetch_one(pool)
             .await?;
 
         Ok(SelectRepositoryResult {
-            viewer: row.to_user(),
+            actor: row.to_user(),
             repository,
         })
     }
