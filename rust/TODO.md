@@ -1,8 +1,9 @@
 Feature parity:
 * Add in actor join clauses to all mutations.
-* Fix upserting of users when a person logs in for the first time.
-* Get user deletion working again
 * Move the stats job to rust
+* Upserting of user when a person logs in for the first time
+* Get user deletion working again
+* Ensure that the guest user can never update
 * Get query info working again (the text and topics that appear in the search bar)
 * Add user link reviews
 * Go through rest of pageinfo test cases
@@ -10,6 +11,7 @@ Feature parity:
 
 
 Things that would be nice to eventually get to:
+* Get migrations working on app startup
 * Drop trigram indexes if they're not being used
 * Add a resource_path column to the topics table
 * Simplify the table used for recent activity
