@@ -511,17 +511,17 @@ impl UpsertTopic {
                 into topics
                     (organization_id, repository_id, name, synonyms)
                     select
-                        o.id, r.id, $3, $4::jsonb
+                        o.id, r.id, $3, $5::jsonb
                     from organizations o
                     join organization_members om on o.id = om.organization_id
                     join repositories r on o.id = r.organization_id
                     where o.login = $1
                         and r.name = $2
-                        and om.user_id = any($3::uuid[])
+                        and om.user_id = any($4::uuid[])
 
                 on conflict on constraint topics_repository_name_idx do
                     -- No-op to ensure that an id is returned
-                    update set name = $4
+                    update set name = $3
                 returning id"#,
         )
         .bind(&self.input.organization_login)
@@ -539,8 +539,8 @@ impl UpsertTopic {
             let parent_topic_id = parent_topic_id.to_string();
             let (count,) = sqlx::query_as::<_, (i64,)>(
                 r#"select count(*) match_count
-                    from topic_down_set($1) tds
-                    where tds.child_id = $2"#,
+                    from topic_down_set($1::uuid) tds
+                    where tds.child_id = $2::uuid"#,
             )
             .bind(&parent_topic_id)
             .bind(&topic_id)

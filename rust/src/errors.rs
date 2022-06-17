@@ -3,7 +3,7 @@ use std::sync::Arc;
 quick_error! {
     #[derive(Debug, Clone)]
     pub enum Error {
-        Auth(err: String) { }
+        Auth(err: String) {}
 
         Config(err: envy::Error) {
             from()
@@ -34,6 +34,8 @@ quick_error! {
         }
 
         Parse(err: String) {}
+
+        RBAC(err: String) {}
 
         Reqwest(err: String) {
             from(err: reqwest::Error) -> (format!("{:?}", err))

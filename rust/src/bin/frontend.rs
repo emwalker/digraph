@@ -1,5 +1,5 @@
 use actix_web::{guard, post, web, App, HttpRequest, HttpResponse, HttpServer};
-// use async_graphql::extensions::ApolloTracing;
+use async_graphql::extensions;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
@@ -88,6 +88,7 @@ async fn main() -> async_graphql::Result<()> {
 
     let pool = db::db_connection(&config).await?;
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+        .extension(extensions::Logger)
         // .extension(ApolloTracing)
         .finish();
     let state = State::new(pool, schema, config.digraph_server_secret);

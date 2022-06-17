@@ -1,7 +1,7 @@
 use super::TopicConnection;
 use super::{
     relay::conn, ActivityLineItemConnection, Link, Organization, QueryInfo, Repository, Topic,
-    User, DEFAULT_REPO_ID,
+    User, WIKI_REPOSITORY_ID,
 };
 use crate::prelude::*;
 use crate::psql::Repo;
@@ -50,9 +50,9 @@ impl View {
 
             None => ctx
                 .data_unchecked::<Repo>()
-                .repository(DEFAULT_REPO_ID.to_string())
+                .repository(WIKI_REPOSITORY_ID.to_string())
                 .await?
-                .ok_or_else(|| Error::NotFound(format!("repo id {}", DEFAULT_REPO_ID))),
+                .ok_or_else(|| Error::NotFound(format!("repo id {}", WIKI_REPOSITORY_ID))),
         }
     }
 

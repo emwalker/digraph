@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use regex::Regex;
+use sqlx::{Postgres, Transaction};
 
 use crate::http::repo_url;
 use crate::prelude::*;
@@ -13,6 +14,8 @@ mod link;
 pub use link::*;
 mod organization;
 pub use organization::*;
+mod registration;
+pub use registration::*;
 mod repository;
 pub use repository::*;
 mod search;
@@ -25,6 +28,8 @@ pub mod topic;
 pub use topic::*;
 pub mod user;
 pub use user::*;
+
+type PgTransaction<'t> = Transaction<'t, Postgres>;
 
 #[derive(Debug, PartialEq)]
 pub struct TopicSpec {

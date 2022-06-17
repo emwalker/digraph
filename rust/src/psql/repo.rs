@@ -2,15 +2,15 @@ use async_graphql::dataloader::*;
 use sqlx::postgres::PgPool;
 
 use super::{
-    CreateGithubSession, CreateSessionResult, DeleteLink, DeleteLinkResult, DeleteSession,
-    DeleteSessionResult, DeleteTopic, DeleteTopicResult, DeleteTopicTimeRange,
-    DeleteTopicTimeRangeResult, FetchActivity, FetchChildLinksForTopic, FetchChildTopicsForTopic,
-    FetchRepositoriesForUser, LinkLoader, LiveSearchTopics, OrganizationByLoginLoader,
-    OrganizationLoader, RepositoryByNameLoader, RepositoryLoader, Search, SelectRepository,
-    SelectRepositoryResult, TopicLoader, UpdateLinkParentTopics, UpdateLinkTopicsResult,
-    UpdateSynonyms, UpdateSynonymsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult,
-    UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange,
-    UpsertTopicTimeRangeResult, UserLoader,
+    CreateGithubSession, CreateSessionResult, DeleteAccount, DeleteAccountResult, DeleteLink,
+    DeleteLinkResult, DeleteSession, DeleteSessionResult, DeleteTopic, DeleteTopicResult,
+    DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchChildLinksForTopic,
+    FetchChildTopicsForTopic, FetchRepositoriesForUser, LinkLoader, LiveSearchTopics,
+    OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader,
+    Search, SelectRepository, SelectRepositoryResult, TopicLoader, UpdateLinkParentTopics,
+    UpdateLinkTopicsResult, UpdateSynonyms, UpdateSynonymsResult, UpdateTopicParentTopics,
+    UpdateTopicParentTopicsResult, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
+    UpsertTopicTimeRange, UpsertTopicTimeRangeResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
@@ -111,6 +111,12 @@ impl Repo {
 
     pub async fn child_topics_for_topic(&self, topic_id: String) -> Result<Vec<Topic>> {
         FetchChildTopicsForTopic::new(self.viewer.clone(), topic_id)
+            .call(&self.pool)
+            .await
+    }
+
+    pub async fn delete_account(&self, user_id: String) -> Result<DeleteAccountResult> {
+        DeleteAccount::new(self.viewer.clone(), user_id)
             .call(&self.pool)
             .await
     }

@@ -1,15 +1,13 @@
 Feature parity:
-* Upserting of user when a person logs in for the first time
-* Get user deletion working again
 * Add user link reviews
 * Go through rest of pageinfo test cases
 * See if session problems go away if all sessions are deleted before switchover
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
+* Get migrations working on app startup
 
 
 Things that would be nice to eventually get to:
 * Get query info working again (the text and topics that appear in the search bar)
-* Get migrations working on app startup
 * Verify the server secret before deleting a session
 * Drop trigram indexes if they're not being used
 * Add a resource_path column to the topics table
@@ -21,3 +19,5 @@ Things that would be nice to eventually get to:
 * Bugfix for Time / Science / Agriculture and farming test case
 * Always show dates in topics with a date in alll contexts
 * Live search shows synonyms
+* Add an owner id to organizations
+* Disambiguate topics with same names in different repos (e.g., Everything)

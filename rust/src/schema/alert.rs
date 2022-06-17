@@ -40,6 +40,14 @@ impl Alert {
     }
 }
 
+pub fn success(text: String) -> Alert {
+    Alert {
+        text,
+        alert_type: AlertType::Success,
+        id: String::from("0"),
+    }
+}
+
 pub fn warning(text: String) -> Alert {
     Alert {
         text,

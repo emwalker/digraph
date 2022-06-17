@@ -7,18 +7,18 @@ use super::{
 use crate::http::repo_url;
 use crate::prelude::*;
 use crate::psql::{
-    DeleteLinkResult, DeleteSessionResult, DeleteTopicTimeRangeResult, Repo,
+    DeleteAccountResult, DeleteLinkResult, DeleteSessionResult, DeleteTopicTimeRangeResult, Repo,
     SelectRepositoryResult, UpdateLinkTopicsResult, UpdateSynonymsResult,
     UpdateTopicParentTopicsResult, UpsertTopicTimeRangeResult,
 };
 
-#[derive(Debug, InputObject)]
+#[derive(Clone, Debug, InputObject)]
 pub struct CreateGithubSessionInput {
     client_mutation_id: Option<String>,
-    github_avatar_url: String,
+    pub github_avatar_url: String,
     pub github_username: String,
-    name: String,
-    primary_email: String,
+    pub name: String,
+    pub primary_email: String,
     server_secret: String,
 }
 
@@ -27,6 +27,19 @@ pub struct CreateSessionPayload {
     alerts: Vec<Alert>,
     user_edge: Option<UserEdge>,
     session_edge: Option<SessionEdge>,
+}
+
+#[derive(Debug, InputObject)]
+pub struct DeleteAccountInput {
+    client_mutation_id: Option<String>,
+    user_id: ID,
+}
+
+#[derive(Debug, SimpleObject)]
+pub struct DeleteAccountPayload {
+    alerts: Vec<Alert>,
+    client_mutation_id: Option<String>,
+    deleted_user_id: ID,
 }
 
 #[derive(Debug, InputObject)]
@@ -235,6 +248,30 @@ impl MutationRoot {
         })
     }
 
+    async fn delete_account(
+        &self,
+        ctx: &Context<'_>,
+        input: DeleteAccountInput,
+    ) -> Result<DeleteAccountPayload> {
+        let DeleteAccountInput {
+            user_id,
+            client_mutation_id,
+        } = input;
+        let DeleteAccountResult {
+            alerts,
+            deleted_user_id,
+        } = ctx
+            .data_unchecked::<Repo>()
+            .delete_account(user_id.to_string())
+            .await?;
+
+        Ok(DeleteAccountPayload {
+            alerts,
+            deleted_user_id: ID(deleted_user_id),
+            client_mutation_id,
+        })
+    }
+
     async fn delete_link(
         &self,
         ctx: &Context<'_>,
@@ -264,12 +301,6 @@ impl MutationRoot {
             client_mutation_id,
             session_id,
         } = input;
-
-        // if repo.server_secret != input.server_secret {
-        //     log::warn!("server secret did not match secret provided by client");
-        //     return Err(Error::Auth("failed to authenticate request".to_string()));
-        // }
-
         let DeleteSessionResult { deleted_session_id } = ctx
             .data_unchecked::<Repo>()
             .delete_session(session_id.to_string())
