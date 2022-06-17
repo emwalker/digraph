@@ -3,10 +3,9 @@ use async_graphql::types::ID;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
-use std::sync::Arc;
 
-use super::shared::uuids;
-use crate::schema::User;
+use crate::prelude::*;
+use crate::schema::{User, Viewer};
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
@@ -27,36 +26,40 @@ impl Row {
     }
 }
 
-pub struct UserLoader(PgPool);
+pub struct UserLoader {
+    pool: PgPool,
+    viewer: Viewer,
+}
 
 impl UserLoader {
-    pub fn new(pool: PgPool) -> Self {
-        Self(pool)
+    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+        Self { viewer, pool }
     }
 }
 
 #[async_trait::async_trait]
 impl Loader<String> for UserLoader {
     type Value = User;
-    type Error = Arc<sqlx::Error>;
+    type Error = Error;
 
-    async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>> {
         log::debug!("batch load users: {:?}", ids);
 
-        let uuids = uuids(ids);
-        let rows = sqlx::query_as!(
-            Row,
+        let rows = sqlx::query_as::<_, Row>(
             r#"select
-                u.id as "id!",
-                u.name as "name!",
-                u.avatar_url as "avatar_url!",
+                u.id,
+                u.name,
+                u.avatar_url,
                 u.selected_repository_id
 
             from users u
-            where u.id = any($1)"#,
-            &uuids,
+            join organization_members om1 on u.id = om1.organization_id
+            join organization_members om2 on om1.organization_id = om2.organization_id 
+            where u.id = any($1::uuid[]) and om2.user_id = $2::uuid"#,
         )
-        .fetch_all(&self.0)
+        .bind(&ids)
+        .bind(&self.viewer.user_id)
+        .fetch_all(&self.pool)
         .await;
 
         Ok(rows?

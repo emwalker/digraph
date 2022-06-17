@@ -26,6 +26,7 @@ impl CreateGithubSession {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<CreateSessionResult> {
+        // TODO: actor join?
         let user = sqlx::query_as!(
             user::Row,
             r#"select
@@ -75,6 +76,7 @@ impl DeleteSession {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<DeleteSessionResult> {
+        // TODO: actor join?
         sqlx::query(
             r#"delete from sessions
                 where session_id = decode($1, 'hex') and user_id = $2::uuid

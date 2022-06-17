@@ -4,7 +4,10 @@ use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 
-use super::queries::{LINK_FIELDS, LINK_JOINS};
+use super::{
+    fetch_topic,
+    queries::{LINK_FIELDS, LINK_JOINS},
+};
 use crate::http::{repo_url::Url, Page};
 use crate::prelude::*;
 use crate::schema::{
@@ -39,6 +42,25 @@ impl Row {
     pub fn to_search_result_item(&self) -> SearchResultItem {
         SearchResultItem::Link(self.to_link(false))
     }
+}
+
+async fn fetch_link(viewer: &Viewer, pool: &PgPool, link_id: &String) -> Result<Row> {
+    let query = format!(
+        r#"select
+        {LINK_FIELDS}
+        {LINK_JOINS}
+        where l.id = $1::uuid
+            and om.user_id = any($2::uuid[])
+        group by l.id"#,
+    );
+
+    let row = sqlx::query_as::<_, Row>(&query)
+        .bind(link_id)
+        .bind(&viewer.query_ids)
+        .fetch_one(pool)
+        .await?;
+
+    Ok(row)
 }
 
 pub struct LinkLoader {
@@ -137,6 +159,7 @@ impl DeleteLink {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<DeleteLinkResult> {
+        // TODO: actor join
         sqlx::query("delete from links where id = $1::uuid")
             .bind(&self.link_id)
             .execute(pool)
@@ -148,6 +171,7 @@ impl DeleteLink {
 }
 
 pub struct UpdateLinkParentTopics {
+    actor: Viewer,
     input: UpdateLinkTopicsInput,
 }
 
@@ -156,31 +180,15 @@ pub struct UpdateLinkTopicsResult {
 }
 
 impl UpdateLinkParentTopics {
-    pub fn new(input: UpdateLinkTopicsInput) -> Self {
-        Self { input }
-    }
-
-    async fn fetch_link(&self, link_id: &str, pool: &PgPool) -> Result<Link> {
-        let query = format!(
-            r#"
-            select
-                {LINK_FIELDS}
-                {LINK_JOINS}
-                where l.id = $1::uuid
-                group by l.id
-            "#
-        );
-
-        let row = sqlx::query_as::<_, Row>(&query)
-            .bind(link_id)
-            .fetch_one(pool)
-            .await?;
-
-        Ok(row.to_link(false))
+    pub fn new(actor: Viewer, input: UpdateLinkTopicsInput) -> Self {
+        Self { actor, input }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpdateLinkTopicsResult> {
-        let link_id = self.input.link_id.as_str();
+        let link_id = self.input.link_id.to_string();
+
+        // Verify that we can update the link
+        fetch_link(&self.actor, pool, &link_id).await?;
 
         let mut topic_ids = self
             .input
@@ -196,27 +204,29 @@ impl UpdateLinkParentTopics {
         let mut tx = pool.begin().await?;
 
         sqlx::query("delete from link_transitive_closure where child_id = $1::uuid")
-            .bind(link_id)
+            .bind(&link_id)
             .execute(&mut tx)
             .await?;
 
         sqlx::query("delete from link_topics where child_id = $1::uuid")
-            .bind(link_id)
+            .bind(&link_id)
             .execute(&mut tx)
             .await?;
 
         for topic_id in &topic_ids {
             sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
                 .bind(&topic_id)
-                .bind(link_id)
+                .bind(&link_id)
                 .execute(&mut tx)
                 .await?;
         }
 
         tx.commit().await?;
 
-        let link = self.fetch_link(link_id, pool).await?;
-        Ok(UpdateLinkTopicsResult { link })
+        let row = fetch_link(&self.actor, pool, &link_id).await?;
+        Ok(UpdateLinkTopicsResult {
+            link: row.to_link(false),
+        })
     }
 }
 
@@ -236,6 +246,7 @@ impl UpsertLink {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpsertLinkResult> {
+        // TODO: actor join
         let url = Url::parse(self.input.url.as_ref())?;
 
         let title = match &self.input.title {
@@ -279,8 +290,11 @@ impl UpsertLink {
                 .await?;
 
         for topic_id in &self.input.add_parent_topic_ids {
+            let topic_id = topic_id.to_string();
+            // Verify that we can see the parent topic
+            fetch_topic(&self.actor, pool, &topic_id).await?;
             sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
-                .bind(topic_id.as_str())
+                .bind(&topic_id)
                 .bind(&link_id)
                 .fetch_one(&mut tx)
                 .await?;
@@ -322,19 +336,7 @@ impl UpsertLink {
 
         tx.commit().await?;
 
-        let query = format!(
-            r#"select
-            {LINK_FIELDS}
-            {LINK_JOINS}
-            where l.id = $1::uuid
-            group by l.id"#,
-        );
-
-        let row = sqlx::query_as::<_, Row>(&query)
-            .bind(link_id)
-            .fetch_one(pool)
-            .await?;
-
+        let row = fetch_link(&self.actor, pool, &link_id.to_string()).await?;
         Ok(UpsertLinkResult {
             alerts: vec![],
             link: Some(row.to_link(inserted)),

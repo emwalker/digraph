@@ -18,6 +18,7 @@ const REPOSITORY_FIELDS: &str = r#"
 
 const REPOSITORY_JOINS: &str = r#"
     from repositories r
+    join organization_members om on r.organization_id = om.organization_id
     join topics t on r.id = t.repository_id
 "#;
 
@@ -80,11 +81,14 @@ impl FetchRepositoriesForUser {
     }
 }
 
-pub struct RepositoryLoader(PgPool);
+pub struct RepositoryLoader {
+    pool: PgPool,
+    viewer: Viewer,
+}
 
 impl RepositoryLoader {
-    pub fn new(pool: PgPool) -> Self {
-        Self(pool)
+    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+        Self { viewer, pool }
     }
 }
 
@@ -103,12 +107,14 @@ impl Loader<String> for RepositoryLoader {
                 {REPOSITORY_JOINS}
                 where r.id = any($1::uuid[])
                     and t.root = true
+                    and om.user_id = any($2::uuid[])
                 {REPOSITORY_GROUP_BY}
             "#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&ids)
-            .fetch_all(&self.0)
+            .bind(&self.viewer.query_ids)
+            .fetch_all(&self.pool)
             .await?;
 
         Ok(rows
@@ -118,11 +124,14 @@ impl Loader<String> for RepositoryLoader {
     }
 }
 
-pub struct RepositoryByNameLoader(PgPool);
+pub struct RepositoryByNameLoader {
+    pool: PgPool,
+    viewer: Viewer,
+}
 
 impl RepositoryByNameLoader {
-    pub fn new(pool: PgPool) -> Self {
-        Self(pool)
+    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+        Self { viewer, pool }
     }
 }
 
@@ -141,12 +150,14 @@ impl Loader<String> for RepositoryByNameLoader {
                 {REPOSITORY_JOINS}
                 where r.name = any($1)
                     and t.root = true
+                    and om.user_id = any($2::uuid[])
                 {REPOSITORY_GROUP_BY}
            "#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&names)
-            .fetch_all(&self.0)
+            .bind(&self.viewer.query_ids)
+            .fetch_all(&self.pool)
             .await?;
 
         Ok(rows
@@ -175,6 +186,8 @@ impl SelectRepository {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<SelectRepositoryResult> {
+        // TODO: actor join
+
         log::info!(
             "selecting repository {:?} for viewer {:?}",
             self.repository_id,
