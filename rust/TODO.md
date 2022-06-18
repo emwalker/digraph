@@ -1,8 +1,7 @@
 Feature parity:
-* See if session problems go away if all sessions are deleted before switchover
-* Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 * Get migrations working on app startup
-
+* Switch from `master` to `main`
+* Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 
 Things that would be nice to eventually get to:
 * Get query info working again (the text and topics that appear in the search bar)
