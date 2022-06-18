@@ -50,9 +50,6 @@ dump:
 fixtures: data/fixtures.sql
 	bash ./scripts/make-fixtures
 
-generate:
-	$(MAKE) -C golang $@
-
 load-fixtures:
 	bash ./scripts/load-fixtures
 	psql $(DBNAME) < queries/transitive-closure.sql
@@ -87,7 +84,7 @@ push-docker:
 push-deploy: check-git-clean build push-docker push-git deploy-k8s
 
 push-git:
-	git push origin master
+	git push origin main
 
 recreate-transitive-closures:
 	psql $(DBNAME) < queries/clear-transitive-closure.sql
@@ -102,10 +99,10 @@ start:
 start-dev:
 	overmind start -f Procfile.dev
 
-test-go:
-	$(MAKE) -C golang test
+test-rust:
+	$(MAKE) -C rust test
 
 test-js:
 	$(MAKE) -C javascript test
 
-test: test-js test-go
+test: test-js test-rust
