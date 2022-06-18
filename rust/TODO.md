@@ -1,5 +1,4 @@
 Feature parity:
-* Get migrations working on app startup
 * Switch from `master` to `main`
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 

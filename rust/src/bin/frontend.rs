@@ -87,6 +87,11 @@ async fn main() -> async_graphql::Result<()> {
     env_logger::init();
 
     let pool = db::db_connection(&config).await?;
+
+    sqlx::migrate!("db/migrations")
+        .run(&pool)
+        .await?;
+
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         .extension(extensions::Logger)
         // .extension(ApolloTracing)
