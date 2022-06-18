@@ -1,5 +1,4 @@
-Feature parity:
-* Switch from `master` to `main`
+Soon:
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 
 Things that would be nice to eventually get to:
