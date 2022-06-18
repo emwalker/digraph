@@ -1,11 +1,11 @@
 use async_graphql::connection::*;
 use itertools::Itertools;
 
-use super::ActivityLineItemConnection;
 use super::{
     relay::conn, LinkConnection, Prefix, Repository, SearchResultItemConnection, Synonym, Synonyms,
     TimeRange,
 };
+use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::prelude::*;
 use crate::psql::Repo;
 
@@ -92,7 +92,7 @@ impl Topic {
     }
 
     // TODO: rename to childLinks
-    #[allow(unused_variables)]
+    #[allow(unused_variables, clippy::too_many_arguments)]
     async fn links(
         &self,
         ctx: &Context<'_>,
@@ -101,16 +101,38 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
         search_string: Option<String>,
+        reviewed: Option<bool>,
+        descendants: Option<bool>,
     ) -> Result<LinkConnection> {
-        conn(
+        query(
             after,
             before,
             first,
             last,
-            ctx.data::<Repo>()?
-                .child_links_for_topic(self.id.to_string())
-                .await?,
+            |_after, _before, _first, _last| async move {
+                let results = ctx
+                    .data::<Repo>()?
+                    .child_links_for_topic(self.id.to_string(), reviewed)
+                    .await?;
+                let mut connection = Connection::with_additional_fields(
+                    false,
+                    false,
+                    LinkConnectionFields {
+                        total_count: results.len() as i64,
+                    },
+                );
+
+                connection.edges.extend(
+                    results
+                        .into_iter()
+                        .map(|n| Edge::with_additional_fields(String::from("0"), n, EmptyFields)),
+                );
+
+                Ok::<_, Error>(connection)
+            },
         )
+        .await
+        .map_err(Error::Resolver)
     }
 
     async fn loading(&self) -> bool {

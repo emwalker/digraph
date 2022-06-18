@@ -8,10 +8,13 @@ use super::{
     fetch_topic,
     queries::{LINK_FIELDS, LINK_JOINS},
 };
-use crate::http::{repo_url::Url, Page};
 use crate::prelude::*;
 use crate::schema::{
-    Alert, Link, SearchResultItem, UpdateLinkTopicsInput, UpsertLinkInput, Viewer,
+    Alert, Link, LinkReview, SearchResultItem, UpdateLinkTopicsInput, UpsertLinkInput, Viewer,
+};
+use crate::{
+    http::{repo_url::Url, Page},
+    schema::DateTime,
 };
 
 const PUBLIC_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
@@ -21,6 +24,8 @@ pub struct Row {
     id: Uuid,
     parent_topic_ids: Vec<Uuid>,
     repository_id: Uuid,
+    reviewed_at: Option<chrono::DateTime<chrono::Utc>>,
+    viewer_id: String,
     title: String,
     url: String,
 }
@@ -29,6 +34,11 @@ impl Row {
     fn to_link(&self, newly_added: bool) -> Link {
         let parent_topic_ids = self.parent_topic_ids.iter().map(Uuid::to_string).collect();
 
+        let viewer_review = LinkReview {
+            reviewed_at: self.reviewed_at.map(DateTime),
+            user_id: self.viewer_id.clone(),
+        };
+
         Link {
             id: ID(self.id.to_string()),
             newly_added,
@@ -36,6 +46,7 @@ impl Row {
             title: self.title.to_owned(),
             repository_id: ID(self.repository_id.to_string()),
             url: self.url.to_owned(),
+            viewer_review: Some(viewer_review),
         }
     }
 
@@ -104,39 +115,80 @@ impl Loader<String> for LinkLoader {
 }
 
 pub struct FetchChildLinksForTopic {
-    viewer_ids: Vec<String>,
-    parent_topic_id: String,
     limit: i32,
+    parent_topic_id: String,
+    reviewed: Option<bool>,
+    viewer: Viewer,
 }
 
 impl FetchChildLinksForTopic {
-    pub fn new(viewer_ids: Vec<String>, parent_topic_id: String) -> Self {
+    pub fn new(viewer: Viewer, parent_topic_id: String, reviewed: Option<bool>) -> Self {
         Self {
-            viewer_ids,
-            parent_topic_id,
             limit: 100,
+            parent_topic_id,
+            reviewed,
+            viewer,
         }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<Vec<Link>> {
         log::debug!("fetching linkes for topic: {}", self.parent_topic_id);
 
+        let mut index = 1;
+        let mut link_fields: Vec<String> = Vec::new();
+        let mut reviewed_joins: Vec<String> = Vec::new();
+        let mut reviewed_wheres: Vec<String> = vec!["true".into()];
+        let mut group_by: Vec<String> = vec!["l.id".into(), "l.created_at".into()];
+
+        if let Some(reviewed) = self.reviewed {
+            link_fields.push(format!(", ulr.reviewed_at, ${index} viewer_id"));
+            reviewed_joins.push(format!(
+                r#"left join user_link_reviews ulr
+                        on l.id = ulr.link_id and ulr.user_id = ${index}::uuid"#
+            ));
+            index += 1;
+
+            if reviewed {
+                reviewed_wheres.push("ulr.reviewed_at is not null".into());
+            } else {
+                reviewed_wheres.push("ulr.reviewed_at is null".into());
+            }
+
+            group_by.push("ulr.reviewed_at".into());
+        }
+
+        let link_fields = link_fields.join(" ");
+        let reviewed_joins = reviewed_joins.join("\n");
+        let reviewed_wheres = reviewed_wheres.join(" and ");
+        let group_by = group_by.join(", ");
+
+        let param_parent_id = index;
+        let param_om_user_ids = param_parent_id + 1;
+        let param_limit = param_om_user_ids + 1;
+
         let query = format!(
-            r#"
-            select
+            r#"select
                 {LINK_FIELDS}
+                {link_fields}
                 {LINK_JOINS}
-                where parent_topics.parent_id = $1::uuid
-                    and om.user_id = any($2::uuid[])
-                group by l.id, l.created_at
+                {reviewed_joins}
+                where parent_topics.parent_id = ${param_parent_id}::uuid
+                    and om.user_id = any(${param_om_user_ids}::uuid[])
+                    and {reviewed_wheres}
+                group by {group_by}
                 order by l.created_at desc
-                limit $3
-            "#
+                limit ${param_limit}"#
         );
 
-        let rows = sqlx::query_as::<_, Row>(&query)
+        let mut q = sqlx::query_as::<_, Row>(&query);
+
+        if self.reviewed.is_some() {
+            q = q.bind(&self.viewer.user_id);
+        }
+
+        let rows = q
             .bind(&self.parent_topic_id)
-            .bind(&self.viewer_ids)
+            .bind(&self.viewer.query_ids)
             .bind(self.limit)
             .fetch_all(pool)
             .await?;
@@ -170,6 +222,54 @@ impl DeleteLink {
 
         Ok(DeleteLinkResult {
             deleted_link_id: self.link_id.clone(),
+        })
+    }
+}
+
+pub struct ReviewLink {
+    pub actor: Viewer,
+    pub link_id: String,
+    pub reviewed: bool,
+}
+
+pub struct ReviewLinkResult {
+    pub link: Link,
+}
+
+impl ReviewLink {
+    pub fn new(actor: Viewer, link_id: String, reviewed: bool) -> Self {
+        Self {
+            actor,
+            link_id,
+            reviewed,
+        }
+    }
+
+    pub async fn call(&self, pool: &PgPool) -> Result<ReviewLinkResult> {
+        fetch_link(&self.actor.mutation_ids, pool, &self.link_id).await?;
+
+        let reviewed_at = if self.reviewed {
+            Some(chrono::Utc::now())
+        } else {
+            None
+        };
+
+        sqlx::query(
+            r#"insert into user_link_reviews
+                (link_id, user_id, reviewed_at)
+                values ($1::uuid, $2::uuid, $3)
+            on conflict on constraint user_link_reviews_user_id_link_id_key do
+                update set reviewed_at = $3"#,
+        )
+        .bind(&self.link_id)
+        .bind(&self.actor.user_id)
+        .bind(reviewed_at)
+        .execute(pool)
+        .await?;
+
+        let row = fetch_link(&self.actor.mutation_ids, pool, &self.link_id).await?;
+        Ok(ReviewLinkResult {
+            link: row.to_link(false),
         })
     }
 }

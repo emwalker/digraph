@@ -8,7 +8,7 @@ use crate::http::repo_url;
 use crate::prelude::*;
 use crate::psql::{
     DeleteAccountResult, DeleteLinkResult, DeleteSessionResult, DeleteTopicTimeRangeResult, Repo,
-    SelectRepositoryResult, UpdateLinkTopicsResult, UpdateSynonymsResult,
+    ReviewLinkResult, SelectRepositoryResult, UpdateLinkTopicsResult, UpdateSynonymsResult,
     UpdateTopicParentTopicsResult, UpsertTopicTimeRangeResult,
 };
 
@@ -90,6 +90,18 @@ pub struct DeleteTopicTimeRangePayload {
     client_mutation_id: Option<String>,
     deleted_time_range_id: Option<ID>,
     topic: Topic,
+}
+
+#[derive(Debug, InputObject)]
+pub struct ReviewLinkInput {
+    client_mutation_id: Option<String>,
+    link_id: ID,
+    reviewed: bool,
+}
+
+#[derive(Debug, SimpleObject)]
+pub struct ReviewLinkPayload {
+    link: Link,
 }
 
 #[derive(Debug, InputObject)]
@@ -354,6 +366,22 @@ impl MutationRoot {
             topic,
             deleted_time_range_id: deleted_time_range_id.map(ID),
         })
+    }
+
+    async fn review_link(
+        &self,
+        ctx: &Context<'_>,
+        input: ReviewLinkInput,
+    ) -> Result<ReviewLinkPayload> {
+        let ReviewLinkInput {
+            link_id, reviewed, ..
+        } = input;
+        let ReviewLinkResult { link } = ctx
+            .data_unchecked::<Repo>()
+            .review_link(link_id.to_string(), reviewed)
+            .await?;
+
+        Ok(ReviewLinkPayload { link })
     }
 
     async fn select_repository(

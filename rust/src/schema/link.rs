@@ -1,6 +1,6 @@
 use async_graphql::connection::*;
 
-use super::{relay::conn, Repository, TopicConnection};
+use super::{relay::conn, DateTime, Repository, TopicConnection, User};
 use crate::prelude::*;
 use crate::psql::Repo;
 
@@ -10,12 +10,18 @@ pub struct Link {
     pub newly_added: bool,
     pub parent_topic_ids: Vec<String>,
     pub repository_id: ID,
+    pub viewer_review: Option<LinkReview>,
     pub title: String,
     pub url: String,
 }
 
+#[derive(SimpleObject)]
+pub struct LinkConnectionFields {
+    pub total_count: i64,
+}
+
 pub type LinkEdge = Edge<String, Link, EmptyFields>;
-pub type LinkConnection = Connection<String, Link, EmptyFields, EmptyFields>;
+pub type LinkConnection = Connection<String, Link, LinkConnectionFields, EmptyFields>;
 
 #[Object]
 impl Link {
@@ -83,5 +89,34 @@ impl Link {
 
     async fn url(&self) -> String {
         self.url.to_owned()
+    }
+
+    async fn viewer_review(&self) -> Option<LinkReview> {
+        self.viewer_review.clone()
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct LinkReview {
+    pub reviewed_at: Option<DateTime>,
+    pub user_id: String,
+}
+
+#[Object]
+impl LinkReview {
+    async fn reviewed_at(&self) -> Option<DateTime> {
+        self.reviewed_at.clone()
+    }
+
+    async fn user(&self, ctx: &Context<'_>) -> Result<User> {
+        let user = ctx
+            .data_unchecked::<Repo>()
+            .user(self.user_id.clone())
+            .await?;
+
+        match user {
+            Some(user) => Ok(user),
+            None => Err(Error::NotFound(format!("user not found: {}", self.user_id))),
+        }
     }
 }

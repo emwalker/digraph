@@ -7,10 +7,10 @@ use super::{
     DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchChildLinksForTopic,
     FetchChildTopicsForTopic, FetchRepositoriesForUser, LinkLoader, LiveSearchTopics,
     OrganizationByLoginLoader, OrganizationLoader, RepositoryByNameLoader, RepositoryLoader,
-    Search, SelectRepository, SelectRepositoryResult, TopicLoader, UpdateLinkParentTopics,
-    UpdateLinkTopicsResult, UpdateSynonyms, UpdateSynonymsResult, UpdateTopicParentTopics,
-    UpdateTopicParentTopicsResult, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
-    UpsertTopicTimeRange, UpsertTopicTimeRangeResult, UserLoader,
+    ReviewLink, ReviewLinkResult, Search, SelectRepository, SelectRepositoryResult, TopicLoader,
+    UpdateLinkParentTopics, UpdateLinkTopicsResult, UpdateSynonyms, UpdateSynonymsResult,
+    UpdateTopicParentTopics, UpdateTopicParentTopicsResult, UpsertLink, UpsertLinkResult,
+    UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange, UpsertTopicTimeRangeResult, UserLoader,
 };
 use crate::prelude::*;
 use crate::schema::{
@@ -103,8 +103,12 @@ impl Repo {
         Ok(result.iter().flatten().cloned().collect())
     }
 
-    pub async fn child_links_for_topic(&self, topic_id: String) -> Result<Vec<Link>> {
-        FetchChildLinksForTopic::new(self.viewer.query_ids.clone(), topic_id)
+    pub async fn child_links_for_topic(
+        &self,
+        topic_id: String,
+        reviewed: Option<bool>,
+    ) -> Result<Vec<Link>> {
+        FetchChildLinksForTopic::new(self.viewer.clone(), topic_id, reviewed)
             .call(&self.pool)
             .await
     }
@@ -201,6 +205,12 @@ impl Repo {
 
     pub async fn repository_by_name(&self, name: String) -> Result<Option<Repository>> {
         self.repository_by_name_loader.load_one(name).await
+    }
+
+    pub async fn review_link(&self, link_id: String, reviewed: bool) -> Result<ReviewLinkResult> {
+        ReviewLink::new(self.viewer.clone(), link_id.clone(), reviewed)
+            .call(&self.pool)
+            .await
     }
 
     pub async fn search(

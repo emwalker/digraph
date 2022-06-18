@@ -37,6 +37,9 @@ pub const LINK_FIELDS: &str = r#"
     l.title,
     l.url,
     l.repository_id,
+    null reviewed_at,
+    -- Guest user
+    '11a13e26-ee64-4c31-8af1-d1e953899ee0' viewer_id,
     array_remove(array_agg(distinct parent_topics.parent_id), null)
         parent_topic_ids
 "#;
