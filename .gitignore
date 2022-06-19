@@ -21,3 +21,4 @@ tmp/
 *.code-workspace
 target/
 .env*
+scratchpad.md
