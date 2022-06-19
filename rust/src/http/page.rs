@@ -29,6 +29,14 @@ impl Page {
     }
 
     pub async fn fetch(&self) -> Result<Response> {
+        if !self.should_fetch() {
+            log::info!("document not suitable for fetching, skipping fetch: {}", self.0);
+            return Ok(Response {
+                url: self.0.clone(),
+                body: Html::parse_document("<title>Missing title [pdf]</title>"),
+            })
+        }
+
         log::info!("Fetching page at link {}", self.0);
         let text = reqwest::get(self.0.normalized.clone())
             .await?
@@ -40,5 +48,29 @@ impl Page {
             url: self.0.clone(),
             body,
         })
+    }
+
+    pub fn should_fetch(&self) -> bool {
+        !self.0.is_pdf()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_should_fetch() {
+        let url =
+            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something")
+                .unwrap();
+        let page = Page::from(url);
+        assert_eq!(page.should_fetch(), false);
+
+        let url =
+            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something")
+                .unwrap();
+        let page = Page::from(url);
+        assert_eq!(page.should_fetch(), true);
     }
 }

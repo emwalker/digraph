@@ -15,6 +15,7 @@ use crate::prelude::*;
 pub struct Url {
     pub input: String,
     pub normalized: String,
+    pub path: String,
     pub sha1: String,
 }
 
@@ -94,12 +95,21 @@ impl Url {
         Ok(Self {
             input,
             normalized,
+            path: url.path().to_string(),
             sha1,
         })
     }
 
     pub fn is_valid_url(input: &str) -> bool {
         Self::parse(input).is_ok()
+    }
+
+    pub fn ends_with(&self, suffix: &str) -> bool {
+        self.path.ends_with(suffix)
+    }
+
+    pub fn is_pdf(&self) -> bool {
+        self.ends_with(".pdf")
     }
 }
 
@@ -135,6 +145,24 @@ mod tests {
     fn test_url_params() {
         let url = Url::parse("https://www.reuters.com/some-title?utm_source=reddit.com").unwrap();
         assert_eq!(url.normalized, "https://www.reuters.com/some-title");
+    }
+
+    #[test]
+    fn test_ends_with() {
+        let url = Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something").unwrap();
+        assert_eq!(url.ends_with(".pdf"), true);
+
+        let url = Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something").unwrap();
+        assert_eq!(url.ends_with(".pdf"), false);
+    }
+
+    #[test]
+    fn test_is_pdf() {
+        let url = Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something").unwrap();
+        assert_eq!(url.is_pdf(), true);
+
+        let url = Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something").unwrap();
+        assert_eq!(url.is_pdf(), false);
     }
 
     #[test]
