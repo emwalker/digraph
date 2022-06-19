@@ -150,20 +150,28 @@ mod tests {
 
     #[test]
     fn test_ends_with() {
-        let url = Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something").unwrap();
-        assert_eq!(url.ends_with(".pdf"), true);
+        let url =
+            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something")
+                .unwrap();
+        assert!(url.ends_with(".pdf"));
 
-        let url = Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something").unwrap();
-        assert_eq!(url.ends_with(".pdf"), false);
+        let url =
+            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something")
+                .unwrap();
+        assert!(!url.ends_with(".pdf"));
     }
 
     #[test]
     fn test_is_pdf() {
-        let url = Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something").unwrap();
-        assert_eq!(url.is_pdf(), true);
+        let url =
+            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something")
+                .unwrap();
+        assert!(url.is_pdf());
 
-        let url = Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something").unwrap();
-        assert_eq!(url.is_pdf(), false);
+        let url =
+            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something")
+                .unwrap();
+        assert!(!url.is_pdf());
     }
 
     #[test]
@@ -368,7 +376,8 @@ mod tests {
 
     #[test]
     fn test_cspan_video() {
-        let url = Url::parse("https://www.c-span.org/video/?c5004713/user-clip-mcgahn-quotes").unwrap();
+        let url =
+            Url::parse("https://www.c-span.org/video/?c5004713/user-clip-mcgahn-quotes").unwrap();
         assert_eq!(
             url.normalized,
             "https://www.c-span.org/video/?c5004713%2Fuser-clip-mcgahn-quotes="

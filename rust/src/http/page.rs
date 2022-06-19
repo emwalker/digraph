@@ -2,6 +2,8 @@ use super::repo_url::Url;
 use crate::prelude::*;
 use scraper::{Html, Selector};
 
+const USER_AGENT: &str = "digraph/0.1.0";
+
 #[derive(Debug)]
 pub struct Page(pub Url);
 
@@ -30,15 +32,28 @@ impl Page {
 
     pub async fn fetch(&self) -> Result<Response> {
         if !self.should_fetch() {
-            log::info!("document not suitable for fetching, skipping fetch: {}", self.0);
+            log::info!(
+                "document not suitable for fetching, skipping fetch: {}",
+                self.0
+            );
             return Ok(Response {
                 url: self.0.clone(),
                 body: Html::parse_document("<title>Missing title [pdf]</title>"),
-            })
+            });
         }
 
         log::info!("Fetching page at link {}", self.0);
-        let text = reqwest::get(self.0.normalized.clone())
+        let client = reqwest::Client::builder()
+            .user_agent(USER_AGENT)
+            // We're just interested in the link title for now, so this is hopefully not an unsafe
+            // operation in our context.  The user's browser can take over when the user attempts
+            // to follow the link.
+            .danger_accept_invalid_certs(true)
+            .build()?;
+
+        let text = client
+            .get(self.0.normalized.clone())
+            .send()
             .await?
             .text()
             .await?;
@@ -65,12 +80,12 @@ mod test {
             Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something")
                 .unwrap();
         let page = Page::from(url);
-        assert_eq!(page.should_fetch(), false);
+        assert!(!page.should_fetch());
 
         let url =
             Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something")
                 .unwrap();
         let page = Page::from(url);
-        assert_eq!(page.should_fetch(), true);
+        assert!(page.should_fetch());
     }
 }

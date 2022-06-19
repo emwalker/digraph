@@ -33,12 +33,14 @@ build-container-node: build-client
 build-executables:
 	$(MAKE) -C rust build
 
-check:
-	$(MAKE) -C rust check
+check: check-rust
 	$(MAKE) -C javascript check
 
 check-git-clean:
 	test -z "$(shell git diff-index --name-only HEAD --)"
+
+check-rust:
+	$(MAKE) -C rust check
 
 deploy-k8s:
 	kubectl config use-context digraph-production

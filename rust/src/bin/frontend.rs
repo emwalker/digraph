@@ -88,9 +88,7 @@ async fn main() -> async_graphql::Result<()> {
 
     let pool = db::db_connection(&config).await?;
 
-    sqlx::migrate!("db/migrations")
-        .run(&pool)
-        .await?;
+    sqlx::migrate!("db/migrations").run(&pool).await?;
 
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         .extension(extensions::Logger)
