@@ -425,6 +425,7 @@ impl UpdateTopicParentTopics {
         topic: &Topic,
         pool: &PgPool,
     ) -> Result<(HashSet<String>, Vec<Alert>)> {
+        let topic_id = topic.id.to_string();
         let mut valid: HashSet<String> = HashSet::new();
         let mut alerts = vec![];
         let desired = self
@@ -447,7 +448,7 @@ impl UpdateTopicParentTopics {
                     from topic_down_set($1::uuid) tds
                     where tds.child_id = $2::uuid"#,
             )
-            .bind(&topic.id)
+            .bind(&topic_id)
             .bind(&parent_topic_id)
             .fetch_one(pool)
             .await?;
