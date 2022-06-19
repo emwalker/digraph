@@ -207,7 +207,7 @@ mod tests {
     #[test]
     fn test_urls_are_normalized() {
         let s = QuerySpec::parse("https://www.google.com/?s=1234").unwrap();
-        assert_eq!(s.string_tokens, ["https://www.google.com"]);
+        assert_eq!(s.string_tokens, ["https://www.google.com/"]);
     }
 
     #[test]

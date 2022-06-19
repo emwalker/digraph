@@ -80,17 +80,7 @@ impl Url {
     pub fn parse(input: &str) -> Result<Self> {
         let url = parse_url(input)?;
         let input = input.to_string();
-
-        // Strip off the path if it is just "/" in order to avoid duplicate urls, since this is what
-        // has been done for a long time.
-        let normalized = match url.path() {
-            "/" => {
-                let link = format!("{}", url);
-                link.get(0..link.len() - 1).unwrap_or_default().to_string()
-            }
-            _ => format!("{}", url),
-        };
-
+        let normalized = format!("{}", url);
         let sha1 = sha1_digest(normalized.as_bytes());
 
         Ok(Self {
@@ -122,12 +112,12 @@ mod tests {
     fn test_sha1() {
         // The sha1 digest is based on the normalized url
         let url = Url::parse("http://www.google.com").unwrap();
-        assert_eq!(url.normalized, "http://www.google.com");
-        assert_eq!(url.sha1, "738ddf35b3a85a7a6ba7b232bd3d5f1e4d284ad1");
+        assert_eq!(url.normalized, "http://www.google.com/");
+        assert_eq!(url.sha1, "d111175e022c19f447895ad6b72ff259552d1b38");
 
         let url = Url::parse("http://some.url.com").unwrap();
-        assert_eq!(url.normalized, "http://some.url.com");
-        assert_eq!(url.sha1, "85cdd80985b9fef9ec0bc1d1ab2aeb7bd4efef86");
+        assert_eq!(url.normalized, "http://some.url.com/");
+        assert_eq!(url.sha1, "49a19c25e29d440715906aebc07ffbbecfb6037f");
     }
 
     #[test]
@@ -139,7 +129,7 @@ mod tests {
     #[test]
     fn test_simple_case() {
         let url = Url::parse("http://www.google.com").unwrap();
-        assert_eq!(url.normalized, "http://www.google.com");
+        assert_eq!(url.normalized, "http://www.google.com/");
     }
 
     #[test]
