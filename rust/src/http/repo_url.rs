@@ -40,6 +40,7 @@ fn make_filter<'r>(host: Option<&str>) -> impl Fn(&Pair<'r>) -> bool + '_ {
         Some("newscenter.sdsu.edu") => p.0 == "sid",
         Some("scholarworks.umass.edu") => p.0 == "article" || p.0 == "context",
         Some("www.baylor.edu") => p.0 == "action" || p.0 == "story",
+        Some("www.c-span.org") => true,
         Some("www.dur.ac.uk") => p.0 == "itemno",
         Some("www.facebook.com") => p.0 == "__xts__[0]" || p.0 == "v",
         Some("www.greenbeltmd.gov") => p.0 == "id",
@@ -362,6 +363,15 @@ mod tests {
         assert_eq!(
             url.normalized,
             "http://www.koreaherald.com/view.php?ud=20210316000213"
+        );
+    }
+
+    #[test]
+    fn test_cspan_video() {
+        let url = Url::parse("https://www.c-span.org/video/?c5004713/user-clip-mcgahn-quotes").unwrap();
+        assert_eq!(
+            url.normalized,
+            "https://www.c-span.org/video/?c5004713%2Fuser-clip-mcgahn-quotes="
         );
     }
 }
