@@ -12,8 +12,10 @@ services:
       context: .
       dockerfile: k8s/docker/cron/Dockerfile
     image: emwalker/digraph-cron
-    environment:
-      - DIGRAPH_POSTGRES_CONNECTION=postgres://postgres@${PGLOCALHOST}/digraph_dev?sslmode=disable
+    env_file:
+    - .env.docker.local
+    extra_hosts:
+    - "database:172.17.0.1"
 
   api:
     build:
@@ -22,10 +24,10 @@ services:
     image: emwalker/digraph-api
     expose:
       - "8080"
-    environment:
-      - DIGRAPH_POSTGRES_CONNECTION=postgres://postgres@${PGLOCALHOST}/digraph_dev?sslmode=disable
-      - DIGRAPH_REDIS_HOST=redis:6379
-      - DIGRAPH_SERVER_SECRET
+    env_file:
+    - .env.docker.local
+    extra_hosts:
+    - "database:172.17.0.1"
     links:
       - redis
     depends_on:
@@ -38,15 +40,8 @@ services:
       dockerfile: k8s/docker/node/Dockerfile
     ports:
       - "3001:3001"
-    environment:
-      - DIGRAPH_API_BASE_URL=http://api:8080
-      - DIGRAPH_NODE_REDIS_URL=redis://redis:6379
-      - DIGRAPH_SERVER_SECRET
-      - DIGRAPH_COOKIE_SECRET
-      - DIGRAPH_GITHUB_CLIENT_ID
-      - DIGRAPH_GITHUB_CLIENT_SECRET
-      - DIGRAPH_GITHUB_CALLBACK_URL
-      - DIGRAPH_GOOGLE_ANALYTICS_ID
+    env_file:
+    - .env.docker.local
     depends_on:
       - api
       - redis

@@ -5,6 +5,6 @@ use sqlx::Pool;
 use crate::config::Config;
 
 pub async fn db_connection(config: &Config) -> Result<Pool<Postgres>, Error> {
-    let database_url = config.database_url.clone();
+    let database_url = config.digraph_postgres_connection.clone();
     Pool::<Postgres>::connect(&*database_url).await
 }

@@ -1,12 +1,13 @@
+use std::path::Path;
 use serde::Deserialize;
 
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
-    pub database_url: String,
-    pub rust_log: String,
+    pub digraph_postgres_connection: String,
     pub digraph_server_secret: String,
+    pub rust_log: String,
     pub session_domain: String,
     pub session_key: String,
 }
@@ -19,7 +20,10 @@ impl Config {
             "production"
         };
 
-        dotenv::from_filename(format!(".env.{}.local", profile)).ok();
+        let filename = format!(".env.{}.local", profile);
+        if Path::new(&filename).exists() {
+            dotenv::from_filename(filename).ok();
+        }
         dotenv::dotenv().ok();
 
         envy::from_env::<Self>().map_err(Error::from)
