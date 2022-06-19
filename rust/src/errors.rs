@@ -9,6 +9,8 @@ quick_error! {
             from()
         }
 
+        Command(err: String) { }
+
         DB(err: Arc<sqlx::Error>) {
             from(err: sqlx::Error) -> (Arc::new(err))
         }
@@ -23,6 +25,10 @@ quick_error! {
 
         HeaderValue(err: String) {
             from(err: actix_web::http::header::ToStrError) -> (format!("{:?}", err))
+        }
+
+        IO(err: String) {
+            from(err: std::io::Error) -> (format!("{}", err))
         }
 
         Load(err: String) {
@@ -41,6 +47,8 @@ quick_error! {
             from(err: reqwest::Error) -> (format!("{:?}", err))
         }
 
+        Repo(err: String) { }
+
         Resolver(err: async_graphql::Error) {
             from()
         }
@@ -51,6 +59,10 @@ quick_error! {
 
         Utf8(err: std::string::FromUtf8Error) {
             from()
+        }
+
+        YAML(err: String) {
+            from(err: serde_yaml::Error) -> (format!("{}", err))
         }
     }
 }

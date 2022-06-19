@@ -12,6 +12,14 @@ path = "src/bin/frontend.rs"
 name = "cron"
 path = "src/bin/cron.rs"
 
+[[bin]]
+name = "show"
+path = "src/bin/show.rs"
+
+[[bin]]
+name = "export"
+path = "src/bin/export.rs"
+
 [dependencies]
 actix-web = "4"
 async-graphql = { version = "4", features = ["apollo_tracing", "cbor", "dataloader", "log", "uuid"] }
@@ -25,6 +33,7 @@ dotenv = "0"
 env_logger = "0"
 envy = "0"
 futures = "0"
+getopts = "0"
 itertools = "0"
 lazy_static = "1"
 log = "0"
@@ -34,6 +43,7 @@ reqwest = { version = "0", features = ["default-tls"] }
 scraper = "0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml = "0"
 sha1 = "0"
 sqlx = { version = "0.6", features = ["chrono", "json", "postgres", "macros", "migrate", "uuid", "runtime-actix-native-tls"] }
 time = "0"
