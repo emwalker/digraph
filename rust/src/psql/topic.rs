@@ -532,10 +532,12 @@ impl UpsertTopic {
         .bind(&synonyms)
         .fetch_one(&mut tx)
         .await?;
+        let topic_id = topic_id.to_string();
 
         for parent_topic_id in &self.input.topic_ids {
+            let parent_topic_id = parent_topic_id.to_string();
             // Ensure that we can update the parent topic
-            fetch_topic(&self.actor.mutation_ids, pool, parent_topic_id).await?;
+            fetch_topic(&self.actor.mutation_ids, pool, &parent_topic_id).await?;
 
             let parent_topic_id = parent_topic_id.to_string();
             let (count,) = sqlx::query_as::<_, (i64,)>(
