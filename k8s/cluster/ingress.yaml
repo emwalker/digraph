@@ -3,16 +3,16 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frontend-ingress
-  # annotations:
-  #   kubernetes.io/ingress.class: nginx
-  #   certmanager.k8s.io/cluster-issuer: letsencrypt-staging
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
 spec:
   tls:
-  # - hosts:
-  #   - digraph.app
-  #   secretName: letsencrypt-staging
+  - hosts:
+    - digraph.app
+    secretName: frontend-tls
   rules:
-  - host: #digraph.app
+  - host: digraph.app
     http:
       paths:
       - path: /
@@ -21,4 +21,4 @@ spec:
           service:
             name: frontend
             port:
-              number: 80
+              number: 3001
