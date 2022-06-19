@@ -4,7 +4,7 @@ COPY ./rust .
 RUN cargo build --release --bin frontend
 
 FROM debian:buster-slim
-LABEL Name=munje Version=0.0.1
+LABEL Name=frontend Version=0.1.0
 RUN apt-get update && apt-get install -y ca-certificates libssl-dev && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/src/digraph/target/release/frontend /app/frontend
 CMD ["/app/frontend"]
