@@ -59,7 +59,7 @@ load-production:
 	psql $(DBNAME) < queries/transitive-closure.sql
 
 logs:
-	overmind start -f Procfile.logs
+	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs
 
 migrate-up:
 	$(foreach database,$(DBNAME),\

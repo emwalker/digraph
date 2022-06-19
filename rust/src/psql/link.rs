@@ -391,6 +391,11 @@ impl UpsertLink {
                 .bind(&title)
                 .fetch_one(&mut tx)
                 .await?;
+        let (link_id, repository_id, organization_id) = (
+            link_id.to_string(),
+            repository_id.to_string(),
+            organization_id.to_string(),
+        );
 
         for topic_id in &self.input.add_parent_topic_ids {
             let topic_id = topic_id.to_string();
