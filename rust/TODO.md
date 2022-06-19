@@ -16,3 +16,4 @@ Things that would be nice to eventually get to:
 * Live search shows synonyms
 * Add an owner id to organizations
 * Disambiguate topics with same names in different repos (e.g., Everything)
+* Parse PDF metadata to get the title (e.g., with https://docs.rs/crate/skia-safe/latest)
