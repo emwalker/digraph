@@ -46,7 +46,7 @@ class DesktopNav extends Component<Props> {
     const { viewer, view, router, location } = this.props
 
     return (
-      <header className={`${styles.header} px-sm-3 px-md-6 px-lg-4`}>
+      <header className={`${styles.innerHeader} px-sm-3 px-md-6 px-lg-4`}>
         <nav className={`${styles.navLeft} d-inline-block`}>
           <h1 className="h3 text-normal">
             <a

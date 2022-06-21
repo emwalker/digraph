@@ -19,8 +19,8 @@ type Props = {
 }
 
 export default ({ location, router, viewer, view }: Props) => (
-  <div className={`${styles.header} clearfix d-flex`}>
-    <div style={{ width: '100%' }}>
+  <div className={`${styles.outerHeader} clearfix d-flex`}>
+    <div style={{ width: '100' }}>
       <MediaQuery query="(max-width: 768px)">
         <MobileNav
           location={location}

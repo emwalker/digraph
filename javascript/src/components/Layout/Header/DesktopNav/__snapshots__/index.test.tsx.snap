@@ -2,7 +2,7 @@
 
 exports[`<DesktopNav /> renders 1`] = `
 <header
-  className="header px-sm-3 px-md-6 px-lg-4"
+  className="innerHeader px-sm-3 px-md-6 px-lg-4"
 >
   <nav
     className="navLeft d-inline-block"

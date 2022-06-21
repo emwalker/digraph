@@ -1,8 +1,9 @@
-.header {
+.outerHeader {
   -webkit-box-shadow: rgba(0,0,0,0.08) 0 0 5px 1px;
   -moz-box-shadow: rgba(0,0,0,0.08) 0 0 5px 1px;
   box-shadow: rgba(0,0,0,0.08) 0 0 5px 1px;
   border-bottom: 1px solid #e2e2e2;
+  width: 100%;
 }
 
 .container {
