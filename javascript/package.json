@@ -73,7 +73,7 @@
     "react-select": "^5.3.2",
     "react-social-login-buttons": "^3.6.0",
     "react-sortable-hoc": "^2.0.0",
-    "react-timeago": "^6.2.1",
+    "react-timeago": "^7.1.0",
     "redis": "^4.1.0",
     "redux": "^4.2.0",
     "regenerator-runtime": "^0.13.9",
