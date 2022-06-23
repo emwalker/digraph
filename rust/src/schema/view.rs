@@ -4,7 +4,7 @@ use super::{
     User, WIKI_REPOSITORY_ID,
 };
 use crate::prelude::*;
-use crate::psql::Repo;
+use crate::repo::Repo;
 
 #[derive(Clone)]
 pub struct View {

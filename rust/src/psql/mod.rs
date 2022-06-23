@@ -7,10 +7,8 @@ use crate::prelude::*;
 
 mod activity;
 pub use activity::*;
-mod queries;
-mod repo;
-pub use repo::*;
 mod link;
+mod queries;
 pub use link::*;
 mod organization;
 pub use organization::*;

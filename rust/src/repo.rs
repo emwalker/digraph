@@ -1,7 +1,9 @@
 use async_graphql::dataloader::*;
 use sqlx::postgres::PgPool;
 
-use super::{
+use crate::git::Git;
+use crate::prelude::*;
+use crate::psql::{
     CreateGithubSession, CreateSessionResult, DeleteAccount, DeleteAccountResult, DeleteLink,
     DeleteLinkResult, DeleteSession, DeleteSessionResult, DeleteTopic, DeleteTopicResult,
     DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchChildLinksForTopic,
@@ -12,7 +14,6 @@ use super::{
     UpdateTopicParentTopics, UpdateTopicParentTopicsResult, UpsertLink, UpsertLinkResult,
     UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange, UpsertTopicTimeRangeResult, UserLoader,
 };
-use crate::prelude::*;
 use crate::schema::{
     ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem,
     Topic, UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput,
@@ -20,20 +21,21 @@ use crate::schema::{
 };
 
 pub struct Repo {
+    git: Git,
     link_loader: DataLoader<LinkLoader, HashMapCache>,
     organization_by_login_loader: DataLoader<OrganizationByLoginLoader, HashMapCache>,
     organization_loader: DataLoader<OrganizationLoader, HashMapCache>,
     pool: PgPool,
+    pub server_secret: String,
     pub viewer: Viewer,
     repository_by_name_loader: DataLoader<RepositoryByNameLoader, HashMapCache>,
     repository_loader: DataLoader<RepositoryLoader, HashMapCache>,
-    pub server_secret: String,
     topic_loader: DataLoader<TopicLoader, HashMapCache>,
     user_loader: DataLoader<UserLoader, HashMapCache>,
 }
 
 impl Repo {
-    pub fn new(viewer: Viewer, pool: PgPool, server_secret: String) -> Self {
+    pub fn new(git: Git, viewer: Viewer, pool: PgPool, server_secret: String) -> Self {
         let link_loader = LinkLoader::new(viewer.clone(), pool.clone());
         let organization_loader = OrganizationLoader::new(viewer.clone(), pool.clone());
         let organization_by_login_loader =
@@ -44,6 +46,7 @@ impl Repo {
         let user_loader = UserLoader::new(viewer.clone(), pool.clone());
 
         Self {
+            git,
             pool,
             viewer,
             server_secret,

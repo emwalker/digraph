@@ -2,7 +2,7 @@ use async_graphql::connection::*;
 
 use super::{Repository, RepositoryConnection, RepositoryEdgeFields};
 use crate::prelude::*;
-use crate::psql::Repo;
+use crate::repo::Repo;
 
 pub static GUEST_ID: &str = "11a13e26-ee64-4c31-8af1-d1e953899ee0";
 

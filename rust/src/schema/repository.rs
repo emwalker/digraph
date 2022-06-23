@@ -2,7 +2,7 @@ use async_graphql::connection::*;
 
 use super::{Organization, Topic, User};
 use crate::prelude::*;
-use crate::psql::Repo;
+use crate::repo::Repo;
 
 const PRIVATE_REPOSITORY_COLOR: &str = "#dbedff";
 pub const DEFAULT_REPOSITORY_NAME: &str = "system:default";

@@ -162,14 +162,14 @@ impl RepoPath {
     }
 }
 
-#[derive(Default)]
-pub struct GitRepo {
+#[derive(Clone, Default)]
+pub struct Git {
     cache: HashMap<String, Object>,
     cache_hits: u32,
     entrypoint: RepoPath,
 }
 
-impl std::fmt::Debug for GitRepo {
+impl std::fmt::Debug for Git {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(
             f,
@@ -180,7 +180,7 @@ impl std::fmt::Debug for GitRepo {
     }
 }
 
-impl GitRepo {
+impl Git {
     pub fn new(entrypoint: RepoPath) -> Self {
         Self {
             entrypoint,

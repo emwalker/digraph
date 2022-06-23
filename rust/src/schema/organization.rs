@@ -1,6 +1,6 @@
 use super::Repository;
 use crate::prelude::*;
-use crate::psql::Repo;
+use crate::repo::Repo;
 
 pub const DEFAULT_ORGANIZATION_NAME: &str = "system:default";
 pub const WIKI_ORGANIZATION_ID: &str = "45dc89a6-e6f0-11e8-8bc1-6f4d565e3ddb";

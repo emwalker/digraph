@@ -10,7 +10,7 @@ struct Opts {
 }
 
 struct ConsoleOutput<'r> {
-    repo: &'r mut GitRepo,
+    git: &'r mut Git,
     buf: String,
 }
 
@@ -61,7 +61,7 @@ impl<'r> ConsoleOutput<'r> {
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
         let object = self
-            .repo
+            .git
             .get(&topic.id)?
             .ok_or_else(|| Error::Repo(format!("no parent topic found: {:?}", topic)))?;
 
@@ -102,7 +102,7 @@ impl<'r> ConsoleOutput<'r> {
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
         let object = self
-            .repo
+            .git
             .get(&topic.id)?
             .ok_or_else(|| Error::Repo(format!("failed to fetch parent: {:?}", topic)))?;
 
@@ -120,7 +120,7 @@ impl<'r> ConsoleOutput<'r> {
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
         let object = self
-            .repo
+            .git
             .get(&child.id)?
             .ok_or_else(|| Error::Repo(format!("failed to fetch child: {:?}", child)))?;
 
@@ -150,19 +150,19 @@ fn parse_args() -> Opts {
 async fn main() -> Result<()> {
     let opts = parse_args();
     let entrypoint = RepoPath::parse(opts.filename)?;
-    let mut repo = GitRepo::new(entrypoint.clone());
-    let id = entrypoint.id.expect("an id is required");
-    let object = repo.get(&id)?;
+    let id = entrypoint.id.clone().expect("an id is required");
+    let mut git = Git::new(entrypoint);
+    let object = git.get(&id)?;
 
     if let Some(object) = object {
         let mut output = ConsoleOutput {
-            repo: &mut repo,
+            git: &mut git,
             buf: String::new(),
         };
         object.accept(&mut output)?;
         io::stdout().write_all(output.as_bytes())?;
 
-        let r = format!("\n{:?}\n", output.repo);
+        let r = format!("\n{:?}\n", output.git);
         io::stdout().write_all(r.as_bytes())?;
     } else {
         io::stdout().write_all(b"")?;

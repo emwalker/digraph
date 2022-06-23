@@ -3,11 +3,13 @@ use async_graphql::extensions;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use std::path::PathBuf;
 
 use std::env;
 
 use digraph::config::Config;
 use digraph::db;
+use digraph::git::{Git, RepoPath};
 use digraph::prelude::*;
 use digraph::schema::{MutationRoot, QueryRoot, Schema, State};
 
@@ -86,6 +88,10 @@ async fn main() -> async_graphql::Result<()> {
     let config = Config::load()?;
     env_logger::init();
 
+    let path = PathBuf::from(config.digraph_wiki_repo_path.clone());
+    let root = RepoPath::new(path, None);
+    let git = Git::new(root);
+
     let pool = db::db_connection(&config).await?;
 
     sqlx::migrate!("db/migrations").run(&pool).await?;
@@ -94,7 +100,7 @@ async fn main() -> async_graphql::Result<()> {
         .extension(extensions::Logger)
         // .extension(ApolloTracing)
         .finish();
-    let state = State::new(pool, schema, config.digraph_server_secret);
+    let state = State::new(pool, schema, config.digraph_server_secret, git);
 
     let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_owned());
     println!("Playground: http://localhost:8080");

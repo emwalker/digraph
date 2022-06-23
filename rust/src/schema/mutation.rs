@@ -7,10 +7,11 @@ use super::{
 use crate::http::repo_url;
 use crate::prelude::*;
 use crate::psql::{
-    DeleteAccountResult, DeleteLinkResult, DeleteSessionResult, DeleteTopicTimeRangeResult, Repo,
+    DeleteAccountResult, DeleteLinkResult, DeleteSessionResult, DeleteTopicTimeRangeResult,
     ReviewLinkResult, SelectRepositoryResult, UpdateLinkTopicsResult, UpdateSynonymsResult,
     UpdateTopicParentTopicsResult, UpsertTopicTimeRangeResult,
 };
+use crate::repo::Repo;
 
 #[derive(Clone, Debug, InputObject)]
 pub struct CreateGithubSessionInput {

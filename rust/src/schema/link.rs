@@ -2,7 +2,7 @@ use async_graphql::connection::*;
 
 use super::{relay::conn, DateTime, Repository, TopicConnection, User};
 use crate::prelude::*;
-use crate::psql::Repo;
+use crate::repo::Repo;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Link {

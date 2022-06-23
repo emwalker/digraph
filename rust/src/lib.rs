@@ -11,4 +11,5 @@ pub mod git;
 mod http;
 pub mod prelude;
 mod psql;
+pub mod repo;
 pub mod schema;

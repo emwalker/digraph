@@ -7,7 +7,7 @@ use super::{
 };
 use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::prelude::*;
-use crate::psql::Repo;
+use crate::repo::Repo;
 
 pub const DEFAULT_ROOT_TOPIC_NAME: &str = "Everything";
 
