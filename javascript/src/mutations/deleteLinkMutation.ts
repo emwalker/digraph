@@ -11,7 +11,7 @@ export default defaultMutation(graphql`
   ) {
     deleteLink(input: $input) {
       clientMutationId
-      deletedLinkId
+      deletedLinkPath
     }
   }
 `)

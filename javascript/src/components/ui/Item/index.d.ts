@@ -2,7 +2,7 @@ import { Component, ReactNode } from 'react';
 import { LocationType } from 'components/types';
 declare type Topic = {
     displayName: string;
-    resourcePath: string;
+    path: string;
 } | null;
 declare type Props = {
     canEdit: boolean;

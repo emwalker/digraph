@@ -4,7 +4,7 @@ import { QueryRenderer, graphql, RelayProp } from 'react-relay'
 import makeEditLink from './EditLink'
 
 type Link = {
-  id: string,
+  path: string,
 }
 
 type Props = {
@@ -24,7 +24,7 @@ const EditLinkContainer = ({ isOpen, link, orgLogin, relay, toggleForm }: Props)
         $orgLogin: String!,
         $repoName: String,
         $repoIds: [ID!],
-        $linkId: ID!,
+        $linkPath: String!,
       ) {
         view(
           viewerId: $viewerId,
@@ -32,7 +32,7 @@ const EditLinkContainer = ({ isOpen, link, orgLogin, relay, toggleForm }: Props)
           currentRepositoryName: $repoName,
           repositoryIds: $repoIds,
         ) {
-          link(id: $linkId) {
+          link(path: $linkPath) {
             ...EditLinkForm_link
           }
         }
@@ -41,7 +41,7 @@ const EditLinkContainer = ({ isOpen, link, orgLogin, relay, toggleForm }: Props)
     variables={{
       orgLogin,
       repoName: null,
-      linkId: link.id,
+      linkPath: link.path,
       viewerId: '',
       repoIds: [],
     }}

@@ -19,7 +19,7 @@ class Breadcrumbs extends Component<Props> {
     const { rootTopic: topic } = repo
 
     const to = {
-      pathname: topic.resourcePath,
+      pathname: topic.path,
       state: {
         orgLogin: org.login,
         repoName: repo.displayName,
@@ -77,7 +77,7 @@ export default createFragmentContainer(Breadcrumbs, {
 
           rootTopic {
             name
-            resourcePath
+            path
           }
         }
       }

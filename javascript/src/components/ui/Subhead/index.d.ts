@@ -1,4 +1,3 @@
-/// <reference types="react" />
 declare type Props = {
     heading: string;
     renderHeadingDetail?: Function;

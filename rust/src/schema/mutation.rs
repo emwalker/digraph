@@ -46,13 +46,13 @@ pub struct DeleteAccountPayload {
 #[derive(Debug, InputObject)]
 pub struct DeleteLinkInput {
     client_mutation_id: Option<String>,
-    link_id: ID,
+    link_path: String,
 }
 
 #[derive(Debug, SimpleObject)]
 pub struct DeleteLinkPayload {
     client_mutation_id: Option<String>,
-    deleted_link_id: Option<ID>,
+    deleted_link_path: Option<String>,
 }
 
 #[derive(Debug, InputObject)]
@@ -71,32 +71,31 @@ pub struct DeleteSessionPayload {
 #[derive(Debug, InputObject)]
 pub struct DeleteTopicInput {
     client_mutation_id: Option<String>,
-    topic_id: ID,
+    topic_path: String,
 }
 
 #[derive(Debug, SimpleObject)]
 pub struct DeleteTopicPayload {
     client_mutation_id: Option<String>,
-    deleted_topic_id: ID,
+    deleted_topic_path: String,
 }
 
 #[derive(Debug, InputObject)]
 pub struct DeleteTopicTimeRangeInput {
     client_mutation_id: Option<String>,
-    topic_id: ID,
+    topic_path: String,
 }
 
 #[derive(Debug, SimpleObject)]
 pub struct DeleteTopicTimeRangePayload {
     client_mutation_id: Option<String>,
-    deleted_time_range_id: Option<ID>,
     topic: Topic,
 }
 
 #[derive(Debug, InputObject)]
 pub struct ReviewLinkInput {
     client_mutation_id: Option<String>,
-    link_id: ID,
+    link_path: String,
     reviewed: bool,
 }
 
@@ -120,8 +119,8 @@ pub struct SelectRepositoryPayload {
 #[derive(Debug, InputObject)]
 pub struct UpdateLinkTopicsInput {
     pub client_mutation_id: Option<String>,
-    pub link_id: ID,
-    pub parent_topic_ids: Vec<ID>,
+    pub link_path: String,
+    pub parent_topic_paths: Vec<String>,
 }
 
 #[derive(Debug, SimpleObject)]
@@ -152,7 +151,7 @@ impl SynonymInput {
 pub struct UpdateSynonymsInput {
     pub client_mutation_id: Option<String>,
     pub synonyms: Vec<SynonymInput>,
-    pub topic_id: ID,
+    pub topic_path: String,
 }
 
 #[derive(SimpleObject)]
@@ -165,8 +164,8 @@ pub struct UpdateSynonymsPayload {
 #[derive(Debug, InputObject)]
 pub struct UpdateTopicParentTopicsInput {
     client_mutation_id: Option<String>,
-    topic_id: ID,
-    parent_topic_ids: Vec<ID>,
+    topic_path: String,
+    parent_topic_paths: Vec<String>,
 }
 
 #[derive(SimpleObject)]
@@ -177,7 +176,7 @@ pub struct UpdateTopicParentTopicsPayload {
 
 #[derive(Debug, InputObject)]
 pub struct UpsertLinkInput {
-    pub add_parent_topic_ids: Vec<ID>,
+    pub add_parent_topic_paths: Vec<String>,
     pub client_mutation_id: Option<String>,
     pub organization_login: String,
     pub repository_name: String,
@@ -198,7 +197,7 @@ pub struct UpsertTopicInput {
     pub name: String,
     pub organization_login: String,
     pub repository_name: String,
-    pub topic_ids: Vec<ID>,
+    pub parent_topic_paths: Vec<String>,
 }
 
 #[derive(SimpleObject)]
@@ -210,7 +209,7 @@ pub struct UpsertTopicPayload {
 #[derive(Debug, InputObject)]
 pub struct UpsertTopicTimeRangeInput {
     pub client_mutation_id: Option<String>,
-    pub topic_id: ID,
+    pub topic_path: String,
     pub starts_at: DateTime,
     pub ends_at: Option<DateTime>,
     pub prefix_format: TimeRangePrefixFormat,
@@ -292,16 +291,17 @@ impl MutationRoot {
     ) -> Result<DeleteLinkPayload> {
         let DeleteLinkInput {
             client_mutation_id,
-            link_id,
+            link_path,
         } = input;
-        let DeleteLinkResult { deleted_link_id } = ctx
+        let link_path = RepoPath::from(&link_path);
+        let DeleteLinkResult { deleted_link_path } = ctx
             .data_unchecked::<Repo>()
-            .delete_link(link_id.to_string())
+            .delete_link(&link_path)
             .await?;
 
         Ok(DeleteLinkPayload {
             client_mutation_id,
-            deleted_link_id: Some(ID(deleted_link_id)),
+            deleted_link_path: Some(deleted_link_path.to_string()),
         })
     }
 
@@ -332,15 +332,15 @@ impl MutationRoot {
     ) -> Result<DeleteTopicPayload> {
         let DeleteTopicInput {
             client_mutation_id,
-            topic_id,
+            topic_path,
         } = input;
         ctx.data_unchecked::<Repo>()
-            .delete_topic(topic_id.to_string())
+            .delete_topic(&RepoPath::from(&topic_path))
             .await?;
 
         Ok(DeleteTopicPayload {
             client_mutation_id,
-            deleted_topic_id: topic_id,
+            deleted_topic_path: topic_path,
         })
     }
 
@@ -351,21 +351,18 @@ impl MutationRoot {
     ) -> Result<DeleteTopicTimeRangePayload> {
         let DeleteTopicTimeRangeInput {
             client_mutation_id,
-            topic_id,
+            topic_path,
         } = input;
 
-        let DeleteTopicTimeRangeResult {
-            topic,
-            deleted_time_range_id,
-        } = ctx
+        let topic_path = RepoPath::from(&topic_path);
+        let DeleteTopicTimeRangeResult { topic } = ctx
             .data_unchecked::<Repo>()
-            .delete_topic_time_range(topic_id.to_string())
+            .delete_topic_time_range(&topic_path)
             .await?;
 
         Ok(DeleteTopicTimeRangePayload {
             client_mutation_id,
             topic,
-            deleted_time_range_id: deleted_time_range_id.map(ID),
         })
     }
 
@@ -375,11 +372,11 @@ impl MutationRoot {
         input: ReviewLinkInput,
     ) -> Result<ReviewLinkPayload> {
         let ReviewLinkInput {
-            link_id, reviewed, ..
+            link_path, reviewed, ..
         } = input;
         let ReviewLinkResult { link } = ctx
             .data_unchecked::<Repo>()
-            .review_link(link_id.to_string(), reviewed)
+            .review_link(&RepoPath::from(&link_path), reviewed)
             .await?;
 
         Ok(ReviewLinkPayload { link })
@@ -418,15 +415,15 @@ impl MutationRoot {
         input: UpdateTopicParentTopicsInput,
     ) -> Result<UpdateTopicParentTopicsPayload> {
         let UpdateTopicParentTopicsInput {
-            topic_id,
-            parent_topic_ids,
+            topic_path,
+            parent_topic_paths,
             ..
         } = input;
         let UpdateTopicParentTopicsResult { alerts, topic } = ctx
             .data_unchecked::<Repo>()
             .update_topic_parent_topics(
-                topic_id.to_string(),
-                parent_topic_ids.iter().map(|id| id.to_string()).collect(),
+                &RepoPath::from(&topic_path),
+                parent_topic_paths.iter().map(RepoPath::from).collect(),
             )
             .await?;
 

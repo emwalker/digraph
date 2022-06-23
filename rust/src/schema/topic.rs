@@ -3,27 +3,23 @@ use itertools::Itertools;
 
 use super::{
     relay::conn, LinkConnection, Prefix, Repository, SearchResultItemConnection, Synonym, Synonyms,
-    TimeRange,
+    Timerange,
 };
 use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::prelude::*;
-use crate::repo::Repo;
+use crate::repo::{Repo, RepoPath};
 
 pub const DEFAULT_ROOT_TOPIC_NAME: &str = "Everything";
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
-    pub id: String,
+    pub path: RepoPath,
     pub name: String,
-    pub parent_topic_ids: Vec<String>,
+    pub parent_topic_paths: Vec<RepoPath>,
     pub prefix: Prefix,
-    pub repository_id: String,
-    pub repository_is_private: bool,
-    pub repository_owner_id: String,
-    pub resource_path: String,
     pub root: bool,
     pub synonyms: Synonyms,
-    pub time_range: Option<TimeRange>,
+    pub time_range: Option<Timerange>,
 }
 
 pub type TopicEdge = Edge<String, Topic, EmptyFields>;
@@ -41,7 +37,7 @@ impl Topic {
     ) -> Result<ActivityLineItemConnection> {
         let results = ctx
             .data_unchecked::<Repo>()
-            .activity(Some(self.id.clone()), first.unwrap_or(3))
+            .activity(Some(self.path.path.clone()), first.unwrap_or(3))
             .await?;
         conn(after, before, first, last, results)
     }
@@ -74,7 +70,7 @@ impl Topic {
     ) -> Result<TopicConnection> {
         let results = ctx
             .data_unchecked::<Repo>()
-            .child_topics_for_topic(self.id.to_string())
+            .child_topics_for_topic(&self.path)
             .await?;
         conn(after, before, first, last, results)
     }
@@ -85,10 +81,6 @@ impl Topic {
 
     async fn display_name(&self) -> String {
         self.synonyms.display_name("en", &self.name, &self.prefix)
-    }
-
-    async fn id(&self) -> ID {
-        ID(self.id.to_owned())
     }
 
     // TODO: rename to childLinks
@@ -112,7 +104,7 @@ impl Topic {
             |_after, _before, _first, _last| async move {
                 let results = ctx
                     .data::<Repo>()?
-                    .child_links_for_topic(self.id.to_string(), reviewed)
+                    .child_links_for_topic(&self.path, reviewed)
                     .await?;
                 let mut connection = Connection::with_additional_fields(
                     false,
@@ -139,6 +131,10 @@ impl Topic {
         false
     }
 
+    async fn id(&self) -> String {
+        self.path.to_string()
+    }
+
     async fn name(&self) -> &str {
         self.name.as_str()
     }
@@ -161,20 +157,24 @@ impl Topic {
             first,
             last,
             ctx.data_unchecked::<Repo>()
-                .parent_topics_for_topic(self.id.to_string())
+                .parent_topics_for_topic(&self.path)
                 .await?,
         )
     }
 
+    async fn path(&self) -> String {
+        self.path.to_string()
+    }
+
     async fn repository(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
         ctx.data_unchecked::<Repo>()
-            .repository(self.repository_id.clone())
+            .repository_by_prefix(self.path.prefix.clone())
             .await
-            .map_err(|_e| Error::NotFound(format!("repo id {}", self.repository_id)))
+            .map_err(|_e| Error::NotFound(format!("no repo for {}", self.path)))
     }
 
     async fn resource_path(&self) -> &str {
-        self.resource_path.as_str()
+        self.path.path.as_str()
     }
 
     async fn search(
@@ -201,7 +201,7 @@ impl Topic {
         self.synonyms.into_iter().collect_vec()
     }
 
-    async fn time_range(&self) -> Option<TimeRange> {
+    async fn time_range(&self) -> Option<Timerange> {
         self.time_range.clone()
     }
 
@@ -217,9 +217,19 @@ impl Topic {
         if repo.viewer.is_guest() {
             return Ok(false);
         }
-        if self.repository_is_private {
-            return Ok(self.repository_owner_id == repo.viewer.user_id);
+
+        let repository = self
+            .repository(ctx)
+            .await?
+            .ok_or_else(|| Error::NotFound(format!("no repository for topic: {:?}", self.path)))?;
+
+        if let Repository::Fetched {
+            owner_id, private, ..
+        } = repository
+        {
+            Ok(!private || (owner_id == repo.viewer.user_id))
+        } else {
+            Ok(false)
         }
-        Ok(true)
     }
 }

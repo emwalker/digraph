@@ -39,13 +39,6 @@ impl Organization {
         }
     }
 
-    async fn id(&self) -> ID {
-        match self {
-            Self::Wiki => ID(WIKI_ORGANIZATION_ID.to_string()),
-            Self::Selected { id, .. } => id.to_owned(),
-        }
-    }
-
     async fn login(&self) -> &str {
         match self {
             Self::Wiki => "wiki",
@@ -53,10 +46,24 @@ impl Organization {
         }
     }
 
+    async fn id(&self) -> ID {
+        match self {
+            Self::Wiki => ID(WIKI_ORGANIZATION_ID.to_owned()),
+            Self::Selected { id, .. } => id.to_owned(),
+        }
+    }
+
     async fn name(&self) -> &str {
         match self {
             Self::Wiki => "General",
             Self::Selected { name, .. } => name,
+        }
+    }
+
+    async fn path(&self) -> String {
+        match self {
+            Self::Wiki => "wiki".to_string(),
+            Self::Selected { login, .. } => login.to_owned(),
         }
     }
 }

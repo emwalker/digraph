@@ -8,10 +8,10 @@ type Props = {
   orgLogin: string,
   relay: RelayProp,
   toggleForm: () => void,
-  topicId: string,
+  topicPath: string,
 }
 
-const EditTopicContainer = ({ isOpen, orgLogin, topicId, relay, toggleForm }: Props) => (
+const EditTopicContainer = ({ isOpen, orgLogin, topicPath, relay, toggleForm }: Props) => (
   <QueryRenderer
     environment={relay.environment}
     query={graphql`
@@ -20,7 +20,7 @@ const EditTopicContainer = ({ isOpen, orgLogin, topicId, relay, toggleForm }: Pr
         $orgLogin: String!,
         $repoName: String,
         $repoIds: [ID!],
-        $topicId: ID!,
+        $topicPath: String!,
       ) {
         view(
           viewerId: $viewerId,
@@ -28,7 +28,7 @@ const EditTopicContainer = ({ isOpen, orgLogin, topicId, relay, toggleForm }: Pr
           currentRepositoryName: $repoName,
           repositoryIds: $repoIds,
         ) {
-          topic(id: $topicId) {
+          topic(path: $topicPath) {
             ...EditTopicForm_topic
           }
         }
@@ -38,7 +38,7 @@ const EditTopicContainer = ({ isOpen, orgLogin, topicId, relay, toggleForm }: Pr
       orgLogin,
       repoName: null,
       repoIds: [],
-      topicId,
+      topicPath,
       viewerId: '',
     }}
     render={makeEditTopic({ isOpen, orgLogin, toggleForm })}

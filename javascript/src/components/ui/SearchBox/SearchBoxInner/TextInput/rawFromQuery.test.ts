@@ -10,7 +10,7 @@ describe('rawFromQuery', () => {
           {
             node: {
               name: 'BP',
-              resourcePath: '/wiki/topics/321ccdae-d5bc-47c6-ab73-7f4d8a264270',
+              path: '/wiki/topics/321ccdae-d5bc-47c6-ab73-7f4d8a264270',
             },
           },
         ],

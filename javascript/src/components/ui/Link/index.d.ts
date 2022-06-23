@@ -26,7 +26,7 @@ declare class Link extends Component<Props, State> {
     get linkBelongsToCurrentRepo(): boolean;
     get parentTopics(): ({
         readonly displayName: string;
-        readonly resourcePath: string;
+        readonly path: string;
     } | null)[];
     get displayColor(): unknown;
     get showEditButton(): boolean;

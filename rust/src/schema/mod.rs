@@ -1,7 +1,7 @@
 use async_graphql::EmptySubscription;
 use sqlx::postgres::PgPool;
 
-use crate::git::Git;
+use crate::git;
 use crate::prelude::*;
 use crate::repo::Repo;
 mod activity;
@@ -65,14 +65,14 @@ impl Viewer {
 
 #[derive(Clone)]
 pub struct State {
-    pub git: Git,
+    pub git: git::Git,
     pub pool: PgPool,
     pub schema: Schema,
     pub server_secret: String,
 }
 
 impl State {
-    pub fn new(pool: PgPool, schema: Schema, server_secret: String, git: Git) -> Self {
+    pub fn new(pool: PgPool, schema: Schema, server_secret: String, git: git::Git) -> Self {
         Self {
             git,
             pool,
@@ -83,8 +83,8 @@ impl State {
 
     pub fn create_repo(&self, viewer: Viewer) -> Repo {
         Repo::new(
-            self.git.clone(),
             viewer,
+            self.git.clone(),
             self.pool.clone(),
             self.server_secret.clone(),
         )

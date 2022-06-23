@@ -74,7 +74,7 @@ class TopicPage extends Component<Props, State> {
 
   get recentActivityLocation(): LocationType {
     return {
-      pathname: `${this.props.topic.resourcePath}/recent`,
+      pathname: `${this.props.topic.path}/recent`,
       query: {},
       search: '',
       state: {
@@ -87,7 +87,7 @@ class TopicPage extends Component<Props, State> {
 
   get linksToReviewLocation(): LocationType {
     return {
-      pathname: `${this.props.topic.resourcePath}/review`,
+      pathname: `${this.props.topic.path}/review`,
       query: {},
       search: '',
       state: {
@@ -101,7 +101,7 @@ class TopicPage extends Component<Props, State> {
   renderLink = (link: LinkType | null) => (
     link && (
     <Link
-      key={link.id}
+      key={link.path}
       link={link}
       orgLogin={this.props.orgLogin}
       view={this.props.view}
@@ -113,7 +113,7 @@ class TopicPage extends Component<Props, State> {
   renderTopic = (topic: ChildTopicType | null) => (
     topic && (
     <Topic
-      key={topic.id}
+      key={topic.path}
       orgLogin={this.props.orgLogin}
       topic={topic}
       view={this.props.view}
@@ -238,7 +238,7 @@ query TopicPage_query_Query(
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
-  $topicId: ID!,
+  $topicPath: String!,
   $searchString: String,
 ) {
   alerts {
@@ -268,7 +268,7 @@ query TopicPage_query_Query(
     ...Link_view
     ...Topic_view
 
-    topic(id: $topicId) {
+    topic(path: $topicPath) {
       ...TopicPage_topic @arguments(searchString: $searchString)
     }
   }
@@ -281,7 +281,7 @@ export default createFragmentContainer(TopicPage, {
     ) {
       displayName: name
       id
-      resourcePath
+      path
 
       synonyms {
         name
@@ -291,7 +291,8 @@ export default createFragmentContainer(TopicPage, {
         edges {
           node {
             display: name
-            resourcePath
+            id
+            path
           }
         }
       }
@@ -300,6 +301,7 @@ export default createFragmentContainer(TopicPage, {
         edges {
           node {
             id
+            path
             ...Topic_topic
           }
         }
@@ -309,6 +311,7 @@ export default createFragmentContainer(TopicPage, {
         edges {
           node {
             id
+            path
             ...Link_link
           }
         }

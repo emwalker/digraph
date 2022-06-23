@@ -54,7 +54,7 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   onDelete = () => {
-    const input: DeleteInput = { linkId: this.props.link.id }
+    const input: DeleteInput = { linkPath: this.props.link.path }
     deleteLinkMutation(
       this.props.relay.environment,
       input,
@@ -67,8 +67,8 @@ class EditLinkForm extends Component<Props, State> {
     )
   }
 
-  get linkId(): string {
-    return this.props.link.id
+  get linkPath(): string {
+    return this.props.link.path
   }
 
   get selectedTopics(): readonly SelectedTopicType[] {
@@ -80,10 +80,10 @@ class EditLinkForm extends Component<Props, State> {
     this.setState({ title: event.currentTarget.value })
   }
 
-  updateTopics = (parentTopicIds: string[]) => {
+  updateTopics = (parentTopicPaths: string[]) => {
     const input: UpdateTopicsInput = {
-      linkId: this.linkId,
-      parentTopicIds,
+      linkPath: this.linkPath,
+      parentTopicPaths,
     }
     updateLinkTopicsMutation(this.props.relay.environment, input)
   }
@@ -119,14 +119,14 @@ class EditLinkForm extends Component<Props, State> {
         <div>
           <Input
             className="col-12"
-            id={`edit-link-title-${this.linkId}`}
+            id={`edit-link-title-${this.linkPath}`}
             label="Page title"
             onChange={this.updateTitle}
             value={this.state.title}
           />
           <Input
             className="col-12"
-            id={`edit-link-url-${this.linkId}`}
+            id={`edit-link-url-${this.linkPath}`}
             label="Url"
             onChange={this.updateUrl}
             value={this.state.url}
@@ -161,6 +161,7 @@ export default createRefetchContainer(EditLinkForm, {
       count: {type: "Int!", defaultValue: 10}
     ) {
       id
+      path
       title
       url
 
@@ -175,7 +176,7 @@ export default createRefetchContainer(EditLinkForm, {
       selectedTopics: parentTopics(first: 1000) {
         edges {
           node {
-            value: id
+            value: path
             label: displayName
           }
         }
@@ -184,7 +185,7 @@ export default createRefetchContainer(EditLinkForm, {
       availableTopics: availableParentTopics(searchString: $searchString, first: $count) {
         edges {
           node {
-            value: id
+            value: path
             label: displayName
           }
         }
@@ -198,7 +199,7 @@ graphql`
     $orgLogin: String!,
     $repoName: String,
     $repoIds: [ID!],
-    $linkId: ID!,
+    $linkPath: String!,
     $count: Int!,
     $searchString: String,
   ) {
@@ -208,7 +209,7 @@ graphql`
       currentRepositoryName: $repoName,
       repositoryIds: $repoIds,
     ) {
-      link(id: $linkId) {
+      link(path: $linkPath) {
         ...EditLinkForm_link @arguments(count: $count, searchString: $searchString)
       }
     }

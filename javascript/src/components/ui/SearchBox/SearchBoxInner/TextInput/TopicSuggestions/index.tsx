@@ -22,7 +22,7 @@ const query = graphql`
         edges {
           node {
             name
-            link: resourcePath
+            link: path
           }
         }
       }

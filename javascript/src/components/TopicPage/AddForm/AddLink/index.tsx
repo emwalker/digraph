@@ -130,6 +130,7 @@ export default createFragmentContainer(AddLink, {
   topic: graphql`
     fragment AddLink_topic on Topic {
       id
+      path
     }
   `,
 })

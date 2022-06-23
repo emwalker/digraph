@@ -107,7 +107,7 @@ query TopicSearchPage_query_Query(
   $orgLogin: String!
   $repoName: String,
   $repoIds: [ID!],
-  $topicId: ID!,
+  $topicPath: String!,
   $searchString: String!,
 ) {
   view(
@@ -128,7 +128,7 @@ query TopicSearchPage_query_Query(
     ...Link_view
     ...Topic_view
 
-    topic(id: $topicId) {
+    topic(path: $topicPath) {
       ...TopicSearchPage_topic @arguments(searchString: $searchString)
     }
   }
@@ -141,13 +141,14 @@ export default createFragmentContainer(TopicSearchPage, {
     ) {
       id
       name
-      resourcePath
+      path
 
       parentTopics(first: 100) {
         edges {
           node {
             display: name
-            resourcePath
+            id
+            path
           }
         }
       }

@@ -1,8 +1,6 @@
-use async_graphql::dataloader::*;
 use async_graphql::types::ID;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
-use std::collections::HashMap;
 
 use super::{
     fetch_topic,
@@ -17,12 +15,12 @@ use crate::{
     schema::DateTime,
 };
 
-const PUBLIC_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
+const PUBLIC_ROOT_TOPIC_PATH: &str = "/wiki/df63295e-ee02-11e8-9e36-17d56b662bc8";
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
-    id: Uuid,
-    parent_topic_ids: Vec<Uuid>,
+    path: String,
+    parent_topic_paths: Vec<String>,
     repository_id: Uuid,
     reviewed_at: Option<chrono::DateTime<chrono::Utc>>,
     viewer_id: String,
@@ -32,17 +30,15 @@ pub struct Row {
 
 impl Row {
     fn to_link(&self, newly_added: bool) -> Link {
-        let parent_topic_ids = self.parent_topic_ids.iter().map(Uuid::to_string).collect();
-
         let viewer_review = LinkReview {
             reviewed_at: self.reviewed_at.map(DateTime),
             user_id: self.viewer_id.clone(),
         };
 
         Link {
-            id: ID(self.id.to_string()),
+            path: RepoPath::from(&self.path),
             newly_added,
-            parent_topic_ids,
+            parent_topic_paths: self.parent_topic_paths.iter().map(RepoPath::from).collect(),
             title: self.title.to_owned(),
             repository_id: ID(self.repository_id.to_string()),
             url: self.url.to_owned(),
@@ -55,18 +51,18 @@ impl Row {
     }
 }
 
-async fn fetch_link(query_ids: &Vec<String>, pool: &PgPool, link_id: &String) -> Result<Row> {
+async fn fetch_link(query_ids: &Vec<String>, pool: &PgPool, link_path: &RepoPath) -> Result<Row> {
     let query = format!(
         r#"select
         {LINK_FIELDS}
         {LINK_JOINS}
         where l.id = $1::uuid
             and om.user_id = any($2::uuid[])
-        group by l.id"#,
+        group by l.id, o.login"#,
     );
 
     let row = sqlx::query_as::<_, Row>(&query)
-        .bind(link_id)
+        .bind(&link_path.short_id)
         .bind(query_ids)
         .fetch_one(pool)
         .await?;
@@ -74,55 +70,15 @@ async fn fetch_link(query_ids: &Vec<String>, pool: &PgPool, link_id: &String) ->
     Ok(row)
 }
 
-pub struct LinkLoader {
-    viewer: Viewer,
-    pool: PgPool,
-}
-
-impl LinkLoader {
-    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
-        Self { viewer, pool }
-    }
-}
-
-#[async_trait::async_trait]
-impl Loader<String> for LinkLoader {
-    type Value = Link;
-    type Error = Error;
-
-    async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>> {
-        log::debug!("batch links: {:?}", ids);
-
-        let query = format!(
-            r#"select
-            {LINK_FIELDS}
-            {LINK_JOINS}
-            where l.id = any($1::uuid[]) and om.user_id = any($2::uuid[])
-            group by l.id"#,
-        );
-
-        let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(ids)
-            .bind(&self.viewer.query_ids)
-            .fetch_all(&self.pool)
-            .await;
-
-        Ok(rows?
-            .iter()
-            .map(|r| (r.id.to_string(), r.to_link(false)))
-            .collect::<HashMap<_, _>>())
-    }
-}
-
 pub struct FetchChildLinksForTopic {
     limit: i32,
-    parent_topic_id: String,
+    parent_topic_id: RepoPath,
     reviewed: Option<bool>,
     viewer: Viewer,
 }
 
 impl FetchChildLinksForTopic {
-    pub fn new(viewer: Viewer, parent_topic_id: String, reviewed: Option<bool>) -> Self {
+    pub fn new(viewer: Viewer, parent_topic_id: RepoPath, reviewed: Option<bool>) -> Self {
         Self {
             limit: 100,
             parent_topic_id,
@@ -132,13 +88,14 @@ impl FetchChildLinksForTopic {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<Vec<Link>> {
-        log::debug!("fetching linkes for topic: {}", self.parent_topic_id);
+        log::debug!("fetching child links for topic: {}", self.parent_topic_id);
 
         let mut index = 1;
         let mut link_fields: Vec<String> = Vec::new();
         let mut reviewed_joins: Vec<String> = Vec::new();
         let mut reviewed_wheres: Vec<String> = vec!["true".into()];
-        let mut group_by: Vec<String> = vec!["l.id".into(), "l.created_at".into()];
+        let mut group_by: Vec<String> =
+            vec!["l.id".into(), "o.login".into(), "l.created_at".into()];
 
         if let Some(reviewed) = self.reviewed {
             link_fields.push(format!(", ulr.reviewed_at, ${index} viewer_id"));
@@ -187,7 +144,7 @@ impl FetchChildLinksForTopic {
         }
 
         let rows = q
-            .bind(&self.parent_topic_id)
+            .bind(&self.parent_topic_id.short_id)
             .bind(&self.viewer.query_ids)
             .bind(self.limit)
             .fetch_all(pool)
@@ -199,36 +156,36 @@ impl FetchChildLinksForTopic {
 
 pub struct DeleteLink {
     actor: Viewer,
-    link_id: String,
+    link_path: RepoPath,
 }
 
 pub struct DeleteLinkResult {
-    pub deleted_link_id: String,
+    pub deleted_link_path: String,
 }
 
 impl DeleteLink {
-    pub fn new(actor: Viewer, link_id: String) -> Self {
-        Self { actor, link_id }
+    pub fn new(actor: Viewer, link_path: RepoPath) -> Self {
+        Self { actor, link_path }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<DeleteLinkResult> {
         // Ensure that the caller can modify the link
-        fetch_link(&self.actor.mutation_ids, pool, &self.link_id).await?;
+        fetch_link(&self.actor.mutation_ids, pool, &self.link_path).await?;
 
         sqlx::query("delete from links where id = $1::uuid")
-            .bind(&self.link_id)
+            .bind(&self.link_path.short_id)
             .execute(pool)
             .await?;
 
         Ok(DeleteLinkResult {
-            deleted_link_id: self.link_id.clone(),
+            deleted_link_path: self.link_path.to_string(),
         })
     }
 }
 
 pub struct ReviewLink {
     pub actor: Viewer,
-    pub link_id: String,
+    pub link: RepoPath,
     pub reviewed: bool,
 }
 
@@ -237,16 +194,16 @@ pub struct ReviewLinkResult {
 }
 
 impl ReviewLink {
-    pub fn new(actor: Viewer, link_id: String, reviewed: bool) -> Self {
+    pub fn new(actor: Viewer, link: RepoPath, reviewed: bool) -> Self {
         Self {
             actor,
-            link_id,
+            link,
             reviewed,
         }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<ReviewLinkResult> {
-        fetch_link(&self.actor.mutation_ids, pool, &self.link_id).await?;
+        fetch_link(&self.actor.mutation_ids, pool, &self.link).await?;
 
         let reviewed_at = if self.reviewed {
             Some(chrono::Utc::now())
@@ -261,13 +218,13 @@ impl ReviewLink {
             on conflict on constraint user_link_reviews_user_id_link_id_key do
                 update set reviewed_at = $3"#,
         )
-        .bind(&self.link_id)
+        .bind(&self.link.short_id)
         .bind(&self.actor.user_id)
         .bind(reviewed_at)
         .execute(pool)
         .await?;
 
-        let row = fetch_link(&self.actor.mutation_ids, pool, &self.link_id).await?;
+        let row = fetch_link(&self.actor.mutation_ids, pool, &self.link).await?;
         Ok(ReviewLinkResult {
             link: row.to_link(false),
         })
@@ -289,45 +246,45 @@ impl UpdateLinkParentTopics {
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpdateLinkTopicsResult> {
-        let link_id = self.input.link_id.to_string();
+        let link_path = RepoPath::from(&self.input.link_path);
 
         // Verify that we can update the link
-        fetch_link(&self.actor.mutation_ids, pool, &link_id).await?;
+        fetch_link(&self.actor.mutation_ids, pool, &link_path).await?;
 
-        let mut topic_ids = self
+        let mut parent_topic_paths = self
             .input
-            .parent_topic_ids
+            .parent_topic_paths
             .iter()
-            .map(|id| id.to_string())
-            .collect::<Vec<String>>();
+            .map(RepoPath::from)
+            .collect::<Vec<RepoPath>>();
 
-        if topic_ids.is_empty() {
-            topic_ids.push(PUBLIC_ROOT_TOPIC_ID.to_string());
+        if parent_topic_paths.is_empty() {
+            parent_topic_paths.push(RepoPath::from(PUBLIC_ROOT_TOPIC_PATH));
         }
 
         let mut tx = pool.begin().await?;
 
         sqlx::query("delete from link_transitive_closure where child_id = $1::uuid")
-            .bind(&link_id)
+            .bind(&link_path.short_id)
             .execute(&mut tx)
             .await?;
 
         sqlx::query("delete from link_topics where child_id = $1::uuid")
-            .bind(&link_id)
+            .bind(&link_path.short_id)
             .execute(&mut tx)
             .await?;
 
-        for topic_id in &topic_ids {
+        for topic_path in &parent_topic_paths {
             sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
-                .bind(&topic_id)
-                .bind(&link_id)
+                .bind(&topic_path.short_id)
+                .bind(&link_path.short_id)
                 .execute(&mut tx)
                 .await?;
         }
 
         tx.commit().await?;
 
-        let row = fetch_link(&self.actor.mutation_ids, pool, &link_id).await?;
+        let row = fetch_link(&self.actor.mutation_ids, pool, &link_path).await?;
         Ok(UpdateLinkTopicsResult {
             link: row.to_link(false),
         })
@@ -379,11 +336,12 @@ impl UpsertLink {
             on conflict on constraint links_repository_sha1_idx do
                 update set title = $5
 
-            returning id, repository_id, organization_id, (xmax = 0) inserted
+            returning concat('/', o.login, '/', l.id) path,
+                repository_id, organization_id, (xmax = 0) inserted
             "#;
 
-        let (link_id, repository_id, organization_id, inserted) =
-            sqlx::query_as::<_, (Uuid, Uuid, Uuid, bool)>(query)
+        let (link_path, repository_id, organization_id, inserted) =
+            sqlx::query_as::<_, (String, Uuid, Uuid, bool)>(query)
                 .bind(&self.input.organization_login)
                 .bind(&self.input.repository_name)
                 .bind(&url.normalized)
@@ -391,20 +349,20 @@ impl UpsertLink {
                 .bind(&title)
                 .fetch_one(&mut tx)
                 .await?;
-        let (link_id, repository_id, organization_id) = (
-            link_id.to_string(),
+        let (link_path, repository_id, organization_id) = (
+            RepoPath::from(&link_path),
             repository_id.to_string(),
             organization_id.to_string(),
         );
 
-        for topic_id in &self.input.add_parent_topic_ids {
-            let topic_id = topic_id.to_string();
+        for parent_topic_path in &self.input.add_parent_topic_paths {
+            let topic_path = RepoPath::from(parent_topic_path);
             // Verify that we can update the parent topic
-            fetch_topic(&self.actor.mutation_ids, pool, &topic_id).await?;
+            fetch_topic(&self.actor.mutation_ids, pool, &topic_path).await?;
 
             sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
-                .bind(&topic_id)
-                .bind(&link_id)
+                .bind(&topic_path.short_id)
+                .bind(&link_path.short_id)
                 .fetch_one(&mut tx)
                 .await?;
         }
@@ -419,12 +377,13 @@ impl UpsertLink {
         )
         .bind(&organization_id)
         .bind(&repository_id)
-        .bind(&link_id)
+        .bind(&link_path.short_id)
         .bind(&self.actor.user_id)
         .fetch_one(&mut tx)
         .await?;
 
-        for topic_id in &self.input.add_parent_topic_ids {
+        for topic_path in &self.input.add_parent_topic_paths {
+            let topic_path = RepoPath::from(topic_path);
             sqlx::query(
                 r#"insert into user_link_topics
                     (user_link_id, topic_id, action)
@@ -432,7 +391,7 @@ impl UpsertLink {
                 "#,
             )
             .bind(&user_link_id)
-            .bind(topic_id.as_str())
+            .bind(topic_path.short_id)
             .execute(&mut tx)
             .await?;
         }
@@ -445,7 +404,7 @@ impl UpsertLink {
 
         tx.commit().await?;
 
-        let row = fetch_link(&self.actor.mutation_ids, pool, &link_id.to_string()).await?;
+        let row = fetch_link(&self.actor.mutation_ids, pool, &link_path).await?;
         Ok(UpsertLinkResult {
             alerts: vec![],
             link: Some(row.to_link(inserted)),

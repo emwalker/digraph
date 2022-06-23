@@ -18,10 +18,12 @@ declare class TopicPage extends Component<Props, State> {
     static getDerivedStateFromProps: (nextProps: Props) => {};
     get links(): ({
         readonly id: string;
+        readonly path: string;
         readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Link_link">;
     } | null)[];
     get topics(): ({
         readonly id: string;
+        readonly path: string;
         readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Topic_topic">;
     } | null)[];
     get synonyms(): readonly {

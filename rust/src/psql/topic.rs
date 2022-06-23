@@ -1,5 +1,5 @@
 use async_graphql::dataloader::*;
-use async_graphql::ID;
+
 use serde_json::json;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
@@ -9,42 +9,32 @@ use super::queries::{TopicQuery, TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
 use crate::http::repo_url::Url;
 use crate::prelude::*;
 use crate::schema::{
-    alert, Alert, AlertType, DateTime, Prefix, SearchResultItem, Synonyms, TimeRange,
-    TimeRangePrefixFormat, Topic, UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
+    alert, Alert, AlertType, DateTime, Prefix, SearchResultItem, Synonyms, TimeRangePrefixFormat,
+    Timerange, Topic, UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
 };
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
-    pub id: Uuid,
+    pub path: String,
     pub name: String,
-    pub parent_topic_ids: Vec<Uuid>,
-    pub repository_id: Uuid,
-    pub repository_is_private: bool,
-    pub repository_owner_id: Uuid,
-    pub resource_path: String,
+    pub parent_topic_paths: Vec<String>,
     pub root: bool,
     pub synonyms: serde_json::Value,
-    pub timerange_id: Option<Uuid>,
     pub timerange_prefix_format: Option<String>,
     pub timerange_starts_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 impl Row {
     pub fn to_topic(&self) -> Topic {
-        let parent_topic_ids = self.parent_topic_ids.iter().map(Uuid::to_string).collect();
         let synonyms = Synonyms::from_json(&self.synonyms);
         let time_range = self.time_range();
         let prefix = Prefix::from(&time_range);
 
         Topic {
-            id: self.id.to_string(),
+            path: RepoPath::from(&self.path),
             name: self.name.to_owned(),
-            parent_topic_ids,
+            parent_topic_paths: self.parent_topic_paths.iter().map(RepoPath::from).collect(),
             prefix,
-            repository_id: self.repository_id.to_string(),
-            repository_is_private: self.repository_is_private,
-            repository_owner_id: self.repository_owner_id.to_string(),
-            resource_path: self.resource_path.to_owned(),
             root: self.root,
             synonyms,
             time_range,
@@ -55,13 +45,12 @@ impl Row {
         SearchResultItem::Topic(self.to_topic())
     }
 
-    pub fn time_range(&self) -> Option<TimeRange> {
+    pub fn time_range(&self) -> Option<Timerange> {
         match (
-            self.timerange_id,
             self.timerange_starts_at,
             self.timerange_prefix_format.clone(),
         ) {
-            (Some(id), Some(starts_at), Some(prefix_format)) => {
+            (Some(starts_at), Some(prefix_format)) => {
                 let prefix_format = match prefix_format.as_str() {
                     "NONE" => TimeRangePrefixFormat::None,
                     "START_YEAR" => TimeRangePrefixFormat::StartYear,
@@ -69,8 +58,7 @@ impl Row {
                     _ => TimeRangePrefixFormat::None,
                 };
 
-                Some(TimeRange {
-                    id: ID(id.to_string()),
+                Some(Timerange {
                     starts_at: DateTime(starts_at),
                     ends_at: None,
                     prefix_format,
@@ -81,7 +69,7 @@ impl Row {
     }
 }
 
-pub async fn fetch_topic(query_ids: &Vec<String>, pool: &PgPool, topic_id: &String) -> Result<Row> {
+pub async fn fetch_topic(query_ids: &Vec<String>, pool: &PgPool, topic_path: &RepoPath) -> Result<Row> {
     let query = format!(
         r#"select
         {TOPIC_FIELDS}
@@ -92,7 +80,7 @@ pub async fn fetch_topic(query_ids: &Vec<String>, pool: &PgPool, topic_id: &Stri
     );
 
     let row = sqlx::query_as::<_, Row>(&query)
-        .bind(&topic_id)
+        .bind(&topic_path.short_id)
         .bind(query_ids)
         .fetch_one(pool)
         .await?;
@@ -123,28 +111,28 @@ impl Loader<String> for TopicLoader {
 
         Ok(topics
             .iter()
-            .map(|t| (t.id.to_string(), t.clone()))
+            .map(|t| (t.path.short_id.to_string(), t.clone()))
             .collect::<HashMap<_, _>>())
     }
 }
 
 pub struct FetchChildTopicsForTopic {
     viewer: Viewer,
-    parent_topic_id: String,
+    parent_topic: RepoPath,
     limit: i32,
 }
 
 impl FetchChildTopicsForTopic {
-    pub fn new(viewer: Viewer, parent_topic_id: String) -> Self {
+    pub fn new(viewer: Viewer, parent_topic: RepoPath) -> Self {
         Self {
             viewer,
-            parent_topic_id,
+            parent_topic,
             limit: 100,
         }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<Vec<Topic>> {
-        log::debug!("fetching linkes for topic: {}", self.parent_topic_id);
+        log::debug!("fetching child topics for topic: {}", self.parent_topic);
 
         let query = format!(
             r#"
@@ -160,7 +148,7 @@ impl FetchChildTopicsForTopic {
         );
 
         let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(&self.parent_topic_id)
+            .bind(&self.parent_topic.short_id)
             .bind(&self.viewer.query_ids)
             .bind(self.limit)
             .fetch_all(pool)
@@ -171,41 +159,40 @@ impl FetchChildTopicsForTopic {
 
 pub struct DeleteTopic {
     actor: Viewer,
-    topic_id: String,
+    topic: RepoPath,
 }
 
 pub struct DeleteTopicResult {
     pub alerts: Vec<Alert>,
-    pub deleted_topic_id: Option<String>,
+    pub deleted_topic_path: Option<String>,
 }
 
 impl DeleteTopic {
-    pub fn new(actor: Viewer, topic_id: String) -> Self {
-        Self { actor, topic_id }
+    pub fn new(actor: Viewer, topic: RepoPath) -> Self {
+        Self { actor, topic }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<DeleteTopicResult> {
-        log::info!("attempting to delete topic: {}", self.topic_id);
-        let topic_id = self.topic_id.clone();
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_id).await?;
+        log::info!("attempting to delete topic: {}", self.topic);
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic).await?;
         let mut alerts: Vec<Alert> = vec![];
 
         if topic.root {
             log::warn!(
                 "attempting to delete root topic, bailing: {}",
-                self.topic_id
+                self.topic
             );
             alerts.push(alert::warning("Cannot delete root topic".into()));
             return Ok(DeleteTopicResult {
                 alerts,
-                deleted_topic_id: None,
+                deleted_topic_path: None,
             });
         }
 
         let parent_topic_ids: Vec<String> = sqlx::query_as::<_, (Uuid,)>(
             r#"select parent_id from topic_topics where child_id = $1::uuid"#,
         )
-        .bind(&topic_id)
+        .bind(&self.topic.short_id)
         .fetch_all(pool)
         .await?
         .iter()
@@ -215,7 +202,7 @@ impl DeleteTopic {
         let child_topic_ids: Vec<String> = sqlx::query_as::<_, (Uuid,)>(
             r#"select child_id from topic_topics where parent_id = $1::uuid"#,
         )
-        .bind(&topic_id)
+        .bind(&self.topic.short_id)
         .fetch_all(pool)
         .await?
         .iter()
@@ -225,7 +212,7 @@ impl DeleteTopic {
         let child_link_ids: Vec<String> = sqlx::query_as::<_, (Uuid,)>(
             r#"select child_id from link_topics where parent_id = $1::uuid"#,
         )
-        .bind(&topic_id)
+        .bind(&self.topic.short_id)
         .fetch_all(pool)
         .await?
         .iter()
@@ -253,7 +240,7 @@ impl DeleteTopic {
         }
 
         sqlx::query("delete from topics where id = $1::uuid")
-            .bind(&topic_id)
+            .bind(&self.topic.short_id)
             .execute(&mut tx)
             .await?;
 
@@ -261,36 +248,33 @@ impl DeleteTopic {
 
         Ok(DeleteTopicResult {
             alerts,
-            deleted_topic_id: Some(topic_id),
+            deleted_topic_path: Some(self.topic.to_string()),
         })
     }
 }
 
 pub struct DeleteTopicTimeRange {
     actor: Viewer,
-    topic_id: String,
+    topic: RepoPath,
 }
 
 pub struct DeleteTopicTimeRangeResult {
     pub topic: Topic,
-    pub deleted_time_range_id: Option<String>,
 }
 
 impl DeleteTopicTimeRange {
-    pub fn new(actor: Viewer, topic_id: String) -> Self {
-        Self { actor, topic_id }
+    pub fn new(actor: Viewer, topic: RepoPath) -> Self {
+        Self { actor, topic }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<DeleteTopicTimeRangeResult> {
-        log::info!("deleting topic time range: {}", self.topic_id);
+        log::info!("deleting topic time range: {}", self.topic);
 
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic_id)
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic)
             .await?
             .to_topic();
-        let mut deleted_time_range_id = None;
 
-        if let Some(time_range) = topic.time_range {
-            deleted_time_range_id = Some(time_range.id.to_string());
+        if topic.time_range.is_some() {
             let mut tx = pool.begin().await?;
             let name = topic
                 .synonyms
@@ -307,33 +291,34 @@ impl DeleteTopicTimeRange {
                 "#,
             )
             .bind(&name)
-            .bind(&self.topic_id)
+            .bind(&self.topic.short_id)
             .execute(&mut tx)
             .await?;
 
-            sqlx::query("delete from timeranges where id = $1::uuid")
-                .bind(&time_range.id.to_string())
-                .execute(&mut tx)
-                .await?;
+            sqlx::query(
+                r#"delete from timeranges tr
+                    using topics t
+                    where t.timerange_id = tr.id and t = $1::uuid"#,
+            )
+            .bind(&self.topic.short_id)
+            .execute(&mut tx)
+            .await?;
 
             tx.commit().await?;
         }
 
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic_id)
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic)
             .await?
             .to_topic();
 
-        Ok(DeleteTopicTimeRangeResult {
-            topic,
-            deleted_time_range_id,
-        })
+        Ok(DeleteTopicTimeRangeResult { topic })
     }
 }
 
 pub struct UpdateTopicParentTopics {
     actor: Viewer,
-    topic_id: String,
-    parent_topic_ids: Vec<String>,
+    topic: RepoPath,
+    parent_topics: Vec<RepoPath>,
 }
 
 pub struct UpdateTopicParentTopicsResult {
@@ -342,24 +327,24 @@ pub struct UpdateTopicParentTopicsResult {
 }
 
 impl UpdateTopicParentTopics {
-    pub fn new(actor: Viewer, topic_id: String, parent_topic_ids: Vec<String>) -> Self {
+    pub fn new(actor: Viewer, topic: RepoPath, parent_topics: Vec<RepoPath>) -> Self {
         Self {
             actor,
-            parent_topic_ids,
-            topic_id,
+            parent_topics,
+            topic,
         }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<UpdateTopicParentTopicsResult> {
-        let topic_id = &self.topic_id;
+        let topic_path = &self.topic;
 
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_path)
             .await?
             .to_topic();
         let before = topic
-            .parent_topic_ids
+            .parent_topic_paths
             .iter()
-            .map(String::to_owned)
+            .map(|p| p.short_id.to_owned())
             .collect::<HashSet<String>>();
 
         let (update, mut alerts) = self.valid_parent_topic_ids(&topic, pool).await?;
@@ -381,19 +366,19 @@ impl UpdateTopicParentTopics {
         let mut tx = pool.begin().await?;
 
         sqlx::query("delete from topic_transitive_closure where child_id = $1::uuid")
-            .bind(topic_id)
+            .bind(&topic_path.short_id)
             .execute(&mut tx)
             .await?;
 
         sqlx::query("delete from topic_topics where child_id = $1::uuid")
-            .bind(topic_id)
+            .bind(&topic_path.short_id)
             .execute(&mut tx)
             .await?;
 
         for parent_topic_id in &update {
             sqlx::query("select add_topic_to_topic($1::uuid, $2::uuid)")
                 .bind(parent_topic_id.as_str())
-                .bind(&topic_id)
+                .bind(&topic_path.short_id)
                 .execute(&mut tx)
                 .await?;
         }
@@ -414,7 +399,7 @@ impl UpdateTopicParentTopics {
 
         tx.commit().await?;
 
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_path)
             .await?
             .to_topic();
         Ok(UpdateTopicParentTopicsResult { topic, alerts })
@@ -425,17 +410,17 @@ impl UpdateTopicParentTopics {
         topic: &Topic,
         pool: &PgPool,
     ) -> Result<(HashSet<String>, Vec<Alert>)> {
-        let topic_id = topic.id.to_string();
+        let topic_id = &topic.path.short_id;
         let mut valid: HashSet<String> = HashSet::new();
         let mut alerts = vec![];
         let desired = self
-            .parent_topic_ids
+            .parent_topics
             .iter()
-            .map(String::to_owned)
+            .map(RepoPath::to_string)
             .collect::<HashSet<String>>();
 
         for parent_topic_id in &desired {
-            if parent_topic_id == &topic.id {
+            if parent_topic_id == &topic.path.short_id {
                 let alert = alert::warning("cannot add a topic to itself".to_string());
                 alerts.push(alert);
                 continue;
@@ -507,7 +492,7 @@ impl UpsertTopic {
 
         let mut tx = pool.begin().await?;
 
-        let (topic_id,) = sqlx::query_as::<_, (Uuid,)>(
+        let (topic_path,) = sqlx::query_as::<_, (String,)>(
             r#"insert
                 into topics
                     (organization_id, repository_id, name, synonyms)
@@ -523,7 +508,7 @@ impl UpsertTopic {
                 on conflict on constraint topics_repository_name_idx do
                     -- No-op to ensure that an id is returned
                     update set name = $3
-                returning id"#,
+                returning concat('/', o.login, '/', t.id) path"#,
         )
         .bind(&self.input.organization_login)
         .bind(&self.input.repository_name)
@@ -532,43 +517,42 @@ impl UpsertTopic {
         .bind(&synonyms)
         .fetch_one(&mut tx)
         .await?;
-        let topic_id = topic_id.to_string();
+        let topic_path = RepoPath::from(&topic_path);
 
-        for parent_topic_id in &self.input.topic_ids {
-            let parent_topic_id = parent_topic_id.to_string();
+        for parent_topic_path in &self.input.parent_topic_paths {
+            let parent_topic_path = RepoPath::from(parent_topic_path);
             // Ensure that we can update the parent topic
-            fetch_topic(&self.actor.mutation_ids, pool, &parent_topic_id).await?;
+            fetch_topic(&self.actor.mutation_ids, pool, &parent_topic_path).await?;
 
-            let parent_topic_id = parent_topic_id.to_string();
             let (count,) = sqlx::query_as::<_, (i64,)>(
                 r#"select count(*) match_count
                     from topic_down_set($1::uuid) tds
                     where tds.child_id = $2::uuid"#,
             )
-            .bind(&parent_topic_id)
-            .bind(&topic_id)
+            .bind(&parent_topic_path.short_id)
+            .bind(&topic_path.short_id)
             .fetch_one(&mut tx)
             .await?;
 
             if count.is_positive() {
                 let alert = alert::warning(format!(
                     r#""{}" is a descendant of "{}" and cannot be added as a parent topic"#,
-                    parent_topic_id, name,
+                    parent_topic_path, name,
                 ));
                 alerts.push(alert);
                 continue;
             }
 
             sqlx::query("select add_topic_to_topic($1::uuid, $2::uuid)")
-                .bind(parent_topic_id.as_str())
-                .bind(&topic_id)
+                .bind(&parent_topic_path.short_id)
+                .bind(&topic_path.short_id)
                 .fetch_one(&mut tx)
                 .await?;
         }
 
         tx.commit().await?;
 
-        let row = fetch_topic(&self.actor.mutation_ids, pool, &topic_id.to_string()).await?;
+        let row = fetch_topic(&self.actor.mutation_ids, pool, &topic_path).await?;
 
         Ok(UpsertTopicResult {
             alerts,
@@ -584,7 +568,7 @@ pub struct UpsertTopicTimeRange {
 
 pub struct UpsertTopicTimeRangeResult {
     pub alerts: Vec<Alert>,
-    pub time_range: TimeRange,
+    pub time_range: Timerange,
     pub topic: Topic,
 }
 
@@ -596,27 +580,26 @@ impl UpsertTopicTimeRange {
     pub async fn call(&self, pool: &PgPool) -> Result<UpsertTopicTimeRangeResult> {
         log::info!("upserting time range for topic: {:?}", self.input);
 
-        let topic_id = self.input.topic_id.to_string();
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_id)
+        let topic_path = RepoPath::from(&self.input.topic_path);
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_path)
             .await?
             .to_topic();
         let prefix_format = format!("{}", self.input.prefix_format);
         let mut tx = pool.begin().await?;
 
-        let time_range_id = if let Some(time_range) = &topic.time_range {
+        if topic.time_range.is_some() {
             sqlx::query(
-                r#"
-                update timeranges set starts_at = $1, prefix_format = $2
-                    where id = $3::uuid
+                r#"update timeranges tr
+                    set tr.starts_at = $1, tr.prefix_format = $2
+                from topics t
+                where tr.id = t.timerange_id and t.id = $3::uuid
                 "#,
             )
             .bind(&self.input.starts_at.0)
             .bind(&prefix_format)
-            .bind(&time_range.id.to_string())
+            .bind(&topic_path.short_id)
             .execute(&mut tx)
             .await?;
-
-            time_range.id.to_string()
         } else {
             let row = sqlx::query_as::<_, (Uuid,)>(
                 r#"
@@ -633,15 +616,12 @@ impl UpsertTopicTimeRange {
 
             sqlx::query("update topics set timerange_id = $1::uuid where id = $2::uuid")
                 .bind(&time_range_id)
-                .bind(&topic_id)
+                .bind(&topic_path.short_id)
                 .execute(&mut tx)
                 .await?;
-
-            time_range_id
         };
 
-        let time_range = TimeRange {
-            id: ID(time_range_id),
+        let time_range = Timerange {
             starts_at: self.input.starts_at.clone(),
             ends_at: None,
             prefix_format: self.input.prefix_format,
@@ -657,14 +637,14 @@ impl UpsertTopicTimeRange {
 
         sqlx::query("update topics set name = $1 where id = $2::uuid")
             .bind(&name)
-            .bind(&topic_id)
+            .bind(&topic_path.short_id)
             .execute(&mut tx)
             .await?;
 
         tx.commit().await?;
 
         // Reload to pick up changes
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_id)
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_path)
             .await?
             .to_topic();
 

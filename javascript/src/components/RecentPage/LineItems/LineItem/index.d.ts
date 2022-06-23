@@ -1,4 +1,3 @@
-/// <reference types="react" />
 declare type Props = {
     item: {
         createdAt: unknown;

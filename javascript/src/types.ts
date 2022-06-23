@@ -1,4 +1,7 @@
-export type FoundRelayVariables = {}
+export type FoundRelayVariables = {
+  topicId?: string,
+  orgLogin?: string,
+}
 
 export type ReturnType<
   T extends (...args: any) => any,

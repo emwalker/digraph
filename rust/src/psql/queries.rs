@@ -5,18 +5,17 @@ use crate::prelude::*;
 use crate::schema::{SearchResultItem, Topic, Viewer};
 
 pub const TOPIC_FIELDS: &str = r#"
-    t.id,
+    concat('/', o.login, '/', t.id) path,
     t.name,
-    concat('/', o.login, '/topics/', t.id) resource_path,
     t.synonyms,
     t.repository_id,
     t.root,
-    (r.system and (r.name = 'system:default')) repository_is_private,
     r.owner_id repository_owner_id,
     tr.starts_at timerange_starts_at,
     tr.id timerange_id,
     tr.prefix_format timerange_prefix_format,
-    array_remove(array_agg(distinct parent_topics.parent_id), null) parent_topic_ids
+    array_remove(array_agg(distinct concat('/', o.login, '/', parent_topics.parent_id)), null)
+        parent_topic_paths
 "#;
 
 pub const TOPIC_JOINS: &str = r#"
@@ -33,21 +32,22 @@ pub const TOPIC_GROUP_BY: &str = r#"
 "#;
 
 pub const LINK_FIELDS: &str = r#"
-    l.id,
+    concat('/', o.login, '/', l.id) path,
     l.title,
     l.url,
     l.repository_id,
     null reviewed_at,
     -- Guest user
     '11a13e26-ee64-4c31-8af1-d1e953899ee0' viewer_id,
-    array_remove(array_agg(distinct parent_topics.parent_id), null)
-        parent_topic_ids
+    array_remove(array_agg(distinct concat('/', o.login, '/', parent_topics.parent_id)), null)
+        parent_topic_paths
 "#;
 
 pub const LINK_JOINS: &str = r#"
     from links l
     join repositories r on r.id = l.repository_id
     join organization_members om on om.organization_id = r.organization_id
+    join organizations o on o.id = l.organization_id
     left join link_topics parent_topics on l.id = parent_topics.child_id
 "#;
 
@@ -288,7 +288,7 @@ impl SearchQuery {
             {LINK_JOINS}
             {join_clauses}
             where {where_clauses}
-            group by l.id
+            group by l.id, o.login
             order by l.created_at desc
             limit ${index}"#
         )
@@ -336,7 +336,7 @@ impl SearchQuery {
 
     // FIXME: Account for the org and repo as well?
     fn topic_ids(&self) -> Vec<String> {
-        let mut topic_ids: Vec<String> = vec![self.parent_topic.id.to_string()];
+        let mut topic_ids: Vec<String> = vec![self.parent_topic.path.short_id.clone()];
         topic_ids.extend(self.query_spec.topics.iter().map(TopicSpec::topic_id));
         topic_ids
     }

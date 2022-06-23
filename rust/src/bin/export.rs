@@ -10,7 +10,8 @@ use std::path::{Path, PathBuf};
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    Link, LinkMetadata, ParentTopic, RepoPath, Synonym, Topic, TopicChild, TopicMetadata,
+    DataRoot, Link, LinkMetadata, ParentTopic, Synonym, Timerange, TimerangePrefixFormat, Topic,
+    TopicChild, TopicMetadata,
 };
 use digraph::prelude::*;
 
@@ -26,8 +27,8 @@ fn parse_args() -> Opts {
 
     let mut opts = Options::new();
     opts.reqopt(
-        "o",
-        "output",
+        "d",
+        "data-dir",
         "root directory of a repo to export to",
         "DIRNAME",
     );
@@ -38,10 +39,8 @@ fn parse_args() -> Opts {
             panic!("{}", f.to_string())
         }
     };
-    let dirname = matches
-        .opt_str("o")
-        .expect("expected a repo root directory");
-    let root = Path::new(&dirname);
+    let data_directory = matches.opt_str("d").expect("expected a data directory");
+    let root = Path::new(&data_directory);
 
     Opts {
         root: PathBuf::from(root),
@@ -51,7 +50,7 @@ fn parse_args() -> Opts {
 #[derive(Clone, Deserialize, FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SynonymRow {
-    added_timestamp: DateTime<Utc>,
+    added: DateTime<Utc>,
     locale: String,
     name: String,
 }
@@ -59,7 +58,7 @@ struct SynonymRow {
 impl From<&SynonymRow> for Synonym {
     fn from(row: &SynonymRow) -> Self {
         Self {
-            added_timestamp: row.added_timestamp,
+            added: row.added,
             locale: row.locale.clone(),
             name: row.name.clone(),
         }
@@ -68,27 +67,30 @@ impl From<&SynonymRow> for Synonym {
 
 #[derive(FromRow)]
 struct TopicMetadataRow {
-    added_timestamp: DateTime<Utc>,
-    id: String,
+    added: DateTime<Utc>,
+    path: String,
     name: String,
+    root: bool,
     synonyms: serde_json::Value,
+    timerange_starts: Option<DateTime<Utc>>,
+    timerange_prefix_format: Option<String>,
 }
 
 #[derive(Clone, FromRow)]
 struct ParentTopicRow {
-    id: String,
+    path: String,
 }
 
 impl From<&ParentTopicRow> for ParentTopic {
     fn from(row: &ParentTopicRow) -> Self {
-        Self { id: row.id.clone() }
+        Self { path: row.path.clone() }
     }
 }
 
 #[derive(Clone, FromRow)]
 struct LinkMetadataRow {
-    added_timestamp: DateTime<Utc>,
-    id: String,
+    added: DateTime<Utc>,
+    path: String,
     link_id: String,
     title: String,
     url: String,
@@ -97,8 +99,8 @@ struct LinkMetadataRow {
 impl From<&LinkMetadataRow> for LinkMetadata {
     fn from(row: &LinkMetadataRow) -> Self {
         Self {
-            added_timestamp: row.added_timestamp,
-            id: row.id.clone(),
+            added: row.added,
+            path: row.path.clone(),
             title: row.title.clone(),
             url: row.url.clone(),
         }
@@ -108,21 +110,21 @@ impl From<&LinkMetadataRow> for LinkMetadata {
 #[derive(FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct TopicChildRow {
-    added_timestamp: DateTime<Utc>,
-    id: String,
+    added: DateTime<Utc>,
+    path: String,
 }
 
 impl From<&TopicChildRow> for TopicChild {
     fn from(row: &TopicChildRow) -> Self {
         Self {
-            added_timestamp: row.added_timestamp,
-            id: row.id.clone(),
+            added: row.added,
+            path: row.path.clone(),
         }
     }
 }
 
-fn write_object<T: Serialize>(root: &RepoPath, id: &str, object: T) -> Result<()> {
-    let filename = root.path(id)?;
+fn write_object<T: Serialize>(root: &DataRoot, id: &str, object: T) -> Result<()> {
+    let filename = root.file_path(id)?;
     let dest = filename.parent().expect("expected a parent directory");
     fs::create_dir_all(&dest).ok();
     let s = serde_yaml::to_string(&object)?;
@@ -131,39 +133,49 @@ fn write_object<T: Serialize>(root: &RepoPath, id: &str, object: T) -> Result<()
     Ok(())
 }
 
-async fn save_topics(root: &RepoPath, pool: &PgPool) -> Result<()> {
+async fn save_topics(root: &DataRoot, pool: &PgPool) -> Result<()> {
     log::info!("saving topics");
 
     let rows = sqlx::query_as::<_, TopicMetadataRow>(
         r#"select
             t.name,
-            concat('/wiki/', t.id) id,
+            concat('/', o.login, '/', t.id) path,
             t.synonyms,
-            t.created_at added_timestamp
-        from topics t"#,
+            t.created_at added,
+            t.root,
+            tr.starts_at timerange_starts,
+            tr.prefix_format timerange_prefix_format
+
+        from topics t
+        join organizations o on o.id = t.organization_id
+        left join timeranges tr on tr.id = t.timerange_id"#,
     )
     .fetch_all(pool)
     .await?;
 
-    for metadata in &rows {
-        let topic_id = metadata.id.split('/').last().expect("expected a uuid");
+    for meta in &rows {
+        let topic_path = RepoPath::from(&meta.path);
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
-                concat('/wiki/', tt.parent_id) id
+                concat('/', o.login, '/', tt.parent_id) path
             from topic_topics tt
+            join topics t on t.id = tt.parent_id
+            join organizations o on o.id = t.organization_id
+            left join timeranges tr on tr.id = t.timerange_id
             where tt.child_id = $1::uuid"#,
         )
-        .bind(&topic_id)
+        .bind(&topic_path.short_id)
         .fetch_all(pool)
         .await?;
 
         let children = sqlx::query_as::<_, TopicChildRow>(
             r#"(
                 select
-                    t.created_at added_timestamp,
-                    concat('/wiki/', tt.child_id) id
+                    t.created_at added,
+                    concat('/', o.login, '/', tt.child_id) path
                 from topic_topics tt
                 join topics t on t.id = tt.child_id
+                join organizations o on o.id = t.organization_id
                 where tt.parent_id = $1::uuid
                 order by t.name
             )
@@ -172,70 +184,83 @@ async fn save_topics(root: &RepoPath, pool: &PgPool) -> Result<()> {
 
             (
                 select
-                    l.created_at added_timestamp,
-                    concat('/wiki/', encode(digest(l.url, 'sha256'), 'hex')) id
+                    l.created_at added,
+                    concat('/', o.login, '/', l.id) path
                 from link_topics tt
                 join links l on l.id = tt.child_id
+                join organizations o on o.id = l.organization_id
                 where tt.parent_id = $1::uuid
                 order by l.created_at desc
             )"#,
         )
-        .bind(&topic_id)
+        .bind(&topic_path.short_id)
         .fetch_all(pool)
         .await?;
 
         let deserialized =
-            serde_json::from_value::<Vec<HashMap<String, String>>>(metadata.synonyms.clone())?;
+            serde_json::from_value::<Vec<HashMap<String, String>>>(meta.synonyms.clone())?;
 
         let mut synonyms: Vec<SynonymRow> = vec![];
         for s in &deserialized {
             synonyms.push(SynonymRow {
-                added_timestamp: metadata.added_timestamp,
+                added: meta.added,
                 locale: s.get("Locale").unwrap_or(&String::from("en")).to_string(),
-                name: s.get("Name").unwrap_or(&metadata.name).to_string(),
+                name: s.get("Name").unwrap_or(&meta.name).to_string(),
             });
         }
+
+        let timerange = match (&meta.timerange_starts, &meta.timerange_prefix_format) {
+            (Some(starts), Some(prefix_format)) => Some(Timerange {
+                starts: starts.to_owned(),
+                prefix_format: TimerangePrefixFormat::from(prefix_format.as_ref()),
+            }),
+            _ => None,
+        };
 
         let topic = Topic {
             api_version: API_VERSION.to_string(),
             kind: "Topic".to_string(),
             metadata: TopicMetadata {
-                id: metadata.id.clone(),
-                added_timestamp: metadata.added_timestamp,
+                added: meta.added,
+                path: topic_path.path,
+                root: meta.root,
                 synonyms: synonyms.iter().map(Synonym::from).collect(),
+                timerange,
             },
             parent_topics: parent_topics.iter().map(ParentTopic::from).collect(),
             children: children.iter().map(TopicChild::from).collect(),
         };
 
-        let id = metadata.id.split('/').last().expect("expected an id");
-        write_object(root, id, topic)?;
+        write_object(root, &meta.path, topic)?;
     }
 
     Ok(())
 }
 
-async fn save_links(root: &RepoPath, pool: &PgPool) -> Result<()> {
+async fn save_links(root: &DataRoot, pool: &PgPool) -> Result<()> {
     log::info!("saving links");
 
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
         r#"select
-            l.created_at added_timestamp,
-            concat('/wiki/', encode(digest(l.url, 'sha256'), 'hex')) id,
+            l.created_at added,
+            concat('/', o.login, '/', l.id) path,
             l.id::varchar link_id,
             l.title,
             l.url
-        from links l"#,
+        from links l
+        join organizations o on o.id = l.organization_id"#,
     )
     .fetch_all(pool)
     .await?;
 
-    for metadata in rows {
-        let link_id = metadata.link_id.clone();
+    for meta in rows {
+        let link_id = meta.link_id.clone();
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
-                concat('/wiki/', lt.parent_id) id
+                concat('/', o.login, '/', lt.parent_id) path
             from link_topics lt
+            join topics t on t.id = lt.parent_id
+            join organizations o on o.id = t.organization_id
             where lt.child_id = $1::uuid"#,
         )
         .bind(&link_id)
@@ -245,12 +270,11 @@ async fn save_links(root: &RepoPath, pool: &PgPool) -> Result<()> {
         let link = Link {
             api_version: API_VERSION.to_string(),
             kind: "Link".to_string(),
-            metadata: LinkMetadata::from(&metadata),
+            metadata: LinkMetadata::from(&meta),
             parent_topics: parent_topics.iter().map(ParentTopic::from).collect(),
         };
 
-        let id = metadata.id.split('/').last().expect("expected an id");
-        write_object(root, id, link)?;
+        write_object(root, &meta.path, link)?;
     }
 
     Ok(())
@@ -266,7 +290,7 @@ async fn main() -> Result<()> {
     if !opts.root.exists() {
         return Err(Error::NotFound(format!("{:?}", opts.root)));
     }
-    let root = RepoPath::new(opts.root, None);
+    let root = DataRoot::new(opts.root);
 
     save_topics(&root, &pool).await?;
     save_links(&root, &pool).await?;

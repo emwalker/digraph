@@ -111,6 +111,7 @@ export default createFragmentContainer(Link, {
       id
       loading
       newlyAdded
+      path
       title
       url
 
@@ -123,7 +124,7 @@ export default createFragmentContainer(Link, {
         edges {
           node {
             displayName: name
-            resourcePath
+            path
           }
         }
       }

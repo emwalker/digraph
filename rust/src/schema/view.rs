@@ -57,7 +57,8 @@ impl View {
     }
 
     async fn link(&self, ctx: &Context<'_>, id: ID) -> Result<Option<Link>> {
-        ctx.data_unchecked::<Repo>().link(id.to_string()).await
+        let path = RepoPath::from(&id.to_string());
+        ctx.data_unchecked::<Repo>().link(&path).await
     }
 
     async fn link_count(&self, ctx: &Context<'_>) -> Result<i64> {
@@ -73,9 +74,9 @@ impl View {
     async fn topic(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Topic Id")] id: ID,
+        path: String,
     ) -> Result<Option<Topic>> {
-        ctx.data_unchecked::<Repo>().topic(id.to_string()).await
+        ctx.data_unchecked::<Repo>().topic(&RepoPath::from(&path)).await
     }
 
     async fn topic_count(&self, ctx: &Context<'_>) -> Result<i64> {

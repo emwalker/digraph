@@ -43,7 +43,7 @@ query RecentPage_recent_Query(
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
-  $topicId: ID!,
+  $topicPath: String!,
 ) {
   view(
     viewerId: $viewerId,
@@ -51,7 +51,7 @@ query RecentPage_recent_Query(
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
-    topic(id: $topicId) {
+    topic(path: $topicPath) {
       ...LineItems_topic
     }
   }

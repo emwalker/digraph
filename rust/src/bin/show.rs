@@ -1,12 +1,11 @@
 use std::env;
 use std::io::{self, Write};
-use std::path::PathBuf;
 
 use digraph::git::*;
 use digraph::prelude::*;
 
 struct Opts {
-    filename: PathBuf,
+    filename: String,
 }
 
 struct ConsoleOutput<'r> {
@@ -21,7 +20,7 @@ impl<'r> Visitor for &mut ConsoleOutput<'r> {
 Topic: [{}]({})
 Parent topics:
 "#,
-        meta.name(), meta.id};
+        meta.name(), meta.path};
         self.buf.push_str(&s);
 
         for topic in &topic.parent_topics {
@@ -60,17 +59,13 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        let object = self
-            .git
-            .get(&topic.id)?
-            .ok_or_else(|| Error::Repo(format!("no parent topic found: {:?}", topic)))?;
-
-        if let Object::Topic(topic) = object {
-            let meta = topic.metadata;
-            let s = format!("  + [{}]({})\n", meta.name(), meta.id);
-            self.buf.push_str(&s)
-        } else {
-            return Err(Error::Repo(format!("expected a topic: {:?}", object)));
+        match &self.git.get(&topic.path)? {
+            Object::Topic(topic) => {
+                let meta = &topic.metadata;
+                let s = format!("  + [{}]({})\n", meta.name(), meta.path);
+                self.buf.push_str(&s);
+            }
+            other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
         }
 
         Ok(())
@@ -78,7 +73,7 @@ impl<'r> ConsoleOutput<'r> {
 
     fn visit_child_topic(&mut self, topic: &Topic) -> Result<()> {
         let meta = &topic.metadata;
-        let line = format!("- [{}]({})\n", meta.name(), meta.id);
+        let line = format!("- [{}]({})\n", meta.name(), meta.path);
         self.buf.push_str(&line);
 
         for topic in &topic.parent_topics {
@@ -101,72 +96,53 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        let object = self
-            .git
-            .get(&topic.id)?
-            .ok_or_else(|| Error::Repo(format!("failed to fetch parent: {:?}", topic)))?;
-
-        match object {
+        match &self.git.get(&topic.path)? {
             Object::Topic(topic) => {
-                let meta = topic.metadata;
-                let line = format!("- [{}]({})\n", meta.name(), meta.id);
+                let meta = &topic.metadata;
+                let line = format!("- [{}]({})\n", meta.name(), meta.path);
                 self.buf.push_str(&line);
             }
             other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
         }
-
         Ok(())
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
-        let object = self
-            .git
-            .get(&child.id)?
-            .ok_or_else(|| Error::Repo(format!("failed to fetch child: {:?}", child)))?;
-
-        match object {
+        match &self.git.get(&child.path)? {
             Object::Topic(topic) => {
-                self.visit_child_topic(&topic)?;
+                self.visit_child_topic(topic)?;
             }
             Object::Link(link) => {
-                self.visit_child_link(&link)?;
+                self.visit_child_link(link)?;
             }
         }
-
         Ok(())
     }
 }
 
 fn parse_args() -> Opts {
     let args: Vec<String> = env::args().collect();
-    let filename = args.get(1).expect("a file is required");
+    let filename = args.get(1).expect("a file is required").to_owned();
 
-    Opts {
-        filename: PathBuf::from(filename),
-    }
+    Opts { filename }
 }
 
 #[actix_web::main]
 async fn main() -> Result<()> {
     let opts = parse_args();
-    let entrypoint = RepoPath::parse(opts.filename)?;
-    let id = entrypoint.id.clone().expect("an id is required");
-    let mut git = Git::new(entrypoint);
-    let object = git.get(&id)?;
+    let (root_directory, path) = parse_path(&opts.filename)?;
+    let mut git = Git::new(root_directory);
+    let object = git.get(&path)?;
 
-    if let Some(object) = object {
-        let mut output = ConsoleOutput {
-            git: &mut git,
-            buf: String::new(),
-        };
-        object.accept(&mut output)?;
-        io::stdout().write_all(output.as_bytes())?;
+    let mut output = ConsoleOutput {
+        git: &mut git,
+        buf: String::new(),
+    };
+    object.accept(&mut output)?;
+    io::stdout().write_all(output.as_bytes())?;
 
-        let r = format!("\n{:?}\n", output.git);
-        io::stdout().write_all(r.as_bytes())?;
-    } else {
-        io::stdout().write_all(b"")?;
-    }
+    let r = format!("\n{:?}\n", output.git);
+    io::stdout().write_all(r.as_bytes())?;
 
     Ok(())
 }

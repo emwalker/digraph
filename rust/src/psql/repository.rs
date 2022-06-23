@@ -13,25 +13,31 @@ const REPOSITORY_FIELDS: &str = r#"
     r.organization_id,
     r.system,
     r.owner_id,
-    t.id root_topic_id
+    -- Let's come up with something better than this
+    (r.system and r.name = 'system:default') private,
+    t.id root_topic_id,
+    o.login lookup_prefix
 "#;
 
 const REPOSITORY_JOINS: &str = r#"
     from repositories r
     join organization_members om on r.organization_id = om.organization_id
+    join organizations o on o.id = r.organization_id
     join topics t on r.id = t.repository_id
 "#;
 
 const REPOSITORY_GROUP_BY: &str = r#"
-    group by r.id, t.id
+    group by r.id, t.id, o.login
 "#;
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
     id: Uuid,
+    lookup_prefix: String,
     name: String,
     organization_id: Uuid,
     owner_id: Uuid,
+    private: bool,
     root_topic_id: Uuid,
     system: bool,
 }
@@ -43,6 +49,7 @@ impl Row {
             name: self.name.to_owned(),
             organization_id: self.organization_id.to_string(),
             owner_id: self.owner_id.to_string(),
+            private: self.private,
             root_topic_id: self.root_topic_id.to_string(),
             system: self.system,
         }
@@ -101,7 +108,7 @@ impl Loader<String> for RepositoryLoader {
     type Error = Error;
 
     async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>> {
-        log::debug!("load links by batch {:?}", ids);
+        log::debug!("batch load repositories {:?}", ids);
 
         let query = format!(
             r#"
@@ -166,6 +173,53 @@ impl Loader<String> for RepositoryByNameLoader {
         Ok(rows
             .iter()
             .map(|r| (r.id.to_string(), r.to_repository()))
+            .collect::<HashMap<_, _>>())
+    }
+}
+
+pub struct RepositoryByPrefixLoader {
+    pool: PgPool,
+    viewer: Viewer,
+}
+
+impl RepositoryByPrefixLoader {
+    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+        Self { viewer, pool }
+    }
+}
+
+#[async_trait::async_trait]
+impl Loader<String> for RepositoryByPrefixLoader {
+    type Value = Repository;
+    type Error = Error;
+
+    async fn load(&self, prefixes: &[String]) -> Result<HashMap<String, Self::Value>> {
+        log::debug!(
+            "batch load repos by id prefixes {:?} for users {:?}",
+            prefixes,
+            self.viewer.query_ids
+        );
+
+        let query = format!(
+            r#"select
+                {REPOSITORY_FIELDS}
+                {REPOSITORY_JOINS}
+                where o.login = any($1::text[])
+                    and t.root = true
+                    and om.user_id = any($2::uuid[])
+                {REPOSITORY_GROUP_BY}
+           "#
+        );
+        let rows = sqlx::query_as::<_, Row>(&query)
+            .bind(&prefixes)
+            .bind(&self.viewer.query_ids)
+            .fetch_all(&self.pool)
+            .await?;
+
+        log::debug!("repo query results: {:?}", rows);
+        Ok(rows
+            .iter()
+            .map(|r| (r.lookup_prefix.to_string(), r.to_repository()))
             .collect::<HashMap<_, _>>())
     }
 }

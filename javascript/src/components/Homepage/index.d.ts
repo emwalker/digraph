@@ -1,4 +1,3 @@
-/// <reference types="react" />
 import { Router } from 'found';
 import { Homepage_homepage_QueryResponse as Response } from '__generated__/Homepage_homepage_Query.graphql';
 declare type ViewType = Response['view'];

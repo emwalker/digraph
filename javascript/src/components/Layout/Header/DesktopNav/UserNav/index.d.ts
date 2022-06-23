@@ -1,4 +1,3 @@
-/// <reference types="react" />
 import { UserNav_viewer as Viewer } from '__generated__/UserNav_viewer.graphql';
 declare type Props = {
     viewer: Viewer;

@@ -23,9 +23,9 @@ impl UpdateSynonyms {
     pub async fn call(&self, pool: &PgPool) -> Result<UpdateSynonymsResult> {
         log::info!("updating synonyms for topic: {:?}", self.input);
 
-        let topic_id = &self.input.topic_id;
+        let topic_path = RepoPath::from(&self.input.topic_path);
         // Verify that the user can see the topic
-        fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+        fetch_topic(&self.actor.mutation_ids, pool, &topic_path)
             .await?
             .to_topic();
 
@@ -48,7 +48,7 @@ impl UpdateSynonyms {
             seen.insert(&synonym_input.name);
         }
 
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_path)
             .await?
             .to_topic();
 
@@ -59,11 +59,11 @@ impl UpdateSynonyms {
         sqlx::query("update topics set name = $1, synonyms = $2::jsonb where id = $3::uuid")
             .bind(&name)
             .bind(&synonym_string)
-            .bind(&topic.id)
+            .bind(&topic.path.short_id)
             .execute(pool)
             .await?;
 
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, topic_id)
+        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_path)
             .await?
             .to_topic();
         Ok(UpdateSynonymsResult { alerts, topic })

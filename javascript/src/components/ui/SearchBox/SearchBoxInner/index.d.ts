@@ -1,4 +1,3 @@
-/// <reference types="react" />
 import { Router } from 'found';
 import { LocationType } from 'components/types';
 import { SearchBox_view as ViewType } from '__generated__/SearchBox_view.graphql';

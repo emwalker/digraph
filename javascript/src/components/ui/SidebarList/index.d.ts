@@ -1,7 +1,6 @@
-/// <reference types="react" />
 declare type ItemType = {
     display: string;
-    resourcePath: string;
+    path: string;
 } | null;
 declare type Props = {
     items: ItemType[];

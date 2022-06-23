@@ -16,7 +16,7 @@ type Props = {
   topic: TopicType,
 }
 
-const TopicTimeRangeForm = ({ relay, topic: { id: topicId, timeRange } }: Props) => {
+const TopicTimeRangeForm = ({ relay, topic: { path: topicPath, timeRange } }: Props) => {
   const [mutationInFlight, setMutationInFlight] = useState(false)
   const [startsAt, setStartsAt] = useState(moment(timeRange?.startsAt as string))
   const prefixFormat = timeRange?.prefixFormat
@@ -28,7 +28,7 @@ const TopicTimeRangeForm = ({ relay, topic: { id: topicId, timeRange } }: Props)
         const input: Input = {
           prefixFormat,
           startsAt: dt.toISOString(),
-          topicId,
+          topicPath,
         }
         upsertTopicTimeRangeMutation(relay.environment, input)
       } else {
@@ -48,7 +48,7 @@ const TopicTimeRangeForm = ({ relay, topic: { id: topicId, timeRange } }: Props)
       const input: Input = {
         prefixFormat: newPrefix,
         startsAt,
-        topicId,
+        topicPath,
       }
       await upsertTopicTimeRangeMutation(relay.environment, input)
       setMutationInFlight(false)
@@ -104,7 +104,7 @@ const TopicTimeRangeForm = ({ relay, topic: { id: topicId, timeRange } }: Props)
 export default createFragmentContainer(TopicTimeRangeForm, {
   topic: graphql`
     fragment TopicTimeRangeForm_topic on Topic {
-      id
+      path
 
       timeRange {
         startsAt

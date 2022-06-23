@@ -12,7 +12,7 @@ query reviewPageQuery_query_Query(
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
-  $topicId: ID!,
+  $topicPath: String!,
 ) {
   alerts {
     id

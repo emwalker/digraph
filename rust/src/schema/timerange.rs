@@ -1,5 +1,5 @@
 use async_graphql::connection::*;
-use async_graphql::{connection::EmptyFields, scalar, Enum, SimpleObject, ID};
+use async_graphql::{connection::EmptyFields, scalar, Enum, SimpleObject};
 
 use serde::{Deserialize, Serialize};
 
@@ -10,10 +10,10 @@ pub enum Prefix {
     StartYearMonth(chrono::DateTime<chrono::Utc>),
 }
 
-impl Prefix {
-    pub fn from(time_range: &Option<TimeRange>) -> Self {
+impl From<&Option<Timerange>> for Prefix {
+    fn from(time_range: &Option<Timerange>) -> Self {
         match &time_range {
-            Some(TimeRange {
+            Some(Timerange {
                 starts_at,
                 prefix_format,
                 ..
@@ -25,7 +25,9 @@ impl Prefix {
             None => Self::None,
         }
     }
+}
 
+impl Prefix {
     pub fn new(
         prefix_format: Option<&str>,
         starts_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -81,14 +83,13 @@ pub struct DateTime(pub chrono::DateTime<chrono::Utc>);
 scalar!(DateTime);
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, SimpleObject)]
-pub struct TimeRange {
+pub struct Timerange {
     pub ends_at: Option<DateTime>,
-    pub id: ID,
     pub prefix_format: TimeRangePrefixFormat,
     pub starts_at: DateTime,
 }
 
-pub type TimeRangeEdge = Edge<String, TimeRange, EmptyFields>;
+pub type TimeRangeEdge = Edge<String, Timerange, EmptyFields>;
 
 #[cfg(test)]
 mod tests {

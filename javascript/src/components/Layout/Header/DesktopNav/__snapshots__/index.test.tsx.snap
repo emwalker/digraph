@@ -68,7 +68,7 @@ exports[`<DesktopNav /> renders 1`] = `
         Object {
           "defaultRepository": Object {
             "rootTopic": Object {
-              "resourcePath": "/some-repo/topics/123",
+              "path": "/some-repo/topics/123",
             },
           },
           "name": "Frotz",

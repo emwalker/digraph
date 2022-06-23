@@ -70,12 +70,12 @@ type DeleteAccountPayload implements Alertable {
 
 input DeleteLinkInput {
   clientMutationId: String
-  linkId: ID!
+  linkPath: String!
 }
 
 type DeleteLinkPayload {
   clientMutationId: String
-  deletedLinkId: ID
+  deletedLinkPath: String
 }
 
 input DeleteSessionInput {
@@ -90,22 +90,21 @@ type DeleteSessionPayload {
 
 input DeleteTopicInput {
   clientMutationId: String
-  topicId: ID!
+  topicPath: String!
 }
 
 type DeleteTopicPayload {
   clientMutationId: String
-  deletedTopicId: ID
+  deletedTopicPath: String
 }
 
 input DeleteTopicTimeRangeInput {
   clientMutationId: String
-  topicId: ID!
+  topicPath: String!
 }
 
 type DeleteTopicTimeRangePayload {
   clientMutationId: String
-  deletedTimeRangeId: ID
   topic: Topic!
 }
 
@@ -118,7 +117,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
     before: String
   ): TopicConnection!
   createdAt: DateTime!
-  id: ID!
+  id: String!
   loading: Boolean!
   newlyAdded: Boolean!
   organization: Organization!
@@ -128,8 +127,8 @@ type Link implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection!
+  path: String!
   repository: Repository!
-  resourcePath: String!
   sha1: String!
   title: String!
   updatedAt: DateTime!
@@ -207,8 +206,8 @@ type Organization implements ResourceIdentifiable {
   id: ID
   login: String!
   name: String!
+  path: String!
   public: Boolean!
-  resourcePath: String!
   updatedAt: DateTime!
 }
 
@@ -246,7 +245,7 @@ type Query {
 input ReorderSynonymsInput {
   clientMutationId: String
   synonymIds: [ID!]!
-  topicId: ID!
+  topicPath: String!
 }
 
 type ReorderSynonymsPayload {
@@ -257,7 +256,7 @@ type Repository {
   displayColor: Color!
   displayName: String!
   fullName: String!
-  id: ID
+  id: String
   isPrivate: Boolean!
   name: String!
   organization: Organization!
@@ -276,12 +275,12 @@ type RepositoryEdge {
 }
 
 interface ResourceIdentifiable {
-  resourcePath: String!
+  path: String!
 }
 
 input ReviewLinkInput {
   clientMutationId: String
-  linkId: ID!
+  linkPath: String!
   reviewed: Boolean!
 }
 
@@ -340,7 +339,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   displayName(
     timeRange: Boolean,
   ): String!
-  id: ID!
+  id: String!
   links(
     first: Int,
     after: String,
@@ -360,8 +359,8 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection!
+  path: String!
   repository: Repository!
-  resourcePath: String!
   search(
     searchString: String!,
     first: Int,
@@ -437,7 +436,7 @@ input SynonymInput {
 input UpdateSynonymsInput {
   clientMutationId: String
   synonyms: [SynonymInput!]!
-  topicId: ID!
+  topicPath: String!
 }
 
 type UpdateSynonymsPayload {
@@ -449,9 +448,9 @@ type UpdateSynonymsPayload {
 input UpdateTopicInput {
   clientMutationId: String
   description: String
-  id: ID!
   name: String!
-  topicIds: [ID!]
+  addParentTopicPaths: [String!]
+  topicPath: String!
 }
 
 type UpdateTopicPayload {
@@ -461,8 +460,8 @@ type UpdateTopicPayload {
 
 input UpdateLinkTopicsInput {
   clientMutationId: String
-  linkId: ID!
-  parentTopicIds: [ID!]
+  linkPath: String!
+  parentTopicPaths: [String!]
 }
 
 type UpdateLinkTopicsPayload {
@@ -471,8 +470,8 @@ type UpdateLinkTopicsPayload {
 
 input UpdateTopicParentTopicsInput {
   clientMutationId: String
-  topicId: ID!
-  parentTopicIds: [ID!]
+  topicPath: String!
+  parentTopicPaths: [String!]
 }
 
 type UpdateTopicParentTopicsPayload implements Alertable {
@@ -505,7 +504,7 @@ input UpsertTopicInput {
 
 input UpsertTopicTimeRangeInput {
   clientMutationId: String
-  topicId: ID!
+  topicPath: String!
   startsAt: DateTime!
   endsAt: DateTime
   prefixFormat: TimeRangePrefixFormat!
@@ -531,7 +530,7 @@ type View {
   ): ActivityLineItemConnection!
   currentRepository: Repository
   defaultOrganization: Organization!
-  link(id: ID!): Link
+  link(path: String!): Link
   linkCount: Int!
   links(
     searchString: String,
@@ -543,7 +542,7 @@ type View {
   ): LinkConnection!
   queryInfo: QueryInfo!
   searchString: String
-  topic(id: ID!): Topic
+  topic(path: String!): Topic
   topicCount: Int!
   topicGraph: String
   topics(

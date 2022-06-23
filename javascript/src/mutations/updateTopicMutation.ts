@@ -18,10 +18,9 @@ export default defaultMutation(graphql`
       }
 
       topic {
-        id
-        name
-        resourcePath
         description
+        name
+        path
       }
     }
   }

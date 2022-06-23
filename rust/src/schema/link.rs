@@ -6,9 +6,9 @@ use crate::repo::Repo;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Link {
-    pub id: ID,
+    pub path: RepoPath,
     pub newly_added: bool,
-    pub parent_topic_ids: Vec<String>,
+    pub parent_topic_paths: Vec<RepoPath>,
     pub repository_id: ID,
     pub viewer_review: Option<LinkReview>,
     pub title: String,
@@ -45,12 +45,12 @@ impl Link {
         )
     }
 
-    async fn id(&self) -> ID {
-        self.id.to_owned()
-    }
-
     async fn loading(&self) -> bool {
         false
+    }
+
+    async fn id(&self) -> String {
+        self.path.to_string()
     }
 
     async fn newly_added(&self) -> bool {
@@ -65,15 +65,15 @@ impl Link {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<TopicConnection> {
-        conn(
-            after,
-            before,
-            first,
-            last,
-            ctx.data_unchecked::<Repo>()
-                .parent_topics_for_link(self.id.to_string())
-                .await?,
-        )
+        let topics = ctx
+            .data_unchecked::<Repo>()
+            .parent_topics_for_link(&self.path)
+            .await?;
+        conn(after, before, first, last, topics)
+    }
+
+    async fn path(&self) -> String {
+        self.path.to_string()
     }
 
     async fn repository(&self, ctx: &Context<'_>) -> Result<Repository> {

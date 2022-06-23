@@ -1,7 +1,6 @@
-/// <reference types="react" />
 import { RelayProp } from 'react-relay';
 declare type Link = {
-    id: string;
+    path: string;
 };
 declare type Props = {
     isOpen: boolean;

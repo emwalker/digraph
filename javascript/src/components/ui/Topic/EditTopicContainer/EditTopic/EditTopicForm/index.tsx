@@ -37,9 +37,9 @@ class EditTopicForm extends Component<Props, State> {
 
   onSave = () => {
     const input: UpdateInput = {
-      topicIds: this.addTopicIds,
+      addParentTopicPaths: this.addParentTopicPaths,
       description: this.state.description || '',
-      id: this.props.topic.id,
+      topicPath: this.props.topic.path,
       name: this.state.displayName,
     }
     updateTopicMutation(this.props.relay.environment, input)
@@ -47,7 +47,7 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   onDelete = () => {
-    const input: DeleteInput = { topicId: this.props.topic.id }
+    const input: DeleteInput = { topicPath: this.props.topic.path }
     deleteTopicMutation(
       this.props.relay.environment,
       input,
@@ -61,12 +61,12 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  get addTopicIds(): string[] {
+  get addParentTopicPaths(): string[] {
     return []
   }
 
-  get topicId(): string {
-    return this.props.topic.id
+  get topicPath(): string {
+    return this.props.topic.path
   }
 
   get selectedTopics(): TopicOption[] | null {
@@ -75,10 +75,10 @@ class EditTopicForm extends Component<Props, State> {
     return selectedTopics ? makeOptions(selectedTopics) : null
   }
 
-  updateParentTopics = (parentTopicIds: string[]) => {
+  updateParentTopics = (parentTopicPaths: string[]) => {
     const input: UpdateTopicsInput = {
-      topicId: this.props.topic.id,
-      parentTopicIds,
+      topicPath: this.props.topic.path,
+      parentTopicPaths,
     }
     updateTopicTopicsMutation(this.props.relay.environment, input)
   }
@@ -145,11 +145,12 @@ export default createRefetchContainer(EditTopicForm, {
       description
       id
       displayName: name
+      path
 
       selectedTopics: parentTopics(first: 1000) {
         edges {
           node {
-            value: id
+            value: path
             label: name
           }
         }
@@ -158,7 +159,7 @@ export default createRefetchContainer(EditTopicForm, {
       availableTopics: availableParentTopics(first: $count, searchString: $searchString) {
         edges {
           node {
-            value: id
+            value: path
             label: name
           }
         }
@@ -175,7 +176,7 @@ graphql`
     $orgLogin: String!,
     $repoName: String,
     $repoIds: [ID!],
-    $topicId: ID!,
+    $topicPath: String!,
     $count: Int!,
     $searchString: String,
   ) {
@@ -185,7 +186,7 @@ graphql`
       currentRepositoryName: $repoName,
       repositoryIds: $repoIds,
     ) {
-      topic(id: $topicId) {
+      topic(path: $topicPath) {
         ...EditTopicForm_topic @arguments(count: $count, searchString: $searchString)
       }
     }

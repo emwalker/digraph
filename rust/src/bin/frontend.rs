@@ -9,7 +9,7 @@ use std::env;
 
 use digraph::config::Config;
 use digraph::db;
-use digraph::git::{Git, RepoPath};
+use digraph::git::{DataRoot, Git};
 use digraph::prelude::*;
 use digraph::schema::{MutationRoot, QueryRoot, Schema, State};
 
@@ -88,8 +88,7 @@ async fn main() -> async_graphql::Result<()> {
     let config = Config::load()?;
     env_logger::init();
 
-    let path = PathBuf::from(config.digraph_wiki_repo_path.clone());
-    let root = RepoPath::new(path, None);
+    let root = DataRoot::new(PathBuf::from(&config.digraph_data_directory));
     let git = Git::new(root);
 
     let pool = db::db_connection(&config).await?;

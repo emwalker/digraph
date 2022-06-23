@@ -79,14 +79,14 @@ class Topic extends Component<Props, State> {
         title={topic.displayName}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}
-        url={topic.resourcePath}
+        url={topic.path}
       >
         <EditTopic
           isOpen={this.state.formIsOpen}
           orgLogin={this.props.orgLogin}
           relay={this.props.relay}
           toggleForm={this.toggleForm}
-          topicId={topic.id}
+          topicPath={topic.path}
         />
       </Item>
     )
@@ -108,7 +108,7 @@ export default createFragmentContainer(Topic, {
       id
       loading
       newlyAdded
-      resourcePath
+      path
       viewerCanUpdate
 
       repository {
@@ -120,8 +120,9 @@ export default createFragmentContainer(Topic, {
       parentTopics(first: 100) {
         edges {
           node {
+            id
             displayName: name
-            resourcePath
+            path
           }
         }
       }

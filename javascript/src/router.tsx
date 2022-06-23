@@ -33,11 +33,13 @@ export function createResolver(fetcher: FetcherBase) {
 const prepareVariablesFn = (viewer: Express.User) => (variables: FoundRelayVariables) => {
   const viewerId = viewer?.id || ''
   const sessionId = viewer?.sessionId || ''
+  const { orgLogin, topicId } = variables
+  const topicPath = topicId ? `/${orgLogin}/${topicId}` : `${defaultOrganizationLogin}/${defaultRootTopicId}`
 
   return {
-    topicId: defaultRootTopicId,
     orgLogin: defaultOrganizationLogin,
     ...variables,
+    topicPath,
     sessionId,
     viewerId,
   }
@@ -113,33 +115,31 @@ export const createRouteConfig = (store: RouteStore) => {
         Component={TermsOfUse}
       />
       <Route path=":orgLogin">
-        <Route path="topics">
+        <Route
+          path=":topicId"
+        >
           <Route
-            path=":topicId"
-          >
-            <Route
-              path=""
-              render={renderTopicPage}
-              prepareVariables={prepareVariables}
-              getQuery={({ location }: RouteMatch) => (
-                location.query.q
-                  ? topicSearchPageQuery
-                  : topicPageQuery
-              )}
-            />
-            <Route
-              path="recent"
-              prepareVariables={prepareVariables}
-              query={recentPageQuery}
-              render={withErrorBoundary(RecentPage)}
-            />
-            <Route
-              path="review"
-              prepareVariables={prepareVariables}
-              query={reviewPageQuery}
-              render={withErrorBoundary(ReviewPage)}
-            />
-          </Route>
+            path=""
+            render={renderTopicPage}
+            prepareVariables={prepareVariables}
+            getQuery={({ location }: RouteMatch) => (
+              location.query.q
+                ? topicSearchPageQuery
+                : topicPageQuery
+            )}
+          />
+          <Route
+            path="recent"
+            prepareVariables={prepareVariables}
+            query={recentPageQuery}
+            render={withErrorBoundary(RecentPage)}
+          />
+          <Route
+            path="review"
+            prepareVariables={prepareVariables}
+            query={reviewPageQuery}
+            render={withErrorBoundary(ReviewPage)}
+          />
         </Route>
       </Route>
     </Route>,

@@ -1,16 +1,20 @@
 use chrono::{DateTime, Utc};
+use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::PathBuf;
 
+mod link;
+mod topic;
 use crate::prelude::*;
+pub use link::*;
+pub use topic::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LinkMetadata {
-    pub added_timestamp: DateTime<Utc>,
-    pub id: String,
+    pub added: DateTime<Utc>,
+    pub path: String,
     pub title: String,
     pub url: String,
 }
@@ -26,30 +30,58 @@ pub struct Link {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ParentTopic {
-    pub id: String,
+    pub path: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicChild {
-    pub added_timestamp: DateTime<Utc>,
-    pub id: String,
+    pub added: DateTime<Utc>,
+    pub path: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Synonym {
-    pub added_timestamp: DateTime<Utc>,
+    pub added: DateTime<Utc>,
     pub locale: String,
     pub name: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct Timerange {
+    pub starts: DateTime<Utc>,
+    pub prefix_format: TimerangePrefixFormat,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TimerangePrefixFormat {
+    None,
+    StartYear,
+    StartYearMonth,
+}
+
+impl From<&str> for TimerangePrefixFormat {
+    fn from(format: &str) -> Self {
+        match format {
+            "NONE" => Self::None,
+            "START_YEAR" => Self::StartYear,
+            "START_YEAR_MONTH" => Self::StartYearMonth,
+            _ => Self::None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TopicMetadata {
-    pub added_timestamp: DateTime<Utc>,
-    pub id: String,
+    pub added: DateTime<Utc>,
+    pub path: String,
+    pub root: bool,
     pub synonyms: Vec<Synonym>,
+    pub timerange: Option<Timerange>,
 }
 
 impl TopicMetadata {
@@ -104,104 +136,149 @@ pub trait Visitor {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct RepoPath {
-    pub id: Option<String>,
+pub struct DataRoot {
     root: PathBuf,
 }
 
-impl std::fmt::Display for RepoPath {
+impl std::fmt::Display for DataRoot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.root)
     }
 }
 
-impl RepoPath {
-    pub fn new(root: PathBuf, id: Option<String>) -> Self {
-        Self { id, root }
+pub fn parse_path(input: &str) -> Result<(DataRoot, String)> {
+    lazy_static! {
+        static ref RE: Regex =
+            Regex::new(r"^(.+?)/(\w+)/objects/(\w{2})/(\w{2})/([\w-]+)/object.yaml$").unwrap();
     }
 
-    pub fn parse(input: PathBuf) -> Result<Self> {
-        use itertools::Itertools;
+    let cap = RE
+        .captures(input)
+        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?;
+    if cap.len() != 6 {
+        return Err(Error::Command(format!("bad path: {:?}", cap)));
+    }
 
-        let path = input.into_os_string().into_string().unwrap();
-        let re = Regex::new(r"^(.+?/wiki)/objects/(.+)/object.yaml$").unwrap();
-        let cap = re.captures(&path).unwrap();
-        if cap.len() != 3 {
-            return Err(Error::Command(format!("unexpected path: {:?}", cap)));
+    let root = cap
+        .get(1)
+        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
+        .as_str();
+    let org_login = cap
+        .get(2)
+        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
+        .as_str();
+    let part1 = cap
+        .get(3)
+        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
+        .as_str();
+    let part2 = cap
+        .get(4)
+        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
+        .as_str();
+    let part3 = cap
+        .get(5)
+        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
+        .as_str();
+
+    let id = format!("/{}/{}{}{}", org_login, part1, part2, part3);
+    let root = PathBuf::from(root);
+
+    Ok((DataRoot::new(root), id))
+}
+
+impl DataRoot {
+    pub fn new(root: PathBuf) -> Self {
+        Self { root }
+    }
+
+    pub fn file_path(&self, path: &str) -> Result<PathBuf> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^(\w{2})(\w{2})([\w-]+)$").unwrap();
         }
 
-        let root = cap.get(1).map_or("".into(), |m| m.as_str().to_string());
-        let id = cap
+        let path = RepoPath::from(path);
+        if !path.valid {
+            return Err(Error::Repo(format!("invalid path: {:?}", path)));
+        }
+
+        let cap = RE
+            .captures(&path.short_id)
+            .ok_or_else(|| Error::Repo(format!("bad id: {}", path)))?;
+
+        if cap.len() != 4 {
+            return Err(Error::Repo(format!("bad id: {}", path)));
+        }
+
+        let part1 = cap
+            .get(1)
+            .ok_or_else(|| Error::Repo(format!("bad id: {}", path)))?
+            .as_str();
+        let part2 = cap
             .get(2)
-            .map_or("".into(), |m| m.as_str().to_string())
-            .split('/')
-            .join("");
-        let id = format!("/wiki/{}", id);
-        let root = PathBuf::from(root);
+            .ok_or_else(|| Error::Repo(format!("bad id: {}", path)))?
+            .as_str();
+        let part3 = cap
+            .get(3)
+            .ok_or_else(|| Error::Repo(format!("bad id: {}", path)))?
+            .as_str();
 
-        Ok(Self::new(root, Some(id)))
-    }
+        let file_path = format!(
+            "{}/objects/{}/{}/{}/object.yaml",
+            path.org_login, part1, part2, part3
+        );
 
-    pub fn path(&self, id: &str) -> Result<PathBuf> {
-        let id = id
-            .split('/')
-            .last()
-            .ok_or_else(|| Error::Repo("failed to split path".to_string()))?;
-        let first = id
-            .get(0..2)
-            .ok_or_else(|| Error::Repo("expected at least two chars".into()))?;
-        let second = id
-            .get(2..4)
-            .ok_or_else(|| Error::Repo("expected at least four chars".into()))?;
-        let rest = id
-            .get(4..)
-            .ok_or_else(|| Error::Repo("expectd at least six chars".into()))?;
-        let path = format!("objects/{}/{}/{}/object.yaml", first, second, rest);
-
-        Ok(self.root.join(path))
+        Ok(self.root.join(file_path))
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Git {
-    cache: HashMap<String, Object>,
-    cache_hits: u32,
-    entrypoint: RepoPath,
-}
-
-impl std::fmt::Debug for Git {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(
-            f,
-            "GitRepo({} cached objects, {} cache hits)",
-            self.cache.len(),
-            self.cache_hits
-        )
-    }
+    root: DataRoot,
 }
 
 impl Git {
-    pub fn new(entrypoint: RepoPath) -> Self {
-        Self {
-            entrypoint,
-            ..Self::default()
-        }
+    pub fn new(root: DataRoot) -> Self {
+        Self { root }
     }
 
-    pub fn get(&mut self, id: &String) -> Result<Option<Object>> {
-        match self.cache.get(id) {
-            Some(object) => {
-                self.cache_hits += 1;
-                Ok(Some(object.to_owned()))
-            }
-            None => {
-                let filename = self.entrypoint.path(id)?;
-                let fh =
-                    std::fs::File::open(&filename).map_err(|e| Error::Repo(format!("{:?}", e)))?;
-                let object: Object = serde_yaml::from_reader(fh)?;
-                self.cache.insert(id.clone(), object.clone());
-                Ok(Some(object))
-            }
-        }
+    pub fn get(&self, path: &str) -> Result<Object> {
+        let path = self.root.file_path(path)?;
+        let fh = std::fs::File::open(&path).map_err(|e| Error::Repo(format!("{:?}", e)))?;
+        let object: Object = serde_yaml::from_reader(fh)?;
+        Ok(object)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_path() {
+        let result = parse_path("../../wiki/12/34/5678/object.yaml");
+        assert!(matches!(result, Err(Error::Repo(_))));
+
+        let (root, id) = parse_path("../../wiki/objects/12/34/5678/object.yaml").unwrap();
+        assert_eq!(root.root, PathBuf::from("../.."));
+        assert_eq!(id, String::from("/wiki/12345678"));
+    }
+
+    #[test]
+    fn test_data_root_file_path() {
+        let root = DataRoot::new(PathBuf::from("../.."));
+
+        assert!(matches!(root.file_path("1234"), Err(Error::Repo(_))));
+        assert!(matches!(root.file_path("wiki/123456"), Err(Error::Repo(_))));
+        assert!(matches!(root.file_path("/wiki/1234"), Err(Error::Repo(_))));
+
+        assert_eq!(
+            root.file_path("/wiki/123456").unwrap(),
+            PathBuf::from("../../wiki/objects/12/34/56/object.yaml")
+        );
+
+        assert_eq!(
+            root.file_path("/with-dash/123456").unwrap(),
+            PathBuf::from("../../with-dash/objects/12/34/56/object.yaml")
+        );
     }
 }

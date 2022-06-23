@@ -24,11 +24,11 @@ const updateOrDelete = (
   setMutationInFlight(true)
 
   if (topic.timeRange) {
-    const input: DeleteInput = { topicId: topic.id }
+    const input: DeleteInput = { topicPath: topic.path }
     await deleteTopicTimeRangeMutation(relay.environment, input)
   } else {
     const input: UpdateInput = {
-      topicId: topic.id,
+      topicPath: topic.path,
       startsAt: (new Date()).toISOString(),
       prefixFormat: 'START_YEAR_MONTH',
     }
@@ -67,6 +67,7 @@ export default createFragmentContainer(TopicTimeRange, {
   topic: graphql`
     fragment TopicTimeRange_topic on Topic {
       id
+      path
 
       timeRange {
         startsAt

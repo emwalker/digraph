@@ -12,7 +12,7 @@ const Blankslate = ({ placeholder }: { placeholder: string }) => (
 
 type ItemType = {
   display: string,
-  resourcePath: string,
+  path: string,
 } | null
 
 type ItemListProps = {
@@ -23,10 +23,10 @@ type ItemListProps = {
 
 const renderItem = (orgLogin: string, repoName: string) => (item: ItemType) => {
   if (!item) return null
-  const { resourcePath, display } = item
+  const { path, display } = item
 
   const to = {
-    pathname: resourcePath,
+    pathname: path,
     state: {
       itemTitle: display,
       orgLogin,
@@ -37,7 +37,7 @@ const renderItem = (orgLogin: string, repoName: string) => (item: ItemType) => {
   return (
     <li
       className="Box-row"
-      key={resourcePath}
+      key={path}
     >
       <Link to={to} className="Box-row-link">
         { display }

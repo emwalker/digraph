@@ -10,7 +10,7 @@ import styles from './styles.module.css'
 
 type Topic = {
   displayName: string,
-  resourcePath: string,
+  path: string,
 } | null
 
 type Props = {
@@ -106,12 +106,12 @@ class Item extends Component<Props> {
 
   renderTopicBadge = (topic: Topic) => {
     if (!topic) return null
-    const { resourcePath, displayName } = topic
+    const { path, displayName } = topic
     return (
       <TopicBadge
-        key={resourcePath}
+        key={path}
         displayName={displayName}
-        to={this.locationDescriptor(resourcePath, displayName)}
+        to={this.locationDescriptor(path, displayName)}
       />
     )
   }

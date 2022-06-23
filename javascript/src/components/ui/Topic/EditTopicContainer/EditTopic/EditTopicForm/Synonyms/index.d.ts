@@ -28,7 +28,7 @@ declare class Synonyms extends Component<Props, State> {
             topic: {
                 synonyms: SynonymType[];
                 displayName: string;
-                id: string;
+                path: string;
                 viewerCanDeleteSynonyms: boolean;
                 viewerCanUpdate: boolean;
                 " $refType": "Synonyms_topic";

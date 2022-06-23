@@ -17,6 +17,7 @@ pub enum Repository {
         name: String,
         organization_id: String,
         owner_id: String,
+        private: bool,
         root_topic_id: String,
         system: bool,
     },
@@ -92,7 +93,7 @@ impl Repository {
     pub async fn is_private(&self) -> bool {
         match self {
             Self::Default => false,
-            Self::Fetched { system, name, .. } => *system && name == DEFAULT_REPOSITORY_NAME,
+            Self::Fetched { private, .. } => *private,
         }
     }
 
@@ -133,12 +134,13 @@ impl Repository {
 
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
         let topic_id = match self {
-            Self::Default => WIKI_ROOT_TOPIC_ID,
-            Self::Fetched { root_topic_id, .. } => root_topic_id,
+            Self::Default => format!("/wiki/{}", WIKI_ROOT_TOPIC_ID),
+            Self::Fetched { root_topic_id, .. } => format!("/wiki/{}", root_topic_id),
         };
+        let path = RepoPath::from(&topic_id);
         ctx.data_unchecked::<Repo>()
-            .topic(topic_id.to_string())
+            .topic(&path)
             .await?
-            .ok_or_else(|| Error::NotFound(format!("root topic id: {}", topic_id)))
+            .ok_or_else(|| Error::NotFound(format!("root topic id: {}", path)))
     }
 }
