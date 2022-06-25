@@ -5,9 +5,11 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 mod link;
+mod loader;
 mod topic;
 use crate::prelude::*;
 pub use link::*;
+pub use loader::*;
 pub use topic::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

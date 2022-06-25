@@ -71,12 +71,10 @@ impl View {
         }
     }
 
-    async fn topic(
-        &self,
-        ctx: &Context<'_>,
-        path: String,
-    ) -> Result<Option<Topic>> {
-        ctx.data_unchecked::<Repo>().topic(&RepoPath::from(&path)).await
+    async fn topic(&self, ctx: &Context<'_>, path: String) -> Result<Option<Topic>> {
+        ctx.data_unchecked::<Repo>()
+            .topic(&RepoPath::from(&path))
+            .await
     }
 
     async fn topic_count(&self, ctx: &Context<'_>) -> Result<i64> {

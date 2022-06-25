@@ -53,7 +53,7 @@ class AddTopic extends Component<Props, State> {
       type: 'RANGE_ADD',
       parentID: this.props.topic.id,
       connectionInfo: [{
-        key: 'Topic_childTopics',
+        key: 'Topic_children',
         rangeBehavior: 'prepend',
       }],
       edgeName: 'topicEdge',

@@ -1,16 +1,14 @@
-use async_graphql::dataloader::*;
-
 use serde_json::json;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
-use super::queries::{TopicQuery, TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
+use super::queries::{TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
 use crate::http::repo_url::Url;
 use crate::prelude::*;
 use crate::schema::{
-    alert, Alert, AlertType, DateTime, Prefix, SearchResultItem, Synonyms, TimeRangePrefixFormat,
-    Timerange, Topic, UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
+    alert, Alert, AlertType, DateTime, Prefix, Synonyms, TimeRangePrefixFormat, Timerange, Topic,
+    TopicChild, UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
 };
 
 #[derive(sqlx::FromRow, Clone, Debug)]
@@ -31,6 +29,7 @@ impl Row {
         let prefix = Prefix::from(&time_range);
 
         Topic {
+            child_paths: vec![],
             path: RepoPath::from(&self.path),
             name: self.name.to_owned(),
             parent_topic_paths: self.parent_topic_paths.iter().map(RepoPath::from).collect(),
@@ -41,8 +40,8 @@ impl Row {
         }
     }
 
-    pub fn to_search_result_item(&self) -> SearchResultItem {
-        SearchResultItem::Topic(self.to_topic())
+    pub fn to_search_result_item(&self) -> TopicChild {
+        TopicChild::Topic(self.to_topic())
     }
 
     pub fn time_range(&self) -> Option<Timerange> {
@@ -69,7 +68,11 @@ impl Row {
     }
 }
 
-pub async fn fetch_topic(query_ids: &Vec<String>, pool: &PgPool, topic_path: &RepoPath) -> Result<Row> {
+pub async fn fetch_topic(
+    query_ids: &Vec<String>,
+    pool: &PgPool,
+    topic_path: &RepoPath,
+) -> Result<Row> {
     let query = format!(
         r#"select
         {TOPIC_FIELDS}
@@ -85,76 +88,6 @@ pub async fn fetch_topic(query_ids: &Vec<String>, pool: &PgPool, topic_path: &Re
         .fetch_one(pool)
         .await?;
     Ok(row)
-}
-
-pub struct TopicLoader {
-    viewer: Viewer,
-    pool: PgPool,
-}
-
-impl TopicLoader {
-    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
-        Self { viewer, pool }
-    }
-}
-
-#[async_trait::async_trait]
-impl Loader<String> for TopicLoader {
-    type Value = Topic;
-    type Error = Error;
-
-    async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>> {
-        log::debug!("load topics by batch {:?}", ids);
-        let topics = TopicQuery::from(self.viewer.clone(), ids.to_vec())
-            .execute(&self.pool)
-            .await?;
-
-        Ok(topics
-            .iter()
-            .map(|t| (t.path.short_id.to_string(), t.clone()))
-            .collect::<HashMap<_, _>>())
-    }
-}
-
-pub struct FetchChildTopicsForTopic {
-    viewer: Viewer,
-    parent_topic: RepoPath,
-    limit: i32,
-}
-
-impl FetchChildTopicsForTopic {
-    pub fn new(viewer: Viewer, parent_topic: RepoPath) -> Self {
-        Self {
-            viewer,
-            parent_topic,
-            limit: 100,
-        }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<Vec<Topic>> {
-        log::debug!("fetching child topics for topic: {}", self.parent_topic);
-
-        let query = format!(
-            r#"
-            select
-                {TOPIC_FIELDS}
-                {TOPIC_JOINS}
-                where parent_topics.parent_id = $1::uuid
-                    and om.user_id = any($2::uuid[])
-                {TOPIC_GROUP_BY}
-                order by t.name asc
-                limit $3
-            "#
-        );
-
-        let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(&self.parent_topic.short_id)
-            .bind(&self.viewer.query_ids)
-            .bind(self.limit)
-            .fetch_all(pool)
-            .await?;
-        Ok(rows.iter().map(Row::to_topic).collect())
-    }
 }
 
 pub struct DeleteTopic {
@@ -178,10 +111,7 @@ impl DeleteTopic {
         let mut alerts: Vec<Alert> = vec![];
 
         if topic.root {
-            log::warn!(
-                "attempting to delete root topic, bailing: {}",
-                self.topic
-            );
+            log::warn!("attempting to delete root topic, bailing: {}", self.topic);
             alerts.push(alert::warning("Cannot delete root topic".into()));
             return Ok(DeleteTopicResult {
                 alerts,

@@ -24,7 +24,7 @@ impl Row {
             let mut topics: Vec<String> = vec![];
 
             for topic in self.topics.iter() {
-                let markdown = format!("[{}]({})", topic["name"], topic["resource_path"]);
+                let markdown = format!("[{}]({})", topic["name"], topic["path"]);
                 topics.push(markdown);
             }
 
@@ -50,15 +50,15 @@ impl Row {
 #[allow(dead_code)]
 pub struct FetchActivity {
     viewer: Viewer,
-    topic_id: Option<String>,
+    topic_path: Option<RepoPath>,
     limit: i32,
 }
 
 impl FetchActivity {
-    pub fn new(viewer: Viewer, topic_id: Option<String>, first: i32) -> Self {
+    pub fn new(viewer: Viewer, topic_path: Option<RepoPath>, first: i32) -> Self {
         Self {
             viewer,
-            topic_id,
+            topic_path,
             limit: first,
         }
     }
@@ -66,7 +66,7 @@ impl FetchActivity {
     pub async fn call(&self, pool: &PgPool) -> Result<Vec<ActivityLineItem>> {
         let mut index = 2;
 
-        let topic_clause = if self.topic_id.is_some() {
+        let topic_clause = if self.topic_path.is_some() {
             let clause = format!("ult.topic_id = ${index}::uuid");
             index += 1;
             clause
@@ -85,7 +85,7 @@ impl FetchActivity {
                     distinct
                     jsonb_build_object(
                         'name', t.name,
-                        'resource_path', concat('/', torg.login, '/topics/', t.id)
+                        'path', concat('/', torg.login, '/', t.id)
                     )
                 ) topics
 
@@ -107,8 +107,8 @@ impl FetchActivity {
         );
 
         let mut q = sqlx::query_as::<_, Row>(&query).bind(&self.viewer.query_ids);
-        if let Some(topic_id) = &self.topic_id {
-            q = q.bind(topic_id);
+        if let Some(topic_path) = &self.topic_path {
+            q = q.bind(&topic_path.short_id);
         }
         let rows = q.bind(self.limit).fetch_all(pool).await?;
 
@@ -140,7 +140,7 @@ mod tests {
     fn test_one_topic() {
         let topics = serde_json::from_str(
             r#"[
-                { "name": "Climate change", "resource_path": "/wiki/topics/1" }
+                { "name": "Climate change", "path": "/wiki/1" }
             ]"#,
         )
         .unwrap();
@@ -156,7 +156,7 @@ mod tests {
         let item = row.to_activity_line_item();
         assert_eq!(
             item.description,
-            "Gnusto added [Link Title](link) and tagged it with [Climate change](/wiki/topics/1)"
+            "Gnusto added [Link Title](link) and tagged it with [Climate change](/wiki/1)"
         );
     }
 
@@ -164,8 +164,8 @@ mod tests {
     fn test_two_topics() {
         let topics = serde_json::from_str(
             r#"[
-                { "name": "Climate change", "resource_path": "/wiki/topics/1" },
-                { "name": "Biodiversity", "resource_path": "/wiki/topics/2" }
+                { "name": "Climate change", "path": "/wiki/1" },
+                { "name": "Biodiversity", "path": "/wiki/2" }
             ]"#,
         )
         .unwrap();
@@ -181,7 +181,7 @@ mod tests {
         let item = row.to_activity_line_item();
         assert_eq!(
             item.description,
-            "Gnusto added [Link Title](link) and tagged it with [Climate change](/wiki/topics/1) and [Biodiversity](/wiki/topics/2)"
+            "Gnusto added [Link Title](link) and tagged it with [Climate change](/wiki/1) and [Biodiversity](/wiki/2)"
         );
     }
 
@@ -189,9 +189,9 @@ mod tests {
     fn test_three_topics() {
         let topics = serde_json::from_str(
             r#"[
-                { "name": "Climate change", "resource_path": "/wiki/topics/1" },
-                { "name": "Biodiversity", "resource_path": "/wiki/topics/2" },
-                { "name": "Habitat destruction", "resource_path": "/wiki/topics/3" }
+                { "name": "Climate change", "path": "/wiki/1" },
+                { "name": "Biodiversity", "path": "/wiki/2" },
+                { "name": "Habitat destruction", "path": "/wiki/3" }
             ]"#,
         )
         .unwrap();
@@ -207,7 +207,7 @@ mod tests {
         let item = row.to_activity_line_item();
         assert_eq!(
             item.description,
-            "Gnusto added [Link Title](link) and tagged it with [Climate change](/wiki/topics/1), [Biodiversity](/wiki/topics/2) and [Habitat destruction](/wiki/topics/3)"
+            "Gnusto added [Link Title](link) and tagged it with [Climate change](/wiki/1), [Biodiversity](/wiki/2) and [Habitat destruction](/wiki/3)"
         );
     }
 }

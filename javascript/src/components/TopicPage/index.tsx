@@ -21,8 +21,7 @@ import AddForm from './AddForm'
 import styles from './styles.module.css'
 
 type ViewType = Response['view']
-type LinkType = NodeTypeOf<TopicType['links']>
-type ChildTopicType = NodeTypeOf<TopicType['childTopics']>
+type TopicChildType = NodeTypeOf<TopicType['children']>
 type ParentTopicType = NodeTypeOf<TopicType['parentTopics']>
 
 type Props = {
@@ -51,12 +50,8 @@ class TopicPage extends Component<Props, State> {
     return {}
   }
 
-  get links() {
-    return liftNodes<LinkType>(this.props.topic.links)
-  }
-
-  get topics() {
-    return liftNodes<ChildTopicType>(this.props.topic.childTopics)
+  get children() {
+    return liftNodes<TopicChildType>(this.props.topic.children)
   }
 
   get synonyms() {
@@ -98,28 +93,34 @@ class TopicPage extends Component<Props, State> {
     }
   }
 
-  renderLink = (link: LinkType | null) => (
-    link && (
-    <Link
-      key={link.path}
-      link={link}
-      orgLogin={this.props.orgLogin}
-      view={this.props.view}
-      viewer={this.props.view.viewer}
-    />
-    )
-  )
+  renderTopicChild = (child: TopicChildType | null) => {
+    if (!child) return null
 
-  renderTopic = (topic: ChildTopicType | null) => (
-    topic && (
-    <Topic
-      key={topic.path}
-      orgLogin={this.props.orgLogin}
-      topic={topic}
-      view={this.props.view}
-    />
-    )
-  )
+    if (child.__typename == 'Topic') {
+      return (
+        <Topic
+          key={child.id}
+          orgLogin={this.props.orgLogin}
+          topic={child}
+          view={this.props.view}
+        />
+      )
+    }
+
+    if (child.__typename == 'Link') {
+      return (
+          <Link
+          key={child.id}
+          link={child}
+          orgLogin={this.props.orgLogin}
+          view={this.props.view}
+          viewer={this.props.view.viewer}
+        />
+      )
+    }
+
+    return null
+  }
 
   renderAddForm = () => (
     <AddForm
@@ -188,7 +189,7 @@ class TopicPage extends Component<Props, State> {
     }
 
     const { displayName, parentTopics } = topic
-    const { topics, links, repoName } = this
+    const { children, repoName } = this
     const { currentRepository } = view
 
     return (
@@ -210,18 +211,17 @@ class TopicPage extends Component<Props, State> {
               repoName={repoName}
               title="Parent topics"
             />
-            { this.renderTopicViews() }
-            { this.isGuest
+            {this.renderTopicViews()}
+            {this.isGuest
               ? this.renderNotification()
               : this.renderAddForm()}
           </RightColumn>
           <LeftColumn>
             <List
               placeholder="There are no items in this list."
-              hasItems={!isEmpty(topics) || !isEmpty(links)}
+              hasItems={!isEmpty(children)}
             >
-              { topics.map(this.renderTopic) }
-              { links.map(this.renderLink) }
+              {children.map(this.renderTopicChild)}
             </List>
           </LeftColumn>
         </Columns>
@@ -297,22 +297,22 @@ export default createFragmentContainer(TopicPage, {
         }
       }
 
-      childTopics(first: 1000, searchString: $searchString) @connection(key: "Topic_childTopics") {
+      children(first: 1000, searchString: $searchString) @connection(key: "Topic_children") {
         edges {
           node {
-            id
-            path
-            ...Topic_topic
-          }
-        }
-      }
+            __typename
 
-      links(first: 1000, searchString: $searchString)  @connection(key: "Topic_links") {
-        edges {
-          node {
-            id
-            path
-            ...Link_link
+            ... on Topic {
+              id
+              path
+              ...Topic_topic
+            }
+
+            ... on Link {
+              id
+              path
+              ...Link_link
+            }
           }
         }
       }

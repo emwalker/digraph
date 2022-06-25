@@ -3,10 +3,9 @@ use async_graphql::{connection::*, Union};
 use super::{Link, Topic};
 
 #[derive(Union)]
-pub enum SearchResultItem {
+pub enum TopicChild {
     Link(Link),
     Topic(Topic),
 }
 
-pub type SearchResultItemConnection =
-    Connection<String, SearchResultItem, EmptyFields, EmptyFields>;
+pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;

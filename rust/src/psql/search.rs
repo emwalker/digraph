@@ -3,7 +3,7 @@ use super::{
     QuerySpec,
 };
 use crate::prelude::*;
-use crate::schema::{SearchResultItem, Topic};
+use crate::schema::{Topic, TopicChild};
 use sqlx::postgres::PgPool;
 
 #[allow(unused_variables, dead_code)]
@@ -49,7 +49,7 @@ impl Search {
         }
     }
 
-    pub async fn call(&self, pool: &PgPool) -> Result<Vec<SearchResultItem>> {
+    pub async fn call(&self, pool: &PgPool) -> Result<Vec<TopicChild>> {
         let spec = QuerySpec::parse(self.search_string.clone().as_str())?;
         log::debug!("running query: {}", spec);
 

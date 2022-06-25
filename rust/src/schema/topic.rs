@@ -2,8 +2,8 @@ use async_graphql::connection::*;
 use itertools::Itertools;
 
 use super::{
-    relay::conn, LinkConnection, Prefix, Repository, SearchResultItemConnection, Synonym, Synonyms,
-    Timerange,
+    relay::conn, LinkConnection, Prefix, Repository, Synonym, Synonyms, Timerange,
+    TopicChildConnection,
 };
 use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::prelude::*;
@@ -13,6 +13,7 @@ pub const DEFAULT_ROOT_TOPIC_NAME: &str = "Everything";
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
+    pub child_paths: Vec<RepoPath>,
     pub path: RepoPath,
     pub name: String,
     pub parent_topic_paths: Vec<RepoPath>,
@@ -59,7 +60,7 @@ impl Topic {
     }
 
     #[allow(unused_variables)]
-    async fn child_topics(
+    async fn children(
         &self,
         ctx: &Context<'_>,
         after: Option<String>,
@@ -67,10 +68,10 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
         search_string: Option<String>,
-    ) -> Result<TopicConnection> {
+    ) -> Result<TopicChildConnection> {
         let results = ctx
             .data_unchecked::<Repo>()
-            .child_topics_for_topic(&self.path)
+            .topic_children(&self.path)
             .await?;
         conn(after, before, first, last, results)
     }
@@ -185,7 +186,7 @@ impl Topic {
         last: Option<i32>,
         before: Option<String>,
         search_string: String,
-    ) -> Result<SearchResultItemConnection> {
+    ) -> Result<TopicChildConnection> {
         conn(
             after,
             before,

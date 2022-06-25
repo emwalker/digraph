@@ -2,7 +2,7 @@ use sqlx::postgres::PgPool;
 
 use super::{link, topic, QuerySpec, TopicSpec};
 use crate::prelude::*;
-use crate::schema::{SearchResultItem, Topic, Viewer};
+use crate::schema::{Topic, TopicChild};
 
 pub const TOPIC_FIELDS: &str = r#"
     concat('/', o.login, '/', t.id) path,
@@ -50,56 +50,6 @@ pub const LINK_JOINS: &str = r#"
     join organizations o on o.id = l.organization_id
     left join link_topics parent_topics on l.id = parent_topics.child_id
 "#;
-
-pub struct TopicQuery {
-    viewer: Viewer,
-    topic_ids: Vec<String>,
-    limit: i32,
-}
-
-impl TopicQuery {
-    pub fn from(viewer: Viewer, topic_ids: Vec<String>) -> Self {
-        Self {
-            viewer,
-            topic_ids,
-            limit: 10000,
-        }
-    }
-
-    pub async fn execute(&self, pool: &PgPool) -> Result<Vec<Topic>> {
-        let sql = self.topic_sql();
-        let rows = sqlx::query_as::<_, topic::Row>(&sql)
-            .bind(&self.topic_ids)
-            .bind(&self.viewer.query_ids)
-            .bind(self.limit)
-            .fetch_all(pool)
-            .await?;
-
-        Ok(rows.iter().map(topic::Row::to_topic).collect())
-    }
-
-    fn topic_sql(&self) -> String {
-        let mut wheres: Vec<String> = Vec::new();
-        let mut index = 1;
-
-        wheres.push(format!("t.id = any(${index}::uuid[])"));
-        index += 1;
-
-        wheres.push(format!("om.user_id = any(${index}::uuid[])"));
-        index += 1;
-
-        let where_clause = wheres.join(" and ");
-
-        format!(
-            r#"select
-            {TOPIC_FIELDS}
-            {TOPIC_JOINS}
-            where {where_clause}
-            {TOPIC_GROUP_BY}
-            limit ${index}"#
-        )
-    }
-}
 
 pub struct LiveTopicQuery {
     viewer_ids: Vec<String>,
@@ -170,7 +120,7 @@ impl SearchQuery {
         }
     }
 
-    pub async fn execute(&self, pool: &PgPool) -> Result<Vec<SearchResultItem>> {
+    pub async fn execute(&self, pool: &PgPool) -> Result<Vec<TopicChild>> {
         let topic_ids = self.topic_ids();
         let tokens = self.query_spec.wildcard_tokens();
 
@@ -229,7 +179,7 @@ impl SearchQuery {
         limit: i32,
         topic_ids: &Vec<String>,
         tokens: &Vec<String>,
-    ) -> Result<(Vec<SearchResultItem>, i32)> {
+    ) -> Result<(Vec<TopicChild>, i32)> {
         log::debug!(
             "filtering on topic ids {:?}, tokens {:?} and limit {:?}",
             topic_ids,
@@ -250,8 +200,7 @@ impl SearchQuery {
             .fetch_all(pool)
             .await?;
 
-        let results: Vec<SearchResultItem> =
-            rows.iter().map(topic::Row::to_search_result_item).collect();
+        let results: Vec<TopicChild> = rows.iter().map(topic::Row::to_search_result_item).collect();
 
         let found = results.len() as i32;
         Ok((results, limit - found))
@@ -300,7 +249,7 @@ impl SearchQuery {
         limit: i32,
         topic_ids: &Vec<String>,
         tokens: &Vec<String>,
-    ) -> Result<(Vec<SearchResultItem>, i32)> {
+    ) -> Result<(Vec<TopicChild>, i32)> {
         let sql = self.link_sql(topic_ids);
 
         let mut q = sqlx::query_as::<_, link::Row>(&sql);
@@ -314,8 +263,7 @@ impl SearchQuery {
             .fetch_all(pool)
             .await?;
 
-        let links: Vec<SearchResultItem> =
-            rows.iter().map(link::Row::to_search_result_item).collect();
+        let links: Vec<TopicChild> = rows.iter().map(link::Row::to_search_result_item).collect();
 
         Ok((links, limit))
     }

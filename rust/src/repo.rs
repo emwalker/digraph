@@ -9,16 +9,16 @@ use crate::psql;
 use crate::psql::{
     CreateGithubSession, CreateSessionResult, DeleteAccount, DeleteAccountResult, DeleteLink,
     DeleteLinkResult, DeleteSession, DeleteSessionResult, DeleteTopic, DeleteTopicResult,
-    DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchChildLinksForTopic,
-    FetchChildTopicsForTopic, FetchRepositoriesForUser, LiveSearchTopics, ReviewLink,
-    ReviewLinkResult, Search, SelectRepository, SelectRepositoryResult, UpdateLinkParentTopics,
-    UpdateLinkTopicsResult, UpdateSynonyms, UpdateSynonymsResult, UpdateTopicParentTopics,
-    UpdateTopicParentTopicsResult, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
-    UpsertTopicTimeRange, UpsertTopicTimeRangeResult,
+    DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchRepositoriesForUser,
+    LiveSearchTopics, ReviewLink, ReviewLinkResult, Search, SelectRepository,
+    SelectRepositoryResult, UpdateLinkParentTopics, UpdateLinkTopicsResult, UpdateSynonyms,
+    UpdateSynonymsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult, UpsertLink,
+    UpsertLinkResult, UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange,
+    UpsertTopicTimeRangeResult,
 };
 use crate::schema::{
-    ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, SearchResultItem,
-    Topic, UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput,
+    ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, Topic, TopicChild,
+    UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput,
     UpsertTopicTimeRangeInput, User, Viewer,
 };
 
@@ -79,29 +79,23 @@ impl RepoPath {
             valid: false,
         }
     }
-
-    pub fn to_string(&self) -> String {
-        self.path.clone()
-    }
 }
 
 pub struct Repo {
-    link_loader: DataLoader<git::LinkLoader, HashMapCache>,
+    db: PgPool,
+    object_loader: DataLoader<git::ObjectLoader, HashMapCache>,
     organization_by_login_loader: DataLoader<psql::OrganizationByLoginLoader, HashMapCache>,
     organization_loader: DataLoader<psql::OrganizationLoader, HashMapCache>,
-    db: PgPool,
     pub server_secret: String,
     pub viewer: Viewer,
     repository_by_name_loader: DataLoader<psql::RepositoryByNameLoader, HashMapCache>,
     repository_by_prefix_loader: DataLoader<psql::RepositoryByPrefixLoader, HashMapCache>,
     repository_loader: DataLoader<psql::RepositoryLoader, HashMapCache>,
-    topic_loader: DataLoader<git::TopicLoader, HashMapCache>,
     user_loader: DataLoader<psql::UserLoader, HashMapCache>,
 }
 
 impl Repo {
     pub fn new(viewer: Viewer, git: git::Git, db: PgPool, server_secret: String) -> Self {
-        let link_loader = git::LinkLoader::new(viewer.clone(), git.clone());
         let organization_loader = psql::OrganizationLoader::new(viewer.clone(), db.clone());
         let organization_by_login_loader =
             psql::OrganizationByLoginLoader::new(viewer.clone(), db.clone());
@@ -110,7 +104,7 @@ impl Repo {
             psql::RepositoryByNameLoader::new(viewer.clone(), db.clone());
         let repository_by_prefix_loader =
             psql::RepositoryByPrefixLoader::new(viewer.clone(), db.clone());
-        let topic_loader = git::TopicLoader::new(viewer.clone(), git);
+        let object_loader = git::ObjectLoader::new(viewer.clone(), git);
         let user_loader = psql::UserLoader::new(viewer.clone(), db.clone());
 
         Self {
@@ -118,11 +112,6 @@ impl Repo {
             viewer,
             server_secret,
 
-            link_loader: DataLoader::with_cache(
-                link_loader,
-                actix_web::rt::spawn,
-                HashMapCache::default(),
-            ),
             organization_loader: DataLoader::with_cache(
                 organization_loader,
                 actix_web::rt::spawn,
@@ -148,8 +137,8 @@ impl Repo {
                 actix_web::rt::spawn,
                 HashMapCache::default(),
             ),
-            topic_loader: DataLoader::with_cache(
-                topic_loader,
+            object_loader: DataLoader::with_cache(
+                object_loader,
                 actix_web::rt::spawn,
                 HashMapCache::default(),
             ),
@@ -165,33 +154,67 @@ impl Repo {
 impl Repo {
     pub async fn activity(
         &self,
-        topic_id: Option<String>,
+        topic_path: Option<String>,
         first: i32,
     ) -> Result<Vec<ActivityLineItem>> {
-        FetchActivity::new(self.viewer.clone(), topic_id, first)
+        let topic_path = topic_path.map(|s| RepoPath::from(&s));
+        FetchActivity::new(self.viewer.clone(), topic_path, first)
             .call(&self.db)
             .await
     }
 
-    async fn flat_topics(&self, paths: &Vec<RepoPath>) -> Result<Vec<Topic>> {
+    async fn flat_topics(&self, paths: &[RepoPath]) -> Result<Vec<Topic>> {
         let result = self.topics(paths).await?;
         Ok(result.iter().flatten().cloned().collect())
     }
 
     pub async fn child_links_for_topic(
         &self,
-        path: &RepoPath,
-        reviewed: Option<bool>,
+        parent_topic: &RepoPath,
+        _reviewed: Option<bool>,
     ) -> Result<Vec<Link>> {
-        FetchChildLinksForTopic::new(self.viewer.clone(), path.clone(), reviewed)
-            .call(&self.db)
-            .await
+        let children = self.topic_children(parent_topic).await?;
+        let mut links = vec![];
+
+        for child in &children {
+            if let TopicChild::Link(link) = &child {
+                links.push(link.to_owned());
+            }
+        }
+
+        Ok(links)
     }
 
-    pub async fn child_topics_for_topic(&self, path: &RepoPath) -> Result<Vec<Topic>> {
-        FetchChildTopicsForTopic::new(self.viewer.clone(), path.clone())
-            .call(&self.db)
-            .await
+    pub async fn topic_children(&self, parent_topic: &RepoPath) -> Result<Vec<TopicChild>> {
+        use itertools::Itertools;
+
+        let topic = self
+            .topic(parent_topic)
+            .await?
+            .ok_or_else(|| Error::NotFound(format!("no topic: {}", parent_topic)))?;
+        let child_paths = topic
+            .child_paths
+            .iter()
+            .map(RepoPath::to_string)
+            .collect_vec();
+        let map = self.object_loader.load_many(child_paths.clone()).await?;
+
+        let mut children = vec![];
+
+        for child_path in &child_paths {
+            let child = map
+                .get(child_path)
+                .ok_or_else(|| Error::NotFound(format!("no child: {}", child_path)))?;
+
+            let child = match child {
+                git::Object::Topic(topic) => TopicChild::Topic(Topic::from(topic)),
+                git::Object::Link(link) => TopicChild::Link(Link::from(link)),
+            };
+
+            children.push(child);
+        }
+
+        Ok(children)
     }
 
     pub async fn delete_account(&self, user_id: String) -> Result<DeleteAccountResult> {
@@ -228,7 +251,16 @@ impl Repo {
     }
 
     pub async fn link(&self, path: &RepoPath) -> Result<Option<Link>> {
-        self.link_loader.load_one(path.to_string()).await
+        let result = self
+            .object_loader
+            .load_one(path.to_string())
+            .await?
+            .ok_or_else(|| Error::NotFound(format!("no link: {}", path)))?;
+
+        match result {
+            git::Object::Link(link) => Ok(Some(Link::from(&link))),
+            _ => return Err(Error::NotFound(format!("no link: {}", path))),
+        }
     }
 
     pub async fn link_count(&self) -> Result<i64> {
@@ -296,7 +328,7 @@ impl Repo {
         &self,
         parent_topic: Topic,
         search_string: String,
-    ) -> Result<Vec<SearchResultItem>> {
+    ) -> Result<Vec<TopicChild>> {
         Search::new(
             self.viewer.query_ids.clone(),
             parent_topic,
@@ -322,7 +354,16 @@ impl Repo {
     }
 
     pub async fn topic(&self, path: &RepoPath) -> Result<Option<Topic>> {
-        self.topic_loader.load_one(path.to_string()).await
+        let result = self
+            .object_loader
+            .load_one(path.to_string())
+            .await?
+            .ok_or_else(|| Error::NotFound(format!("no topic: {}", path)))?;
+
+        match result {
+            git::Object::Topic(topic) => Ok(Some(Topic::from(&topic))),
+            _ => return Err(Error::NotFound(format!("no topic: {}", path))),
+        }
     }
 
     pub async fn topic_count(&self) -> Result<i64> {
@@ -339,15 +380,20 @@ impl Repo {
         Ok(count)
     }
 
-    pub async fn topics(&self, paths: &Vec<RepoPath>) -> Result<Vec<Option<Topic>>> {
-        let paths = paths
-            .iter()
-            .map(|p| p.to_string())
-            .collect::<Vec<String>>();
-        let map = self.topic_loader.load_many(paths.clone()).await?;
+    pub async fn topics(&self, paths: &[RepoPath]) -> Result<Vec<Option<Topic>>> {
+        let paths = paths.iter().map(|p| p.to_string()).collect::<Vec<String>>();
+        let map = self.object_loader.load_many(paths.clone()).await?;
         let mut topics: Vec<Option<Topic>> = Vec::new();
         for path in paths {
-            let topic = map.get(&path).cloned();
+            let topic = map
+                .get(&path)
+                .ok_or_else(|| Error::NotFound(format!("no topic: {}", path)))?;
+
+            let topic = match &topic {
+                git::Object::Topic(topic) => Some(Topic::from(topic)),
+                _ => None,
+            };
+
             topics.push(topic);
         }
         Ok(topics)

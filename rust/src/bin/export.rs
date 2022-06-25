@@ -83,7 +83,9 @@ struct ParentTopicRow {
 
 impl From<&ParentTopicRow> for ParentTopic {
     fn from(row: &ParentTopicRow) -> Self {
-        Self { path: row.path.clone() }
+        Self {
+            path: row.path.clone(),
+        }
     }
 }
 
@@ -162,7 +164,8 @@ async fn save_topics(root: &DataRoot, pool: &PgPool) -> Result<()> {
             join topics t on t.id = tt.parent_id
             join organizations o on o.id = t.organization_id
             left join timeranges tr on tr.id = t.timerange_id
-            where tt.child_id = $1::uuid"#,
+            where tt.child_id = $1::uuid
+            order by t.name"#,
         )
         .bind(&topic_path.short_id)
         .fetch_all(pool)

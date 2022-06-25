@@ -294,14 +294,12 @@ impl MutationRoot {
             link_path,
         } = input;
         let link_path = RepoPath::from(&link_path);
-        let DeleteLinkResult { deleted_link_path } = ctx
-            .data_unchecked::<Repo>()
-            .delete_link(&link_path)
-            .await?;
+        let DeleteLinkResult { deleted_link_path } =
+            ctx.data_unchecked::<Repo>().delete_link(&link_path).await?;
 
         Ok(DeleteLinkPayload {
             client_mutation_id,
-            deleted_link_path: Some(deleted_link_path.to_string()),
+            deleted_link_path: Some(deleted_link_path),
         })
     }
 
@@ -372,7 +370,9 @@ impl MutationRoot {
         input: ReviewLinkInput,
     ) -> Result<ReviewLinkPayload> {
         let ReviewLinkInput {
-            link_path, reviewed, ..
+            link_path,
+            reviewed,
+            ..
         } = input;
         let ReviewLinkResult { link } = ctx
             .data_unchecked::<Repo>()

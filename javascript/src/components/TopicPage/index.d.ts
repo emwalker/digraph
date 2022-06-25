@@ -3,8 +3,7 @@ import { LocationType, NodeTypeOf } from 'components/types';
 import { TopicPage_query_QueryResponse as Response } from '__generated__/TopicPage_query_Query.graphql';
 import { TopicPage_topic as TopicType } from '__generated__/TopicPage_topic.graphql';
 declare type ViewType = Response['view'];
-declare type LinkType = NodeTypeOf<TopicType['links']>;
-declare type ChildTopicType = NodeTypeOf<TopicType['childTopics']>;
+declare type TopicChildType = NodeTypeOf<TopicType['children']>;
 declare type Props = {
     alerts: Object[];
     location: LocationType;
@@ -16,15 +15,18 @@ declare type State = {};
 declare class TopicPage extends Component<Props, State> {
     constructor(props: Props);
     static getDerivedStateFromProps: (nextProps: Props) => {};
-    get links(): ({
-        readonly id: string;
-        readonly path: string;
-        readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Link_link">;
-    } | null)[];
-    get topics(): ({
+    get children(): ({
+        readonly __typename: "Topic";
         readonly id: string;
         readonly path: string;
         readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Topic_topic">;
+    } | {
+        readonly __typename: "Link";
+        readonly id: string;
+        readonly path: string;
+        readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Link_link">;
+    } | {
+        readonly __typename: "%other";
     } | null)[];
     get synonyms(): readonly {
         readonly name: string;
@@ -33,8 +35,7 @@ declare class TopicPage extends Component<Props, State> {
     get repoName(): string;
     get recentActivityLocation(): LocationType;
     get linksToReviewLocation(): LocationType;
-    renderLink: (link: LinkType | null) => JSX.Element | null;
-    renderTopic: (topic: ChildTopicType | null) => JSX.Element | null;
+    renderTopicChild: (child: TopicChildType | null) => JSX.Element | null;
     renderAddForm: () => JSX.Element;
     renderHeadingDetail: () => JSX.Element | null;
     renderNotification: () => JSX.Element;

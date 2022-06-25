@@ -8,7 +8,7 @@ use super::{
 };
 use crate::prelude::*;
 use crate::schema::{
-    Alert, Link, LinkReview, SearchResultItem, UpdateLinkTopicsInput, UpsertLinkInput, Viewer,
+    Alert, Link, LinkReview, TopicChild, UpdateLinkTopicsInput, UpsertLinkInput, Viewer,
 };
 use crate::{
     http::{repo_url::Url, Page},
@@ -46,8 +46,8 @@ impl Row {
         }
     }
 
-    pub fn to_search_result_item(&self) -> SearchResultItem {
-        SearchResultItem::Link(self.to_link(false))
+    pub fn to_search_result_item(&self) -> TopicChild {
+        TopicChild::Link(self.to_link(false))
     }
 }
 
@@ -68,90 +68,6 @@ async fn fetch_link(query_ids: &Vec<String>, pool: &PgPool, link_path: &RepoPath
         .await?;
 
     Ok(row)
-}
-
-pub struct FetchChildLinksForTopic {
-    limit: i32,
-    parent_topic_id: RepoPath,
-    reviewed: Option<bool>,
-    viewer: Viewer,
-}
-
-impl FetchChildLinksForTopic {
-    pub fn new(viewer: Viewer, parent_topic_id: RepoPath, reviewed: Option<bool>) -> Self {
-        Self {
-            limit: 100,
-            parent_topic_id,
-            reviewed,
-            viewer,
-        }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<Vec<Link>> {
-        log::debug!("fetching child links for topic: {}", self.parent_topic_id);
-
-        let mut index = 1;
-        let mut link_fields: Vec<String> = Vec::new();
-        let mut reviewed_joins: Vec<String> = Vec::new();
-        let mut reviewed_wheres: Vec<String> = vec!["true".into()];
-        let mut group_by: Vec<String> =
-            vec!["l.id".into(), "o.login".into(), "l.created_at".into()];
-
-        if let Some(reviewed) = self.reviewed {
-            link_fields.push(format!(", ulr.reviewed_at, ${index} viewer_id"));
-            reviewed_joins.push(format!(
-                r#"left join user_link_reviews ulr
-                        on l.id = ulr.link_id and ulr.user_id = ${index}::uuid"#
-            ));
-            index += 1;
-
-            if reviewed {
-                reviewed_wheres.push("ulr.reviewed_at is not null".into());
-            } else {
-                reviewed_wheres.push("ulr.reviewed_at is null".into());
-            }
-
-            group_by.push("ulr.reviewed_at".into());
-        }
-
-        let link_fields = link_fields.join(" ");
-        let reviewed_joins = reviewed_joins.join("\n");
-        let reviewed_wheres = reviewed_wheres.join(" and ");
-        let group_by = group_by.join(", ");
-
-        let param_parent_id = index;
-        let param_om_user_ids = param_parent_id + 1;
-        let param_limit = param_om_user_ids + 1;
-
-        let query = format!(
-            r#"select
-                {LINK_FIELDS}
-                {link_fields}
-                {LINK_JOINS}
-                {reviewed_joins}
-                where parent_topics.parent_id = ${param_parent_id}::uuid
-                    and om.user_id = any(${param_om_user_ids}::uuid[])
-                    and {reviewed_wheres}
-                group by {group_by}
-                order by l.created_at desc
-                limit ${param_limit}"#
-        );
-
-        let mut q = sqlx::query_as::<_, Row>(&query);
-
-        if self.reviewed.is_some() {
-            q = q.bind(&self.viewer.user_id);
-        }
-
-        let rows = q
-            .bind(&self.parent_topic_id.short_id)
-            .bind(&self.viewer.query_ids)
-            .bind(self.limit)
-            .fetch_all(pool)
-            .await?;
-
-        Ok(rows.iter().map(|r| r.to_link(false)).collect())
-    }
 }
 
 pub struct DeleteLink {

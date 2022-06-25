@@ -216,7 +216,6 @@ impl Loader<String> for RepositoryByPrefixLoader {
             .fetch_all(&self.pool)
             .await?;
 
-        log::debug!("repo query results: {:?}", rows);
         Ok(rows
             .iter()
             .map(|r| (r.lookup_prefix.to_string(), r.to_repository()))
