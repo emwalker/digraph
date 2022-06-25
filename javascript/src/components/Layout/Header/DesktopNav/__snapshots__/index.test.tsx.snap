@@ -52,7 +52,7 @@ exports[`<DesktopNav /> renders 1`] = `
       className="Link--primary px-2"
       to={
         Object {
-          "pathname": "/wiki/topics/df63295e-ee02-11e8-9e36-17d56b662bc8",
+          "pathname": "/wiki/df63295e-ee02-11e8-9e36-17d56b662bc8",
           "state": Object {
             "itemTitle": "Everything",
             "orgLogin": "wiki",
