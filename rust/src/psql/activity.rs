@@ -121,7 +121,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_no_topics() {
+    fn no_topics() {
         let topics = serde_json::from_str("[]").unwrap();
 
         let row = Row {
@@ -137,7 +137,7 @@ mod tests {
     }
 
     #[test]
-    fn test_one_topic() {
+    fn one_topic() {
         let topics = serde_json::from_str(
             r#"[
                 { "name": "Climate change", "path": "/wiki/1" }
@@ -161,7 +161,7 @@ mod tests {
     }
 
     #[test]
-    fn test_two_topics() {
+    fn two_topics() {
         let topics = serde_json::from_str(
             r#"[
                 { "name": "Climate change", "path": "/wiki/1" },
@@ -186,7 +186,7 @@ mod tests {
     }
 
     #[test]
-    fn test_three_topics() {
+    fn three_topics() {
         let topics = serde_json::from_str(
             r#"[
                 { "name": "Climate change", "path": "/wiki/1" },

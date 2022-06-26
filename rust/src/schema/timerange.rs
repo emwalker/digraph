@@ -102,25 +102,25 @@ mod tests {
     }
 
     #[test]
-    fn test_none() {
+    fn none() {
         let prefix = Prefix::new(None, None);
         assert_eq!(prefix.display("a"), "a");
     }
 
     #[test]
-    fn test_prefix_none() {
+    fn prefix_none() {
         let prefix = Prefix::new(Some("NONE"), valid_date());
         assert_eq!(prefix.display("a"), "a");
     }
 
     #[test]
-    fn test_start_year() {
+    fn start_year() {
         let prefix = Prefix::new(Some("START_YEAR"), valid_date());
         assert_eq!(prefix.display("a"), "2000 a");
     }
 
     #[test]
-    fn test_start_year_month() {
+    fn start_year_month() {
         let prefix = Prefix::new(Some("START_YEAR_MONTH"), valid_date());
         assert_eq!(prefix.display("a"), "2000-01 a");
     }

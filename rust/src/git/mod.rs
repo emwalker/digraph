@@ -2,15 +2,24 @@ use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 
+mod index;
 mod link;
 mod loader;
+mod repository;
 mod topic;
+
+use crate::http::repo_url;
 use crate::prelude::*;
+pub use index::*;
 pub use link::*;
 pub use loader::*;
+pub use repository::*;
 pub use topic::*;
+
+pub const API_VERSION: &str = "objects/v1";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -107,7 +116,7 @@ pub struct Topic {
     pub children: Vec<TopicChild>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Object {
     Topic(Topic),
@@ -193,7 +202,12 @@ impl DataRoot {
         Self { root }
     }
 
-    pub fn file_path(&self, path: &str) -> Result<PathBuf> {
+    pub fn index_filename(&self, key: &IndexKey) -> Result<PathBuf> {
+        let file_path = format!("{}/indexes/tokens/{}.yaml", key.prefix, key.field);
+        Ok(self.root.join(file_path))
+    }
+
+    pub fn object_filename(&self, path: &str) -> Result<PathBuf> {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^(\w{2})(\w{2})([\w-]+)$").unwrap();
         }
@@ -243,11 +257,68 @@ impl Git {
         Self { root }
     }
 
+    pub fn exists(&self, path: &RepoPath) -> Result<bool> {
+        let filename = self.root.object_filename(&path.inner)?;
+        Ok(Path::new(&filename).exists())
+    }
+
     pub fn get(&self, path: &str) -> Result<Object> {
-        let path = self.root.file_path(path)?;
+        let path = self.root.object_filename(path)?;
         let fh = std::fs::File::open(&path).map_err(|e| Error::Repo(format!("{:?}", e)))?;
         let object: Object = serde_yaml::from_reader(fh)?;
         Ok(object)
+    }
+
+    pub fn index_key(&self, path: &RepoPath, token: &str) -> Result<IndexKey> {
+        match token.get(0..2) {
+            Some(field) => Ok(IndexKey {
+                prefix: path.prefix.to_owned(),
+                field: field.to_owned(),
+            }),
+            None => Err(Error::Repo(format!("bad token: {}", token))),
+        }
+    }
+
+    pub fn index_for(&self, key: &IndexKey) -> Result<PathIndex> {
+        let filename = self.root.index_filename(key)?;
+        PathIndex::load(&filename)
+    }
+
+    pub fn indexed_on(&self, path: &RepoPath, phrase: &Phrase) -> Result<bool> {
+        for token in &phrase.tokens {
+            let key = self.index_key(path, token)?;
+            if !self.index_for(&key)?.indexed_on(path, token)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    fn save<T: Serialize>(&self, path: &RepoPath, object: &T) -> Result<()> {
+        let filename = self.root.object_filename(&path.inner)?;
+        let dest = filename.parent().expect("expected a parent directory");
+        fs::create_dir_all(&dest).ok();
+        let s = serde_yaml::to_string(&object)?;
+        log::debug!("saving {:?}", filename);
+        fs::write(&filename, s)?;
+
+        Ok(())
+    }
+
+    pub fn save_link(&self, path: &RepoPath, link: &Link, indexer: &mut Indexer) -> Result<()> {
+        let meta = &link.metadata;
+        let url = repo_url::Url::parse(&meta.url)?;
+        let phrases = &[
+            Phrase::approximate(&meta.title),
+            Phrase::lowercase(&url.normalized),
+        ];
+        indexer.index(path, phrases)?;
+        self.save(path, link)
+    }
+
+    pub fn save_topic(&self, path: &RepoPath, topic: &Topic, _indexer: &mut Indexer) -> Result<()> {
+        // TODO: Indexing
+        self.save(path, topic)
     }
 }
 
@@ -256,7 +327,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_path() {
+    fn parse_path_works() {
         let result = parse_path("../../wiki/12/34/5678/object.yaml");
         assert!(matches!(result, Err(Error::Repo(_))));
 
@@ -266,20 +337,26 @@ mod tests {
     }
 
     #[test]
-    fn test_data_root_file_path() {
+    fn data_root_file_path() {
         let root = DataRoot::new(PathBuf::from("../.."));
 
-        assert!(matches!(root.file_path("1234"), Err(Error::Repo(_))));
-        assert!(matches!(root.file_path("wiki/123456"), Err(Error::Repo(_))));
-        assert!(matches!(root.file_path("/wiki/1234"), Err(Error::Repo(_))));
+        assert!(matches!(root.object_filename("1234"), Err(Error::Repo(_))));
+        assert!(matches!(
+            root.object_filename("wiki/123456"),
+            Err(Error::Repo(_))
+        ));
+        assert!(matches!(
+            root.object_filename("/wiki/1234"),
+            Err(Error::Repo(_))
+        ));
 
         assert_eq!(
-            root.file_path("/wiki/123456").unwrap(),
+            root.object_filename("/wiki/123456").unwrap(),
             PathBuf::from("../../wiki/objects/12/34/56/object.yaml")
         );
 
         assert_eq!(
-            root.file_path("/with-dash/123456").unwrap(),
+            root.object_filename("/with-dash/123456").unwrap(),
             PathBuf::from("../../with-dash/objects/12/34/56/object.yaml")
         );
     }

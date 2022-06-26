@@ -8,11 +8,10 @@ const USER_AGENT: &str = "digraph/0.1.0";
 pub struct Page(pub Url);
 
 #[derive(Derivative)]
-#[derivative(Debug)]
 pub struct Response {
-    url: Url,
+    pub url: Url,
     #[derivative(Debug = "ignore")]
-    body: Html,
+    pub body: Html,
 }
 
 impl Response {
@@ -75,7 +74,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_should_fetch() {
+    fn should_fetch() {
         let url =
             Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something")
                 .unwrap();

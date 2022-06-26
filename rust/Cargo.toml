@@ -20,6 +20,10 @@ path = "src/bin/show.rs"
 name = "export"
 path = "src/bin/export.rs"
 
+[[test]]
+name = "multi-threaded"
+path = "tests/lib.rs"
+
 [dependencies]
 actix-web = "4"
 async-graphql = { version = "4", features = ["apollo_tracing", "cbor", "dataloader", "log", "uuid"] }
@@ -44,8 +48,13 @@ scraper = "0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0"
-sha1 = "0"
+sha2 = "0"
 sqlx = { version = "0.6", features = ["chrono", "json", "postgres", "macros", "migrate", "uuid", "runtime-actix-native-tls"] }
 time = "0"
+unidecode = "0"
 url = "2"
 uuid = { version = "1", features = ["v4", "fast-rng"]}
+
+[dev-dependencies]
+fs_extra = "1"
+tempfile = "3"

@@ -132,7 +132,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_valid_topic_specs() {
+    fn valid_topic_specs() {
         assert!(TopicSpec::is_topic_spec(
             "in:/wiki/topics/e76a690f-2eb2-45a0-9cbc-5e7d76f92851"
         ));
@@ -142,7 +142,7 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_topic_specs() {
+    fn invalid_topic_specs() {
         assert!(!TopicSpec::is_topic_spec(
             "in:/wiki/topics/e76a690f-2eb2-45a0-9cbc-5e7d76f9285"
         ));
@@ -161,7 +161,7 @@ mod tests {
     }
 
     #[test]
-    fn test_topic_spec_parsing() {
+    fn topic_spec_parsing() {
         let s = TopicSpec::parse("in:/wiki/topics/e76a690f-2eb2-45a0-9cbc-5e7d76f92851".into())
             .unwrap();
         assert_eq!(s.op, "in".to_string());
@@ -173,7 +173,7 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_query() {
+    fn empty_query() {
         let s = QuerySpec::parse("").unwrap();
         assert_eq!(s.input, "");
         assert_eq!(s.tokens.len(), 0);
@@ -182,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn test_simple_query() {
+    fn simple_query() {
         let s = QuerySpec::parse("a b").unwrap();
         assert_eq!(s.input, "a b");
         assert_eq!(s.tokens, ["a", "b"]);
@@ -191,7 +191,7 @@ mod tests {
     }
 
     #[test]
-    fn test_topic_query() {
+    fn topic_query() {
         let s = QuerySpec::parse("in:/wiki/topics/e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap();
         assert_eq!(
             s.input,
@@ -203,13 +203,13 @@ mod tests {
     }
 
     #[test]
-    fn test_urls_are_normalized() {
+    fn urls_are_normalized() {
         let s = QuerySpec::parse("https://www.google.com/?s=1234").unwrap();
         assert_eq!(s.string_tokens, ["https://www.google.com/"]);
     }
 
     #[test]
-    fn test_combined_query() {
+    fn combined_query() {
         let s =
             QuerySpec::parse("in:/wiki/topics/e76a690f-2eb2-45a0-9cbc-5e7d76f92851 a b").unwrap();
         assert_eq!(
@@ -227,19 +227,19 @@ mod tests {
     }
 
     #[test]
-    fn test_wildcard_tokens_empty_string() {
+    fn wildcard_tokens_empty_string() {
         let s = QuerySpec::parse("").unwrap();
         assert_eq!(s.wildcard_tokens().len(), 0);
     }
 
     #[test]
-    fn test_wildcard_tokens_simple_string() {
+    fn wildcard_tokens_simple_string() {
         let s = QuerySpec::parse("one two").unwrap();
         assert_eq!(s.wildcard_tokens(), ["%one%", "%two%"]);
     }
 
     #[test]
-    fn test_wildcard_tokens_exclude_a_topic_spec() {
+    fn wildcard_tokens_exclude_a_topic_spec() {
         let s = QuerySpec::parse("one two in:/wiki/topics/e76a690f-2eb2-45a0-9cbc-5e7d76f92851")
             .unwrap();
         assert_eq!(s.wildcard_tokens(), ["%one%", "%two%"]);

@@ -38,7 +38,7 @@ impl Topic {
     ) -> Result<ActivityLineItemConnection> {
         let results = ctx
             .data_unchecked::<Repo>()
-            .activity(Some(self.path.path.clone()), first.unwrap_or(3))
+            .activity(Some(self.path.inner.clone()), first.unwrap_or(3))
             .await?;
         conn(after, before, first, last, results)
     }
@@ -175,7 +175,7 @@ impl Topic {
     }
 
     async fn resource_path(&self) -> &str {
-        self.path.path.as_str()
+        self.path.inner.as_str()
     }
 
     async fn search(

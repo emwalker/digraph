@@ -1,21 +1,19 @@
 use chrono::{DateTime, Utc};
 use getopts::Options;
 use serde::{Deserialize, Serialize};
+
 use sqlx::{FromRow, PgPool};
 use std::collections::HashMap;
 use std::env;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    DataRoot, Link, LinkMetadata, ParentTopic, Synonym, Timerange, TimerangePrefixFormat, Topic,
-    TopicChild, TopicMetadata,
+    DataRoot, Git, Indexer, Link, LinkMetadata, ParentTopic, Synonym, Timerange,
+    TimerangePrefixFormat, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use digraph::prelude::*;
-
-const API_VERSION: &str = "objects/v1";
 
 struct Opts {
     root: PathBuf,
@@ -125,17 +123,7 @@ impl From<&TopicChildRow> for TopicChild {
     }
 }
 
-fn write_object<T: Serialize>(root: &DataRoot, id: &str, object: T) -> Result<()> {
-    let filename = root.file_path(id)?;
-    let dest = filename.parent().expect("expected a parent directory");
-    fs::create_dir_all(&dest).ok();
-    let s = serde_yaml::to_string(&object)?;
-    log::debug!("saving {:?}", filename);
-    fs::write(&filename, s)?;
-    Ok(())
-}
-
-async fn save_topics(root: &DataRoot, pool: &PgPool) -> Result<()> {
+async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<()> {
     log::info!("saving topics");
 
     let rows = sqlx::query_as::<_, TopicMetadataRow>(
@@ -225,7 +213,7 @@ async fn save_topics(root: &DataRoot, pool: &PgPool) -> Result<()> {
             kind: "Topic".to_string(),
             metadata: TopicMetadata {
                 added: meta.added,
-                path: topic_path.path,
+                path: topic_path.inner,
                 root: meta.root,
                 synonyms: synonyms.iter().map(Synonym::from).collect(),
                 timerange,
@@ -234,13 +222,13 @@ async fn save_topics(root: &DataRoot, pool: &PgPool) -> Result<()> {
             children: children.iter().map(TopicChild::from).collect(),
         };
 
-        write_object(root, &meta.path, topic)?;
+        git.save_topic(&RepoPath::from(&meta.path), &topic, indexer)?;
     }
 
     Ok(())
 }
 
-async fn save_links(root: &DataRoot, pool: &PgPool) -> Result<()> {
+async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> Result<()> {
     log::info!("saving links");
 
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
@@ -277,7 +265,7 @@ async fn save_links(root: &DataRoot, pool: &PgPool) -> Result<()> {
             parent_topics: parent_topics.iter().map(ParentTopic::from).collect(),
         };
 
-        write_object(root, &meta.path, link)?;
+        git.save_link(&RepoPath::from(&meta.path), &link, indexer)?;
     }
 
     Ok(())
@@ -294,9 +282,14 @@ async fn main() -> Result<()> {
         return Err(Error::NotFound(format!("{:?}", opts.root)));
     }
     let root = DataRoot::new(opts.root);
+    let git = Git::new(root.clone());
+    let mut indexer = Indexer::new(&git);
 
-    save_topics(&root, &pool).await?;
-    save_links(&root, &pool).await?;
+    save_topics(&git, &pool, &mut indexer).await?;
+    save_links(&git, &pool, &mut indexer).await?;
+
+    log::info!("saving indexes");
+    indexer.save()?;
 
     log::info!("exported database to {}", root);
     Ok(())

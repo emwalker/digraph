@@ -261,7 +261,7 @@ impl UpsertLink {
                 .bind(&self.input.organization_login)
                 .bind(&self.input.repository_name)
                 .bind(&url.normalized)
-                .bind(&url.sha1)
+                .bind(&url.sha256)
                 .bind(&title)
                 .fetch_one(&mut tx)
                 .await?;

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::git;
 use crate::prelude::*;
 
+#[allow(dead_code)]
 pub struct ObjectLoader {
     viewer: Viewer,
     git: git::Git,

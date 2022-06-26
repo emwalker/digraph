@@ -1,9 +1,14 @@
 use async_graphql::dataloader::*;
+use chrono::Utc;
 use std::collections::HashMap;
 
-use crate::git;
+use crate::http::{repo_url, Response};
 use crate::prelude::*;
-use crate::schema::{Link, WIKI_REPOSITORY_ID};
+use crate::schema::{Alert, Link, WIKI_REPOSITORY_ID};
+use crate::{
+    git,
+    git::{Git, Indexer, API_VERSION},
+};
 
 impl From<&git::Link> for Link {
     fn from(link: &git::Link) -> Self {
@@ -26,13 +31,14 @@ impl From<&git::Link> for Link {
     }
 }
 
+#[allow(dead_code)]
 pub struct LinkLoader {
     viewer: Viewer,
-    git: git::Git,
+    git: Git,
 }
 
 impl LinkLoader {
-    pub fn new(viewer: Viewer, git: git::Git) -> Self {
+    pub fn new(viewer: Viewer, git: Git) -> Self {
         Self { viewer, git }
     }
 }
@@ -57,5 +63,71 @@ impl Loader<String> for LinkLoader {
         }
 
         Ok(map)
+    }
+}
+
+pub trait Fetch {
+    fn fetch(&self, url: &repo_url::Url) -> Result<Response>;
+}
+
+pub struct UpsertLink {
+    pub actor: Viewer,
+    pub add_parent_topic_paths: Vec<RepoPath>,
+    pub prefix: String,
+    pub title: Option<String>,
+    pub url: String,
+    pub fetcher: Box<dyn Fetch>,
+}
+
+pub struct UpsertLinkResult {
+    pub alerts: Vec<Alert>,
+    pub link: Option<Link>,
+}
+
+impl UpsertLink {
+    pub async fn call(&self, git: &Git) -> Result<UpsertLinkResult> {
+        log::info!("upserting link: {}", self.url);
+        let url = repo_url::Url::parse(&self.url)?;
+        let path = url.path(&self.prefix);
+
+        let mut link = if git.exists(&path)? {
+            let object = git.get(&path.inner)?;
+            match object {
+                git::Object::Link(link) => link,
+                other => return Err(Error::Repo(format!("expected a link: {:?}", other))),
+            }
+        } else {
+            let title = if let Some(title) = &self.title {
+                title.clone()
+            } else {
+                let response = self.fetcher.fetch(&url)?;
+                response.title().unwrap_or_else(|| "Missing title".into())
+            };
+
+            git::Link {
+                api_version: API_VERSION.into(),
+                kind: "Link".into(),
+                parent_topics: vec![],
+                metadata: git::LinkMetadata {
+                    added: Utc::now(),
+                    path: path.to_string(),
+                    title,
+                    url: url.normalized,
+                },
+            }
+        };
+
+        if let Some(title) = &self.title {
+            link.metadata.title = title.clone();
+        }
+
+        let mut indexer = Indexer::new(git);
+        git.save_link(&path, &link, &mut indexer)?;
+        indexer.save()?;
+
+        Ok(UpsertLinkResult {
+            alerts: vec![],
+            link: Some(Link::from(&link)),
+        })
     }
 }

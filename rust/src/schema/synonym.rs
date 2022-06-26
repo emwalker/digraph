@@ -82,21 +82,21 @@ mod tests {
     }
 
     #[test]
-    fn test_from_ref() {
+    fn from_ref() {
         let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(2, syn.into_iter().len());
     }
 
     #[test]
-    fn test_simple_display_name() {
+    fn simple_display_name() {
         let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(syn.display_name("en", "c", &Prefix::new(None, None)), "a");
     }
 
     #[test]
-    fn test_display_name_with_start_year_month_format() {
+    fn display_name_with_start_year_month_format() {
         let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(
@@ -110,7 +110,7 @@ mod tests {
     }
 
     #[test]
-    fn test_display_name_with_start_year_format() {
+    fn display_name_with_start_year_format() {
         let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(

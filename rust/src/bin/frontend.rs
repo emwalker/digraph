@@ -128,7 +128,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_auth_header_parsing() {
+    fn auth_header_parsing() {
         let auth = AuthHeader("Bearer NDYxYzg3YzgtZmI4Zi0xMWU4LTljYmMtYWZkZTZjNTRkODgxOmFiM2Q1MTYwYWFlNjMyYTUxNzNjMDVmOGNiMGVmMDg2ODY2ZGFkMTAzNTE3ZGQwMTRmMzhhNWIxY2E2OWI5YWE=".into());
         let (user_id, session_id) = auth.decode().unwrap();
         assert_eq!(user_id, "461c87c8-fb8f-11e8-9cbc-afde6c54d881");

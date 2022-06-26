@@ -24,7 +24,7 @@ use crate::schema::{
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct RepoPath {
-    pub path: String,
+    pub inner: String,
     pub org_login: String,
     pub prefix: String,
     pub short_id: String,
@@ -33,7 +33,7 @@ pub struct RepoPath {
 
 impl std::fmt::Display for RepoPath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.path)
+        write!(f, "{}", self.inner)
     }
 }
 
@@ -54,7 +54,7 @@ impl From<&String> for RepoPath {
         };
 
         RepoPath {
-            path: input.to_string(),
+            inner: input.to_string(),
             org_login: prefix.to_string(),
             prefix: prefix.to_string(),
             short_id: short_id.to_string(),
@@ -72,7 +72,7 @@ impl From<&str> for RepoPath {
 impl RepoPath {
     fn invalid_path(input: &String) -> Self {
         Self {
-            path: input.clone(),
+            inner: input.clone(),
             org_login: "wiki".into(),
             prefix: "wiki".into(),
             short_id: input.into(),
