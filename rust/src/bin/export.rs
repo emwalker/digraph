@@ -234,7 +234,7 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
         r#"select
             l.created_at added,
-            concat('/', o.login, '/', l.id) path,
+            concat('/', o.login, '/', encode(sha256(l.id), 'hex') path,
             l.id::varchar link_id,
             l.title,
             l.url
