@@ -1,4 +1,4 @@
-use digraph::git::{Fetch, Phrase, UpsertLink};
+use digraph::git::{Fetch, Search, UpsertLink};
 use digraph::http::{repo_url, Response};
 use digraph::prelude::*;
 use scraper::Html;
@@ -22,12 +22,10 @@ async fn create_link() {
 
     let url = repo_url::Url::parse("https://www.google.com").unwrap();
     let path = url.path(&f.repo.prefix);
-    let page_title = Phrase::approximate("page title");
-    let url_text = Phrase::lowercase("https://www.google.com/");
+    let search = Search::parse("page title https://www.google.com/").unwrap();
 
     assert!(!f.repo.exists(&path).unwrap());
-    assert!(!f.repo.indexed_on(&path, &page_title).unwrap());
-    assert!(!f.repo.indexed_on(&path, &url_text).unwrap());
+    assert!(!f.repo.appears_in(&search, &path).unwrap());
 
     UpsertLink {
         actor: actor(),
@@ -42,6 +40,5 @@ async fn create_link() {
     .unwrap();
 
     assert!(f.repo.exists(&path).unwrap());
-    assert!(f.repo.indexed_on(&path, &page_title).unwrap());
-    assert!(f.repo.indexed_on(&path, &url_text).unwrap());
+    assert!(f.repo.appears_in(&search, &path).unwrap());
 }

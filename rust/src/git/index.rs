@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
@@ -6,6 +5,7 @@ use std::path::PathBuf;
 use unidecode::unidecode;
 
 use super::{Git, API_VERSION};
+use crate::http::repo_url;
 use crate::prelude::*;
 
 const SPECIAL_CHARS: &[char] = &[
@@ -19,36 +19,30 @@ struct BTreeIndex {
     paths: BTreeMap<String, BTreeSet<String>>,
 }
 
-pub struct Phrase {
-    pub exact: bool,
+pub struct Search {
+    pub urls: Vec<repo_url::Url>,
     pub tokens: Vec<String>,
 }
 
-impl Phrase {
-    pub fn approximate(phrase: &str) -> Self {
-        let phrase = unidecode(phrase).replace(SPECIAL_CHARS, "").to_lowercase();
-        let tokens = phrase
-            .split_whitespace()
-            .filter_map(|s| {
-                if s.len() >= 3 && s.len() <= 20 {
-                    Some(s.to_string())
-                } else {
-                    None
-                }
-            })
-            .collect_vec();
+impl Search {
+    pub fn parse(input: &str) -> Result<Self> {
+        let input = unidecode(input).to_lowercase();
+        let mut tokens = vec![];
+        let mut urls = vec![];
 
-        Self {
-            exact: false,
-            tokens,
-        }
-    }
+        for token in input.split_whitespace() {
+            if repo_url::Url::is_valid_url(token) {
+                urls.push(repo_url::Url::parse(token)?);
+                continue;
+            }
 
-    pub fn lowercase(phrase: &str) -> Self {
-        Self {
-            exact: true,
-            tokens: vec![phrase.to_lowercase()],
+            let token = token.replace(SPECIAL_CHARS, "");
+            if token.len() >= 3 && token.len() <= 20 {
+                tokens.push(token);
+            }
         }
+
+        Ok(Self { tokens, urls })
     }
 }
 
@@ -128,9 +122,19 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn index(&mut self, path: &RepoPath, phrases: &[Phrase]) -> Result<()> {
-        for phrase in phrases {
-            for token in &phrase.tokens {
+    pub fn index(&mut self, path: &RepoPath, searches: &[Search]) -> Result<()> {
+        for search in searches {
+            for token in &search.tokens {
+                let key = self.git.index_key(path, token)?;
+                let index = self
+                    .indexes
+                    .entry(key.to_owned())
+                    .or_insert(self.git.index_for(&key)?);
+                index.index(path, token)?;
+            }
+
+            for url in &search.urls {
+                let token = &url.normalized;
                 let key = self.git.index_key(path, token)?;
                 let index = self
                     .indexes
@@ -157,19 +161,19 @@ mod tests {
 
     #[test]
     fn punctuation() {
-        let phrase = Phrase::approximate("one.!?:`#$@*&;+-{}[]()/\\'\",=    <> two");
+        let phrase = Search::parse("one.!?:`#$@*&;+-{}[]()/\\'\",=    <> two").unwrap();
         assert_eq!(phrase.tokens, &["one", "two"]);
     }
 
     #[test]
     fn uppercase_letters() {
-        let phrase = Phrase::approximate("One TWO three");
+        let phrase = Search::parse("One TWO three").unwrap();
         assert_eq!(phrase.tokens, &["one", "two", "three"]);
     }
 
     #[test]
     fn unicode_characters() {
-        let phrase = Phrase::approximate("Æneid étude 北亰 ᔕᓇᓇ げんまい茶");
+        let phrase = Search::parse("Æneid étude 北亰 ᔕᓇᓇ げんまい茶").unwrap();
         assert_eq!(
             phrase.tokens,
             &["aeneid", "etude", "bei", "jing", "shanana", "genmaicha"]
@@ -181,7 +185,16 @@ mod tests {
         let token = (0..=20).map(|_| "a").collect::<String>();
         assert_eq!(token.len(), 21);
 
-        let phrase = Phrase::approximate(&format!("a aa aaa aaaa {}", token));
+        let phrase = Search::parse(&format!("a aa aaa aaaa {}", token)).unwrap();
         assert_eq!(phrase.tokens, &["aaa", "aaaa"]);
+    }
+
+    #[test]
+    fn url() {
+        let phrase = Search::parse("one https://www.google.com").unwrap();
+        assert_eq!(
+            phrase.urls,
+            &[repo_url::Url::parse("https://www.google.com").unwrap()],
+        );
     }
 }

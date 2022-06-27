@@ -1,4 +1,4 @@
-use super::{Git, Phrase};
+use super::{Git, Search};
 use crate::prelude::*;
 
 pub struct Repository {
@@ -18,7 +18,7 @@ impl Repository {
         self.git.exists(path)
     }
 
-    pub fn indexed_on(&self, path: &RepoPath, phrase: &Phrase) -> Result<bool> {
-        self.git.indexed_on(path, phrase)
+    pub fn appears_in(&self, search: &Search, path: &RepoPath) -> Result<bool> {
+        self.git.indexed_on(path, search)
     }
 }

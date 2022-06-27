@@ -284,13 +284,22 @@ impl Git {
         PathIndex::load(&filename)
     }
 
-    pub fn indexed_on(&self, path: &RepoPath, phrase: &Phrase) -> Result<bool> {
-        for token in &phrase.tokens {
+    pub fn indexed_on(&self, path: &RepoPath, search: &Search) -> Result<bool> {
+        for token in &search.tokens {
             let key = self.index_key(path, token)?;
             if !self.index_for(&key)?.indexed_on(path, token)? {
                 return Ok(false);
             }
         }
+
+        for url in &search.urls {
+            let url = &url.normalized;
+            let key = self.index_key(path, url)?;
+            if !self.index_for(&key)?.indexed_on(path, url)? {
+                return Ok(false);
+            }
+        }
+
         Ok(true)
     }
 
@@ -308,11 +317,8 @@ impl Git {
     pub fn save_link(&self, path: &RepoPath, link: &Link, indexer: &mut Indexer) -> Result<()> {
         let meta = &link.metadata;
         let url = repo_url::Url::parse(&meta.url)?;
-        let phrases = &[
-            Phrase::approximate(&meta.title),
-            Phrase::lowercase(&url.normalized),
-        ];
-        indexer.index(path, phrases)?;
+        let searches = &[Search::parse(&meta.title)?, Search::parse(&url.normalized)?];
+        indexer.index(path, searches)?;
         self.save(path, link)
     }
 

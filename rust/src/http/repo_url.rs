@@ -11,12 +11,18 @@ use crate::prelude::*;
 //
 // Eventually this kind of site-level handling of links can be moved into configs that are stored
 // in a repo or in the database, but for now we just hard-code the handling here.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, Hash)]
 pub struct Url {
     pub input: String,
     pub normalized: String,
     pub path: String,
     pub sha256: String,
+}
+
+impl std::cmp::PartialEq for Url {
+    fn eq(&self, other: &Self) -> bool {
+        self.sha256 == other.sha256
+    }
 }
 
 impl std::fmt::Display for Url {
@@ -112,21 +118,33 @@ impl Url {
 mod tests {
     use super::*;
 
+    fn parse(input: &str) -> Url {
+        Url::parse(input).unwrap()
+    }
+
     #[test]
     fn sha1() {
         // The sha1 digest is based on the normalized url
-        let url = Url::parse("http://www.google.com").unwrap();
+        let url = parse("http://www.google.com");
         assert_eq!(url.normalized, "http://www.google.com/");
         assert_eq!(
             url.sha256,
             "dd014af5ed6b38d9130e3f466f850e46d21b951199d53a18ef29ee9341614eaf"
         );
 
-        let url = Url::parse("http://some.url.com").unwrap();
+        let url = parse("http://some.url.com");
         assert_eq!(url.normalized, "http://some.url.com/");
         assert_eq!(
             url.sha256,
             "c54263cc494cbb1d846efe85ca6ece40221db8cbb58f40f2f26590ae86cc25b8"
+        );
+    }
+
+    #[test]
+    fn partial_eq() {
+        assert_eq!(
+            parse("http://www.google.com"),
+            parse("http://www.google.com/")
         );
     }
 
@@ -138,46 +156,38 @@ mod tests {
 
     #[test]
     fn simple_case() {
-        let url = Url::parse("http://www.google.com").unwrap();
+        let url = parse("http://www.google.com");
         assert_eq!(url.normalized, "http://www.google.com/");
     }
 
     #[test]
     fn url_params() {
-        let url = Url::parse("https://www.reuters.com/some-title?utm_source=reddit.com").unwrap();
+        let url = parse("https://www.reuters.com/some-title?utm_source=reddit.com");
         assert_eq!(url.normalized, "https://www.reuters.com/some-title");
     }
 
     #[test]
     fn ends_with() {
-        let url =
-            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something")
-                .unwrap();
+        let url = parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something");
         assert!(url.ends_with(".pdf"));
 
-        let url =
-            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something")
-                .unwrap();
+        let url = parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something");
         assert!(!url.ends_with(".pdf"));
     }
 
     #[test]
     fn is_pdf() {
-        let url =
-            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something")
-                .unwrap();
+        let url = parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.pdf?q=something");
         assert!(url.is_pdf());
 
-        let url =
-            Url::parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something")
-                .unwrap();
+        let url = parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something");
         assert!(!url.is_pdf());
     }
 
     #[test]
     fn hacker_news_article() {
         // The id parameter is preserved
-        let url = Url::parse("https://news.ycombinator.com/item?id=18504300").unwrap();
+        let url = parse("https://news.ycombinator.com/item?id=18504300");
         assert_eq!(
             url.normalized,
             "https://news.ycombinator.com/item?id=18504300"
@@ -187,7 +197,7 @@ mod tests {
     #[test]
     fn youtube_video() {
         // The id parameter is preserved
-        let url = Url::parse("https://www.youtube.com/watch?v=Wx_2SVm9Jgo&list=PLJ8cMiYb3G5eYGt47YpJcNhILyYLmV-tW&index=3&t=0s").unwrap();
+        let url = parse("https://www.youtube.com/watch?v=Wx_2SVm9Jgo&list=PLJ8cMiYb3G5eYGt47YpJcNhILyYLmV-tW&index=3&t=0s");
         assert_eq!(
             url.normalized,
             "https://www.youtube.com/watch?v=Wx_2SVm9Jgo&t=0s"
@@ -196,7 +206,7 @@ mod tests {
 
     #[test]
     fn bugfix() {
-        let url = Url::parse("https://quaderno.io/stripe-vat-subscriptions/").unwrap();
+        let url = parse("https://quaderno.io/stripe-vat-subscriptions/");
         assert_eq!(
             url.normalized,
             "https://quaderno.io/stripe-vat-subscriptions/"
@@ -205,7 +215,7 @@ mod tests {
 
     #[test]
     fn nytimes_link() {
-        let url = Url::parse("https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html?partner=rss&emc=rss").unwrap();
+        let url = parse("https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html?partner=rss&emc=rss");
         assert_eq!(
             url.normalized,
             "https://www.nytimes.com/2019/04/12/world/canada/foreign-election-interference-social-media.html"
@@ -214,7 +224,7 @@ mod tests {
 
     #[test]
     fn link_with_an_anchor() {
-        let url = Url::parse("https://www.buzzfeed.com/craigsilverman/fever-swamp-election?utm_term=.ug4NRgEQDe#.lszgG6PJZr").unwrap();
+        let url = parse("https://www.buzzfeed.com/craigsilverman/fever-swamp-election?utm_term=.ug4NRgEQDe#.lszgG6PJZr");
         assert_eq!(
             url.normalized,
             "https://www.buzzfeed.com/craigsilverman/fever-swamp-election"
@@ -223,16 +233,14 @@ mod tests {
 
     #[test]
     fn gmail_link() {
-        let url = Url::parse("https://mail.google.com/mail/u/0/#inbox").unwrap();
+        let url = parse("https://mail.google.com/mail/u/0/#inbox");
         assert_eq!(url.normalized, "https://mail.google.com/mail/u/0/#inbox");
     }
 
     #[test]
     fn urban_dictionary() {
-        let url = Url::parse(
-            "https://www.urbandictionary.com/define.php?term=Vote%20from%20the%20rooftops",
-        )
-        .unwrap();
+        let url =
+            parse("https://www.urbandictionary.com/define.php?term=Vote%20from%20the%20rooftops");
         assert_eq!(
             url.normalized,
             "https://www.urbandictionary.com/define.php?term=Vote+from+the+rooftops"
@@ -241,7 +249,7 @@ mod tests {
 
     #[test]
     fn abcnews_link() {
-        let url = Url::parse("https://abcnews.go.com/US/facebook-takes-proud-boys-american-guard-accounts-connected/story?cid=clicksource_4380645_2_heads_hero_live_twopack_hed&id=71286604").unwrap();
+        let url = parse("https://abcnews.go.com/US/facebook-takes-proud-boys-american-guard-accounts-connected/story?cid=clicksource_4380645_2_heads_hero_live_twopack_hed&id=71286604");
         assert_eq!(
             url.normalized,
             "https://abcnews.go.com/US/facebook-takes-proud-boys-american-guard-accounts-connected/story?id=71286604"
@@ -250,7 +258,7 @@ mod tests {
 
     #[test]
     fn facebook_link() {
-        let url = Url::parse("https://www.facebook.com/kristof/posts/10159885205317891?__xts__[0]=68.ARAVnkUTUgiRHe7PEE2SsJ8HPxpc50fo9LzoUWxjsgXHvmgtl-NE8VFhGrr4qBIZt7cxN9cvFsH8nVaD0IAVqLeyGe7KsnhjpJxJb8pio_yTPi6m0aKQr8SwTr1950y6fKrObouJIz5ai3L0XEqb0RcN7XnNtGyglUdu76Md2B5qCreEQMveNjWjaw2lNQEAYlSuU7uENm2F8fae1WBozYwBtzgYayLDzVJhZ_VJMsDq9qhaDDQVQ8v3ZxNpcLWJz2PlRPJ8lcd_QsctED82cujRarYxRMSyx0RwGUj-zvljdBuF-sPSdIKyFNo5GE3RBu_qSCL7TUQ").unwrap();
+        let url = parse("https://www.facebook.com/kristof/posts/10159885205317891?__xts__[0]=68.ARAVnkUTUgiRHe7PEE2SsJ8HPxpc50fo9LzoUWxjsgXHvmgtl-NE8VFhGrr4qBIZt7cxN9cvFsH8nVaD0IAVqLeyGe7KsnhjpJxJb8pio_yTPi6m0aKQr8SwTr1950y6fKrObouJIz5ai3L0XEqb0RcN7XnNtGyglUdu76Md2B5qCreEQMveNjWjaw2lNQEAYlSuU7uENm2F8fae1WBozYwBtzgYayLDzVJhZ_VJMsDq9qhaDDQVQ8v3ZxNpcLWJz2PlRPJ8lcd_QsctED82cujRarYxRMSyx0RwGUj-zvljdBuF-sPSdIKyFNo5GE3RBu_qSCL7TUQ");
         assert_eq!(
             url.normalized,
             "https://www.facebook.com/kristof/posts/10159885205317891?__xts__%5B0%5D=68.ARAVnkUTUgiRHe7PEE2SsJ8HPxpc50fo9LzoUWxjsgXHvmgtl-NE8VFhGrr4qBIZt7cxN9cvFsH8nVaD0IAVqLeyGe7KsnhjpJxJb8pio_yTPi6m0aKQr8SwTr1950y6fKrObouJIz5ai3L0XEqb0RcN7XnNtGyglUdu76Md2B5qCreEQMveNjWjaw2lNQEAYlSuU7uENm2F8fae1WBozYwBtzgYayLDzVJhZ_VJMsDq9qhaDDQVQ8v3ZxNpcLWJz2PlRPJ8lcd_QsctED82cujRarYxRMSyx0RwGUj-zvljdBuF-sPSdIKyFNo5GE3RBu_qSCL7TUQ"
@@ -259,7 +267,7 @@ mod tests {
 
     #[test]
     fn cell_journal_link() {
-        let url = Url::parse("https://www.cell.com/cell/pdf/S0092-8674(20)30567-5.pdf?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867420305675%3Fshowall%3Dtrue").unwrap();
+        let url = parse("https://www.cell.com/cell/pdf/S0092-8674(20)30567-5.pdf?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867420305675%3Fshowall%3Dtrue");
         assert_eq!(
             url.normalized,
             "https://www.cell.com/cell/pdf/S0092-8674(20)30567-5.pdf"
@@ -268,7 +276,7 @@ mod tests {
 
     #[test]
     fn durham_university_link() {
-        let url = Url::parse("https://www.dur.ac.uk/research/news/item/?itemno=42260").unwrap();
+        let url = parse("https://www.dur.ac.uk/research/news/item/?itemno=42260");
         assert_eq!(
             url.normalized,
             "https://www.dur.ac.uk/research/news/item/?itemno=42260"
@@ -277,10 +285,8 @@ mod tests {
 
     #[test]
     fn baylor_university_link() {
-        let url = Url::parse(
-            "https://www.baylor.edu/mediacommunications/news.php?action=story&story=219716",
-        )
-        .unwrap();
+        let url =
+            parse("https://www.baylor.edu/mediacommunications/news.php?action=story&story=219716");
         assert_eq!(
             url.normalized,
             "https://www.baylor.edu/mediacommunications/news.php?action=story&story=219716"
@@ -289,7 +295,7 @@ mod tests {
 
     #[test]
     fn umass_link() {
-        let url = Url::parse("https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1004&context=eng_faculty_pubs").unwrap();
+        let url = parse("https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1004&context=eng_faculty_pubs");
         assert_eq!(
             url.normalized,
             "https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1004&context=eng_faculty_pubs"
@@ -298,9 +304,7 @@ mod tests {
 
     #[test]
     fn san_diego_university_link() {
-        let url =
-            Url::parse("https://newscenter.sdsu.edu/sdsu_newscenter/news_story.aspx?sid=78119")
-                .unwrap();
+        let url = parse("https://newscenter.sdsu.edu/sdsu_newscenter/news_story.aspx?sid=78119");
         assert_eq!(
             url.normalized,
             "https://newscenter.sdsu.edu/sdsu_newscenter/news_story.aspx?sid=78119"
@@ -310,14 +314,13 @@ mod tests {
     #[test]
     fn human_rights_ukraine_link() {
         let url =
-            Url::parse("http://khpg.org/en/index.php?id=1597789267&fbclid=IwAR0TszHB5J_sEHt6ZRBnzMWuVCH_Ec2t8stvpSs8vt32sUnZYkVOlRXYnoY")
-                .unwrap();
+            parse("http://khpg.org/en/index.php?id=1597789267&fbclid=IwAR0TszHB5J_sEHt6ZRBnzMWuVCH_Ec2t8stvpSs8vt32sUnZYkVOlRXYnoY");
         assert_eq!(url.normalized, "http://khpg.org/en/index.php?id=1597789267");
     }
 
     #[test]
     fn greenbelt_link() {
-        let url = Url::parse("https://www.greenbeltmd.gov/home/showdocument?id=2656").unwrap();
+        let url = parse("https://www.greenbeltmd.gov/home/showdocument?id=2656");
         assert_eq!(
             url.normalized,
             "https://www.greenbeltmd.gov/home/showdocument?id=2656"
@@ -326,10 +329,8 @@ mod tests {
 
     #[test]
     fn nz_herald_link() {
-        let url = Url::parse(
-            "https://www.nzherald.co.nz/world/news/article.cfm?c_id=2&objectid=12358821",
-        )
-        .unwrap();
+        let url =
+            parse("https://www.nzherald.co.nz/world/news/article.cfm?c_id=2&objectid=12358821");
         assert_eq!(
             url.normalized,
             "https://www.nzherald.co.nz/world/news/article.cfm?objectid=12358821"
@@ -338,7 +339,7 @@ mod tests {
 
     #[test]
     fn facebook_video() {
-        let url = Url::parse("https://www.facebook.com/watch/?v=781916212211423").unwrap();
+        let url = parse("https://www.facebook.com/watch/?v=781916212211423");
         assert_eq!(
             url.normalized,
             "https://www.facebook.com/watch/?v=781916212211423"
@@ -347,9 +348,7 @@ mod tests {
 
     #[test]
     fn source_watch_page() {
-        let url =
-            Url::parse("https://www.sourcewatch.org/index.php?title=Honest_Elections_Project")
-                .unwrap();
+        let url = parse("https://www.sourcewatch.org/index.php?title=Honest_Elections_Project");
         assert_eq!(
             url.normalized,
             "https://www.sourcewatch.org/index.php?title=Honest_Elections_Project"
@@ -358,7 +357,7 @@ mod tests {
 
     #[test]
     fn lenr_forum() {
-        let url = Url::parse("https://www.lenr-forum.com/forum/thread/6017-mizuno-replication-and-materials-only/?pageNo=2").unwrap();
+        let url = parse("https://www.lenr-forum.com/forum/thread/6017-mizuno-replication-and-materials-only/?pageNo=2");
         assert_eq!(
             url.normalized,
             "https://www.lenr-forum.com/forum/thread/6017-mizuno-replication-and-materials-only/?pageNo=2"
@@ -367,7 +366,7 @@ mod tests {
 
     #[test]
     fn koreaherald_link() {
-        let url = Url::parse("http://www.koreaherald.com/view.php?ud=20210316000213").unwrap();
+        let url = parse("http://www.koreaherald.com/view.php?ud=20210316000213");
         assert_eq!(
             url.normalized,
             "http://www.koreaherald.com/view.php?ud=20210316000213"
@@ -376,8 +375,7 @@ mod tests {
 
     #[test]
     fn cspan_video() {
-        let url =
-            Url::parse("https://www.c-span.org/video/?c5004713/user-clip-mcgahn-quotes").unwrap();
+        let url = parse("https://www.c-span.org/video/?c5004713/user-clip-mcgahn-quotes");
         assert_eq!(
             url.normalized,
             "https://www.c-span.org/video/?c5004713%2Fuser-clip-mcgahn-quotes="
