@@ -33,6 +33,10 @@ build-container-node: build-client
 build-executables:
 	$(MAKE) -C rust build
 
+clean:
+	$(MAKE) -C javascript clean
+	$(MAKE) -C rust clean
+
 check: check-rust
 	$(MAKE) -C javascript check
 

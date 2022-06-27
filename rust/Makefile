@@ -1,8 +1,12 @@
 build:
 	cargo build --release
 
+
 check: format test
 	cargo check
+
+clean:
+	cargo clean
 
 format:
 	cargo clippy --fix

@@ -6,6 +6,11 @@ build: .PHONY
 
 check: reinstall-javacript format test build
 
+clean:
+	rm -rf node_modules
+	rm -rf cache
+	rm -rf build
+
 format:
 	yarn eslint
 	yarn tsc
@@ -13,8 +18,7 @@ format:
 relay:
 	yarn relay
 
-reinstall-javacript:
-	rm -rf node_modules
+reinstall-javacript: clean
 	yarn install
 	rm -rf src/__generated__
 	yarn relay
