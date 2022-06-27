@@ -7,7 +7,7 @@ use crate::repo::Repo;
 const PRIVATE_REPOSITORY_COLOR: &str = "#dbedff";
 pub const DEFAULT_REPOSITORY_NAME: &str = "system:default";
 pub const WIKI_REPOSITORY_ID: &str = "32212616-fc1b-11e8-8eda-b70af6d8d09f";
-pub const WIKI_ROOT_TOPIC_ID: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
+pub const WIKI_ROOT_TOPIC_PATH: &str = "df63295e-ee02-11e8-9e36-17d56b662bc8";
 
 #[derive(Clone, Debug)]
 pub enum Repository {
@@ -134,7 +134,7 @@ impl Repository {
 
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
         let topic_id = match self {
-            Self::Default => format!("/wiki/{}", WIKI_ROOT_TOPIC_ID),
+            Self::Default => format!("/wiki/{}", WIKI_ROOT_TOPIC_PATH),
             Self::Fetched { root_topic_id, .. } => format!("/wiki/{}", root_topic_id),
         };
         let path = RepoPath::from(&topic_id);

@@ -1,10 +1,25 @@
 use fs_extra::dir;
+use scraper::Html;
 use std::env;
 use std::path::PathBuf;
 use tempfile::{self, TempDir};
 
-use digraph::git::{DataRoot, Git, Repository};
+use digraph::git::{DataRoot, Fetch, Git, Link, Object, Repository, UpsertLink};
+use digraph::http::{repo_url, Response};
 use digraph::prelude::*;
+
+mod link;
+
+struct Fetcher(String);
+
+impl Fetch for Fetcher {
+    fn fetch(&self, url: &repo_url::Url) -> Result<Response> {
+        Ok(Response {
+            url: url.to_owned(),
+            body: Html::parse_document(&self.0),
+        })
+    }
+}
 
 struct Fixtures {
     path: PathBuf,
@@ -59,4 +74,43 @@ fn actor() -> Viewer {
     }
 }
 
-mod link;
+fn fetch_link<F>(f: &Fixtures, path: &RepoPath, block: F)
+where
+    F: Fn(Link),
+{
+    match f.repo.git.get(&path.inner).unwrap() {
+        Object::Link(link) => block(link),
+        other => panic!("unexpected object: {:?}", other),
+    }
+}
+
+async fn upsert_link(
+    f: &Fixtures,
+    url: &repo_url::Url,
+    title: Option<String>,
+    parent_topics: &[&str],
+) {
+    use itertools::Itertools;
+
+    let html = match &title {
+        Some(title) => format!("<title>{}</title>", title),
+        None => "<title>Some title</title>".into(),
+    };
+
+    let parent_topics = parent_topics
+        .iter()
+        .map(|path| RepoPath::from(*path))
+        .collect_vec();
+
+    UpsertLink {
+        actor: actor(),
+        add_parent_topic_paths: parent_topics,
+        fetcher: Box::new(Fetcher(html)),
+        prefix: "/wiki".into(),
+        url: url.to_string(),
+        title,
+    }
+    .call(&f.repo.git)
+    .await
+    .unwrap();
+}

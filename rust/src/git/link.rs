@@ -1,10 +1,12 @@
 use async_graphql::dataloader::*;
 use chrono::Utc;
-use std::collections::HashMap;
+use itertools::Itertools;
+use std::collections::{BTreeSet, HashMap};
 
+use crate::git::ParentTopic;
 use crate::http::{repo_url, Response};
 use crate::prelude::*;
-use crate::schema::{Alert, Link, WIKI_REPOSITORY_ID};
+use crate::schema::{Alert, Link, WIKI_REPOSITORY_ID, WIKI_ROOT_TOPIC_PATH};
 use crate::{
     git,
     git::{Git, Indexer, API_VERSION},
@@ -104,10 +106,18 @@ impl UpsertLink {
                 response.title().unwrap_or_else(|| "Missing title".into())
             };
 
+            let parent_topics = self
+                .add_parent_topic_paths
+                .iter()
+                .map(|path| ParentTopic {
+                    path: path.to_string(),
+                })
+                .collect_vec();
+
             git::Link {
                 api_version: API_VERSION.into(),
                 kind: "Link".into(),
-                parent_topics: vec![],
+                parent_topics,
                 metadata: git::LinkMetadata {
                     added: Utc::now(),
                     path: path.to_string(),
@@ -120,6 +130,25 @@ impl UpsertLink {
         if let Some(title) = &self.title {
             link.metadata.title = title.clone();
         }
+
+        let mut parent_topics: BTreeSet<String> = BTreeSet::new();
+
+        for topic in &link.parent_topics {
+            parent_topics.insert(topic.path.to_owned());
+        }
+
+        for path in &self.add_parent_topic_paths {
+            parent_topics.insert(path.to_string());
+        }
+
+        if parent_topics.is_empty() {
+            parent_topics.insert(WIKI_ROOT_TOPIC_PATH.into());
+        }
+
+        link.parent_topics = parent_topics
+            .iter()
+            .map(|path| ParentTopic { path: path.into() })
+            .collect_vec();
 
         let mut indexer = Indexer::new(git);
         git.save_link(&path, &link, &mut indexer)?;
