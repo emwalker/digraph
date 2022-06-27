@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    DataRoot, Git, Indexer, Link, LinkMetadata, ParentTopic, Synonym, Timerange,
+    DataRoot, Git, IndexMode, Indexer, Link, LinkMetadata, ParentTopic, Synonym, Timerange,
     TimerangePrefixFormat, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use digraph::prelude::*;
@@ -283,7 +283,7 @@ async fn main() -> Result<()> {
     }
     let root = DataRoot::new(opts.root);
     let git = Git::new(root.clone());
-    let mut indexer = Indexer::new(&git);
+    let mut indexer = Indexer::new(&git, IndexMode::Replace);
 
     save_topics(&git, &pool, &mut indexer).await?;
     save_links(&git, &pool, &mut indexer).await?;

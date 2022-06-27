@@ -1,4 +1,6 @@
 Soon:
+* Include the locale in synonym entries?
+* Use BTreeSets and Ord on everything that needs it
 * Fix header box shadow funkiness, perhaps by simplifying the HTML structure and dropping some components
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 

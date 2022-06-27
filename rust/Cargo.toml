@@ -21,7 +21,7 @@ name = "export"
 path = "src/bin/export.rs"
 
 [[test]]
-name = "multi-threaded"
+name = "integration-tests"
 path = "tests/lib.rs"
 
 [dependencies]
@@ -42,6 +42,7 @@ itertools = "0"
 lazy_static = "1"
 log = "0"
 quick-error = "2"
+rand = "0"
 regex = "1"
 reqwest = { version = "0", features = ["default-tls"] }
 scraper = "0"

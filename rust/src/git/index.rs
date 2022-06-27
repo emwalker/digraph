@@ -1,10 +1,11 @@
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::PathBuf;
 use unidecode::unidecode;
 
-use super::{Git, API_VERSION};
+use super::{Git, Synonym, Topic, API_VERSION};
 use crate::http::repo_url;
 use crate::prelude::*;
 
@@ -12,12 +13,6 @@ const SPECIAL_CHARS: &[char] = &[
     '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=',
     '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~',
 ];
-
-#[derive(Debug, Deserialize, Serialize)]
-struct BTreeIndex {
-    api_version: String,
-    paths: BTreeMap<String, BTreeSet<String>>,
-}
 
 pub struct Search {
     pub urls: Vec<repo_url::Url>,
@@ -46,21 +41,107 @@ impl Search {
     }
 }
 
-#[derive(Debug)]
-pub struct PathIndex {
-    filename: PathBuf,
-    index: BTreeIndex,
+pub fn normalize(input: &str) -> String {
+    unidecode(input).to_lowercase().replace(SPECIAL_CHARS, "")
 }
 
-impl PathIndex {
+#[derive(Copy, Clone)]
+pub enum IndexMode {
+    Merge,
+    Replace,
+}
+
+trait Index {
+    fn filename(&self) -> &PathBuf;
+
+    fn serialize(&self) -> Result<String>;
+
+    fn write(&self) -> Result<()> {
+        let filename = self.filename();
+        let dest = filename.parent().expect("expected a parent directory");
+        fs::create_dir_all(&dest).ok();
+        let s = self.serialize()?;
+        log::debug!("saving {:?}", filename);
+        fs::write(&filename, s).map_err(Error::from)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct SynonymEntry {
+    pub name: String,
+    pub path: String,
+}
+
+impl std::cmp::PartialOrd for SynonymEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match self.name.partial_cmp(&other.name) {
+            Some(core::cmp::Ordering::Equal) => {}
+            ord => return ord,
+        }
+        self.path.partial_cmp(&other.path)
+    }
+}
+
+impl std::cmp::Ord for SynonymEntry {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct SynonymMatch {
+    pub entry: SynonymEntry,
+    pub name: String,
+    pub topic: Topic,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct SynonymIndexMap {
+    api_version: String,
+    synonyms: BTreeMap<String, BTreeSet<SynonymEntry>>,
+}
+
+impl SynonymIndexMap {
+    fn get(&self, string: &str) -> Option<&BTreeSet<SynonymEntry>> {
+        self.synonyms.get(string)
+    }
+}
+
+#[derive(Debug)]
+pub struct SynonymIndex {
+    filename: PathBuf,
+    index: SynonymIndexMap,
+}
+
+impl Index for SynonymIndex {
+    fn filename(&self) -> &PathBuf {
+        &self.filename
+    }
+
+    fn serialize(&self) -> Result<String> {
+        Ok(serde_yaml::to_string(&self.index)?)
+    }
+}
+
+impl SynonymIndex {
+    pub fn new(filename: &PathBuf) -> Self {
+        Self {
+            filename: filename.to_owned(),
+            index: SynonymIndexMap {
+                api_version: API_VERSION.to_owned(),
+                synonyms: BTreeMap::new(),
+            },
+        }
+    }
+
     pub fn load(filename: &PathBuf) -> Result<Self> {
         let index = if filename.as_path().exists() {
             let fh = std::fs::File::open(&filename).map_err(|e| Error::Repo(format!("{:?}", e)))?;
             serde_yaml::from_reader(fh)?
         } else {
-            BTreeIndex {
+            SynonymIndexMap {
                 api_version: API_VERSION.to_owned(),
-                paths: BTreeMap::new(),
+                synonyms: BTreeMap::new(),
             }
         };
 
@@ -70,10 +151,90 @@ impl PathIndex {
         })
     }
 
-    pub fn index(&mut self, path: &RepoPath, token: &str) -> Result<()> {
+    pub fn index(&mut self, path: &RepoPath, normalized: &str, name: &str) -> Result<()> {
         let paths = self
             .index
-            .paths
+            .synonyms
+            .entry(normalized.to_owned())
+            .or_insert(BTreeSet::new());
+
+        paths.insert(SynonymEntry {
+            name: name.to_owned(),
+            path: path.to_string(),
+        });
+
+        Ok(())
+    }
+
+    pub fn matches(&self, name: &str) -> Result<Vec<&SynonymEntry>> {
+        let normalized = normalize(name);
+        match self.index.get(&normalized) {
+            Some(entries) => Ok(entries.iter().collect_vec()),
+            None => Ok(vec![]),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct TokenIndexMap {
+    api_version: String,
+    tokens: BTreeMap<String, BTreeSet<String>>,
+}
+
+impl TokenIndexMap {
+    fn get(&self, string: &str) -> Option<&BTreeSet<String>> {
+        self.tokens.get(string)
+    }
+}
+
+#[derive(Debug)]
+pub struct TokenIndex {
+    filename: PathBuf,
+    index: TokenIndexMap,
+}
+
+impl Index for TokenIndex {
+    fn filename(&self) -> &PathBuf {
+        &self.filename
+    }
+
+    fn serialize(&self) -> Result<String> {
+        Ok(serde_yaml::to_string(&self.index)?)
+    }
+}
+
+impl TokenIndex {
+    pub fn new(filename: &PathBuf) -> Self {
+        Self {
+            filename: filename.to_owned(),
+            index: TokenIndexMap {
+                api_version: API_VERSION.to_owned(),
+                tokens: BTreeMap::new(),
+            },
+        }
+    }
+
+    pub fn load(filename: &PathBuf) -> Result<Self> {
+        let index = if filename.as_path().exists() {
+            let fh = std::fs::File::open(&filename).map_err(|e| Error::Repo(format!("{:?}", e)))?;
+            serde_yaml::from_reader(fh)?
+        } else {
+            TokenIndexMap {
+                api_version: API_VERSION.to_owned(),
+                tokens: BTreeMap::new(),
+            }
+        };
+
+        Ok(Self {
+            filename: filename.to_owned(),
+            index,
+        })
+    }
+
+    fn index(&mut self, path: &RepoPath, token: &str) -> Result<()> {
+        let paths = self
+            .index
+            .tokens
             .entry(token.to_owned())
             .or_insert(BTreeSet::new());
         paths.insert(path.to_string());
@@ -81,18 +242,10 @@ impl PathIndex {
     }
 
     pub fn indexed_on(&self, path: &RepoPath, token: &str) -> Result<bool> {
-        Ok(match &self.index.paths.get(token) {
+        Ok(match &self.index.get(token) {
             Some(paths) => paths.contains(&path.inner),
             None => false,
         })
-    }
-
-    pub fn write(&self) -> Result<()> {
-        let dest = self.filename.parent().expect("expected a parent directory");
-        fs::create_dir_all(&dest).ok();
-        let s = serde_yaml::to_string(&self.index)?;
-        log::debug!("saving {:?}", self.filename);
-        fs::write(&self.filename, s).map_err(Error::from)
     }
 }
 
@@ -104,53 +257,82 @@ pub struct IndexKey {
 
 pub struct Indexer {
     git: Git,
-    indexes: HashMap<IndexKey, PathIndex>,
+    mode: IndexMode,
+    synonym_indexes: HashMap<IndexKey, SynonymIndex>,
+    token_indexes: HashMap<IndexKey, TokenIndex>,
 }
 
 impl Indexer {
-    pub fn new(git: &Git) -> Self {
+    pub fn new(git: &Git, mode: IndexMode) -> Self {
         Self {
             git: git.clone(),
-            indexes: HashMap::new(),
+            mode,
+            synonym_indexes: HashMap::new(),
+            token_indexes: HashMap::new(),
         }
     }
 
-    pub fn save(&self) -> Result<()> {
-        for index in self.indexes.values() {
-            index.write()?;
-        }
-        Ok(())
-    }
-
-    pub fn index(&mut self, path: &RepoPath, searches: &[Search]) -> Result<()> {
+    pub fn index_searches(&mut self, path: &RepoPath, searches: &[Search]) -> Result<()> {
         for search in searches {
             for token in &search.tokens {
-                let key = self.git.index_key(path, token)?;
-                let index = self
-                    .indexes
-                    .entry(key.to_owned())
-                    .or_insert(self.git.index_for(&key)?);
-                index.index(path, token)?;
+                let key = self.git.index_key(&path.prefix, token)?;
+                self.token_index_for(&key)?.index(path, token)?;
             }
 
             for url in &search.urls {
                 let token = &url.normalized;
-                let key = self.git.index_key(path, token)?;
-                let index = self
-                    .indexes
-                    .entry(key.to_owned())
-                    .or_insert(self.git.index_for(&key)?);
-                index.index(path, token)?;
+                let key = self.git.index_key(&path.prefix, token)?;
+                self.token_index_for(&key)?.index(path, token)?;
             }
         }
         Ok(())
+    }
+
+    pub fn index_synonyms(&mut self, path: &RepoPath, synonyms: &Vec<Synonym>) -> Result<()> {
+        for synonym in synonyms {
+            let name = &synonym.name;
+            let normalized = normalize(name);
+            if normalized.len() < 3 {
+                continue;
+            }
+            let key = self.git.index_key(&path.prefix, &normalized)?;
+            self.synonym_index_for(&key)?
+                .index(path, &normalized, name)?;
+        }
+        Ok(())
+    }
+
+    pub fn save(&self) -> Result<()> {
+        for index in self.token_indexes.values() {
+            index.write()?;
+        }
+
+        for index in self.synonym_indexes.values() {
+            index.write()?;
+        }
+
+        Ok(())
+    }
+
+    fn synonym_index_for(&mut self, key: &IndexKey) -> Result<&mut SynonymIndex> {
+        Ok(self
+            .synonym_indexes
+            .entry(key.to_owned())
+            .or_insert(self.git.synonym_index(key, self.mode)?))
+    }
+
+    fn token_index_for(&mut self, key: &IndexKey) -> Result<&mut TokenIndex> {
+        Ok(self
+            .token_indexes
+            .entry(key.to_owned())
+            .or_insert(self.git.token_index(key, self.mode)?))
     }
 }
 
 impl std::fmt::Debug for Indexer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Indexer")
-            .field("indexes", &self.indexes.keys())
+            .field("indexes", &self.token_indexes.keys())
             .finish()
     }
 }

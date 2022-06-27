@@ -40,7 +40,7 @@ impl std::fmt::Display for RepoPath {
 impl From<&String> for RepoPath {
     fn from(input: &String) -> Self {
         lazy_static! {
-            static ref RE: Regex = Regex::new(r"^/([\w-]+)/([\w-]+)$").unwrap();
+            static ref RE: Regex = Regex::new(r"^(/([\w-]+))/([\w-]+)$").unwrap();
         }
 
         let cap = match RE.captures(input) {
@@ -48,14 +48,16 @@ impl From<&String> for RepoPath {
             _ => return Self::invalid_path(input),
         };
 
-        let (prefix, short_id) = match (cap.get(1), cap.get(2)) {
-            (Some(prefix), Some(short_id)) => (prefix.as_str(), short_id.as_str()),
+        let (prefix, org_login, short_id) = match (cap.get(1), cap.get(2), cap.get(3)) {
+            (Some(prefix), Some(org_login), Some(short_id)) => {
+                (prefix.as_str(), org_login.as_str(), short_id.as_str())
+            }
             _ => return Self::invalid_path(input),
         };
 
         RepoPath {
             inner: input.to_string(),
-            org_login: prefix.to_string(),
+            org_login: org_login.to_string(),
             prefix: prefix.to_string(),
             short_id: short_id.to_string(),
             valid: true,
@@ -457,5 +459,20 @@ impl Repo {
 
     pub async fn user(&self, id: String) -> Result<Option<User>> {
         self.user_loader.load_one(id).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn simple_case() {
+        let path = RepoPath::from("/wiki/00001");
+        assert!(path.valid);
+        assert_eq!("/wiki/00001", path.inner);
+        assert_eq!("/wiki", path.prefix);
+        assert_eq!("wiki", path.org_login);
+        assert_eq!("00001", path.short_id);
     }
 }

@@ -4,11 +4,15 @@ use std::env;
 use std::path::PathBuf;
 use tempfile::{self, TempDir};
 
-use digraph::git::{DataRoot, Fetch, Git, Link, Object, Repository, UpsertLink};
+use digraph::git::{
+    DataRoot, Fetch, Git, Link, OnMatchingSynonym, Repository, Topic, UpsertLink, UpsertLinkResult,
+    UpsertTopic, UpsertTopicResult,
+};
 use digraph::http::{repo_url, Response};
 use digraph::prelude::*;
 
 mod link;
+mod topic;
 
 struct Fetcher(String);
 
@@ -55,6 +59,7 @@ impl Fixtures {
         let fixture = Fixtures::blank(fixture_dirname);
         let options = dir::CopyOptions {
             overwrite: true,
+            content_only: true,
             ..Default::default()
         };
         log::debug!("copying: {:?}", fixture.source);
@@ -78,18 +83,24 @@ fn fetch_link<F>(f: &Fixtures, path: &RepoPath, block: F)
 where
     F: Fn(Link),
 {
-    match f.repo.git.get(&path.inner).unwrap() {
-        Object::Link(link) => block(link),
-        other => panic!("unexpected object: {:?}", other),
-    }
+    let link = f.repo.git.fetch_link(&path.inner).unwrap();
+    block(link);
 }
 
-async fn upsert_link(
+fn fetch_topic<F>(f: &Fixtures, path: &RepoPath, block: F)
+where
+    F: Fn(Topic),
+{
+    let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+    block(topic);
+}
+
+fn upsert_link(
     f: &Fixtures,
     url: &repo_url::Url,
     title: Option<String>,
     parent_topics: &[&str],
-) {
+) -> UpsertLinkResult {
     use itertools::Itertools;
 
     let html = match &title {
@@ -97,20 +108,36 @@ async fn upsert_link(
         None => "<title>Some title</title>".into(),
     };
 
-    let parent_topics = parent_topics
+    let parents = parent_topics
         .iter()
         .map(|path| RepoPath::from(*path))
         .collect_vec();
 
     UpsertLink {
         actor: actor(),
-        add_parent_topic_paths: parent_topics,
+        add_parent_topic_paths: parents,
         fetcher: Box::new(Fetcher(html)),
         prefix: "/wiki".into(),
-        url: url.to_string(),
+        url: url.normalized.to_owned(),
         title,
     }
     .call(&f.repo.git)
-    .await
-    .unwrap();
+    .unwrap()
+}
+
+fn upsert_topic(
+    f: &Fixtures,
+    name: &str,
+    parent_topic: RepoPath,
+    on_matching_synonym: OnMatchingSynonym,
+) -> Result<UpsertTopicResult> {
+    UpsertTopic {
+        actor: actor(),
+        parent_topic,
+        locale: "en".into(),
+        name: name.into(),
+        on_matching_synonym,
+        prefix: "/wiki".into(),
+    }
+    .call(&f.repo.git)
 }

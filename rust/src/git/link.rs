@@ -3,17 +3,18 @@ use chrono::Utc;
 use itertools::Itertools;
 use std::collections::{BTreeSet, HashMap};
 
-use crate::git::ParentTopic;
+use crate::git::{
+    Git, IndexMode, Indexer, Link, LinkMetadata, Object, ParentTopic, TopicChild, API_VERSION,
+};
 use crate::http::{repo_url, Response};
 use crate::prelude::*;
-use crate::schema::{Alert, Link, WIKI_REPOSITORY_ID, WIKI_ROOT_TOPIC_PATH};
 use crate::{
-    git,
-    git::{Git, Indexer, API_VERSION},
+    schema,
+    schema::{WIKI_REPOSITORY_ID, WIKI_ROOT_TOPIC_PATH},
 };
 
-impl From<&git::Link> for Link {
-    fn from(link: &git::Link) -> Self {
+impl From<&Link> for schema::Link {
+    fn from(link: &Link) -> Self {
         let meta = &link.metadata;
         let parent_topic_paths = link
             .parent_topics
@@ -47,7 +48,7 @@ impl LinkLoader {
 
 #[async_trait::async_trait]
 impl Loader<String> for LinkLoader {
-    type Value = Link;
+    type Value = schema::Link;
     type Error = Error;
 
     async fn load(&self, paths: &[String]) -> Result<HashMap<String, Self::Value>> {
@@ -56,7 +57,7 @@ impl Loader<String> for LinkLoader {
 
         for path in paths {
             let link = match &self.git.get(path)? {
-                git::Object::Link(link) => Link::from(link),
+                Object::Link(link) => schema::Link::from(link),
                 other => {
                     return Err(Error::Repo(format!("expected a link: {:?}", other)));
                 }
@@ -82,22 +83,19 @@ pub struct UpsertLink {
 }
 
 pub struct UpsertLinkResult {
-    pub alerts: Vec<Alert>,
-    pub link: Option<Link>,
+    pub alerts: Vec<schema::Alert>,
+    pub link: Option<schema::Link>,
 }
 
 impl UpsertLink {
-    pub async fn call(&self, git: &Git) -> Result<UpsertLinkResult> {
+    pub fn call(&self, git: &Git) -> Result<UpsertLinkResult> {
         log::info!("upserting link: {}", self.url);
         let url = repo_url::Url::parse(&self.url)?;
         let path = url.path(&self.prefix);
+        let added = Utc::now();
 
         let mut link = if git.exists(&path)? {
-            let object = git.get(&path.inner)?;
-            match object {
-                git::Object::Link(link) => link,
-                other => return Err(Error::Repo(format!("expected a link: {:?}", other))),
-            }
+            git.fetch_link(&path.inner)?
         } else {
             let title = if let Some(title) = &self.title {
                 title.clone()
@@ -114,12 +112,12 @@ impl UpsertLink {
                 })
                 .collect_vec();
 
-            git::Link {
+            Link {
                 api_version: API_VERSION.into(),
                 kind: "Link".into(),
                 parent_topics,
-                metadata: git::LinkMetadata {
-                    added: Utc::now(),
+                metadata: LinkMetadata {
+                    added,
                     path: path.to_string(),
                     title,
                     url: url.normalized,
@@ -150,13 +148,24 @@ impl UpsertLink {
             .map(|path| ParentTopic { path: path.into() })
             .collect_vec();
 
-        let mut indexer = Indexer::new(git);
+        let mut indexer = Indexer::new(git, IndexMode::Merge);
+
+        for path in &parent_topics {
+            let mut topic = git.fetch_topic(path)?;
+            topic.children.push(TopicChild {
+                added,
+                path: link.metadata.path.to_owned(),
+            });
+            git.save_topic(&RepoPath::from(path), &topic, &mut indexer)?;
+        }
+
         git.save_link(&path, &link, &mut indexer)?;
+
         indexer.save()?;
 
         Ok(UpsertLinkResult {
             alerts: vec![],
-            link: Some(Link::from(&link)),
+            link: Some(schema::Link::from(&link)),
         })
     }
 }

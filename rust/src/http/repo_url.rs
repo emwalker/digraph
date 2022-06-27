@@ -1,5 +1,6 @@
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
+use std::hash::Hasher;
 use url;
 
 use crate::prelude::*;
@@ -11,7 +12,7 @@ use crate::prelude::*;
 //
 // Eventually this kind of site-level handling of links can be moved into configs that are stored
 // in a repo or in the database, but for now we just hard-code the handling here.
-#[derive(Clone, Debug, Eq, Hash)]
+#[derive(Clone, Debug, Eq)]
 pub struct Url {
     pub input: String,
     pub normalized: String,
@@ -28,6 +29,44 @@ impl std::cmp::PartialEq for Url {
 impl std::fmt::Display for Url {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{}", self.normalized)
+    }
+}
+
+impl std::hash::Hash for Url {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.sha256.hash(state);
+    }
+}
+
+impl Url {
+    pub fn parse(input: &str) -> Result<Self> {
+        let url = parse_url(input)?;
+        let input = input.to_string();
+        let normalized = format!("{}", url);
+        let sha256 = sha256_digest(normalized.as_bytes());
+
+        Ok(Self {
+            input,
+            normalized,
+            path: url.path().to_string(),
+            sha256,
+        })
+    }
+
+    pub fn is_valid_url(input: &str) -> bool {
+        Self::parse(input).is_ok()
+    }
+
+    pub fn ends_with(&self, suffix: &str) -> bool {
+        self.path.ends_with(suffix)
+    }
+
+    pub fn is_pdf(&self) -> bool {
+        self.ends_with(".pdf")
+    }
+
+    pub fn path(&self, prefix: &str) -> RepoPath {
+        RepoPath::from(&format!("{}/{}", prefix, self.sha256))
     }
 }
 
@@ -80,38 +119,6 @@ fn parse_url(input: &str) -> Result<url::Url> {
     }
 
     Ok(url2)
-}
-
-impl Url {
-    pub fn parse(input: &str) -> Result<Self> {
-        let url = parse_url(input)?;
-        let input = input.to_string();
-        let normalized = format!("{}", url);
-        let sha256 = sha256_digest(normalized.as_bytes());
-
-        Ok(Self {
-            input,
-            normalized,
-            path: url.path().to_string(),
-            sha256,
-        })
-    }
-
-    pub fn is_valid_url(input: &str) -> bool {
-        Self::parse(input).is_ok()
-    }
-
-    pub fn ends_with(&self, suffix: &str) -> bool {
-        self.path.ends_with(suffix)
-    }
-
-    pub fn is_pdf(&self) -> bool {
-        self.ends_with(".pdf")
-    }
-
-    pub fn path(&self, prefix: &str) -> RepoPath {
-        RepoPath::from(&format!("{}/{}", prefix, self.sha256))
-    }
 }
 
 #[cfg(test)]

@@ -1,0 +1,18 @@
+---
+apiVersion: objects/v1
+kind: Topic
+metadata:
+  added: "2021-03-18T00:09:59.350933Z"
+  path: /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8
+  root: true
+  synonyms:
+    - added: "2021-03-18T00:09:59.350933Z"
+      locale: en
+      name: Root topic
+  timerange: ~
+parentTopics: []
+children:
+  - added: "2021-03-18T00:09:59.350933Z"
+    path: /wiki/00001
+  - added: "2021-03-18T00:09:59.350933Z"
+    path: /wiki/00002

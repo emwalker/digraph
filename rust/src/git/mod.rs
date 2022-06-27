@@ -44,7 +44,7 @@ pub struct ParentTopic {
     pub path: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicChild {
     pub added: DateTime<Utc>,
@@ -114,6 +114,12 @@ pub struct Topic {
     pub metadata: TopicMetadata,
     pub parent_topics: Vec<ParentTopic>,
     pub children: Vec<TopicChild>,
+}
+
+impl std::cmp::PartialEq for Topic {
+    fn eq(&self, other: &Self) -> bool {
+        self.metadata.path == other.metadata.path
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -202,11 +208,6 @@ impl DataRoot {
         Self { root }
     }
 
-    pub fn index_filename(&self, key: &IndexKey) -> Result<PathBuf> {
-        let file_path = format!("{}/indexes/tokens/{}.yaml", key.prefix, key.field);
-        Ok(self.root.join(file_path))
-    }
-
     pub fn object_filename(&self, path: &str) -> Result<PathBuf> {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^(\w{2})(\w{2})([\w-]+)$").unwrap();
@@ -245,6 +246,16 @@ impl DataRoot {
 
         Ok(self.root.join(file_path))
     }
+
+    pub fn synonym_index_filename(&self, key: &IndexKey) -> Result<PathBuf> {
+        let file_path = format!("{}/indexes/synonyms/{}.yaml", &key.prefix[1..], key.field);
+        Ok(self.root.join(file_path))
+    }
+
+    pub fn token_index_filename(&self, key: &IndexKey) -> Result<PathBuf> {
+        let file_path = format!("{}/indexes/tokens/{}.yaml", &key.prefix[1..], key.field);
+        Ok(self.root.join(file_path))
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -264,38 +275,55 @@ impl Git {
 
     pub fn get(&self, path: &str) -> Result<Object> {
         let path = self.root.object_filename(path)?;
-        let fh = std::fs::File::open(&path).map_err(|e| Error::Repo(format!("{:?}", e)))?;
+        let fh = std::fs::File::open(&path)
+            .map_err(|e| Error::Repo(format!("problem opening file {:?}: {}", path, e)))?;
         let object: Object = serde_yaml::from_reader(fh)?;
         Ok(object)
     }
 
-    pub fn index_key(&self, path: &RepoPath, token: &str) -> Result<IndexKey> {
+    pub fn fetch_topic(&self, path: &str) -> Result<Topic> {
+        match &self.get(path)? {
+            Object::Topic(topic) => Ok(topic.clone()),
+            other => return Err(Error::Repo(format!("not a topic: {:?}", other))),
+        }
+    }
+
+    pub fn fetch_link(&self, path: &str) -> Result<Link> {
+        match &self.get(path)? {
+            Object::Link(link) => Ok(link.clone()),
+            other => return Err(Error::Repo(format!("not a link: {:?}", other))),
+        }
+    }
+
+    pub fn index_key(&self, prefix: &str, token: &str) -> Result<IndexKey> {
+        let token = normalize(token);
         match token.get(0..2) {
             Some(field) => Ok(IndexKey {
-                prefix: path.prefix.to_owned(),
-                field: field.to_owned(),
+                prefix: prefix.to_owned(),
+                field: field.replace([' '], "+"),
             }),
             None => Err(Error::Repo(format!("bad token: {}", token))),
         }
     }
 
-    pub fn index_for(&self, key: &IndexKey) -> Result<PathIndex> {
-        let filename = self.root.index_filename(key)?;
-        PathIndex::load(&filename)
-    }
-
     pub fn indexed_on(&self, path: &RepoPath, search: &Search) -> Result<bool> {
         for token in &search.tokens {
-            let key = self.index_key(path, token)?;
-            if !self.index_for(&key)?.indexed_on(path, token)? {
+            let key = self.index_key(&path.prefix, token)?;
+            if !self
+                .token_index(&key, IndexMode::Merge)?
+                .indexed_on(path, token)?
+            {
                 return Ok(false);
             }
         }
 
         for url in &search.urls {
             let url = &url.normalized;
-            let key = self.index_key(path, url)?;
-            if !self.index_for(&key)?.indexed_on(path, url)? {
+            let key = self.index_key(&path.prefix, url)?;
+            if !self
+                .token_index(&key, IndexMode::Merge)?
+                .indexed_on(path, url)?
+            {
                 return Ok(false);
             }
         }
@@ -310,7 +338,6 @@ impl Git {
         let s = serde_yaml::to_string(&object)?;
         log::debug!("saving {:?}", filename);
         fs::write(&filename, s)?;
-
         Ok(())
     }
 
@@ -318,13 +345,53 @@ impl Git {
         let meta = &link.metadata;
         let url = repo_url::Url::parse(&meta.url)?;
         let searches = &[Search::parse(&meta.title)?, Search::parse(&url.normalized)?];
-        indexer.index(path, searches)?;
+        indexer.index_searches(path, searches)?;
         self.save(path, link)
     }
 
-    pub fn save_topic(&self, path: &RepoPath, topic: &Topic, _indexer: &mut Indexer) -> Result<()> {
-        // TODO: Indexing
+    pub fn save_topic(&self, path: &RepoPath, topic: &Topic, indexer: &mut Indexer) -> Result<()> {
+        indexer.index_synonyms(path, &topic.metadata.synonyms)?;
+
+        let meta = &topic.metadata;
+        let mut searches = vec![];
+        for synonym in &meta.synonyms {
+            searches.push(Search::parse(&synonym.name)?);
+        }
+        indexer.index_searches(path, &searches)?;
+
         self.save(path, topic)
+    }
+
+    pub fn synonym_matches(&self, prefix: &str, name: &str) -> Result<Vec<SynonymMatch>> {
+        let key = self.index_key(prefix, name)?;
+        let mut matches = vec![];
+
+        for entry in &self.synonym_index(&key, IndexMode::Merge)?.matches(name)? {
+            let topic = self.fetch_topic(&entry.path)?;
+            matches.push(SynonymMatch {
+                entry: (*entry).clone(),
+                name: name.to_string(),
+                topic,
+            });
+        }
+
+        Ok(matches)
+    }
+
+    pub fn token_index(&self, key: &IndexKey, mode: IndexMode) -> Result<TokenIndex> {
+        let filename = self.root.token_index_filename(key)?;
+        match mode {
+            IndexMode::Replace => Ok(TokenIndex::new(&filename)),
+            IndexMode::Merge => TokenIndex::load(&filename),
+        }
+    }
+
+    pub fn synonym_index(&self, key: &IndexKey, mode: IndexMode) -> Result<SynonymIndex> {
+        let filename = self.root.synonym_index_filename(key)?;
+        match mode {
+            IndexMode::Replace => Ok(SynonymIndex::new(&filename)),
+            IndexMode::Merge => SynonymIndex::load(&filename),
+        }
     }
 }
 
