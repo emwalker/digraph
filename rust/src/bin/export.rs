@@ -176,7 +176,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             (
                 select
                     l.created_at added,
-                    concat('/', o.login, '/', l.id) path
+                    concat('/', o.login, '/', encode(digest(l.id::varchar, 'sha256'), 'hex')) path
                 from link_topics tt
                 join links l on l.id = tt.child_id
                 join organizations o on o.id = l.organization_id
@@ -234,7 +234,7 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
         r#"select
             l.created_at added,
-            concat('/', o.login, '/', encode(sha256(l.id), 'hex') path,
+            concat('/', o.login, '/', encode(digest(l.id::varchar, 'sha256'), 'hex')) path,
             l.id::varchar link_id,
             l.title,
             l.url
