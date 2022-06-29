@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    DataRoot, Git, IndexMode, Indexer, Link, LinkMetadata, ParentTopic, Synonym, Timerange,
+    DataRoot, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Synonym, Timerange,
     TimerangePrefixFormat, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use digraph::prelude::*;
@@ -111,6 +111,7 @@ impl From<&LinkMetadataRow> for LinkMetadata {
 #[serde(rename_all = "camelCase")]
 struct TopicChildRow {
     added: DateTime<Utc>,
+    kind: String,
     path: String,
 }
 
@@ -118,6 +119,7 @@ impl From<&TopicChildRow> for TopicChild {
     fn from(row: &TopicChildRow) -> Self {
         Self {
             added: row.added,
+            kind: Kind::from(&row.kind).unwrap(),
             path: row.path.clone(),
         }
     }
@@ -163,6 +165,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             r#"(
                 select
                     t.created_at added,
+                    'Topic' kind,
                     concat('/', o.login, '/', tt.child_id) path
                 from topic_topics tt
                 join topics t on t.id = tt.child_id
@@ -176,6 +179,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             (
                 select
                     l.created_at added,
+                    'Link' kind,
                     concat('/', o.login, '/', encode(digest(l.id::varchar, 'sha256'), 'hex')) path
                 from link_topics tt
                 join links l on l.id = tt.child_id
@@ -210,7 +214,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
 
         let topic = Topic {
             api_version: API_VERSION.to_string(),
-            kind: "Topic".to_string(),
+            kind: Kind::Topic,
             metadata: TopicMetadata {
                 added: meta.added,
                 path: topic_path.inner,

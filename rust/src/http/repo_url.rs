@@ -101,6 +101,11 @@ fn make_filter<'r>(host: Option<&str>) -> impl Fn(&Pair<'r>) -> bool + '_ {
 
 fn parse_url(input: &str) -> Result<url::Url> {
     let url = url::Url::parse(input)?;
+
+    if !url.has_host() {
+        return Err(Error::UrlParse(format!("invalid url: {}", input)));
+    }
+
     let host = url.host_str();
     let filter = make_filter(host);
     let query: Vec<(_, _)> = url.query_pairs().filter(filter).collect();
@@ -159,6 +164,7 @@ mod tests {
     fn is_valid() {
         assert!(Url::is_valid_url("https://www.google.com"));
         assert!(!Url::is_valid_url("Some name"));
+        assert!(!Url::is_valid_url("aaas:"));
     }
 
     #[test]

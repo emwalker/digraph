@@ -14,6 +14,11 @@ const SPECIAL_CHARS: &[char] = &[
     '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~',
 ];
 
+pub fn normalize(input: &str) -> String {
+    unidecode(input).to_lowercase().replace(SPECIAL_CHARS, "")
+}
+
+#[derive(Debug)]
 pub struct Search {
     pub urls: Vec<repo_url::Url>,
     pub tokens: Vec<String>,
@@ -21,7 +26,7 @@ pub struct Search {
 
 impl Search {
     pub fn parse(input: &str) -> Result<Self> {
-        let input = unidecode(input).to_lowercase();
+        let input = unidecode(input);
         let mut tokens = vec![];
         let mut urls = vec![];
 
@@ -31,7 +36,7 @@ impl Search {
                 continue;
             }
 
-            let token = token.replace(SPECIAL_CHARS, "");
+            let token = token.to_lowercase().replace(SPECIAL_CHARS, "");
             if token.len() >= 3 && token.len() <= 20 {
                 tokens.push(token);
             }
@@ -39,15 +44,15 @@ impl Search {
 
         Ok(Self { tokens, urls })
     }
-}
 
-pub fn normalize(input: &str) -> String {
-    unidecode(input).to_lowercase().replace(SPECIAL_CHARS, "")
+    pub fn is_empty(&self) -> bool {
+        self.urls.is_empty() && self.tokens.is_empty()
+    }
 }
 
 #[derive(Copy, Clone)]
 pub enum IndexMode {
-    Merge,
+    Update,
     Replace,
 }
 
@@ -231,11 +236,11 @@ impl TokenIndex {
         })
     }
 
-    fn index(&mut self, path: &RepoPath, token: &str) -> Result<()> {
+    fn index(&mut self, path: &RepoPath, normalized: &str) -> Result<()> {
         let paths = self
             .index
             .tokens
-            .entry(token.to_owned())
+            .entry(normalized.to_owned())
             .or_insert(BTreeSet::new());
         paths.insert(path.to_string());
         Ok(())
@@ -280,9 +285,9 @@ impl Indexer {
             }
 
             for url in &search.urls {
-                let token = &url.normalized;
-                let key = self.git.index_key(&path.prefix, token)?;
-                self.token_index_for(&key)?.index(path, token)?;
+                let normalized = &url.normalized;
+                let key = self.git.index_key(&path.prefix, normalized)?;
+                self.token_index_for(&key)?.index(path, normalized)?;
             }
         }
         Ok(())
@@ -378,5 +383,8 @@ mod tests {
             phrase.urls,
             &[repo_url::Url::parse("https://www.google.com").unwrap()],
         );
+
+        let phrase = Search::parse("aaas:").unwrap();
+        assert_eq!(phrase.urls, &[]);
     }
 }

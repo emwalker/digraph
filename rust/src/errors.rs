@@ -53,8 +53,8 @@ quick_error! {
             from()
         }
 
-        UrlParse(err: url::ParseError) {
-            from()
+        UrlParse(err: String) {
+            from(err: url::ParseError) -> (format!("{}", err))
         }
 
         Utf8(err: std::string::FromUtf8Error) {

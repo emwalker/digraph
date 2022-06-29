@@ -1,10 +1,9 @@
 use async_graphql::dataloader::*;
 use chrono::Utc;
-use itertools::Itertools;
 use std::collections::{BTreeSet, HashMap};
 
 use crate::git::{
-    Git, IndexMode, Indexer, Link, LinkMetadata, Object, ParentTopic, TopicChild, API_VERSION,
+    Git, IndexMode, Indexer, Kind, Link, LinkMetadata, Object, ParentTopic, TopicChild, API_VERSION,
 };
 use crate::http::{repo_url, Response};
 use crate::prelude::*;
@@ -110,7 +109,7 @@ impl UpsertLink {
                 .map(|path| ParentTopic {
                     path: path.to_string(),
                 })
-                .collect_vec();
+                .collect::<BTreeSet<ParentTopic>>();
 
             Link {
                 api_version: API_VERSION.into(),
@@ -146,14 +145,15 @@ impl UpsertLink {
         link.parent_topics = parent_topics
             .iter()
             .map(|path| ParentTopic { path: path.into() })
-            .collect_vec();
+            .collect::<BTreeSet<ParentTopic>>();
 
-        let mut indexer = Indexer::new(git, IndexMode::Merge);
+        let mut indexer = Indexer::new(git, IndexMode::Update);
 
         for path in &parent_topics {
             let mut topic = git.fetch_topic(path)?;
-            topic.children.push(TopicChild {
+            topic.children.insert(TopicChild {
                 added,
+                kind: Kind::Topic,
                 path: link.metadata.path.to_owned(),
             });
             git.save_topic(&RepoPath::from(path), &topic, &mut indexer)?;

@@ -13,6 +13,8 @@ metadata:
 parentTopics: []
 children:
   - added: "2021-03-18T00:09:59.350933Z"
+    kind: Topic
     path: /wiki/00001
   - added: "2021-03-18T00:09:59.350933Z"
+    kind: Topic
     path: /wiki/00002

@@ -37,7 +37,7 @@ async fn no_orphan_links() {
 
     fetch_link(&f, &path, |link| {
         assert_eq!(link.parent_topics.len(), 1);
-        let topic = &link.parent_topics[0];
+        let topic = &link.parent_topics.iter().next().unwrap();
         assert_eq!(topic.path, WIKI_ROOT_TOPIC_PATH);
     });
 }

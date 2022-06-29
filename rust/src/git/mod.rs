@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -21,6 +22,34 @@ pub use topic::*;
 
 pub const API_VERSION: &str = "objects/v1";
 
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, Serialize)]
+pub enum Kind {
+    Link,
+    Topic,
+}
+
+impl Kind {
+    pub fn from(kind: &str) -> Result<Self> {
+        match kind {
+            "Link" => Ok(Self::Link),
+            "Topic" => Ok(Self::Topic),
+            _ => Err(Error::Repo(format!("unknown kind: {}", kind))),
+        }
+    }
+}
+
+impl std::cmp::PartialOrd for Kind {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        use std::cmp::Ordering;
+        match (self, &other) {
+            (Self::Topic, Self::Topic) => Some(Ordering::Equal),
+            (Self::Topic, Self::Link) => Some(Ordering::Less),
+            (Self::Link, Self::Topic) => Some(Ordering::Greater),
+            (Self::Link, Self::Link) => Some(Ordering::Equal),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LinkMetadata {
@@ -36,19 +65,44 @@ pub struct Link {
     pub api_version: String,
     pub kind: String,
     pub metadata: LinkMetadata,
-    pub parent_topics: Vec<ParentTopic>,
+    pub parent_topics: BTreeSet<ParentTopic>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, PartialOrd, Serialize)]
 pub struct ParentTopic {
     pub path: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+impl std::cmp::Ord for ParentTopic {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.path.cmp(&other.path)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Ord, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicChild {
     pub added: DateTime<Utc>,
+    pub kind: Kind,
     pub path: String,
+}
+
+impl std::cmp::PartialEq for TopicChild {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind && self.path == other.path
+    }
+}
+
+impl std::cmp::PartialOrd for TopicChild {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        use std::cmp::Ordering;
+        match (&self.kind, &other.kind) {
+            (Kind::Topic, Kind::Topic) => self.path.partial_cmp(&other.path),
+            (Kind::Topic, Kind::Link) => Some(Ordering::Less),
+            (Kind::Link, Kind::Topic) => Some(Ordering::Greater),
+            (Kind::Link, Kind::Link) => other.added.partial_cmp(&self.added), // Reverse
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -110,10 +164,10 @@ impl TopicMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct Topic {
     pub api_version: String,
-    pub kind: String,
+    pub kind: Kind,
     pub metadata: TopicMetadata,
-    pub parent_topics: Vec<ParentTopic>,
-    pub children: Vec<TopicChild>,
+    pub parent_topics: BTreeSet<ParentTopic>,
+    pub children: BTreeSet<TopicChild>,
 }
 
 impl std::cmp::PartialEq for Topic {
@@ -176,26 +230,17 @@ pub fn parse_path(input: &str) -> Result<(DataRoot, String)> {
         return Err(Error::Command(format!("bad path: {:?}", cap)));
     }
 
-    let root = cap
-        .get(1)
-        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
-        .as_str();
-    let org_login = cap
-        .get(2)
-        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
-        .as_str();
-    let part1 = cap
-        .get(3)
-        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
-        .as_str();
-    let part2 = cap
-        .get(4)
-        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
-        .as_str();
-    let part3 = cap
-        .get(5)
-        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?
-        .as_str();
+    let (root, org_login, part1, part2, part3) =
+        match (cap.get(1), cap.get(2), cap.get(3), cap.get(4), cap.get(5)) {
+            (Some(root), Some(org_login), Some(part1), Some(part2), Some(part3)) => (
+                root.as_str(),
+                org_login.as_str(),
+                part1.as_str(),
+                part2.as_str(),
+                part3.as_str(),
+            ),
+            _ => return Err(Error::Repo(format!("bad path: {}", input))),
+        };
 
     let id = format!("/{}/{}{}{}", org_login, part1, part2, part3);
     let root = PathBuf::from(root);
@@ -226,18 +271,12 @@ impl DataRoot {
             return Err(Error::Repo(format!("bad id: {}", path)));
         }
 
-        let part1 = cap
-            .get(1)
-            .ok_or_else(|| Error::Repo(format!("bad id: {}", path)))?
-            .as_str();
-        let part2 = cap
-            .get(2)
-            .ok_or_else(|| Error::Repo(format!("bad id: {}", path)))?
-            .as_str();
-        let part3 = cap
-            .get(3)
-            .ok_or_else(|| Error::Repo(format!("bad id: {}", path)))?
-            .as_str();
+        let (part1, part2, part3) = match (cap.get(1), cap.get(2), cap.get(3)) {
+            (Some(part1), Some(part2), Some(part3)) => {
+                (part1.as_str(), part2.as_str(), part3.as_str())
+            }
+            _ => return Err(Error::Repo(format!("bad id: {}", path))),
+        };
 
         let file_path = format!(
             "{}/objects/{}/{}/{}/object.yaml",
@@ -295,8 +334,10 @@ impl Git {
         }
     }
 
+    // The value of `token` will sometimes need to be normalized by the caller in order for lookups
+    // to work as expected.  We do not normalize the token here because some searches, e.g.,
+    // of urls, are more sensitive to normalization, and so we omit it in those cases.
     pub fn index_key(&self, prefix: &str, token: &str) -> Result<IndexKey> {
-        let token = normalize(token);
         match token.get(0..2) {
             Some(field) => Ok(IndexKey {
                 prefix: prefix.to_owned(),
@@ -310,7 +351,7 @@ impl Git {
         for token in &search.tokens {
             let key = self.index_key(&path.prefix, token)?;
             if !self
-                .token_index(&key, IndexMode::Merge)?
+                .token_index(&key, IndexMode::Update)?
                 .indexed_on(path, token)?
             {
                 return Ok(false);
@@ -321,7 +362,7 @@ impl Git {
             let url = &url.normalized;
             let key = self.index_key(&path.prefix, url)?;
             if !self
-                .token_index(&key, IndexMode::Merge)?
+                .token_index(&key, IndexMode::Update)?
                 .indexed_on(path, url)?
             {
                 return Ok(false);
@@ -355,7 +396,11 @@ impl Git {
         let meta = &topic.metadata;
         let mut searches = vec![];
         for synonym in &meta.synonyms {
-            searches.push(Search::parse(&synonym.name)?);
+            let search = Search::parse(&synonym.name)?;
+            if search.is_empty() {
+                continue;
+            }
+            searches.push(search);
         }
         indexer.index_searches(path, &searches)?;
 
@@ -363,10 +408,11 @@ impl Git {
     }
 
     pub fn synonym_matches(&self, prefix: &str, name: &str) -> Result<Vec<SynonymMatch>> {
-        let key = self.index_key(prefix, name)?;
+        let normalized = normalize(name);
+        let key = self.index_key(prefix, &normalized)?;
         let mut matches = vec![];
 
-        for entry in &self.synonym_index(&key, IndexMode::Merge)?.matches(name)? {
+        for entry in &self.synonym_index(&key, IndexMode::Update)?.matches(name)? {
             let topic = self.fetch_topic(&entry.path)?;
             matches.push(SynonymMatch {
                 entry: (*entry).clone(),
@@ -382,7 +428,7 @@ impl Git {
         let filename = self.root.token_index_filename(key)?;
         match mode {
             IndexMode::Replace => Ok(TokenIndex::new(&filename)),
-            IndexMode::Merge => TokenIndex::load(&filename),
+            IndexMode::Update => TokenIndex::load(&filename),
         }
     }
 
@@ -390,7 +436,7 @@ impl Git {
         let filename = self.root.synonym_index_filename(key)?;
         match mode {
             IndexMode::Replace => Ok(SynonymIndex::new(&filename)),
-            IndexMode::Merge => SynonymIndex::load(&filename),
+            IndexMode::Update => SynonymIndex::load(&filename),
         }
     }
 }

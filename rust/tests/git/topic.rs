@@ -1,6 +1,8 @@
-use super::{upsert_topic, Fixtures};
 use digraph::git::{OnMatchingSynonym, Search};
 use digraph::prelude::*;
+use std::collections::BTreeSet;
+
+use super::{upsert_topic, Fixtures};
 
 #[actix_web::test]
 async fn topic_is_added() {
@@ -129,7 +131,7 @@ async fn create_distinct() {
 async fn parent_topic_updated() {
     let f = Fixtures::copy("simple");
     let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
-    assert_eq!(parent.children, vec![]);
+    assert_eq!(parent.children, BTreeSet::new());
 
     let result = upsert_topic(
         &f,

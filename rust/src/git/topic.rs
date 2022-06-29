@@ -1,7 +1,10 @@
 use rand::{distributions::Alphanumeric, Rng};
+use std::collections::BTreeSet;
 
 use super::{Indexer, ParentTopic, SynonymMatch, TopicMetadata, API_VERSION};
-use crate::git::{Git, IndexMode, Synonym, Timerange, TimerangePrefixFormat, Topic, TopicChild};
+use crate::git::{
+    Git, IndexMode, Kind, Synonym, Timerange, TimerangePrefixFormat, Topic, TopicChild,
+};
 use crate::prelude::*;
 use crate::schema;
 
@@ -124,7 +127,7 @@ impl UpsertTopic {
                 OnMatchingSynonym::Update(path) => {
                     log::info!("updating existing topic {:?}", path);
                     let mut topic = git.fetch_topic(&path.inner)?;
-                    topic.parent_topics.push(ParentTopic {
+                    topic.parent_topics.insert(ParentTopic {
                         path: parent.metadata.path.to_owned(),
                     });
 
@@ -139,13 +142,14 @@ impl UpsertTopic {
             }
         };
 
-        parent.children.push(TopicChild {
+        parent.children.insert(TopicChild {
             added,
+            kind: Kind::Topic,
             path: path.inner.to_owned(),
         });
         let parent_path = RepoPath::from(&parent.metadata.path);
 
-        let mut indexer = Indexer::new(git, IndexMode::Merge);
+        let mut indexer = Indexer::new(git, IndexMode::Update);
         git.save_topic(&path, &topic, &mut indexer)?;
         git.save_topic(&parent_path, &parent, &mut indexer)?;
         indexer.save()?;
@@ -172,7 +176,7 @@ impl UpsertTopic {
         let path = self.make_path();
         let topic = Topic {
             api_version: API_VERSION.into(),
-            kind: "Topic".into(),
+            kind: Kind::Topic,
             metadata: TopicMetadata {
                 added,
                 path: path.to_string(),
@@ -184,10 +188,10 @@ impl UpsertTopic {
                 }],
                 timerange: None,
             },
-            parent_topics: vec![ParentTopic {
+            parent_topics: BTreeSet::from([ParentTopic {
                 path: parent.metadata.path.to_owned(),
-            }],
-            children: vec![],
+            }]),
+            children: BTreeSet::new(),
         };
         (path, topic)
     }
