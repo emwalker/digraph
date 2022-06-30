@@ -5,10 +5,11 @@ use sqlx::postgres::PgPool;
 
 use crate::git;
 use crate::graphql::{
-    ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, Topic, TopicChild,
-    UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput,
+    self, ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, Topic,
+    TopicChild, UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertTopicInput,
     UpsertTopicTimeRangeInput, User, Viewer,
 };
+use crate::http;
 use crate::prelude::*;
 use crate::psql;
 use crate::psql::{
@@ -17,9 +18,8 @@ use crate::psql::{
     DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchRepositoriesForUser,
     LiveSearchTopics, ReviewLink, ReviewLinkResult, Search, SelectRepository,
     SelectRepositoryResult, UpdateLinkParentTopics, UpdateLinkTopicsResult, UpdateSynonyms,
-    UpdateSynonymsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult, UpsertLink,
-    UpsertLinkResult, UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange,
-    UpsertTopicTimeRangeResult,
+    UpdateSynonymsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult, UpsertTopic,
+    UpsertTopicResult, UpsertTopicTimeRange, UpsertTopicTimeRangeResult,
 };
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -85,6 +85,7 @@ impl RepoPath {
 
 pub struct Repo {
     db: PgPool,
+    git: git::Git,
     object_loader: DataLoader<git::ObjectLoader, HashMapCache>,
     organization_by_login_loader: DataLoader<psql::OrganizationByLoginLoader, HashMapCache>,
     organization_loader: DataLoader<psql::OrganizationLoader, HashMapCache>,
@@ -106,11 +107,12 @@ impl Repo {
             psql::RepositoryByNameLoader::new(viewer.clone(), db.clone());
         let repository_by_prefix_loader =
             psql::RepositoryByPrefixLoader::new(viewer.clone(), db.clone());
-        let object_loader = git::ObjectLoader::new(viewer.clone(), git);
+        let object_loader = git::ObjectLoader::new(viewer.clone(), git.clone());
         let user_loader = psql::UserLoader::new(viewer.clone(), db.clone());
 
         Self {
             db,
+            git,
             viewer,
             server_secret,
 
@@ -419,10 +421,20 @@ impl Repo {
             .await
     }
 
-    pub async fn upsert_link(&self, input: UpsertLinkInput) -> Result<UpsertLinkResult> {
-        UpsertLink::new(self.viewer.clone(), input)
-            .call(&self.db)
-            .await
+    pub async fn upsert_link(
+        &self,
+        input: graphql::UpsertLinkInput,
+    ) -> Result<git::UpsertLinkResult> {
+        git::UpsertLink {
+            actor: self.viewer.clone(),
+            add_parent_topic_paths: vec![],
+            prefix: "/wiki".to_owned(),
+            title: input.title,
+            url: input.url,
+            fetcher: Box::new(http::Fetcher),
+        }
+        .call(&self.git)
+        .await
     }
 
     pub async fn update_topic_parent_topics(

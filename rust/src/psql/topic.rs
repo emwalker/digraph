@@ -5,11 +5,12 @@ use std::collections::HashSet;
 
 use super::queries::{TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
 use crate::graphql::{
-    alert, Alert, AlertType, DateTime, Prefix, Synonyms, TimeRangePrefixFormat, Timerange, Topic,
-    TopicChild, UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
+    DateTime, Prefix, Synonyms, TimeRangePrefixFormat, Timerange, Topic, TopicChild,
+    UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
 };
 use crate::http::repo_url::Url;
 use crate::prelude::*;
+use crate::Alert;
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
@@ -112,7 +113,7 @@ impl DeleteTopic {
 
         if topic.root {
             log::warn!("attempting to delete root topic, bailing: {}", self.topic);
-            alerts.push(alert::warning("Cannot delete root topic".into()));
+            alerts.push(Alert::Warning("Cannot delete root topic".into()));
             return Ok(DeleteTopicResult {
                 alerts,
                 deleted_topic_path: None,
@@ -280,7 +281,7 @@ impl UpdateTopicParentTopics {
         let (update, mut alerts) = self.valid_parent_topic_ids(&topic, pool).await?;
 
         if update.is_empty() {
-            let alert = alert::warning("at least one valid topic is needed".to_string());
+            let alert = Alert::Warning("at least one valid topic is needed".to_string());
             alerts.push(alert);
             return Ok(UpdateTopicParentTopicsResult { topic, alerts });
         }
@@ -351,7 +352,7 @@ impl UpdateTopicParentTopics {
 
         for parent_topic_id in &desired {
             if parent_topic_id == &topic.path.short_id {
-                let alert = alert::warning("cannot add a topic to itself".to_string());
+                let alert = Alert::Warning("cannot add a topic to itself".to_string());
                 alerts.push(alert);
                 continue;
             }
@@ -369,7 +370,7 @@ impl UpdateTopicParentTopics {
             .await?;
 
             if count.is_positive() {
-                let alert = alert::warning(format!(
+                let alert = Alert::Warning(format!(
                     r#""{}" is a descendant of "{}" and cannot be added as a parent topic"#,
                     parent_topic_id, topic.name,
                 ));
@@ -405,11 +406,7 @@ impl UpsertTopic {
 
         if name.is_empty() || Url::is_valid_url(&name) {
             let result = UpsertTopicResult {
-                alerts: vec![Alert {
-                    text: format!("Not a valid topic name: {}", name),
-                    alert_type: AlertType::Warn,
-                    id: String::from("0"),
-                }],
+                alerts: vec![Alert::Warning(format!("Not a valid topic name: {}", name))],
                 topic: None,
             };
             return Ok(result);
@@ -465,7 +462,7 @@ impl UpsertTopic {
             .await?;
 
             if count.is_positive() {
-                let alert = alert::warning(format!(
+                let alert = Alert::Warning(format!(
                     r#""{}" is a descendant of "{}" and cannot be added as a parent topic"#,
                     parent_topic_path, name,
                 ));

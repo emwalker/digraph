@@ -5,8 +5,9 @@ use sqlx::types::Uuid;
 use std::collections::HashMap;
 
 use super::{CompleteRegistration, PgTransaction};
-use crate::graphql::{alert, Alert, CreateGithubSessionInput, User, Viewer};
+use crate::graphql::{CreateGithubSessionInput, User, Viewer};
 use crate::prelude::*;
+use crate::Alert;
 
 pub const USER_FIELDS: &str = r#"
     u.id,
@@ -220,7 +221,7 @@ impl DeleteAccount {
         tx.commit().await?;
         log::warn!("account {} has been deleted", self.user_id);
 
-        let alert = alert::success("Your account has been deleted".into());
+        let alert = Alert::Success("Your account has been deleted".into());
         Ok(DeleteAccountResult {
             alerts: vec![alert],
             deleted_user_id: self.user_id.clone(),

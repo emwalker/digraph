@@ -43,8 +43,8 @@ export default (environment: Environment, input: Input, config?: Config) => {
     node.setValue(input.title || 'Adding link to repo ...', 'title')
     node.setValue(input.url, 'url')
     node.setValue(true, 'loading')
-    const parentTopicIds = input.addParentTopicIds || []
-    updateTopicConnections(store, node, 'LinkEdge', parentTopicIds, 'Topic_children')
+    const parentTopicPaths = input.addParentTopicPaths || []
+    updateTopicConnections(store, node, 'LinkEdge', parentTopicPaths, 'Topic_children')
   }
 
   return commitMutation(

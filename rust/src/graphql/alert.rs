@@ -40,18 +40,18 @@ impl Alert {
     }
 }
 
-pub fn success(text: String) -> Alert {
-    Alert {
-        text,
-        alert_type: AlertType::Success,
-        id: String::from("0"),
-    }
-}
+impl From<&crate::Alert> for Alert {
+    fn from(alert: &crate::Alert) -> Self {
+        let (alert_type, text) = match alert {
+            crate::Alert::Danger(text) => (AlertType::Error, text),
+            crate::Alert::Success(text) => (AlertType::Success, text),
+            crate::Alert::Warning(text) => (AlertType::Warn, text),
+        };
 
-pub fn warning(text: String) -> Alert {
-    Alert {
-        text,
-        alert_type: AlertType::Warn,
-        id: String::from("0"),
+        Alert {
+            alert_type,
+            id: String::from("0"),
+            text: text.to_owned(),
+        }
     }
 }

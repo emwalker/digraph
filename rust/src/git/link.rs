@@ -5,8 +5,9 @@ use std::collections::{BTreeSet, HashMap};
 use crate::git::{
     Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, TopicChild, API_VERSION,
 };
-use crate::http::{repo_url, Response};
+use crate::http::{self, repo_url};
 use crate::prelude::*;
+use crate::Alert;
 
 #[allow(dead_code)]
 pub struct LinkLoader {
@@ -38,26 +39,22 @@ impl Loader<String> for LinkLoader {
     }
 }
 
-pub trait Fetch {
-    fn fetch(&self, url: &repo_url::Url) -> Result<Response>;
-}
-
 pub struct UpsertLink {
     pub actor: Viewer,
     pub add_parent_topic_paths: Vec<RepoPath>,
     pub prefix: String,
     pub title: Option<String>,
     pub url: String,
-    pub fetcher: Box<dyn Fetch>,
+    pub fetcher: Box<dyn http::Fetch + Send + Sync>,
 }
 
 pub struct UpsertLinkResult {
-    pub alerts: Vec<String>,
+    pub alerts: Vec<Alert>,
     pub link: Option<Link>,
 }
 
 impl UpsertLink {
-    pub fn call(&self, git: &Git) -> Result<UpsertLinkResult> {
+    pub async fn call(&self, git: &Git) -> Result<UpsertLinkResult> {
         log::info!("upserting link: {}", self.url);
         let url = repo_url::Url::parse(&self.url)?;
         let path = url.path(&self.prefix);
@@ -69,7 +66,7 @@ impl UpsertLink {
             let title = if let Some(title) = &self.title {
                 title.clone()
             } else {
-                let response = self.fetcher.fetch(&url)?;
+                let response = self.fetcher.fetch(&url).await?;
                 response.title().unwrap_or_else(|| "Missing title".into())
             };
 
@@ -123,7 +120,7 @@ impl UpsertLink {
             let mut topic = git.fetch_topic(path)?;
             topic.children.insert(TopicChild {
                 added,
-                kind: Kind::Topic,
+                kind: Kind::Link,
                 path: link.metadata.path.to_owned(),
             });
             git.save_topic(&RepoPath::from(path), &topic, &mut indexer)?;

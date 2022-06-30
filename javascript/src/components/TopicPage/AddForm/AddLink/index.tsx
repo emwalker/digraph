@@ -72,7 +72,7 @@ class AddLink extends Component<Props, State> {
     if (!orgLogin) return
 
     const input: Input = {
-      addParentTopicIds: [this.props.topic.id],
+      addParentTopicPaths: [this.props.topic.path],
       organizationLogin: orgLogin,
       repositoryName: repoName,
       url: this.state.url,

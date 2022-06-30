@@ -167,9 +167,8 @@ impl Topic {
 
     async fn repository(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
         ctx.data_unchecked::<Repo>()
-            .repository_by_prefix(self.path.prefix.clone())
+            .repository_by_prefix(self.path.org_login.clone())
             .await
-            .map_err(|_e| Error::NotFound(format!("no repo for {}", self.path)))
     }
 
     async fn resource_path(&self) -> &str {
@@ -217,10 +216,13 @@ impl Topic {
             return Ok(false);
         }
 
-        let repository = self
-            .repository(ctx)
-            .await?
-            .ok_or_else(|| Error::NotFound(format!("no repository for topic: {:?}", self.path)))?;
+        let repository = match self.repository(ctx).await {
+            Ok(repository) => match &repository {
+                Some(repository) => repository.clone(),
+                None => return Ok(false),
+            },
+            Err(_) => return Ok(false),
+        };
 
         if let Repository::Fetched {
             owner_id, private, ..

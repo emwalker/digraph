@@ -13,3 +13,9 @@ pub mod http;
 pub mod prelude;
 mod psql;
 pub mod repo;
+
+pub enum Alert {
+    Danger(String),
+    Success(String),
+    Warning(String),
+}

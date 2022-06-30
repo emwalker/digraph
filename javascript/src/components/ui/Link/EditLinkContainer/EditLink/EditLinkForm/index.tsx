@@ -42,7 +42,7 @@ class EditLinkForm extends Component<Props, State> {
     const { name, organization: { login } } = this.props.link.repository
 
     const input: UpsertInput = {
-      addParentTopicIds: [],
+      addParentTopicPaths: [],
       organizationLogin: login,
       repositoryName: name,
       title: this.state.title,

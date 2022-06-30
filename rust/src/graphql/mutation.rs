@@ -1,4 +1,5 @@
 use async_graphql::{Context, InputObject, Object, SimpleObject};
+use itertools::Itertools;
 
 use super::{
     Alert, DateTime, Link, LinkEdge, Repository, Session, SessionEdge, Synonym, TimeRangeEdge,
@@ -278,7 +279,7 @@ impl MutationRoot {
             .await?;
 
         Ok(DeleteAccountPayload {
-            alerts,
+            alerts: alerts.iter().map(Alert::from).collect_vec(),
             deleted_user_id: ID(deleted_user_id),
             client_mutation_id,
         })
@@ -427,7 +428,10 @@ impl MutationRoot {
             )
             .await?;
 
-        Ok(UpdateTopicParentTopicsPayload { alerts, topic })
+        Ok(UpdateTopicParentTopicsPayload {
+            alerts: alerts.iter().map(Alert::from).collect_vec(),
+            topic,
+        })
     }
 
     async fn update_synonyms(
@@ -440,7 +444,7 @@ impl MutationRoot {
             ctx.data_unchecked::<Repo>().update_synonyms(input).await?;
 
         Ok(UpdateSynonymsPayload {
-            alerts,
+            alerts: alerts.iter().map(Alert::from).collect_vec(),
             client_mutation_id,
             topic: Some(topic),
         })
@@ -456,10 +460,10 @@ impl MutationRoot {
         let edge = result
             .link
             .as_ref()
-            .map(|link| LinkEdge::new(String::from("0"), link.clone()));
+            .map(|link| LinkEdge::new(String::from("0"), Link::from(link)));
 
         Ok(UpsertLinkPayload {
-            alerts: result.alerts,
+            alerts: result.alerts.iter().map(Alert::from).collect_vec(),
             link_edge: edge,
         })
     }
@@ -477,7 +481,7 @@ impl MutationRoot {
             .map(|topic| TopicEdge::new(String::from("0"), topic.clone()));
 
         Ok(UpsertTopicPayload {
-            alerts: result.alerts,
+            alerts: result.alerts.iter().map(Alert::from).collect_vec(),
             topic_edge: edge,
         })
     }
@@ -497,7 +501,7 @@ impl MutationRoot {
             .await?;
 
         Ok(UpsertTopicTimeRangePayload {
-            alerts,
+            alerts: alerts.iter().map(Alert::from).collect_vec(),
             topic,
             time_range_edge: Some(TimeRangeEdge::new(String::from("0"), time_range)),
         })

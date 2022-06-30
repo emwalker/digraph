@@ -2,8 +2,9 @@ use sqlx::PgPool;
 use std::collections::HashSet;
 
 use super::fetch_topic;
-use crate::graphql::{alert, Alert, Synonym, Synonyms, Topic, UpdateSynonymsInput, Viewer};
+use crate::graphql::{Synonym, Synonyms, Topic, UpdateSynonymsInput, Viewer};
 use crate::prelude::*;
+use crate::Alert;
 
 pub struct UpdateSynonyms {
     actor: Viewer,
@@ -40,7 +41,7 @@ impl UpdateSynonyms {
             if synonym_input.is_valid() {
                 serialize.push(synonym_input.to_synonym());
             } else {
-                alerts.push(alert::warning(format!(
+                alerts.push(Alert::Warning(format!(
                     "Not a valid name: {}",
                     synonym_input.name
                 )));

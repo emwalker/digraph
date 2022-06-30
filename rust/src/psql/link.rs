@@ -2,18 +2,10 @@ use async_graphql::types::ID;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 
-use super::{
-    fetch_topic,
-    queries::{LINK_FIELDS, LINK_JOINS},
-};
-use crate::graphql::{
-    Alert, Link, LinkReview, TopicChild, UpdateLinkTopicsInput, UpsertLinkInput, Viewer,
-};
+use super::queries::{LINK_FIELDS, LINK_JOINS};
+use crate::graphql::DateTime;
+use crate::graphql::{Link, LinkReview, TopicChild, UpdateLinkTopicsInput, Viewer};
 use crate::prelude::*;
-use crate::{
-    graphql::DateTime,
-    http::{repo_url::Url, Page},
-};
 
 const PUBLIC_ROOT_TOPIC_PATH: &str = "/wiki/df63295e-ee02-11e8-9e36-17d56b662bc8";
 
@@ -203,127 +195,6 @@ impl UpdateLinkParentTopics {
         let row = fetch_link(&self.actor.mutation_ids, pool, &link_path).await?;
         Ok(UpdateLinkTopicsResult {
             link: row.to_link(false),
-        })
-    }
-}
-
-pub struct UpsertLink {
-    actor: Viewer,
-    input: UpsertLinkInput,
-}
-
-pub struct UpsertLinkResult {
-    pub alerts: Vec<Alert>,
-    pub link: Option<Link>,
-}
-
-impl UpsertLink {
-    pub fn new(actor: Viewer, input: UpsertLinkInput) -> Self {
-        Self { actor, input }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<UpsertLinkResult> {
-        let url = Url::parse(self.input.url.as_ref())?;
-
-        let title = match &self.input.title {
-            Some(title) => title.to_owned(),
-            None => {
-                let response = Page::from(url.clone()).fetch().await?;
-                response
-                    .title()
-                    .unwrap_or_else(|| String::from("Missing title"))
-            }
-        };
-
-        // TODO: Figure out how to pass a transaction around to helper methods
-        let mut tx = pool.begin().await?;
-
-        // Upsert link
-        let query = r#"
-            insert
-            into links
-                (organization_id, repository_id, url, sha1, title)
-                select
-                    o.id, r.id, $3, $4, $5
-                from organizations o
-                join repositories r on o.id = r.organization_id
-                where o.login = $1 and r.name = $2
-
-            on conflict on constraint links_repository_sha1_idx do
-                update set title = $5
-
-            returning concat('/', o.login, '/', l.id) path,
-                repository_id, organization_id, (xmax = 0) inserted
-            "#;
-
-        let (link_path, repository_id, organization_id, inserted) =
-            sqlx::query_as::<_, (String, Uuid, Uuid, bool)>(query)
-                .bind(&self.input.organization_login)
-                .bind(&self.input.repository_name)
-                .bind(&url.normalized)
-                .bind(&url.sha256)
-                .bind(&title)
-                .fetch_one(&mut tx)
-                .await?;
-        let (link_path, repository_id, organization_id) = (
-            RepoPath::from(&link_path),
-            repository_id.to_string(),
-            organization_id.to_string(),
-        );
-
-        for parent_topic_path in &self.input.add_parent_topic_paths {
-            let topic_path = RepoPath::from(parent_topic_path);
-            // Verify that we can update the parent topic
-            fetch_topic(&self.actor.mutation_ids, pool, &topic_path).await?;
-
-            sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
-                .bind(&topic_path.short_id)
-                .bind(&link_path.short_id)
-                .fetch_one(&mut tx)
-                .await?;
-        }
-
-        // Upsert link activity
-        let (user_link_id,) = sqlx::query_as::<_, (Uuid,)>(
-            r#"insert into user_links
-                (organization_id, repository_id, link_id, user_id, action)
-                values ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'upsert_link')
-                returning id
-            "#,
-        )
-        .bind(&organization_id)
-        .bind(&repository_id)
-        .bind(&link_path.short_id)
-        .bind(&self.actor.user_id)
-        .fetch_one(&mut tx)
-        .await?;
-
-        for topic_path in &self.input.add_parent_topic_paths {
-            let topic_path = RepoPath::from(topic_path);
-            sqlx::query(
-                r#"insert into user_link_topics
-                    (user_link_id, topic_id, action)
-                    values ($1::uuid, $2::uuid, 'topic_added')
-                "#,
-            )
-            .bind(&user_link_id)
-            .bind(topic_path.short_id)
-            .execute(&mut tx)
-            .await?;
-        }
-
-        // Upsert user link review record
-        // if err = m.addUserLinkReview(ctx, exec, link); err != nil {
-        //     log.Printf("There was a problem creating a user link review record: %s", err)
-        //     return nil, errors.Wrap(err, "services.UpsertLink")
-        // }
-
-        tx.commit().await?;
-
-        let row = fetch_link(&self.actor.mutation_ids, pool, &link_path).await?;
-        Ok(UpsertLinkResult {
-            alerts: vec![],
-            link: Some(row.to_link(inserted)),
         })
     }
 }

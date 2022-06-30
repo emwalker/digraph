@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use fs_extra::dir;
 use scraper::Html;
 use std::env;
@@ -5,10 +6,10 @@ use std::path::PathBuf;
 use tempfile::{self, TempDir};
 
 use digraph::git::{
-    DataRoot, Fetch, Git, Link, OnMatchingSynonym, Repository, Topic, UpsertLink, UpsertLinkResult,
+    DataRoot, Git, Link, OnMatchingSynonym, Repository, Topic, UpsertLink, UpsertLinkResult,
     UpsertTopic, UpsertTopicResult,
 };
-use digraph::http::{repo_url, Response};
+use digraph::http::{repo_url, Fetch, Response};
 use digraph::prelude::*;
 
 mod link;
@@ -16,8 +17,9 @@ mod topic;
 
 struct Fetcher(String);
 
+#[async_trait]
 impl Fetch for Fetcher {
-    fn fetch(&self, url: &repo_url::Url) -> Result<Response> {
+    async fn fetch(&self, url: &repo_url::Url) -> Result<Response> {
         Ok(Response {
             url: url.to_owned(),
             body: Html::parse_document(&self.0),
@@ -95,7 +97,7 @@ where
     block(topic);
 }
 
-fn upsert_link(
+async fn upsert_link(
     f: &Fixtures,
     url: &repo_url::Url,
     title: Option<String>,
@@ -122,6 +124,7 @@ fn upsert_link(
         title,
     }
     .call(&f.repo.git)
+    .await
     .unwrap()
 }
 

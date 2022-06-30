@@ -19,7 +19,7 @@ async fn link_added() {
     assert!(!f.repo.exists(&path).unwrap());
     assert!(!f.repo.appears_in(&search, &path).unwrap());
 
-    upsert_link(&f, &url, Some("Page title".into()), &[]);
+    upsert_link(&f, &url, Some("Page title".into()), &[]).await;
 
     assert!(f.repo.exists(&path).unwrap());
     assert!(f.repo.appears_in(&search, &path).unwrap());
@@ -32,7 +32,7 @@ async fn no_orphan_links() {
     let path = url.path(&f.repo.prefix);
     assert!(!f.repo.exists(&path).unwrap());
 
-    upsert_link(&f, &url, None, &[]);
+    upsert_link(&f, &url, None, &[]).await;
 
     fetch_link(&f, &path, |link| {
         assert_eq!(link.parent_topics.len(), 1);
@@ -48,8 +48,8 @@ async fn updates_are_idempotent() {
     let path = url.path(&f.repo.prefix);
     assert!(!f.repo.exists(&path).unwrap());
 
-    upsert_link(&f, &url, None, &[]);
-    upsert_link(&f, &url, None, &[]);
+    upsert_link(&f, &url, None, &[]).await;
+    upsert_link(&f, &url, None, &[]).await;
 
     assert!(f.repo.exists(&path).unwrap());
 }
@@ -61,7 +61,7 @@ async fn details_are_updated() {
     let path = url.path(&f.repo.prefix);
     assert!(!f.repo.exists(&path).unwrap());
 
-    upsert_link(&f, &url, Some("A".into()), &["/wiki/00001"]);
+    upsert_link(&f, &url, Some("A".into()), &["/wiki/00001"]).await;
 
     fetch_link(&f, &path, |link| {
         assert_eq!(link.metadata.title, "A");
@@ -75,7 +75,7 @@ async fn details_are_updated() {
         assert_eq!(topics, &["/wiki/00001"]);
     });
 
-    upsert_link(&f, &url, Some("B".into()), &["/wiki/00002"]);
+    upsert_link(&f, &url, Some("B".into()), &["/wiki/00002"]).await;
 
     fetch_link(&f, &path, |link| {
         assert_eq!(link.metadata.title, "B");
@@ -98,7 +98,7 @@ async fn parent_topic_updated() {
     let topic = RepoPath::from("/wiki/00001");
     assert!(!f.repo.exists(&path).unwrap());
 
-    let result = upsert_link(&f, &url, Some("A".into()), &[&topic.inner]);
+    let result = upsert_link(&f, &url, Some("A".into()), &[&topic.inner]).await;
     let link = result.link.unwrap();
 
     fetch_topic(&f, &topic, |parent| {

@@ -482,7 +482,7 @@ type UpdateTopicParentTopicsPayload implements Alertable {
 }
 
 input UpsertLinkInput {
-  addParentTopicIds: [String!]
+  addParentTopicPaths: [String!]
   clientMutationId: String
   organizationLogin: String!
   repositoryName: String!
