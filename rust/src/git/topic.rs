@@ -2,81 +2,11 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::collections::BTreeSet;
 
 use super::{Indexer, ParentTopic, SynonymMatch, TopicMetadata, API_VERSION};
-use crate::git::{
-    Git, IndexMode, Kind, Synonym, Timerange, TimerangePrefixFormat, Topic, TopicChild,
-};
+use crate::git::{Git, IndexMode, Kind, Synonym, Topic, TopicChild};
 use crate::prelude::*;
-use crate::schema;
-
-impl From<&Synonym> for schema::Synonym {
-    fn from(synonym: &Synonym) -> Self {
-        Self {
-            name: synonym.name.clone(),
-            locale: synonym.locale.clone(),
-        }
-    }
-}
-
-impl From<&Vec<Synonym>> for schema::Synonyms {
-    fn from(synonyms: &Vec<Synonym>) -> Self {
-        Self(synonyms.iter().map(schema::Synonym::from).collect())
-    }
-}
-
-impl From<&TimerangePrefixFormat> for schema::TimeRangePrefixFormat {
-    fn from(format: &TimerangePrefixFormat) -> Self {
-        match format {
-            TimerangePrefixFormat::None => Self::None,
-            TimerangePrefixFormat::StartYear => Self::StartYear,
-            TimerangePrefixFormat::StartYearMonth => Self::StartYearMonth,
-        }
-    }
-}
-
-impl From<&Timerange> for schema::Timerange {
-    fn from(timerange: &Timerange) -> Self {
-        Self {
-            ends_at: None,
-            starts_at: schema::DateTime(timerange.starts),
-            prefix_format: schema::TimeRangePrefixFormat::from(&timerange.prefix_format),
-        }
-    }
-}
-
-impl From<&Topic> for schema::Topic {
-    fn from(topic: &Topic) -> Self {
-        let meta = &topic.metadata;
-        let parent_topic_paths = topic
-            .parent_topics
-            .iter()
-            .map(|p| RepoPath::from(&p.path))
-            .collect::<Vec<RepoPath>>();
-
-        let child_paths = topic
-            .children
-            .iter()
-            .map(|p| RepoPath::from(&p.path))
-            .collect::<Vec<RepoPath>>();
-
-        let synonyms = schema::Synonyms::from(&meta.synonyms);
-        let time_range = meta.timerange.clone().map(|r| schema::Timerange::from(&r));
-        let prefix = schema::Prefix::from(&time_range);
-
-        Self {
-            child_paths,
-            path: RepoPath::from(&meta.path),
-            parent_topic_paths,
-            name: meta.name(),
-            prefix,
-            root: meta.root,
-            synonyms,
-            time_range,
-        }
-    }
-}
 
 pub struct UpsertTopicResult {
-    pub alerts: Vec<schema::Alert>,
+    pub alerts: Vec<String>,
     pub matching_synonyms: Vec<SynonymMatch>,
     pub saved: bool,
     pub topic: Option<Topic>,
@@ -174,6 +104,7 @@ impl UpsertTopic {
     fn make_topic(&self, parent: &Topic) -> (RepoPath, Topic) {
         let added = chrono::Utc::now();
         let path = self.make_path();
+
         let topic = Topic {
             api_version: API_VERSION.into(),
             kind: Kind::Topic,
@@ -193,6 +124,7 @@ impl UpsertTopic {
             }]),
             children: BTreeSet::new(),
         };
+
         (path, topic)
     }
 

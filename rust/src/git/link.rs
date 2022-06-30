@@ -3,35 +3,10 @@ use chrono::Utc;
 use std::collections::{BTreeSet, HashMap};
 
 use crate::git::{
-    Git, IndexMode, Indexer, Kind, Link, LinkMetadata, Object, ParentTopic, TopicChild, API_VERSION,
+    Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, TopicChild, API_VERSION,
 };
 use crate::http::{repo_url, Response};
 use crate::prelude::*;
-use crate::{
-    schema,
-    schema::{WIKI_REPOSITORY_ID, WIKI_ROOT_TOPIC_PATH},
-};
-
-impl From<&Link> for schema::Link {
-    fn from(link: &Link) -> Self {
-        let meta = &link.metadata;
-        let parent_topic_paths = link
-            .parent_topics
-            .iter()
-            .map(|topic| RepoPath::from(&topic.path))
-            .collect::<Vec<RepoPath>>();
-
-        Self {
-            path: RepoPath::from(&meta.path),
-            newly_added: false,
-            parent_topic_paths,
-            repository_id: WIKI_REPOSITORY_ID.into(),
-            viewer_review: None,
-            title: meta.title.clone(),
-            url: meta.url.clone(),
-        }
-    }
-}
 
 #[allow(dead_code)]
 pub struct LinkLoader {
@@ -47,7 +22,7 @@ impl LinkLoader {
 
 #[async_trait::async_trait]
 impl Loader<String> for LinkLoader {
-    type Value = schema::Link;
+    type Value = Link;
     type Error = Error;
 
     async fn load(&self, paths: &[String]) -> Result<HashMap<String, Self::Value>> {
@@ -55,13 +30,8 @@ impl Loader<String> for LinkLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for path in paths {
-            let link = match &self.git.get(path)? {
-                Object::Link(link) => schema::Link::from(link),
-                other => {
-                    return Err(Error::Repo(format!("expected a link: {:?}", other)));
-                }
-            };
-            map.insert(path.to_owned(), link);
+            let link = &self.git.fetch_link(path)?;
+            map.insert(path.to_owned(), link.to_owned());
         }
 
         Ok(map)
@@ -82,8 +52,8 @@ pub struct UpsertLink {
 }
 
 pub struct UpsertLinkResult {
-    pub alerts: Vec<schema::Alert>,
-    pub link: Option<schema::Link>,
+    pub alerts: Vec<String>,
+    pub link: Option<Link>,
 }
 
 impl UpsertLink {
@@ -165,7 +135,7 @@ impl UpsertLink {
 
         Ok(UpsertLinkResult {
             alerts: vec![],
-            link: Some(schema::Link::from(&link)),
+            link: Some(link),
         })
     }
 }

@@ -8,6 +8,7 @@ mod activity;
 pub use activity::*;
 pub mod alert;
 pub use alert::*;
+mod git_object;
 mod relay;
 pub use relay::*;
 mod link;

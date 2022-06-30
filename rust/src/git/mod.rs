@@ -22,7 +22,7 @@ pub use topic::*;
 
 pub const API_VERSION: &str = "objects/v1";
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Kind {
     Link,
     Topic,
@@ -38,15 +38,29 @@ impl Kind {
     }
 }
 
-impl std::cmp::PartialOrd for Kind {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+impl std::cmp::PartialEq for Kind {
+    fn eq(&self, other: &Self) -> bool {
+        core::mem::discriminant(self) == core::mem::discriminant(other)
+    }
+}
+
+impl std::cmp::Eq for Kind {}
+
+impl std::cmp::Ord for Kind {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         use std::cmp::Ordering;
         match (self, &other) {
-            (Self::Topic, Self::Topic) => Some(Ordering::Equal),
-            (Self::Topic, Self::Link) => Some(Ordering::Less),
-            (Self::Link, Self::Topic) => Some(Ordering::Greater),
-            (Self::Link, Self::Link) => Some(Ordering::Equal),
+            (Self::Topic, Self::Topic) => Ordering::Equal,
+            (Self::Topic, Self::Link) => Ordering::Less,
+            (Self::Link, Self::Topic) => Ordering::Greater,
+            (Self::Link, Self::Link) => Ordering::Equal,
         }
+    }
+}
+
+impl std::cmp::PartialOrd for Kind {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -68,7 +82,7 @@ pub struct Link {
     pub parent_topics: BTreeSet<ParentTopic>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ParentTopic {
     pub path: String,
 }
@@ -79,7 +93,13 @@ impl std::cmp::Ord for ParentTopic {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, Serialize)]
+impl std::cmp::PartialOrd for ParentTopic {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicChild {
     pub added: DateTime<Utc>,
@@ -93,14 +113,22 @@ impl std::cmp::PartialEq for TopicChild {
     }
 }
 
+impl std::cmp::Eq for TopicChild {}
+
 impl std::cmp::PartialOrd for TopicChild {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl std::cmp::Ord for TopicChild {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         use std::cmp::Ordering;
         match (&self.kind, &other.kind) {
-            (Kind::Topic, Kind::Topic) => self.path.partial_cmp(&other.path),
-            (Kind::Topic, Kind::Link) => Some(Ordering::Less),
-            (Kind::Link, Kind::Topic) => Some(Ordering::Greater),
-            (Kind::Link, Kind::Link) => other.added.partial_cmp(&self.added), // Reverse
+            (Kind::Topic, Kind::Topic) => self.path.cmp(&other.path),
+            (Kind::Link, Kind::Link) => other.added.cmp(&self.added),
+            (Kind::Topic, Kind::Link) => Ordering::Less,
+            (Kind::Link, Kind::Topic) => Ordering::Greater,
         }
     }
 }

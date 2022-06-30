@@ -9,8 +9,6 @@ use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::prelude::*;
 use crate::repo::{Repo, RepoPath};
 
-pub const DEFAULT_ROOT_TOPIC_NAME: &str = "Everything";
-
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
     pub child_paths: Vec<RepoPath>,

@@ -2,10 +2,7 @@ use sqlx::types::Uuid;
 
 use super::PgTransaction;
 use crate::prelude::*;
-use crate::schema::{
-    User, DEFAULT_ORGANIZATION_NAME, DEFAULT_REPOSITORY_NAME, DEFAULT_ROOT_TOPIC_NAME,
-    WIKI_ORGANIZATION_ID,
-};
+use crate::schema::User;
 
 pub struct CompleteRegistration {
     login: String,

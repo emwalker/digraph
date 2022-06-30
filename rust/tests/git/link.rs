@@ -1,7 +1,6 @@
 use digraph::git::Search;
 use digraph::http::repo_url;
 use digraph::prelude::*;
-use digraph::schema::WIKI_ROOT_TOPIC_PATH;
 use itertools::Itertools;
 
 use super::{fetch_link, fetch_topic, upsert_link, Fixtures};
@@ -105,7 +104,7 @@ async fn parent_topic_updated() {
     fetch_topic(&f, &topic, |parent| {
         let mut found = false;
         for child in parent.children {
-            if &child.path == &link.path.inner {
+            if child.path == link.metadata.path {
                 found = true;
                 break;
             }
