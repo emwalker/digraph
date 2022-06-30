@@ -4,12 +4,12 @@ use sqlx::types::Uuid;
 use std::collections::HashSet;
 
 use super::queries::{TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
-use crate::http::repo_url::Url;
-use crate::prelude::*;
-use crate::schema::{
+use crate::graphql::{
     alert, Alert, AlertType, DateTime, Prefix, Synonyms, TimeRangePrefixFormat, Timerange, Topic,
     TopicChild, UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
 };
+use crate::http::repo_url::Url;
+use crate::prelude::*;
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {

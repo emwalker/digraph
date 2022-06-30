@@ -3,8 +3,8 @@ use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 
+use crate::graphql::{Organization, Viewer};
 use crate::prelude::*;
-use crate::schema::{Organization, Viewer};
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {

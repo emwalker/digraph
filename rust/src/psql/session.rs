@@ -1,8 +1,8 @@
 use sqlx::{postgres::PgPool, types::Uuid, FromRow};
 
 use super::{UpsertRegisteredUser, UpsertUserResult};
+use crate::graphql::{Alert, CreateGithubSessionInput, User, Viewer};
 use crate::prelude::*;
-use crate::schema::{Alert, CreateGithubSessionInput, User, Viewer};
 
 #[derive(FromRow, Clone, Debug)]
 pub struct DatabaseSession {

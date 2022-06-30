@@ -4,8 +4,8 @@ use sqlx::types::Uuid;
 use std::collections::HashMap;
 
 use super::{fetch_user, repository};
+use crate::graphql::{Repository, User, Viewer};
 use crate::prelude::*;
-use crate::schema::{Repository, User, Viewer};
 
 const REPOSITORY_FIELDS: &str = r#"
     r.id,

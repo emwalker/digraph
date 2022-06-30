@@ -1,8 +1,8 @@
 use sqlx::types::Uuid;
 
 use super::PgTransaction;
+use crate::graphql::User;
 use crate::prelude::*;
-use crate::schema::User;
 
 pub struct CompleteRegistration {
     login: String,

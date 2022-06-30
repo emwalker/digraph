@@ -2,8 +2,8 @@ use sqlx::PgPool;
 use std::collections::HashSet;
 
 use super::fetch_topic;
+use crate::graphql::{alert, Alert, Synonym, Synonyms, Topic, UpdateSynonymsInput, Viewer};
 use crate::prelude::*;
-use crate::schema::{alert, Alert, Synonym, Synonyms, Topic, UpdateSynonymsInput, Viewer};
 
 pub struct UpdateSynonyms {
     actor: Viewer,

@@ -10,8 +10,8 @@ use std::env;
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{DataRoot, Git};
+use digraph::graphql::{MutationRoot, QueryRoot, Schema, State};
 use digraph::prelude::*;
-use digraph::schema::{MutationRoot, QueryRoot, Schema, State};
 
 struct AuthHeader(String);
 

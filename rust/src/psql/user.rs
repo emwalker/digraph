@@ -5,8 +5,8 @@ use sqlx::types::Uuid;
 use std::collections::HashMap;
 
 use super::{CompleteRegistration, PgTransaction};
+use crate::graphql::{alert, Alert, CreateGithubSessionInput, User, Viewer};
 use crate::prelude::*;
-use crate::schema::{alert, Alert, CreateGithubSessionInput, User, Viewer};
 
 pub const USER_FIELDS: &str = r#"
     u.id,

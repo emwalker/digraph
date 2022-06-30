@@ -1,8 +1,8 @@
 use sqlx::{types::Json, FromRow, PgPool};
 use std::collections::HashMap;
 
+use crate::graphql::{ActivityLineItem, Viewer};
 use crate::prelude::*;
-use crate::schema::{ActivityLineItem, Viewer};
 
 #[derive(FromRow, Clone, Debug)]
 pub struct Row {

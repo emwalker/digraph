@@ -4,6 +4,11 @@ use regex::Regex;
 use sqlx::postgres::PgPool;
 
 use crate::git;
+use crate::graphql::{
+    ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, Topic, TopicChild,
+    UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput,
+    UpsertTopicTimeRangeInput, User, Viewer,
+};
 use crate::prelude::*;
 use crate::psql;
 use crate::psql::{
@@ -15,11 +20,6 @@ use crate::psql::{
     UpdateSynonymsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult, UpsertLink,
     UpsertLinkResult, UpsertTopic, UpsertTopicResult, UpsertTopicTimeRange,
     UpsertTopicTimeRangeResult,
-};
-use crate::schema::{
-    ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, Topic, TopicChild,
-    UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertLinkInput, UpsertTopicInput,
-    UpsertTopicTimeRangeInput, User, Viewer,
 };
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

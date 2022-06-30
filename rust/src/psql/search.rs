@@ -2,8 +2,8 @@ use super::{
     queries::{LiveTopicQuery, SearchQuery},
     QuerySpec,
 };
+use crate::graphql::{Topic, TopicChild};
 use crate::prelude::*;
-use crate::schema::{Topic, TopicChild};
 use sqlx::postgres::PgPool;
 
 #[allow(unused_variables, dead_code)]

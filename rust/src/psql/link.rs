@@ -6,13 +6,13 @@ use super::{
     fetch_topic,
     queries::{LINK_FIELDS, LINK_JOINS},
 };
-use crate::prelude::*;
-use crate::schema::{
+use crate::graphql::{
     Alert, Link, LinkReview, TopicChild, UpdateLinkTopicsInput, UpsertLinkInput, Viewer,
 };
+use crate::prelude::*;
 use crate::{
+    graphql::DateTime,
     http::{repo_url::Url, Page},
-    schema::DateTime,
 };
 
 const PUBLIC_ROOT_TOPIC_PATH: &str = "/wiki/df63295e-ee02-11e8-9e36-17d56b662bc8";

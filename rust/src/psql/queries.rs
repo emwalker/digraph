@@ -1,8 +1,8 @@
 use sqlx::postgres::PgPool;
 
 use super::{link, topic, QuerySpec, TopicSpec};
+use crate::graphql::{Topic, TopicChild};
 use crate::prelude::*;
-use crate::schema::{Topic, TopicChild};
 
 pub const TOPIC_FIELDS: &str = r#"
     concat('/', o.login, '/', t.id) path,
