@@ -123,13 +123,7 @@ impl std::cmp::PartialOrd for TopicChild {
 
 impl std::cmp::Ord for TopicChild {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        use std::cmp::Ordering;
-        match (&self.kind, &other.kind) {
-            (Kind::Topic, Kind::Topic) => self.path.cmp(&other.path),
-            (Kind::Link, Kind::Link) => other.added.cmp(&self.added),
-            (Kind::Topic, Kind::Link) => Ordering::Less,
-            (Kind::Link, Kind::Topic) => Ordering::Greater,
-        }
+        (&self.kind, &self.path).cmp(&(&other.kind, &other.path))
     }
 }
 
@@ -506,5 +500,53 @@ mod tests {
             root.object_filename("/with-dash/123456").unwrap(),
             PathBuf::from("../../with-dash/objects/12/34/56/object.yaml")
         );
+    }
+
+    #[test]
+    fn topic_child_equality_ignores_timestamps() {
+        let child1 = TopicChild {
+            added: chrono::Utc::now(),
+            path: "/wiki/00001".to_owned(),
+            kind: Kind::Link,
+        };
+
+        let child2 = TopicChild {
+            added: chrono::Utc::now(),
+            path: "/wiki/00001".to_owned(),
+            kind: Kind::Link,
+        };
+
+        let child3 = TopicChild {
+            added: chrono::Utc::now(),
+            path: "/wiki/00002".to_owned(),
+            kind: Kind::Link,
+        };
+
+        assert_eq!(child1, child2);
+        assert_ne!(child1, child3);
+        assert_ne!(child2, child3);
+    }
+
+    #[test]
+    fn deduping_topic_children() {
+        let mut set = BTreeSet::new();
+
+        let a = TopicChild {
+            added: chrono::Utc::now(),
+            path: "/wiki/00001".to_owned(),
+            kind: Kind::Link,
+        };
+        assert!(set.insert(&a));
+        assert_eq!(set.len(), 1);
+
+        let b = TopicChild {
+            added: chrono::Utc::now(),
+            path: "/wiki/00001".to_owned(),
+            kind: Kind::Link,
+        };
+        assert!(set.contains(&b));
+        assert_eq!(&a, &b);
+
+        assert!(!set.insert(&b));
     }
 }

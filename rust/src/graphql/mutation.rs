@@ -455,7 +455,6 @@ impl MutationRoot {
         ctx: &Context<'_>,
         input: UpsertLinkInput,
     ) -> Result<UpsertLinkPayload> {
-        log::info!("upserting link: {:?}", input);
         let result = ctx.data_unchecked::<Repo>().upsert_link(input).await?;
         let edge = result
             .link

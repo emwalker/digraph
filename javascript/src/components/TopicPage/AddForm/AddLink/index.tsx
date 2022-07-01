@@ -52,7 +52,7 @@ class AddLink extends Component<Props, State> {
       type: 'RANGE_ADD',
       parentID: this.props.topic.id,
       connectionInfo: [{
-        key: 'Topic_links',
+        key: 'Topic_children',
         rangeBehavior: 'prepend',
       }],
       edgeName: 'linkEdge',

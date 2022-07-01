@@ -39,12 +39,15 @@ impl Loader<String> for LinkLoader {
     }
 }
 
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub struct UpsertLink {
     pub actor: Viewer,
     pub add_parent_topic_paths: Vec<RepoPath>,
     pub prefix: String,
     pub title: Option<String>,
     pub url: String,
+    #[derivative(Debug = "ignore")]
     pub fetcher: Box<dyn http::Fetch + Send + Sync>,
 }
 
@@ -55,7 +58,7 @@ pub struct UpsertLinkResult {
 
 impl UpsertLink {
     pub async fn call(&self, git: &Git) -> Result<UpsertLinkResult> {
-        log::info!("upserting link: {}", self.url);
+        log::info!("upserting link: {:?}", self);
         let url = repo_url::Url::parse(&self.url)?;
         let path = url.path(&self.prefix);
         let added = Utc::now();

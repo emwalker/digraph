@@ -102,6 +102,8 @@ async fn parent_topic_updated() {
     let link = result.link.unwrap();
 
     fetch_topic(&f, &topic, |parent| {
+        assert_eq!(topic.inner, parent.metadata.path);
+
         let mut found = false;
         for child in parent.children {
             if child.path == link.metadata.path {

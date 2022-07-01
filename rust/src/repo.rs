@@ -1,4 +1,5 @@
 use async_graphql::dataloader::*;
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
 use sqlx::postgres::PgPool;
@@ -190,8 +191,6 @@ impl Repo {
     }
 
     pub async fn topic_children(&self, parent_topic: &RepoPath) -> Result<Vec<TopicChild>> {
-        use itertools::Itertools;
-
         let topic = self
             .topic(parent_topic)
             .await?
@@ -425,9 +424,15 @@ impl Repo {
         &self,
         input: graphql::UpsertLinkInput,
     ) -> Result<git::UpsertLinkResult> {
+        let add_parent_topic_paths = input
+            .add_parent_topic_paths
+            .iter()
+            .map(RepoPath::from)
+            .collect_vec();
+
         git::UpsertLink {
             actor: self.viewer.clone(),
-            add_parent_topic_paths: vec![],
+            add_parent_topic_paths,
             prefix: "/wiki".to_owned(),
             title: input.title,
             url: input.url,
