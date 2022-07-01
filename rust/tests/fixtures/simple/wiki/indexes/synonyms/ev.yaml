@@ -1,0 +1,6 @@
+---
+api_version: objects/v1
+synonyms:
+  everything:
+    - name: Everything
+      path: /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8

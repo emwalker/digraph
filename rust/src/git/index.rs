@@ -93,11 +93,35 @@ impl std::cmp::Ord for SynonymEntry {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct SynonymMatch {
+    pub cycle: bool,
     pub entry: SynonymEntry,
     pub name: String,
     pub topic: Topic,
+}
+
+impl std::cmp::Ord for SynonymMatch {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.entry.cmp(&other.entry)
+    }
+}
+
+impl std::cmp::PartialOrd for SynonymMatch {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl SynonymMatch {
+    pub fn with_cycle(&self, cycle: bool) -> Self {
+        Self {
+            cycle,
+            entry: self.entry.to_owned(),
+            name: self.name.to_owned(),
+            topic: self.topic.to_owned(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

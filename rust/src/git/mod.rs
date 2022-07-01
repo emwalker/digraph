@@ -99,6 +99,12 @@ impl std::cmp::PartialOrd for ParentTopic {
     }
 }
 
+impl ParentTopic {
+    pub fn fetch(&self, git: &Git) -> Result<Topic> {
+        git.fetch_topic(&self.path)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicChild {
@@ -195,6 +201,60 @@ pub struct Topic {
 impl std::cmp::PartialEq for Topic {
     fn eq(&self, other: &Self) -> bool {
         self.metadata.path == other.metadata.path
+    }
+}
+
+impl std::cmp::Eq for Topic {}
+
+impl std::cmp::Ord for Topic {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.metadata.path.cmp(&other.metadata.path)
+    }
+}
+
+impl std::cmp::PartialOrd for Topic {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Topic {
+    pub fn has_child(&self, child: &Self) -> bool {
+        child
+            .parent_topics
+            .iter()
+            .any(|parent| parent.path == self.metadata.path)
+    }
+
+    pub fn name(&self, desired_locale: &str) -> String {
+        for Synonym { locale, name, .. } in &self.metadata.synonyms {
+            if desired_locale == locale {
+                return name.to_owned();
+            }
+        }
+
+        match &self.metadata.synonyms.get(0) {
+            Some(synonym) => synonym.name.to_owned(),
+            None => "Missing name".to_owned(),
+        }
+    }
+
+    pub fn path(&self) -> RepoPath {
+        RepoPath::from(&self.metadata.path)
+    }
+
+    pub fn to_parent_topic(&self) -> ParentTopic {
+        ParentTopic {
+            path: self.metadata.path.to_owned(),
+        }
+    }
+
+    pub fn to_topic_child(&self, added: chrono::DateTime<Utc>) -> TopicChild {
+        TopicChild {
+            added,
+            kind: Kind::Topic,
+            path: self.metadata.path.to_owned(),
+        }
     }
 }
 
@@ -356,6 +416,41 @@ impl Git {
         }
     }
 
+    pub fn cycle_exists(
+        &self,
+        descendant_path: &RepoPath,
+        ancestor_path: &RepoPath,
+    ) -> Result<bool> {
+        let mut stack = vec![descendant_path.clone()];
+        let mut seen: BTreeSet<RepoPath> = BTreeSet::new();
+
+        while !stack.is_empty() {
+            if let Some(descendant_path) = stack.pop() {
+                if seen.contains(&descendant_path) {
+                    continue;
+                }
+
+                if &descendant_path == ancestor_path {
+                    return Ok(true);
+                }
+
+                let descendant = self.fetch_topic(&descendant_path.inner)?;
+
+                for child in &descendant.children {
+                    if child.kind != Kind::Topic {
+                        break;
+                    }
+                    let child_path = RepoPath::from(&child.path);
+                    stack.push(child_path);
+                }
+
+                seen.insert(descendant_path.clone());
+            }
+        }
+
+        Ok(false)
+    }
+
     // The value of `token` will sometimes need to be normalized by the caller in order for lookups
     // to work as expected.  We do not normalize the token here because some searches, e.g.,
     // of urls, are more sensitive to normalization, and so we omit it in those cases.
@@ -429,14 +524,15 @@ impl Git {
         self.save(path, topic)
     }
 
-    pub fn synonym_matches(&self, prefix: &str, name: &str) -> Result<Vec<SynonymMatch>> {
+    pub fn synonym_matches(&self, prefix: &str, name: &str) -> Result<BTreeSet<SynonymMatch>> {
         let normalized = normalize(name);
         let key = self.index_key(prefix, &normalized)?;
-        let mut matches = vec![];
+        let mut matches = BTreeSet::new();
 
         for entry in &self.synonym_index(&key, IndexMode::Update)?.matches(name)? {
             let topic = self.fetch_topic(&entry.path)?;
-            matches.push(SynonymMatch {
+            matches.insert(SynonymMatch {
+                cycle: false,
                 entry: (*entry).clone(),
                 name: name.to_string(),
                 topic,

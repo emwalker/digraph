@@ -72,6 +72,18 @@ impl From<&str> for RepoPath {
     }
 }
 
+impl std::cmp::Ord for RepoPath {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.inner.cmp(&other.inner)
+    }
+}
+
+impl std::cmp::PartialOrd for RepoPath {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 impl RepoPath {
     fn invalid_path(input: &String) -> Self {
         Self {
