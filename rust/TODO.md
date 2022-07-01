@@ -1,5 +1,9 @@
 Soon:
+* Update topic synonyms
 * Restrict on org/repo prefix
+* Update synonyms
+* Update link parent topics
+* Update link title
 * Include the locale in synonym entries?
 * Fix header box shadow funkiness, perhaps by simplifying the HTML structure and dropping some components
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)

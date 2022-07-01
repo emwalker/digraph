@@ -41,7 +41,7 @@ export default (environment: Environment, input: Input, config: Config) => {
     node.setValue(input.name, 'name')
     node.setValue('Adding topic to the repo ...', 'description')
     node.setValue(true, 'loading')
-    updateTopicConnections(store, node, 'TopicEdge', input.topicIds || [], 'Topic_children')
+    updateTopicConnections(store, node, 'TopicChildEdge', input.parentTopicPath, 'Topic_children')
   }
 
   return commitMutation(

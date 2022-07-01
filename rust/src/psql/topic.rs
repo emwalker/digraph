@@ -1,4 +1,3 @@
-use serde_json::json;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashSet;
@@ -6,9 +5,8 @@ use std::collections::HashSet;
 use super::queries::{TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
 use crate::graphql::{
     DateTime, Prefix, Synonyms, TimeRangePrefixFormat, Timerange, Topic, TopicChild,
-    UpsertTopicInput, UpsertTopicTimeRangeInput, Viewer,
+    UpsertTopicTimeRangeInput, Viewer,
 };
-use crate::http::repo_url::Url;
 use crate::prelude::*;
 use crate::Alert;
 
@@ -382,109 +380,6 @@ impl UpdateTopicParentTopics {
         }
 
         Ok((valid, alerts))
-    }
-}
-
-pub struct UpsertTopic {
-    actor: Viewer,
-    input: UpsertTopicInput,
-}
-
-pub struct UpsertTopicResult {
-    pub alerts: Vec<Alert>,
-    pub topic: Option<Topic>,
-}
-
-impl UpsertTopic {
-    pub fn new(actor: Viewer, input: UpsertTopicInput) -> Self {
-        Self { actor, input }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<UpsertTopicResult> {
-        let mut alerts = vec![];
-        let name = self.input.name.to_owned();
-
-        if name.is_empty() || Url::is_valid_url(&name) {
-            let result = UpsertTopicResult {
-                alerts: vec![Alert::Warning(format!("Not a valid topic name: {}", name))],
-                topic: None,
-            };
-            return Ok(result);
-        }
-
-        let synonyms = json!([
-            { "Locale": "en", "Name": name },
-        ])
-        .to_string();
-
-        let mut tx = pool.begin().await?;
-
-        let (topic_path,) = sqlx::query_as::<_, (String,)>(
-            r#"insert
-                into topics
-                    (organization_id, repository_id, name, synonyms)
-                    select
-                        o.id, r.id, $3, $5::jsonb
-                    from organizations o
-                    join organization_members om on o.id = om.organization_id
-                    join repositories r on o.id = r.organization_id
-                    where o.login = $1
-                        and r.name = $2
-                        and om.user_id = any($4::uuid[])
-
-                on conflict on constraint topics_repository_name_idx do
-                    -- No-op to ensure that an id is returned
-                    update set name = $3
-                returning concat('/', o.login, '/', t.id) path"#,
-        )
-        .bind(&self.input.organization_login)
-        .bind(&self.input.repository_name)
-        .bind(&name)
-        .bind(&self.actor.mutation_ids)
-        .bind(&synonyms)
-        .fetch_one(&mut tx)
-        .await?;
-        let topic_path = RepoPath::from(&topic_path);
-
-        for parent_topic_path in &self.input.parent_topic_paths {
-            let parent_topic_path = RepoPath::from(parent_topic_path);
-            // Ensure that we can update the parent topic
-            fetch_topic(&self.actor.mutation_ids, pool, &parent_topic_path).await?;
-
-            let (count,) = sqlx::query_as::<_, (i64,)>(
-                r#"select count(*) match_count
-                    from topic_down_set($1::uuid) tds
-                    where tds.child_id = $2::uuid"#,
-            )
-            .bind(&parent_topic_path.short_id)
-            .bind(&topic_path.short_id)
-            .fetch_one(&mut tx)
-            .await?;
-
-            if count.is_positive() {
-                let alert = Alert::Warning(format!(
-                    r#""{}" is a descendant of "{}" and cannot be added as a parent topic"#,
-                    parent_topic_path, name,
-                ));
-                alerts.push(alert);
-                continue;
-            }
-
-            sqlx::query("select add_topic_to_topic($1::uuid, $2::uuid)")
-                .bind(&parent_topic_path.short_id)
-                .bind(&topic_path.short_id)
-                .fetch_one(&mut tx)
-                .await?;
-        }
-
-        tx.commit().await?;
-
-        let row = fetch_topic(&self.actor.mutation_ids, pool, &topic_path).await?;
-
-        Ok(UpsertTopicResult {
-            alerts,
-            topic: Some(row.to_topic()),
-        })
     }
 }
 

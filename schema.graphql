@@ -500,8 +500,8 @@ input UpsertTopicInput {
   description: String
   name: String!
   organizationLogin: String!
+  parentTopicPath: String!
   repositoryName: String!
-  topicIds: [String!]
 }
 
 input UpsertTopicTimeRangeInput {

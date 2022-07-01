@@ -19,8 +19,8 @@ use crate::psql::{
     DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchRepositoriesForUser,
     LiveSearchTopics, ReviewLink, ReviewLinkResult, Search, SelectRepository,
     SelectRepositoryResult, UpdateLinkParentTopics, UpdateLinkTopicsResult, UpdateSynonyms,
-    UpdateSynonymsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult, UpsertTopic,
-    UpsertTopicResult, UpsertTopicTimeRange, UpsertTopicTimeRangeResult,
+    UpdateSynonymsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult,
+    UpsertTopicTimeRange, UpsertTopicTimeRangeResult,
 };
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -459,10 +459,16 @@ impl Repo {
         CreateGithubSession::new(input).call(&self.db).await
     }
 
-    pub async fn upsert_topic(&self, input: UpsertTopicInput) -> Result<UpsertTopicResult> {
-        UpsertTopic::new(self.viewer.clone(), input)
-            .call(&self.db)
-            .await
+    pub async fn upsert_topic(&self, input: UpsertTopicInput) -> Result<git::UpsertTopicResult> {
+        git::UpsertTopic {
+            actor: self.viewer.clone(),
+            locale: "en".to_owned(),
+            name: input.name.to_owned(),
+            on_matching_synonym: git::OnMatchingSynonym::Ask,
+            prefix: "/wiki".to_owned(),
+            parent_topic: RepoPath::from(&input.parent_topic_path),
+        }
+        .call(&self.git)
     }
 
     pub async fn upsert_topic_time_range(

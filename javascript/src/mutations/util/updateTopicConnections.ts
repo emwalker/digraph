@@ -6,7 +6,7 @@ export default (
   store: RecordSourceSelectorProxy,
   node: RecordProxy,
   edgeType: string,
-  topicIds: readonly string[],
+  parentTopicPath: string,
   connectionName: string,
 ) => {
   tmpId += 1
@@ -14,11 +14,9 @@ export default (
   const newEdge = store.create(`client:newEdge:${tmpId}`, edgeType)
   newEdge.setLinkedRecord(node, 'node')
 
-  topicIds.forEach((topicId) => {
-    const topicProxy = store.get(topicId)
-    if (topicProxy) {
-      const conn = ConnectionHandler.getConnection(topicProxy, connectionName)
-      if (conn) ConnectionHandler.insertEdgeAfter(conn, newEdge)
-    }
-  })
+  const topicProxy = store.get(parentTopicPath)
+  if (topicProxy) {
+    const conn = ConnectionHandler.getConnection(topicProxy, connectionName)
+    if (conn) ConnectionHandler.insertEdgeBefore(conn, newEdge)
+  }
 }

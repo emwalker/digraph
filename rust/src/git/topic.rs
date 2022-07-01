@@ -4,9 +4,10 @@ use std::collections::BTreeSet;
 use super::{Indexer, ParentTopic, SynonymMatch, TopicMetadata, API_VERSION};
 use crate::git::{Git, IndexMode, Kind, Synonym, Topic, TopicChild};
 use crate::prelude::*;
+use crate::Alert;
 
 pub struct UpsertTopicResult {
-    pub alerts: Vec<String>,
+    pub alerts: Vec<Alert>,
     pub matching_synonyms: Vec<SynonymMatch>,
     pub saved: bool,
     pub topic: Option<Topic>,

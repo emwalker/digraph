@@ -198,7 +198,7 @@ pub struct UpsertTopicInput {
     pub name: String,
     pub organization_login: String,
     pub repository_name: String,
-    pub parent_topic_paths: Vec<String>,
+    pub parent_topic_path: String,
 }
 
 #[derive(SimpleObject)]
@@ -477,7 +477,7 @@ impl MutationRoot {
         let edge = result
             .topic
             .as_ref()
-            .map(|topic| TopicEdge::new(String::from("0"), topic.clone()));
+            .map(|topic| TopicEdge::new(String::from("0"), Topic::from(topic)));
 
         Ok(UpsertTopicPayload {
             alerts: result.alerts.iter().map(Alert::from).collect_vec(),

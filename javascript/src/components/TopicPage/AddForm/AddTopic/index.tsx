@@ -78,7 +78,7 @@ class AddTopic extends Component<Props, State> {
         name: this.state.name,
         repositoryName: repo.name,
         organizationLogin: this.orgLogin,
-        topicIds: [this.props.topic.id],
+        parentTopicPath: this.props.topic.path,
       },
       {
         configs: this.relayConfigs,
@@ -125,6 +125,7 @@ export default createFragmentContainer(AddTopic, {
   `,
   topic: graphql`
     fragment AddTopic_topic on Topic {
+      path
       id
     }
   `,
