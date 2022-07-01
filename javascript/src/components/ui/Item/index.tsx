@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import { LocationType } from 'components/types'
 import LinkOrA from './LinkOrA'
 import TopicBadge from '../TopicBadge'
-import styles from './styles.module.css'
 
 /* eslint no-underscore-dangle: 0 */
 
@@ -140,7 +139,7 @@ class Item extends Component<Props> {
                 Edit
               </button>
             )
-            : <span className={styles.disabledLink}>Edit</span>}
+            : <span className="itemDisabledLink">Edit</span>}
         </div>
       </div>
       <div>

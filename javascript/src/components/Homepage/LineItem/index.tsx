@@ -5,7 +5,6 @@ import TimeAgo from 'react-timeago'
 import classNames from 'classnames'
 
 import { LineItem_item as ItemType } from '__generated__/LineItem_item.graphql'
-import styles from './styles.module.css'
 
 type Props = {
   item: ItemType,
@@ -15,10 +14,9 @@ const LineItem = ({ item }: Props) => {
   const { createdAt, description } = item
 
   return (
-    // @ts-ignore
-    <div className={classNames(styles.lineItem, 'my-3')}>
-      <Markdown className={styles.description}>{description}</Markdown>
-      <TimeAgo className={styles.timeAgo} date={createdAt as string} />
+    <div className={classNames('lineItem', 'my-3')}>
+      <Markdown className="lineItemDescription">{description}</Markdown>
+      <TimeAgo className="lineItemTimeAgo" date={createdAt as string} />
     </div>
   )
 }

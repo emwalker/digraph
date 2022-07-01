@@ -18,7 +18,6 @@ import { LocationType, NodeTypeOf, liftNodes } from 'components/types'
 import { TopicPage_query_QueryResponse as Response } from '__generated__/TopicPage_query_Query.graphql'
 import { TopicPage_topic as TopicType } from '__generated__/TopicPage_topic.graphql'
 import AddForm from './AddForm'
-import styles from './styles.module.css'
 
 type ViewType = Response['view']
 type TopicChildType = NodeTypeOf<TopicType['children']>
@@ -136,9 +135,9 @@ class TopicPage extends Component<Props, State> {
     if (length < 2) return null
 
     return (
-      <div className={classNames(styles.synonyms, 'h6')}>
+      <div className={classNames('synonyms', 'h6')}>
         {synonyms.slice(1, length).map(({ name }) => (
-          <span key={name} className={styles.synonym}>{name}</span>
+          <span key={name} className="synonym">{name}</span>
         ))}
       </div>
     )

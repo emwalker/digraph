@@ -2,7 +2,6 @@ import React, { Component, KeyboardEvent } from 'react'
 import classNames from 'classnames'
 
 import { everythingTopicPath } from 'components/constants'
-import styles from './styles.module.css'
 
 type Props = {
   className?: string | undefined,
@@ -36,7 +35,7 @@ class SearchBox extends Component<Props> {
     <p className={classNames(this.props.className, 'form-group text-center')}>
       <input
         aria-label="Search"
-        className={classNames(styles.input, 'form-control p-3')}
+        className="searchBoxInput form-control p-3"
         onKeyPress={this.onKeyPress}
         placeholder="Start with a search"
         type="search"

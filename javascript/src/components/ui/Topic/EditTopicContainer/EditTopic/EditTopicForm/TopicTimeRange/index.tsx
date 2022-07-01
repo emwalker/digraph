@@ -9,7 +9,6 @@ import deleteTopicTimeRangeMutation, {
 } from 'mutations/deleteTopicTimeRangeMutation'
 import { TopicTimeRange_topic as TopicType } from '__generated__/TopicTimeRange_topic.graphql'
 import TopicTimeRangeForm from './TopicTimeRangeForm'
-import styles from './styles.module.css'
 
 type Props = {
   topic: TopicType,
@@ -45,7 +44,7 @@ const TopicTimeRange = ({ relay, topic }: Props) => {
   const onChange = updateOrDelete(relay, topic, setMutationInFlight)
 
   return (
-    <div className={styles.timelineForm}>
+    <div>
       <div className="form-checkbox mb-1">
         <label htmlFor="time-range-checkbox">
           <input

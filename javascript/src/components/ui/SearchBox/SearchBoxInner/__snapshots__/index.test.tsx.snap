@@ -2,7 +2,7 @@
 
 exports[`<FilterInput /> renders 1`] = `
 <form
-  className="searchBox input-group"
+  className="searchBoxInnerSearchBox input-group"
   onSubmit={[Function]}
 >
   <TextInput
@@ -10,10 +10,10 @@ exports[`<FilterInput /> renders 1`] = `
     queryInfo={Object {}}
   />
   <div
-    className="input-group-button buttonContainer"
+    className="input-group-button searchBoxInnerButtonContainer"
   >
     <button
-      className="btn button"
+      className="btn searchBoxInnerButton"
       type="button"
     >
       Everything

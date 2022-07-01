@@ -18,7 +18,7 @@ export default (
     const topicProxy = store.get(topicId)
     if (topicProxy) {
       const conn = ConnectionHandler.getConnection(topicProxy, connectionName)
-      if (conn) ConnectionHandler.insertEdgeBefore(conn, newEdge)
+      if (conn) ConnectionHandler.insertEdgeAfter(conn, newEdge)
     }
   })
 }

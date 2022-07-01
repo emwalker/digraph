@@ -1,13 +1,11 @@
 import React, { ReactNode } from 'react'
 import { graphql } from 'react-relay'
 import { Match, Router } from 'found'
-import { MediaQueryProvider } from 'react-responsive-hoc'
 
 import { LayoutQueryResponse } from '__generated__/LayoutQuery.graphql'
 import FlashMessages from '../FlashMessages'
 import Header from './Header'
 import Footer from './Footer'
-import styles from './styles.module.css'
 
 type AlertsType = LayoutQueryResponse['alerts']
 type ViewType = LayoutQueryResponse['view']
@@ -51,23 +49,19 @@ query LayoutQuery(
 }`
 
 const Layout = ({ alerts, children, view, match, router }: Props) => (
-  <MediaQueryProvider width={1600} height={800}>
-    <div className={styles.layout}>
-      <div>
-        <Header
-          location={match.location}
-          router={router}
-          view={view}
-          viewer={view.viewer}
-        />
-        <div className="clearfix">
-          <FlashMessages initialAlerts={alerts} />
-          { children }
-        </div>
-        <Footer />
-      </div>
+  <div className="layoutComponent">
+    <Header
+      location={match.location}
+      router={router}
+      view={view}
+      viewer={view.viewer}
+    />
+    <div className="clearfix">
+      <FlashMessages initialAlerts={alerts} />
+      { children }
     </div>
-  </MediaQueryProvider>
+    <Footer />
+  </div>
 )
 
 export default Layout

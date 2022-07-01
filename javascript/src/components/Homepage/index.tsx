@@ -8,7 +8,6 @@ import DigraphLogo from 'components/ui/icons/DigraphLogo'
 import { Homepage_homepage_QueryResponse as Response } from '__generated__/Homepage_homepage_Query.graphql'
 import LineItem from './LineItem'
 import SearchBox from './SearchBox'
-import styles from './styles.module.css'
 
 type ViewType = Response['view']
 
@@ -32,12 +31,12 @@ const Homepage = ({ view, router }: Props) => {
 
   return (
     <div className="f4">
-      <div className={styles.hero}>
-        <div className={styles.background} />
+      <div className="homepageHero">
+        <div className="homepageBackground" />
 
-        <div className={styles.content}>
-          <a className={styles.logo} href="/">
-            <div className={styles.appName}>
+        <div className="homepageContent">
+          <a className="homepageLogo" href="/">
+            <div className="homepageAppName">
               Digraph
             </div>
 
@@ -45,14 +44,14 @@ const Homepage = ({ view, router }: Props) => {
               <DigraphLogo height="60px" width="60px" fill="#fff" />
             </div>
           </a>
-          <p className={styles.subtitle}>
+          <p className="homepageSubtitle">
             Organize the world
           </p>
         </div>
       </div>
 
       <Page>
-        <p className={styles.description}>
+        <p className="homepageDescription">
           Save links in a mind-map-like network of topics.
           Keep track of everything you&rsquo;ve read or might want to read in the future.
           Gain control over your reading and turn the deluge of information into knowledge.
@@ -73,7 +72,7 @@ const Homepage = ({ view, router }: Props) => {
           </div>
         </div>
 
-        <SearchBox className={styles.search} router={router} />
+        <SearchBox className="homepageSearch" router={router} />
       </Page>
     </div>
   )

@@ -15,7 +15,7 @@ declare class Synonym extends Component<Props> {
     render: () => JSX.Element;
 }
 export declare const UnwrappedSynonym: typeof Synonym;
-declare const _default: import("react-relay").Container<Pick<Omit<Props, "relay">, "position" | "dragHandle" | "synonym"> & {
+declare const _default: import("react-relay").Container<Pick<Omit<Props, "relay">, "position" | "synonym" | "dragHandle"> & {
     onDelete?: ((index: number) => void) | undefined;
 } & {}>;
 export default _default;

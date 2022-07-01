@@ -109,7 +109,7 @@ pub struct TopicChild {
 
 impl std::cmp::PartialEq for TopicChild {
     fn eq(&self, other: &Self) -> bool {
-        self.kind == other.kind && self.path == other.path
+        self.path == other.path
     }
 }
 

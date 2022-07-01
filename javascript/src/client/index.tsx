@@ -4,7 +4,7 @@ import React from 'react'
 import { RelayEnvironmentProvider } from 'relay-hooks'
 import { BrowserProtocol } from 'farce'
 import { createInitialFarceRouter } from 'found'
-import { hydrate } from 'react-dom'
+import ReactDOM from 'react-dom/client'
 import { createStore } from 'redux'
 import { Provider } from 'react-redux'
 import '@primer/css/index.scss?global'
@@ -40,17 +40,15 @@ const init = async () => {
     routeConfig,
   })
 
-  const element = document.getElementById('root')
+  const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
-  if (element) {
-    hydrate(
+  if (root) {
+    root.render(
       <RelayEnvironmentProvider environment={resolver.environment}>
-        {/* @ts-ignore */}
         <Provider store={store}>
           <Router resolver={resolver} />
         </Provider>
       </RelayEnvironmentProvider>,
-      element,
     )
   }
 

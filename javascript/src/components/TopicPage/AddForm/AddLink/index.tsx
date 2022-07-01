@@ -1,5 +1,5 @@
 import React, { Component, KeyboardEvent, FormEvent } from 'react'
-import { graphql, createFragmentContainer, RelayProp, DeclarativeMutationConfig } from 'react-relay'
+import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
 
 import upsertLinkMutation, { Input } from 'mutations/upsertLinkMutation'
 import { AddLink_viewer as ViewerType } from '__generated__/AddLink_viewer.graphql'
@@ -47,18 +47,6 @@ class AddLink extends Component<Props, State> {
     return repo.organization.login
   }
 
-  get relayConfigs(): DeclarativeMutationConfig[] {
-    return [{
-      type: 'RANGE_ADD',
-      parentID: this.props.topic.id,
-      connectionInfo: [{
-        key: 'Topic_children',
-        rangeBehavior: 'prepend',
-      }],
-      edgeName: 'linkEdge',
-    }]
-  }
-
   updateUrl = (event: FormEvent<HTMLInputElement>) => {
     this.setState({ url: event.currentTarget.value })
   }
@@ -78,13 +66,7 @@ class AddLink extends Component<Props, State> {
       url: this.state.url,
     }
 
-    upsertLinkMutation(
-      this.props.relay.environment,
-      input,
-      {
-        configs: this.relayConfigs,
-      },
-    )
+    upsertLinkMutation(this.props.relay.environment, input)
     this.setState({ url: '' })
   }
 

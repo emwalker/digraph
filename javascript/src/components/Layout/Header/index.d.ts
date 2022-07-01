@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import { Router } from 'found';
 import { LocationType } from 'components/types';
 import { LayoutQueryResponse as Response } from '__generated__/LayoutQuery.graphql';

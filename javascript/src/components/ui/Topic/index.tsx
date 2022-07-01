@@ -1,13 +1,11 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
-import classNames from 'classnames'
 
 import { NodeTypeOf, liftNodes } from 'components/types'
 import { Topic_topic as TopicType } from '__generated__/Topic_topic.graphql'
 import { Topic_view as ViewType } from '__generated__/Topic_view.graphql'
 import Item from '../Item'
 import EditTopic from './EditTopicContainer'
-import styles from './styles.module.css'
 
 type ParentTopicType = NodeTypeOf<TopicType['parentTopics']>
 
@@ -67,7 +65,7 @@ class Topic extends Component<Props, State> {
     return (
       <Item
         canEdit={this.props.topic.viewerCanUpdate}
-        className={classNames(styles.topicRow, 'Box-row--topic')}
+        className="topicTopicRow Box-row--topic"
         description={this.props.topic.description}
         displayColor={this.displayColor}
         formIsOpen={this.state.formIsOpen}

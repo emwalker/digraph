@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import { RelayProp } from 'react-relay';
 declare type Link = {
     path: string;
