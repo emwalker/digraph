@@ -1,5 +1,5 @@
 use super::SynonymInput;
-use super::{DateTime, Link, Prefix, Synonym, Synonyms, TimeRangePrefixFormat, Timerange, Topic};
+use super::{DateTime, Link, Prefix, Synonym, Synonyms, Timerange, TimerangePrefixFormat, Topic};
 use crate::git;
 use crate::prelude::*;
 
@@ -49,7 +49,7 @@ impl From<&SynonymInput> for git::Synonym {
     }
 }
 
-impl From<&git::TimerangePrefixFormat> for TimeRangePrefixFormat {
+impl From<&git::TimerangePrefixFormat> for TimerangePrefixFormat {
     fn from(format: &git::TimerangePrefixFormat) -> Self {
         match format {
             git::TimerangePrefixFormat::None => Self::None,
@@ -64,7 +64,7 @@ impl From<&git::Timerange> for Timerange {
         Self {
             ends_at: None,
             starts_at: DateTime(timerange.starts),
-            prefix_format: TimeRangePrefixFormat::from(&timerange.prefix_format),
+            prefix_format: TimerangePrefixFormat::from(&timerange.prefix_format),
         }
     }
 }
@@ -85,8 +85,8 @@ impl From<&git::Topic> for Topic {
             .collect::<Vec<RepoPath>>();
 
         let synonyms = Synonyms::from(&meta.synonyms);
-        let time_range = meta.timerange.clone().map(|r| Timerange::from(&r));
-        let prefix = Prefix::from(&time_range);
+        let timerange = meta.timerange.clone().map(|r| Timerange::from(&r));
+        let prefix = Prefix::from(&timerange);
 
         Self {
             child_paths,
@@ -96,7 +96,17 @@ impl From<&git::Topic> for Topic {
             prefix,
             root: meta.root,
             synonyms,
-            time_range,
+            timerange,
+        }
+    }
+}
+
+impl From<&TimerangePrefixFormat> for git::TimerangePrefixFormat {
+    fn from(prefix_format: &TimerangePrefixFormat) -> Self {
+        match prefix_format {
+            TimerangePrefixFormat::None => git::TimerangePrefixFormat::None,
+            TimerangePrefixFormat::StartYear => git::TimerangePrefixFormat::StartYear,
+            TimerangePrefixFormat::StartYearMonth => git::TimerangePrefixFormat::StartYearMonth,
         }
     }
 }

@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
 import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 
-import upsertTopicTimeRangeMutation, {
+import upsertTopicTimerangeMutation, {
   Input as UpdateInput,
-} from 'mutations/upsertTopicTimeRangeMutation'
-import deleteTopicTimeRangeMutation, {
+} from 'mutations/upsertTopicTimerangeMutation'
+import deleteTopicTimerangeMutation, {
   Input as DeleteInput,
-} from 'mutations/deleteTopicTimeRangeMutation'
-import { TopicTimeRange_topic as TopicType } from '__generated__/TopicTimeRange_topic.graphql'
-import TopicTimeRangeForm from './TopicTimeRangeForm'
+} from 'mutations/deleteTopicTimerangeMutation'
+import { TopicTimerange_topic as TopicType } from '__generated__/TopicTimerange_topic.graphql'
+import TopicTimerangeForm from './TopicTimerangeForm'
 
 type Props = {
   topic: TopicType,
@@ -22,16 +22,16 @@ const updateOrDelete = (
 ) => async () => {
   setMutationInFlight(true)
 
-  if (topic.timeRange) {
+  if (topic.timerange) {
     const input: DeleteInput = { topicPath: topic.path }
-    await deleteTopicTimeRangeMutation(relay.environment, input)
+    await deleteTopicTimerangeMutation(relay.environment, input)
   } else {
     const input: UpdateInput = {
       topicPath: topic.path,
       startsAt: (new Date()).toISOString(),
       prefixFormat: 'START_YEAR_MONTH',
     }
-    await upsertTopicTimeRangeMutation(relay.environment, input)
+    await upsertTopicTimerangeMutation(relay.environment, input)
   }
 
   setMutationInFlight(false)
@@ -39,7 +39,7 @@ const updateOrDelete = (
 
 const TopicTimeRange = ({ relay, topic }: Props) => {
   const [mutationInFlight, setMutationInFlight] = useState(false)
-  const checked = !!topic.timeRange
+  const checked = !!topic.timerange
 
   const onChange = updateOrDelete(relay, topic, setMutationInFlight)
 
@@ -57,22 +57,22 @@ const TopicTimeRange = ({ relay, topic }: Props) => {
           Occurs in time
         </label>
       </div>
-      {checked && <TopicTimeRangeForm topic={topic} />}
+      {checked && <TopicTimerangeForm topic={topic} />}
     </div>
   )
 }
 
 export default createFragmentContainer(TopicTimeRange, {
   topic: graphql`
-    fragment TopicTimeRange_topic on Topic {
+    fragment TopicTimerange_topic on Topic {
       id
       path
 
-      timeRange {
+      timerange {
         startsAt
       }
 
-      ...TopicTimeRangeForm_topic
+      ...TopicTimerangeForm_topic
     }
   `,
 })

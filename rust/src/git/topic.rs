@@ -1,8 +1,10 @@
 use rand::{distributions::Alphanumeric, Rng};
 use std::collections::{BTreeSet, HashMap};
 
-use super::{Indexer, ParentTopic, SynonymEntry, SynonymMatch, TopicMetadata, API_VERSION};
-use crate::git::{Git, IndexMode, Kind, Synonym, Topic};
+use super::{
+    Git, IndexMode, Indexer, Kind, ParentTopic, Synonym, SynonymEntry, SynonymMatch, Timerange,
+    Topic, TopicMetadata, API_VERSION,
+};
 use crate::prelude::*;
 use crate::Alert;
 
@@ -294,5 +296,34 @@ impl UpsertTopic {
     fn fetch_parent(&self, git: &Git) -> Result<Topic> {
         let path = &self.parent_topic.inner;
         git.fetch_topic(path)
+    }
+}
+
+pub struct UpsertTopicTimerange {
+    pub actor: Viewer,
+    pub timerange: Timerange,
+    pub topic_path: RepoPath,
+}
+
+pub struct UpsertTopicTimerangeResult {
+    pub alerts: Vec<Alert>,
+    pub timerange: Timerange,
+    pub topic: Topic,
+}
+
+impl UpsertTopicTimerange {
+    pub fn call(&self, git: &Git) -> Result<UpsertTopicTimerangeResult> {
+        let mut topic = git.fetch_topic(&self.topic_path.inner)?;
+
+        let mut indexer = Indexer::new(git, IndexMode::Update);
+        topic.metadata.timerange = Some(self.timerange.clone());
+        git.save_topic(&self.topic_path, &topic, &mut indexer)?;
+        indexer.save()?;
+
+        Ok(UpsertTopicTimerangeResult {
+            alerts: vec![],
+            topic,
+            timerange: self.timerange.clone(),
+        })
     }
 }

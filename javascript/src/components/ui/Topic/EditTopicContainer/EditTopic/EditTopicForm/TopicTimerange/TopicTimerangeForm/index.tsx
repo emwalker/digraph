@@ -3,22 +3,22 @@ import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 import moment, { Moment } from 'moment/moment'
 import { useDebouncedCallback } from 'use-debounce'
 
-import upsertTopicTimeRangeMutation, { Input } from 'mutations/upsertTopicTimeRangeMutation'
+import upsertTopicTimerangeMutation, { Input } from 'mutations/upsertTopicTimerangeMutation'
 import {
-  TopicTimeRangeForm_topic as TopicType,
-} from '__generated__/TopicTimeRangeForm_topic.graphql'
+  TopicTimerangeForm_topic as TopicType,
+} from '__generated__/TopicTimerangeForm_topic.graphql'
 
-type PrefixFormat = NonNullable<TopicType['timeRange']>['prefixFormat']
+type PrefixFormat = NonNullable<TopicType['timerange']>['prefixFormat']
 
 type Props = {
   relay: RelayProp,
   topic: TopicType,
 }
 
-const TopicTimeRangeForm = ({ relay, topic: { path: topicPath, timeRange } }: Props) => {
+const TopicTimerangeForm = ({ relay, topic: { path: topicPath, timerange } }: Props) => {
   const [mutationInFlight, setMutationInFlight] = useState(false)
-  const [startsAt, setStartsAt] = useState(moment(timeRange?.startsAt as string))
-  const prefixFormat = timeRange?.prefixFormat
+  const [startsAt, setStartsAt] = useState(moment(timerange?.startsAt as string))
+  const prefixFormat = timerange?.prefixFormat
 
   const updateStartsAt = useDebouncedCallback(
     (dt: Moment) => {
@@ -29,7 +29,7 @@ const TopicTimeRangeForm = ({ relay, topic: { path: topicPath, timeRange } }: Pr
           startsAt: dt.toISOString(),
           topicPath,
         }
-        upsertTopicTimeRangeMutation(relay.environment, input)
+        upsertTopicTimerangeMutation(relay.environment, input)
       } else {
         // eslint-disable-next-line no-console
         console.log('invalid date:', dt)
@@ -49,7 +49,7 @@ const TopicTimeRangeForm = ({ relay, topic: { path: topicPath, timeRange } }: Pr
         startsAt,
         topicPath,
       }
-      await upsertTopicTimeRangeMutation(relay.environment, input)
+      await upsertTopicTimerangeMutation(relay.environment, input)
       setMutationInFlight(false)
     },
     [setMutationInFlight, startsAt],
@@ -100,12 +100,12 @@ const TopicTimeRangeForm = ({ relay, topic: { path: topicPath, timeRange } }: Pr
   )
 }
 
-export default createFragmentContainer(TopicTimeRangeForm, {
+export default createFragmentContainer(TopicTimerangeForm, {
   topic: graphql`
-    fragment TopicTimeRangeForm_topic on Topic {
+    fragment TopicTimerangeForm_topic on Topic {
       path
 
-      timeRange {
+      timerange {
         startsAt
         prefixFormat
       }

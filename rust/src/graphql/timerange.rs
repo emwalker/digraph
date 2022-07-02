@@ -11,16 +11,16 @@ pub enum Prefix {
 }
 
 impl From<&Option<Timerange>> for Prefix {
-    fn from(time_range: &Option<Timerange>) -> Self {
-        match &time_range {
+    fn from(timerange: &Option<Timerange>) -> Self {
+        match &timerange {
             Some(Timerange {
                 starts_at,
                 prefix_format,
                 ..
             }) => match prefix_format {
-                TimeRangePrefixFormat::None => Self::None,
-                TimeRangePrefixFormat::StartYear => Self::StartYear(starts_at.0),
-                TimeRangePrefixFormat::StartYearMonth => Self::StartYearMonth(starts_at.0),
+                TimerangePrefixFormat::None => Self::None,
+                TimerangePrefixFormat::StartYear => Self::StartYear(starts_at.0),
+                TimerangePrefixFormat::StartYearMonth => Self::StartYearMonth(starts_at.0),
             },
             None => Self::None,
         }
@@ -61,13 +61,13 @@ impl Prefix {
 }
 
 #[derive(Enum, Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum TimeRangePrefixFormat {
+pub enum TimerangePrefixFormat {
     None,
     StartYear,
     StartYearMonth,
 }
 
-impl std::fmt::Display for TimeRangePrefixFormat {
+impl std::fmt::Display for TimerangePrefixFormat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         let string = match self {
             Self::None => "NONE",
@@ -85,11 +85,11 @@ scalar!(DateTime);
 #[derive(Clone, Debug, Eq, Hash, PartialEq, SimpleObject)]
 pub struct Timerange {
     pub ends_at: Option<DateTime>,
-    pub prefix_format: TimeRangePrefixFormat,
+    pub prefix_format: TimerangePrefixFormat,
     pub starts_at: DateTime,
 }
 
-pub type TimeRangeEdge = Edge<String, Timerange, EmptyFields>;
+pub type TimerangeEdge = Edge<String, Timerange, EmptyFields>;
 
 #[cfg(test)]
 mod tests {

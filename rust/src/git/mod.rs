@@ -169,7 +169,7 @@ pub struct Timerange {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TimerangePrefixFormat {
     None,
     StartYear,

@@ -2,8 +2,8 @@ use async_graphql::{Context, InputObject, Object, SimpleObject};
 use itertools::Itertools;
 
 use super::{
-    Alert, DateTime, Link, LinkEdge, Repository, Session, SessionEdge, Synonym, TimeRangeEdge,
-    TimeRangePrefixFormat, Topic, TopicEdge, User, UserEdge,
+    Alert, DateTime, Link, LinkEdge, Repository, Session, SessionEdge, Synonym, Timerange,
+    TimerangeEdge, TimerangePrefixFormat, Topic, TopicEdge, User, UserEdge,
 };
 use crate::git;
 use crate::http::repo_url;
@@ -11,7 +11,7 @@ use crate::prelude::*;
 use crate::psql::{
     DeleteAccountResult, DeleteLinkResult, DeleteSessionResult, DeleteTopicTimeRangeResult,
     ReviewLinkResult, SelectRepositoryResult, UpdateLinkTopicsResult,
-    UpdateTopicParentTopicsResult, UpsertTopicTimeRangeResult,
+    UpdateTopicParentTopicsResult,
 };
 use crate::repo::Repo;
 
@@ -83,13 +83,13 @@ pub struct DeleteTopicPayload {
 }
 
 #[derive(Debug, InputObject)]
-pub struct DeleteTopicTimeRangeInput {
+pub struct DeleteTopicTimerangeInput {
     client_mutation_id: Option<String>,
     topic_path: String,
 }
 
 #[derive(Debug, SimpleObject)]
-pub struct DeleteTopicTimeRangePayload {
+pub struct DeleteTopicTimerangePayload {
     client_mutation_id: Option<String>,
     topic: Topic,
 }
@@ -209,18 +209,18 @@ pub struct UpsertTopicPayload {
 }
 
 #[derive(Debug, InputObject)]
-pub struct UpsertTopicTimeRangeInput {
+pub struct UpsertTopicTimerangeInput {
     pub client_mutation_id: Option<String>,
     pub topic_path: String,
     pub starts_at: DateTime,
     pub ends_at: Option<DateTime>,
-    pub prefix_format: TimeRangePrefixFormat,
+    pub prefix_format: TimerangePrefixFormat,
 }
 
 #[derive(SimpleObject)]
-pub struct UpsertTopicTimeRangePayload {
+pub struct UpsertTopicTimerangePayload {
     alerts: Vec<Alert>,
-    time_range_edge: Option<TimeRangeEdge>,
+    timerange_edge: Option<TimerangeEdge>,
     topic: Topic,
 }
 
@@ -344,12 +344,12 @@ impl MutationRoot {
         })
     }
 
-    async fn delete_topic_time_range(
+    async fn delete_topic_timerange(
         &self,
         ctx: &Context<'_>,
-        input: DeleteTopicTimeRangeInput,
-    ) -> Result<DeleteTopicTimeRangePayload> {
-        let DeleteTopicTimeRangeInput {
+        input: DeleteTopicTimerangeInput,
+    ) -> Result<DeleteTopicTimerangePayload> {
+        let DeleteTopicTimerangeInput {
             client_mutation_id,
             topic_path,
         } = input;
@@ -357,10 +357,10 @@ impl MutationRoot {
         let topic_path = RepoPath::from(&topic_path);
         let DeleteTopicTimeRangeResult { topic } = ctx
             .data_unchecked::<Repo>()
-            .delete_topic_time_range(&topic_path)
+            .delete_topic_timerange(&topic_path)
             .await?;
 
-        Ok(DeleteTopicTimeRangePayload {
+        Ok(DeleteTopicTimerangePayload {
             client_mutation_id,
             topic,
         })
@@ -488,24 +488,27 @@ impl MutationRoot {
         })
     }
 
-    async fn upsert_topic_time_range(
+    async fn upsert_topic_timerange(
         &self,
         ctx: &Context<'_>,
-        input: UpsertTopicTimeRangeInput,
-    ) -> Result<UpsertTopicTimeRangePayload> {
-        let UpsertTopicTimeRangeResult {
+        input: UpsertTopicTimerangeInput,
+    ) -> Result<UpsertTopicTimerangePayload> {
+        let git::UpsertTopicTimerangeResult {
             alerts,
             topic,
-            time_range,
+            timerange,
         } = ctx
             .data_unchecked::<Repo>()
-            .upsert_topic_time_range(input)
+            .upsert_topic_timerange(input)
             .await?;
 
-        Ok(UpsertTopicTimeRangePayload {
+        Ok(UpsertTopicTimerangePayload {
             alerts: alerts.iter().map(Alert::from).collect_vec(),
-            topic,
-            time_range_edge: Some(TimeRangeEdge::new(String::from("0"), time_range)),
+            topic: Topic::from(&topic),
+            timerange_edge: Some(TimerangeEdge::new(
+                String::from("0"),
+                Timerange::from(&timerange),
+            )),
         })
     }
 }

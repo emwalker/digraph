@@ -7,7 +7,7 @@ use sqlx::postgres::PgPool;
 use crate::git;
 use crate::graphql::{
     self, ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, Topic,
-    TopicChild, UpdateLinkTopicsInput, UpsertTopicInput, UpsertTopicTimeRangeInput, User, Viewer,
+    TopicChild, UpdateLinkTopicsInput, UpsertTopicInput, UpsertTopicTimerangeInput, User, Viewer,
 };
 use crate::http;
 use crate::prelude::*;
@@ -18,8 +18,7 @@ use crate::psql::{
     DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchRepositoriesForUser,
     LiveSearchTopics, ReviewLink, ReviewLinkResult, Search, SelectRepository,
     SelectRepositoryResult, UpdateLinkParentTopics, UpdateLinkTopicsResult,
-    UpdateTopicParentTopics, UpdateTopicParentTopicsResult, UpsertTopicTimeRange,
-    UpsertTopicTimeRangeResult,
+    UpdateTopicParentTopics, UpdateTopicParentTopicsResult,
 };
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -255,7 +254,7 @@ impl Repo {
             .await
     }
 
-    pub async fn delete_topic_time_range(
+    pub async fn delete_topic_timerange(
         &self,
         topic_path: &RepoPath,
     ) -> Result<DeleteTopicTimeRangeResult> {
@@ -485,13 +484,19 @@ impl Repo {
         .call(&self.git)
     }
 
-    pub async fn upsert_topic_time_range(
+    pub async fn upsert_topic_timerange(
         &self,
-        input: UpsertTopicTimeRangeInput,
-    ) -> Result<UpsertTopicTimeRangeResult> {
-        UpsertTopicTimeRange::new(self.viewer.clone(), input)
-            .call(&self.db)
-            .await
+        input: UpsertTopicTimerangeInput,
+    ) -> Result<git::UpsertTopicTimerangeResult> {
+        git::UpsertTopicTimerange {
+            actor: self.viewer.clone(),
+            timerange: git::Timerange {
+                starts: input.starts_at.0,
+                prefix_format: git::TimerangePrefixFormat::from(&input.prefix_format),
+            },
+            topic_path: RepoPath::from(&input.topic_path),
+        }
+        .call(&self.git)
     }
 
     pub async fn user(&self, id: String) -> Result<Option<User>> {

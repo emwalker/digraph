@@ -98,12 +98,12 @@ type DeleteTopicPayload {
   deletedTopicPath: String
 }
 
-input DeleteTopicTimeRangeInput {
+input DeleteTopicTimerangeInput {
   clientMutationId: String
   topicPath: String!
 }
 
-type DeleteTopicTimeRangePayload {
+type DeleteTopicTimerangePayload {
   clientMutationId: String
   topic: Topic!
 }
@@ -184,7 +184,7 @@ type Mutation {
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
   deleteSession(input: DeleteSessionInput!): DeleteSessionPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
-  deleteTopicTimeRange(input: DeleteTopicTimeRangeInput!): DeleteTopicTimeRangePayload
+  deleteTopicTimerange(input: DeleteTopicTimerangeInput!): DeleteTopicTimerangePayload
   reviewLink(input: ReviewLinkInput!): ReviewLinkPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
@@ -193,7 +193,7 @@ type Mutation {
   updateTopicSynonyms(input: UpdateTopicSynonymsInput!): UpdateTopicSynonymsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
   upsertTopic(input: UpsertTopicInput!): UpsertTopicPayload
-  upsertTopicTimeRange(input: UpsertTopicTimeRangeInput!): UpsertTopicTimeRangePayload
+  upsertTopicTimerange(input: UpsertTopicTimerangeInput!): UpsertTopicTimerangePayload
 }
 
 interface Namespaceable {
@@ -223,7 +223,7 @@ type QueryInfo {
   stringTokens: [String!]!
 }
 
-enum TimeRangePrefixFormat {
+enum TimerangePrefixFormat {
   NONE
   START_YEAR
   START_YEAR_MONTH
@@ -339,7 +339,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   createdAt: DateTime!
   description: String
   displayName(
-    timeRange: Boolean,
+    timerange: Boolean,
   ): String!
   id: String!
   links(
@@ -371,16 +371,16 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     before: String
   ): TopicChildConnection!
   synonyms: [Synonym!]!
-  timeRange: TimeRange
+  timerange: Timerange
   updatedAt: DateTime!
   viewerCanDeleteSynonyms: Boolean!
   viewerCanUpdate: Boolean!
 }
 
-type TimeRange {
+type Timerange {
   startsAt: DateTime!
   endsAt: DateTime
-  prefixFormat: TimeRangePrefixFormat!
+  prefixFormat: TimerangePrefixFormat!
 }
 
 type TopicEdge {
@@ -388,9 +388,9 @@ type TopicEdge {
   node: Topic!
 }
 
-type TimeRangeEdge {
+type TimerangeEdge {
   cursor: String!
-  node: TimeRange!
+  node: Timerange!
 }
 
 type TopicConnection {
@@ -504,12 +504,12 @@ input UpsertTopicInput {
   repositoryName: String!
 }
 
-input UpsertTopicTimeRangeInput {
+input UpsertTopicTimerangeInput {
   clientMutationId: String
   topicPath: String!
   startsAt: DateTime!
   endsAt: DateTime
-  prefixFormat: TimeRangePrefixFormat!
+  prefixFormat: TimerangePrefixFormat!
 }
 
 type UpsertTopicPayload implements Alertable {
@@ -517,9 +517,9 @@ type UpsertTopicPayload implements Alertable {
   topicEdge: TopicEdge
 }
 
-type UpsertTopicTimeRangePayload implements Alertable {
+type UpsertTopicTimerangePayload implements Alertable {
   alerts: [Alert!]!
-  timeRangeEdge: TimeRangeEdge
+  timerangeEdge: TimerangeEdge
   topic: Topic!
 }
 

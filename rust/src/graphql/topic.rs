@@ -18,7 +18,7 @@ pub struct Topic {
     pub prefix: Prefix,
     pub root: bool,
     pub synonyms: Synonyms,
-    pub time_range: Option<Timerange>,
+    pub timerange: Option<Timerange>,
 }
 
 pub type TopicEdge = Edge<String, Topic, EmptyFields>;
@@ -199,8 +199,8 @@ impl Topic {
         self.synonyms.into_iter().collect_vec()
     }
 
-    async fn time_range(&self) -> Option<Timerange> {
-        self.time_range.clone()
+    async fn timerange(&self) -> Option<Timerange> {
+        self.timerange.clone()
     }
 
     async fn viewer_can_delete_synonyms(&self, ctx: &Context<'_>) -> Result<bool> {

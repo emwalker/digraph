@@ -366,3 +366,33 @@ mod update_topic_synonyms {
         assert_eq!(syn.added, added);
     }
 }
+
+#[cfg(test)]
+mod upsert_topic_timerange {
+    use super::*;
+    use chrono;
+    use digraph::git::{Timerange, UpsertTopicTimerange};
+
+    #[test]
+    fn timerange_added() {
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+
+        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        assert!(topic.metadata.timerange.is_none());
+
+        UpsertTopicTimerange {
+            actor: actor(),
+            timerange: Timerange {
+                prefix_format: digraph::git::TimerangePrefixFormat::StartYearMonth,
+                starts: chrono::Utc::now(),
+            },
+            topic_path: path.clone(),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        assert!(topic.metadata.timerange.is_some());
+    }
+}

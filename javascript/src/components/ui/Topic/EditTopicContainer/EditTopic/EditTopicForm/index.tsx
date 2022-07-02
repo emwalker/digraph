@@ -11,7 +11,7 @@ import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
 import { EditTopicForm_topic as TopicType } from '__generated__/EditTopicForm_topic.graphql'
 import Synonyms from './Synonyms'
-import TopicTimeRange from './TopicTimeRange'
+import TopicTimerange from './TopicTimerange'
 
 type Props = {
   isOpen: boolean,
@@ -110,7 +110,7 @@ class EditTopicForm extends Component<Props, State> {
       selectedTopics ? (
         <div className="my-4">
           <Synonyms topic={this.props.topic} />
-          <TopicTimeRange topic={this.props.topic} />
+          <TopicTimerange topic={this.props.topic} />
 
           <EditTopicList
             loadOptions={this.loadOptions}
@@ -166,7 +166,7 @@ export default createRefetchContainer(EditTopicForm, {
       }
 
       ...Synonyms_topic
-      ...TopicTimeRange_topic
+      ...TopicTimerange_topic
     }
   `,
 },

@@ -4,8 +4,7 @@ use std::collections::HashSet;
 
 use super::queries::{TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
 use crate::graphql::{
-    DateTime, Prefix, Synonyms, TimeRangePrefixFormat, Timerange, Topic, TopicChild,
-    UpsertTopicTimeRangeInput, Viewer,
+    DateTime, Prefix, Synonyms, Timerange, TimerangePrefixFormat, Topic, TopicChild, Viewer,
 };
 use crate::prelude::*;
 use crate::Alert;
@@ -24,8 +23,8 @@ pub struct Row {
 impl Row {
     pub fn to_topic(&self) -> Topic {
         let synonyms = Synonyms::from_json(&self.synonyms);
-        let time_range = self.time_range();
-        let prefix = Prefix::from(&time_range);
+        let timerange = self.timerange();
+        let prefix = Prefix::from(&timerange);
 
         Topic {
             child_paths: vec![],
@@ -35,7 +34,7 @@ impl Row {
             prefix,
             root: self.root,
             synonyms,
-            time_range,
+            timerange,
         }
     }
 
@@ -43,17 +42,17 @@ impl Row {
         TopicChild::Topic(self.to_topic())
     }
 
-    pub fn time_range(&self) -> Option<Timerange> {
+    pub fn timerange(&self) -> Option<Timerange> {
         match (
             self.timerange_starts_at,
             self.timerange_prefix_format.clone(),
         ) {
             (Some(starts_at), Some(prefix_format)) => {
                 let prefix_format = match prefix_format.as_str() {
-                    "NONE" => TimeRangePrefixFormat::None,
-                    "START_YEAR" => TimeRangePrefixFormat::StartYear,
-                    "START_YEAR_MONTH" => TimeRangePrefixFormat::StartYearMonth,
-                    _ => TimeRangePrefixFormat::None,
+                    "NONE" => TimerangePrefixFormat::None,
+                    "START_YEAR" => TimerangePrefixFormat::StartYear,
+                    "START_YEAR_MONTH" => TimerangePrefixFormat::StartYearMonth,
+                    _ => TimerangePrefixFormat::None,
                 };
 
                 Some(Timerange {
@@ -203,7 +202,7 @@ impl DeleteTopicTimeRange {
             .await?
             .to_topic();
 
-        if topic.time_range.is_some() {
+        if topic.timerange.is_some() {
             let mut tx = pool.begin().await?;
             let name = topic
                 .synonyms
@@ -380,100 +379,5 @@ impl UpdateTopicParentTopics {
         }
 
         Ok((valid, alerts))
-    }
-}
-
-pub struct UpsertTopicTimeRange {
-    actor: Viewer,
-    input: UpsertTopicTimeRangeInput,
-}
-
-pub struct UpsertTopicTimeRangeResult {
-    pub alerts: Vec<Alert>,
-    pub time_range: Timerange,
-    pub topic: Topic,
-}
-
-impl UpsertTopicTimeRange {
-    pub fn new(actor: Viewer, input: UpsertTopicTimeRangeInput) -> Self {
-        Self { actor, input }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<UpsertTopicTimeRangeResult> {
-        log::info!("upserting time range for topic: {:?}", self.input);
-
-        let topic_path = RepoPath::from(&self.input.topic_path);
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_path)
-            .await?
-            .to_topic();
-        let prefix_format = format!("{}", self.input.prefix_format);
-        let mut tx = pool.begin().await?;
-
-        if topic.time_range.is_some() {
-            sqlx::query(
-                r#"update timeranges tr
-                    set tr.starts_at = $1, tr.prefix_format = $2
-                from topics t
-                where tr.id = t.timerange_id and t.id = $3::uuid
-                "#,
-            )
-            .bind(&self.input.starts_at.0)
-            .bind(&prefix_format)
-            .bind(&topic_path.short_id)
-            .execute(&mut tx)
-            .await?;
-        } else {
-            let row = sqlx::query_as::<_, (Uuid,)>(
-                r#"
-                insert into timeranges (starts_at, prefix_format)
-                    values ($1, $2)
-                returning id
-                "#,
-            )
-            .bind(&self.input.starts_at.0)
-            .bind(&prefix_format)
-            .fetch_one(&mut tx)
-            .await?;
-            let time_range_id = row.0.to_string();
-
-            sqlx::query("update topics set timerange_id = $1::uuid where id = $2::uuid")
-                .bind(&time_range_id)
-                .bind(&topic_path.short_id)
-                .execute(&mut tx)
-                .await?;
-        };
-
-        let time_range = Timerange {
-            starts_at: self.input.starts_at.clone(),
-            ends_at: None,
-            prefix_format: self.input.prefix_format,
-        };
-
-        let prefix = Prefix::from(&Some(time_range.clone()));
-        let synonym = topic
-            .synonyms
-            .first()
-            .map(|s| s.name.clone())
-            .unwrap_or_else(|| "Missing name".into());
-        let name = prefix.display(&synonym);
-
-        sqlx::query("update topics set name = $1 where id = $2::uuid")
-            .bind(&name)
-            .bind(&topic_path.short_id)
-            .execute(&mut tx)
-            .await?;
-
-        tx.commit().await?;
-
-        // Reload to pick up changes
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &topic_path)
-            .await?
-            .to_topic();
-
-        Ok(UpsertTopicTimeRangeResult {
-            alerts: vec![],
-            time_range,
-            topic,
-        })
     }
 }
