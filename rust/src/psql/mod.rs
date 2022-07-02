@@ -20,8 +20,6 @@ mod search;
 pub use search::*;
 mod session;
 pub use session::*;
-mod synonym;
-pub use synonym::*;
 pub mod topic;
 pub use topic::*;
 pub mod user;

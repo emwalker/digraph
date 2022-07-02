@@ -83,6 +83,33 @@ impl UpdateTopicParentTopics {
     }
 }
 
+pub struct UpdateTopicSynonyms {
+    pub actor: Viewer,
+    pub synonyms: Vec<Synonym>,
+    pub topic_path: RepoPath,
+}
+
+pub struct UpdateTopicSynonymsResult {
+    pub alerts: Vec<Alert>,
+    pub topic: Topic,
+}
+
+impl UpdateTopicSynonyms {
+    pub fn call(&self, git: &Git) -> Result<UpdateTopicSynonymsResult> {
+        let mut topic = git.fetch_topic(&self.topic_path.inner)?;
+        let mut indexer = Indexer::new(git, IndexMode::Update);
+
+        topic.metadata.synonyms = self.synonyms.clone();
+        git.save_topic(&self.topic_path, &topic, &mut indexer)?;
+        indexer.save()?;
+
+        Ok(UpdateTopicSynonymsResult {
+            alerts: vec![],
+            topic,
+        })
+    }
+}
+
 pub enum OnMatchingSynonym {
     Ask,
     CreateDistinct,

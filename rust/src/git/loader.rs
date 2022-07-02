@@ -26,7 +26,7 @@ impl Loader<String> for ObjectLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for path in paths {
-            let object = &self.git.get(path)?;
+            let object = &self.git.fetch(path)?;
             map.insert(path.to_owned(), object.clone());
         }
 

@@ -1,3 +1,4 @@
+use super::SynonymInput;
 use super::{DateTime, Link, Prefix, Synonym, Synonyms, TimeRangePrefixFormat, Timerange, Topic};
 use crate::git;
 use crate::prelude::*;
@@ -35,6 +36,16 @@ impl From<&git::Synonym> for Synonym {
 impl From<&Vec<git::Synonym>> for Synonyms {
     fn from(synonyms: &Vec<git::Synonym>) -> Self {
         Self(synonyms.iter().map(Synonym::from).collect())
+    }
+}
+
+impl From<&SynonymInput> for git::Synonym {
+    fn from(synonym: &SynonymInput) -> Self {
+        Self {
+            added: chrono::Utc::now(),
+            name: synonym.name.clone(),
+            locale: synonym.locale.clone(),
+        }
     }
 }
 
@@ -81,7 +92,7 @@ impl From<&git::Topic> for Topic {
             child_paths,
             path: RepoPath::from(&meta.path),
             parent_topic_paths,
-            name: meta.name(),
+            name: topic.name("en"),
             prefix,
             root: meta.root,
             synonyms,

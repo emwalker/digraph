@@ -7,8 +7,7 @@ use sqlx::postgres::PgPool;
 use crate::git;
 use crate::graphql::{
     self, ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, Topic,
-    TopicChild, UpdateLinkTopicsInput, UpdateSynonymsInput, UpsertTopicInput,
-    UpsertTopicTimeRangeInput, User, Viewer,
+    TopicChild, UpdateLinkTopicsInput, UpsertTopicInput, UpsertTopicTimeRangeInput, User, Viewer,
 };
 use crate::http;
 use crate::prelude::*;
@@ -18,9 +17,9 @@ use crate::psql::{
     DeleteLinkResult, DeleteSession, DeleteSessionResult, DeleteTopic, DeleteTopicResult,
     DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchRepositoriesForUser,
     LiveSearchTopics, ReviewLink, ReviewLinkResult, Search, SelectRepository,
-    SelectRepositoryResult, UpdateLinkParentTopics, UpdateLinkTopicsResult, UpdateSynonyms,
-    UpdateSynonymsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult,
-    UpsertTopicTimeRange, UpsertTopicTimeRangeResult,
+    SelectRepositoryResult, UpdateLinkParentTopics, UpdateLinkTopicsResult,
+    UpdateTopicParentTopics, UpdateTopicParentTopicsResult, UpsertTopicTimeRange,
+    UpsertTopicTimeRangeResult,
 };
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -423,13 +422,16 @@ impl Repo {
             .await
     }
 
-    pub async fn update_synonyms(
+    pub async fn update_topic_synonyms(
         &self,
-        input: UpdateSynonymsInput,
-    ) -> Result<UpdateSynonymsResult> {
-        UpdateSynonyms::new(self.viewer.clone(), input)
-            .call(&self.db)
-            .await
+        input: graphql::UpdateTopicSynonymsInput,
+    ) -> Result<git::UpdateTopicSynonymsResult> {
+        git::UpdateTopicSynonyms {
+            actor: self.viewer.clone(),
+            synonyms: input.synonyms.iter().map(git::Synonym::from).collect_vec(),
+            topic_path: RepoPath::from(&input.topic_path),
+        }
+        .call(&self.git)
     }
 
     pub async fn upsert_link(

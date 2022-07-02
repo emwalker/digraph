@@ -141,6 +141,26 @@ pub struct Synonym {
     pub name: String,
 }
 
+impl std::cmp::PartialEq for Synonym {
+    fn eq(&self, other: &Self) -> bool {
+        self.locale == other.locale && self.name == other.name
+    }
+}
+
+impl std::cmp::Eq for Synonym {}
+
+impl std::cmp::Ord for Synonym {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (&self.locale, &self.name).cmp(&(&other.locale, &other.name))
+    }
+}
+
+impl std::cmp::PartialOrd for Synonym {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Timerange {
@@ -178,9 +198,9 @@ pub struct TopicMetadata {
 }
 
 impl TopicMetadata {
-    pub fn name(&self) -> String {
+    pub fn name(&self, locale: &str) -> String {
         for synonym in &self.synonyms {
-            if synonym.locale == "en" {
+            if synonym.locale == locale {
                 return synonym.name.clone();
             }
         }
@@ -227,16 +247,7 @@ impl Topic {
     }
 
     pub fn name(&self, desired_locale: &str) -> String {
-        for Synonym { locale, name, .. } in &self.metadata.synonyms {
-            if desired_locale == locale {
-                return name.to_owned();
-            }
-        }
-
-        match &self.metadata.synonyms.get(0) {
-            Some(synonym) => synonym.name.to_owned(),
-            None => "Missing name".to_owned(),
-        }
+        self.metadata.name(desired_locale)
     }
 
     pub fn path(&self) -> RepoPath {
@@ -394,7 +405,7 @@ impl Git {
         Ok(Path::new(&filename).exists())
     }
 
-    pub fn get(&self, path: &str) -> Result<Object> {
+    pub fn fetch(&self, path: &str) -> Result<Object> {
         let path = self.root.object_filename(path)?;
         let fh = std::fs::File::open(&path)
             .map_err(|e| Error::Repo(format!("problem opening file {:?}: {}", path, e)))?;
@@ -403,14 +414,14 @@ impl Git {
     }
 
     pub fn fetch_topic(&self, path: &str) -> Result<Topic> {
-        match &self.get(path)? {
+        match &self.fetch(path)? {
             Object::Topic(topic) => Ok(topic.clone()),
             other => return Err(Error::Repo(format!("not a topic: {:?}", other))),
         }
     }
 
     pub fn fetch_link(&self, path: &str) -> Result<Link> {
-        match &self.get(path)? {
+        match &self.fetch(path)? {
             Object::Link(link) => Ok(link.clone()),
             other => return Err(Error::Repo(format!("not a link: {:?}", other))),
         }
@@ -508,7 +519,8 @@ impl Git {
     }
 
     pub fn save_topic(&self, path: &RepoPath, topic: &Topic, indexer: &mut Indexer) -> Result<()> {
-        indexer.index_synonyms(path, &topic.metadata.synonyms)?;
+        let before = self.topic(path)?;
+        indexer.index_synonyms(&before, topic)?;
 
         let meta = &topic.metadata;
         let mut searches = vec![];
@@ -540,6 +552,13 @@ impl Git {
         }
 
         Ok(matches)
+    }
+
+    pub fn topic(&self, path: &RepoPath) -> Result<Option<Topic>> {
+        if self.exists(path)? {
+            return Ok(Some(self.fetch_topic(&path.inner)?));
+        }
+        Ok(None)
     }
 
     pub fn token_index(&self, key: &IndexKey, mode: IndexMode) -> Result<TokenIndex> {

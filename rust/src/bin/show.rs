@@ -20,7 +20,7 @@ impl<'r> Visitor for &mut ConsoleOutput<'r> {
 Topic: [{}]({})
 Parent topics:
 "#,
-        meta.name(), meta.path};
+        meta.name("en"), meta.path};
         self.buf.push_str(&s);
 
         for topic in &topic.parent_topics {
@@ -59,10 +59,10 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.get(&topic.path)? {
+        match &self.git.fetch(&topic.path)? {
             Object::Topic(topic) => {
                 let meta = &topic.metadata;
-                let s = format!("  + [{}]({})\n", meta.name(), meta.path);
+                let s = format!("  + [{}]({})\n", topic.name("en"), meta.path);
                 self.buf.push_str(&s);
             }
             other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
@@ -72,8 +72,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_topic(&mut self, topic: &Topic) -> Result<()> {
-        let meta = &topic.metadata;
-        let line = format!("- [{}]({})\n", meta.name(), meta.path);
+        let line = format!("- [{}]({})\n", topic.name("en"), topic.path());
         self.buf.push_str(&line);
 
         for topic in &topic.parent_topics {
@@ -96,10 +95,9 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.get(&topic.path)? {
+        match &self.git.fetch(&topic.path)? {
             Object::Topic(topic) => {
-                let meta = &topic.metadata;
-                let line = format!("- [{}]({})\n", meta.name(), meta.path);
+                let line = format!("- [{}]({})\n", topic.name("en"), topic.path());
                 self.buf.push_str(&line);
             }
             other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
@@ -108,7 +106,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
-        match &self.git.get(&child.path)? {
+        match &self.git.fetch(&child.path)? {
             Object::Topic(topic) => {
                 self.visit_child_topic(topic)?;
             }
@@ -132,7 +130,7 @@ async fn main() -> Result<()> {
     let opts = parse_args();
     let (root_directory, path) = parse_path(&opts.filename)?;
     let mut git = Git::new(root_directory);
-    let object = git.get(&path)?;
+    let object = git.fetch(&path)?;
 
     let mut output = ConsoleOutput {
         git: &mut git,

@@ -188,9 +188,9 @@ type Mutation {
   reviewLink(input: ReviewLinkInput!): ReviewLinkPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
-  updateSynonyms(input: UpdateSynonymsInput!): UpdateSynonymsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
+  updateTopicSynonyms(input: UpdateTopicSynonymsInput!): UpdateTopicSynonymsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
   upsertTopic(input: UpsertTopicInput!): UpsertTopicPayload
   upsertTopicTimeRange(input: UpsertTopicTimeRangeInput!): UpsertTopicTimeRangePayload
@@ -435,13 +435,13 @@ input SynonymInput {
   locale: String!
 }
 
-input UpdateSynonymsInput {
+input UpdateTopicSynonymsInput {
   clientMutationId: String
   synonyms: [SynonymInput!]!
   topicPath: String!
 }
 
-type UpdateSynonymsPayload {
+type UpdateTopicSynonymsPayload {
   alerts: [Alert!]!
   clientMutationId: String
   topic: Topic

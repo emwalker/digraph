@@ -266,3 +266,81 @@ mod update_topic_parent_topics {
         assert!(matches!(result, Err(Error::Repo(_))));
     }
 }
+
+#[cfg(test)]
+mod update_topic_synonyms {
+    use super::*;
+    use digraph::git::{Synonym, UpdateTopicSynonyms, UpdateTopicSynonymsResult};
+
+    fn count(f: &Fixtures, name: &str) -> usize {
+        f.repo.git.synonym_matches("/wiki", name).unwrap().len()
+    }
+
+    fn synonym(name: &str) -> Synonym {
+        Synonym {
+            added: chrono::Utc::now(),
+            locale: "en".to_owned(),
+            name: name.to_owned(),
+        }
+    }
+
+    #[test]
+    fn synonyms_added() {
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+
+        assert_eq!(topic.name("en"), "A topic");
+        assert_eq!(topic.metadata.synonyms.len(), 1);
+
+        assert_eq!(count(&f, "A topic"), 1);
+        assert_eq!(count(&f, "B topic"), 0);
+        assert_eq!(count(&f, "C topic"), 0);
+
+        let UpdateTopicSynonymsResult { topic, .. } = UpdateTopicSynonyms {
+            actor: actor(),
+            topic_path: path,
+            synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        assert_eq!(topic.metadata.synonyms.len(), 3);
+
+        assert_eq!(count(&f, "A topic"), 1);
+        assert_eq!(count(&f, "B topic"), 1);
+        assert_eq!(count(&f, "C topic"), 1);
+    }
+
+    #[test]
+    fn synonyms_removed() {
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+
+        let UpdateTopicSynonymsResult { topic, .. } = UpdateTopicSynonyms {
+            actor: actor(),
+            topic_path: path.clone(),
+            synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        assert_eq!(topic.metadata.synonyms.len(), 3);
+        assert_eq!(count(&f, "A topic"), 1);
+        assert_eq!(count(&f, "B topic"), 1);
+        assert_eq!(count(&f, "C topic"), 1);
+
+        let UpdateTopicSynonymsResult { topic, .. } = UpdateTopicSynonyms {
+            actor: actor(),
+            topic_path: path,
+            synonyms: vec![synonym("C topic")],
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        assert_eq!(topic.metadata.synonyms.len(), 1);
+        assert_eq!(count(&f, "A topic"), 0);
+        assert_eq!(count(&f, "B topic"), 0);
+        assert_eq!(count(&f, "C topic"), 1);
+    }
+}

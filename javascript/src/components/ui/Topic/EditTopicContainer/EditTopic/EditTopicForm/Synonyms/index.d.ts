@@ -22,12 +22,13 @@ declare class Synonyms extends Component<Props, State> {
         readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Synonym_synonym">;
     }[];
     optimisticResponse: (synonyms: SynonymType[]) => {
-        updateSynonyms: {
+        updateTopicSynonyms: {
             alerts: never[];
             clientMutationId: null;
             topic: {
-                synonyms: SynonymType[];
                 displayName: string;
+                synonyms: SynonymType[];
+                id: string;
                 path: string;
                 viewerCanDeleteSynonyms: boolean;
                 viewerCanUpdate: boolean;
@@ -35,7 +36,7 @@ declare class Synonyms extends Component<Props, State> {
             };
         };
     };
-    updateSynonyms: (synonyms: SynonymType[]) => void;
+    updateTopicSynonyms: (synonyms: SynonymType[]) => void;
     renderSynonyms: () => JSX.Element;
     renderAddForm: () => JSX.Element;
     render: () => JSX.Element;

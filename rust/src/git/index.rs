@@ -180,7 +180,7 @@ impl SynonymIndex {
         })
     }
 
-    pub fn index(&mut self, path: &RepoPath, normalized: &str, name: &str) -> Result<()> {
+    pub fn add(&mut self, path: &RepoPath, normalized: &str, name: &str) -> Result<()> {
         let paths = self
             .index
             .synonyms
@@ -188,6 +188,21 @@ impl SynonymIndex {
             .or_insert(BTreeSet::new());
 
         paths.insert(SynonymEntry {
+            name: name.to_owned(),
+            path: path.to_string(),
+        });
+
+        Ok(())
+    }
+
+    pub fn remove(&mut self, path: &RepoPath, normalized: &str, name: &str) -> Result<()> {
+        let paths = self
+            .index
+            .synonyms
+            .entry(normalized.to_owned())
+            .or_insert(BTreeSet::new());
+
+        paths.remove(&SynonymEntry {
             name: name.to_owned(),
             path: path.to_string(),
         });
@@ -317,17 +332,54 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn index_synonyms(&mut self, path: &RepoPath, synonyms: &Vec<Synonym>) -> Result<()> {
-        for synonym in synonyms {
+    pub fn index_synonyms(&mut self, before: &Option<Topic>, after: &Topic) -> Result<()> {
+        let path = after.path();
+
+        let before = match before {
+            Some(before) => before
+                .metadata
+                .synonyms
+                .iter()
+                .map(|s| s.to_owned())
+                .collect::<BTreeSet<Synonym>>(),
+            None => BTreeSet::new(),
+        };
+
+        let after = after
+            .metadata
+            .synonyms
+            .iter()
+            .map(|s| s.to_owned())
+            .collect::<BTreeSet<Synonym>>();
+
+        let added = after.difference(&before);
+        for synonym in added {
             let name = &synonym.name;
+
             let normalized = normalize(name);
             if normalized.len() < 3 {
                 continue;
             }
+
             let key = self.git.index_key(&path.prefix, &normalized)?;
             self.synonym_index_for(&key)?
-                .index(path, &normalized, name)?;
+                .add(&path, &normalized, name)?;
         }
+
+        let removed = before.difference(&after);
+        for synonym in removed {
+            let name = &synonym.name;
+
+            let normalized = normalize(name);
+            if normalized.len() < 3 {
+                continue;
+            }
+
+            let key = self.git.index_key(&path.prefix, &normalized)?;
+            self.synonym_index_for(&key)?
+                .remove(&path, &normalized, name)?;
+        }
+
         Ok(())
     }
 

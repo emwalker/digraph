@@ -1,7 +1,7 @@
 import React, { Component, FormEvent, ChangeEvent } from 'react'
 import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 
-import updateSynonymsMutation, { Input } from 'mutations/updateSynonymsMutation'
+import updateTopicSynonymsMutation, { Input } from 'mutations/updateTopicSynonymsMutation'
 import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphql'
 import { SynonymType } from 'components/types'
 import SynonymList from './SynonymList'
@@ -15,6 +15,20 @@ type Props = {
 type State = {
   locale: string,
   name: string,
+}
+
+const displayName = (synonyms: SynonymType[]) => {
+  if (synonyms.length > 0) {
+    for (const synonym of synonyms) {
+      if (synonym.locale != 'en')
+        continue
+      return synonym.name
+    }
+    if (!displayName)
+      return synonyms[0].name
+  }
+
+  return 'Missing name'
 }
 
 class Synonyms extends Component<Props, State> {
@@ -38,7 +52,7 @@ class Synonyms extends Component<Props, State> {
     const update = copySynonyms(this.synonyms)
     const synonym = { name: this.state.name, locale: this.state.locale }
     update.push(synonym)
-    this.updateSynonyms(update)
+    this.updateTopicSynonyms(update)
   }
 
   onDelete = (position: number) => {
@@ -47,31 +61,32 @@ class Synonyms extends Component<Props, State> {
 
     const update = copySynonyms(this.synonyms)
     update.splice(position, 1)
-    this.updateSynonyms(update)
+    this.updateTopicSynonyms(update)
   }
 
   get synonyms() {
     return this.props.topic.synonyms
   }
 
-  optimisticResponse = (synonyms: SynonymType[]) => (
-    {
-      updateSynonyms: {
+  optimisticResponse = (synonyms: SynonymType[]) => {
+    return {
+      updateTopicSynonyms: {
         alerts: [],
         clientMutationId: null,
         topic: {
           ...this.props.topic,
+          displayName: displayName(synonyms),
           synonyms,
         },
       },
     }
-  )
+  }
 
-  updateSynonyms = (synonyms: SynonymType[]) => {
+  updateTopicSynonyms = (synonyms: SynonymType[]) => {
     const input: Input = { topicPath: this.props.topic.path, synonyms }
 
     this.setState({ locale: 'en', name: '' }, () => {
-      updateSynonymsMutation(
+      updateTopicSynonymsMutation(
         this.props.relay.environment,
         input,
         { optimisticResponse: this.optimisticResponse(synonyms) },
@@ -83,7 +98,7 @@ class Synonyms extends Component<Props, State> {
     <SynonymList
       canUpdate={this.props.topic.viewerCanUpdate}
       onDelete={this.onDelete}
-      onUpdate={this.updateSynonyms}
+      onUpdate={this.updateTopicSynonyms}
       synonyms={this.synonyms}
     />
   )
@@ -138,9 +153,9 @@ class Synonyms extends Component<Props, State> {
         Names and synonyms
       </label>
       <ul className="Box list-style-none mt-1 mb-2">
-        { this.renderSynonyms() }
+        {this.renderSynonyms()}
       </ul>
-      { this.props.topic.viewerCanUpdate && this.renderAddForm() }
+      {this.props.topic.viewerCanUpdate && this.renderAddForm()}
     </dl>
   )
 }
@@ -150,6 +165,7 @@ export const UnwrappedSynonyms = Synonyms
 export default createFragmentContainer(Synonyms, {
   topic: graphql`
     fragment Synonyms_topic on Topic {
+      id
       displayName: name
       path
       viewerCanDeleteSynonyms

@@ -5,11 +5,12 @@ use super::{
     Alert, DateTime, Link, LinkEdge, Repository, Session, SessionEdge, Synonym, TimeRangeEdge,
     TimeRangePrefixFormat, Topic, TopicEdge, User, UserEdge,
 };
+use crate::git;
 use crate::http::repo_url;
 use crate::prelude::*;
 use crate::psql::{
     DeleteAccountResult, DeleteLinkResult, DeleteSessionResult, DeleteTopicTimeRangeResult,
-    ReviewLinkResult, SelectRepositoryResult, UpdateLinkTopicsResult, UpdateSynonymsResult,
+    ReviewLinkResult, SelectRepositoryResult, UpdateLinkTopicsResult,
     UpdateTopicParentTopicsResult, UpsertTopicTimeRangeResult,
 };
 use crate::repo::Repo;
@@ -149,14 +150,14 @@ impl SynonymInput {
 }
 
 #[derive(Debug, InputObject)]
-pub struct UpdateSynonymsInput {
+pub struct UpdateTopicSynonymsInput {
     pub client_mutation_id: Option<String>,
     pub synonyms: Vec<SynonymInput>,
     pub topic_path: String,
 }
 
 #[derive(SimpleObject)]
-pub struct UpdateSynonymsPayload {
+pub struct UpdateTopicSynonymsPayload {
     alerts: Vec<Alert>,
     client_mutation_id: Option<String>,
     topic: Option<Topic>,
@@ -434,19 +435,21 @@ impl MutationRoot {
         })
     }
 
-    async fn update_synonyms(
+    async fn update_topic_synonyms(
         &self,
         ctx: &Context<'_>,
-        input: UpdateSynonymsInput,
-    ) -> Result<UpdateSynonymsPayload> {
+        input: UpdateTopicSynonymsInput,
+    ) -> Result<UpdateTopicSynonymsPayload> {
         let client_mutation_id = input.client_mutation_id.clone();
-        let UpdateSynonymsResult { alerts, topic } =
-            ctx.data_unchecked::<Repo>().update_synonyms(input).await?;
+        let git::UpdateTopicSynonymsResult { alerts, topic } = ctx
+            .data_unchecked::<Repo>()
+            .update_topic_synonyms(input)
+            .await?;
 
-        Ok(UpdateSynonymsPayload {
+        Ok(UpdateTopicSynonymsPayload {
             alerts: alerts.iter().map(Alert::from).collect_vec(),
             client_mutation_id,
-            topic: Some(topic),
+            topic: Some(Topic::from(&topic)),
         })
     }
 
