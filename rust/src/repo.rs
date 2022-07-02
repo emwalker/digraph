@@ -5,20 +5,10 @@ use regex::Regex;
 use sqlx::postgres::PgPool;
 
 use crate::git;
-use crate::graphql::{
-    self, ActivityLineItem, CreateGithubSessionInput, Link, Organization, Repository, Topic,
-    TopicChild, UpdateLinkTopicsInput, UpsertTopicInput, UpsertTopicTimerangeInput, User, Viewer,
-};
+use crate::graphql;
 use crate::http;
 use crate::prelude::*;
 use crate::psql;
-use crate::psql::{
-    CreateGithubSession, CreateSessionResult, DeleteAccount, DeleteAccountResult, DeleteLink,
-    DeleteLinkResult, DeleteSession, DeleteSessionResult, DeleteTopic, DeleteTopicResult,
-    FetchActivity, FetchRepositoriesForUser, LiveSearchTopics, ReviewLink, ReviewLinkResult,
-    Search, SelectRepository, SelectRepositoryResult, UpdateLinkParentTopics,
-    UpdateLinkTopicsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult,
-};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct RepoPath {
@@ -170,14 +160,14 @@ impl Repo {
         &self,
         topic_path: Option<String>,
         first: i32,
-    ) -> Result<Vec<ActivityLineItem>> {
+    ) -> Result<Vec<graphql::ActivityLineItem>> {
         let topic_path = topic_path.map(|s| RepoPath::from(&s));
-        FetchActivity::new(self.viewer.clone(), topic_path, first)
+        psql::FetchActivity::new(self.viewer.clone(), topic_path, first)
             .call(&self.db)
             .await
     }
 
-    async fn flat_topics(&self, paths: &[RepoPath]) -> Result<Vec<Topic>> {
+    async fn flat_topics(&self, paths: &[RepoPath]) -> Result<Vec<graphql::Topic>> {
         let result = self.topics(paths).await?;
         Ok(result.iter().flatten().cloned().collect())
     }
@@ -186,12 +176,12 @@ impl Repo {
         &self,
         parent_topic: &RepoPath,
         _reviewed: Option<bool>,
-    ) -> Result<Vec<Link>> {
+    ) -> Result<Vec<graphql::Link>> {
         let children = self.topic_children(parent_topic).await?;
         let mut links = vec![];
 
         for child in &children {
-            if let TopicChild::Link(link) = &child {
+            if let graphql::TopicChild::Link(link) = &child {
                 links.push(link.to_owned());
             }
         }
@@ -199,7 +189,10 @@ impl Repo {
         Ok(links)
     }
 
-    pub async fn topic_children(&self, parent_topic: &RepoPath) -> Result<Vec<TopicChild>> {
+    pub async fn topic_children(
+        &self,
+        parent_topic: &RepoPath,
+    ) -> Result<Vec<graphql::TopicChild>> {
         let topic = self
             .topic(parent_topic)
             .await?
@@ -219,8 +212,10 @@ impl Repo {
                 .ok_or_else(|| Error::NotFound(format!("no child: {}", child_path)))?;
 
             let child = match child {
-                git::Object::Topic(topic) => TopicChild::Topic(Topic::from(topic)),
-                git::Object::Link(link) => TopicChild::Link(Link::from(link)),
+                git::Object::Topic(topic) => {
+                    graphql::TopicChild::Topic(graphql::Topic::from(topic))
+                }
+                git::Object::Link(link) => graphql::TopicChild::Link(graphql::Link::from(link)),
             };
 
             children.push(child);
@@ -229,26 +224,26 @@ impl Repo {
         Ok(children)
     }
 
-    pub async fn delete_account(&self, user_id: String) -> Result<DeleteAccountResult> {
-        DeleteAccount::new(self.viewer.clone(), user_id)
+    pub async fn delete_account(&self, user_id: String) -> Result<psql::DeleteAccountResult> {
+        psql::DeleteAccount::new(self.viewer.clone(), user_id)
             .call(&self.db)
             .await
     }
 
-    pub async fn delete_link(&self, link_path: &RepoPath) -> Result<DeleteLinkResult> {
-        DeleteLink::new(self.viewer.clone(), link_path.clone())
+    pub async fn delete_link(&self, link_path: &RepoPath) -> Result<psql::DeleteLinkResult> {
+        psql::DeleteLink::new(self.viewer.clone(), link_path.clone())
             .call(&self.db)
             .await
     }
 
-    pub async fn delete_session(&self, session_id: String) -> Result<DeleteSessionResult> {
-        DeleteSession::new(self.viewer.clone(), session_id)
+    pub async fn delete_session(&self, session_id: String) -> Result<psql::DeleteSessionResult> {
+        psql::DeleteSession::new(self.viewer.clone(), session_id)
             .call(&self.db)
             .await
     }
 
-    pub async fn delete_topic(&self, path: &RepoPath) -> Result<DeleteTopicResult> {
-        DeleteTopic::new(self.viewer.clone(), path.clone())
+    pub async fn delete_topic(&self, path: &RepoPath) -> Result<psql::DeleteTopicResult> {
+        psql::DeleteTopic::new(self.viewer.clone(), path.clone())
             .call(&self.db)
             .await
     }
@@ -264,7 +259,7 @@ impl Repo {
         .call(&self.git)
     }
 
-    pub async fn link(&self, path: &RepoPath) -> Result<Option<Link>> {
+    pub async fn link(&self, path: &RepoPath) -> Result<Option<graphql::Link>> {
         let result = self
             .object_loader
             .load_one(path.to_string())
@@ -272,7 +267,7 @@ impl Repo {
             .ok_or_else(|| Error::NotFound(format!("no link: {}", path)))?;
 
         match result {
-            git::Object::Link(link) => Ok(Some(Link::from(&link))),
+            git::Object::Link(link) => Ok(Some(graphql::Link::from(&link))),
             _ => return Err(Error::NotFound(format!("no link: {}", path))),
         }
     }
@@ -290,15 +285,18 @@ impl Repo {
         Ok(count)
     }
 
-    pub async fn organization(&self, id: String) -> Result<Option<Organization>> {
+    pub async fn organization(&self, id: String) -> Result<Option<graphql::Organization>> {
         self.organization_loader.load_one(id).await
     }
 
-    pub async fn organization_by_login(&self, login: String) -> Result<Option<Organization>> {
+    pub async fn organization_by_login(
+        &self,
+        login: String,
+    ) -> Result<Option<graphql::Organization>> {
         self.organization_by_login_loader.load_one(login).await
     }
 
-    pub async fn parent_topics_for_topic(&self, path: &RepoPath) -> Result<Vec<Topic>> {
+    pub async fn parent_topics_for_topic(&self, path: &RepoPath) -> Result<Vec<graphql::Topic>> {
         let topic = self
             .topic(path)
             .await?
@@ -306,7 +304,7 @@ impl Repo {
         self.flat_topics(&topic.parent_topic_paths).await
     }
 
-    pub async fn parent_topics_for_link(&self, path: &RepoPath) -> Result<Vec<Topic>> {
+    pub async fn parent_topics_for_link(&self, path: &RepoPath) -> Result<Vec<graphql::Topic>> {
         let link = self
             .link(path)
             .await?
@@ -314,36 +312,43 @@ impl Repo {
         self.flat_topics(&link.parent_topic_paths).await
     }
 
-    pub async fn repositories_for_user(&self, user_id: String) -> Result<Vec<Repository>> {
-        FetchRepositoriesForUser::new(self.viewer.clone(), user_id)
+    pub async fn repositories_for_user(&self, user_id: String) -> Result<Vec<graphql::Repository>> {
+        psql::FetchRepositoriesForUser::new(self.viewer.clone(), user_id)
             .call(&self.db)
             .await
     }
 
-    pub async fn repository(&self, id: String) -> Result<Option<Repository>> {
+    pub async fn repository(&self, id: String) -> Result<Option<graphql::Repository>> {
         self.repository_loader.load_one(id).await
     }
 
-    pub async fn repository_by_prefix(&self, prefix: String) -> Result<Option<Repository>> {
+    pub async fn repository_by_prefix(
+        &self,
+        prefix: String,
+    ) -> Result<Option<graphql::Repository>> {
         self.repository_by_prefix_loader.load_one(prefix).await
     }
 
-    pub async fn repository_by_name(&self, name: String) -> Result<Option<Repository>> {
+    pub async fn repository_by_name(&self, name: String) -> Result<Option<graphql::Repository>> {
         self.repository_by_name_loader.load_one(name).await
     }
 
-    pub async fn review_link(&self, link: &RepoPath, reviewed: bool) -> Result<ReviewLinkResult> {
-        ReviewLink::new(self.viewer.clone(), link.clone(), reviewed)
+    pub async fn review_link(
+        &self,
+        link: &RepoPath,
+        reviewed: bool,
+    ) -> Result<psql::ReviewLinkResult> {
+        psql::ReviewLink::new(self.viewer.clone(), link.clone(), reviewed)
             .call(&self.db)
             .await
     }
 
     pub async fn search(
         &self,
-        parent_topic: Topic,
+        parent_topic: graphql::Topic,
         search_string: String,
-    ) -> Result<Vec<TopicChild>> {
-        Search::new(
+    ) -> Result<Vec<graphql::TopicChild>> {
+        psql::Search::new(
             self.viewer.query_ids.clone(),
             parent_topic,
             search_string.clone(),
@@ -352,8 +357,11 @@ impl Repo {
         .await
     }
 
-    pub async fn search_topics(&self, search_string: Option<String>) -> Result<Vec<Topic>> {
-        LiveSearchTopics::new(self.viewer.query_ids.clone(), search_string.clone())
+    pub async fn search_topics(
+        &self,
+        search_string: Option<String>,
+    ) -> Result<Vec<graphql::Topic>> {
+        psql::LiveSearchTopics::new(self.viewer.query_ids.clone(), search_string.clone())
             .call(&self.db)
             .await
     }
@@ -361,13 +369,13 @@ impl Repo {
     pub async fn select_repository(
         &self,
         repository_id: Option<String>,
-    ) -> Result<SelectRepositoryResult> {
-        SelectRepository::new(self.viewer.clone(), repository_id)
+    ) -> Result<psql::SelectRepositoryResult> {
+        psql::SelectRepository::new(self.viewer.clone(), repository_id)
             .call(&self.db)
             .await
     }
 
-    pub async fn topic(&self, path: &RepoPath) -> Result<Option<Topic>> {
+    pub async fn topic(&self, path: &RepoPath) -> Result<Option<graphql::Topic>> {
         let result = self
             .object_loader
             .load_one(path.to_string())
@@ -375,7 +383,7 @@ impl Repo {
             .ok_or_else(|| Error::NotFound(format!("no topic: {}", path)))?;
 
         match result {
-            git::Object::Topic(topic) => Ok(Some(Topic::from(&topic))),
+            git::Object::Topic(topic) => Ok(Some(graphql::Topic::from(&topic))),
             _ => return Err(Error::NotFound(format!("no topic: {}", path))),
         }
     }
@@ -394,17 +402,17 @@ impl Repo {
         Ok(count)
     }
 
-    pub async fn topics(&self, paths: &[RepoPath]) -> Result<Vec<Option<Topic>>> {
+    pub async fn topics(&self, paths: &[RepoPath]) -> Result<Vec<Option<graphql::Topic>>> {
         let paths = paths.iter().map(|p| p.to_string()).collect::<Vec<String>>();
         let map = self.object_loader.load_many(paths.clone()).await?;
-        let mut topics: Vec<Option<Topic>> = Vec::new();
+        let mut topics: Vec<Option<graphql::Topic>> = Vec::new();
         for path in paths {
             let topic = map
                 .get(&path)
                 .ok_or_else(|| Error::NotFound(format!("no topic: {}", path)))?;
 
             let topic = match &topic {
-                git::Object::Topic(topic) => Some(Topic::from(topic)),
+                git::Object::Topic(topic) => Some(graphql::Topic::from(topic)),
                 _ => None,
             };
 
@@ -415,9 +423,9 @@ impl Repo {
 
     pub async fn update_link_topics(
         &self,
-        input: UpdateLinkTopicsInput,
-    ) -> Result<UpdateLinkTopicsResult> {
-        UpdateLinkParentTopics::new(self.viewer.clone(), input)
+        input: graphql::UpdateLinkTopicsInput,
+    ) -> Result<psql::UpdateLinkTopicsResult> {
+        psql::UpdateLinkParentTopics::new(self.viewer.clone(), input)
             .call(&self.db)
             .await
     }
@@ -460,20 +468,23 @@ impl Repo {
         &self,
         topic: &RepoPath,
         parent_topics: Vec<RepoPath>,
-    ) -> Result<UpdateTopicParentTopicsResult> {
-        UpdateTopicParentTopics::new(self.viewer.clone(), topic.clone(), parent_topics)
+    ) -> Result<psql::UpdateTopicParentTopicsResult> {
+        psql::UpdateTopicParentTopics::new(self.viewer.clone(), topic.clone(), parent_topics)
             .call(&self.db)
             .await
     }
 
     pub async fn upsert_session(
         &self,
-        input: CreateGithubSessionInput,
-    ) -> Result<CreateSessionResult> {
-        CreateGithubSession::new(input).call(&self.db).await
+        input: graphql::CreateGithubSessionInput,
+    ) -> Result<psql::CreateSessionResult> {
+        psql::CreateGithubSession::new(input).call(&self.db).await
     }
 
-    pub async fn upsert_topic(&self, input: UpsertTopicInput) -> Result<git::UpsertTopicResult> {
+    pub async fn upsert_topic(
+        &self,
+        input: graphql::UpsertTopicInput,
+    ) -> Result<git::UpsertTopicResult> {
         git::UpsertTopic {
             actor: self.viewer.clone(),
             locale: "en".to_owned(),
@@ -487,7 +498,7 @@ impl Repo {
 
     pub async fn upsert_topic_timerange(
         &self,
-        input: UpsertTopicTimerangeInput,
+        input: graphql::UpsertTopicTimerangeInput,
     ) -> Result<git::UpsertTopicTimerangeResult> {
         git::UpsertTopicTimerange {
             actor: self.viewer.clone(),
@@ -500,7 +511,7 @@ impl Repo {
         .call(&self.git)
     }
 
-    pub async fn user(&self, id: String) -> Result<Option<User>> {
+    pub async fn user(&self, id: String) -> Result<Option<graphql::User>> {
         self.user_loader.load_one(id).await
     }
 }
