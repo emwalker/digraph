@@ -8,10 +8,7 @@ use super::{
 use crate::git;
 use crate::http::repo_url;
 use crate::prelude::*;
-use crate::psql::{
-    DeleteAccountResult, DeleteLinkResult, DeleteSessionResult, ReviewLinkResult,
-    SelectRepositoryResult, UpdateLinkTopicsResult, UpdateTopicParentTopicsResult,
-};
+use crate::psql;
 use crate::repo::Repo;
 
 #[derive(Clone, Debug, InputObject)]
@@ -270,7 +267,7 @@ impl MutationRoot {
             user_id,
             client_mutation_id,
         } = input;
-        let DeleteAccountResult {
+        let psql::DeleteAccountResult {
             alerts,
             deleted_user_id,
         } = ctx
@@ -295,7 +292,7 @@ impl MutationRoot {
             link_path,
         } = input;
         let link_path = RepoPath::from(&link_path);
-        let DeleteLinkResult { deleted_link_path } =
+        let psql::DeleteLinkResult { deleted_link_path } =
             ctx.data_unchecked::<Repo>().delete_link(&link_path).await?;
 
         Ok(DeleteLinkPayload {
@@ -313,7 +310,7 @@ impl MutationRoot {
             client_mutation_id,
             session_id,
         } = input;
-        let DeleteSessionResult { deleted_session_id } = ctx
+        let psql::DeleteSessionResult { deleted_session_id } = ctx
             .data_unchecked::<Repo>()
             .delete_session(session_id.to_string())
             .await?;
@@ -375,7 +372,7 @@ impl MutationRoot {
             reviewed,
             ..
         } = input;
-        let ReviewLinkResult { link } = ctx
+        let psql::ReviewLinkResult { link } = ctx
             .data_unchecked::<Repo>()
             .review_link(&RepoPath::from(&link_path), reviewed)
             .await?;
@@ -388,7 +385,7 @@ impl MutationRoot {
         ctx: &Context<'_>,
         input: SelectRepositoryInput,
     ) -> Result<SelectRepositoryPayload> {
-        let SelectRepositoryResult { repository, actor } = ctx
+        let psql::SelectRepositoryResult { repository, actor } = ctx
             .data_unchecked::<Repo>()
             .select_repository(input.repository_id.map(|id| id.to_string()))
             .await?;
@@ -403,7 +400,7 @@ impl MutationRoot {
         ctx: &Context<'_>,
         input: UpdateLinkTopicsInput,
     ) -> Result<UpdateLinkTopicsPayload> {
-        let UpdateLinkTopicsResult { link } = ctx
+        let psql::UpdateLinkTopicsResult { link } = ctx
             .data_unchecked::<Repo>()
             .update_link_topics(input)
             .await?;
@@ -420,7 +417,7 @@ impl MutationRoot {
             parent_topic_paths,
             ..
         } = input;
-        let UpdateTopicParentTopicsResult { alerts, topic } = ctx
+        let git::UpdateTopicParentTopicsResult { alerts, topic } = ctx
             .data_unchecked::<Repo>()
             .update_topic_parent_topics(
                 &RepoPath::from(&topic_path),
@@ -430,7 +427,7 @@ impl MutationRoot {
 
         Ok(UpdateTopicParentTopicsPayload {
             alerts: alerts.iter().map(Alert::from).collect_vec(),
-            topic,
+            topic: Topic::from(&topic),
         })
     }
 

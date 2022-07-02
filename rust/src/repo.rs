@@ -3,6 +3,7 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
 use sqlx::postgres::PgPool;
+use std::collections::BTreeSet;
 
 use crate::git;
 use crate::graphql;
@@ -466,12 +467,18 @@ impl Repo {
 
     pub async fn update_topic_parent_topics(
         &self,
-        topic: &RepoPath,
+        topic_path: &RepoPath,
         parent_topics: Vec<RepoPath>,
-    ) -> Result<psql::UpdateTopicParentTopicsResult> {
-        psql::UpdateTopicParentTopics::new(self.viewer.clone(), topic.clone(), parent_topics)
-            .call(&self.db)
-            .await
+    ) -> Result<git::UpdateTopicParentTopicsResult> {
+        git::UpdateTopicParentTopics {
+            actor: self.viewer.clone(),
+            topic: topic_path.clone(),
+            parent_topics: parent_topics
+                .iter()
+                .map(|p| p.to_owned())
+                .collect::<BTreeSet<RepoPath>>(),
+        }
+        .call(&self.git)
     }
 
     pub async fn upsert_session(

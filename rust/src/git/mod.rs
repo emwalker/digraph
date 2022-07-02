@@ -171,8 +171,11 @@ pub struct Timerange {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TimerangePrefixFormat {
+    #[serde(alias = "none")]
     None,
+    #[serde(alias = "startYear")]
     StartYear,
+    #[serde(alias = "startYearMonth")]
     StartYearMonth,
 }
 
@@ -434,6 +437,7 @@ impl Git {
     ) -> Result<bool> {
         let mut stack = vec![descendant_path.clone()];
         let mut seen: BTreeSet<RepoPath> = BTreeSet::new();
+        let mut iterations = 0;
 
         while !stack.is_empty() {
             if let Some(descendant_path) = stack.pop() {
@@ -442,6 +446,7 @@ impl Git {
                 }
 
                 if &descendant_path == ancestor_path {
+                    log::info!("cycle check completed in {} iterations", iterations);
                     return Ok(true);
                 }
 
@@ -457,8 +462,11 @@ impl Git {
 
                 seen.insert(descendant_path.clone());
             }
+
+            iterations += 1;
         }
 
+        log::info!("cycle check completed in {} iterations", iterations);
         Ok(false)
     }
 
