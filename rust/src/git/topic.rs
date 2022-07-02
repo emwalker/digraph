@@ -1,5 +1,5 @@
 use rand::{distributions::Alphanumeric, Rng};
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 
 use super::{Indexer, ParentTopic, SynonymEntry, SynonymMatch, TopicMetadata, API_VERSION};
 use crate::git::{Git, IndexMode, Kind, Synonym, Topic};
@@ -98,8 +98,29 @@ impl UpdateTopicSynonyms {
     pub fn call(&self, git: &Git) -> Result<UpdateTopicSynonymsResult> {
         let mut topic = git.fetch_topic(&self.topic_path.inner)?;
         let mut indexer = Indexer::new(git, IndexMode::Update);
+        let lookup = topic
+            .metadata
+            .synonyms
+            .iter()
+            .map(|synonym| ((&synonym.name, &synonym.locale), synonym.to_owned()))
+            .collect::<HashMap<(&String, &String), Synonym>>();
 
-        topic.metadata.synonyms = self.synonyms.clone();
+        let mut synonyms = vec![];
+
+        // Preserve the date the synonym was added
+        for new in &self.synonyms {
+            let key = (&new.name, &new.locale);
+            if lookup.contains_key(&key) {
+                match lookup.get(&key) {
+                    Some(existing) => synonyms.push(existing.to_owned()),
+                    None => synonyms.push(new.to_owned()),
+                };
+            } else {
+                synonyms.push(new.to_owned());
+            }
+        }
+
+        topic.metadata.synonyms = synonyms;
         git.save_topic(&self.topic_path, &topic, &mut indexer)?;
         indexer.save()?;
 

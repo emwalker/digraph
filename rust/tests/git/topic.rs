@@ -343,4 +343,26 @@ mod update_topic_synonyms {
         assert_eq!(count(&f, "B topic"), 0);
         assert_eq!(count(&f, "C topic"), 1);
     }
+
+    #[test]
+    fn synonym_added_date() {
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+
+        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let syn = topic.metadata.synonyms.first().unwrap();
+        let added = syn.added;
+
+        UpdateTopicSynonyms {
+            actor: actor(),
+            topic_path: path.clone(),
+            synonyms: vec![synonym(&syn.name)],
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let syn = topic.metadata.synonyms.first().unwrap();
+        assert_eq!(syn.added, added);
+    }
 }
