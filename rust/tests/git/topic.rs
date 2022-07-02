@@ -2,6 +2,42 @@ use super::{actor, upsert_topic, Fixtures};
 use digraph::prelude::*;
 use std::collections::BTreeSet;
 
+#[cfg(test)]
+mod delete_topic_timerange {
+    use super::*;
+    use digraph::git::{DeleteTopicTimerange, Timerange, UpsertTopicTimerange};
+
+    #[test]
+    fn timerange_deleted() {
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+
+        UpsertTopicTimerange {
+            actor: actor(),
+            timerange: Timerange {
+                prefix_format: digraph::git::TimerangePrefixFormat::StartYearMonth,
+                starts: chrono::Utc::now(),
+            },
+            topic_path: path.clone(),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        assert!(topic.metadata.timerange.is_some());
+
+        DeleteTopicTimerange {
+            actor: actor(),
+            topic_path: path.clone(),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        assert!(topic.metadata.timerange.is_none());
+    }
+}
+
 mod upsert_topic {
     use super::*;
     use digraph::git::{OnMatchingSynonym, Search};
@@ -370,7 +406,7 @@ mod update_topic_synonyms {
 #[cfg(test)]
 mod upsert_topic_timerange {
     use super::*;
-    use chrono;
+
     use digraph::git::{Timerange, UpsertTopicTimerange};
 
     #[test]

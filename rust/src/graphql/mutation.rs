@@ -9,9 +9,8 @@ use crate::git;
 use crate::http::repo_url;
 use crate::prelude::*;
 use crate::psql::{
-    DeleteAccountResult, DeleteLinkResult, DeleteSessionResult, DeleteTopicTimeRangeResult,
-    ReviewLinkResult, SelectRepositoryResult, UpdateLinkTopicsResult,
-    UpdateTopicParentTopicsResult,
+    DeleteAccountResult, DeleteLinkResult, DeleteSessionResult, ReviewLinkResult,
+    SelectRepositoryResult, UpdateLinkTopicsResult, UpdateTopicParentTopicsResult,
 };
 use crate::repo::Repo;
 
@@ -355,14 +354,14 @@ impl MutationRoot {
         } = input;
 
         let topic_path = RepoPath::from(&topic_path);
-        let DeleteTopicTimeRangeResult { topic } = ctx
+        let git::DeleteTopicTimerangeResult { topic, .. } = ctx
             .data_unchecked::<Repo>()
             .delete_topic_timerange(&topic_path)
             .await?;
 
         Ok(DeleteTopicTimerangePayload {
             client_mutation_id,
-            topic,
+            topic: Topic::from(&topic),
         })
     }
 

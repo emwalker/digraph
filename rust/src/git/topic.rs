@@ -8,6 +8,32 @@ use super::{
 use crate::prelude::*;
 use crate::Alert;
 
+pub struct DeleteTopicTimerange {
+    pub actor: Viewer,
+    pub topic_path: RepoPath,
+}
+
+pub struct DeleteTopicTimerangeResult {
+    pub alerts: Vec<Alert>,
+    pub topic: Topic,
+}
+
+impl DeleteTopicTimerange {
+    pub fn call(&self, git: &Git) -> Result<DeleteTopicTimerangeResult> {
+        let mut topic = git.fetch_topic(&self.topic_path.inner)?;
+        let mut indexer = Indexer::new(git, IndexMode::Update);
+
+        topic.metadata.timerange = None;
+        git.save_topic(&self.topic_path, &topic, &mut indexer)?;
+        indexer.save()?;
+
+        Ok(DeleteTopicTimerangeResult {
+            alerts: vec![],
+            topic,
+        })
+    }
+}
+
 pub struct UpdateTopicParentTopics {
     pub actor: Viewer,
     pub parent_topics: BTreeSet<RepoPath>,

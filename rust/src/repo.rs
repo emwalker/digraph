@@ -15,10 +15,9 @@ use crate::psql;
 use crate::psql::{
     CreateGithubSession, CreateSessionResult, DeleteAccount, DeleteAccountResult, DeleteLink,
     DeleteLinkResult, DeleteSession, DeleteSessionResult, DeleteTopic, DeleteTopicResult,
-    DeleteTopicTimeRange, DeleteTopicTimeRangeResult, FetchActivity, FetchRepositoriesForUser,
-    LiveSearchTopics, ReviewLink, ReviewLinkResult, Search, SelectRepository,
-    SelectRepositoryResult, UpdateLinkParentTopics, UpdateLinkTopicsResult,
-    UpdateTopicParentTopics, UpdateTopicParentTopicsResult,
+    FetchActivity, FetchRepositoriesForUser, LiveSearchTopics, ReviewLink, ReviewLinkResult,
+    Search, SelectRepository, SelectRepositoryResult, UpdateLinkParentTopics,
+    UpdateLinkTopicsResult, UpdateTopicParentTopics, UpdateTopicParentTopicsResult,
 };
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -257,10 +256,12 @@ impl Repo {
     pub async fn delete_topic_timerange(
         &self,
         topic_path: &RepoPath,
-    ) -> Result<DeleteTopicTimeRangeResult> {
-        DeleteTopicTimeRange::new(self.viewer.clone(), topic_path.clone())
-            .call(&self.db)
-            .await
+    ) -> Result<git::DeleteTopicTimerangeResult> {
+        git::DeleteTopicTimerange {
+            actor: self.viewer.clone(),
+            topic_path: topic_path.clone(),
+        }
+        .call(&self.git)
     }
 
     pub async fn link(&self, path: &RepoPath) -> Result<Option<Link>> {

@@ -181,68 +181,6 @@ impl DeleteTopic {
     }
 }
 
-pub struct DeleteTopicTimeRange {
-    actor: Viewer,
-    topic: RepoPath,
-}
-
-pub struct DeleteTopicTimeRangeResult {
-    pub topic: Topic,
-}
-
-impl DeleteTopicTimeRange {
-    pub fn new(actor: Viewer, topic: RepoPath) -> Self {
-        Self { actor, topic }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<DeleteTopicTimeRangeResult> {
-        log::info!("deleting topic time range: {}", self.topic);
-
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic)
-            .await?
-            .to_topic();
-
-        if topic.timerange.is_some() {
-            let mut tx = pool.begin().await?;
-            let name = topic
-                .synonyms
-                .0
-                .first()
-                .map(|s| s.name.clone())
-                .unwrap_or_else(|| "Missing name".into());
-
-            sqlx::query(
-                r#"
-                update topics
-                    set timerange_id = null, name = $1
-                where id = $2::uuid
-                "#,
-            )
-            .bind(&name)
-            .bind(&self.topic.short_id)
-            .execute(&mut tx)
-            .await?;
-
-            sqlx::query(
-                r#"delete from timeranges tr
-                    using topics t
-                    where t.timerange_id = tr.id and t = $1::uuid"#,
-            )
-            .bind(&self.topic.short_id)
-            .execute(&mut tx)
-            .await?;
-
-            tx.commit().await?;
-        }
-
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic)
-            .await?
-            .to_topic();
-
-        Ok(DeleteTopicTimeRangeResult { topic })
-    }
-}
-
 pub struct UpdateTopicParentTopics {
     actor: Viewer,
     topic: RepoPath,
