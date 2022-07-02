@@ -12,7 +12,7 @@ use crate::prelude::*;
 //
 // Eventually this kind of site-level handling of links can be moved into configs that are stored
 // in a repo or in the database, but for now we just hard-code the handling here.
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug)]
 pub struct Url {
     pub input: String,
     pub normalized: String,
@@ -23,6 +23,20 @@ pub struct Url {
 impl std::cmp::PartialEq for Url {
     fn eq(&self, other: &Self) -> bool {
         self.sha256 == other.sha256
+    }
+}
+
+impl std::cmp::Eq for Url {}
+
+impl std::cmp::Ord for Url {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.normalized.cmp(&other.normalized)
+    }
+}
+
+impl std::cmp::PartialOrd for Url {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 

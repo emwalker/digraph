@@ -3,6 +3,49 @@ use digraph::prelude::*;
 use std::collections::BTreeSet;
 
 #[cfg(test)]
+mod delete_topic {
+    use super::*;
+    use digraph::git::{DeleteTopic, DeleteTopicResult};
+
+    #[test]
+    fn topic_deleted() {
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+        assert!(f.repo.git.exists(&path).unwrap());
+
+        let DeleteTopicResult {
+            deleted_topic_path, ..
+        } = DeleteTopic {
+            actor: actor(),
+            topic_path: path.clone(),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        assert_eq!(path, deleted_topic_path);
+        assert!(!f.repo.git.exists(&path).unwrap());
+    }
+
+    #[test]
+    fn parent_topics_updated() {
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+        let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
+        assert!(parent.has_child(&path));
+
+        DeleteTopic {
+            actor: actor(),
+            topic_path: path.clone(),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
+        assert!(!parent.has_child(&path));
+    }
+}
+
+#[cfg(test)]
 mod delete_topic_timerange {
     use super::*;
     use digraph::git::{DeleteTopicTimerange, Timerange, UpsertTopicTimerange};
@@ -196,8 +239,9 @@ mod upsert_topic {
     async fn no_cycles() {
         let f = Fixtures::copy("simple");
         let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
-        let child = f.repo.git.fetch_topic("/wiki/00001").unwrap();
-        assert!(parent.has_child(&child));
+        let path = RepoPath::from("/wiki/00001");
+        let child = f.repo.git.fetch_topic(&path.inner).unwrap();
+        assert!(parent.has_child(&path));
 
         let result = upsert_topic(
             &f,
@@ -229,7 +273,7 @@ mod update_topic_parent_topics {
         assert_eq!(parent.children, BTreeSet::new());
 
         let child = f.repo.git.fetch_topic("/wiki/00002").unwrap();
-        assert!(!parent.has_child(&child));
+        assert!(!parent.has_child(&child.path()));
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
@@ -243,7 +287,7 @@ mod update_topic_parent_topics {
 
         let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
         let child = f.repo.git.fetch_topic("/wiki/00002").unwrap();
-        assert!(parent.has_child(&child));
+        assert!(parent.has_child(&child.path()));
     }
 
     #[test]
@@ -253,7 +297,7 @@ mod update_topic_parent_topics {
         assert_eq!(parent.children, BTreeSet::new());
 
         let child = f.repo.git.fetch_topic("/wiki/00002").unwrap();
-        assert!(!parent.has_child(&child));
+        assert!(!parent.has_child(&child.path()));
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
@@ -267,7 +311,7 @@ mod update_topic_parent_topics {
 
         let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
         let child = f.repo.git.fetch_topic("/wiki/00002").unwrap();
-        assert!(parent.has_child(&child));
+        assert!(parent.has_child(&child.path()));
     }
 
     #[test]
@@ -290,7 +334,7 @@ mod update_topic_parent_topics {
         let f = Fixtures::copy("simple");
         let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
         let child = f.repo.git.fetch_topic("/wiki/00001").unwrap();
-        assert!(parent.has_child(&child));
+        assert!(parent.has_child(&child.path()));
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
@@ -306,7 +350,7 @@ mod update_topic_parent_topics {
 #[cfg(test)]
 mod update_topic_synonyms {
     use super::*;
-    use digraph::git::{Synonym, UpdateTopicSynonyms, UpdateTopicSynonymsResult};
+    use digraph::git::{Search, Synonym, UpdateTopicSynonyms, UpdateTopicSynonymsResult};
 
     fn count(f: &Fixtures, name: &str) -> usize {
         f.repo.git.synonym_matches("/wiki", name).unwrap().len()
@@ -400,6 +444,34 @@ mod update_topic_synonyms {
         let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
         let syn = topic.metadata.synonyms.first().unwrap();
         assert_eq!(syn.added, added);
+    }
+
+    #[test]
+    fn lookup_indexes_updated() {
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+        let search = Search::parse("topicA").unwrap();
+        assert!(!f.repo.appears_in(&search, &path).unwrap());
+
+        UpdateTopicSynonyms {
+            actor: actor(),
+            topic_path: path.clone(),
+            synonyms: vec![synonym("topicA")],
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        assert!(f.repo.appears_in(&search, &path).unwrap());
+
+        UpdateTopicSynonyms {
+            actor: actor(),
+            topic_path: path.clone(),
+            synonyms: vec![synonym("topicB")],
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        assert!(!f.repo.appears_in(&search, &path).unwrap());
     }
 }
 

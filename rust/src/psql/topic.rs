@@ -1,12 +1,7 @@
-use sqlx::postgres::PgPool;
-use sqlx::types::Uuid;
-
-use super::queries::{TOPIC_FIELDS, TOPIC_GROUP_BY, TOPIC_JOINS};
 use crate::graphql::{
-    DateTime, Prefix, Synonyms, Timerange, TimerangePrefixFormat, Topic, TopicChild, Viewer,
+    DateTime, Prefix, Synonyms, Timerange, TimerangePrefixFormat, Topic, TopicChild,
 };
 use crate::prelude::*;
-use crate::Alert;
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
@@ -62,120 +57,5 @@ impl Row {
             }
             _ => None,
         }
-    }
-}
-
-pub async fn fetch_topic(
-    query_ids: &Vec<String>,
-    pool: &PgPool,
-    topic_path: &RepoPath,
-) -> Result<Row> {
-    let query = format!(
-        r#"select
-        {TOPIC_FIELDS}
-        {TOPIC_JOINS}
-        where t.id = $1::uuid
-            and om.user_id = any($2::uuid[])
-        {TOPIC_GROUP_BY}"#,
-    );
-
-    let row = sqlx::query_as::<_, Row>(&query)
-        .bind(&topic_path.short_id)
-        .bind(query_ids)
-        .fetch_one(pool)
-        .await?;
-    Ok(row)
-}
-
-pub struct DeleteTopic {
-    actor: Viewer,
-    topic: RepoPath,
-}
-
-pub struct DeleteTopicResult {
-    pub alerts: Vec<Alert>,
-    pub deleted_topic_path: Option<String>,
-}
-
-impl DeleteTopic {
-    pub fn new(actor: Viewer, topic: RepoPath) -> Self {
-        Self { actor, topic }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<DeleteTopicResult> {
-        log::info!("attempting to delete topic: {}", self.topic);
-        let topic = fetch_topic(&self.actor.mutation_ids, pool, &self.topic).await?;
-        let mut alerts: Vec<Alert> = vec![];
-
-        if topic.root {
-            log::warn!("attempting to delete root topic, bailing: {}", self.topic);
-            alerts.push(Alert::Warning("Cannot delete root topic".into()));
-            return Ok(DeleteTopicResult {
-                alerts,
-                deleted_topic_path: None,
-            });
-        }
-
-        let parent_topic_ids: Vec<String> = sqlx::query_as::<_, (Uuid,)>(
-            r#"select parent_id from topic_topics where child_id = $1::uuid"#,
-        )
-        .bind(&self.topic.short_id)
-        .fetch_all(pool)
-        .await?
-        .iter()
-        .map(|t| t.0.to_string())
-        .collect();
-
-        let child_topic_ids: Vec<String> = sqlx::query_as::<_, (Uuid,)>(
-            r#"select child_id from topic_topics where parent_id = $1::uuid"#,
-        )
-        .bind(&self.topic.short_id)
-        .fetch_all(pool)
-        .await?
-        .iter()
-        .map(|t| t.0.to_string())
-        .collect();
-
-        let child_link_ids: Vec<String> = sqlx::query_as::<_, (Uuid,)>(
-            r#"select child_id from link_topics where parent_id = $1::uuid"#,
-        )
-        .bind(&self.topic.short_id)
-        .fetch_all(pool)
-        .await?
-        .iter()
-        .map(|t| t.0.to_string())
-        .collect();
-
-        let mut tx = pool.begin().await?;
-
-        for parent_topic_id in parent_topic_ids {
-            for child_topic_id in &child_topic_ids {
-                sqlx::query("select add_topic_to_topic($1::uuid, $2::uuid)")
-                    .bind(&parent_topic_id)
-                    .bind(&child_topic_id)
-                    .execute(&mut tx)
-                    .await?;
-            }
-
-            for child_link_id in &child_link_ids {
-                sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
-                    .bind(&parent_topic_id)
-                    .bind(&child_link_id)
-                    .execute(&mut tx)
-                    .await?;
-            }
-        }
-
-        sqlx::query("delete from topics where id = $1::uuid")
-            .bind(&self.topic.short_id)
-            .execute(&mut tx)
-            .await?;
-
-        tx.commit().await?;
-
-        Ok(DeleteTopicResult {
-            alerts,
-            deleted_topic_path: Some(self.topic.to_string()),
-        })
     }
 }

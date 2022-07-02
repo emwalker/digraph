@@ -2,11 +2,76 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::collections::{BTreeSet, HashMap};
 
 use super::{
-    Git, IndexMode, Indexer, Kind, ParentTopic, Synonym, SynonymEntry, SynonymMatch, Timerange,
-    Topic, TopicMetadata, API_VERSION,
+    Git, IndexMode, Indexer, Kind, Object, ParentTopic, Synonym, SynonymEntry, SynonymMatch,
+    Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use crate::prelude::*;
 use crate::Alert;
+
+pub struct DeleteTopic {
+    pub actor: Viewer,
+    pub topic_path: RepoPath,
+}
+
+pub struct DeleteTopicResult {
+    pub alerts: Vec<Alert>,
+    pub deleted_topic_path: RepoPath,
+}
+
+impl DeleteTopic {
+    pub fn call(&self, git: &Git) -> Result<DeleteTopicResult> {
+        let path = &self.topic_path;
+        let topic = git.fetch_topic(&path.inner)?;
+        let parent_topics = topic
+            .parent_topics
+            .iter()
+            .map(|parent| ParentTopic {
+                path: parent.path.to_owned(),
+            })
+            .collect::<BTreeSet<ParentTopic>>();
+
+        let mut indexer = Indexer::new(git, IndexMode::Update);
+
+        // Remove the topic from the children of the parent topics
+        for parent in &topic.parent_topics {
+            let mut parent = git.fetch_topic(&parent.path)?;
+            parent.children.remove(&TopicChild {
+                // The 'added' field is ignored
+                added: chrono::Utc::now(),
+                kind: Kind::Topic,
+                path: path.inner.to_owned(),
+            });
+            git.save_topic(&parent.path(), &parent, &mut indexer)?;
+        }
+
+        // Remove the topic from its children, moving them onto the parent topics
+        for child in &topic.children {
+            match git.fetch(&child.path)? {
+                Object::Link(child_link) => {
+                    let mut link = child_link.to_owned();
+                    link.parent_topics.remove(&topic.to_parent_topic());
+                    link.parent_topics.append(&mut parent_topics.clone());
+                    git.save_link(&RepoPath::from(&child.path), &link, &mut indexer)?;
+                }
+
+                Object::Topic(child_topic) => {
+                    let mut child_topic = child_topic.to_owned();
+                    child_topic.parent_topics.remove(&topic.to_parent_topic());
+                    child_topic.parent_topics.append(&mut parent_topics.clone());
+                    git.save_topic(&RepoPath::from(&child.path), &child_topic, &mut indexer)?;
+                }
+            }
+        }
+
+        git.remove_topic(&self.topic_path, &topic, &mut indexer)?;
+        indexer.save()?;
+
+        Ok(DeleteTopicResult {
+            alerts: vec![],
+            deleted_topic_path: self.topic_path.clone(),
+        })
+    }
+}
 
 pub struct DeleteTopicTimerange {
     pub actor: Viewer,

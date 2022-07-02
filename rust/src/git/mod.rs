@@ -82,6 +82,12 @@ pub struct Link {
     pub parent_topics: BTreeSet<ParentTopic>,
 }
 
+impl Link {
+    pub fn path(&self) -> RepoPath {
+        RepoPath::from(&self.metadata.path)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ParentTopic {
     pub path: String,
@@ -242,11 +248,8 @@ impl std::cmp::PartialOrd for Topic {
 }
 
 impl Topic {
-    pub fn has_child(&self, child: &Self) -> bool {
-        child
-            .parent_topics
-            .iter()
-            .any(|parent| parent.path == self.metadata.path)
+    pub fn has_child(&self, path: &RepoPath) -> bool {
+        self.children.iter().any(|child| child.path == path.inner)
     }
 
     pub fn name(&self, desired_locale: &str) -> String {
@@ -508,6 +511,52 @@ impl Git {
         Ok(true)
     }
 
+    fn link(&self, path: &RepoPath) -> Result<Option<Link>> {
+        if self.exists(path)? {
+            return Ok(Some(self.fetch_link(&path.inner)?));
+        }
+        Ok(None)
+    }
+
+    fn link_searches(&self, link: Option<Link>) -> Result<BTreeSet<Search>> {
+        let searches = match link {
+            Some(link) => {
+                let meta = &link.metadata;
+                let url = repo_url::Url::parse(&meta.url)?;
+                BTreeSet::from([Search::parse(&meta.title)?, Search::parse(&url.normalized)?])
+            }
+            None => BTreeSet::new(),
+        };
+        Ok(searches)
+    }
+
+    fn remove(&self, path: &RepoPath) -> Result<()> {
+        let filename = self.root.object_filename(&path.inner)?;
+        if filename.exists() {
+            fs::remove_file(filename)?;
+        }
+
+        Ok(())
+    }
+
+    fn remove_topic(&self, path: &RepoPath, topic: &Topic, indexer: &mut Indexer) -> Result<()> {
+        indexer.remove_synonyms(path, topic)?;
+
+        let meta = &topic.metadata;
+        let mut searches = vec![];
+        for synonym in &meta.synonyms {
+            let search = Search::parse(&synonym.name)?;
+            if search.is_empty() {
+                continue;
+            }
+            searches.push(search);
+        }
+        indexer.remove_searches(path, &searches)?;
+        self.remove(path)?;
+
+        Ok(())
+    }
+
     fn save<T: Serialize>(&self, path: &RepoPath, object: &T) -> Result<()> {
         let filename = self.root.object_filename(&path.inner)?;
         let dest = filename.parent().expect("expected a parent directory");
@@ -519,29 +568,30 @@ impl Git {
     }
 
     pub fn save_link(&self, path: &RepoPath, link: &Link, indexer: &mut Indexer) -> Result<()> {
-        let meta = &link.metadata;
-        let url = repo_url::Url::parse(&meta.url)?;
-        let searches = &[Search::parse(&meta.title)?, Search::parse(&url.normalized)?];
-        indexer.index_searches(path, searches)?;
+        let before = self.link(path)?;
+        let before = self.link_searches(before)?;
+        let after = self.link_searches(Some(link.to_owned()))?;
+        indexer.update_lookups(path, &before, &after)?;
         self.save(path, link)
     }
 
     pub fn save_topic(&self, path: &RepoPath, topic: &Topic, indexer: &mut Indexer) -> Result<()> {
         let before = self.topic(path)?;
-        indexer.index_synonyms(&before, topic)?;
+        indexer.update_synonyms(&before, topic)?;
 
-        let meta = &topic.metadata;
-        let mut searches = vec![];
-        for synonym in &meta.synonyms {
-            let search = Search::parse(&synonym.name)?;
-            if search.is_empty() {
-                continue;
-            }
-            searches.push(search);
-        }
-        indexer.index_searches(path, &searches)?;
+        let before = self.topic_searches(before)?;
+        let after = self.topic_searches(Some(topic.to_owned()))?;
+        indexer.update_lookups(path, &before, &after)?;
 
         self.save(path, topic)
+    }
+
+    pub fn synonym_index(&self, key: &IndexKey, mode: IndexMode) -> Result<SynonymIndex> {
+        let filename = self.root.synonym_index_filename(key)?;
+        match mode {
+            IndexMode::Replace => Ok(SynonymIndex::new(&filename)),
+            IndexMode::Update => SynonymIndex::load(&filename),
+        }
     }
 
     pub fn synonym_matches(&self, prefix: &str, name: &str) -> Result<BTreeSet<SynonymMatch>> {
@@ -562,13 +612,6 @@ impl Git {
         Ok(matches)
     }
 
-    pub fn topic(&self, path: &RepoPath) -> Result<Option<Topic>> {
-        if self.exists(path)? {
-            return Ok(Some(self.fetch_topic(&path.inner)?));
-        }
-        Ok(None)
-    }
-
     pub fn token_index(&self, key: &IndexKey, mode: IndexMode) -> Result<TokenIndex> {
         let filename = self.root.token_index_filename(key)?;
         match mode {
@@ -577,12 +620,33 @@ impl Git {
         }
     }
 
-    pub fn synonym_index(&self, key: &IndexKey, mode: IndexMode) -> Result<SynonymIndex> {
-        let filename = self.root.synonym_index_filename(key)?;
-        match mode {
-            IndexMode::Replace => Ok(SynonymIndex::new(&filename)),
-            IndexMode::Update => SynonymIndex::load(&filename),
+    pub fn topic(&self, path: &RepoPath) -> Result<Option<Topic>> {
+        if self.exists(path)? {
+            return Ok(Some(self.fetch_topic(&path.inner)?));
         }
+        Ok(None)
+    }
+
+    fn topic_searches(&self, topic: Option<Topic>) -> Result<BTreeSet<Search>> {
+        let searches = match topic {
+            Some(topic) => {
+                let meta = &topic.metadata;
+                let mut searches = BTreeSet::new();
+
+                for synonym in &meta.synonyms {
+                    let search = Search::parse(&synonym.name)?;
+                    if search.is_empty() {
+                        continue;
+                    }
+                    searches.insert(search);
+                }
+
+                searches
+            }
+            None => BTreeSet::new(),
+        };
+
+        Ok(searches)
     }
 }
 

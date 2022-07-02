@@ -54,7 +54,7 @@ class EditTopicForm extends Component<Props, State> {
       {
         configs: [{
           type: 'NODE_DELETE',
-          deletedIDFieldName: 'deletedTopicId',
+          deletedIDFieldName: 'deletedTopicPath',
         }],
       },
     )

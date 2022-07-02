@@ -18,27 +18,39 @@ pub fn normalize(input: &str) -> String {
     unidecode(input).to_lowercase().replace(SPECIAL_CHARS, "")
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Search {
-    pub urls: Vec<repo_url::Url>,
-    pub tokens: Vec<String>,
+    pub urls: BTreeSet<repo_url::Url>,
+    pub tokens: BTreeSet<String>,
+}
+
+impl std::cmp::Ord for Search {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (&self.urls, &self.tokens).cmp(&(&other.urls, &other.tokens))
+    }
+}
+
+impl std::cmp::PartialOrd for Search {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl Search {
     pub fn parse(input: &str) -> Result<Self> {
         let input = unidecode(input);
-        let mut tokens = vec![];
-        let mut urls = vec![];
+        let mut tokens = BTreeSet::new();
+        let mut urls = BTreeSet::new();
 
         for token in input.split_whitespace() {
             if repo_url::Url::is_valid_url(token) {
-                urls.push(repo_url::Url::parse(token)?);
+                urls.insert(repo_url::Url::parse(token)?);
                 continue;
             }
 
             let token = token.to_lowercase().replace(SPECIAL_CHARS, "");
             if token.len() >= 3 && token.len() <= 20 {
-                tokens.push(token);
+                tokens.insert(token);
             }
         }
 
@@ -275,7 +287,7 @@ impl TokenIndex {
         })
     }
 
-    fn index(&mut self, path: &RepoPath, normalized: &str) -> Result<()> {
+    fn add(&mut self, path: &RepoPath, normalized: &str) -> Result<()> {
         let paths = self
             .index
             .tokens
@@ -290,6 +302,16 @@ impl TokenIndex {
             Some(paths) => paths.contains(&path.inner),
             None => false,
         })
+    }
+
+    fn remove(&mut self, path: &RepoPath, normalized: &str) -> Result<()> {
+        let paths = self
+            .index
+            .tokens
+            .entry(normalized.to_owned())
+            .or_insert(BTreeSet::new());
+        paths.remove(&path.inner);
+        Ok(())
     }
 }
 
@@ -316,69 +338,53 @@ impl Indexer {
         }
     }
 
-    pub fn index_searches(&mut self, path: &RepoPath, searches: &[Search]) -> Result<()> {
+    fn synonym_indexes<'s, S, F>(&mut self, prefix: &str, synonyms: S, f: F) -> Result<()>
+    where
+        S: Iterator<Item = &'s Synonym>,
+        F: Fn(&mut SynonymIndex, &String, &String) -> Result<()>,
+    {
+        for synonym in synonyms {
+            let name = &synonym.name;
+
+            let normalized = normalize(name);
+            if normalized.len() < 3 {
+                continue;
+            }
+
+            let key = self.git.index_key(prefix, &normalized)?;
+            let index = self.synonym_index_for(&key)?;
+            f(index, &normalized, name)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn remove_searches(&mut self, path: &RepoPath, searches: &Vec<Search>) -> Result<()> {
         for search in searches {
             for token in &search.tokens {
                 let key = self.git.index_key(&path.prefix, token)?;
-                self.token_index_for(&key)?.index(path, token)?;
+                self.token_index_for(&key)?.remove(path, token)?;
             }
 
             for url in &search.urls {
                 let normalized = &url.normalized;
                 let key = self.git.index_key(&path.prefix, normalized)?;
-                self.token_index_for(&key)?.index(path, normalized)?;
+                self.token_index_for(&key)?.remove(path, normalized)?;
             }
         }
+
         Ok(())
     }
 
-    pub fn index_synonyms(&mut self, before: &Option<Topic>, after: &Topic) -> Result<()> {
-        let path = after.path();
-
-        let before = match before {
-            Some(before) => before
-                .metadata
-                .synonyms
-                .iter()
-                .map(|s| s.to_owned())
-                .collect::<BTreeSet<Synonym>>(),
-            None => BTreeSet::new(),
-        };
-
-        let after = after
-            .metadata
-            .synonyms
-            .iter()
-            .map(|s| s.to_owned())
-            .collect::<BTreeSet<Synonym>>();
-
-        let added = after.difference(&before);
-        for synonym in added {
-            let name = &synonym.name;
-
-            let normalized = normalize(name);
-            if normalized.len() < 3 {
-                continue;
-            }
-
-            let key = self.git.index_key(&path.prefix, &normalized)?;
-            self.synonym_index_for(&key)?
-                .add(&path, &normalized, name)?;
-        }
-
-        let removed = before.difference(&after);
-        for synonym in removed {
-            let name = &synonym.name;
-
-            let normalized = normalize(name);
-            if normalized.len() < 3 {
-                continue;
-            }
-
-            let key = self.git.index_key(&path.prefix, &normalized)?;
-            self.synonym_index_for(&key)?
-                .remove(&path, &normalized, name)?;
-        }
+    pub fn remove_synonyms(&mut self, path: &RepoPath, topic: &Topic) -> Result<()> {
+        self.synonym_indexes(
+            &path.prefix,
+            topic.metadata.synonyms.iter(),
+            |index, normalized, name| {
+                index.remove(path, normalized, name)?;
+                Ok(())
+            },
+        )?;
 
         Ok(())
     }
@@ -408,6 +414,84 @@ impl Indexer {
             .entry(key.to_owned())
             .or_insert(self.git.token_index(key, self.mode)?))
     }
+
+    pub fn update_lookups(
+        &mut self,
+        path: &RepoPath,
+        before: &BTreeSet<Search>,
+        after: &BTreeSet<Search>,
+    ) -> Result<()> {
+        let removed = before.difference(after);
+        for search in removed {
+            for token in &search.tokens {
+                let key = self.git.index_key(&path.prefix, token)?;
+                self.token_index_for(&key)?.remove(path, token)?;
+            }
+
+            for url in &search.urls {
+                let normalized = &url.normalized;
+                let key = self.git.index_key(&path.prefix, normalized)?;
+                self.token_index_for(&key)?.remove(path, normalized)?;
+            }
+        }
+
+        let added = after.difference(before);
+        for search in added {
+            for token in &search.tokens {
+                let key = self.git.index_key(&path.prefix, token)?;
+                self.token_index_for(&key)?.add(path, token)?;
+            }
+
+            for url in &search.urls {
+                let normalized = &url.normalized;
+                let key = self.git.index_key(&path.prefix, normalized)?;
+                self.token_index_for(&key)?.add(path, normalized)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn update_synonyms(&mut self, before: &Option<Topic>, after: &Topic) -> Result<()> {
+        let path = after.path();
+
+        let before = match before {
+            Some(before) => before
+                .metadata
+                .synonyms
+                .iter()
+                .map(|s| s.to_owned())
+                .collect::<BTreeSet<Synonym>>(),
+            None => BTreeSet::new(),
+        };
+
+        let after = after
+            .metadata
+            .synonyms
+            .iter()
+            .map(|s| s.to_owned())
+            .collect::<BTreeSet<Synonym>>();
+
+        self.synonym_indexes(
+            &path.prefix,
+            after.difference(&before),
+            |index, normalized, name| {
+                index.add(&path, normalized, name)?;
+                Ok(())
+            },
+        )?;
+
+        self.synonym_indexes(
+            &path.prefix,
+            before.difference(&after),
+            |index, normalized, name| {
+                index.remove(&path, normalized, name)?;
+                Ok(())
+            },
+        )?;
+
+        Ok(())
+    }
 }
 
 impl std::fmt::Debug for Indexer {
@@ -425,13 +509,16 @@ mod tests {
     #[test]
     fn punctuation() {
         let phrase = Search::parse("one.!?:`#$@*&;+-{}[]()/\\'\",=    <> two").unwrap();
-        assert_eq!(phrase.tokens, &["one", "two"]);
+        assert_eq!(phrase.tokens, BTreeSet::from(["one".into(), "two".into()]));
     }
 
     #[test]
     fn uppercase_letters() {
         let phrase = Search::parse("One TWO three").unwrap();
-        assert_eq!(phrase.tokens, &["one", "two", "three"]);
+        assert_eq!(
+            phrase.tokens,
+            BTreeSet::from(["one".into(), "two".into(), "three".into()])
+        );
     }
 
     #[test]
@@ -439,7 +526,14 @@ mod tests {
         let phrase = Search::parse("Æneid étude 北亰 ᔕᓇᓇ げんまい茶").unwrap();
         assert_eq!(
             phrase.tokens,
-            &["aeneid", "etude", "bei", "jing", "shanana", "genmaicha"]
+            BTreeSet::from([
+                "aeneid".into(),
+                "etude".into(),
+                "bei".into(),
+                "jing".into(),
+                "shanana".into(),
+                "genmaicha".into()
+            ])
         );
     }
 
@@ -449,7 +543,7 @@ mod tests {
         assert_eq!(token.len(), 21);
 
         let phrase = Search::parse(&format!("a aa aaa aaaa {}", token)).unwrap();
-        assert_eq!(phrase.tokens, &["aaa", "aaaa"]);
+        assert_eq!(phrase.tokens, BTreeSet::from(["aaa".into(), "aaaa".into()]));
     }
 
     #[test]
@@ -457,10 +551,10 @@ mod tests {
         let phrase = Search::parse("one https://www.google.com").unwrap();
         assert_eq!(
             phrase.urls,
-            &[repo_url::Url::parse("https://www.google.com").unwrap()],
+            BTreeSet::from([repo_url::Url::parse("https://www.google.com").unwrap()]),
         );
 
         let phrase = Search::parse("aaas:").unwrap();
-        assert_eq!(phrase.urls, &[]);
+        assert_eq!(phrase.urls, BTreeSet::new());
     }
 }

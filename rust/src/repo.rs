@@ -243,10 +243,12 @@ impl Repo {
             .await
     }
 
-    pub async fn delete_topic(&self, path: &RepoPath) -> Result<psql::DeleteTopicResult> {
-        psql::DeleteTopic::new(self.viewer.clone(), path.clone())
-            .call(&self.db)
-            .await
+    pub async fn delete_topic(&self, path: &RepoPath) -> Result<git::DeleteTopicResult> {
+        git::DeleteTopic {
+            actor: self.viewer.clone(),
+            topic_path: path.clone(),
+        }
+        .call(&self.git)
     }
 
     pub async fn delete_topic_timerange(
