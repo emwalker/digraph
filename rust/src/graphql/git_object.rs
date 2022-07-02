@@ -1,3 +1,6 @@
+use async_graphql::dataloader::*;
+use std::collections::HashMap;
+
 use super::SynonymInput;
 use super::{DateTime, Link, Prefix, Synonym, Synonyms, Timerange, TimerangePrefixFormat, Topic};
 use crate::git;
@@ -108,5 +111,65 @@ impl From<&TimerangePrefixFormat> for git::TimerangePrefixFormat {
             TimerangePrefixFormat::StartYear => git::TimerangePrefixFormat::StartYear,
             TimerangePrefixFormat::StartYearMonth => git::TimerangePrefixFormat::StartYearMonth,
         }
+    }
+}
+
+#[allow(dead_code)]
+pub struct LinkLoader {
+    viewer: Viewer,
+    git: git::Git,
+}
+
+impl LinkLoader {
+    pub fn new(viewer: Viewer, git: git::Git) -> Self {
+        Self { viewer, git }
+    }
+}
+
+#[async_trait::async_trait]
+impl Loader<String> for LinkLoader {
+    type Value = git::Link;
+    type Error = Error;
+
+    async fn load(&self, paths: &[String]) -> Result<HashMap<String, Self::Value>> {
+        log::debug!("batch links: {:?}", paths);
+        let mut map: HashMap<_, _> = HashMap::new();
+
+        for path in paths {
+            let link = &self.git.fetch_link(path)?;
+            map.insert(path.to_owned(), link.to_owned());
+        }
+
+        Ok(map)
+    }
+}
+
+#[allow(dead_code)]
+pub struct ObjectLoader {
+    viewer: Viewer,
+    git: git::Git,
+}
+
+impl ObjectLoader {
+    pub fn new(viewer: Viewer, git: git::Git) -> Self {
+        Self { viewer, git }
+    }
+}
+
+#[async_trait::async_trait]
+impl Loader<String> for ObjectLoader {
+    type Value = git::Object;
+    type Error = Error;
+
+    async fn load(&self, paths: &[String]) -> Result<HashMap<String, Self::Value>> {
+        log::debug!("batch load topics: {:?}", paths);
+        let mut map: HashMap<_, _> = HashMap::new();
+
+        for path in paths {
+            let object = &self.git.fetch(path)?;
+            map.insert(path.to_owned(), object.clone());
+        }
+
+        Ok(map)
     }
 }

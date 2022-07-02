@@ -292,12 +292,13 @@ impl MutationRoot {
             link_path,
         } = input;
         let link_path = RepoPath::from(&link_path);
-        let psql::DeleteLinkResult { deleted_link_path } =
-            ctx.data_unchecked::<Repo>().delete_link(&link_path).await?;
+        let git::DeleteLinkResult {
+            deleted_link_path, ..
+        } = ctx.data_unchecked::<Repo>().delete_link(&link_path).await?;
 
         Ok(DeleteLinkPayload {
             client_mutation_id,
-            deleted_link_path: Some(deleted_link_path),
+            deleted_link_path: Some(deleted_link_path.inner),
         })
     }
 

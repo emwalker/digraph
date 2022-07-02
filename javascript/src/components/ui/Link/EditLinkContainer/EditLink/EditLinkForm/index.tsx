@@ -61,7 +61,7 @@ class EditLinkForm extends Component<Props, State> {
       {
         configs: [{
           type: 'NODE_DELETE',
-          deletedIDFieldName: 'deletedLinkId',
+          deletedIDFieldName: 'deletedLinkPath',
         }],
       },
     )

@@ -1,15 +1,35 @@
-use super::{fetch_link, fetch_topic, upsert_link, Fixtures};
+use super::{actor, fetch_link, fetch_topic, upsert_link, valid_url, Fixtures};
+use digraph::prelude::*;
+
+mod delete_link {
+    use super::*;
+    use digraph::git::{DeleteLink, UpsertLinkResult};
+
+    #[actix_web::test]
+    async fn link_deleted() {
+        let f = Fixtures::copy("simple");
+        let url = valid_url();
+
+        let UpsertLinkResult { link, .. } =
+            upsert_link(&f, &url, Some("Page title".into()), &[]).await;
+        let path = link.unwrap().path();
+        assert!(f.repo.exists(&path).unwrap());
+
+        DeleteLink {
+            actor: actor(),
+            link_path: path.clone(),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+        assert!(!f.repo.exists(&path).unwrap());
+    }
+}
 
 mod upsert_link {
     use super::*;
     use digraph::git::{Search, UpsertLinkResult};
     use digraph::http::repo_url;
-    use digraph::prelude::*;
     use itertools::Itertools;
-
-    fn valid_url() -> repo_url::Url {
-        repo_url::Url::parse("https://www.google.com").unwrap()
-    }
 
     #[actix_web::test]
     async fn link_added() {

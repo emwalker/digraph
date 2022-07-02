@@ -87,7 +87,7 @@ impl RepoPath {
 pub struct Repo {
     db: PgPool,
     git: git::Git,
-    object_loader: DataLoader<git::ObjectLoader, HashMapCache>,
+    object_loader: DataLoader<graphql::ObjectLoader, HashMapCache>,
     organization_by_login_loader: DataLoader<psql::OrganizationByLoginLoader, HashMapCache>,
     organization_loader: DataLoader<psql::OrganizationLoader, HashMapCache>,
     pub server_secret: String,
@@ -108,7 +108,7 @@ impl Repo {
             psql::RepositoryByNameLoader::new(viewer.clone(), db.clone());
         let repository_by_prefix_loader =
             psql::RepositoryByPrefixLoader::new(viewer.clone(), db.clone());
-        let object_loader = git::ObjectLoader::new(viewer.clone(), git.clone());
+        let object_loader = graphql::ObjectLoader::new(viewer.clone(), git.clone());
         let user_loader = psql::UserLoader::new(viewer.clone(), db.clone());
 
         Self {
@@ -231,10 +231,12 @@ impl Repo {
             .await
     }
 
-    pub async fn delete_link(&self, link_path: &RepoPath) -> Result<psql::DeleteLinkResult> {
-        psql::DeleteLink::new(self.viewer.clone(), link_path.clone())
-            .call(&self.db)
-            .await
+    pub async fn delete_link(&self, link_path: &RepoPath) -> Result<git::DeleteLinkResult> {
+        git::DeleteLink {
+            actor: self.viewer.clone(),
+            link_path: link_path.clone(),
+        }
+        .call(&self.git)
     }
 
     pub async fn delete_session(&self, session_id: String) -> Result<psql::DeleteSessionResult> {

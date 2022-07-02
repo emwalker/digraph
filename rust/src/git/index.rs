@@ -208,17 +208,19 @@ impl SynonymIndex {
     }
 
     pub fn remove(&mut self, path: &RepoPath, normalized: &str, name: &str) -> Result<()> {
-        let paths = self
-            .index
-            .synonyms
-            .entry(normalized.to_owned())
-            .or_insert(BTreeSet::new());
-
-        paths.remove(&SynonymEntry {
-            name: name.to_owned(),
-            path: path.to_string(),
-        });
-
+        let key = normalized.to_owned();
+        match self.index.synonyms.get_mut(&key) {
+            Some(paths) => {
+                paths.remove(&SynonymEntry {
+                    name: name.to_owned(),
+                    path: path.to_string(),
+                });
+                if paths.is_empty() {
+                    self.index.synonyms.remove(&key);
+                }
+            }
+            None => {}
+        }
         Ok(())
     }
 
@@ -305,12 +307,16 @@ impl TokenIndex {
     }
 
     fn remove(&mut self, path: &RepoPath, normalized: &str) -> Result<()> {
-        let paths = self
-            .index
-            .tokens
-            .entry(normalized.to_owned())
-            .or_insert(BTreeSet::new());
-        paths.remove(&path.inner);
+        let token = normalized.to_owned();
+        match self.index.tokens.get_mut(&token) {
+            Some(paths) => {
+                paths.remove(&path.inner);
+                if paths.is_empty() {
+                    self.index.tokens.remove(&token);
+                }
+            }
+            None => {}
+        }
         Ok(())
     }
 }
@@ -359,7 +365,10 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn remove_searches(&mut self, path: &RepoPath, searches: &Vec<Search>) -> Result<()> {
+    pub fn remove_searches<'s, S>(&mut self, path: &RepoPath, searches: S) -> Result<()>
+    where
+        S: Iterator<Item = &'s Search>,
+    {
         for search in searches {
             for token in &search.tokens {
                 let key = self.git.index_key(&path.prefix, token)?;

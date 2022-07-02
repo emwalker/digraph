@@ -144,3 +144,7 @@ fn upsert_topic(
     }
     .call(&f.repo.git)
 }
+
+fn valid_url() -> repo_url::Url {
+    repo_url::Url::parse("https://www.google.com").unwrap()
+}

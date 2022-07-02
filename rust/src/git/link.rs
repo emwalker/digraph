@@ -1,6 +1,5 @@
-use async_graphql::dataloader::*;
 use chrono::Utc;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::BTreeSet;
 
 use crate::git::{
     Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, TopicChild, API_VERSION,
@@ -9,33 +8,37 @@ use crate::http::{self, repo_url};
 use crate::prelude::*;
 use crate::Alert;
 
-#[allow(dead_code)]
-pub struct LinkLoader {
-    viewer: Viewer,
-    git: Git,
+pub struct DeleteLink {
+    pub actor: Viewer,
+    pub link_path: RepoPath,
 }
 
-impl LinkLoader {
-    pub fn new(viewer: Viewer, git: Git) -> Self {
-        Self { viewer, git }
-    }
+pub struct DeleteLinkResult {
+    pub alerts: Vec<Alert>,
+    pub deleted_link_path: RepoPath,
 }
 
-#[async_trait::async_trait]
-impl Loader<String> for LinkLoader {
-    type Value = Link;
-    type Error = Error;
+impl DeleteLink {
+    pub fn call(&self, git: &Git) -> Result<DeleteLinkResult> {
+        let link = git.fetch_link(&self.link_path.inner)?;
+        // Not actually used
+        let added = chrono::Utc::now();
+        let child = link.to_topic_child(added);
+        let mut indexer = Indexer::new(git, IndexMode::Update);
 
-    async fn load(&self, paths: &[String]) -> Result<HashMap<String, Self::Value>> {
-        log::debug!("batch links: {:?}", paths);
-        let mut map: HashMap<_, _> = HashMap::new();
-
-        for path in paths {
-            let link = &self.git.fetch_link(path)?;
-            map.insert(path.to_owned(), link.to_owned());
+        for ParentTopic { path, .. } in &link.parent_topics {
+            let mut parent = git.fetch_topic(path)?;
+            parent.children.remove(&child);
+            git.save_topic(&RepoPath::from(path), &parent, &mut indexer)?;
         }
 
-        Ok(map)
+        git.remove_link(&self.link_path, &link, &mut indexer)?;
+        indexer.save()?;
+
+        Ok(DeleteLinkResult {
+            alerts: vec![],
+            deleted_link_path: self.link_path.clone(),
+        })
     }
 }
 

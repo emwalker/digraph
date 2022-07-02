@@ -43,6 +43,23 @@ mod delete_topic {
         let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
         assert!(!parent.has_child(&path));
     }
+
+    #[test]
+    fn cannot_delete_root_topic() {
+        let f = Fixtures::copy("simple");
+        let topic = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
+        assert!(topic.metadata.root);
+
+        let result = DeleteTopic {
+            actor: actor(),
+            topic_path: topic.path(),
+        }
+        .call(&f.repo.git);
+
+        assert!(matches!(result, Err(Error::Repo(_))));
+        let topic = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
+        assert!(topic.metadata.root);
+    }
 }
 
 #[cfg(test)]

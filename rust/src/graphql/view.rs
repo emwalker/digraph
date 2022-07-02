@@ -56,8 +56,8 @@ impl View {
         }
     }
 
-    async fn link(&self, ctx: &Context<'_>, id: ID) -> Result<Option<Link>> {
-        let path = RepoPath::from(&id.to_string());
+    async fn link(&self, ctx: &Context<'_>, path: String) -> Result<Option<Link>> {
+        let path = RepoPath::from(&path.to_string());
         ctx.data_unchecked::<Repo>().link(&path).await
     }
 

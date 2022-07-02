@@ -8,7 +8,6 @@ use std::path::{Path, PathBuf};
 
 mod index;
 mod link;
-mod loader;
 mod repository;
 mod topic;
 
@@ -16,7 +15,6 @@ use crate::http::repo_url;
 use crate::prelude::*;
 pub use index::*;
 pub use link::*;
-pub use loader::*;
 pub use repository::*;
 pub use topic::*;
 
@@ -85,6 +83,14 @@ pub struct Link {
 impl Link {
     pub fn path(&self) -> RepoPath {
         RepoPath::from(&self.metadata.path)
+    }
+
+    pub fn to_topic_child(&self, added: chrono::DateTime<Utc>) -> TopicChild {
+        TopicChild {
+            added,
+            kind: Kind::Link,
+            path: self.metadata.path.to_owned(),
+        }
     }
 }
 
@@ -539,6 +545,13 @@ impl Git {
         Ok(())
     }
 
+    fn remove_link(&self, path: &RepoPath, link: &Link, indexer: &mut Indexer) -> Result<()> {
+        let searches = self.link_searches(Some(link.to_owned()))?;
+        indexer.remove_searches(path, searches.iter())?;
+        self.remove(path)?;
+        Ok(())
+    }
+
     fn remove_topic(&self, path: &RepoPath, topic: &Topic, indexer: &mut Indexer) -> Result<()> {
         indexer.remove_synonyms(path, topic)?;
 
@@ -551,7 +564,7 @@ impl Git {
             }
             searches.push(search);
         }
-        indexer.remove_searches(path, &searches)?;
+        indexer.remove_searches(path, searches.iter())?;
         self.remove(path)?;
 
         Ok(())

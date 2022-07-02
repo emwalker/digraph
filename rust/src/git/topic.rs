@@ -22,6 +22,11 @@ impl DeleteTopic {
     pub fn call(&self, git: &Git) -> Result<DeleteTopicResult> {
         let path = &self.topic_path;
         let topic = git.fetch_topic(&path.inner)?;
+
+        if topic.metadata.root {
+            return Err(Error::Repo("cannot delete root topic".to_owned()));
+        }
+
         let parent_topics = topic
             .parent_topics
             .iter()

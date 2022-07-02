@@ -62,35 +62,6 @@ async fn fetch_link(query_ids: &Vec<String>, pool: &PgPool, link_path: &RepoPath
     Ok(row)
 }
 
-pub struct DeleteLink {
-    actor: Viewer,
-    link_path: RepoPath,
-}
-
-pub struct DeleteLinkResult {
-    pub deleted_link_path: String,
-}
-
-impl DeleteLink {
-    pub fn new(actor: Viewer, link_path: RepoPath) -> Self {
-        Self { actor, link_path }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<DeleteLinkResult> {
-        // Ensure that the caller can modify the link
-        fetch_link(&self.actor.mutation_ids, pool, &self.link_path).await?;
-
-        sqlx::query("delete from links where id = $1::uuid")
-            .bind(&self.link_path.short_id)
-            .execute(pool)
-            .await?;
-
-        Ok(DeleteLinkResult {
-            deleted_link_path: self.link_path.to_string(),
-        })
-    }
-}
-
 pub struct ReviewLink {
     pub actor: Viewer,
     pub link: RepoPath,
