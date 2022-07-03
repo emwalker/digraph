@@ -5,7 +5,7 @@ import { NodeTypeOf } from 'components/types'
 import Input from 'components/ui/Input'
 import deleteLinkMutation, { Input as DeleteInput } from 'mutations/deleteLinkMutation'
 import upsertLinkMutation, { Input as UpsertInput } from 'mutations/upsertLinkMutation'
-import updateLinkTopicsMutation, { Input as UpdateTopicsInput } from 'mutations/updateLinkTopicsMutation'
+import updateLinkParentTopicsMutation, { Input as UpdateParentTopicsInput } from 'mutations/updateLinkParentTopicsMutation'
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
 import DeleteButton from 'components/ui/DeleteButton'
@@ -81,11 +81,11 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   updateTopics = (parentTopicPaths: string[]) => {
-    const input: UpdateTopicsInput = {
+    const input: UpdateParentTopicsInput = {
       linkPath: this.linkPath,
       parentTopicPaths,
     }
-    updateLinkTopicsMutation(this.props.relay.environment, input)
+    updateLinkParentTopicsMutation(this.props.relay.environment, input)
   }
 
   loadOptions = (searchString: string): Promise<readonly AvailableTopicType[]> => {

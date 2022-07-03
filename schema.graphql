@@ -187,7 +187,7 @@ type Mutation {
   deleteTopicTimerange(input: DeleteTopicTimerangeInput!): DeleteTopicTimerangePayload
   reviewLink(input: ReviewLinkInput!): ReviewLinkPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
-  updateLinkTopics(input: UpdateLinkTopicsInput!): UpdateLinkTopicsPayload
+  updateLinkParentTopics(input: UpdateLinkParentTopicsInput!): UpdateLinkParentTopicsPayload
   updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
   updateTopicSynonyms(input: UpdateTopicSynonymsInput!): UpdateTopicSynonymsPayload
@@ -460,13 +460,13 @@ type UpdateTopicPayload {
   topic: Topic!
 }
 
-input UpdateLinkTopicsInput {
+input UpdateLinkParentTopicsInput {
   clientMutationId: String
   linkPath: String!
   parentTopicPaths: [String!]
 }
 
-type UpdateLinkTopicsPayload {
+type UpdateLinkParentTopicsPayload {
   link: Link!
 }
 

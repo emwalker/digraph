@@ -25,6 +25,56 @@ mod delete_link {
     }
 }
 
+mod update_link_parent_topics {
+    use super::*;
+    use digraph::git::{UpdateLinkParentTopics, UpsertLinkResult};
+    use std::collections::BTreeSet;
+
+    #[actix_web::test]
+    async fn topics_updated() {
+        let f = Fixtures::copy("simple");
+        let parent1 = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
+        let parent2 = RepoPath::from("/wiki/00001");
+        let url = valid_url();
+
+        let UpsertLinkResult { link, .. } =
+            upsert_link(&f, &url, Some("Page title".into()), &[&parent1.inner]).await;
+        let link = link.unwrap();
+        assert_eq!(link.parent_topics.len(), 1);
+
+        UpdateLinkParentTopics {
+            actor: actor(),
+            link_path: link.path(),
+            parent_topic_paths: BTreeSet::from([parent1, parent2]),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        let link = f.repo.git.fetch_link(&link.path().inner).unwrap();
+        assert_eq!(link.parent_topics.len(), 2);
+    }
+
+    #[actix_web::test]
+    async fn no_orphans() {
+        let f = Fixtures::copy("simple");
+        let url = valid_url();
+
+        let UpsertLinkResult { link, .. } =
+            upsert_link(&f, &url, Some("Page title".into()), &[]).await;
+        let link = link.unwrap();
+        assert_eq!(link.parent_topics.len(), 1);
+
+        let result = UpdateLinkParentTopics {
+            actor: actor(),
+            link_path: link.path(),
+            parent_topic_paths: BTreeSet::new(),
+        }
+        .call(&f.repo.git);
+
+        assert!(matches!(result, Err(Error::Repo(_))));
+    }
+}
+
 mod upsert_link {
     use super::*;
     use digraph::git::{Search, UpsertLinkResult};

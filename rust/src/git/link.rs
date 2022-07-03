@@ -2,7 +2,7 @@ use chrono::Utc;
 use std::collections::BTreeSet;
 
 use crate::git::{
-    Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, TopicChild, API_VERSION,
+    Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Topic, TopicChild, API_VERSION,
 };
 use crate::http::{self, repo_url};
 use crate::prelude::*;
@@ -39,6 +39,71 @@ impl DeleteLink {
             alerts: vec![],
             deleted_link_path: self.link_path.clone(),
         })
+    }
+}
+
+pub struct UpdateLinkParentTopics {
+    pub actor: Viewer,
+    pub link_path: RepoPath,
+    pub parent_topic_paths: BTreeSet<RepoPath>,
+}
+
+pub struct UpdateLinkParentTopicsResult {
+    pub alerts: Vec<Alert>,
+    pub link: Link,
+}
+
+impl UpdateLinkParentTopics {
+    pub fn call(&self, git: &Git) -> Result<UpdateLinkParentTopicsResult> {
+        self.validate()?;
+
+        let now = chrono::Utc::now();
+        let mut indexer = Indexer::new(git, IndexMode::Update);
+        let mut link = git.fetch_link(&self.link_path.inner)?;
+        let mut updates: Vec<Topic> = vec![];
+        let parent_topics = self
+            .parent_topic_paths
+            .iter()
+            .map(|path| ParentTopic {
+                path: path.to_string(),
+            })
+            .collect::<BTreeSet<ParentTopic>>();
+
+        let added = parent_topics.difference(&link.parent_topics);
+        for parent in &added.cloned().collect::<Vec<ParentTopic>>() {
+            let mut topic = parent.fetch(git)?;
+            topic.children.insert(link.to_topic_child(now));
+            link.parent_topics.insert(parent.to_owned());
+            updates.push(topic);
+        }
+
+        let deleted = link.parent_topics.difference(&parent_topics);
+        for parent in &deleted.cloned().collect::<Vec<ParentTopic>>() {
+            let mut topic = parent.fetch(git)?;
+            topic.children.remove(&link.to_topic_child(now));
+            link.parent_topics.remove(parent);
+            updates.push(topic);
+        }
+
+        for topic in updates {
+            git.save_topic(&topic.path(), &topic, &mut indexer)?;
+        }
+        git.save_link(&link.path(), &link, &mut indexer)?;
+        indexer.save()?;
+
+        Ok(UpdateLinkParentTopicsResult {
+            alerts: vec![],
+            link,
+        })
+    }
+
+    fn validate(&self) -> Result<()> {
+        if self.parent_topic_paths.is_empty() {
+            return Err(Error::Repo(
+                "at least one parent topic must be provided".into(),
+            ));
+        }
+        Ok(())
     }
 }
 

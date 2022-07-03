@@ -294,8 +294,8 @@ mod update_topic_parent_topics {
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            topic: child.path(),
-            parent_topics: BTreeSet::from([parent.path()]),
+            topic_path: child.path(),
+            parent_topic_paths: BTreeSet::from([parent.path()]),
         }
         .call(&f.repo.git)
         .unwrap();
@@ -318,8 +318,8 @@ mod update_topic_parent_topics {
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            topic: child.path(),
-            parent_topics: BTreeSet::from([parent.path()]),
+            topic_path: child.path(),
+            parent_topic_paths: BTreeSet::from([parent.path()]),
         }
         .call(&f.repo.git)
         .unwrap();
@@ -338,8 +338,8 @@ mod update_topic_parent_topics {
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            topic: child.path(),
-            parent_topics: BTreeSet::new(),
+            topic_path: child.path(),
+            parent_topic_paths: BTreeSet::new(),
         }
         .call(&f.repo.git);
 
@@ -355,8 +355,8 @@ mod update_topic_parent_topics {
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            topic: parent.path(),
-            parent_topics: BTreeSet::from([child.path()]),
+            topic_path: parent.path(),
+            parent_topic_paths: BTreeSet::from([child.path()]),
         }
         .call(&f.repo.git);
 

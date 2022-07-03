@@ -106,8 +106,8 @@ impl DeleteTopicTimerange {
 
 pub struct UpdateTopicParentTopics {
     pub actor: Viewer,
-    pub parent_topics: BTreeSet<RepoPath>,
-    pub topic: RepoPath,
+    pub parent_topic_paths: BTreeSet<RepoPath>,
+    pub topic_path: RepoPath,
 }
 
 pub struct UpdateTopicParentTopicsResult {
@@ -121,10 +121,10 @@ impl UpdateTopicParentTopics {
 
         let now = chrono::Utc::now();
         let mut indexer = Indexer::new(git, IndexMode::Update);
-        let mut child = git.fetch_topic(&self.topic.inner)?;
+        let mut child = git.fetch_topic(&self.topic_path.inner)?;
         let mut updates: Vec<Topic> = vec![];
         let parent_topics = self
-            .parent_topics
+            .parent_topic_paths
             .iter()
             .map(|path| ParentTopic {
                 path: path.to_string(),
@@ -148,11 +148,9 @@ impl UpdateTopicParentTopics {
         }
 
         updates.push(child.clone());
-
         for topic in updates {
             git.save_topic(&topic.path(), &topic, &mut indexer)?;
         }
-
         indexer.save()?;
 
         Ok(UpdateTopicParentTopicsResult {
@@ -162,17 +160,17 @@ impl UpdateTopicParentTopics {
     }
 
     fn validate(&self, git: &Git) -> Result<()> {
-        if self.parent_topics.is_empty() {
+        if self.parent_topic_paths.is_empty() {
             return Err(Error::Repo(
                 "at least one parent topic must be provided".into(),
             ));
         }
 
-        for parent in &self.parent_topics {
-            if git.cycle_exists(&self.topic, parent)? {
+        for parent in &self.parent_topic_paths {
+            if git.cycle_exists(&self.topic_path, parent)? {
                 return Err(Error::Repo(format!(
                     "{} is a parent topic of {}",
-                    self.topic, parent
+                    self.topic_path, parent
                 )));
             }
         }

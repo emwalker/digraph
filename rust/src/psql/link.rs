@@ -4,10 +4,8 @@ use sqlx::types::Uuid;
 
 use super::queries::{LINK_FIELDS, LINK_JOINS};
 use crate::graphql::DateTime;
-use crate::graphql::{Link, LinkReview, TopicChild, UpdateLinkTopicsInput, Viewer};
+use crate::graphql::{Link, LinkReview, TopicChild, Viewer};
 use crate::prelude::*;
-
-const PUBLIC_ROOT_TOPIC_PATH: &str = "/wiki/df63295e-ee02-11e8-9e36-17d56b662bc8";
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
@@ -105,66 +103,6 @@ impl ReviewLink {
 
         let row = fetch_link(&self.actor.mutation_ids, pool, &self.link).await?;
         Ok(ReviewLinkResult {
-            link: row.to_link(false),
-        })
-    }
-}
-
-pub struct UpdateLinkParentTopics {
-    actor: Viewer,
-    input: UpdateLinkTopicsInput,
-}
-
-pub struct UpdateLinkTopicsResult {
-    pub link: Link,
-}
-
-impl UpdateLinkParentTopics {
-    pub fn new(actor: Viewer, input: UpdateLinkTopicsInput) -> Self {
-        Self { actor, input }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<UpdateLinkTopicsResult> {
-        let link_path = RepoPath::from(&self.input.link_path);
-
-        // Verify that we can update the link
-        fetch_link(&self.actor.mutation_ids, pool, &link_path).await?;
-
-        let mut parent_topic_paths = self
-            .input
-            .parent_topic_paths
-            .iter()
-            .map(RepoPath::from)
-            .collect::<Vec<RepoPath>>();
-
-        if parent_topic_paths.is_empty() {
-            parent_topic_paths.push(RepoPath::from(PUBLIC_ROOT_TOPIC_PATH));
-        }
-
-        let mut tx = pool.begin().await?;
-
-        sqlx::query("delete from link_transitive_closure where child_id = $1::uuid")
-            .bind(&link_path.short_id)
-            .execute(&mut tx)
-            .await?;
-
-        sqlx::query("delete from link_topics where child_id = $1::uuid")
-            .bind(&link_path.short_id)
-            .execute(&mut tx)
-            .await?;
-
-        for topic_path in &parent_topic_paths {
-            sqlx::query("select add_topic_to_link($1::uuid, $2::uuid)")
-                .bind(&topic_path.short_id)
-                .bind(&link_path.short_id)
-                .execute(&mut tx)
-                .await?;
-        }
-
-        tx.commit().await?;
-
-        let row = fetch_link(&self.actor.mutation_ids, pool, &link_path).await?;
-        Ok(UpdateLinkTopicsResult {
             link: row.to_link(false),
         })
     }

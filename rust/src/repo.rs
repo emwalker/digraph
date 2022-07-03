@@ -426,13 +426,20 @@ impl Repo {
         Ok(topics)
     }
 
-    pub async fn update_link_topics(
+    pub async fn update_link_parent_topics(
         &self,
-        input: graphql::UpdateLinkTopicsInput,
-    ) -> Result<psql::UpdateLinkTopicsResult> {
-        psql::UpdateLinkParentTopics::new(self.viewer.clone(), input)
-            .call(&self.db)
-            .await
+        input: graphql::UpdateLinkParentTopicsInput,
+    ) -> Result<git::UpdateLinkParentTopicsResult> {
+        git::UpdateLinkParentTopics {
+            actor: self.viewer.clone(),
+            link_path: RepoPath::from(&input.link_path),
+            parent_topic_paths: input
+                .parent_topic_paths
+                .iter()
+                .map(RepoPath::from)
+                .collect::<BTreeSet<RepoPath>>(),
+        }
+        .call(&self.git)
     }
 
     pub async fn update_topic_synonyms(
@@ -476,8 +483,8 @@ impl Repo {
     ) -> Result<git::UpdateTopicParentTopicsResult> {
         git::UpdateTopicParentTopics {
             actor: self.viewer.clone(),
-            topic: topic_path.clone(),
-            parent_topics: parent_topics
+            topic_path: topic_path.clone(),
+            parent_topic_paths: parent_topics
                 .iter()
                 .map(|p| p.to_owned())
                 .collect::<BTreeSet<RepoPath>>(),

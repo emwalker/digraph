@@ -115,14 +115,14 @@ pub struct SelectRepositoryPayload {
 }
 
 #[derive(Debug, InputObject)]
-pub struct UpdateLinkTopicsInput {
+pub struct UpdateLinkParentTopicsInput {
     pub client_mutation_id: Option<String>,
     pub link_path: String,
     pub parent_topic_paths: Vec<String>,
 }
 
 #[derive(Debug, SimpleObject)]
-pub struct UpdateLinkTopicsPayload {
+pub struct UpdateLinkParentTopicsPayload {
     link: Link,
 }
 
@@ -396,16 +396,18 @@ impl MutationRoot {
         })
     }
 
-    async fn update_link_topics(
+    async fn update_link_parent_topics(
         &self,
         ctx: &Context<'_>,
-        input: UpdateLinkTopicsInput,
-    ) -> Result<UpdateLinkTopicsPayload> {
-        let psql::UpdateLinkTopicsResult { link } = ctx
+        input: UpdateLinkParentTopicsInput,
+    ) -> Result<UpdateLinkParentTopicsPayload> {
+        let git::UpdateLinkParentTopicsResult { link, .. } = ctx
             .data_unchecked::<Repo>()
-            .update_link_topics(input)
+            .update_link_parent_topics(input)
             .await?;
-        Ok(UpdateLinkTopicsPayload { link })
+        Ok(UpdateLinkParentTopicsPayload {
+            link: Link::from(&link),
+        })
     }
 
     async fn update_topic_parent_topics(
