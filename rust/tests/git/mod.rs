@@ -13,6 +13,7 @@ use digraph::http::{repo_url, Fetch, Response};
 use digraph::prelude::*;
 
 mod link;
+mod search;
 mod topic;
 
 struct Fetcher(String);

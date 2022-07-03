@@ -1,0 +1,9 @@
+---
+apiVersion: objects/v1
+kind: SynonymIndexMap
+synonyms:
+  topic:
+    - name: A topic
+      path: /wiki/00001
+    - name: Existing non-root topic
+      path: /wiki/00002

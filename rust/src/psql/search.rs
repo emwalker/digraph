@@ -1,38 +1,7 @@
-use super::{
-    queries::{LiveTopicQuery, SearchQuery},
-    QuerySpec,
-};
+use super::{queries::SearchQuery, QuerySpec};
 use crate::graphql::{Topic, TopicChild};
 use crate::prelude::*;
 use sqlx::postgres::PgPool;
-
-#[allow(unused_variables, dead_code)]
-pub struct LiveSearchTopics {
-    viewer_ids: Vec<String>,
-    search_string: Option<String>,
-}
-
-impl LiveSearchTopics {
-    pub fn new(viewer_ids: Vec<String>, search_string: Option<String>) -> Self {
-        Self {
-            viewer_ids,
-            search_string,
-        }
-    }
-
-    pub async fn call(&self, pool: &PgPool) -> Result<Vec<Topic>> {
-        let spec = QuerySpec::parse(self.search_string.clone().unwrap_or_default().as_str())?;
-        log::debug!("running live search: {}", spec);
-
-        if spec.is_empty() {
-            return Ok(vec![]);
-        }
-
-        LiveTopicQuery::from(self.viewer_ids.clone(), spec)
-            .execute(pool)
-            .await
-    }
-}
 
 pub struct Search {
     viewer_ids: Vec<String>,

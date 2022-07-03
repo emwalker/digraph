@@ -77,7 +77,7 @@ mod update_link_parent_topics {
 
 mod upsert_link {
     use super::*;
-    use digraph::git::{Search, UpsertLinkResult};
+    use digraph::git::{Kind, Search, SearchEntry, UpsertLinkResult};
     use digraph::http::repo_url;
     use itertools::Itertools;
 
@@ -87,14 +87,18 @@ mod upsert_link {
         let url = valid_url();
         let path = url.path(&f.repo.prefix);
         let search = Search::parse("page title https://www.google.com/").unwrap();
+        let entry = SearchEntry {
+            path: path.inner.to_owned(),
+            kind: Kind::Link,
+        };
 
         assert!(!f.repo.exists(&path).unwrap());
-        assert!(!f.repo.appears_in(&search, &path).unwrap());
+        assert!(!f.repo.appears_in(&search, &entry).unwrap());
 
         upsert_link(&f, &url, Some("Page title".into()), &[]).await;
 
         assert!(f.repo.exists(&path).unwrap());
-        assert!(f.repo.appears_in(&search, &path).unwrap());
+        assert!(f.repo.appears_in(&search, &entry).unwrap());
     }
 
     #[actix_web::test]
@@ -196,10 +200,16 @@ mod upsert_link {
 
         let UpsertLinkResult { link, .. } =
             upsert_link(&f, &url, Some("a link title".into()), &[&topic.inner]).await;
-        assert!(f.repo.appears_in(&search, &link.unwrap().path()).unwrap());
+        assert!(f
+            .repo
+            .appears_in(&search, &link.unwrap().to_search_entry())
+            .unwrap());
 
         let UpsertLinkResult { link, .. } =
             upsert_link(&f, &url, Some("a url title".into()), &[&topic.inner]).await;
-        assert!(!f.repo.appears_in(&search, &link.unwrap().path()).unwrap());
+        assert!(!f
+            .repo
+            .appears_in(&search, &link.unwrap().to_search_entry())
+            .unwrap());
     }
 }

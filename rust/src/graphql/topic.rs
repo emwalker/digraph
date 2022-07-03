@@ -6,8 +6,19 @@ use super::{
     TopicChildConnection,
 };
 use super::{ActivityLineItemConnection, LinkConnectionFields};
-use crate::prelude::*;
 use crate::repo::{Repo, RepoPath};
+use crate::{git, prelude::*};
+
+#[derive(Debug, SimpleObject)]
+pub struct SynonymMatch {
+    pub display_name: String,
+    pub path: String,
+}
+
+#[derive(Debug, SimpleObject)]
+pub struct LiveSearchTopicsPayload {
+    pub synonym_matches: Vec<SynonymMatch>,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
@@ -45,16 +56,16 @@ impl Topic {
         &self,
         ctx: &Context<'_>,
         search_string: Option<String>,
-        first: Option<i32>,
-        after: Option<String>,
-        last: Option<i32>,
-        before: Option<String>,
-    ) -> Result<TopicConnection> {
-        let results = ctx
+    ) -> Result<LiveSearchTopicsPayload> {
+        let git::LiveSearchTopicsResult { synonym_matches } = ctx
             .data_unchecked::<Repo>()
             .search_topics(search_string)
             .await?;
-        conn(after, before, first, last, results)
+        let synonym_matches = synonym_matches
+            .iter()
+            .map(SynonymMatch::from)
+            .collect::<Vec<SynonymMatch>>();
+        Ok(LiveSearchTopicsPayload { synonym_matches })
     }
 
     #[allow(unused_variables)]

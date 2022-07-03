@@ -85,6 +85,13 @@ impl Link {
         RepoPath::from(&self.metadata.path)
     }
 
+    pub fn to_search_entry(&self) -> SearchEntry {
+        SearchEntry {
+            path: self.metadata.path.to_owned(),
+            kind: Kind::Link,
+        }
+    }
+
     pub fn to_topic_child(&self, added: chrono::DateTime<Utc>) -> TopicChild {
         TopicChild {
             added,
@@ -272,6 +279,13 @@ impl Topic {
         }
     }
 
+    pub fn to_search_entry(&self) -> SearchEntry {
+        SearchEntry {
+            path: self.metadata.path.to_owned(),
+            kind: Kind::Topic,
+        }
+    }
+
     pub fn to_topic_child(&self, added: chrono::DateTime<Utc>) -> TopicChild {
         TopicChild {
             added,
@@ -391,13 +405,17 @@ impl DataRoot {
         Ok(self.root.join(file_path))
     }
 
-    pub fn synonym_index_filename(&self, key: &IndexKey) -> Result<PathBuf> {
-        let file_path = format!("{}/indexes/synonyms/{}.yaml", &key.prefix[1..], key.field);
-        Ok(self.root.join(file_path))
-    }
-
-    pub fn token_index_filename(&self, key: &IndexKey) -> Result<PathBuf> {
-        let file_path = format!("{}/indexes/tokens/{}.yaml", &key.prefix[1..], key.field);
+    pub fn index_filename(&self, key: &IndexKey, index_type: IndexType) -> Result<PathBuf> {
+        let prefix = &key.prefix[1..];
+        let file_path = match index_type {
+            IndexType::Search => format!("{}/indexes/search/{}.yaml", prefix, key.basename),
+            IndexType::SynonymPhrase => {
+                format!("{}/indexes/synonyms/phrases/{}.yaml", prefix, key.basename)
+            }
+            IndexType::SynonymToken => {
+                format!("{}/indexes/synonyms/tokens/{}.yaml", prefix, key.basename)
+            }
+        };
         Ok(self.root.join(file_path))
     }
 }
@@ -482,33 +500,27 @@ impl Git {
     // The value of `token` will sometimes need to be normalized by the caller in order for lookups
     // to work as expected.  We do not normalize the token here because some searches, e.g.,
     // of urls, are more sensitive to normalization, and so we omit it in those cases.
-    pub fn index_key(&self, prefix: &str, token: &str) -> Result<IndexKey> {
-        match token.get(0..2) {
-            Some(field) => Ok(IndexKey {
+    pub fn index_key(&self, prefix: &str, token: &Phrase) -> Result<IndexKey> {
+        if !token.is_valid() {
+            return Err(Error::Repo(format!("a valid token is required: {}", token)));
+        }
+
+        match token.basename() {
+            Some(basename) => Ok(IndexKey {
                 prefix: prefix.to_owned(),
-                field: field.replace([' '], "+"),
+                basename,
             }),
             None => Err(Error::Repo(format!("bad token: {}", token))),
         }
     }
 
-    pub fn indexed_on(&self, path: &RepoPath, search: &Search) -> Result<bool> {
+    pub fn indexed_on(&self, entry: &SearchEntry, search: &Search) -> Result<bool> {
+        let path = entry.path();
         for token in &search.tokens {
             let key = self.index_key(&path.prefix, token)?;
             if !self
                 .token_index(&key, IndexMode::Update)?
-                .indexed_on(path, token)?
-            {
-                return Ok(false);
-            }
-        }
-
-        for url in &search.urls {
-            let url = &url.normalized;
-            let key = self.index_key(&path.prefix, url)?;
-            if !self
-                .token_index(&key, IndexMode::Update)?
-                .indexed_on(path, url)?
+                .indexed_on(entry, token)?
             {
                 return Ok(false);
             }
@@ -547,7 +559,7 @@ impl Git {
 
     fn remove_link(&self, path: &RepoPath, link: &Link, indexer: &mut Indexer) -> Result<()> {
         let searches = self.link_searches(Some(link.to_owned()))?;
-        indexer.remove_searches(path, searches.iter())?;
+        indexer.remove_searches(&link.to_search_entry(), searches.iter())?;
         self.remove(path)?;
         Ok(())
     }
@@ -564,7 +576,9 @@ impl Git {
             }
             searches.push(search);
         }
-        indexer.remove_searches(path, searches.iter())?;
+
+        let entry = topic.to_search_entry();
+        indexer.remove_searches(&entry, searches.iter())?;
         self.remove(path)?;
 
         Ok(())
@@ -584,7 +598,7 @@ impl Git {
         let before = self.link(path)?;
         let before = self.link_searches(before)?;
         let after = self.link_searches(Some(link.to_owned()))?;
-        indexer.update_lookups(path, &before, &after)?;
+        indexer.update(&link.to_search_entry(), &before, &after)?;
         self.save(path, link)
     }
 
@@ -594,42 +608,81 @@ impl Git {
 
         let before = self.topic_searches(before)?;
         let after = self.topic_searches(Some(topic.to_owned()))?;
-        indexer.update_lookups(path, &before, &after)?;
+        indexer.update(&topic.to_search_entry(), &before, &after)?;
 
         self.save(path, topic)
     }
 
-    pub fn synonym_index(&self, key: &IndexKey, mode: IndexMode) -> Result<SynonymIndex> {
-        let filename = self.root.synonym_index_filename(key)?;
+    pub fn synonym_index(
+        &self,
+        key: &IndexKey,
+        index_type: IndexType,
+        mode: IndexMode,
+    ) -> Result<SynonymIndex> {
+        let filename = self.root.index_filename(key, index_type)?;
         match mode {
             IndexMode::Replace => Ok(SynonymIndex::new(&filename)),
+            IndexMode::ReadOnly => SynonymIndex::load(&filename),
             IndexMode::Update => SynonymIndex::load(&filename),
         }
     }
 
-    pub fn synonym_matches(&self, prefix: &str, name: &str) -> Result<BTreeSet<SynonymMatch>> {
-        let normalized = normalize(name);
-        let key = self.index_key(prefix, &normalized)?;
+    pub fn synonym_phrase_matches(
+        &self,
+        prefixes: &[&str],
+        name: &str,
+    ) -> Result<BTreeSet<SynonymMatch>> {
+        let phrase = Phrase::parse(name);
         let mut matches = BTreeSet::new();
 
-        for entry in &self.synonym_index(&key, IndexMode::Update)?.matches(name)? {
-            let topic = self.fetch_topic(&entry.path)?;
-            matches.insert(SynonymMatch {
-                cycle: false,
-                entry: (*entry).clone(),
-                name: name.to_string(),
-                topic,
-            });
+        for prefix in prefixes {
+            let key = self.index_key(prefix, &phrase)?;
+            for entry in &self
+                .synonym_index(&key, IndexType::SynonymPhrase, IndexMode::Update)?
+                .full_matches(&phrase)?
+            {
+                let topic = self.fetch_topic(&entry.path)?;
+                matches.insert(SynonymMatch {
+                    cycle: false,
+                    entry: (*entry).clone(),
+                    name: name.to_string(),
+                    topic,
+                });
+            }
         }
 
         Ok(matches)
     }
 
-    pub fn token_index(&self, key: &IndexKey, mode: IndexMode) -> Result<TokenIndex> {
-        let filename = self.root.token_index_filename(key)?;
+    // The "prefix" argument tells us which repo to look in.  The "prefix" in the method name
+    // alludes to the prefix scan that is done to find matching synonyms.
+    pub fn synonym_token_prefix_matches(
+        &self,
+        prefix: &str,
+        token: &Phrase,
+    ) -> BTreeSet<SynonymEntry> {
+        match self.index_key(prefix, token) {
+            Ok(key) => match self.synonym_index(&key, IndexType::SynonymToken, IndexMode::ReadOnly)
+            {
+                Ok(index) => index.prefix_matches(token),
+                Err(err) => {
+                    log::error!("problem fetching index: {}", err);
+                    BTreeSet::new()
+                }
+            },
+            Err(err) => {
+                log::error!("problem fetching index key: {}", err);
+                BTreeSet::new()
+            }
+        }
+    }
+
+    pub fn token_index(&self, key: &IndexKey, mode: IndexMode) -> Result<SearchTokenIndex> {
+        let filename = self.root.index_filename(key, IndexType::Search)?;
         match mode {
-            IndexMode::Replace => Ok(TokenIndex::new(&filename)),
-            IndexMode::Update => TokenIndex::load(&filename),
+            IndexMode::ReadOnly => SearchTokenIndex::load(&filename),
+            IndexMode::Replace => Ok(SearchTokenIndex::new(&filename)),
+            IndexMode::Update => SearchTokenIndex::load(&filename),
         }
     }
 

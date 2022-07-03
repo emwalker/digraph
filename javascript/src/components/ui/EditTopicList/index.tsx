@@ -4,20 +4,28 @@ import { ActionMeta } from 'react-select'
 import AsyncSelect from 'react-select/async'
 import debounce from 'es6-promise-debounce'
 
-import { TopicOption, Connection, Edge, liftEdges } from 'components/types'
+import { EditTopicForm_topic } from '__generated__/EditTopicForm_topic.graphql'
+import { TopicOption } from 'components/types'
 import colourStyles from './colourStyles'
 
 /* eslint react/no-unused-state: 0 */
 
+type SynonymMatches = EditTopicForm_topic['availableTopics']['synonymMatches']
+type SelectedTopics = ({ label: string, value: string } | null)[]
+
 const color = '#0366d6'
 
-const makeOption = <T,>(edge: Edge<T>) => (
-  edge?.node
-    ? ({ ...edge.node, color })
-    : { value: 'missing', label: '<missing>', color: '' }
-)
-
-export const makeOptions = <T,>(conn: Connection<T>) => liftEdges(conn).map(makeOption)
+export const makeOptions = (matches: SynonymMatches | SelectedTopics): TopicOption[] => {
+  console.log('matches', matches)
+  return matches
+    ? (
+      matches.map((match) => match
+        ? { value: match.value, label: match.label, color }
+        : { value: 'missing', label: '<missing>', color: '' }
+      ) as TopicOption[]
+    )
+    : []
+}
 
 type LoadOptionsType = (str: string) => Promise<readonly TopicOption[]>
 

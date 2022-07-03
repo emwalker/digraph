@@ -1,11 +1,10 @@
 Soon:
-* Update topic synonyms
+* Add kind/path fields to token indexes
+* Activity feed using anonymous ids + user lookups
+* Cache topic traversals in Redis
 * Restrict on org/repo prefix
-* Update synonyms
-* Update link parent topics
 * Update link title
 * Include the locale in synonym entries?
-* Fix header box shadow funkiness, perhaps by simplifying the HTML structure and dropping some components
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 
 Things that would be nice to eventually get to:

@@ -1,10 +1,9 @@
-use super::TopicConnection;
 use super::{
-    relay::conn, ActivityLineItemConnection, Link, Organization, QueryInfo, Repository, Topic,
-    User, WIKI_REPOSITORY_ID,
+    relay::conn, ActivityLineItemConnection, Link, LiveSearchTopicsPayload, Organization,
+    QueryInfo, Repository, SynonymMatch, Topic, User, WIKI_REPOSITORY_ID,
 };
-use crate::prelude::*;
 use crate::repo::Repo;
+use crate::{git, prelude::*};
 
 #[derive(Clone)]
 pub struct View {
@@ -81,20 +80,17 @@ impl View {
         ctx.data_unchecked::<Repo>().topic_count().await
     }
 
-    async fn topics(
+    async fn topic_live_search(
         &self,
         ctx: &Context<'_>,
         search_string: Option<String>,
-        after: Option<String>,
-        before: Option<String>,
-        first: Option<i32>,
-        last: Option<i32>,
-    ) -> Result<TopicConnection> {
-        let results = ctx
+    ) -> Result<LiveSearchTopicsPayload> {
+        let git::LiveSearchTopicsResult { synonym_matches } = ctx
             .data_unchecked::<Repo>()
             .search_topics(search_string)
             .await?;
-        conn(after, before, first, last, results)
+        let synonym_matches = synonym_matches.iter().map(SynonymMatch::from).collect();
+        Ok(LiveSearchTopicsPayload { synonym_matches })
     }
 
     async fn viewer(&self, ctx: &Context<'_>) -> Result<User> {

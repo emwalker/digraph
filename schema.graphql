@@ -111,11 +111,7 @@ type DeleteTopicTimerangePayload {
 type Link implements ResourceIdentifiable & Namespaceable {
   availableParentTopics(
     searchString: String,
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection!
+  ): LiveSearchTopicsPayload!
   createdAt: DateTime!
   id: String!
   loading: Boolean!
@@ -175,6 +171,15 @@ enum LocaleIdentifier {
 type LinkReview {
   reviewedAt: DateTime
   user: User!
+}
+
+type SynonymMatch {
+  displayName: String!
+  path: String!
+}
+
+type LiveSearchTopicsPayload {
+  synonymMatches: [SynonymMatch!]!
 }
 
 type Mutation {
@@ -324,11 +329,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   ): ActivityLineItemConnection!
   availableParentTopics(
     searchString: String,
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection!
+  ): LiveSearchTopicsPayload!
   children(
     searchString: String,
     first: Int,
@@ -547,12 +548,8 @@ type View {
   topic(path: String!): Topic
   topicCount: Int!
   topicGraph: String
-  topics(
+  topicLiveSearch(
     searchString: String,
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection!
+  ): LiveSearchTopicsPayload!
   viewer: User!
 }

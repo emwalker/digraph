@@ -51,58 +51,6 @@ pub const LINK_JOINS: &str = r#"
     left join link_topics parent_topics on l.id = parent_topics.child_id
 "#;
 
-pub struct LiveTopicQuery {
-    viewer_ids: Vec<String>,
-    query_spec: QuerySpec,
-    limit: i32,
-}
-
-impl LiveTopicQuery {
-    pub fn from(viewer_ids: Vec<String>, query_spec: QuerySpec) -> Self {
-        Self {
-            viewer_ids,
-            query_spec,
-            limit: 15,
-        }
-    }
-
-    pub async fn execute(&self, pool: &PgPool) -> Result<Vec<Topic>> {
-        let tokens = self.query_spec.wildcard_tokens();
-
-        // FIXME: Use a purpose-specific struct for these results, which show the synonyms
-        let sql = self.topic_sql();
-        let rows = sqlx::query_as::<_, topic::Row>(&sql)
-            .bind(tokens)
-            .bind(&self.viewer_ids)
-            .bind(self.limit)
-            .fetch_all(pool)
-            .await?;
-
-        Ok(rows.iter().map(topic::Row::to_topic).collect())
-    }
-
-    pub fn topic_sql(&self) -> String {
-        let mut index = 1;
-        let mut wheres = vec![format!("t.name ~~* all(${index})")];
-        index += 1;
-
-        wheres.push(format!("om.user_id = any(${index}::uuid[])"));
-        index += 1;
-
-        let where_clause = wheres.join(" and ");
-
-        format!(
-            r#"select
-            {TOPIC_FIELDS}
-            {TOPIC_JOINS}
-            where {where_clause}
-            {TOPIC_GROUP_BY}
-            order by char_length(t.name), t.name
-            limit ${index}"#
-        )
-    }
-}
-
 pub struct SearchQuery {
     viewer_ids: Vec<String>,
     parent_topic: Topic,

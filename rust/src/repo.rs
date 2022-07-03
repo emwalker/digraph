@@ -365,10 +365,14 @@ impl Repo {
     pub async fn search_topics(
         &self,
         search_string: Option<String>,
-    ) -> Result<Vec<graphql::Topic>> {
-        psql::LiveSearchTopics::new(self.viewer.query_ids.clone(), search_string.clone())
-            .call(&self.db)
-            .await
+    ) -> Result<git::LiveSearchTopicsResult> {
+        let search = git::Search::parse(&search_string.unwrap_or_default())?;
+        git::LiveSearchTopics {
+            viewer: self.viewer.to_owned(),
+            prefixes: vec!["/wiki".into()],
+            search,
+        }
+        .call(&self.git)
     }
 
     pub async fn select_repository(

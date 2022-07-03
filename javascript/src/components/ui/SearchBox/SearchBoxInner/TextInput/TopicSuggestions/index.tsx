@@ -4,26 +4,27 @@ import {
   MentionSuggestionsPubProps,
 } from '@draft-js-plugins/mention/lib/MentionSuggestions/MentionSuggestions'
 
-import { NodeTypeOf, liftNodes } from 'components/types'
 import {
   TopicSuggestionsQuery as Query,
   TopicSuggestionsQueryResponse as Response,
 } from '__generated__/TopicSuggestionsQuery.graphql'
 
+type Mutable<Type> = {
+  -readonly [Key in keyof Type]: Type[Key];
+};
+
 type ViewType = Response['view']
-type TopicType = NodeTypeOf<ViewType['topics']>
+type SynonymMatches = Mutable<ViewType['topicLiveSearch']['synonymMatches']>
 
 const query = graphql`
   query TopicSuggestionsQuery (
     $searchString: String,
   ) {
     view(currentOrganizationLogin: "wiki", viewerId: "") {
-      topics(first: 10, searchString: $searchString) {
-        edges {
-          node {
-            name
-            link: path
-          }
+      topicLiveSearch(searchString: $searchString) {
+        synonymMatches {
+          name: displayName
+          link: path
         }
       }
     }
@@ -38,7 +39,7 @@ type Props = {
 
 const TopicSuggestions = ({ Suggestions, isOpen, setMentionListOpen }: Props) => {
   const environment = useRelayEnvironment()
-  const [suggestions, setSuggestions] = useState([] as TopicType[])
+  const [suggestions, setSuggestions] = useState([] as SynonymMatches)
 
   const onSearchChange = useCallback(({ value }: { value: string }) => {
     // Workaround for a draft-js-plugins/mention issue
@@ -46,11 +47,11 @@ const TopicSuggestions = ({ Suggestions, isOpen, setMentionListOpen }: Props) =>
     fetchQuery<Query>(environment, query, { searchString: modifiedValue })
       .subscribe({
         next: (data) => {
-          const mentions = liftNodes<TopicType>(data?.view?.topics).filter(Boolean)
-          setSuggestions(mentions as TopicType[])
+          const mentions = data?.view?.topicLiveSearch?.synonymMatches || []
+          setSuggestions(mentions as SynonymMatches)
         },
       })
-  }, [fetchQuery, liftNodes, setSuggestions])
+  }, [fetchQuery, setSuggestions])
 
   return (
     <Suggestions

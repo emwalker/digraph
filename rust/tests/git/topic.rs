@@ -98,13 +98,87 @@ mod delete_topic_timerange {
     }
 }
 
+#[cfg(test)]
+mod live_search_topics {
+    use super::*;
+    use digraph::git::{
+        LiveSearchTopics, LiveSearchTopicsResult, OnMatchingSynonym, Search, SynonymEntry,
+    };
+
+    #[test]
+    fn returns_matches() {
+        let f = Fixtures::copy("simple");
+
+        let LiveSearchTopicsResult {
+            synonym_matches: matches,
+            ..
+        } = LiveSearchTopics {
+            prefixes: vec!["/wiki".to_owned()],
+            search: Search::parse("existing non-root topic").unwrap(),
+            viewer: actor(),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        assert_eq!(
+            matches.iter().next().unwrap(),
+            &SynonymEntry {
+                name: "Existing non-root topic".to_owned(),
+                path: "/wiki/00002".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn indexing_works() {
+        let f = Fixtures::copy("simple");
+        let parent = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
+        let search = Search::parse("clim chan soc").unwrap();
+
+        let LiveSearchTopicsResult {
+            synonym_matches: matches,
+            ..
+        } = LiveSearchTopics {
+            prefixes: vec!["/wiki".to_owned()],
+            search: search.clone(),
+            viewer: actor(),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        assert!(matches.is_empty());
+
+        upsert_topic(
+            &f,
+            "Climate change and society",
+            parent,
+            OnMatchingSynonym::Ask,
+        )
+        .unwrap();
+
+        let LiveSearchTopicsResult {
+            synonym_matches: matches,
+            ..
+        } = LiveSearchTopics {
+            prefixes: vec!["/wiki".to_owned()],
+            search,
+            viewer: actor(),
+        }
+        .call(&f.repo.git)
+        .unwrap();
+
+        assert_eq!(matches.len(), 1);
+    }
+}
+
+#[cfg(test)]
 mod upsert_topic {
     use super::*;
     use digraph::git::{OnMatchingSynonym, Search};
     use digraph::Alert;
 
-    #[actix_web::test]
-    async fn topic_added() {
+    #[test]
+    fn topic_added() {
         let f = Fixtures::copy("simple");
         let search = Search::parse("topic name").unwrap();
 
@@ -123,12 +197,14 @@ mod upsert_topic {
         assert!(topic.is_some());
 
         let topic = (*topic).clone().unwrap();
-        let path = RepoPath::from(&topic.metadata.path);
-        assert!(f.repo.appears_in(&search, &path).unwrap());
+        assert!(f
+            .repo
+            .appears_in(&search, &topic.to_search_entry())
+            .unwrap());
     }
 
-    #[actix_web::test]
-    async fn action_requested() {
+    #[test]
+    fn action_requested() {
         let f = Fixtures::copy("simple");
 
         let result = upsert_topic(
@@ -153,8 +229,8 @@ mod upsert_topic {
         assert_ne!(result.matching_synonyms, BTreeSet::new());
     }
 
-    #[actix_web::test]
-    async fn update_topic() {
+    #[test]
+    fn update_topic() {
         let f = Fixtures::copy("simple");
 
         let result = upsert_topic(
@@ -189,8 +265,8 @@ mod upsert_topic {
         assert_eq!(parent_topics, &["/wiki/00001", "/wiki/00002"]);
     }
 
-    #[actix_web::test]
-    async fn create_distinct() {
+    #[test]
+    fn create_distinct() {
         let f = Fixtures::copy("simple");
 
         let result = upsert_topic(
@@ -217,7 +293,11 @@ mod upsert_topic {
 
         assert_ne!(path1, path2);
 
-        let matches = f.repo.git.synonym_matches("/wiki", "Topic name").unwrap();
+        let matches = f
+            .repo
+            .git
+            .synonym_phrase_matches(&["/wiki"], "Topic name")
+            .unwrap();
         let mut names = matches
             .iter()
             .map(|m| m.entry.name.to_owned())
@@ -226,8 +306,8 @@ mod upsert_topic {
         assert_eq!(names, vec!["Topic Name", "Topic name"]);
     }
 
-    #[actix_web::test]
-    async fn parent_topic_updated() {
+    #[test]
+    fn parent_topic_updated() {
         let f = Fixtures::copy("simple");
         let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
         assert_eq!(parent.children, BTreeSet::new());
@@ -252,8 +332,8 @@ mod upsert_topic {
         assert_eq!(children, vec![child_path.to_string()]);
     }
 
-    #[actix_web::test]
-    async fn no_cycles() {
+    #[test]
+    fn no_cycles() {
         let f = Fixtures::copy("simple");
         let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
         let path = RepoPath::from("/wiki/00001");
@@ -367,10 +447,16 @@ mod update_topic_parent_topics {
 #[cfg(test)]
 mod update_topic_synonyms {
     use super::*;
-    use digraph::git::{Search, Synonym, UpdateTopicSynonyms, UpdateTopicSynonymsResult};
+    use digraph::git::{
+        Kind, Search, SearchEntry, Synonym, UpdateTopicSynonyms, UpdateTopicSynonymsResult,
+    };
 
     fn count(f: &Fixtures, name: &str) -> usize {
-        f.repo.git.synonym_matches("/wiki", name).unwrap().len()
+        f.repo
+            .git
+            .synonym_phrase_matches(&["/wiki"], name)
+            .unwrap()
+            .len()
     }
 
     fn synonym(name: &str) -> Synonym {
@@ -468,7 +554,11 @@ mod update_topic_synonyms {
         let f = Fixtures::copy("simple");
         let path = RepoPath::from("/wiki/00001");
         let search = Search::parse("topicA").unwrap();
-        assert!(!f.repo.appears_in(&search, &path).unwrap());
+        let entry = SearchEntry {
+            path: path.inner.to_owned(),
+            kind: Kind::Topic,
+        };
+        assert!(!f.repo.appears_in(&search, &entry).unwrap());
 
         UpdateTopicSynonyms {
             actor: actor(),
@@ -478,17 +568,17 @@ mod update_topic_synonyms {
         .call(&f.repo.git)
         .unwrap();
 
-        assert!(f.repo.appears_in(&search, &path).unwrap());
+        assert!(f.repo.appears_in(&search, &entry).unwrap());
 
         UpdateTopicSynonyms {
             actor: actor(),
-            topic_path: path.clone(),
+            topic_path: path,
             synonyms: vec![synonym("topicB")],
         }
         .call(&f.repo.git)
         .unwrap();
 
-        assert!(!f.repo.appears_in(&search, &path).unwrap());
+        assert!(!f.repo.appears_in(&search, &entry).unwrap());
     }
 }
 

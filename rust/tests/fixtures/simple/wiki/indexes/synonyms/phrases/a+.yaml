@@ -1,5 +1,6 @@
 ---
-api_version: objects/v1
+apiVersion: objects/v1
+kind: SynonymIndex
 synonyms:
   a topic:
     - name: A topic

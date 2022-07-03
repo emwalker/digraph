@@ -2,8 +2,8 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::collections::{BTreeSet, HashMap};
 
 use super::{
-    Git, IndexMode, Indexer, Kind, Object, ParentTopic, Synonym, SynonymEntry, SynonymMatch,
-    Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
+    Git, IndexMode, Indexer, Kind, Object, ParentTopic, Search, Synonym, SynonymEntry,
+    SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use crate::prelude::*;
 use crate::Alert;
@@ -101,6 +101,58 @@ impl DeleteTopicTimerange {
             alerts: vec![],
             topic,
         })
+    }
+}
+
+pub struct LiveSearchTopics {
+    pub prefixes: Vec<String>,
+    pub search: Search,
+    pub viewer: Viewer,
+}
+
+pub struct LiveSearchTopicsResult {
+    pub synonym_matches: BTreeSet<SynonymEntry>,
+}
+
+impl LiveSearchTopics {
+    pub fn call(&self, git: &Git) -> Result<LiveSearchTopicsResult> {
+        if self.search.tokens.is_empty() {
+            log::info!("empty search, returning no results");
+            return Ok(LiveSearchTopicsResult {
+                synonym_matches: BTreeSet::new(),
+            });
+        }
+
+        log::info!("searching for topics: {:?}", self.search);
+        let mut matches: BTreeSet<SynonymEntry> = BTreeSet::new();
+        let mut limit = 10;
+        for prefix in &self.prefixes {
+            let search = self.search(git, prefix);
+            let mut result: BTreeSet<SynonymEntry> = search.iter().take(limit).cloned().collect();
+            limit = limit.saturating_sub(result.len());
+            matches.append(&mut result);
+            if limit == 0 {
+                break;
+            }
+        }
+
+        Ok(LiveSearchTopicsResult {
+            synonym_matches: matches,
+        })
+    }
+
+    fn search(&self, git: &Git, prefix: &str) -> BTreeSet<SynonymEntry> {
+        let tokens = &mut self.search.tokens.iter();
+        match tokens.next() {
+            Some(token) => {
+                let start = git.synonym_token_prefix_matches(prefix, token);
+                tokens.fold(start, |acc, token| {
+                    let result = git.synonym_token_prefix_matches(prefix, token);
+                    acc.intersection(&result).cloned().collect()
+                })
+            }
+            None => BTreeSet::new(),
+        }
     }
 }
 
@@ -252,7 +304,7 @@ pub struct UpsertTopicResult {
 impl UpsertTopic {
     pub fn call(&self, git: &Git) -> Result<UpsertTopicResult> {
         let mut parent = self.fetch_parent(git)?;
-        let mut matches = git.synonym_matches(&self.prefix, &self.name)?;
+        let mut matches = git.synonym_phrase_matches(&[&self.prefix], &self.name)?;
         let added = chrono::Utc::now();
 
         let (path, child) = if matches.is_empty() {

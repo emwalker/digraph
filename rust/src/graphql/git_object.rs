@@ -2,7 +2,10 @@ use async_graphql::dataloader::*;
 use std::collections::HashMap;
 
 use super::SynonymInput;
-use super::{DateTime, Link, Prefix, Synonym, Synonyms, Timerange, TimerangePrefixFormat, Topic};
+use super::{
+    DateTime, Link, Prefix, Synonym, SynonymMatch, Synonyms, Timerange, TimerangePrefixFormat,
+    Topic,
+};
 use crate::git;
 use crate::prelude::*;
 
@@ -171,5 +174,14 @@ impl Loader<String> for ObjectLoader {
         }
 
         Ok(map)
+    }
+}
+
+impl From<&git::SynonymEntry> for SynonymMatch {
+    fn from(git::SynonymEntry { name, path }: &git::SynonymEntry) -> Self {
+        Self {
+            display_name: name.to_owned(),
+            path: path.to_owned(),
+        }
     }
 }

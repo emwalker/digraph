@@ -1,5 +1,6 @@
 ---
-api_version: objects/v1
+apiVersion: objects/v1
+kind: SynonymIndexMap
 synonyms:
   everything:
     - name: Everything

@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { createRefetchContainer, graphql, RelayRefetchProp } from 'react-relay'
 
-import { TopicOption } from 'components/types'
+import { TopicOption, liftNodes } from 'components/types'
 import deleteTopicMutation, { Input as DeleteInput } from 'mutations/deleteTopicMutation'
 import updateTopicMutation, { Input as UpdateInput } from 'mutations/updateTopicMutation'
 import updateTopicTopicsMutation, {
@@ -71,8 +71,8 @@ class EditTopicForm extends Component<Props, State> {
 
   get selectedTopics(): TopicOption[] | null {
     const { selectedTopics } = this.props.topic
-    // @ts-ignore
-    return selectedTopics ? makeOptions(selectedTopics) : null
+    const array = liftNodes(selectedTopics)
+    return selectedTopics ? makeOptions(array) : null
   }
 
   updateParentTopics = (parentTopicPaths: string[]) => {
@@ -95,7 +95,7 @@ class EditTopicForm extends Component<Props, State> {
 
       this.props.relay.refetch(variables, null, () => {
         const { availableTopics } = this.props.topic
-        const options = availableTopics ? makeOptions(availableTopics) : []
+        const options = availableTopics ? makeOptions(availableTopics.synonymMatches) : []
         resolve(options as TopicOption[])
       })
     })
@@ -156,12 +156,10 @@ export default createRefetchContainer(EditTopicForm, {
         }
       }
 
-      availableTopics: availableParentTopics(first: $count, searchString: $searchString) {
-        edges {
-          node {
-            value: path
-            label: name
-          }
+      availableTopics: availableParentTopics(searchString: $searchString) {
+        synonymMatches {
+          value: path
+          label: displayName
         }
       }
 

@@ -1,13 +1,13 @@
 import { Component } from 'react';
 import { ActionMeta } from 'react-select';
-import { TopicOption, Connection } from 'components/types';
-export declare const makeOptions: <T>(conn: Connection<T>) => ((T & {
-    color: string;
-}) | {
-    value: string;
+import { EditTopicForm_topic } from '__generated__/EditTopicForm_topic.graphql';
+import { TopicOption } from 'components/types';
+declare type SynonymMatches = EditTopicForm_topic['availableTopics']['synonymMatches'];
+declare type SelectedTopics = ({
     label: string;
-    color: string;
-})[];
+    value: string;
+} | null)[];
+export declare const makeOptions: (matches: SynonymMatches | SelectedTopics) => TopicOption[];
 declare type LoadOptionsType = (str: string) => Promise<readonly TopicOption[]>;
 declare type Props = {
     loadOptions: LoadOptionsType;

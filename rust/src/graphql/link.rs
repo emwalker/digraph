@@ -1,6 +1,9 @@
 use async_graphql::connection::*;
 
-use super::{relay::conn, DateTime, Repository, TopicConnection, User};
+use super::{
+    relay::conn, DateTime, LiveSearchTopicsPayload, Repository, SynonymMatch, TopicConnection, User,
+};
+use crate::git;
 use crate::prelude::*;
 use crate::repo::Repo;
 
@@ -29,20 +32,16 @@ impl Link {
         &self,
         ctx: &Context<'_>,
         search_string: Option<String>,
-        after: Option<String>,
-        before: Option<String>,
-        first: Option<i32>,
-        last: Option<i32>,
-    ) -> Result<TopicConnection> {
-        conn(
-            after,
-            before,
-            first,
-            last,
-            ctx.data_unchecked::<Repo>()
-                .search_topics(search_string)
-                .await?,
-        )
+    ) -> Result<LiveSearchTopicsPayload> {
+        let git::LiveSearchTopicsResult { synonym_matches } = ctx
+            .data_unchecked::<Repo>()
+            .search_topics(search_string)
+            .await?;
+        let synonym_matches = synonym_matches
+            .iter()
+            .map(SynonymMatch::from)
+            .collect::<Vec<SynonymMatch>>();
+        Ok(LiveSearchTopicsPayload { synonym_matches })
     }
 
     async fn loading(&self) -> bool {
