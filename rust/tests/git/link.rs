@@ -78,7 +78,6 @@ mod update_link_parent_topics {
 mod upsert_link {
     use super::*;
     use digraph::git::{Kind, Search, SearchEntry, UpsertLinkResult};
-    use digraph::http::repo_url;
     use itertools::Itertools;
 
     #[actix_web::test]
@@ -133,7 +132,7 @@ mod upsert_link {
     #[actix_web::test]
     async fn details_updated() {
         let f = Fixtures::copy("simple");
-        let url = repo_url::Url::parse("https://www.google.com").unwrap();
+        let url = RepoUrl::parse("https://www.google.com").unwrap();
         let path = url.path(&f.repo.prefix);
         assert!(!f.repo.exists(&path).unwrap());
 
@@ -169,7 +168,7 @@ mod upsert_link {
     #[actix_web::test]
     async fn parent_topic_updated() {
         let f = Fixtures::copy("simple");
-        let url = repo_url::Url::parse("https://www.google.com").unwrap();
+        let url = RepoUrl::parse("https://www.google.com").unwrap();
         let path = url.path(&f.repo.prefix);
         let topic = RepoPath::from("/wiki/00001");
         assert!(!f.repo.exists(&path).unwrap());
@@ -194,7 +193,7 @@ mod upsert_link {
     #[actix_web::test]
     async fn lookup_indexes_updated() {
         let f = Fixtures::copy("simple");
-        let url = repo_url::Url::parse("https://www.google.com").unwrap();
+        let url = RepoUrl::parse("https://www.google.com").unwrap();
         let topic = RepoPath::from("/wiki/00001");
         let search = Search::parse("a link").unwrap();
 

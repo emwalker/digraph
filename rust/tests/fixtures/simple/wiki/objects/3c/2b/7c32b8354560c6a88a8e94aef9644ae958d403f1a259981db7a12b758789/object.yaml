@@ -1,0 +1,10 @@
+---
+apiVersion: objects/v1
+kind: Link
+metadata:
+  added: "2022-07-04T15:51:59.119447266Z"
+  path: /wiki/3c2b7c32b8354560c6a88a8e94aef9644ae958d403f1a259981db7a12b758789
+  title: "Overview: Weather, Global Warming, and Climate Change"
+  url: "https://climate.nasa.gov/resources/global-warming-vs-climate-change/"
+parentTopics:
+  - path: /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13

@@ -266,7 +266,7 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
 
         let link = Link {
             api_version: API_VERSION.to_string(),
-            kind: "Link".to_string(),
+            kind: Kind::Link,
             metadata: LinkMetadata::from(&meta),
             parent_topics: parent_topics.iter().map(ParentTopic::from).collect(),
         };

@@ -4,18 +4,19 @@ use crate::prelude::*;
 
 mod page;
 pub use page::*;
-pub mod repo_url;
+mod repo_url;
+pub use repo_url::*;
 
 #[async_trait]
 pub trait Fetch {
-    async fn fetch(&self, url: &repo_url::Url) -> Result<Response>;
+    async fn fetch(&self, url: &repo_url::RepoUrl) -> Result<Response>;
 }
 
 pub struct Fetcher;
 
 #[async_trait]
 impl Fetch for Fetcher {
-    async fn fetch(&self, url: &repo_url::Url) -> Result<Response> {
+    async fn fetch(&self, url: &repo_url::RepoUrl) -> Result<Response> {
         Page::from(url).fetch().await
     }
 }

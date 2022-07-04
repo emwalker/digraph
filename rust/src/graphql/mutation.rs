@@ -6,7 +6,6 @@ use super::{
     TimerangeEdge, TimerangePrefixFormat, Topic, TopicEdge, User, UserEdge,
 };
 use crate::git;
-use crate::http::repo_url;
 use crate::prelude::*;
 use crate::psql;
 use crate::repo::Repo;
@@ -134,7 +133,7 @@ pub struct SynonymInput {
 
 impl SynonymInput {
     pub fn is_valid(&self) -> bool {
-        !self.name.is_empty() && !repo_url::Url::is_valid_url(&self.name)
+        !self.name.is_empty() && !RepoUrl::is_valid_url(&self.name)
     }
 
     pub fn to_synonym(&self) -> Synonym {

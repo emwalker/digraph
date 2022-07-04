@@ -19,6 +19,10 @@ quick_error! {
             from()
         }
 
+        DecodeEnum(err: strum::ParseError) {
+            from()
+        }
+
         Deserialization(err: String) {
             from(err: serde_json::Error) -> (format!("{:?}", err))
         }

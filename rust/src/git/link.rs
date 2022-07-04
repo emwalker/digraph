@@ -4,7 +4,7 @@ use std::collections::BTreeSet;
 use crate::git::{
     Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Topic, TopicChild, API_VERSION,
 };
-use crate::http::{self, repo_url};
+use crate::http::{self, RepoUrl};
 use crate::prelude::*;
 use crate::Alert;
 
@@ -127,7 +127,7 @@ pub struct UpsertLinkResult {
 impl UpsertLink {
     pub async fn call(&self, git: &Git) -> Result<UpsertLinkResult> {
         log::info!("upserting link: {:?}", self);
-        let url = repo_url::Url::parse(&self.url)?;
+        let url = RepoUrl::parse(&self.url)?;
         let path = url.path(&self.prefix);
         let added = Utc::now();
 
@@ -151,7 +151,7 @@ impl UpsertLink {
 
             Link {
                 api_version: API_VERSION.into(),
-                kind: "Link".into(),
+                kind: Kind::Link,
                 parent_topics,
                 metadata: LinkMetadata {
                     added,

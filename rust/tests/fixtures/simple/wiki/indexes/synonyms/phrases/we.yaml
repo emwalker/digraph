@@ -1,0 +1,7 @@
+---
+apiVersion: objects/v1
+kind: SynonymIndexMap
+synonyms:
+  weather:
+    - name: Weather
+      path: /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj

@@ -11,6 +11,7 @@ Soon:
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 
 Things that would be nice to eventually get to:
+* Zero-copy search results
 * Move over to Primer React components
 * Revisit UI look and feel
 * Get query info working again (the text and topics that appear in the search bar)

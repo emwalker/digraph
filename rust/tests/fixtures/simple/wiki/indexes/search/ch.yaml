@@ -1,0 +1,15 @@
+---
+apiVersion: objects/v1
+kind: SearchTokenIndexMap
+tokens:
+  change:
+    - kind: Topic
+      path: /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
+    - kind: Topic
+      path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
+    - kind: Link
+      path: /wiki/24ef1a588aa8242ed43193766154fd5f05d343dcdcd3690dda097979363776f2
+    - kind: Link
+      path: /wiki/3c2b7c32b8354560c6a88a8e94aef9644ae958d403f1a259981db7a12b758789
+    - kind: Link
+      path: /wiki/d72b7df807ba4a386b8fb8efa8789d656b43c02ce2cd4348b1dd4885c07c95d7

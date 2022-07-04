@@ -1,18 +1,15 @@
 use async_trait::async_trait;
-use fs_extra::dir;
-use scraper::Html;
-use std::env;
-use std::path::PathBuf;
-use tempfile::{self, TempDir};
+use scraper::html::Html;
 
 use digraph::git::{
-    DataRoot, Git, Link, OnMatchingSynonym, Repository, Topic, UpsertLink, UpsertLinkResult,
-    UpsertTopic, UpsertTopicResult,
+    Link, OnMatchingSynonym, Topic, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
 };
-use digraph::http::{repo_url, Fetch, Response};
+use digraph::http::{Fetch, Response};
 use digraph::prelude::*;
 use digraph::Locale;
 
+mod fixtures;
+pub use fixtures::*;
 mod link;
 mod search;
 mod topic;
@@ -21,56 +18,11 @@ struct Fetcher(String);
 
 #[async_trait]
 impl Fetch for Fetcher {
-    async fn fetch(&self, url: &repo_url::Url) -> Result<Response> {
+    async fn fetch(&self, url: &RepoUrl) -> Result<Response> {
         Ok(Response {
             url: url.to_owned(),
             body: Html::parse_document(&self.0),
         })
-    }
-}
-
-struct Fixtures {
-    path: PathBuf,
-    source: PathBuf,
-    repo: Repository,
-    _tempdir: TempDir,
-}
-
-impl Fixtures {
-    fn blank(fixture_dirname: &str) -> Self {
-        let root = &env::var("CARGO_MANIFEST_DIR").expect("$CARGO_MANIFEST_DIR");
-        let mut source = PathBuf::from(root);
-        source.push("tests/fixtures");
-        source.push(&fixture_dirname);
-
-        let tempdir = tempfile::tempdir().unwrap();
-        let path = PathBuf::from(&tempdir.path());
-        let root = DataRoot::new(path.clone());
-        let git = Git::new(root);
-        let repo = Repository::new("/wiki", git);
-
-        Fixtures {
-            _tempdir: tempdir,
-            path,
-            repo,
-            source,
-        }
-    }
-}
-
-impl Fixtures {
-    fn copy(fixture_dirname: &str) -> Self {
-        let fixture = Fixtures::blank(fixture_dirname);
-        let options = dir::CopyOptions {
-            overwrite: true,
-            content_only: true,
-            ..Default::default()
-        };
-        log::debug!("copying: {:?}", fixture.source);
-        dir::copy(&fixture.source, &fixture.path, &options).unwrap_or_else(|_| {
-            panic!("problem copying {:?} to {:?}", fixture.source, fixture.path)
-        });
-        fixture
     }
 }
 
@@ -101,7 +53,7 @@ where
 
 async fn upsert_link(
     f: &Fixtures,
-    url: &repo_url::Url,
+    url: &RepoUrl,
     title: Option<String>,
     parent_topics: &[&str],
 ) -> UpsertLinkResult {
@@ -147,6 +99,6 @@ fn upsert_topic(
     .call(&f.repo.git)
 }
 
-fn valid_url() -> repo_url::Url {
-    repo_url::Url::parse("https://www.google.com").unwrap()
+fn valid_url() -> RepoUrl {
+    RepoUrl::parse("https://www.google.com").unwrap()
 }

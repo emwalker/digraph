@@ -355,11 +355,13 @@ impl Repo {
         search_string: String,
     ) -> Result<Vec<graphql::TopicChild>> {
         let git::SearchWithinTopicResult { matches, .. } = git::SearchWithinTopic {
-            viewer: self.viewer.clone(),
+            limit: 100,
             locale: Locale::EN,
             prefixes: vec!["/wiki".to_owned()],
+            recursive: true,
             search: git::Search::parse(&search_string)?,
             topic_path: parent_topic.path,
+            viewer: self.viewer.clone(),
         }
         .call(&self.git)?;
 
@@ -375,6 +377,7 @@ impl Repo {
     ) -> Result<git::FetchTopicLiveSearchResult> {
         let search = git::Search::parse(&search_string.unwrap_or_default())?;
         git::FetchTopicLiveSearch {
+            limit: 10,
             viewer: self.viewer.to_owned(),
             prefixes: vec!["/wiki".into()],
             search,

@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
 use unidecode::unidecode;
 
-use super::{Git, Kind, Synonym, Topic, API_VERSION};
-use crate::http::repo_url;
+use super::{Git, Kind, Row, Search, Synonym, Topic, TopicChild, API_VERSION};
 use crate::prelude::*;
 
 // Omit dashes so that we can split on them
@@ -66,54 +65,9 @@ impl Phrase {
     pub fn is_valid(&self) -> bool {
         self.0.len() >= 2
     }
-}
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Search {
-    pub normalized: Phrase,
-    pub urls: BTreeSet<repo_url::Url>,
-    pub tokens: BTreeSet<Phrase>,
-}
-
-impl std::cmp::Ord for Search {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (&self.urls, &self.tokens).cmp(&(&other.urls, &other.tokens))
-    }
-}
-
-impl std::cmp::PartialOrd for Search {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Search {
-    pub fn parse(input: &str) -> Result<Self> {
-        let mut tokens = BTreeSet::new();
-        let mut urls = BTreeSet::new();
-
-        for part in input.split_whitespace() {
-            if repo_url::Url::is_valid_url(part) {
-                urls.insert(repo_url::Url::parse(part)?);
-                continue;
-            }
-
-            let phrase = Phrase::parse(part);
-            for token in phrase.tokens() {
-                // is_valid is called during Phrase::tokens
-                tokens.insert(token);
-            }
-        }
-
-        Ok(Self {
-            normalized: Phrase::parse(input),
-            tokens,
-            urls,
-        })
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.urls.is_empty() && self.tokens.is_empty()
+    pub fn contains(&self, other: &Self) -> bool {
+        self.0.contains(&other.0)
     }
 }
 
@@ -308,6 +262,15 @@ pub struct SearchEntry {
     pub path: String,
 }
 
+impl From<&TopicChild> for SearchEntry {
+    fn from(child: &TopicChild) -> Self {
+        Self {
+            kind: child.kind.to_owned(),
+            path: child.path.to_owned(),
+        }
+    }
+}
+
 impl SearchEntry {
     pub fn path(&self) -> RepoPath {
         RepoPath::from(&self.path)
@@ -327,15 +290,19 @@ impl SearchTokenIndexMap {
         self.tokens.get(string)
     }
 
-    fn prefix_matches(&self, token: &Phrase) -> BTreeSet<SearchEntry> {
+    fn prefix_matches(&self, token: &Phrase) -> HashSet<Row> {
         let iter = self
             .tokens
             .range::<Phrase, _>(token..)
             .take_while(|(k, _)| k.starts_with(&token.0));
 
-        iter.fold(BTreeSet::new(), |acc, (_token, set)| {
-            acc.union(set).cloned().collect()
-        })
+        let mut rows = HashSet::new();
+        for (_token, set) in iter {
+            for entry in set {
+                rows.insert(Row::SearchEntry(entry.to_owned()));
+            }
+        }
+        rows
     }
 }
 
@@ -398,7 +365,7 @@ impl SearchTokenIndex {
         })
     }
 
-    pub fn prefix_matches(&self, token: &Phrase) -> BTreeSet<SearchEntry> {
+    pub fn prefix_matches(&self, token: &Phrase) -> HashSet<Row> {
         self.index.prefix_matches(token)
     }
 
@@ -624,58 +591,8 @@ impl std::fmt::Debug for Indexer {
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
-
     use super::*;
-
-    fn phrases(iter: &[&str]) -> BTreeSet<Phrase> {
-        iter.iter()
-            .map(|s| Phrase::parse(*s))
-            .collect::<BTreeSet<Phrase>>()
-    }
-
-    #[test]
-    fn punctuation() {
-        let search = Search::parse("one.!?:`#$@*&;+-{}[]()/\\'\",=    <> two").unwrap();
-        assert_eq!(search.tokens, phrases(&["one", "two"]));
-    }
-
-    #[test]
-    fn uppercase_letters() {
-        let search = Search::parse("One TWO three").unwrap();
-        assert_eq!(search.tokens, phrases(&["one", "two", "three"]));
-    }
-
-    #[test]
-    fn unicode_characters() {
-        let phrase = Search::parse("Æneid étude 北亰 ᔕᓇᓇ げんまい茶").unwrap();
-        assert_eq!(
-            phrase.tokens,
-            phrases(&["aeneid", "etude", "bei", "jing", "shanana", "genmaicha"])
-        );
-    }
-
-    #[test]
-    fn splits_on_hyphens() {
-        let phrase = Search::parse("Existing non-root topic").unwrap();
-        assert_eq!(
-            phrase.tokens,
-            phrases(&["existing", "non", "root", "topic"])
-        );
-    }
-
-    #[test]
-    fn token_length() {
-        let token = (0..=20).map(|_| "a").collect::<String>();
-        assert_eq!(token.len(), 21);
-
-        // Long phrases are allowed for now, to accomodate synonym matches
-        let phrase = Search::parse(&format!("a aa aaa aaaa {}", token)).unwrap();
-        assert_eq!(
-            phrase.tokens,
-            phrases(&["aa", "aaa", "aaaa", "aaaaaaaaaaaaaaaaaaaaa"])
-        );
-    }
+    use itertools::Itertools;
 
     #[test]
     fn phrase_tokens() {
@@ -708,7 +625,6 @@ mod tests {
     #[test]
     fn handling_of_hyphens() {
         let phrase = Phrase::parse("one-two-three");
-        assert_eq!(phrase.0, "one two three");
         assert_eq!(phrase.to_string(), "one two three");
 
         let phrase = Phrase::parse(
@@ -719,17 +635,5 @@ mod tests {
             phrase.to_string(),
             "flexible hierarchical wraps repel drug resistant gram negative and positive bacteria"
         );
-    }
-
-    #[test]
-    fn url() {
-        let phrase = Search::parse("one https://www.google.com").unwrap();
-        assert_eq!(
-            phrase.urls,
-            BTreeSet::from([repo_url::Url::parse("https://www.google.com").unwrap()]),
-        );
-
-        let phrase = Search::parse("aaas:").unwrap();
-        assert_eq!(phrase.urls, BTreeSet::new());
     }
 }

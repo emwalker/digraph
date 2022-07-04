@@ -13,46 +13,46 @@ use crate::prelude::*;
 // Eventually this kind of site-level handling of links can be moved into configs that are stored
 // in a repo or in the database, but for now we just hard-code the handling here.
 #[derive(Clone, Debug)]
-pub struct Url {
+pub struct RepoUrl {
     pub input: String,
     pub normalized: String,
     pub path: String,
     pub sha256: String,
 }
 
-impl std::cmp::PartialEq for Url {
+impl std::cmp::PartialEq for RepoUrl {
     fn eq(&self, other: &Self) -> bool {
         self.sha256 == other.sha256
     }
 }
 
-impl std::cmp::Eq for Url {}
+impl std::cmp::Eq for RepoUrl {}
 
-impl std::cmp::Ord for Url {
+impl std::cmp::Ord for RepoUrl {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.normalized.cmp(&other.normalized)
     }
 }
 
-impl std::cmp::PartialOrd for Url {
+impl std::cmp::PartialOrd for RepoUrl {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl std::fmt::Display for Url {
+impl std::fmt::Display for RepoUrl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{}", self.normalized)
     }
 }
 
-impl std::hash::Hash for Url {
+impl std::hash::Hash for RepoUrl {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.sha256.hash(state);
     }
 }
 
-impl Url {
+impl RepoUrl {
     pub fn parse(input: &str) -> Result<Self> {
         let url = parse_url(input)?;
         let input = input.to_string();
@@ -144,8 +144,8 @@ fn parse_url(input: &str) -> Result<url::Url> {
 mod tests {
     use super::*;
 
-    fn parse(input: &str) -> Url {
-        Url::parse(input).unwrap()
+    fn parse(input: &str) -> RepoUrl {
+        RepoUrl::parse(input).unwrap()
     }
 
     #[test]
@@ -176,9 +176,9 @@ mod tests {
 
     #[test]
     fn is_valid() {
-        assert!(Url::is_valid_url("https://www.google.com"));
-        assert!(!Url::is_valid_url("Some name"));
-        assert!(!Url::is_valid_url("aaas:"));
+        assert!(RepoUrl::is_valid_url("https://www.google.com"));
+        assert!(!RepoUrl::is_valid_url("Some name"));
+        assert!(!RepoUrl::is_valid_url("aaas:"));
     }
 
     #[test]

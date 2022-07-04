@@ -1,0 +1,21 @@
+---
+apiVersion: objects/v1
+kind: Topic
+metadata:
+  added: "2022-07-04T15:51:59.096651380Z"
+  path: /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj
+  root: false
+  synonyms:
+    - added: "2022-07-04T15:51:59.096651380Z"
+      locale: en
+      name: Weather
+  timerange: ~
+parentTopics:
+  - path: /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8
+children:
+  - added: "2022-07-04T15:51:59.108415496Z"
+    kind: Topic
+    path: /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
+  - added: "2022-07-04T15:51:59.100302830Z"
+    kind: Link
+    path: /wiki/74992432e0ab240ab3fabad30db4fc72145102167e8759816b4c84b5c4899433

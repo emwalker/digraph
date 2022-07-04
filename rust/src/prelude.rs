@@ -1,5 +1,6 @@
 pub use super::errors::Error;
 pub use super::graphql::Viewer;
+pub use super::http::RepoUrl;
 pub use super::repo::RepoPath;
 pub use async_graphql::{Context, Object, SimpleObject, ID};
 

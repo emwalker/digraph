@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -12,7 +12,6 @@ mod repository;
 mod search;
 mod topic;
 
-use crate::http::repo_url;
 use crate::prelude::*;
 use crate::Locale;
 pub use index::*;
@@ -23,7 +22,7 @@ pub use topic::*;
 
 pub const API_VERSION: &str = "objects/v1";
 
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum Kind {
     Link,
     Topic,
@@ -38,14 +37,6 @@ impl Kind {
         }
     }
 }
-
-impl std::cmp::PartialEq for Kind {
-    fn eq(&self, other: &Self) -> bool {
-        core::mem::discriminant(self) == core::mem::discriminant(other)
-    }
-}
-
-impl std::cmp::Eq for Kind {}
 
 impl std::cmp::Ord for Kind {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
@@ -78,7 +69,7 @@ pub struct LinkMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct Link {
     pub api_version: String,
-    pub kind: String,
+    pub kind: Kind,
     pub metadata: LinkMetadata,
     pub parent_topics: BTreeSet<ParentTopic>,
 }
@@ -90,6 +81,22 @@ impl std::cmp::PartialEq for Link {
 }
 
 impl std::cmp::Eq for Link {}
+
+impl std::cmp::Ord for Link {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (self.kind, &self.metadata.title, &self.metadata.path).cmp(&(
+            other.kind,
+            &other.metadata.title,
+            &other.metadata.path,
+        ))
+    }
+}
+
+impl std::cmp::PartialOrd for Link {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 impl Link {
     pub fn path(&self) -> RepoPath {
@@ -160,6 +167,13 @@ impl std::cmp::PartialOrd for TopicChild {
 impl std::cmp::Ord for TopicChild {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         (&self.kind, &self.path).cmp(&(&other.kind, &other.path))
+    }
+}
+
+impl std::hash::Hash for TopicChild {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.kind.hash(state);
+        self.path.hash(state);
     }
 }
 
@@ -306,7 +320,7 @@ impl Topic {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(untagged)]
 pub enum Object {
     Topic(Topic),
@@ -330,15 +344,66 @@ impl Object {
         Ok(())
     }
 
-    pub fn display_string(&self, locale: Locale) -> String {
+    fn display_string(&self, locale: Locale) -> String {
         match self {
             Self::Link(link) => link.metadata.title.to_owned(),
             Self::Topic(topic) => topic.name(locale),
         }
     }
 
-    pub fn search_string(&self, locale: Locale) -> Phrase {
+    pub fn kind(&self) -> Kind {
+        match self {
+            Object::Topic(_) => Kind::Topic,
+            Object::Link(_) => Kind::Link,
+        }
+    }
+
+    fn search_string(&self, locale: Locale) -> Phrase {
         Phrase::parse(&self.display_string(locale))
+    }
+
+    pub fn to_search_match(self, locale: Locale, normalized: &Phrase) -> SearchMatch {
+        let display_string = self.display_string(locale);
+        let search_string = self.search_string(locale);
+        let kind = match &self {
+            Self::Link(_) => Kind::Link,
+            Self::Topic(_) => Kind::Topic,
+        };
+        SearchMatch {
+            sort_key: SortKey(&search_string != normalized, kind, display_string),
+            object: self,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum Row {
+    SearchEntry(SearchEntry),
+    Topic(Topic),
+    TopicChild(TopicChild),
+}
+
+impl std::cmp::PartialEq for Row {
+    fn eq(&self, other: &Self) -> bool {
+        self.path() == other.path()
+    }
+}
+
+impl std::cmp::Eq for Row {}
+
+impl std::hash::Hash for Row {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.path().hash(state);
+    }
+}
+
+impl Row {
+    fn path(&self) -> &String {
+        match self {
+            Self::SearchEntry(SearchEntry { path, .. }) => path,
+            Self::Topic(topic) => &topic.metadata.path,
+            Self::TopicChild(TopicChild { path, .. }) => path,
+        }
     }
 }
 
@@ -439,6 +504,100 @@ impl DataRoot {
             }
         };
         Ok(self.root.join(file_path))
+    }
+}
+
+#[derive(Debug)]
+pub struct DownSetIter {
+    links: Vec<TopicChild>,
+    curr_topic: Option<Topic>,
+    git: Git,
+    seen: HashSet<TopicChild>,
+    stack: Vec<TopicChild>,
+}
+
+impl Iterator for DownSetIter {
+    type Item = Row;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        log::debug!(
+            "next() with {} children and {} stack elements",
+            self.links.len(),
+            self.stack.len()
+        );
+
+        // Exit with `None` if there is no current topic.
+        self.curr_topic.as_ref()?;
+
+        if !self.links.is_empty() {
+            let child = self.links.pop();
+            if child.is_some() {
+                return child.map(Row::TopicChild);
+            }
+        }
+
+        while !self.stack.is_empty() {
+            match self.stack.pop() {
+                Some(topic_child) => {
+                    if self.seen.contains(&topic_child) {
+                        log::debug!("topic {:?} already seen, skipping", topic_child);
+                        continue;
+                    }
+                    self.seen.insert(topic_child.clone());
+
+                    match self.git.fetch_topic(&topic_child.path) {
+                        Ok(topic) => {
+                            self.curr_topic = Some(topic.clone());
+                            for child in &topic.children {
+                                match child.kind {
+                                    Kind::Link => {
+                                        self.links.push(child.clone());
+                                    }
+                                    Kind::Topic => {
+                                        self.stack.push(child.clone());
+                                    }
+                                }
+                            }
+                            return Some(Row::Topic(topic));
+                        }
+
+                        Err(err) => {
+                            log::error!("failed to fetch topic: {}", err)
+                        }
+                    };
+
+                    while !self.links.is_empty() {
+                        let child = self.links.pop();
+                        if child.is_some() {
+                            return child.map(Row::TopicChild);
+                        }
+                    }
+                }
+
+                None => {
+                    log::error!("expected a topic, continuing");
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl DownSetIter {
+    fn new(git: Git, topic: Option<Topic>) -> Self {
+        let mut stack = vec![];
+        if let Some(topic) = &topic {
+            stack.push(topic.to_topic_child(chrono::Utc::now()));
+        }
+
+        Self {
+            links: vec![],
+            curr_topic: topic,
+            git,
+            seen: HashSet::new(),
+            stack,
+        }
     }
 }
 
@@ -562,7 +721,7 @@ impl Git {
         let searches = match link {
             Some(link) => {
                 let meta = &link.metadata;
-                let url = repo_url::Url::parse(&meta.url)?;
+                let url = RepoUrl::parse(&meta.url)?;
                 BTreeSet::from([Search::parse(&meta.title)?, Search::parse(&url.normalized)?])
             }
             None => BTreeSet::new(),
@@ -651,22 +810,18 @@ impl Git {
 
     // The "prefix" argument tells us which repo to look in.  The "prefix" in the method name
     // alludes to the prefix scan that is done to find matching synonyms.
-    pub fn search_token_prefix_matches(
-        &self,
-        prefix: &str,
-        token: &Phrase,
-    ) -> BTreeSet<SearchEntry> {
+    pub fn search_token_prefix_matches(&self, prefix: &str, token: &Phrase) -> HashSet<Row> {
         match self.index_key(prefix, token) {
             Ok(key) => match self.search_index(&key, IndexType::Search, IndexMode::ReadOnly) {
                 Ok(index) => index.prefix_matches(token),
                 Err(err) => {
                     log::error!("problem fetching index: {}", err);
-                    BTreeSet::new()
+                    HashSet::new()
                 }
             },
             Err(err) => {
                 log::error!("problem fetching index key: {}", err);
-                BTreeSet::new()
+                HashSet::new()
             }
         }
     }
@@ -749,6 +904,16 @@ impl Git {
             return Ok(Some(self.fetch_topic(&path.inner)?));
         }
         Ok(None)
+    }
+
+    pub fn topic_down_set(&self, topic_path: &RepoPath) -> DownSetIter {
+        match self.fetch_topic(&topic_path.inner) {
+            Ok(topic) => DownSetIter::new(self.clone(), Some(topic)),
+            Err(err) => {
+                log::error!("problem constructing down set: {}", err);
+                DownSetIter::new(self.clone(), None)
+            }
+        }
     }
 
     fn topic_searches(&self, topic: Option<Topic>) -> Result<BTreeSet<Search>> {
