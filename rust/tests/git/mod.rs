@@ -11,6 +11,7 @@ use digraph::git::{
 };
 use digraph::http::{repo_url, Fetch, Response};
 use digraph::prelude::*;
+use digraph::Locale;
 
 mod link;
 mod search;
@@ -138,7 +139,7 @@ fn upsert_topic(
     UpsertTopic {
         actor: actor(),
         parent_topic,
-        locale: "en".into(),
+        locale: Locale::EN,
         name: name.into(),
         on_matching_synonym,
         prefix: "/wiki".into(),

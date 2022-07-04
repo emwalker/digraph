@@ -1,5 +1,6 @@
 use super::{actor, upsert_topic, Fixtures};
 use digraph::prelude::*;
+use digraph::Locale;
 use std::collections::BTreeSet;
 
 #[cfg(test)]
@@ -95,79 +96,6 @@ mod delete_topic_timerange {
 
         let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
         assert!(topic.metadata.timerange.is_none());
-    }
-}
-
-#[cfg(test)]
-mod live_search_topics {
-    use super::*;
-    use digraph::git::{
-        LiveSearchTopics, LiveSearchTopicsResult, OnMatchingSynonym, Search, SynonymEntry,
-    };
-
-    #[test]
-    fn returns_matches() {
-        let f = Fixtures::copy("simple");
-
-        let LiveSearchTopicsResult {
-            synonym_matches: matches,
-            ..
-        } = LiveSearchTopics {
-            prefixes: vec!["/wiki".to_owned()],
-            search: Search::parse("existing non-root topic").unwrap(),
-            viewer: actor(),
-        }
-        .call(&f.repo.git)
-        .unwrap();
-
-        assert_eq!(
-            matches.iter().next().unwrap(),
-            &SynonymEntry {
-                name: "Existing non-root topic".to_owned(),
-                path: "/wiki/00002".to_owned(),
-            }
-        );
-    }
-
-    #[test]
-    fn indexing_works() {
-        let f = Fixtures::copy("simple");
-        let parent = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
-        let search = Search::parse("clim chan soc").unwrap();
-
-        let LiveSearchTopicsResult {
-            synonym_matches: matches,
-            ..
-        } = LiveSearchTopics {
-            prefixes: vec!["/wiki".to_owned()],
-            search: search.clone(),
-            viewer: actor(),
-        }
-        .call(&f.repo.git)
-        .unwrap();
-
-        assert!(matches.is_empty());
-
-        upsert_topic(
-            &f,
-            "Climate change and society",
-            parent,
-            OnMatchingSynonym::Ask,
-        )
-        .unwrap();
-
-        let LiveSearchTopicsResult {
-            synonym_matches: matches,
-            ..
-        } = LiveSearchTopics {
-            prefixes: vec!["/wiki".to_owned()],
-            search,
-            viewer: actor(),
-        }
-        .call(&f.repo.git)
-        .unwrap();
-
-        assert_eq!(matches.len(), 1);
     }
 }
 
@@ -462,7 +390,7 @@ mod update_topic_synonyms {
     fn synonym(name: &str) -> Synonym {
         Synonym {
             added: chrono::Utc::now(),
-            locale: "en".to_owned(),
+            locale: Locale::EN,
             name: name.to_owned(),
         }
     }
@@ -473,7 +401,7 @@ mod update_topic_synonyms {
         let path = RepoPath::from("/wiki/00001");
         let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
 
-        assert_eq!(topic.name("en"), "A topic");
+        assert_eq!(topic.name(Locale::EN), "A topic");
         assert_eq!(topic.metadata.synonyms.len(), 1);
 
         assert_eq!(count(&f, "A topic"), 1);

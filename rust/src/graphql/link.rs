@@ -33,7 +33,7 @@ impl Link {
         ctx: &Context<'_>,
         search_string: Option<String>,
     ) -> Result<LiveSearchTopicsPayload> {
-        let git::LiveSearchTopicsResult { synonym_matches } = ctx
+        let git::FetchTopicLiveSearchResult { synonym_matches } = ctx
             .data_unchecked::<Repo>()
             .search_topics(search_string)
             .await?;

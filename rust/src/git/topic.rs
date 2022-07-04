@@ -2,11 +2,11 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::collections::{BTreeSet, HashMap};
 
 use super::{
-    Git, IndexMode, Indexer, Kind, Object, ParentTopic, Search, Synonym, SynonymEntry,
-    SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
+    Git, IndexMode, Indexer, Kind, Object, ParentTopic, Synonym, SynonymEntry, SynonymMatch,
+    Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use crate::prelude::*;
-use crate::Alert;
+use crate::{Alert, Locale};
 
 pub struct DeleteTopic {
     pub actor: Viewer,
@@ -101,58 +101,6 @@ impl DeleteTopicTimerange {
             alerts: vec![],
             topic,
         })
-    }
-}
-
-pub struct LiveSearchTopics {
-    pub prefixes: Vec<String>,
-    pub search: Search,
-    pub viewer: Viewer,
-}
-
-pub struct LiveSearchTopicsResult {
-    pub synonym_matches: BTreeSet<SynonymEntry>,
-}
-
-impl LiveSearchTopics {
-    pub fn call(&self, git: &Git) -> Result<LiveSearchTopicsResult> {
-        if self.search.tokens.is_empty() {
-            log::info!("empty search, returning no results");
-            return Ok(LiveSearchTopicsResult {
-                synonym_matches: BTreeSet::new(),
-            });
-        }
-
-        log::info!("searching for topics: {:?}", self.search);
-        let mut matches: BTreeSet<SynonymEntry> = BTreeSet::new();
-        let mut limit = 10;
-        for prefix in &self.prefixes {
-            let search = self.search(git, prefix);
-            let mut result: BTreeSet<SynonymEntry> = search.iter().take(limit).cloned().collect();
-            limit = limit.saturating_sub(result.len());
-            matches.append(&mut result);
-            if limit == 0 {
-                break;
-            }
-        }
-
-        Ok(LiveSearchTopicsResult {
-            synonym_matches: matches,
-        })
-    }
-
-    fn search(&self, git: &Git, prefix: &str) -> BTreeSet<SynonymEntry> {
-        let tokens = &mut self.search.tokens.iter();
-        match tokens.next() {
-            Some(token) => {
-                let start = git.synonym_token_prefix_matches(prefix, token);
-                tokens.fold(start, |acc, token| {
-                    let result = git.synonym_token_prefix_matches(prefix, token);
-                    acc.intersection(&result).cloned().collect()
-                })
-            }
-            None => BTreeSet::new(),
-        }
     }
 }
 
@@ -251,7 +199,7 @@ impl UpdateTopicSynonyms {
             .synonyms
             .iter()
             .map(|synonym| ((&synonym.name, &synonym.locale), synonym.to_owned()))
-            .collect::<HashMap<(&String, &String), Synonym>>();
+            .collect::<HashMap<(&String, &Locale), Synonym>>();
 
         let mut synonyms = vec![];
 
@@ -287,7 +235,7 @@ pub enum OnMatchingSynonym {
 
 pub struct UpsertTopic {
     pub actor: Viewer,
-    pub locale: String,
+    pub locale: Locale,
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
     pub parent_topic: RepoPath,
@@ -353,8 +301,8 @@ impl UpsertTopic {
                         log::info!("a cycle was found");
                         let alerts = vec![Alert::Warning(format!(
                             "{} is a subtopic of {}",
-                            &parent.name("en"),
-                            &ancestor.name("en"),
+                            &parent.name(Locale::EN),
+                            &ancestor.name(Locale::EN),
                         ))];
 
                         matches.replace(SynonymMatch {
@@ -381,7 +329,7 @@ impl UpsertTopic {
 
                     topic.metadata.synonyms.push(Synonym {
                         added,
-                        locale: self.locale.to_owned(),
+                        locale: self.locale,
                         name: self.name.to_owned(),
                     });
 

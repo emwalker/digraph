@@ -4,7 +4,7 @@ use sqlx::types::Uuid;
 
 use super::queries::{LINK_FIELDS, LINK_JOINS};
 use crate::graphql::DateTime;
-use crate::graphql::{Link, LinkReview, TopicChild, Viewer};
+use crate::graphql::{Link, LinkReview, Viewer};
 use crate::prelude::*;
 
 #[derive(sqlx::FromRow, Clone, Debug)]
@@ -34,10 +34,6 @@ impl Row {
             url: self.url.to_owned(),
             viewer_review: Some(viewer_review),
         }
-    }
-
-    pub fn to_search_result_item(&self) -> TopicChild {
-        TopicChild::Link(self.to_link(false))
     }
 }
 

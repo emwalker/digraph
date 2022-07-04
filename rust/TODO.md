@@ -3,11 +3,16 @@ Soon:
 * Activity feed using anonymous ids + user lookups
 * Cache topic traversals in Redis
 * Restrict on org/repo prefix
-* Update link title
+* Update link title, don't fetch html if we already have the link
 * Include the locale in synonym entries?
+* Switch the topic view to using search without descendents, and add a cursor for paging
+* Add paging
+* Populate locale dropdown using a GraphQL field
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 
 Things that would be nice to eventually get to:
+* Move over to Primer React components
+* Revisit UI look and feel
 * Get query info working again (the text and topics that appear in the search bar)
 * Verify the server secret before deleting a session
 * Drop trigram indexes if they're not being used

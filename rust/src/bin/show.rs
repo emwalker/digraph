@@ -3,6 +3,7 @@ use std::io::{self, Write};
 
 use digraph::git::*;
 use digraph::prelude::*;
+use digraph::Locale;
 
 struct Opts {
     filename: String,
@@ -20,7 +21,7 @@ impl<'r> Visitor for &mut ConsoleOutput<'r> {
 Topic: [{}]({})
 Parent topics:
 "#,
-        meta.name("en"), meta.path};
+        meta.name(Locale::EN), meta.path};
         self.buf.push_str(&s);
 
         for topic in &topic.parent_topics {
@@ -62,7 +63,7 @@ impl<'r> ConsoleOutput<'r> {
         match &self.git.fetch(&topic.path)? {
             Object::Topic(topic) => {
                 let meta = &topic.metadata;
-                let s = format!("  + [{}]({})\n", topic.name("en"), meta.path);
+                let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.path);
                 self.buf.push_str(&s);
             }
             other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
@@ -72,7 +73,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_topic(&mut self, topic: &Topic) -> Result<()> {
-        let line = format!("- [{}]({})\n", topic.name("en"), topic.path());
+        let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path());
         self.buf.push_str(&line);
 
         for topic in &topic.parent_topics {
@@ -97,7 +98,7 @@ impl<'r> ConsoleOutput<'r> {
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
         match &self.git.fetch(&topic.path)? {
             Object::Topic(topic) => {
-                let line = format!("- [{}]({})\n", topic.name("en"), topic.path());
+                let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path());
                 self.buf.push_str(&line);
             }
             other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),

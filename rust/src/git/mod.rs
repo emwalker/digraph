@@ -9,18 +9,21 @@ use std::path::{Path, PathBuf};
 mod index;
 mod link;
 mod repository;
+mod search;
 mod topic;
 
 use crate::http::repo_url;
 use crate::prelude::*;
+use crate::Locale;
 pub use index::*;
 pub use link::*;
 pub use repository::*;
+pub use search::*;
 pub use topic::*;
 
 pub const API_VERSION: &str = "objects/v1";
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub enum Kind {
     Link,
     Topic,
@@ -79,6 +82,14 @@ pub struct Link {
     pub metadata: LinkMetadata,
     pub parent_topics: BTreeSet<ParentTopic>,
 }
+
+impl std::cmp::PartialEq for Link {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind && self.metadata.path == other.metadata.path
+    }
+}
+
+impl std::cmp::Eq for Link {}
 
 impl Link {
     pub fn path(&self) -> RepoPath {
@@ -156,7 +167,7 @@ impl std::cmp::Ord for TopicChild {
 #[serde(rename_all = "camelCase")]
 pub struct Synonym {
     pub added: DateTime<Utc>,
-    pub locale: String,
+    pub locale: Locale,
     pub name: String,
 }
 
@@ -220,7 +231,7 @@ pub struct TopicMetadata {
 }
 
 impl TopicMetadata {
-    pub fn name(&self, locale: &str) -> String {
+    pub fn name(&self, locale: Locale) -> String {
         for synonym in &self.synonyms {
             if synonym.locale == locale {
                 return synonym.name.clone();
@@ -242,7 +253,7 @@ pub struct Topic {
 
 impl std::cmp::PartialEq for Topic {
     fn eq(&self, other: &Self) -> bool {
-        self.metadata.path == other.metadata.path
+        self.kind == other.kind && self.metadata.path == other.metadata.path
     }
 }
 
@@ -265,7 +276,7 @@ impl Topic {
         self.children.iter().any(|child| child.path == path.inner)
     }
 
-    pub fn name(&self, desired_locale: &str) -> String {
+    pub fn name(&self, desired_locale: Locale) -> String {
         self.metadata.name(desired_locale)
     }
 
@@ -295,7 +306,7 @@ impl Topic {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Object {
     Topic(Topic),
@@ -317,6 +328,17 @@ impl Object {
         }
 
         Ok(())
+    }
+
+    pub fn display_string(&self, locale: Locale) -> String {
+        match self {
+            Self::Link(link) => link.metadata.title.to_owned(),
+            Self::Topic(topic) => topic.name(locale),
+        }
+    }
+
+    pub fn search_string(&self, locale: Locale) -> Phrase {
+        Phrase::parse(&self.display_string(locale))
     }
 }
 
@@ -611,6 +633,42 @@ impl Git {
         indexer.update(&topic.to_search_entry(), &before, &after)?;
 
         self.save(path, topic)
+    }
+
+    pub fn search_index(
+        &self,
+        key: &IndexKey,
+        index_type: IndexType,
+        mode: IndexMode,
+    ) -> Result<SearchTokenIndex> {
+        let filename = self.root.index_filename(key, index_type)?;
+        match mode {
+            IndexMode::Replace => Ok(SearchTokenIndex::new(&filename)),
+            IndexMode::ReadOnly => SearchTokenIndex::load(&filename),
+            IndexMode::Update => SearchTokenIndex::load(&filename),
+        }
+    }
+
+    // The "prefix" argument tells us which repo to look in.  The "prefix" in the method name
+    // alludes to the prefix scan that is done to find matching synonyms.
+    pub fn search_token_prefix_matches(
+        &self,
+        prefix: &str,
+        token: &Phrase,
+    ) -> BTreeSet<SearchEntry> {
+        match self.index_key(prefix, token) {
+            Ok(key) => match self.search_index(&key, IndexType::Search, IndexMode::ReadOnly) {
+                Ok(index) => index.prefix_matches(token),
+                Err(err) => {
+                    log::error!("problem fetching index: {}", err);
+                    BTreeSet::new()
+                }
+            },
+            Err(err) => {
+                log::error!("problem fetching index key: {}", err);
+                BTreeSet::new()
+            }
+        }
     }
 
     pub fn synonym_index(

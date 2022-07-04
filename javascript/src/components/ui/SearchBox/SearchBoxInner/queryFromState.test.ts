@@ -35,13 +35,13 @@ describe('queryFromState', () => {
         0: {
           data: {
             mention: {
-              link: '/wiki/topics/1',
+              link: '/wiki/00001',
             },
           },
         },
       },
     }
 
-    expect(toString(raw)).toEqual('one in:/wiki/topics/1 two')
+    expect(toString(raw)).toEqual('one in:/wiki/00001 two')
   })
 })

@@ -1,0 +1,7 @@
+---
+apiVersion: objects/v1
+kind: SearchTokenIndexMap
+tokens:
+  non:
+    - kind: Topic
+      path: /wiki/00002

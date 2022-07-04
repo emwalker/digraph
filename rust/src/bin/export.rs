@@ -14,6 +14,7 @@ use digraph::git::{
     TimerangePrefixFormat, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use digraph::prelude::*;
+use digraph::Locale;
 
 struct Opts {
     root: PathBuf,
@@ -55,9 +56,10 @@ struct SynonymRow {
 
 impl From<&SynonymRow> for Synonym {
     fn from(row: &SynonymRow) -> Self {
+        use std::str::FromStr;
         Self {
             added: row.added,
-            locale: row.locale.clone(),
+            locale: Locale::from_str(&row.locale).unwrap_or(Locale::EN),
             name: row.name.clone(),
         }
     }

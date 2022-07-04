@@ -1,13 +1,12 @@
 use async_graphql::dataloader::*;
 use std::collections::HashMap;
 
-use super::SynonymInput;
 use super::{
-    DateTime, Link, Prefix, Synonym, SynonymMatch, Synonyms, Timerange, TimerangePrefixFormat,
-    Topic,
+    DateTime, Link, Prefix, Synonym, SynonymInput, SynonymMatch, Synonyms, Timerange,
+    TimerangePrefixFormat, Topic, TopicChild,
 };
-use crate::git;
 use crate::prelude::*;
+use crate::{git, Locale};
 
 impl From<&git::Link> for Link {
     fn from(link: &git::Link) -> Self {
@@ -34,7 +33,7 @@ impl From<&git::Synonym> for Synonym {
     fn from(synonym: &git::Synonym) -> Self {
         Self {
             name: synonym.name.clone(),
-            locale: synonym.locale.clone(),
+            locale: synonym.locale.to_string(),
         }
     }
 }
@@ -47,10 +46,12 @@ impl From<&Vec<git::Synonym>> for Synonyms {
 
 impl From<&SynonymInput> for git::Synonym {
     fn from(synonym: &SynonymInput) -> Self {
+        use std::str::FromStr;
+
         Self {
             added: chrono::Utc::now(),
             name: synonym.name.clone(),
-            locale: synonym.locale.clone(),
+            locale: Locale::from_str(&synonym.locale).unwrap_or(Locale::EN),
         }
     }
 }
@@ -98,7 +99,7 @@ impl From<&git::Topic> for Topic {
             child_paths,
             path: RepoPath::from(&meta.path),
             parent_topic_paths,
-            name: topic.name("en"),
+            name: topic.name(Locale::EN),
             prefix,
             root: meta.root,
             synonyms,
@@ -182,6 +183,15 @@ impl From<&git::SynonymEntry> for SynonymMatch {
         Self {
             display_name: name.to_owned(),
             path: path.to_owned(),
+        }
+    }
+}
+
+impl From<&git::Object> for TopicChild {
+    fn from(object: &git::Object) -> Self {
+        match object {
+            git::Object::Link(link) => TopicChild::Link(Link::from(link)),
+            git::Object::Topic(topic) => TopicChild::Topic(Topic::from(topic)),
         }
     }
 }

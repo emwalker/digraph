@@ -5,6 +5,7 @@ use regex::Regex;
 use sqlx::postgres::PgPool;
 use std::collections::BTreeSet;
 
+use super::Locale;
 use crate::git;
 use crate::graphql;
 use crate::http;
@@ -353,21 +354,27 @@ impl Repo {
         parent_topic: graphql::Topic,
         search_string: String,
     ) -> Result<Vec<graphql::TopicChild>> {
-        psql::Search::new(
-            self.viewer.query_ids.clone(),
-            parent_topic,
-            search_string.clone(),
-        )
-        .call(&self.db)
-        .await
+        let git::SearchWithinTopicResult { matches, .. } = git::SearchWithinTopic {
+            viewer: self.viewer.clone(),
+            locale: Locale::EN,
+            prefixes: vec!["/wiki".to_owned()],
+            search: git::Search::parse(&search_string)?,
+            topic_path: parent_topic.path,
+        }
+        .call(&self.git)?;
+
+        Ok(matches
+            .iter()
+            .map(|row| graphql::TopicChild::from(&row.object))
+            .collect())
     }
 
     pub async fn search_topics(
         &self,
         search_string: Option<String>,
-    ) -> Result<git::LiveSearchTopicsResult> {
+    ) -> Result<git::FetchTopicLiveSearchResult> {
         let search = git::Search::parse(&search_string.unwrap_or_default())?;
-        git::LiveSearchTopics {
+        git::FetchTopicLiveSearch {
             viewer: self.viewer.to_owned(),
             prefixes: vec!["/wiki".into()],
             search,
@@ -509,7 +516,7 @@ impl Repo {
     ) -> Result<git::UpsertTopicResult> {
         git::UpsertTopic {
             actor: self.viewer.clone(),
-            locale: "en".to_owned(),
+            locale: Locale::EN,
             name: input.name.to_owned(),
             on_matching_synonym: git::OnMatchingSynonym::Ask,
             prefix: "/wiki".to_owned(),

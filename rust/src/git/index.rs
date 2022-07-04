@@ -70,6 +70,7 @@ impl Phrase {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Search {
+    pub normalized: Phrase,
     pub urls: BTreeSet<repo_url::Url>,
     pub tokens: BTreeSet<Phrase>,
 }
@@ -104,7 +105,11 @@ impl Search {
             }
         }
 
-        Ok(Self { tokens, urls })
+        Ok(Self {
+            normalized: Phrase::parse(input),
+            tokens,
+            urls,
+        })
     }
 
     pub fn is_empty(&self) -> bool {
@@ -289,29 +294,11 @@ impl SynonymIndex {
                 self.index.synonyms.remove(&phrase);
             }
         }
-
-        for token in phrase.tokens() {
-            if token.is_valid() {
-                continue;
-            }
-
-            let key = token.to_owned();
-            if let Some(paths) = self.index.synonyms.get_mut(&key) {
-                paths.remove(&SynonymEntry {
-                    name: name.to_owned(),
-                    path: path.to_string(),
-                });
-                if paths.is_empty() {
-                    self.index.synonyms.remove(&key);
-                }
-            }
-        }
-
         Ok(())
     }
 
-    pub fn prefix_matches(&self, phrase: &Phrase) -> BTreeSet<SynonymEntry> {
-        self.index.prefix_matches(phrase)
+    pub fn prefix_matches(&self, token: &Phrase) -> BTreeSet<SynonymEntry> {
+        self.index.prefix_matches(token)
     }
 }
 
@@ -328,14 +315,27 @@ impl SearchEntry {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct SearchTokenIndexMap {
     api_version: String,
+    kind: String,
     tokens: BTreeMap<Phrase, BTreeSet<SearchEntry>>,
 }
 
 impl SearchTokenIndexMap {
     fn get(&self, string: &Phrase) -> Option<&BTreeSet<SearchEntry>> {
         self.tokens.get(string)
+    }
+
+    fn prefix_matches(&self, token: &Phrase) -> BTreeSet<SearchEntry> {
+        let iter = self
+            .tokens
+            .range::<Phrase, _>(token..)
+            .take_while(|(k, _)| k.starts_with(&token.0));
+
+        iter.fold(BTreeSet::new(), |acc, (_token, set)| {
+            acc.union(set).cloned().collect()
+        })
     }
 }
 
@@ -361,6 +361,7 @@ impl SearchTokenIndex {
             filename: filename.to_owned(),
             index: SearchTokenIndexMap {
                 api_version: API_VERSION.to_owned(),
+                kind: "SearchTokenIndexMap".to_owned(),
                 tokens: BTreeMap::new(),
             },
         }
@@ -373,6 +374,7 @@ impl SearchTokenIndex {
         } else {
             SearchTokenIndexMap {
                 api_version: API_VERSION.to_owned(),
+                kind: "SearchTokenIndexMap".to_owned(),
                 tokens: BTreeMap::new(),
             }
         };
@@ -394,6 +396,10 @@ impl SearchTokenIndex {
             Some(matches) => matches.contains(entry),
             None => false,
         })
+    }
+
+    pub fn prefix_matches(&self, token: &Phrase) -> BTreeSet<SearchEntry> {
+        self.index.prefix_matches(token)
     }
 
     fn remove(&mut self, entry: &SearchEntry, token: Phrase) -> Result<()> {
@@ -667,7 +673,7 @@ mod tests {
         let phrase = Search::parse(&format!("a aa aaa aaaa {}", token)).unwrap();
         assert_eq!(
             phrase.tokens,
-            phrases(&["aaa", "aaaa", "aaaaaaaaaaaaaaaaaaaaa"])
+            phrases(&["aa", "aaa", "aaaa", "aaaaaaaaaaaaaaaaaaaaa"])
         );
     }
 
@@ -681,6 +687,7 @@ mod tests {
             phrase.tokens().iter().map(Phrase::to_string).collect_vec(),
             &[
                 "2019",
+                "07",
                 "partnership",
                 "announced",
                 "between",
@@ -688,6 +695,7 @@ mod tests {
                 "dod",
                 "and",
                 "venatorx",
+                "to",
                 "develop",
                 "vnrx",
                 "5133",
