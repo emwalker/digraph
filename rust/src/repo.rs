@@ -11,6 +11,7 @@ use crate::graphql;
 use crate::http;
 use crate::prelude::*;
 use crate::psql;
+use crate::redis;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct RepoPath {
@@ -354,6 +355,11 @@ impl Repo {
         parent_topic: graphql::Topic,
         search_string: String,
     ) -> Result<Vec<graphql::TopicChild>> {
+        let fetcher = git::RedisFetchDownSet {
+            git: self.git.clone(),
+            redis: redis::Redis::new("redis://localhost"),
+        };
+
         let git::SearchWithinTopicResult { matches, .. } = git::SearchWithinTopic {
             limit: 100,
             locale: Locale::EN,
@@ -363,7 +369,7 @@ impl Repo {
             topic_path: parent_topic.path,
             viewer: self.viewer.clone(),
         }
-        .call(&self.git)?;
+        .call(&self.git, &fetcher)?;
 
         Ok(matches
             .iter()

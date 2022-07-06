@@ -61,7 +61,7 @@ impl Fixtures {
         } = FetchTopicLiveSearch {
             limit: 10,
             prefixes: vec!["/wiki".to_owned()],
-            search: Search::parse("climate change").unwrap(),
+            search: Search::parse(name).unwrap(),
             viewer: actor(),
         }
         .call(&self.repo.git)

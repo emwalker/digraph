@@ -91,7 +91,38 @@ mod fetch_topic_live_search {
 
 #[cfg(test)]
 mod search_within_topic {
+    use digraph::git::Git;
+    use digraph::DownSet;
+    use std::collections::HashSet;
+
     use super::*;
+
+    struct FetchDownSet(Git);
+
+    impl DownSet for FetchDownSet {
+        fn transitive_closure(&self, topic_paths: &[&RepoPath]) -> Result<HashSet<String>> {
+            let (head, tail) = topic_paths.split_at(1);
+            match head.get(0) {
+                Some(path) => {
+                    let mut set = self.down_set(path);
+                    for other_path in tail {
+                        let other = self.down_set(other_path);
+                        set.retain(|path| other.contains(path));
+                    }
+                    Ok(set)
+                }
+
+                None => Ok(HashSet::new()),
+            }
+        }
+
+        fn down_set(&self, path: &RepoPath) -> HashSet<String> {
+            self.0
+                .topic_down_set(path)
+                .map(|topic| topic.metadata.path)
+                .collect::<HashSet<String>>()
+        }
+    }
 
     fn root() -> RepoPath {
         RepoPath::from(WIKI_ROOT_TOPIC_PATH)
@@ -113,7 +144,9 @@ mod search_within_topic {
         input: &str,
         recursive: bool,
     ) -> BTreeSet<SearchMatch> {
+        let fetcher = FetchDownSet(f.repo.git.clone());
         let search = Search::parse(input).unwrap();
+
         let SearchWithinTopicResult { matches } = SearchWithinTopic {
             limit: 100,
             locale: Locale::EN,
@@ -123,7 +156,7 @@ mod search_within_topic {
             topic_path: topic_path.to_owned(),
             viewer: actor(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &fetcher)
         .unwrap();
 
         matches
@@ -153,12 +186,12 @@ mod search_within_topic {
     //
     //   - Everything
     //     - Climate change
-    //       - Weather and climate change
+    //       - Climate change and weather
     //         - https://climate.nasa.gov/news/3184/a-force-of-nature-hurricanes-in-a-changing-climate/
     //         - https://royalsociety.org/topics-policy/projects/climate-change-evidence-causes/question-13/
     //       - https://en.wikipedia.org/wiki/Climate_change
-    //     - Weather (topic)
-    //       - Weather and climate change
+    //     - Weather
+    //       - Climate change and weather
     //         - https://climate.nasa.gov/news/3184/a-force-of-nature-hurricanes-in-a-changing-climate/
     //         - https://royalsociety.org/topics-policy/projects/climate-change-evidence-causes/question-13/
     //       - https://en.wikipedia.org/wiki/Weather
@@ -178,14 +211,31 @@ mod search_within_topic {
     }
 
     #[test]
-    fn result_size_and_order() {
+    fn combined_search() {
         let f = Fixtures::copy("simple");
 
         let root = root();
         let climate_change = f.topic_path("Climate change").unwrap().unwrap();
-        let query = format!("in:{}", climate_change);
+        let query = format!("in:{} frequency", climate_change);
 
+        // A link should be returned, since it matches the token search and is a child of the topic
+        // included in the search.  The topic should not be included, because it doesn't match the
+        // token search.
+        let matches = search(&f, &root, &query, true);
+        assert_eq!(count(Kind::Topic, &matches), 0);
+        assert_eq!(count(Kind::Link, &matches), 1);
+    }
+
+    #[test]
+    fn result_size_and_order() {
+        let f = Fixtures::copy("simple");
+
+        let fetcher = FetchDownSet(f.repo.git.clone());
+        let root = root();
+        let climate_change = f.topic_path("Climate change and weather").unwrap().unwrap();
+        let query = format!("in:{}", climate_change);
         let search = Search::parse(&query).unwrap();
+
         let SearchWithinTopicResult { matches } = SearchWithinTopic {
             limit: 3,
             locale: Locale::EN,
@@ -195,11 +245,11 @@ mod search_within_topic {
             topic_path: root,
             viewer: actor(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &fetcher)
         .unwrap();
 
-        assert_eq!(count(Kind::Topic, &matches), 2);
-        assert_eq!(count(Kind::Link, &matches), 1);
+        assert_eq!(count(Kind::Topic, &matches), 1);
+        assert_eq!(count(Kind::Link, &matches), 2);
     }
 
     // #[test]

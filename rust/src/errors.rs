@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 quick_error! {
-    #[derive(Debug, Clone)]
+    #[derive(Clone, Debug)]
     pub enum Error {
         Auth(err: String) {}
 
@@ -46,6 +46,10 @@ quick_error! {
         Parse(err: String) {}
 
         RBAC(err: String) {}
+
+        Redis(err: String) {
+            from(err: redis_rs::RedisError) -> (format!("{}", err))
+        }
 
         Reqwest(err: String) {
             from(err: reqwest::Error) -> (format!("{:?}", err))

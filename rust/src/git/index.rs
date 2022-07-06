@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use unidecode::unidecode;
 
-use super::{Git, Kind, Row, Search, Synonym, Topic, TopicChild, API_VERSION};
+use super::{Git, Kind, Search, Synonym, Topic, TopicChild, API_VERSION};
 use crate::prelude::*;
 
 // Omit dashes so that we can split on them
@@ -256,7 +256,7 @@ impl SynonymIndex {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SearchEntry {
     pub kind: Kind,
     pub path: String,
@@ -290,7 +290,7 @@ impl SearchTokenIndexMap {
         self.tokens.get(string)
     }
 
-    fn prefix_matches(&self, token: &Phrase) -> HashSet<Row> {
+    fn prefix_matches(&self, token: &Phrase) -> HashSet<SearchEntry> {
         let iter = self
             .tokens
             .range::<Phrase, _>(token..)
@@ -299,7 +299,7 @@ impl SearchTokenIndexMap {
         let mut rows = HashSet::new();
         for (_token, set) in iter {
             for entry in set {
-                rows.insert(Row::SearchEntry(entry.to_owned()));
+                rows.insert(entry.to_owned());
             }
         }
         rows
@@ -365,7 +365,7 @@ impl SearchTokenIndex {
         })
     }
 
-    pub fn prefix_matches(&self, token: &Phrase) -> HashSet<Row> {
+    pub fn prefix_matches(&self, token: &Phrase) -> HashSet<SearchEntry> {
         self.index.prefix_matches(token)
     }
 

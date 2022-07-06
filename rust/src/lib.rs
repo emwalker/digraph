@@ -1,3 +1,4 @@
+extern crate redis as redis_rs;
 extern crate strum;
 extern crate strum_macros;
 
@@ -8,7 +9,7 @@ extern crate quick_error;
 extern crate derivative;
 
 use serde::{Deserialize, Serialize};
-
+use std::collections::HashSet;
 use strum_macros::EnumString;
 
 pub mod config;
@@ -18,7 +19,9 @@ pub mod git;
 pub mod graphql;
 pub mod http;
 pub mod prelude;
+use prelude::{RepoPath, Result};
 mod psql;
+pub mod redis;
 pub mod repo;
 
 pub enum Alert {
@@ -66,4 +69,10 @@ pub enum Locale {
     UA,
     UK,
     ZH,
+}
+
+pub trait DownSet {
+    fn transitive_closure(&self, topic_paths: &[&RepoPath]) -> Result<HashSet<String>>;
+
+    fn down_set(&self, key: &RepoPath) -> HashSet<String>;
 }

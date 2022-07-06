@@ -1,11 +1,14 @@
 use lazy_static::lazy_static;
+use redis_rs;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
 use strum_macros::EnumString;
 
-use super::{Git, Kind, Locale, Object, Phrase, Row, SynonymEntry};
+use super::{Git, Kind, Locale, Object, Phrase, SynonymEntry, Topic};
 use crate::prelude::*;
+use crate::redis;
+use crate::DownSet;
 
 #[derive(
     Copy,
@@ -196,6 +199,35 @@ impl std::cmp::PartialEq for SearchMatch {
 
 impl std::cmp::Eq for SearchMatch {}
 
+struct Filter<T>(HashSet<T>);
+
+impl<T: Eq + std::hash::Hash> Filter<T> {
+    fn test(&self, value: &T) -> bool {
+        if self.0.is_empty() {
+            return true;
+        }
+        self.0.contains(value)
+    }
+}
+
+pub struct RedisFetchDownSet<T: Clone + redis_rs::IntoConnectionInfo> {
+    pub git: Git,
+    pub redis: redis::Redis<T>,
+}
+
+impl<T: Clone + redis_rs::IntoConnectionInfo> DownSet for RedisFetchDownSet<T> {
+    fn transitive_closure(&self, topic_paths: &[&RepoPath]) -> Result<HashSet<String>> {
+        self.redis.transitive_closure(self, topic_paths)
+    }
+
+    fn down_set(&self, path: &RepoPath) -> HashSet<String> {
+        self.git
+            .topic_down_set(path)
+            .map(|topic| topic.metadata.path)
+            .collect::<HashSet<String>>()
+    }
+}
+
 pub struct SearchWithinTopic {
     pub limit: usize,
     pub locale: Locale,
@@ -211,7 +243,10 @@ pub struct SearchWithinTopicResult {
 }
 
 impl SearchWithinTopic {
-    pub fn call(&self, git: &Git) -> Result<SearchWithinTopicResult> {
+    pub fn call<F>(&self, git: &Git, fetch: &F) -> Result<SearchWithinTopicResult>
+    where
+        F: DownSet,
+    {
         if self.search.is_empty() {
             log::info!("empty search, returning no results");
             return Ok(SearchWithinTopicResult {
@@ -219,35 +254,22 @@ impl SearchWithinTopic {
             });
         }
 
-        // Initial working set
-        // https://stackoverflow.com/a/65175186/61048
-        let mut sets = self.topic_down_sets(git);
-        let (start, remaining) = sets.split_at_mut(1);
-        let rows = &mut start[0];
-        for set in remaining {
-            rows.retain(|o| set.contains(o));
-        }
-
-        // Drop anything that doesn't match the other search terms if they're present
-        if !self.search.tokens.is_empty() {
-            for prefix in &self.prefixes {
-                for token in &self.search.tokens {
-                    let other = git.search_token_prefix_matches(prefix, token);
-                    rows.retain(|o| other.contains(o));
-                }
-            }
-        }
-
+        let mut topics = self.topic_intersection(git, fetch)?;
+        let filter = self.token_filter(git);
         let normalized = &self.search.normalized;
         let mut matches = BTreeSet::new();
 
-        for row in rows.iter() {
-            let object = match row {
-                Row::SearchEntry(entry) => git.fetch(&entry.path)?,
-                Row::Topic(topic) => Object::Topic(topic.to_owned()),
-                Row::TopicChild(child) => git.fetch(&child.path)?,
-            };
-            matches.insert(object.to_search_match(self.locale, normalized));
+        for topic in topics.drain() {
+            for child in &topic.children {
+                if child.kind == Kind::Link && filter.test(&child.path) {
+                    let object = git.fetch(&child.path)?;
+                    matches.insert(object.to_search_match(self.locale, normalized));
+                }
+            }
+
+            if filter.test(&topic.metadata.path) {
+                matches.insert(Object::Topic(topic).to_search_match(self.locale, normalized));
+            }
         }
 
         Ok(SearchWithinTopicResult {
@@ -255,18 +277,50 @@ impl SearchWithinTopic {
         })
     }
 
-    fn topic_down_sets(&self, git: &Git) -> Vec<HashSet<Row>> {
-        let set = git
-            .topic_down_set(&self.topic_path)
-            .collect::<HashSet<Row>>();
-        let mut sets = vec![set];
-        for spec in &self.search.path_specs {
-            let set = git.topic_down_set(&spec.path).collect::<HashSet<Row>>();
-            sets.push(set);
+    fn topic_intersection<F>(&self, git: &Git, fetch: &F) -> Result<HashSet<Topic>>
+    where
+        F: DownSet,
+    {
+        let topic_paths = self
+            .search
+            .path_specs
+            .iter()
+            .map(|s| &s.path)
+            .chain([&self.topic_path])
+            .collect::<Vec<&RepoPath>>();
+
+        let mut set = fetch.transitive_closure(&topic_paths)?;
+        let mut topics = HashSet::new();
+
+        for path in set.drain() {
+            let topic = git.fetch_topic(&path)?;
+            topics.insert(topic);
         }
-        // Use the smallest set ast the starting point
-        sets.sort_by_key(HashSet::len);
-        sets
+
+        Ok(topics)
+    }
+
+    fn token_filter(&self, git: &Git) -> Filter<String> {
+        let mut token_matches = HashSet::new();
+
+        for prefix in &self.prefixes {
+            let mut iter = self.search.tokens.iter();
+
+            if let Some(token) = iter.next() {
+                let mut prefix_matches = git.search_token_prefix_matches(prefix, token);
+
+                for token in iter {
+                    let other = git.search_token_prefix_matches(prefix, token);
+                    prefix_matches.retain(|e| other.contains(e));
+                }
+
+                for entry in prefix_matches.drain() {
+                    token_matches.insert(entry.path);
+                }
+            }
+        }
+
+        Filter(token_matches)
     }
 }
 

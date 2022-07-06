@@ -285,6 +285,13 @@ impl std::cmp::PartialOrd for Topic {
     }
 }
 
+impl std::hash::Hash for Topic {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.kind.hash(state);
+        self.metadata.path.hash(state);
+    }
+}
+
 impl Topic {
     pub fn has_child(&self, path: &RepoPath) -> bool {
         self.children.iter().any(|child| child.path == path.inner)
@@ -509,69 +516,42 @@ impl DataRoot {
 
 #[derive(Debug)]
 pub struct DownSetIter {
-    links: Vec<TopicChild>,
-    curr_topic: Option<Topic>,
     git: Git,
     seen: HashSet<TopicChild>,
     stack: Vec<TopicChild>,
 }
 
 impl Iterator for DownSetIter {
-    type Item = Row;
+    type Item = Topic;
 
     fn next(&mut self) -> Option<Self::Item> {
-        log::debug!(
-            "next() with {} children and {} stack elements",
-            self.links.len(),
-            self.stack.len()
-        );
-
-        // Exit with `None` if there is no current topic.
-        self.curr_topic.as_ref()?;
-
-        if !self.links.is_empty() {
-            let child = self.links.pop();
-            if child.is_some() {
-                return child.map(Row::TopicChild);
-            }
-        }
+        log::debug!("next() with {} stack elements", self.stack.len());
 
         while !self.stack.is_empty() {
             match self.stack.pop() {
                 Some(topic_child) => {
                     if self.seen.contains(&topic_child) {
-                        log::debug!("topic {:?} already seen, skipping", topic_child);
+                        log::debug!("topic already seen, skipping: {}", topic_child.path);
                         continue;
                     }
                     self.seen.insert(topic_child.clone());
 
                     match self.git.fetch_topic(&topic_child.path) {
                         Ok(topic) => {
-                            self.curr_topic = Some(topic.clone());
                             for child in &topic.children {
-                                match child.kind {
-                                    Kind::Link => {
-                                        self.links.push(child.clone());
-                                    }
-                                    Kind::Topic => {
-                                        self.stack.push(child.clone());
-                                    }
+                                if child.kind != Kind::Topic {
+                                    break;
                                 }
+                                self.stack.push(child.clone());
                             }
-                            return Some(Row::Topic(topic));
+                            log::debug!("yielding topic {}", topic_child.path);
+                            return Some(topic);
                         }
 
                         Err(err) => {
                             log::error!("failed to fetch topic: {}", err)
                         }
                     };
-
-                    while !self.links.is_empty() {
-                        let child = self.links.pop();
-                        if child.is_some() {
-                            return child.map(Row::TopicChild);
-                        }
-                    }
                 }
 
                 None => {
@@ -592,8 +572,6 @@ impl DownSetIter {
         }
 
         Self {
-            links: vec![],
-            curr_topic: topic,
             git,
             seen: HashSet::new(),
             stack,
@@ -643,38 +621,17 @@ impl Git {
         descendant_path: &RepoPath,
         ancestor_path: &RepoPath,
     ) -> Result<bool> {
-        let mut stack = vec![descendant_path.clone()];
-        let mut seen: BTreeSet<RepoPath> = BTreeSet::new();
-        let mut iterations = 0;
+        let mut i = 0;
 
-        while !stack.is_empty() {
-            if let Some(descendant_path) = stack.pop() {
-                if seen.contains(&descendant_path) {
-                    continue;
-                }
-
-                if &descendant_path == ancestor_path {
-                    log::info!("cycle check completed in {} iterations", iterations);
-                    return Ok(true);
-                }
-
-                let descendant = self.fetch_topic(&descendant_path.inner)?;
-
-                for child in &descendant.children {
-                    if child.kind != Kind::Topic {
-                        break;
-                    }
-                    let child_path = RepoPath::from(&child.path);
-                    stack.push(child_path);
-                }
-
-                seen.insert(descendant_path.clone());
+        for topic in self.topic_down_set(descendant_path) {
+            i += 1;
+            if topic.metadata.path == ancestor_path.inner {
+                log::info!("cycle found after {} iterations", i);
+                return Ok(true);
             }
-
-            iterations += 1;
         }
 
-        log::info!("cycle check completed in {} iterations", iterations);
+        log::info!("no cycle found after {} iterations", i);
         Ok(false)
     }
 
@@ -810,7 +767,11 @@ impl Git {
 
     // The "prefix" argument tells us which repo to look in.  The "prefix" in the method name
     // alludes to the prefix scan that is done to find matching synonyms.
-    pub fn search_token_prefix_matches(&self, prefix: &str, token: &Phrase) -> HashSet<Row> {
+    pub fn search_token_prefix_matches(
+        &self,
+        prefix: &str,
+        token: &Phrase,
+    ) -> HashSet<SearchEntry> {
         match self.index_key(prefix, token) {
             Ok(key) => match self.search_index(&key, IndexType::Search, IndexMode::ReadOnly) {
                 Ok(index) => index.prefix_matches(token),
@@ -910,7 +871,7 @@ impl Git {
         match self.fetch_topic(&topic_path.inner) {
             Ok(topic) => DownSetIter::new(self.clone(), Some(topic)),
             Err(err) => {
-                log::error!("problem constructing down set: {}", err);
+                log::error!("problem fetching topic: {}", err);
                 DownSetIter::new(self.clone(), None)
             }
         }
