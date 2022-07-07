@@ -369,16 +369,28 @@ impl Object {
         Phrase::parse(&self.display_string(locale))
     }
 
-    pub fn to_search_match(self, locale: Locale, normalized: &Phrase) -> SearchMatch {
+    pub fn to_search_match(self, locale: Locale, search: &Search) -> SearchMatch {
+        let normalized = &search.normalized;
         let display_string = self.display_string(locale);
         let search_string = self.search_string(locale);
-        let kind = match &self {
-            Self::Link(_) => Kind::Link,
-            Self::Topic(_) => Kind::Topic,
-        };
-        SearchMatch {
-            sort_key: SortKey(&search_string != normalized, kind, display_string),
-            object: self,
+
+        match &self {
+            Self::Link(_) => SearchMatch {
+                sort_key: SortKey(Kind::Link, &search_string != normalized, display_string),
+                object: self,
+            },
+            Self::Topic(topic) => {
+                let path = &topic.metadata.path;
+                let explicit_in_search = search.path_specs.iter().any(|s| &s.path.inner == path);
+                SearchMatch {
+                    sort_key: SortKey(
+                        Kind::Topic,
+                        !explicit_in_search && &search_string != normalized,
+                        display_string,
+                    ),
+                    object: self,
+                }
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ Soon:
 * Activity feed using anonymous ids + user lookups
 * Restrict on org/repo prefix
 * Add limit to topic results (why did "Reading list" take such a long time?)
+* Switch to base62 hash for links and topics
 
 Things that would be nice to eventually get to:
 * Populate locale dropdown using a GraphQL field

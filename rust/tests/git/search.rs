@@ -174,7 +174,7 @@ mod search_within_topic {
 
         assert_eq!(
             sort_key,
-            &SortKey(true, Kind::Topic, "Existing non-root topic".to_owned())
+            &SortKey(Kind::Topic, true, "Existing non-root topic".to_owned())
         );
 
         if let Object::Topic(topic) = &object {
@@ -250,6 +250,21 @@ mod search_within_topic {
 
         assert_eq!(count(Kind::Topic, &matches), 1);
         assert_eq!(count(Kind::Link, &matches), 2);
+    }
+
+    #[test]
+    fn topic_used_in_search_appears_at_top() {
+        let f = Fixtures::copy("simple");
+
+        let root = root();
+        let weather = f.topic_path("Weather").unwrap().unwrap();
+        let query = format!("in:{}", weather);
+        let matches = search(&f, &root, &query, true);
+
+        match &matches.iter().next().unwrap().object {
+            Object::Topic(topic) => assert_eq!(topic.name(Locale::EN), "Weather"),
+            Object::Link(_) => assert!(false),
+        }
     }
 
     // #[test]

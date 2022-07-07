@@ -31,8 +31,8 @@ pub enum PathSpecOperation {
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct PathSpec {
-    op: PathSpecOperation,
-    path: RepoPath,
+    pub op: PathSpecOperation,
+    pub path: RepoPath,
 }
 
 const PATH_PATTERN: &str = r#"^in:/\w+/[\w-]+$"#;
@@ -171,7 +171,7 @@ impl FetchTopicLiveSearch {
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SortKey(pub bool, pub Kind, pub String);
+pub struct SortKey(pub Kind, pub bool, pub String);
 
 #[derive(Clone, Debug)]
 pub struct SearchMatch {
@@ -256,19 +256,18 @@ impl SearchWithinTopic {
 
         let mut topics = self.topic_intersection(git, fetch)?;
         let filter = self.token_filter(git);
-        let normalized = &self.search.normalized;
         let mut matches = BTreeSet::new();
 
         for topic in topics.drain() {
             for child in &topic.children {
                 if child.kind == Kind::Link && filter.test(&child.path) {
                     let object = git.fetch(&child.path)?;
-                    matches.insert(object.to_search_match(self.locale, normalized));
+                    matches.insert(object.to_search_match(self.locale, &self.search));
                 }
             }
 
             if filter.test(&topic.metadata.path) {
-                matches.insert(Object::Topic(topic).to_search_match(self.locale, normalized));
+                matches.insert(Object::Topic(topic).to_search_match(self.locale, &self.search));
             }
         }
 
