@@ -1,16 +1,14 @@
 Soon:
-* Add kind/path fields to token indexes
-* Activity feed using anonymous ids + user lookups
-* Cache topic traversals in Redis
-* Restrict on org/repo prefix
 * Update link title, don't fetch html if we already have the link
-* Include the locale in synonym entries?
-* Switch the topic view to using search without descendents, and add a cursor for paging
-* Add paging
-* Populate locale dropdown using a GraphQL field
-* Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
+* Activity feed using anonymous ids + user lookups
+* Restrict on org/repo prefix
+* Add limit to topic results (why did "Reading list" take such a long time?)
 
 Things that would be nice to eventually get to:
+* Populate locale dropdown using a GraphQL field
+* Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
+* Switch the topic view to using search without descendents, and add a cursor for paging
+* Add paging
 * Zero-copy search results
 * Move over to Primer React components
 * Revisit UI look and feel
