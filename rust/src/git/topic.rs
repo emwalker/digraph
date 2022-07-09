@@ -1,12 +1,13 @@
 use rand::{distributions::Alphanumeric, Rng};
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+use super::SaveChangesForPrefix;
 use super::{
-    Git, IndexMode, Indexer, Kind, Object, ParentTopic, Synonym, SynonymEntry, SynonymMatch,
+    desc, Git, IndexMode, Indexer, Kind, Object, ParentTopic, Synonym, SynonymEntry, SynonymMatch,
     Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use crate::prelude::*;
-use crate::{Alert, Locale};
+use crate::Alert;
 
 pub struct DeleteTopic {
     pub actor: Viewer,
@@ -19,14 +20,19 @@ pub struct DeleteTopicResult {
 }
 
 impl DeleteTopic {
-    pub fn call(&self, git: &Git) -> Result<DeleteTopicResult> {
+    pub fn call<S>(&self, git: &Git, store: &S) -> Result<DeleteTopicResult>
+    where
+        S: SaveChangesForPrefix,
+    {
         let path = &self.topic_path;
+        let date = chrono::Utc::now();
         let topic = git.fetch_topic(&path.inner)?;
 
         if topic.metadata.root {
             return Err(Error::Repo("cannot delete root topic".to_owned()));
         }
 
+        let change = self.change(&topic, date);
         let parent_topics = topic
             .parent_topics
             .iter()
@@ -69,12 +75,36 @@ impl DeleteTopic {
         }
 
         git.remove_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.save()?;
+        indexer.add_change(&change)?;
+        indexer.save(store)?;
 
         Ok(DeleteTopicResult {
             alerts: vec![],
             deleted_topic_path: self.topic_path.clone(),
         })
+    }
+
+    fn change(&self, topic: &Topic, date: Timestamp) -> desc::Change {
+        let mut paths = BTreeMap::from([(topic.metadata.path.to_owned(), desc::Role::Topic)]);
+
+        for parent in &topic.parent_topics {
+            paths.insert(parent.path.to_owned(), desc::Role::RemovedParentTopic);
+        }
+
+        for child in &topic.children {
+            let TopicChild { kind, path, .. } = child;
+
+            match kind {
+                Kind::Link => paths.insert(path.to_owned(), desc::Role::RemovedChildLink),
+                Kind::Topic => paths.insert(path.to_owned(), desc::Role::RemovedChildTopic),
+            };
+        }
+
+        desc::Change::UpdateLinkParentTopics(desc::UpdateLinkParentTopics(desc::Body {
+            date,
+            paths,
+            user_id: self.actor.user_id.to_owned(),
+        }))
     }
 }
 
@@ -89,18 +119,30 @@ pub struct DeleteTopicTimerangeResult {
 }
 
 impl DeleteTopicTimerange {
-    pub fn call(&self, git: &Git) -> Result<DeleteTopicTimerangeResult> {
+    pub fn call<S>(&self, git: &Git, store: &S) -> Result<DeleteTopicTimerangeResult>
+    where
+        S: SaveChangesForPrefix,
+    {
         let mut topic = git.fetch_topic(&self.topic_path.inner)?;
         let mut indexer = Indexer::new(git, IndexMode::Update);
 
         topic.metadata.timerange = None;
         git.save_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.save()?;
+        indexer.add_change(&self.change())?;
+        indexer.save(store)?;
 
         Ok(DeleteTopicTimerangeResult {
             alerts: vec![],
             topic,
         })
+    }
+
+    pub fn change(&self) -> desc::Change {
+        desc::Change::DeleteTopicTimerange(desc::DeleteTopicTimerange(desc::Body {
+            date: chrono::Utc::now(),
+            user_id: self.actor.user_id.to_owned(),
+            paths: BTreeMap::from([(self.topic_path.inner.to_owned(), desc::Role::Topic)]),
+        }))
     }
 }
 
@@ -116,13 +158,17 @@ pub struct UpdateTopicParentTopicsResult {
 }
 
 impl UpdateTopicParentTopics {
-    pub fn call(&self, git: &Git) -> Result<UpdateTopicParentTopicsResult> {
+    pub fn call<S>(&self, git: &Git, store: &S) -> Result<UpdateTopicParentTopicsResult>
+    where
+        S: SaveChangesForPrefix,
+    {
         self.validate(git)?;
 
-        let now = chrono::Utc::now();
+        let date = chrono::Utc::now();
         let mut indexer = Indexer::new(git, IndexMode::Update);
         let mut child = git.fetch_topic(&self.topic_path.inner)?;
         let mut updates: Vec<Topic> = vec![];
+
         let parent_topics = self
             .parent_topic_paths
             .iter()
@@ -131,32 +177,68 @@ impl UpdateTopicParentTopics {
             })
             .collect::<BTreeSet<ParentTopic>>();
 
-        let added = parent_topics.difference(&child.parent_topics);
-        for parent in &added.cloned().collect::<Vec<ParentTopic>>() {
+        let added = parent_topics
+            .difference(&child.parent_topics)
+            .cloned()
+            .collect::<Vec<ParentTopic>>();
+
+        for parent in &added {
             let mut topic = parent.fetch(git)?;
-            topic.children.insert(child.to_topic_child(now));
+            topic.children.insert(child.to_topic_child(date));
             child.parent_topics.insert(parent.to_owned());
             updates.push(topic);
         }
 
-        let deleted = child.parent_topics.difference(&parent_topics);
-        for parent in &deleted.cloned().collect::<Vec<ParentTopic>>() {
+        let removed = child
+            .parent_topics
+            .difference(&parent_topics)
+            .cloned()
+            .collect::<Vec<ParentTopic>>();
+
+        for parent in &removed {
             let mut topic = parent.fetch(git)?;
-            topic.children.remove(&child.to_topic_child(now));
+            topic.children.remove(&child.to_topic_child(date));
             child.parent_topics.remove(parent);
             updates.push(topic);
         }
+
+        let change = self.change(&child, &added, &removed, date);
 
         updates.push(child.clone());
         for topic in updates {
             git.save_topic(&topic.path(), &topic, &mut indexer)?;
         }
-        indexer.save()?;
+        indexer.add_change(&change)?;
+        indexer.save(store)?;
 
         Ok(UpdateTopicParentTopicsResult {
             alerts: vec![],
             topic: child,
         })
+    }
+
+    fn change(
+        &self,
+        child: &Topic,
+        added: &Vec<ParentTopic>,
+        removed: &Vec<ParentTopic>,
+        date: Timestamp,
+    ) -> desc::Change {
+        let mut paths = BTreeMap::from([(child.metadata.path.to_owned(), desc::Role::Topic)]);
+
+        for parent in added {
+            paths.insert(parent.path.to_owned(), desc::Role::AddedParentTopic);
+        }
+
+        for parent in removed {
+            paths.insert(parent.path.to_owned(), desc::Role::RemovedParentTopic);
+        }
+
+        desc::Change::UpdateTopicParentTopics(desc::UpdateTopicParentTopics(desc::Body {
+            date,
+            paths,
+            user_id: self.actor.user_id.to_owned(),
+        }))
     }
 
     fn validate(&self, git: &Git) -> Result<()> {
@@ -191,7 +273,10 @@ pub struct UpdateTopicSynonymsResult {
 }
 
 impl UpdateTopicSynonyms {
-    pub fn call(&self, git: &Git) -> Result<UpdateTopicSynonymsResult> {
+    pub fn call<S>(&self, git: &Git, store: &S) -> Result<UpdateTopicSynonymsResult>
+    where
+        S: SaveChangesForPrefix,
+    {
         let mut topic = git.fetch_topic(&self.topic_path.inner)?;
         let mut indexer = Indexer::new(git, IndexMode::Update);
         let lookup = topic
@@ -218,12 +303,21 @@ impl UpdateTopicSynonyms {
 
         topic.metadata.synonyms = synonyms;
         git.save_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.save()?;
+        indexer.add_change(&self.change())?;
+        indexer.save(store)?;
 
         Ok(UpdateTopicSynonymsResult {
             alerts: vec![],
             topic,
         })
+    }
+
+    fn change(&self) -> desc::Change {
+        desc::Change::UpdateTopicSynonyms(desc::UpdateTopicSynonyms(desc::Body {
+            date: chrono::Utc::now(),
+            paths: BTreeMap::from([(self.topic_path.inner.to_owned(), desc::Role::Topic)]),
+            user_id: self.actor.user_id.to_owned(),
+        }))
     }
 }
 
@@ -250,10 +344,13 @@ pub struct UpsertTopicResult {
 }
 
 impl UpsertTopic {
-    pub fn call(&self, git: &Git) -> Result<UpsertTopicResult> {
+    pub fn call<S>(&self, git: &Git, store: &S) -> Result<UpsertTopicResult>
+    where
+        S: SaveChangesForPrefix,
+    {
         let mut parent = self.fetch_parent(git)?;
         let mut matches = git.synonym_phrase_matches(&[&self.prefix], &self.name)?;
-        let added = chrono::Utc::now();
+        let date = chrono::Utc::now();
 
         let (path, child) = if matches.is_empty() {
             self.make_topic(&parent)
@@ -328,7 +425,7 @@ impl UpsertTopic {
                     topic.parent_topics.insert(parent.to_parent_topic());
 
                     topic.metadata.synonyms.push(Synonym {
-                        added,
+                        added: date,
                         locale: self.locale,
                         name: self.name.to_owned(),
                     });
@@ -338,12 +435,14 @@ impl UpsertTopic {
             }
         };
 
-        parent.children.insert(child.to_topic_child(added));
+        parent.children.insert(child.to_topic_child(date));
 
+        let change = self.change(&child, &parent, date);
         let mut indexer = Indexer::new(git, IndexMode::Update);
         git.save_topic(&path, &child, &mut indexer)?;
         git.save_topic(&parent.path(), &parent, &mut indexer)?;
-        indexer.save()?;
+        indexer.add_change(&change)?;
+        indexer.save(store)?;
 
         Ok(UpsertTopicResult {
             alerts: vec![],
@@ -351,6 +450,22 @@ impl UpsertTopic {
             saved: true,
             topic: Some(child),
         })
+    }
+
+    fn change(&self, child: &Topic, parent: &Topic, date: Timestamp) -> desc::Change {
+        let paths = BTreeMap::from([
+            (child.metadata.path.to_owned(), desc::Role::AddedChildTopic),
+            (
+                parent.metadata.path.to_owned(),
+                desc::Role::AddedParentTopic,
+            ),
+        ]);
+
+        desc::Change::UpsertTopic(desc::UpsertTopic(desc::Body {
+            date,
+            paths,
+            user_id: self.actor.user_id.to_owned(),
+        }))
     }
 
     fn make_path(&self) -> RepoPath {
@@ -368,7 +483,6 @@ impl UpsertTopic {
 
         let topic = Topic {
             api_version: API_VERSION.into(),
-            kind: Kind::Topic,
             metadata: TopicMetadata {
                 added,
                 path: path.to_string(),
@@ -406,18 +520,30 @@ pub struct UpsertTopicTimerangeResult {
 }
 
 impl UpsertTopicTimerange {
-    pub fn call(&self, git: &Git) -> Result<UpsertTopicTimerangeResult> {
+    pub fn call<S>(&self, git: &Git, store: &S) -> Result<UpsertTopicTimerangeResult>
+    where
+        S: SaveChangesForPrefix,
+    {
         let mut topic = git.fetch_topic(&self.topic_path.inner)?;
 
         let mut indexer = Indexer::new(git, IndexMode::Update);
         topic.metadata.timerange = Some(self.timerange.clone());
         git.save_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.save()?;
+        indexer.add_change(&self.change())?;
+        indexer.save(store)?;
 
         Ok(UpsertTopicTimerangeResult {
             alerts: vec![],
             topic,
             timerange: self.timerange.clone(),
         })
+    }
+
+    fn change(&self) -> desc::Change {
+        desc::Change::UpsertTopicTimerange(desc::UpsertTopicTimerange(desc::Body {
+            date: chrono::Utc::now(),
+            paths: BTreeMap::from([(self.topic_path.inner.to_owned(), desc::Role::Topic)]),
+            user_id: self.actor.user_id.to_owned(),
+        }))
     }
 }

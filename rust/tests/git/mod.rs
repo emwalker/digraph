@@ -6,7 +6,7 @@ use digraph::git::{
 };
 use digraph::http::{Fetch, Response};
 use digraph::prelude::*;
-use digraph::Locale;
+use digraph::redis;
 
 mod fixtures;
 pub use fixtures::*;
@@ -77,7 +77,7 @@ async fn upsert_link(
         url: url.normalized.to_owned(),
         title,
     }
-    .call(&f.repo.git)
+    .call(&f.repo.git, &redis::Noop)
     .await
     .unwrap()
 }
@@ -96,7 +96,7 @@ fn upsert_topic(
         on_matching_synonym,
         prefix: "/wiki".into(),
     }
-    .call(&f.repo.git)
+    .call(&f.repo.git, &redis::Noop)
 }
 
 fn valid_url() -> RepoUrl {

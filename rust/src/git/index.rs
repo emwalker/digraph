@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use unidecode::unidecode;
 
-use super::{Git, Kind, Search, Synonym, Topic, TopicChild, API_VERSION};
+use super::{desc, ChangeIndexMap, Git, Kind, Search, Synonym, Topic, TopicChild, API_VERSION};
 use crate::prelude::*;
 
 // Omit dashes so that we can split on them
@@ -383,18 +383,78 @@ impl SearchTokenIndex {
     }
 }
 
+pub struct ChangeIndex {
+    filename: PathBuf,
+    index: ChangeIndexMap,
+}
+
+impl ChangeIndex {
+    pub fn new(filename: &PathBuf) -> Self {
+        Self {
+            filename: filename.to_owned(),
+            index: ChangeIndexMap {
+                api_version: API_VERSION.to_owned(),
+                kind: "SearchTokenIndexMap".to_owned(),
+                changes: BTreeSet::new(),
+            },
+        }
+    }
+
+    pub fn load(filename: &PathBuf) -> Result<Self> {
+        let index = if filename.as_path().exists() {
+            let fh = std::fs::File::open(&filename).map_err(|e| Error::Repo(format!("{:?}", e)))?;
+            serde_yaml::from_reader(fh)?
+        } else {
+            ChangeIndexMap {
+                api_version: API_VERSION.to_owned(),
+                kind: "ChangeIndexMap".to_owned(),
+                changes: BTreeSet::new(),
+            }
+        };
+
+        Ok(Self {
+            filename: filename.to_owned(),
+            index,
+        })
+    }
+
+    pub fn add(&mut self, change: desc::Change) {
+        self.index.changes.insert(change);
+    }
+
+    pub fn changes(&self) -> &BTreeSet<desc::Change> {
+        &self.index.changes
+    }
+}
+
+impl Index for ChangeIndex {
+    fn filename(&self) -> &PathBuf {
+        &self.filename
+    }
+
+    fn serialize(&self) -> Result<String> {
+        Ok(serde_yaml::to_string(&self.index)?)
+    }
+}
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct IndexKey {
     pub prefix: String,
     pub basename: String,
 }
 
+pub trait SaveChangesForPrefix {
+    fn save(&self, prefix: &str, changes: &HashMap<String, Vec<desc::Change>>) -> Result<()>;
+}
+
 pub struct Indexer {
     git: Git,
-    mode: IndexMode,
+    pub mode: IndexMode,
     search_tokens: HashMap<IndexKey, SearchTokenIndex>,
     synonym_phrases: HashMap<IndexKey, SynonymIndex>,
     synonym_tokens: HashMap<IndexKey, SynonymIndex>,
+    path_changes: HashMap<String, ChangeIndex>,
+    prefix_changes: HashMap<String, Vec<desc::Change>>,
 }
 
 impl Indexer {
@@ -402,10 +462,34 @@ impl Indexer {
         Self {
             git: git.clone(),
             mode,
+            path_changes: HashMap::new(),
+            prefix_changes: HashMap::new(),
             search_tokens: HashMap::new(),
             synonym_phrases: HashMap::new(),
             synonym_tokens: HashMap::new(),
         }
+    }
+
+    pub fn activity(&mut self, path: &str) -> Result<&mut ChangeIndex> {
+        Ok(self
+            .path_changes
+            .entry(path.to_owned())
+            .or_insert(self.git.change_index(&RepoPath::from(path), self.mode)?))
+    }
+
+    pub fn add_change(&mut self, change: &desc::Change) -> Result<()> {
+        for path in change.paths().keys() {
+            let index = self.activity(path)?;
+            index.add(change.to_owned());
+        }
+
+        let list = self
+            .prefix_changes
+            .entry(WIKI_REPO_PREFIX.to_owned())
+            .or_insert(Vec::new());
+        list.push(change.to_owned());
+
+        Ok(())
     }
 
     fn synonym_indexes<'s, S, F>(&mut self, prefix: &str, synonyms: S, f: F) -> Result<()>
@@ -466,7 +550,10 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn save(&self) -> Result<()> {
+    pub fn save<S>(&self, store: &S) -> Result<()>
+    where
+        S: SaveChangesForPrefix,
+    {
         for index in self.search_tokens.values() {
             index.write()?;
         }
@@ -477,6 +564,15 @@ impl Indexer {
 
         for index in self.synonym_tokens.values() {
             index.write()?;
+        }
+
+        for index in self.path_changes.values() {
+            index.write()?;
+        }
+
+        match store.save(WIKI_REPO_PREFIX, &self.prefix_changes) {
+            Ok(_) => log::info!("changes saved to prefix key"),
+            Err(err) => log::error!("problem saving changes to prefix key: {}", err),
         }
 
         Ok(())

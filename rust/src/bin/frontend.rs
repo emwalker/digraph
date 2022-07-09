@@ -9,9 +9,10 @@ use std::env;
 
 use digraph::config::Config;
 use digraph::db;
-use digraph::git::{DataRoot, Git};
+use digraph::git;
 use digraph::graphql::{MutationRoot, QueryRoot, Schema, State};
 use digraph::prelude::*;
+use digraph::redis;
 
 struct AuthHeader(String);
 
@@ -88,8 +89,8 @@ async fn main() -> async_graphql::Result<()> {
     let config = Config::load()?;
     env_logger::init();
 
-    let root = DataRoot::new(PathBuf::from(&config.digraph_data_directory));
-    let git = Git::new(root);
+    let root = git::DataRoot::new(PathBuf::from(&config.digraph_data_directory));
+    let git = git::Git::new(root);
 
     let pool = db::db_connection(&config).await?;
 
@@ -99,7 +100,9 @@ async fn main() -> async_graphql::Result<()> {
         .extension(extensions::Logger)
         // .extension(ApolloTracing)
         .finish();
-    let state = State::new(pool, schema, config.digraph_server_secret, git);
+
+    let redis = redis::Redis::new("redis://localhost".to_owned())?;
+    let state = State::new(pool, schema, config.digraph_server_secret, git, redis);
 
     let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_owned());
     println!("Playground: http://localhost:8080");

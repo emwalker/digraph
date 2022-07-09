@@ -2,8 +2,8 @@ use async_graphql::connection::*;
 use itertools::Itertools;
 
 use super::{
-    relay::conn, LinkConnection, Prefix, Repository, Synonym, Synonyms, Timerange,
-    TopicChildConnection,
+    relay::conn, ActivityLineItem, LinkConnection, Prefix, Repository, Synonym, Synonyms,
+    Timerange, TopicChildConnection,
 };
 use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::repo::{Repo, RepoPath};
@@ -45,10 +45,19 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        let results = ctx
+        let activity = ctx
             .data_unchecked::<Repo>()
             .activity(Some(self.path.inner.clone()), first.unwrap_or(3))
             .await?;
+
+        let mut results = vec![];
+        for change in activity {
+            results.push(ActivityLineItem {
+                created_at: change.date(),
+                description: change.markdown(Locale::EN, Some(&self.path))?,
+            });
+        }
+
         conn(after, before, first, last, results)
     }
 

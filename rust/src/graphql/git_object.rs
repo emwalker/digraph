@@ -5,8 +5,8 @@ use super::{
     DateTime, Link, Prefix, Synonym, SynonymInput, SynonymMatch, Synonyms, Timerange,
     TimerangePrefixFormat, Topic, TopicChild,
 };
+use crate::git;
 use crate::prelude::*;
-use crate::{git, Locale};
 
 impl From<&git::Link> for Link {
     fn from(link: &git::Link) -> Self {

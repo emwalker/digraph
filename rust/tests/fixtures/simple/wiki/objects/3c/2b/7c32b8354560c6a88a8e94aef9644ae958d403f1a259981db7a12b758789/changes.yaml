@@ -1,0 +1,10 @@
+---
+apiVersion: objects/v1
+kind: ChangeIndexMap
+changes:
+  - kind: UpsertLink
+    date: "2022-07-09T18:37:38.813416455Z"
+    paths:
+      /wiki/3c2b7c32b8354560c6a88a8e94aef9644ae958d403f1a259981db7a12b758789: Link
+      /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13: AddedParentTopic
+    userId: "2"

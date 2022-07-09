@@ -1,7 +1,5 @@
 use sqlx::{Postgres, Transaction};
 
-mod activity;
-pub use activity::*;
 mod link;
 mod queries;
 pub use link::*;

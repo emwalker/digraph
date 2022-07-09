@@ -1,6 +1,6 @@
 use super::{
-    relay::conn, ActivityLineItemConnection, Link, LiveSearchTopicsPayload, Organization,
-    QueryInfo, Repository, SynonymMatch, Topic, User, WIKI_REPOSITORY_ID,
+    relay::conn, ActivityLineItem, ActivityLineItemConnection, Link, LiveSearchTopicsPayload,
+    Organization, QueryInfo, Repository, SynonymMatch, Topic, User, WIKI_REPOSITORY_ID,
 };
 use crate::repo::Repo;
 use crate::{git, prelude::*};
@@ -24,10 +24,19 @@ impl View {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        let results = ctx
+        let activity = ctx
             .data_unchecked::<Repo>()
             .activity(None, first.unwrap_or(3))
             .await?;
+
+        let mut results = vec![];
+        for change in activity {
+            results.push(ActivityLineItem {
+                created_at: change.date(),
+                description: change.markdown(Locale::EN, None)?,
+            });
+        }
+
         conn(after, before, first, last, results)
     }
 

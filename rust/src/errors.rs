@@ -61,6 +61,10 @@ quick_error! {
             from()
         }
 
+        SystemTime(err: std::time::SystemTimeError) {
+            from()
+        }
+
         UrlParse(err: String) {
             from(err: url::ParseError) -> (format!("{}", err))
         }

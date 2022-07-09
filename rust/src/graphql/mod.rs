@@ -3,6 +3,7 @@ use sqlx::postgres::PgPool;
 
 use crate::git;
 use crate::prelude::*;
+use crate::redis;
 use crate::repo::Repo;
 mod activity;
 pub use activity::*;
@@ -69,15 +70,23 @@ impl Viewer {
 pub struct State {
     pub git: git::Git,
     pub pool: PgPool,
+    pub redis: redis::Redis,
     pub schema: Schema,
     pub server_secret: String,
 }
 
 impl State {
-    pub fn new(pool: PgPool, schema: Schema, server_secret: String, git: git::Git) -> Self {
+    pub fn new(
+        pool: PgPool,
+        schema: Schema,
+        server_secret: String,
+        git: git::Git,
+        redis: redis::Redis,
+    ) -> Self {
         Self {
             git,
             pool,
+            redis,
             schema,
             server_secret,
         }
@@ -89,6 +98,7 @@ impl State {
             self.git.clone(),
             self.pool.clone(),
             self.server_secret.clone(),
+            self.redis.clone(),
         )
     }
 

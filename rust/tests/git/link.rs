@@ -1,5 +1,7 @@
-use super::{actor, fetch_link, fetch_topic, upsert_link, valid_url, Fixtures};
 use digraph::prelude::*;
+use digraph::redis;
+
+use super::{actor, fetch_link, fetch_topic, upsert_link, valid_url, Fixtures};
 
 mod delete_link {
     use super::*;
@@ -19,7 +21,7 @@ mod delete_link {
             actor: actor(),
             link_path: path.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
         assert!(!f.repo.exists(&path).unwrap());
     }
@@ -47,7 +49,7 @@ mod update_link_parent_topics {
             link_path: link.path(),
             parent_topic_paths: BTreeSet::from([parent1, parent2]),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         let link = f.repo.git.fetch_link(&link.path().inner).unwrap();
@@ -69,7 +71,7 @@ mod update_link_parent_topics {
             link_path: link.path(),
             parent_topic_paths: BTreeSet::new(),
         }
-        .call(&f.repo.git);
+        .call(&f.repo.git, &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
     }

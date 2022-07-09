@@ -1,5 +1,4 @@
 use lazy_static::lazy_static;
-use redis_rs;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
@@ -210,12 +209,12 @@ impl<T: Eq + std::hash::Hash> Filter<T> {
     }
 }
 
-pub struct RedisFetchDownSet<T: Clone + redis_rs::IntoConnectionInfo> {
+pub struct RedisFetchDownSet {
     pub git: Git,
-    pub redis: redis::Redis<T>,
+    pub redis: redis::Redis,
 }
 
-impl<T: Clone + redis_rs::IntoConnectionInfo> DownSet for RedisFetchDownSet<T> {
+impl DownSet for RedisFetchDownSet {
     fn transitive_closure(&self, topic_paths: &[&RepoPath]) -> Result<HashSet<String>> {
         self.redis.transitive_closure(self, topic_paths)
     }

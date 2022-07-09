@@ -6,7 +6,6 @@ use digraph::git::{
 };
 use digraph::prelude::WIKI_ROOT_TOPIC_PATH;
 use digraph::prelude::*;
-use digraph::Locale;
 
 use super::{actor, upsert_topic, Fixtures};
 
@@ -263,7 +262,7 @@ mod search_within_topic {
 
         match &matches.iter().next().unwrap().object {
             Object::Topic(topic) => assert_eq!(topic.name(Locale::EN), "Weather"),
-            Object::Link(_) => assert!(false),
+            Object::Link(_) => unreachable!(),
         }
     }
 

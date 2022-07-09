@@ -1,11 +1,18 @@
 Soon:
-* Update link title, don't fetch html if we already have the link
+* Handle activity like indexes, so that line items don't overwrite one another
+* Fix duplicate synonym bug
 * Activity feed using anonymous ids + user lookups
+* Add change entry to each parent topic
 * Restrict on org/repo prefix
 * Add limit to topic results (why did "Reading list" take such a long time?)
 * Switch to base62 hash for links and topics
 
 Things that would be nice to eventually get to:
+* Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
+* Figure out how to display the same change in different contexts -- e.g., a topic is deleted, and its contents merged into the parent topics.  What does the change look like in each change history?
+* Figure out how to make history entries outlive the topic and links when they're deleted.  I think this means denormalizing title, url and synonym info in the changes themeslves, mabye with one level of indirection? Or maybe it means putting a marker on the deleted item to indicate that it's deleted rather than actually deleting it.  Maybe change "delete" to "remove" in the UI if this approach ends up being used.  There's also the problem of historical names and titles that change.
+* Figure out how to display the matching synonym in search results (e.g., Radiocarbon dating v. Carbon-14 dating)
+* Update link title, don't fetch html if we already have the link
 * Populate locale dropdown using a GraphQL field
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 * Switch the topic view to using search without descendents, and add a cursor for paging

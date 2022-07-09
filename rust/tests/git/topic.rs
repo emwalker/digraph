@@ -1,6 +1,6 @@
 use super::{actor, upsert_topic, Fixtures};
 use digraph::prelude::*;
-use digraph::Locale;
+use digraph::redis;
 use std::collections::BTreeSet;
 
 #[cfg(test)]
@@ -20,7 +20,7 @@ mod delete_topic {
             actor: actor(),
             topic_path: path.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         assert_eq!(path, deleted_topic_path);
@@ -38,7 +38,7 @@ mod delete_topic {
             actor: actor(),
             topic_path: path.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
@@ -55,7 +55,7 @@ mod delete_topic {
             actor: actor(),
             topic_path: topic.path(),
         }
-        .call(&f.repo.git);
+        .call(&f.repo.git, &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
         let topic = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
@@ -81,7 +81,7 @@ mod delete_topic_timerange {
             },
             topic_path: path.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
@@ -91,7 +91,7 @@ mod delete_topic_timerange {
             actor: actor(),
             topic_path: path.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
@@ -305,7 +305,7 @@ mod update_topic_parent_topics {
             topic_path: child.path(),
             parent_topic_paths: BTreeSet::from([parent.path()]),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         assert_eq!(result.topic, child);
@@ -329,7 +329,7 @@ mod update_topic_parent_topics {
             topic_path: child.path(),
             parent_topic_paths: BTreeSet::from([parent.path()]),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         assert_eq!(result.topic, child);
@@ -349,7 +349,7 @@ mod update_topic_parent_topics {
             topic_path: child.path(),
             parent_topic_paths: BTreeSet::new(),
         }
-        .call(&f.repo.git);
+        .call(&f.repo.git, &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
     }
@@ -366,7 +366,7 @@ mod update_topic_parent_topics {
             topic_path: parent.path(),
             parent_topic_paths: BTreeSet::from([child.path()]),
         }
-        .call(&f.repo.git);
+        .call(&f.repo.git, &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
     }
@@ -413,7 +413,7 @@ mod update_topic_synonyms {
             topic_path: path,
             synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.metadata.synonyms.len(), 3);
@@ -433,7 +433,7 @@ mod update_topic_synonyms {
             topic_path: path.clone(),
             synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.metadata.synonyms.len(), 3);
@@ -446,7 +446,7 @@ mod update_topic_synonyms {
             topic_path: path,
             synonyms: vec![synonym("C topic")],
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.metadata.synonyms.len(), 1);
@@ -469,7 +469,7 @@ mod update_topic_synonyms {
             topic_path: path.clone(),
             synonyms: vec![synonym(&syn.name)],
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
@@ -493,7 +493,7 @@ mod update_topic_synonyms {
             topic_path: path.clone(),
             synonyms: vec![synonym("topicA")],
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         assert!(f.repo.appears_in(&search, &entry).unwrap());
@@ -503,7 +503,7 @@ mod update_topic_synonyms {
             topic_path: path,
             synonyms: vec![synonym("topicB")],
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         assert!(!f.repo.appears_in(&search, &entry).unwrap());
@@ -532,7 +532,7 @@ mod upsert_topic_timerange {
             },
             topic_path: path.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         let topic = f.repo.git.fetch_topic(&path.inner).unwrap();

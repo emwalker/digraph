@@ -1,0 +1,16 @@
+---
+apiVersion: objects/v1
+kind: ChangeIndexMap
+changes:
+  - kind: UpsertLink
+    date: "2022-07-09T18:37:38.776329205Z"
+    paths:
+      /wiki/74992432e0ab240ab3fabad30db4fc72145102167e8759816b4c84b5c4899433: Link
+      /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj: AddedParentTopic
+    userId: "2"
+  - kind: UpsertTopic
+    date: "2022-07-09T18:37:38.765325664Z"
+    paths:
+      /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8: AddedParentTopic
+      /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj: AddedChildTopic
+    userId: "2"

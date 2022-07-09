@@ -3,6 +3,7 @@ use digraph::git::{
     Search,
 };
 use digraph::prelude::*;
+use digraph::redis;
 use fs_extra::dir;
 use std::env;
 use std::path::PathBuf;
@@ -87,24 +88,26 @@ mod tests {
     use super::*;
 
     use digraph::git::{UpdateTopicParentTopics, UpsertTopic, UpsertTopicResult};
-    use digraph::Locale;
     use std::collections::BTreeSet;
 
     // #[actix_web::test]
     #[allow(dead_code)]
-    async fn update_fixtures() {
+    async fn update_simple_fixtures() {
         let f = Fixtures::copy("simple");
         let root = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
 
+        let path = RepoPath::from(
+            "/wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi",
+        );
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change".to_owned(),
             prefix: "/wiki".to_string(),
-            on_matching_synonym: OnMatchingSynonym::Ask,
+            on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
         let climate_change = topic.unwrap().path();
 
@@ -117,30 +120,36 @@ mod tests {
         )
         .await;
 
+        let path = RepoPath::from(
+            "/wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj",
+        );
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Weather".to_owned(),
             prefix: "/wiki".to_owned(),
-            on_matching_synonym: OnMatchingSynonym::Ask,
+            on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
         let weather = topic.unwrap().path();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Weather").unwrap();
         upsert_link(&f, &url, Some("Weather".into()), &[&weather.inner]).await;
 
+        let path = RepoPath::from(
+            "/wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13",
+        );
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change and weather".to_owned(),
             prefix: "/wiki".to_string(),
-            on_matching_synonym: OnMatchingSynonym::Ask,
+            on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: climate_change.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
         let climate_change_weather = topic.unwrap().path();
 
@@ -149,7 +158,7 @@ mod tests {
             parent_topic_paths: BTreeSet::from([climate_change.clone(), weather.clone()]),
             topic_path: climate_change_weather.clone(),
         }
-        .call(&f.repo.git)
+        .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
         let url =

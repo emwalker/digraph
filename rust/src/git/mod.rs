@@ -6,6 +6,7 @@ use std::collections::{BTreeSet, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+pub mod activity;
 mod index;
 mod link;
 mod repository;
@@ -13,7 +14,7 @@ mod search;
 mod topic;
 
 use crate::prelude::*;
-use crate::Locale;
+pub use activity::*;
 pub use index::*;
 pub use link::*;
 pub use repository::*;
@@ -66,17 +67,16 @@ pub struct LinkMetadata {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", tag = "kind")]
 pub struct Link {
     pub api_version: String,
-    pub kind: Kind,
     pub metadata: LinkMetadata,
     pub parent_topics: BTreeSet<ParentTopic>,
 }
 
 impl std::cmp::PartialEq for Link {
     fn eq(&self, other: &Self) -> bool {
-        self.kind == other.kind && self.metadata.path == other.metadata.path
+        self.metadata.path == other.metadata.path
     }
 }
 
@@ -84,11 +84,8 @@ impl std::cmp::Eq for Link {}
 
 impl std::cmp::Ord for Link {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (self.kind, &self.metadata.title, &self.metadata.path).cmp(&(
-            other.kind,
-            &other.metadata.title,
-            &other.metadata.path,
-        ))
+        (&self.metadata.title, &self.metadata.path)
+            .cmp(&(&other.metadata.title, &other.metadata.path))
     }
 }
 
@@ -256,10 +253,9 @@ impl TopicMetadata {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", tag = "kind")]
 pub struct Topic {
     pub api_version: String,
-    pub kind: Kind,
     pub metadata: TopicMetadata,
     pub parent_topics: BTreeSet<ParentTopic>,
     pub children: BTreeSet<TopicChild>,
@@ -267,7 +263,7 @@ pub struct Topic {
 
 impl std::cmp::PartialEq for Topic {
     fn eq(&self, other: &Self) -> bool {
-        self.kind == other.kind && self.metadata.path == other.metadata.path
+        self.metadata.path == other.metadata.path
     }
 }
 
@@ -287,7 +283,6 @@ impl std::cmp::PartialOrd for Topic {
 
 impl std::hash::Hash for Topic {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.kind.hash(state);
         self.metadata.path.hash(state);
     }
 }
@@ -478,7 +473,11 @@ impl DataRoot {
         Self { root }
     }
 
-    pub fn object_filename(&self, path: &str) -> Result<PathBuf> {
+    pub fn change_index_filename(&self, path: &str) -> Result<PathBuf> {
+        Ok(self.object_basename(path)?.join("changes.yaml"))
+    }
+
+    pub fn object_basename(&self, path: &str) -> Result<PathBuf> {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^(\w{2})(\w{2})([\w-]+)$").unwrap();
         }
@@ -503,12 +502,13 @@ impl DataRoot {
             _ => return Err(Error::Repo(format!("bad id: {}", path))),
         };
 
-        let file_path = format!(
-            "{}/objects/{}/{}/{}/object.yaml",
-            path.org_login, part1, part2, part3
-        );
+        let basename = format!("{}/objects/{}/{}/{}", path.org_login, part1, part2, part3);
 
-        Ok(self.root.join(file_path))
+        Ok(self.root.join(basename))
+    }
+
+    pub fn object_filename(&self, path: &str) -> Result<PathBuf> {
+        Ok(self.object_basename(path)?.join("object.yaml"))
     }
 
     pub fn index_filename(&self, key: &IndexKey, index_type: IndexType) -> Result<PathBuf> {
@@ -601,6 +601,15 @@ impl Git {
         Self { root }
     }
 
+    pub fn change_index(&self, path: &RepoPath, index_mode: IndexMode) -> Result<ChangeIndex> {
+        let filename = self.root.change_index_filename(&path.inner)?;
+        match index_mode {
+            IndexMode::Replace => Ok(ChangeIndex::new(&filename)),
+            IndexMode::ReadOnly => ChangeIndex::load(&filename),
+            IndexMode::Update => ChangeIndex::load(&filename),
+        }
+    }
+
     pub fn exists(&self, path: &RepoPath) -> Result<bool> {
         let filename = self.root.object_filename(&path.inner)?;
         Ok(Path::new(&filename).exists())
@@ -612,6 +621,10 @@ impl Git {
             .map_err(|e| Error::Repo(format!("problem opening file {:?}: {}", path, e)))?;
         let object: Object = serde_yaml::from_reader(fh)?;
         Ok(object)
+    }
+
+    pub fn fetch_activity(&self, path: &RepoPath) -> Result<ChangeIndex> {
+        self.change_index(path, IndexMode::ReadOnly)
     }
 
     pub fn fetch_topic(&self, path: &str) -> Result<Topic> {
@@ -698,6 +711,26 @@ impl Git {
         Ok(searches)
     }
 
+    pub fn load_activity(
+        &self,
+        filename: &PathBuf,
+        index_mode: IndexMode,
+    ) -> Result<ChangeIndexMap> {
+        let load = index_mode == IndexMode::Update || index_mode == IndexMode::ReadOnly;
+        let activity = if load && filename.exists() {
+            let fh = std::fs::File::open(&filename)?;
+            serde_yaml::from_reader::<_, ChangeIndexMap>(fh)?
+        } else {
+            ChangeIndexMap {
+                api_version: API_VERSION.to_owned(),
+                kind: "ChangeHistory".to_owned(),
+                ..Default::default()
+            }
+        };
+
+        Ok(activity)
+    }
+
     fn remove(&self, path: &RepoPath) -> Result<()> {
         let filename = self.root.object_filename(&path.inner)?;
         if filename.exists() {
@@ -710,8 +743,7 @@ impl Git {
     fn remove_link(&self, path: &RepoPath, link: &Link, indexer: &mut Indexer) -> Result<()> {
         let searches = self.link_searches(Some(link.to_owned()))?;
         indexer.remove_searches(&link.to_search_entry(), searches.iter())?;
-        self.remove(path)?;
-        Ok(())
+        self.remove(path)
     }
 
     fn remove_topic(&self, path: &RepoPath, topic: &Topic, indexer: &mut Indexer) -> Result<()> {
@@ -734,11 +766,29 @@ impl Git {
         Ok(())
     }
 
-    fn save<T: Serialize>(&self, path: &RepoPath, object: &T) -> Result<()> {
-        let filename = self.root.object_filename(&path.inner)?;
+    pub fn save_changes_file(
+        &self,
+        change: &desc::Change,
+        indexer: &Indexer,
+        filename: &PathBuf,
+        size: Option<usize>,
+    ) -> Result<()> {
+        let mut activity = self.load_activity(filename, indexer.mode)?;
+
+        if let Some(size) = size {
+            let changes = activity.changes.clone();
+            activity.changes.clear();
+            for existing in changes.iter().take(size.checked_sub(1).unwrap_or_default()) {
+                activity.changes.insert(existing.to_owned());
+            }
+            activity.changes.insert(change.to_owned());
+        } else {
+            activity.changes.insert(change.to_owned());
+        }
+
         let dest = filename.parent().expect("expected a parent directory");
         fs::create_dir_all(&dest).ok();
-        let s = serde_yaml::to_string(&object)?;
+        let s = serde_yaml::to_string(&activity)?;
         log::debug!("saving {:?}", filename);
         fs::write(&filename, s)?;
         Ok(())
@@ -749,7 +799,7 @@ impl Git {
         let before = self.link_searches(before)?;
         let after = self.link_searches(Some(link.to_owned()))?;
         indexer.update(&link.to_search_entry(), &before, &after)?;
-        self.save(path, link)
+        self.save_object(path, link)
     }
 
     pub fn save_topic(&self, path: &RepoPath, topic: &Topic, indexer: &mut Indexer) -> Result<()> {
@@ -760,7 +810,7 @@ impl Git {
         let after = self.topic_searches(Some(topic.to_owned()))?;
         indexer.update(&topic.to_search_entry(), &before, &after)?;
 
-        self.save(path, topic)
+        self.save_object(path, topic)
     }
 
     pub fn search_index(
@@ -775,6 +825,16 @@ impl Git {
             IndexMode::ReadOnly => SearchTokenIndex::load(&filename),
             IndexMode::Update => SearchTokenIndex::load(&filename),
         }
+    }
+
+    fn save_object<T: Serialize>(&self, path: &RepoPath, object: &T) -> Result<()> {
+        let filename = self.root.object_filename(&path.inner)?;
+        let dest = filename.parent().expect("expected a parent directory");
+        fs::create_dir_all(&dest).ok();
+        let s = serde_yaml::to_string(&object)?;
+        log::debug!("saving {:?}", filename);
+        fs::write(&filename, s)?;
+        Ok(())
     }
 
     // The "prefix" argument tells us which repo to look in.  The "prefix" in the method name

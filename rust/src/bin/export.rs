@@ -1,20 +1,19 @@
 use chrono::{DateTime, Utc};
 use getopts::Options;
 use serde::{Deserialize, Serialize};
-
 use sqlx::{FromRow, PgPool};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::env;
 use std::path::{Path, PathBuf};
 
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    DataRoot, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Synonym, Timerange,
-    TimerangePrefixFormat, Topic, TopicChild, TopicMetadata, API_VERSION,
+    desc, DataRoot, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Synonym,
+    Timerange, TimerangePrefixFormat, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use digraph::prelude::*;
-use digraph::Locale;
+use digraph::redis;
 
 struct Opts {
     root: PathBuf,
@@ -216,7 +215,6 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
 
         let topic = Topic {
             api_version: API_VERSION.to_string(),
-            kind: Kind::Topic,
             metadata: TopicMetadata {
                 added: meta.added,
                 path: topic_path.inner,
@@ -228,7 +226,34 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             children: children.iter().map(TopicChild::from).collect(),
         };
 
+        let mut paths = BTreeMap::from([(topic.metadata.path.to_owned(), desc::Role::Topic)]);
+
+        for parent in parent_topics {
+            paths.insert(parent.path.to_owned(), desc::Role::AddedParentTopic);
+        }
+
+        for child in children {
+            let TopicChildRow { kind, path, .. } = child;
+
+            match kind.as_str() {
+                "Topic" => {
+                    paths.insert(path.to_owned(), desc::Role::AddedChildTopic);
+                }
+                "Link" => {
+                    paths.insert(path.to_owned(), desc::Role::AddedChildLink);
+                }
+                _ => {}
+            };
+        }
+
+        let change = desc::Change::ImportTopic(desc::UpsertTopic(desc::Body {
+            date: chrono::Utc::now(),
+            paths,
+            user_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
+        }));
+
         git.save_topic(&RepoPath::from(&meta.path), &topic, indexer)?;
+        indexer.add_change(&change)?;
     }
 
     Ok(())
@@ -264,14 +289,30 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
         .fetch_all(pool)
         .await?;
 
+        let parent_topics = parent_topics
+            .iter()
+            .map(ParentTopic::from)
+            .collect::<BTreeSet<ParentTopic>>();
+
         let link = Link {
             api_version: API_VERSION.to_string(),
-            kind: Kind::Link,
             metadata: LinkMetadata::from(&meta),
-            parent_topics: parent_topics.iter().map(ParentTopic::from).collect(),
+            parent_topics: parent_topics.clone(),
         };
 
+        let mut paths = BTreeMap::from([(link.metadata.path.to_owned(), desc::Role::Link)]);
+        for parent in &parent_topics {
+            paths.insert(parent.path.to_owned(), desc::Role::AddedParentTopic);
+        }
+
+        let change = desc::Change::ImportLink(desc::UpsertLink(desc::Body {
+            date: chrono::Utc::now(),
+            paths,
+            user_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
+        }));
+
         git.save_link(&RepoPath::from(&meta.path), &link, indexer)?;
+        indexer.add_change(&change)?;
     }
 
     Ok(())
@@ -295,7 +336,7 @@ async fn main() -> Result<()> {
     save_links(&git, &pool, &mut indexer).await?;
 
     log::info!("saving indexes");
-    indexer.save()?;
+    indexer.save(&redis::Noop)?;
 
     log::info!("exported database to {}", root);
     Ok(())

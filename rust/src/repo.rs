@@ -5,7 +5,6 @@ use regex::Regex;
 use sqlx::postgres::PgPool;
 use std::collections::BTreeSet;
 
-use super::Locale;
 use crate::git;
 use crate::graphql;
 use crate::http;
@@ -94,6 +93,7 @@ pub struct Repo {
     organization_loader: DataLoader<psql::OrganizationLoader, HashMapCache>,
     pub server_secret: String,
     pub viewer: Viewer,
+    redis: redis::Redis,
     repository_by_name_loader: DataLoader<psql::RepositoryByNameLoader, HashMapCache>,
     repository_by_prefix_loader: DataLoader<psql::RepositoryByPrefixLoader, HashMapCache>,
     repository_loader: DataLoader<psql::RepositoryLoader, HashMapCache>,
@@ -101,7 +101,13 @@ pub struct Repo {
 }
 
 impl Repo {
-    pub fn new(viewer: Viewer, git: git::Git, db: PgPool, server_secret: String) -> Self {
+    pub fn new(
+        viewer: Viewer,
+        git: git::Git,
+        db: PgPool,
+        server_secret: String,
+        redis: redis::Redis,
+    ) -> Self {
         let organization_loader = psql::OrganizationLoader::new(viewer.clone(), db.clone());
         let organization_by_login_loader =
             psql::OrganizationByLoginLoader::new(viewer.clone(), db.clone());
@@ -116,8 +122,9 @@ impl Repo {
         Self {
             db,
             git,
-            viewer,
+            redis,
             server_secret,
+            viewer,
 
             organization_loader: DataLoader::with_cache(
                 organization_loader,
@@ -163,11 +170,22 @@ impl Repo {
         &self,
         topic_path: Option<String>,
         first: i32,
-    ) -> Result<Vec<graphql::ActivityLineItem>> {
+    ) -> Result<Vec<git::activity::fetched::Change>> {
         let topic_path = topic_path.map(|s| RepoPath::from(&s));
-        psql::FetchActivity::new(self.viewer.clone(), topic_path, first)
-            .call(&self.db)
-            .await
+        let result = git::FetchActivity {
+            actor: self.viewer.clone(),
+            topic_path,
+            first,
+        }
+        .call(&self.git, &self.redis);
+
+        match result {
+            Ok(git::FetchActivityResult { changes, .. }) => Ok(changes),
+            Err(err) => {
+                log::error!("problem fetching activity: {}", err);
+                Ok(vec![])
+            }
+        }
     }
 
     async fn flat_topics(&self, paths: &[RepoPath]) -> Result<Vec<graphql::Topic>> {
@@ -238,7 +256,7 @@ impl Repo {
             actor: self.viewer.clone(),
             link_path: link_path.clone(),
         }
-        .call(&self.git)
+        .call(&self.git, &self.redis)
     }
 
     pub async fn delete_session(&self, session_id: String) -> Result<psql::DeleteSessionResult> {
@@ -252,7 +270,7 @@ impl Repo {
             actor: self.viewer.clone(),
             topic_path: path.clone(),
         }
-        .call(&self.git)
+        .call(&self.git, &self.redis)
     }
 
     pub async fn delete_topic_timerange(
@@ -263,7 +281,7 @@ impl Repo {
             actor: self.viewer.clone(),
             topic_path: topic_path.clone(),
         }
-        .call(&self.git)
+        .call(&self.git, &self.redis)
     }
 
     pub async fn link(&self, path: &RepoPath) -> Result<Option<graphql::Link>> {
@@ -357,7 +375,7 @@ impl Repo {
     ) -> Result<Vec<graphql::TopicChild>> {
         let fetcher = git::RedisFetchDownSet {
             git: self.git.clone(),
-            redis: redis::Redis::new("redis://localhost"),
+            redis: self.redis.clone(),
         };
 
         let git::SearchWithinTopicResult { matches, .. } = git::SearchWithinTopic {
@@ -459,7 +477,7 @@ impl Repo {
                 .map(RepoPath::from)
                 .collect::<BTreeSet<RepoPath>>(),
         }
-        .call(&self.git)
+        .call(&self.git, &self.redis)
     }
 
     pub async fn update_topic_synonyms(
@@ -471,7 +489,7 @@ impl Repo {
             synonyms: input.synonyms.iter().map(git::Synonym::from).collect_vec(),
             topic_path: RepoPath::from(&input.topic_path),
         }
-        .call(&self.git)
+        .call(&self.git, &self.redis)
     }
 
     pub async fn upsert_link(
@@ -492,7 +510,7 @@ impl Repo {
             url: input.url,
             fetcher: Box::new(http::Fetcher),
         }
-        .call(&self.git)
+        .call(&self.git, &self.redis)
         .await
     }
 
@@ -509,7 +527,7 @@ impl Repo {
                 .map(|p| p.to_owned())
                 .collect::<BTreeSet<RepoPath>>(),
         }
-        .call(&self.git)
+        .call(&self.git, &self.redis)
     }
 
     pub async fn upsert_session(
@@ -531,7 +549,7 @@ impl Repo {
             prefix: "/wiki".to_owned(),
             parent_topic: RepoPath::from(&input.parent_topic_path),
         }
-        .call(&self.git)
+        .call(&self.git, &self.redis)
     }
 
     pub async fn upsert_topic_timerange(
@@ -546,7 +564,7 @@ impl Repo {
             },
             topic_path: RepoPath::from(&input.topic_path),
         }
-        .call(&self.git)
+        .call(&self.git, &self.redis)
     }
 
     pub async fn user(&self, id: String) -> Result<Option<graphql::User>> {

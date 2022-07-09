@@ -3,7 +3,6 @@ use std::io::{self, Write};
 
 use digraph::git::*;
 use digraph::prelude::*;
-use digraph::Locale;
 
 struct Opts {
     filename: String,
