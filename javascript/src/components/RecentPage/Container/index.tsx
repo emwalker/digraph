@@ -2,13 +2,13 @@ import React, { Component, ReactNode } from 'react'
 
 type Props = {
   children: ReactNode,
-  topicName?: string,
+  title?: string,
 }
 
 class Container extends Component<Props> {
   get title(): string {
-    return this.props.topicName
-      ? `Recent activity within ${this.props.topicName}`
+    return this.props.title
+      ? `Recent activity within ${this.props.title}`
       : 'Recent activity'
   }
 

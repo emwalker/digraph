@@ -15,5 +15,8 @@ format:
 start:
 	RUST_LOG=info,digraph=debug cargo run --bin frontend
 
+start-prod:
+	RUST_LOG=info,digraph=debug target/release/frontend
+
 test:
 	cargo test

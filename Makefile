@@ -102,6 +102,9 @@ save-production:
 start:
 	overmind start -f Procfile
 
+start-prod:
+	overmind start -f Procfile.prod
+
 start-dev:
 	overmind start -f Procfile.dev
 
