@@ -92,12 +92,12 @@ pub struct Repo {
     organization_by_login_loader: DataLoader<psql::OrganizationByLoginLoader, HashMapCache>,
     organization_loader: DataLoader<psql::OrganizationLoader, HashMapCache>,
     pub server_secret: String,
+    pub user_loader: DataLoader<psql::UserLoader, HashMapCache>,
     pub viewer: Viewer,
     redis: redis::Redis,
     repository_by_name_loader: DataLoader<psql::RepositoryByNameLoader, HashMapCache>,
     repository_by_prefix_loader: DataLoader<psql::RepositoryByPrefixLoader, HashMapCache>,
     repository_loader: DataLoader<psql::RepositoryLoader, HashMapCache>,
-    user_loader: DataLoader<psql::UserLoader, HashMapCache>,
 }
 
 impl Repo {
@@ -170,9 +170,9 @@ impl Repo {
         &self,
         topic_path: Option<String>,
         first: i32,
-    ) -> Result<Vec<git::activity::fetched::Change>> {
+    ) -> Result<Vec<git::activity::Change>> {
         let topic_path = topic_path.map(|s| RepoPath::from(&s));
-        let result = git::FetchActivity {
+        let result = git::activity::FetchActivity {
             actor: self.viewer.clone(),
             topic_path,
             first,
@@ -180,7 +180,7 @@ impl Repo {
         .call(&self.git, &self.redis);
 
         match result {
-            Ok(git::FetchActivityResult { changes, .. }) => Ok(changes),
+            Ok(git::activity::FetchActivityResult { changes, .. }) => Ok(changes),
             Err(err) => {
                 log::error!("problem fetching activity: {}", err);
                 Ok(vec![])
@@ -568,7 +568,12 @@ impl Repo {
     }
 
     pub async fn user(&self, id: String) -> Result<Option<graphql::User>> {
-        self.user_loader.load_one(id).await
+        let user = self
+            .user_loader
+            .load_one(id)
+            .await?
+            .map(|row| graphql::User::from(&row));
+        Ok(user)
     }
 }
 

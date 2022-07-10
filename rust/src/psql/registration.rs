@@ -1,28 +1,27 @@
 use sqlx::types::Uuid;
 
-use super::PgTransaction;
-use crate::graphql::User;
+use super::{user, PgTransaction};
 use crate::prelude::*;
 
 pub struct CompleteRegistration {
     login: String,
-    user: User,
+    user: user::Row,
 }
 
 impl CompleteRegistration {
-    pub fn new(user: User, login: String) -> Self {
+    pub fn new(user: user::Row, login: String) -> Self {
         Self { user, login }
     }
 
     pub async fn call<'t>(&self, mut tx: PgTransaction<'t>) -> Result<PgTransaction<'t>> {
-        let (user_id, name) = self.user_info()?;
+        let (user_id, name) = self.user_info();
         log::info!("completing registration for {}", name);
 
         log::info!("adding {} ({}) to the Wiki org", name, user_id);
         sqlx::query(
             r#"insert into organization_members
                 (organization_id, user_id)
-                values ($1::uuid, $2::uuid)"#,
+                values ($1, $2::uuid)"#,
         )
         .bind(WIKI_ORGANIZATION_ID)
         .bind(&user_id)
@@ -45,7 +44,7 @@ impl CompleteRegistration {
         sqlx::query(
             r#"insert into organization_members
                 (organization_id, user_id)
-                values ($1::uuid, $2::uuid)"#,
+                values ($1::uuid, $2)"#,
         )
         .bind(&organization_id.to_string())
         .bind(&user_id)
@@ -57,7 +56,7 @@ impl CompleteRegistration {
         let (repository_id,) = sqlx::query_as::<_, (Uuid,)>(
             r#"insert into repositories
                 (organization_id, name, owner_id, system)
-                values ($1::uuid, $2, $3::uuid, 't')
+                values ($1::uuid, $2, $3, 't')
                 returning id"#,
         )
         .bind(&organization_id)
@@ -82,7 +81,7 @@ impl CompleteRegistration {
         sqlx::query(
             r#"update users
                 set registered_at = now(), login = $1
-                where id = $2::uuid"#,
+                where id = $2"#,
         )
         .bind(&self.login)
         .bind(&user_id)
@@ -92,12 +91,7 @@ impl CompleteRegistration {
         Ok(tx)
     }
 
-    fn user_info(&self) -> Result<(String, String)> {
-        match &self.user {
-            User::Guest => Err(Error::NotFound("expected a registered user".into())),
-            User::Registered {
-                id: user_id, name, ..
-            } => Ok((user_id.to_string(), name.to_string())),
-        }
+    fn user_info(&self) -> (&Uuid, &str) {
+        (&self.user.id, &self.user.name)
     }
 }

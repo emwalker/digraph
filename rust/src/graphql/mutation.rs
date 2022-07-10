@@ -246,7 +246,7 @@ impl MutationRoot {
             alerts: result.alerts,
             user_edge: Some(UserEdge {
                 cursor: String::from("0"),
-                node: result.user,
+                node: User::from(&result.user),
             }),
             session_edge: Some(SessionEdge {
                 cursor: String::from("0"),
@@ -391,7 +391,7 @@ impl MutationRoot {
             .await?;
         Ok(SelectRepositoryPayload {
             repository,
-            viewer: actor,
+            viewer: User::from(&actor),
         })
     }
 

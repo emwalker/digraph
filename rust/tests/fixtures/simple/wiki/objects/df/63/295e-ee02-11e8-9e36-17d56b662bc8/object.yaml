@@ -1,6 +1,6 @@
 ---
-apiVersion: objects/v1
 kind: Topic
+apiVersion: objects/v1
 metadata:
   added: "2021-03-18T00:09:59.350933Z"
   path: /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8

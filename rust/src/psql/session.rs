@@ -1,7 +1,7 @@
 use sqlx::{postgres::PgPool, types::Uuid, FromRow};
 
-use super::{UpsertRegisteredUser, UpsertUserResult};
-use crate::graphql::{Alert, CreateGithubSessionInput, User, Viewer};
+use super::{user, UpsertRegisteredUser, UpsertUserResult};
+use crate::graphql::{Alert, CreateGithubSessionInput, Viewer};
 use crate::prelude::*;
 
 #[derive(FromRow, Clone, Debug)]
@@ -12,7 +12,7 @@ pub struct DatabaseSession {
 
 pub struct CreateSessionResult {
     pub alerts: Vec<Alert>,
-    pub user: User,
+    pub user: user::Row,
     pub session_id: String,
 }
 
@@ -33,25 +33,20 @@ impl CreateGithubSession {
         let UpsertUserResult { user } = UpsertRegisteredUser::new(self.input.clone())
             .call(pool)
             .await?;
-        let (user_id, name) = match &user {
-            User::Guest => Err(Error::NotFound(format!(
-                "expected a registered user, but not was found: {:?}",
-                &self.input
-            ))),
-            User::Registered {
-                id: user_id, name, ..
-            } => Ok((user_id.to_string(), name)),
-        }?;
 
         let result = sqlx::query_as::<_, DatabaseSession>(
-            r#"insert into sessions (user_id) values ($1::uuid)
+            r#"insert into sessions (user_id) values ($1)
                 returning encode(session_id, 'hex') session_id, user_id"#,
         )
-        .bind(&user_id)
+        .bind(&user.id)
         .fetch_one(pool)
         .await?;
 
-        log::debug!("session id for user {:?}: {:?}", name, result.session_id);
+        log::debug!(
+            "session id for user {:?}: {:?}",
+            user.name,
+            result.session_id
+        );
 
         Ok(CreateSessionResult {
             alerts: vec![],

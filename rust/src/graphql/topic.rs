@@ -45,16 +45,21 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        let activity = ctx
-            .data_unchecked::<Repo>()
+        let repo = ctx.data_unchecked::<Repo>();
+        let activity = repo
             .activity(Some(self.path.inner.clone()), first.unwrap_or(3))
             .await?;
 
         let mut results = vec![];
         for change in activity {
+            let actor = repo.user_loader.load_one(change.user_id()).await?;
+            let actor_name = actor
+                .map(|user| user.name.to_owned())
+                .unwrap_or_else(|| "[missing user]".to_owned());
+
             results.push(ActivityLineItem {
                 created_at: change.date(),
-                description: change.markdown(Locale::EN, Some(&self.path))?,
+                description: change.markdown(Locale::EN, &actor_name, Some(&self.path))?,
             });
         }
 

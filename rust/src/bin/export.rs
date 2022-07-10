@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    desc, DataRoot, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Synonym,
+    activity, DataRoot, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Synonym,
     Timerange, TimerangePrefixFormat, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use digraph::prelude::*;
@@ -78,6 +78,7 @@ struct TopicMetadataRow {
 #[derive(Clone, FromRow)]
 struct ParentTopicRow {
     path: String,
+    name: String,
 }
 
 impl From<&ParentTopicRow> for ParentTopic {
@@ -114,6 +115,8 @@ struct TopicChildRow {
     added: DateTime<Utc>,
     kind: String,
     path: String,
+    name: String,
+    url: String,
 }
 
 impl From<&TopicChildRow> for TopicChild {
@@ -150,7 +153,8 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
         let topic_path = RepoPath::from(&meta.path);
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
-                concat('/', o.login, '/', tt.parent_id) path
+                concat('/', o.login, '/', tt.parent_id) path,
+                t.name
             from topic_topics tt
             join topics t on t.id = tt.parent_id
             join organizations o on o.id = t.organization_id
@@ -167,7 +171,9 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                 select
                     t.created_at added,
                     'Topic' kind,
-                    concat('/', o.login, '/', tt.child_id) path
+                    concat('/', o.login, '/', tt.child_id) path,
+                    t.name,
+                    'url' as url
                 from topic_topics tt
                 join topics t on t.id = tt.child_id
                 join organizations o on o.id = t.organization_id
@@ -181,7 +187,9 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                 select
                     l.created_at added,
                     'Link' kind,
-                    concat('/', o.login, '/', encode(digest(l.id::varchar, 'sha256'), 'hex')) path
+                    concat('/', o.login, '/', encode(digest(l.id::varchar, 'sha256'), 'hex')) path,
+                    l.title as name,
+                    l.url
                 from link_topics tt
                 join links l on l.id = tt.child_id
                 join organizations o on o.id = l.organization_id
@@ -226,27 +234,50 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             children: children.iter().map(TopicChild::from).collect(),
         };
 
-        let mut paths = BTreeMap::from([(topic.metadata.path.to_owned(), desc::Role::Topic)]);
+        let mut paths = BTreeMap::from([(
+            topic.metadata.path.to_owned(),
+            activity::Role::UpdatedTopic(activity::TopicInfo::from(&topic)),
+        )]);
 
         for parent in parent_topics {
-            paths.insert(parent.path.to_owned(), desc::Role::AddedParentTopic);
+            let synonyms = BTreeMap::from([(Locale::EN, parent.name)]);
+            let synonyms = activity::TopicInfo { synonyms };
+            paths.insert(
+                parent.path.to_owned(),
+                activity::Role::AddedParentTopic(synonyms),
+            );
         }
 
         for child in children {
-            let TopicChildRow { kind, path, .. } = child;
+            let TopicChildRow {
+                kind,
+                path,
+                name,
+                url,
+                ..
+            } = child;
 
             match kind.as_str() {
                 "Topic" => {
-                    paths.insert(path.to_owned(), desc::Role::AddedChildTopic);
+                    let topic = activity::TopicInfo {
+                        synonyms: BTreeMap::from([(Locale::EN, name.to_owned())])
+                    };
+                    paths.insert(path.to_owned(), activity::Role::AddedChildTopic(topic));
                 }
                 "Link" => {
-                    paths.insert(path.to_owned(), desc::Role::AddedChildLink);
+                    paths.insert(
+                        path.to_owned(),
+                        activity::Role::AddedChildLink(activity::LinkInfo {
+                            title: name.to_owned(),
+                            url: url.to_owned(),
+                        }),
+                    );
                 }
                 _ => {}
             };
         }
 
-        let change = desc::Change::ImportTopic(desc::UpsertTopic(desc::Body {
+        let change = activity::Change::ImportTopic(activity::UpsertTopic(activity::Body {
             date: chrono::Utc::now(),
             paths,
             user_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
@@ -279,7 +310,8 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
         let link_id = meta.link_id.clone();
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
-                concat('/', o.login, '/', lt.parent_id) path
+                concat('/', o.login, '/', lt.parent_id) path,
+                t.name
             from link_topics lt
             join topics t on t.id = lt.parent_id
             join organizations o on o.id = t.organization_id
@@ -289,23 +321,35 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
         .fetch_all(pool)
         .await?;
 
-        let parent_topics = parent_topics
-            .iter()
-            .map(ParentTopic::from)
-            .collect::<BTreeSet<ParentTopic>>();
-
         let link = Link {
             api_version: API_VERSION.to_string(),
             metadata: LinkMetadata::from(&meta),
-            parent_topics: parent_topics.clone(),
+            parent_topics: parent_topics
+                .iter()
+                .map(ParentTopic::from)
+                .collect::<BTreeSet<ParentTopic>>(),
         };
 
-        let mut paths = BTreeMap::from([(link.metadata.path.to_owned(), desc::Role::Link)]);
+        let mut paths = BTreeMap::from([(
+            link.metadata.path.to_owned(),
+            activity::Role::UpdatedLink(activity::LinkInfo {
+                title: link.metadata.title.to_owned(),
+                url: link.metadata.url.to_owned(),
+            }),
+        )]);
+
         for parent in &parent_topics {
-            paths.insert(parent.path.to_owned(), desc::Role::AddedParentTopic);
+            let synonyms = activity::TopicInfo {
+                synonyms: BTreeMap::from([(Locale::EN, parent.name.to_owned())]),
+            };
+
+            paths.insert(
+                parent.path.to_owned(),
+                activity::Role::AddedParentTopic(synonyms),
+            );
         }
 
-        let change = desc::Change::ImportLink(desc::UpsertLink(desc::Body {
+        let change = activity::Change::ImportLink(activity::UpsertLink(activity::Body {
             date: chrono::Utc::now(),
             paths,
             user_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),

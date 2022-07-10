@@ -21,6 +21,7 @@ mod organization;
 pub use organization::*;
 mod query;
 pub use query::*;
+mod psql;
 mod repository;
 pub use repository::*;
 mod search;

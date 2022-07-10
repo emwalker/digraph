@@ -1,22 +1,40 @@
 ---
-apiVersion: objects/v1
 kind: ChangeIndexMap
+apiVersion: objects/v1
 changes:
   - kind: UpsertTopic
-    date: "2022-07-09T18:37:38.788704602Z"
+    date: "2022-07-13T00:44:40.112997435Z"
     paths:
-      /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13: AddedChildTopic
-      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi: AddedParentTopic
+      /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13:
+        kind: AddedChildTopic
+        synonyms:
+          en: Climate change and weather
+      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi:
+        kind: AddedParentTopic
+        synonyms:
+          en: Climate change
     userId: "2"
   - kind: UpsertLink
-    date: "2022-07-09T18:37:38.753795342Z"
+    date: "2022-07-13T00:44:40.078499982Z"
     paths:
-      /wiki/24ef1a588aa8242ed43193766154fd5f05d343dcdcd3690dda097979363776f2: Link
-      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi: AddedParentTopic
+      /wiki/24ef1a588aa8242ed43193766154fd5f05d343dcdcd3690dda097979363776f2:
+        kind: UpdatedLink
+        title: Climate change
+        url: "https://en.wikipedia.org/wiki/Climate_change"
+      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi:
+        kind: AddedParentTopic
+        synonyms:
+          en: Climate change
     userId: "2"
   - kind: UpsertTopic
-    date: "2022-07-09T18:37:38.738272809Z"
+    date: "2022-07-13T00:44:40.059743220Z"
     paths:
-      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi: AddedChildTopic
-      /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8: AddedParentTopic
+      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi:
+        kind: AddedChildTopic
+        synonyms:
+          en: Climate change
+      /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8:
+        kind: AddedParentTopic
+        synonyms:
+          en: Root topic
     userId: "2"

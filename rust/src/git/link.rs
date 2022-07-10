@@ -1,8 +1,8 @@
 use chrono::Utc;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use crate::git::{
-    activity::desc, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic,
+    activity, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic,
     SaveChangesForPrefix, Topic, TopicChild, API_VERSION,
 };
 use crate::http::{self, RepoUrl};
@@ -29,13 +29,16 @@ impl DeleteLink {
         let date = chrono::Utc::now();
         let child = link.to_topic_child(date);
         let mut indexer = Indexer::new(git, IndexMode::Update);
-        let change = self.change(&link, date);
+        let mut parent_topics = vec![];
 
         for ParentTopic { path, .. } in &link.parent_topics {
             let mut parent = git.fetch_topic(path)?;
             parent.children.remove(&child);
             git.save_topic(&RepoPath::from(path), &parent, &mut indexer)?;
+            parent_topics.push(parent);
         }
+
+        let change = self.change(&link, &parent_topics, date);
 
         git.remove_link(&self.link_path, &link, &mut indexer)?;
         indexer.add_change(&change)?;
@@ -47,20 +50,23 @@ impl DeleteLink {
         })
     }
 
-    fn change(&self, link: &Link, date: Timestamp) -> desc::Change {
+    fn change(&self, link: &Link, parent_topics: &Vec<Topic>, date: Timestamp) -> activity::Change {
         let mut paths = BTreeMap::from([(
             self.link_path.inner.to_owned(),
-            desc::Role::DeletedLink {
+            activity::Role::DeletedLink(activity::LinkInfo {
                 title: link.metadata.title.to_owned(),
                 url: link.metadata.url.to_owned(),
-            },
+            }),
         )]);
 
-        for parent in &link.parent_topics {
-            paths.insert(parent.path.to_owned(), desc::Role::RemovedParentTopic);
+        for parent in parent_topics {
+            paths.insert(
+                parent.metadata.path.to_owned(),
+                activity::Role::RemovedParentTopic(activity::TopicInfo::from(parent)),
+            );
         }
 
-        desc::Change::DeleteLink(desc::DeleteLink(desc::Body {
+        activity::Change::DeleteLink(activity::DeleteLink(activity::Body {
             date,
             paths,
             user_id: self.actor.user_id.to_owned(),
@@ -120,7 +126,7 @@ impl UpdateLinkParentTopics {
             link.parent_topics.remove(&topic.to_parent_topic());
         }
 
-        let change = self.change(&added, &removed, date);
+        let change = self.change(&link, &added, &removed, date);
 
         for topic in &added {
             git.save_topic(&topic.path(), topic, &mut indexer)?;
@@ -149,21 +155,36 @@ impl UpdateLinkParentTopics {
         Ok(())
     }
 
-    fn change(&self, added: &Vec<Topic>, removed: &Vec<Topic>, date: Timestamp) -> desc::Change {
-        let mut paths = BTreeMap::from([(self.link_path.inner.to_owned(), desc::Role::Link)]);
+    fn change(
+        &self,
+        link: &Link,
+        added: &Vec<Topic>,
+        removed: &Vec<Topic>,
+        date: Timestamp,
+    ) -> activity::Change {
+        let mut paths = BTreeMap::from([(
+            self.link_path.inner.to_owned(),
+            activity::Role::UpdatedLink(activity::LinkInfo {
+                title: link.metadata.title.to_owned(),
+                url: link.metadata.url.to_owned(),
+            }),
+        )]);
 
         for topic in added {
-            paths.insert(topic.metadata.path.to_owned(), desc::Role::AddedParentTopic);
+            paths.insert(
+                topic.metadata.path.to_owned(),
+                activity::Role::AddedParentTopic(activity::TopicInfo::from(topic)),
+            );
         }
 
         for topic in removed {
             paths.insert(
                 topic.metadata.path.to_owned(),
-                desc::Role::RemovedParentTopic,
+                activity::Role::RemovedParentTopic(activity::TopicInfo::from(topic)),
             );
         }
 
-        desc::Change::UpdateLinkParentTopics(desc::UpdateLinkParentTopics(desc::Body {
+        activity::Change::UpdateLinkParentTopics(activity::UpdateLinkParentTopics(activity::Body {
             date,
             paths,
             user_id: self.actor.user_id.to_owned(),
@@ -203,30 +224,32 @@ impl UpsertLink {
             link.metadata.title = title.clone();
         }
 
-        let mut parent_topics: BTreeSet<String> = BTreeSet::new();
+        let mut parent_topics = HashMap::new();
 
-        for topic in &link.parent_topics {
-            parent_topics.insert(topic.path.to_owned());
+        for parent in &link.parent_topics {
+            let topic = git.fetch_topic(&parent.path)?;
+            parent_topics.insert(parent.path.to_owned(), topic);
         }
 
         for path in &self.add_parent_topic_paths {
-            parent_topics.insert(path.to_string());
+            let topic = git.fetch_topic(&path.inner)?;
+            parent_topics.insert(path.inner.to_owned(), topic);
         }
 
         if parent_topics.is_empty() {
-            parent_topics.insert(WIKI_ROOT_TOPIC_PATH.into());
+            let topic = git.fetch_topic(WIKI_ROOT_TOPIC_PATH)?;
+            parent_topics.insert(WIKI_ROOT_TOPIC_PATH.to_owned(), topic);
         }
 
         let change = self.change(&link, &parent_topics, date);
         link.parent_topics = parent_topics
             .iter()
-            .map(|path| ParentTopic { path: path.into() })
+            .map(|(path, _topic)| ParentTopic { path: path.into() })
             .collect::<BTreeSet<ParentTopic>>();
 
         let mut indexer = Indexer::new(git, IndexMode::Update);
 
-        for path in &parent_topics {
-            let mut topic = git.fetch_topic(path)?;
+        for (path, topic) in &mut parent_topics {
             topic.children.insert(TopicChild {
                 added: date,
                 kind: Kind::Link,
@@ -248,15 +271,25 @@ impl UpsertLink {
     fn change(
         &self,
         link: &Link,
-        parent_topics: &BTreeSet<String>,
+        parent_topics: &HashMap<String, Topic>,
         date: Timestamp,
-    ) -> desc::Change {
-        let mut paths = BTreeMap::from([(link.metadata.path.to_owned(), desc::Role::Link)]);
-        for topic in parent_topics.iter() {
-            paths.insert(topic.to_owned(), desc::Role::AddedParentTopic);
+    ) -> activity::Change {
+        let mut paths = BTreeMap::from([(
+            link.metadata.path.to_owned(),
+            activity::Role::UpdatedLink(activity::LinkInfo {
+                title: link.metadata.title.to_owned(),
+                url: link.metadata.url.to_owned(),
+            }),
+        )]);
+
+        for (path, topic) in parent_topics {
+            paths.insert(
+                path.to_owned(),
+                activity::Role::AddedParentTopic(activity::TopicInfo::from(&topic)),
+            );
         }
 
-        desc::Change::UpsertLink(desc::UpsertLink(desc::Body {
+        activity::Change::UpsertLink(activity::UpsertLink(activity::Body {
             date,
             paths,
             user_id: self.actor.user_id.to_owned(),

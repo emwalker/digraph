@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use unidecode::unidecode;
 
-use super::{desc, ChangeIndexMap, Git, Kind, Search, Synonym, Topic, TopicChild, API_VERSION};
+use super::{activity, Git, Kind, Search, Synonym, Topic, TopicChild, API_VERSION};
 use crate::prelude::*;
 
 // Omit dashes so that we can split on them
@@ -385,16 +385,15 @@ impl SearchTokenIndex {
 
 pub struct ChangeIndex {
     filename: PathBuf,
-    index: ChangeIndexMap,
+    index: activity::ChangeIndexMap,
 }
 
 impl ChangeIndex {
     pub fn new(filename: &PathBuf) -> Self {
         Self {
             filename: filename.to_owned(),
-            index: ChangeIndexMap {
+            index: activity::ChangeIndexMap {
                 api_version: API_VERSION.to_owned(),
-                kind: "SearchTokenIndexMap".to_owned(),
                 changes: BTreeSet::new(),
             },
         }
@@ -405,9 +404,8 @@ impl ChangeIndex {
             let fh = std::fs::File::open(&filename).map_err(|e| Error::Repo(format!("{:?}", e)))?;
             serde_yaml::from_reader(fh)?
         } else {
-            ChangeIndexMap {
+            activity::ChangeIndexMap {
                 api_version: API_VERSION.to_owned(),
-                kind: "ChangeIndexMap".to_owned(),
                 changes: BTreeSet::new(),
             }
         };
@@ -418,11 +416,11 @@ impl ChangeIndex {
         })
     }
 
-    pub fn add(&mut self, change: desc::Change) {
+    pub fn add(&mut self, change: activity::Change) {
         self.index.changes.insert(change);
     }
 
-    pub fn changes(&self) -> &BTreeSet<desc::Change> {
+    pub fn changes(&self) -> &BTreeSet<activity::Change> {
         &self.index.changes
     }
 }
@@ -444,7 +442,7 @@ pub struct IndexKey {
 }
 
 pub trait SaveChangesForPrefix {
-    fn save(&self, prefix: &str, changes: &HashMap<String, Vec<desc::Change>>) -> Result<()>;
+    fn save(&self, prefix: &str, changes: &HashMap<String, Vec<activity::Change>>) -> Result<()>;
 }
 
 pub struct Indexer {
@@ -454,7 +452,7 @@ pub struct Indexer {
     synonym_phrases: HashMap<IndexKey, SynonymIndex>,
     synonym_tokens: HashMap<IndexKey, SynonymIndex>,
     path_changes: HashMap<String, ChangeIndex>,
-    prefix_changes: HashMap<String, Vec<desc::Change>>,
+    prefix_changes: HashMap<String, Vec<activity::Change>>,
 }
 
 impl Indexer {
@@ -477,7 +475,7 @@ impl Indexer {
             .or_insert(self.git.change_index(&RepoPath::from(path), self.mode)?))
     }
 
-    pub fn add_change(&mut self, change: &desc::Change) -> Result<()> {
+    pub fn add_change(&mut self, change: &activity::Change) -> Result<()> {
         for path in change.paths().keys() {
             let index = self.activity(path)?;
             index.add(change.to_owned());

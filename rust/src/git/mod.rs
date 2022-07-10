@@ -14,7 +14,6 @@ mod search;
 mod topic;
 
 use crate::prelude::*;
-pub use activity::*;
 pub use index::*;
 pub use link::*;
 pub use repository::*;
@@ -715,15 +714,14 @@ impl Git {
         &self,
         filename: &PathBuf,
         index_mode: IndexMode,
-    ) -> Result<ChangeIndexMap> {
+    ) -> Result<activity::ChangeIndexMap> {
         let load = index_mode == IndexMode::Update || index_mode == IndexMode::ReadOnly;
         let activity = if load && filename.exists() {
             let fh = std::fs::File::open(&filename)?;
-            serde_yaml::from_reader::<_, ChangeIndexMap>(fh)?
+            serde_yaml::from_reader::<_, activity::ChangeIndexMap>(fh)?
         } else {
-            ChangeIndexMap {
+            activity::ChangeIndexMap {
                 api_version: API_VERSION.to_owned(),
-                kind: "ChangeHistory".to_owned(),
                 ..Default::default()
             }
         };
@@ -768,7 +766,7 @@ impl Git {
 
     pub fn save_changes_file(
         &self,
-        change: &desc::Change,
+        change: &activity::Change,
         indexer: &Indexer,
         filename: &PathBuf,
         size: Option<usize>,

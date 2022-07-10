@@ -1,11 +1,10 @@
 use async_graphql::dataloader::*;
-use async_graphql::types::ID;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 
 use super::{CompleteRegistration, PgTransaction};
-use crate::graphql::{CreateGithubSessionInput, User, Viewer};
+use crate::graphql::{CreateGithubSessionInput, Viewer};
 use crate::prelude::*;
 use crate::Alert;
 
@@ -24,17 +23,6 @@ pub struct Row {
     pub login: Option<String>,
     pub name: String,
     pub selected_repository_id: Option<Uuid>,
-}
-
-impl Row {
-    pub fn to_user(&self) -> User {
-        User::Registered {
-            id: ID(self.id.to_string()),
-            name: self.name.to_owned(),
-            avatar_url: self.avatar_url.to_owned(),
-            selected_repository_id: self.selected_repository_id.map(|uuid| ID(uuid.to_string())),
-        }
-    }
 }
 
 #[allow(unused_variables)]
@@ -67,7 +55,7 @@ impl UserLoader {
 
 #[async_trait::async_trait]
 impl Loader<String> for UserLoader {
-    type Value = User;
+    type Value = Row;
     type Error = Error;
 
     async fn load(&self, ids: &[String]) -> Result<HashMap<String, Self::Value>> {
@@ -86,7 +74,7 @@ impl Loader<String> for UserLoader {
 
         Ok(rows?
             .iter()
-            .map(|r| (r.id.to_string(), r.to_user()))
+            .map(|r| (r.id.to_string(), r.to_owned()))
             .collect::<HashMap<_, _>>())
     }
 }
@@ -97,7 +85,7 @@ pub struct UpsertRegisteredUser {
 }
 
 pub struct UpsertUserResult {
-    pub user: User,
+    pub user: Row,
 }
 
 impl UpsertRegisteredUser {
@@ -121,7 +109,7 @@ impl UpsertRegisteredUser {
             .await?;
 
         let user = match result {
-            Some(row) => row.to_user(),
+            Some(row) => row,
             None => {
                 log::info!("user {} not found, creating", username);
                 let tx = pool.begin().await?;
@@ -139,9 +127,9 @@ impl UpsertRegisteredUser {
     }
 
     async fn create_github_user<'t>(
-        &self,
+        &'t self,
         mut tx: PgTransaction<'t>,
-    ) -> Result<(PgTransaction<'t>, User)> {
+    ) -> Result<(PgTransaction<'t>, Row)> {
         let row = sqlx::query_as::<_, Row>(
             r#"insert into users
                 (name, avatar_url, primary_email, github_username, github_avatar_url)
@@ -170,7 +158,7 @@ impl UpsertRegisteredUser {
         .execute(&mut tx)
         .await?;
 
-        Ok((tx, row.to_user()))
+        Ok((tx, row))
     }
 }
 

@@ -3,8 +3,8 @@ use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 
-use super::{fetch_user, repository};
-use crate::graphql::{Repository, User, Viewer};
+use super::{fetch_user, repository, user};
+use crate::graphql::{Repository, Viewer};
 use crate::prelude::*;
 
 const REPOSITORY_FIELDS: &str = r#"
@@ -230,7 +230,7 @@ pub struct SelectRepository {
 
 pub struct SelectRepositoryResult {
     pub repository: Option<Repository>,
-    pub actor: User,
+    pub actor: user::Row,
 }
 
 impl SelectRepository {
@@ -287,7 +287,7 @@ impl SelectRepository {
         let row = fetch_user(&self.actor.mutation_ids, &self.actor.user_id, pool).await?;
 
         Ok(SelectRepositoryResult {
-            actor: row.to_user(),
+            actor: row,
             repository,
         })
     }
