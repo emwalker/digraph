@@ -30,7 +30,7 @@ export default ({ view }: Props) => {
     <Page>
       {
         view
-          ? <LineItems view={view} />
+          ? <LineItems activity={view.activity} />
           : <Placeholder />
       }
     </Page>
@@ -43,6 +43,7 @@ query RecentPage_recent_Query(
   $orgLogin: String!,
   $repoName: String,
   $repoIds: [ID!],
+  $topicPath: String,
 ) {
   view(
     viewerId: $viewerId,
@@ -50,6 +51,8 @@ query RecentPage_recent_Query(
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
-    ...LineItems_view
+    activity(topicPath: $topicPath, first: 50) {
+      ...LineItems_activity
+    }
   }
 }`

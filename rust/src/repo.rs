@@ -1,6 +1,7 @@
 use async_graphql::dataloader::*;
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use rand::{distributions::Alphanumeric, Rng};
 use regex::Regex;
 use sqlx::postgres::PgPool;
 use std::collections::BTreeSet;
@@ -74,6 +75,15 @@ impl std::cmp::PartialOrd for RepoPath {
 }
 
 impl RepoPath {
+    pub fn random(prefix: &String) -> Self {
+        let s: String = rand::thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(64)
+            .map(char::from)
+            .collect();
+        Self::from(&format!("{}/{}", prefix, s))
+    }
+
     fn invalid_path(input: &String) -> Self {
         Self {
             inner: input.clone(),

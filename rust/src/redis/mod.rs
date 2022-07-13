@@ -90,7 +90,7 @@ impl Redis {
         key: &Key,
         set: &HashSet<String>,
     ) -> Result<()> {
-        let _ = redis_rs::transaction(con, &[key], |con, pipe| {
+        redis_rs::transaction(con, &[key], |con, pipe| {
             pipe.sadd(key, set).ignore().expire(key, 60).query(con)
         })?;
 
@@ -117,7 +117,7 @@ impl git::SaveChangesForPrefix for Redis {
 
         let key = Key(format!("activity:{}", prefix));
         log::info!("saving changes to {:?}", key);
-        let _ = con.zadd_multiple(key, &args)?;
+        con.zadd_multiple(key, &args)?;
         Ok(())
     }
 }

@@ -236,15 +236,16 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
 
         let mut paths = BTreeMap::from([(
             topic.metadata.path.to_owned(),
-            activity::Role::UpdatedTopic(activity::TopicInfo::from(&topic)),
+            activity::Role::UpdatedTopic {
+                synonyms: activity::SynonymInfo::from(&topic),
+            },
         )]);
 
         for parent in parent_topics {
-            let synonyms = BTreeMap::from([(Locale::EN, parent.name)]);
-            let synonyms = activity::TopicInfo { synonyms };
+            let synonyms = activity::SynonymInfo(BTreeMap::from([(Locale::EN, parent.name)]));
             paths.insert(
                 parent.path.to_owned(),
-                activity::Role::AddedParentTopic(synonyms),
+                activity::Role::AddedParentTopic { synonyms },
             );
         }
 
@@ -259,18 +260,20 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
 
             match kind.as_str() {
                 "Topic" => {
-                    let topic = activity::TopicInfo {
-                        synonyms: BTreeMap::from([(Locale::EN, name.to_owned())])
-                    };
-                    paths.insert(path.to_owned(), activity::Role::AddedChildTopic(topic));
+                    let synonyms =
+                        activity::SynonymInfo(BTreeMap::from([(Locale::EN, name.to_owned())]));
+                    paths.insert(
+                        path.to_owned(),
+                        activity::Role::AddedChildTopic { synonyms },
+                    );
                 }
                 "Link" => {
                     paths.insert(
                         path.to_owned(),
-                        activity::Role::AddedChildLink(activity::LinkInfo {
+                        activity::Role::AddedChildLink {
                             title: name.to_owned(),
                             url: url.to_owned(),
-                        }),
+                        },
                     );
                 }
                 _ => {}
@@ -332,20 +335,19 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
 
         let mut paths = BTreeMap::from([(
             link.metadata.path.to_owned(),
-            activity::Role::UpdatedLink(activity::LinkInfo {
+            activity::Role::UpdatedLink {
                 title: link.metadata.title.to_owned(),
                 url: link.metadata.url.to_owned(),
-            }),
+            },
         )]);
 
         for parent in &parent_topics {
-            let synonyms = activity::TopicInfo {
-                synonyms: BTreeMap::from([(Locale::EN, parent.name.to_owned())]),
-            };
+            let synonyms =
+                activity::SynonymInfo(BTreeMap::from([(Locale::EN, parent.name.to_owned())]));
 
             paths.insert(
                 parent.path.to_owned(),
-                activity::Role::AddedParentTopic(synonyms),
+                activity::Role::AddedParentTopic { synonyms },
             );
         }
 

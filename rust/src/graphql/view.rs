@@ -23,15 +23,16 @@ impl View {
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
+        topic_path: Option<String>,
     ) -> Result<ActivityLineItemConnection> {
         let repo = ctx.data_unchecked::<Repo>();
-        let activity = repo.activity(None, first.unwrap_or(3)).await?;
+        let activity = repo.activity(topic_path, first.unwrap_or(3)).await?;
 
         let mut results = vec![];
         for change in activity {
             let actor = repo.user_loader.load_one(change.user_id()).await?;
             let actor_name = actor
-                .map(|user| user.name.to_owned())
+                .map(|user| user.name)
                 .unwrap_or_else(|| "[missing user]".to_owned());
 
             let markdown = change.markdown(Locale::EN, &actor_name, None)?;

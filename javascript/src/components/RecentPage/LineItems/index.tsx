@@ -1,12 +1,12 @@
 import React from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import { LineItems_view as View } from '__generated__/LineItems_view.graphql'
+import { LineItems_activity as Activity } from '__generated__/LineItems_activity.graphql'
 import LineItem from './LineItem'
 import Container from '../Container'
 
 type Props = {
-  view: View,
+  activity: Activity,
 }
 
 const NoRecentActivity = () => (
@@ -17,8 +17,8 @@ const NoRecentActivity = () => (
   </Container>
 )
 
-const LineItems = ({ view }: Props) => {
-  const edges = view && view.activity ? view.activity.edges : null
+const LineItems = ({ activity }: Props) => {
+  const edges = activity?.edges
 
   if (!edges || edges.length === 0) return <NoRecentActivity />
 
@@ -32,14 +32,12 @@ const LineItems = ({ view }: Props) => {
 }
 
 export default createFragmentContainer(LineItems, {
-  view: graphql`
-    fragment LineItems_view on View {
-      activity(first: 50) {
-        edges {
-          node {
-            createdAt
-            description
-          }
+  activity: graphql`
+    fragment LineItems_activity on ActivityLineItemConnection {
+      edges {
+        node {
+          createdAt
+          description
         }
       }
     }

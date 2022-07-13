@@ -54,7 +54,7 @@ impl Topic {
         for change in activity {
             let actor = repo.user_loader.load_one(change.user_id()).await?;
             let actor_name = actor
-                .map(|user| user.name.to_owned())
+                .map(|user| user.name)
                 .unwrap_or_else(|| "[missing user]".to_owned());
 
             results.push(ActivityLineItem {

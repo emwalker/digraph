@@ -1,4 +1,3 @@
-use rand::{distributions::Alphanumeric, Rng};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use super::SaveChangesForPrefix;
@@ -102,30 +101,36 @@ impl DeleteTopic {
     ) -> activity::Change {
         let mut paths = BTreeMap::from([(
             topic.metadata.path.to_owned(),
-            activity::Role::UpdatedTopic(activity::TopicInfo::from(topic)),
+            activity::Role::UpdatedTopic {
+                synonyms: activity::SynonymInfo::from(topic),
+            },
         )]);
 
         for parent in parent_topics {
             paths.insert(
                 parent.metadata.path.to_owned(),
-                activity::Role::RemovedParentTopic(activity::TopicInfo::from(parent)),
+                activity::Role::RemovedParentTopic {
+                    synonyms: activity::SynonymInfo::from(parent),
+                },
             );
         }
 
         for child in child_links {
             paths.insert(
                 child.metadata.path.to_owned(),
-                activity::Role::RemovedChildLink(activity::LinkInfo {
+                activity::Role::RemovedChildLink {
                     title: child.metadata.title.to_owned(),
                     url: child.metadata.url.to_owned(),
-                }),
+                },
             );
         }
 
         for child in child_topics {
             paths.insert(
                 child.metadata.path.to_owned(),
-                activity::Role::RemovedChildTopic(activity::TopicInfo::from(child)),
+                activity::Role::RemovedChildTopic {
+                    synonyms: activity::SynonymInfo::from(child),
+                },
             );
         }
 
@@ -172,7 +177,9 @@ impl DeleteTopicTimerange {
             user_id: self.actor.user_id.to_owned(),
             paths: BTreeMap::from([(
                 self.topic_path.inner.to_owned(),
-                activity::Role::UpdatedTopic(activity::TopicInfo::from(topic)),
+                activity::Role::UpdatedTopic {
+                    synonyms: activity::SynonymInfo::from(topic),
+                },
             )]),
         }))
     }
@@ -262,28 +269,36 @@ impl UpdateTopicParentTopics {
     ) -> activity::Change {
         let mut paths = BTreeMap::from([(
             child.metadata.path.to_owned(),
-            activity::Role::UpdatedTopic(activity::TopicInfo::from(child)),
+            activity::Role::UpdatedTopic {
+                synonyms: activity::SynonymInfo::from(child),
+            },
         )]);
 
         for parent in added {
             paths.insert(
                 parent.metadata.path.to_owned(),
-                activity::Role::AddedParentTopic(activity::TopicInfo::from(parent)),
+                activity::Role::AddedParentTopic {
+                    synonyms: activity::SynonymInfo::from(parent),
+                },
             );
         }
 
         for parent in removed {
             paths.insert(
                 parent.metadata.path.to_owned(),
-                activity::Role::RemovedParentTopic(activity::TopicInfo::from(&parent)),
+                activity::Role::RemovedParentTopic {
+                    synonyms: activity::SynonymInfo::from(parent),
+                },
             );
         }
 
-        activity::Change::UpdateTopicParentTopics(activity::UpdateTopicParentTopics(activity::Body {
-            date,
-            paths,
-            user_id: self.actor.user_id.to_owned(),
-        }))
+        activity::Change::UpdateTopicParentTopics(activity::UpdateTopicParentTopics(
+            activity::Body {
+                date,
+                paths,
+                user_id: self.actor.user_id.to_owned(),
+            },
+        ))
     }
 
     fn validate(&self, git: &Git) -> Result<()> {
@@ -362,7 +377,9 @@ impl UpdateTopicSynonyms {
             date: chrono::Utc::now(),
             paths: BTreeMap::from([(
                 self.topic_path.inner.to_owned(),
-                activity::Role::UpdatedTopic(activity::TopicInfo::from(topic)),
+                activity::Role::UpdatedTopic {
+                    synonyms: activity::SynonymInfo::from(topic),
+                },
             )]),
             user_id: self.actor.user_id.to_owned(),
         }))
@@ -504,11 +521,15 @@ impl UpsertTopic {
         let paths = BTreeMap::from([
             (
                 child.metadata.path.to_owned(),
-                activity::Role::AddedChildTopic(activity::TopicInfo::from(child)),
+                activity::Role::AddedChildTopic {
+                    synonyms: activity::SynonymInfo::from(child),
+                },
             ),
             (
                 parent.metadata.path.to_owned(),
-                activity::Role::AddedParentTopic(activity::TopicInfo::from(parent)),
+                activity::Role::AddedParentTopic {
+                    synonyms: activity::SynonymInfo::from(parent),
+                },
             ),
         ]);
 
@@ -519,18 +540,9 @@ impl UpsertTopic {
         }))
     }
 
-    fn make_path(&self) -> RepoPath {
-        let s: String = rand::thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(64)
-            .map(char::from)
-            .collect();
-        RepoPath::from(&format!("{}/{}", self.prefix, s))
-    }
-
     fn make_topic(&self, parent: &Topic) -> (RepoPath, Topic) {
         let added = chrono::Utc::now();
-        let path = self.make_path();
+        let path = RepoPath::random(&self.prefix);
 
         let topic = Topic {
             api_version: API_VERSION.into(),
@@ -595,7 +607,9 @@ impl UpsertTopicTimerange {
             date: chrono::Utc::now(),
             paths: BTreeMap::from([(
                 self.topic_path.inner.to_owned(),
-                activity::Role::UpdatedTopic(activity::TopicInfo::from(topic)),
+                activity::Role::UpdatedTopic {
+                    synonyms: activity::SynonymInfo::from(topic),
+                },
             )]),
             user_id: self.actor.user_id.to_owned(),
         }))

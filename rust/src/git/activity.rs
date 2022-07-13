@@ -5,33 +5,9 @@ use super::{Git, Locale, Topic};
 use crate::prelude::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize, Eq, Ord, PartialEq, PartialOrd)]
-#[serde(tag = "kind")]
-pub enum Role {
-    AddedChildLink(LinkInfo),
-    AddedChildTopic(TopicInfo),
-    AddedParentTopic(TopicInfo),
-    DeletedLink(LinkInfo),
-    RemovedChildLink(LinkInfo),
-    RemovedChildTopic(TopicInfo),
-    RemovedParentTopic(TopicInfo),
-    UpdatedLink(LinkInfo),
-    UpdatedTopic(TopicInfo),
-}
+pub struct SynonymInfo(pub BTreeMap<Locale, String>);
 
-pub type Paths = BTreeMap<String, Role>;
-
-#[derive(Clone, Debug, Deserialize, Serialize, Eq, Ord, PartialEq, PartialOrd)]
-pub struct LinkInfo {
-    pub title: String,
-    pub url: String,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, Eq, Ord, PartialEq, PartialOrd)]
-pub struct TopicInfo {
-    pub synonyms: BTreeMap<Locale, String>,
-}
-
-impl TopicInfo {
+impl SynonymInfo {
     pub fn from(topic: &Topic) -> Self {
         let mut synonyms = BTreeMap::new();
 
@@ -42,25 +18,41 @@ impl TopicInfo {
             synonyms.insert(synonym.locale, synonym.name.to_owned());
         }
 
-        Self { synonyms }
+        Self(synonyms)
     }
 
     pub fn get(&self, locale: Locale) -> Option<&String> {
-        self.synonyms.get(&locale)
+        self.0.get(&locale)
     }
 
     pub fn name(&self, locale: Locale) -> String {
-        if let Some(name) = self.synonyms.get(&locale) {
+        if let Some(name) = self.0.get(&locale) {
             return name.to_owned();
         }
 
-        if let Some(name) = self.synonyms.get(&Locale::EN) {
+        if let Some(name) = self.0.get(&Locale::EN) {
             return name.to_owned();
         }
 
         "[missing topic]".to_owned()
     }
 }
+
+#[derive(Clone, Debug, Deserialize, Serialize, Eq, Ord, PartialEq, PartialOrd)]
+#[serde(tag = "kind")]
+pub enum Role {
+    AddedChildLink { title: String, url: String },
+    AddedChildTopic { synonyms: SynonymInfo },
+    AddedParentTopic { synonyms: SynonymInfo },
+    DeletedLink { title: String, url: String },
+    RemovedChildLink { title: String, url: String },
+    RemovedChildTopic { synonyms: SynonymInfo },
+    RemovedParentTopic { synonyms: SynonymInfo },
+    UpdatedLink { title: String, url: String },
+    UpdatedTopic { synonyms: SynonymInfo },
+}
+
+pub type Paths = BTreeMap<String, Role>;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -179,7 +171,7 @@ pub struct DeleteLink(pub Body);
 impl DeleteLink {
     pub fn deleted_link(&self) -> Option<(&String, &String)> {
         self.0.paths.values().find_map(|value| match value {
-            Role::DeletedLink(LinkInfo { title, url }) => Some((title, url)),
+            Role::DeletedLink { title, url } => Some((title, url)),
             _ => None,
         })
     }
@@ -196,12 +188,11 @@ impl DeleteTopic {
             .values()
             .find(|value| matches!(value, Role::RemovedParentTopic { .. }));
 
-        if let Some(Role::RemovedParentTopic(topic)) = role {
-            topic.name(locale)
+        if let Some(Role::RemovedParentTopic { synonyms }) = role {
+            synonyms.name(locale)
         } else {
             "[missing topic]".to_owned()
         }
-        .to_owned()
     }
 }
 
@@ -221,32 +212,32 @@ pub struct UpdateLinkParentTopics(pub Body);
 pub struct UpdateTopicParentTopics(pub Body);
 
 impl UpdateLinkParentTopics {
-    pub fn added_topics(&self) -> Vec<(String, &TopicInfo)> {
+    pub fn added_topics(&self) -> Vec<(String, &SynonymInfo)> {
         self.0
             .paths
             .iter()
             .filter_map(|(path, value)| {
-                if let Role::AddedParentTopic(topic) = value {
-                    Some((path.to_owned(), topic))
+                if let Role::AddedParentTopic { synonyms } = value {
+                    Some((path.to_owned(), synonyms))
                 } else {
                     None
                 }
             })
-            .collect::<Vec<(String, &TopicInfo)>>()
+            .collect::<Vec<(String, &SynonymInfo)>>()
     }
 
-    pub fn removed_topics(&self) -> Vec<(String, &TopicInfo)> {
+    pub fn removed_topics(&self) -> Vec<(String, &SynonymInfo)> {
         self.0
             .paths
             .iter()
             .filter_map(|(path, value)| {
-                if let Role::RemovedParentTopic(topic) = value {
-                    Some((path.to_owned(), topic))
+                if let Role::RemovedParentTopic { synonyms } = value {
+                    Some((path.to_owned(), synonyms))
                 } else {
                     None
                 }
             })
-            .collect::<Vec<(String, &TopicInfo)>>()
+            .collect::<Vec<(String, &SynonymInfo)>>()
     }
 
     pub fn link(&self) -> Result<&Role> {
@@ -289,12 +280,12 @@ mod markdown {
         format!("[{}]({})", text, path)
     }
 
-    fn topic_reference(locale: Locale, path: &str, topic: &TopicInfo) -> String {
+    fn topic_reference(locale: Locale, path: &str, topic: &SynonymInfo) -> String {
         let name = topic.name(locale);
-        reference(&name, &path)
+        reference(&name, path)
     }
 
-    fn topic_desc(locale: Locale, topics: &[(String, &TopicInfo)]) -> Result<String> {
+    fn topic_desc(locale: Locale, topics: &[(String, &SynonymInfo)]) -> Result<String> {
         use itertools::Itertools;
         let topics = topics.to_vec();
 
@@ -379,8 +370,8 @@ mod markdown {
             actor_name: &str,
             _context: Option<&RepoPath>,
         ) -> Result<String> {
-            let topic = if let Ok(Role::UpdatedTopic(topic)) = self.topic() {
-                topic
+            let synonyms = if let Ok(Role::UpdatedTopic { synonyms }) = self.topic() {
+                synonyms
             } else {
                 return Err(Error::Repo("expected a topic".to_owned()));
             };
@@ -388,7 +379,7 @@ mod markdown {
             let markdown = format!(
                 r#"<user>{}</user> deleted topic "{}", removing it from TOPIC, TOPIC and TOPIC"#,
                 actor_name,
-                topic.name(locale),
+                synonyms.name(locale),
             );
 
             Ok(markdown)
@@ -425,8 +416,8 @@ mod markdown {
 
             markdown.push_str(&changes);
             match self.link() {
-                Ok(Role::UpdatedLink(link)) => {
-                    markdown.push_str(&format!(" {}", reference(&link.title, &link.url)));
+                Ok(Role::UpdatedLink { title, url }) => {
+                    markdown.push_str(&format!(" {}", reference(title, url)));
                 }
                 Ok(_) => {
                     markdown.push_str(" [missing link]");
@@ -587,10 +578,10 @@ mod tests {
 
     #[test]
     fn update_link_parent_topics() {
-        let link = Role::UpdatedLink(LinkInfo {
+        let link = Role::UpdatedLink {
             title: "Reddit".to_owned(),
             url: "http://www.reddit.com".to_owned(),
-        });
+        };
         let topic1 = topic("Climate change");
         let topic2 = topic("Weather");
 
@@ -598,11 +589,15 @@ mod tests {
             ("/wiki/00010".to_owned(), link),
             (
                 topic1.metadata.path.to_owned(),
-                Role::AddedParentTopic(TopicInfo::from(&topic1)),
+                Role::AddedParentTopic {
+                    synonyms: SynonymInfo::from(&topic1),
+                },
             ),
             (
                 topic2.metadata.path.to_owned(),
-                Role::RemovedParentTopic(TopicInfo::from(&topic2)),
+                Role::RemovedParentTopic {
+                    synonyms: SynonymInfo::from(&topic2),
+                },
             ),
         ]);
 
@@ -637,18 +632,22 @@ mod tests {
         let paths = BTreeMap::from([
             (
                 link.metadata.path.to_owned(),
-                Role::DeletedLink(LinkInfo {
+                Role::DeletedLink {
                     title: link.metadata.title.to_owned(),
                     url: link.metadata.url,
-                }),
+                },
             ),
             (
                 topic1.metadata.path.to_owned(),
-                Role::RemovedParentTopic(TopicInfo::from(&topic1)),
+                Role::RemovedParentTopic {
+                    synonyms: SynonymInfo::from(&topic1),
+                },
             ),
             (
                 topic2.metadata.path.to_owned(),
-                Role::RemovedParentTopic(TopicInfo::from(&topic2)),
+                Role::RemovedParentTopic {
+                    synonyms: SynonymInfo::from(&topic2),
+                },
             ),
         ]);
 
@@ -671,7 +670,9 @@ mod tests {
 
         let paths = BTreeMap::from([(
             topic1.metadata.path.to_owned(),
-            Role::UpdatedTopic(TopicInfo::from(&topic1)),
+            Role::UpdatedTopic {
+                synonyms: SynonymInfo::from(&topic1),
+            },
         )]);
 
         let change = Change::UpsertTopicTimerange(UpsertTopicTimerange(Body {

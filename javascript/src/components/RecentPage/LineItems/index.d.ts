@@ -1,6 +1,6 @@
-import { LineItems_topic as Topic } from '__generated__/LineItems_topic.graphql';
+import { LineItems_activity as Activity } from '__generated__/LineItems_activity.graphql';
 declare type Props = {
-    topic: Topic;
+    activity: Activity;
 };
 declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

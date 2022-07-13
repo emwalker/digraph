@@ -476,16 +476,23 @@ impl Indexer {
     }
 
     pub fn add_change(&mut self, change: &activity::Change) -> Result<()> {
+        let mut prefixes = HashSet::new();
+
         for path in change.paths().keys() {
             let index = self.activity(path)?;
             index.add(change.to_owned());
+
+            let path = RepoPath::from(path);
+            prefixes.insert(path.prefix.to_owned());
         }
 
-        let list = self
-            .prefix_changes
-            .entry(WIKI_REPO_PREFIX.to_owned())
-            .or_insert(Vec::new());
-        list.push(change.to_owned());
+        for prefix in &prefixes {
+            let list = self
+                .prefix_changes
+                .entry(prefix.to_owned())
+                .or_insert(Vec::new());
+            list.push(change.to_owned());
+        }
 
         Ok(())
     }

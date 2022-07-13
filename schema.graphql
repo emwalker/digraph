@@ -530,6 +530,7 @@ type View {
     after: String,
     last: Int,
     before: String
+    topicPath: String,
   ): ActivityLineItemConnection!
   currentRepository: Repository
   defaultOrganization: Organization!
