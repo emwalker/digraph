@@ -99,6 +99,10 @@ impl Link {
         RepoPath::from(&self.metadata.path)
     }
 
+    pub fn title(&self) -> &String {
+        &self.metadata.title
+    }
+
     pub fn to_search_entry(&self) -> SearchEntry {
         SearchEntry {
             path: self.metadata.path.to_owned(),
@@ -112,6 +116,10 @@ impl Link {
             kind: Kind::Link,
             path: self.metadata.path.to_owned(),
         }
+    }
+
+    pub fn url(&self) -> &String {
+        &self.metadata.url
     }
 }
 

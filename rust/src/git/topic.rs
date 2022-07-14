@@ -101,7 +101,7 @@ impl DeleteTopic {
     ) -> activity::Change {
         let mut paths = BTreeMap::from([(
             topic.metadata.path.to_owned(),
-            activity::Role::UpdatedTopic {
+            activity::Role::DeletedTopic {
                 synonyms: activity::SynonymInfo::from(topic),
             },
         )]);
@@ -134,7 +134,7 @@ impl DeleteTopic {
             );
         }
 
-        activity::Change::UpdateLinkParentTopics(activity::UpdateLinkParentTopics(activity::Body {
+        activity::Change::DeleteTopic(activity::DeleteTopic(activity::Body {
             date,
             paths,
             user_id: self.actor.user_id.to_owned(),
@@ -521,7 +521,7 @@ impl UpsertTopic {
         let paths = BTreeMap::from([
             (
                 child.metadata.path.to_owned(),
-                activity::Role::AddedChildTopic {
+                activity::Role::UpdatedTopic {
                     synonyms: activity::SynonymInfo::from(child),
                 },
             ),
