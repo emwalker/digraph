@@ -88,7 +88,7 @@
   "repository": "git@github.com:olebedev/go-starter-kit.git",
   "devDependencies": {
     "@babel/core": "^7.18.2",
-    "@babel/plugin-proposal-throw-expressions": "^7.16.7",
+    "@babel/plugin-proposal-throw-expressions": "^7.18.6",
     "@babel/plugin-transform-react-jsx": "^7.17.12",
     "@babel/preset-react": "^7.17.12",
     "@babel/preset-typescript": "^7.17.12",
