@@ -5,7 +5,7 @@ import { queryMiddleware } from 'farce'
 import { Store, Action, Middleware, Dispatch, AnyAction } from 'redux'
 import { Resolver } from 'found-relay'
 
-import { defaultRootTopicId, defaultOrganizationLogin } from 'components/constants'
+import { defaultOrganizationLogin } from 'components/constants'
 import Homepage, { query as homepageQuery } from 'components/Homepage'
 import TermsOfUse from 'components/TermsOfUse'
 import RecentPage, { query as recentPageQuery } from 'components/RecentPage'
@@ -34,7 +34,7 @@ const prepareVariablesFn = (viewer: Express.User) => (variables: FoundRelayVaria
   const viewerId = viewer?.id || ''
   const sessionId = viewer?.sessionId || ''
   const { orgLogin, topicId } = variables
-  const topicPath = topicId ? `/${orgLogin}/${topicId}` : `${defaultOrganizationLogin}/${defaultRootTopicId}`
+  const topicPath = topicId ? `/${orgLogin}/${topicId}` : null
 
   return {
     orgLogin: defaultOrganizationLogin,

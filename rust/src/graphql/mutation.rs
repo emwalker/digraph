@@ -78,13 +78,13 @@ pub struct DeleteTopicPayload {
 }
 
 #[derive(Debug, InputObject)]
-pub struct DeleteTopicTimerangeInput {
+pub struct RemoveTopicTimerangeInput {
     client_mutation_id: Option<String>,
     topic_path: String,
 }
 
 #[derive(Debug, SimpleObject)]
-pub struct DeleteTopicTimerangePayload {
+pub struct RemoveTopicTimerangePayload {
     client_mutation_id: Option<String>,
     topic: Topic,
 }
@@ -173,7 +173,7 @@ pub struct UpdateTopicParentTopicsPayload {
 
 #[derive(Debug, InputObject)]
 pub struct UpsertLinkInput {
-    pub add_parent_topic_paths: Vec<String>,
+    pub add_parent_topic_path: Option<String>,
     pub client_mutation_id: Option<String>,
     pub organization_login: String,
     pub repository_name: String,
@@ -340,23 +340,23 @@ impl MutationRoot {
         })
     }
 
-    async fn delete_topic_timerange(
+    async fn remove_topic_timerange(
         &self,
         ctx: &Context<'_>,
-        input: DeleteTopicTimerangeInput,
-    ) -> Result<DeleteTopicTimerangePayload> {
-        let DeleteTopicTimerangeInput {
+        input: RemoveTopicTimerangeInput,
+    ) -> Result<RemoveTopicTimerangePayload> {
+        let RemoveTopicTimerangeInput {
             client_mutation_id,
             topic_path,
         } = input;
 
         let topic_path = RepoPath::from(&topic_path);
-        let git::DeleteTopicTimerangeResult { topic, .. } = ctx
+        let git::RemoveTopicTimerangeResult { topic, .. } = ctx
             .data_unchecked::<Repo>()
-            .delete_topic_timerange(&topic_path)
+            .remove_topic_timerange(&topic_path)
             .await?;
 
-        Ok(DeleteTopicTimerangePayload {
+        Ok(RemoveTopicTimerangePayload {
             client_mutation_id,
             topic: Topic::from(&topic),
         })

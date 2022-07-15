@@ -3,38 +3,35 @@ kind: ChangeIndexMap
 apiVersion: objects/v1
 changes:
   - kind: UpsertTopic
-    date: "2022-07-13T00:44:40.112997435Z"
-    paths:
-      /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13:
-        kind: AddedChildTopic
-        synonyms:
-          en: Climate change and weather
-      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi:
-        kind: AddedParentTopic
-        synonyms:
-          en: Climate change
-    userId: "2"
+    actorId: "2"
+    date: "2022-07-15T22:18:14.026485845Z"
+    parentTopic:
+      path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
+      synonyms:
+        en: Climate change
+    upsertedTopic:
+      path: /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
+      synonyms:
+        en: Climate change and weather
   - kind: UpsertLink
-    date: "2022-07-13T00:44:40.078499982Z"
-    paths:
-      /wiki/24ef1a588aa8242ed43193766154fd5f05d343dcdcd3690dda097979363776f2:
-        kind: UpdatedLink
-        title: Climate change
-        url: "https://en.wikipedia.org/wiki/Climate_change"
-      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi:
-        kind: AddedParentTopic
-        synonyms:
-          en: Climate change
-    userId: "2"
+    addParentTopic:
+      path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
+      synonyms:
+        en: Climate change
+    actorId: "2"
+    date: "2022-07-15T22:18:13.997904751Z"
+    upsertedLink:
+      path: /wiki/24ef1a588aa8242ed43193766154fd5f05d343dcdcd3690dda097979363776f2
+      title: Climate change
+      url: "https://en.wikipedia.org/wiki/Climate_change"
   - kind: UpsertTopic
-    date: "2022-07-13T00:44:40.059743220Z"
-    paths:
-      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi:
-        kind: AddedChildTopic
-        synonyms:
-          en: Climate change
-      /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8:
-        kind: AddedParentTopic
-        synonyms:
-          en: Root topic
-    userId: "2"
+    actorId: "2"
+    date: "2022-07-15T22:18:13.981211916Z"
+    parentTopic:
+      path: /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8
+      synonyms:
+        en: Root topic
+    upsertedTopic:
+      path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
+      synonyms:
+        en: Climate change

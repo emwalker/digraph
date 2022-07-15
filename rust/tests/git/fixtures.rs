@@ -116,7 +116,7 @@ mod tests {
             &f,
             &url,
             Some("Climate change".into()),
-            &[&climate_change.inner],
+            Some(climate_change.inner.to_owned()),
         )
         .await;
 
@@ -136,7 +136,13 @@ mod tests {
         let weather = topic.unwrap().path();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Weather").unwrap();
-        upsert_link(&f, &url, Some("Weather".into()), &[&weather.inner]).await;
+        upsert_link(
+            &f,
+            &url,
+            Some("Weather".into()),
+            Some(weather.inner.to_owned()),
+        )
+        .await;
 
         let path = RepoPath::from(
             "/wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13",
@@ -168,7 +174,7 @@ mod tests {
             &f,
             &url,
             Some("13. How does climate change affect the strength and frequency of floods, droughts, hurricanes, and tornadoes?".into()),
-            &[&climate_change_weather.inner],
+            Some(climate_change_weather.inner.to_owned()),
         )
         .await;
 
@@ -179,7 +185,7 @@ mod tests {
             &f,
             &url,
             Some("Overview: Weather, Global Warming, and Climate Change".into()),
-            &[&climate_change_weather.inner],
+            Some(climate_change_weather.inner.to_owned()),
         )
         .await;
 

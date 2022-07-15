@@ -3,7 +3,6 @@ import { createRefetchContainer, graphql, RelayRefetchProp } from 'react-relay'
 
 import { TopicOption, liftNodes } from 'components/types'
 import deleteTopicMutation, { Input as DeleteInput } from 'mutations/deleteTopicMutation'
-import updateTopicMutation, { Input as UpdateInput } from 'mutations/updateTopicMutation'
 import updateTopicTopicsMutation, {
   Input as UpdateTopicsInput,
 } from 'mutations/updateTopicParentTopicsMutation'
@@ -35,17 +34,6 @@ class EditTopicForm extends Component<Props, State> {
     }
   }
 
-  onSave = () => {
-    const input: UpdateInput = {
-      addParentTopicPaths: this.addParentTopicPaths,
-      description: this.state.description || '',
-      topicPath: this.props.topic.path,
-      name: this.state.displayName,
-    }
-    updateTopicMutation(this.props.relay.environment, input)
-    this.props.toggleForm()
-  }
-
   onDelete = () => {
     const input: DeleteInput = { topicPath: this.props.topic.path }
     deleteTopicMutation(
@@ -58,11 +46,6 @@ class EditTopicForm extends Component<Props, State> {
         }],
       },
     )
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  get addParentTopicPaths(): string[] {
-    return []
   }
 
   get topicPath(): string {

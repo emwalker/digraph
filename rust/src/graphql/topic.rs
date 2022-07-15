@@ -52,14 +52,14 @@ impl Topic {
 
         let mut results = vec![];
         for change in activity {
-            let actor = repo.user_loader.load_one(change.user_id()).await?;
+            let actor = repo.user_loader.load_one(change.actor_id()).await?;
             let actor_name = actor
                 .map(|user| user.name)
                 .unwrap_or_else(|| "[missing user]".to_owned());
 
             results.push(ActivityLineItem {
                 created_at: change.date(),
-                description: change.markdown(Locale::EN, &actor_name, Some(&self.path))?,
+                description: change.markdown(Locale::EN, &actor_name, Some(&self.path)),
             });
         }
 

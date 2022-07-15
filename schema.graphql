@@ -98,12 +98,12 @@ type DeleteTopicPayload {
   deletedTopicPath: String
 }
 
-input DeleteTopicTimerangeInput {
+input RemoveTopicTimerangeInput {
   clientMutationId: String
   topicPath: String!
 }
 
-type DeleteTopicTimerangePayload {
+type RemoveTopicTimerangePayload {
   clientMutationId: String
   topic: Topic!
 }
@@ -189,11 +189,10 @@ type Mutation {
   deleteLink(input: DeleteLinkInput!): DeleteLinkPayload
   deleteSession(input: DeleteSessionInput!): DeleteSessionPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
-  deleteTopicTimerange(input: DeleteTopicTimerangeInput!): DeleteTopicTimerangePayload
+  removeTopicTimerange(input: RemoveTopicTimerangeInput!): RemoveTopicTimerangePayload
   reviewLink(input: ReviewLinkInput!): ReviewLinkPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkParentTopics(input: UpdateLinkParentTopicsInput!): UpdateLinkParentTopicsPayload
-  updateTopic(input: UpdateTopicInput!): UpdateTopicPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
   updateTopicSynonyms(input: UpdateTopicSynonymsInput!): UpdateTopicSynonymsPayload
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
@@ -448,19 +447,6 @@ type UpdateTopicSynonymsPayload {
   topic: Topic
 }
 
-input UpdateTopicInput {
-  clientMutationId: String
-  description: String
-  name: String!
-  addParentTopicPaths: [String!]
-  topicPath: String!
-}
-
-type UpdateTopicPayload {
-  alerts: [Alert!]!
-  topic: Topic!
-}
-
 input UpdateLinkParentTopicsInput {
   clientMutationId: String
   linkPath: String!
@@ -483,7 +469,13 @@ type UpdateTopicParentTopicsPayload implements Alertable {
 }
 
 input UpsertLinkInput {
-  addParentTopicPaths: [String!]
+  # This mutation is used in two contexts:
+  #   - Updating a link that is known to exist.  Pass no parent topics in order to keep the existing
+  #     ones.
+  #   - Upserting a link that might exist.  Pass the topic under which the link is being upserted.
+  # TODO: Refactor so that there's an UpsertLink mutation, which requires at least one topic, and an
+  # UpdateLink mutation, which has a required link path field and doesn't modify the parent topics.
+  addParentTopicPath: String
   clientMutationId: String
   organizationLogin: String!
   repositoryName: String!

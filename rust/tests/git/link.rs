@@ -12,8 +12,13 @@ mod delete_link {
         let f = Fixtures::copy("simple");
         let url = valid_url();
 
-        let UpsertLinkResult { link, .. } =
-            upsert_link(&f, &url, Some("Page title".into()), &[]).await;
+        let UpsertLinkResult { link, .. } = upsert_link(
+            &f,
+            &url,
+            Some("Page title".into()),
+            Some("/wiki/00001".to_owned()),
+        )
+        .await;
         let path = link.unwrap().path();
         assert!(f.repo.exists(&path).unwrap());
 
@@ -39,8 +44,13 @@ mod update_link_parent_topics {
         let parent2 = RepoPath::from("/wiki/00001");
         let url = valid_url();
 
-        let UpsertLinkResult { link, .. } =
-            upsert_link(&f, &url, Some("Page title".into()), &[&parent1.inner]).await;
+        let UpsertLinkResult { link, .. } = upsert_link(
+            &f,
+            &url,
+            Some("Page title".into()),
+            Some(parent1.inner.to_owned()),
+        )
+        .await;
         let link = link.unwrap();
         assert_eq!(link.parent_topics.len(), 1);
 
@@ -54,26 +64,6 @@ mod update_link_parent_topics {
 
         let link = f.repo.git.fetch_link(&link.path().inner).unwrap();
         assert_eq!(link.parent_topics.len(), 2);
-    }
-
-    #[actix_web::test]
-    async fn no_orphans() {
-        let f = Fixtures::copy("simple");
-        let url = valid_url();
-
-        let UpsertLinkResult { link, .. } =
-            upsert_link(&f, &url, Some("Page title".into()), &[]).await;
-        let link = link.unwrap();
-        assert_eq!(link.parent_topics.len(), 1);
-
-        let result = UpdateLinkParentTopics {
-            actor: actor(),
-            link_path: link.path(),
-            parent_topic_paths: BTreeSet::new(),
-        }
-        .call(&f.repo.git, &redis::Noop);
-
-        assert!(matches!(result, Err(Error::Repo(_))));
     }
 }
 
@@ -96,7 +86,13 @@ mod upsert_link {
         assert!(!f.repo.exists(&path).unwrap());
         assert!(!f.repo.appears_in(&search, &entry).unwrap());
 
-        upsert_link(&f, &url, Some("Page title".into()), &[]).await;
+        upsert_link(
+            &f,
+            &url,
+            Some("Page title".into()),
+            Some("/wiki/00001".to_owned()),
+        )
+        .await;
 
         assert!(f.repo.exists(&path).unwrap());
         assert!(f.repo.appears_in(&search, &entry).unwrap());
@@ -109,7 +105,7 @@ mod upsert_link {
         let path = url.path(&f.repo.prefix);
         assert!(!f.repo.exists(&path).unwrap());
 
-        upsert_link(&f, &url, None, &[]).await;
+        upsert_link(&f, &url, None, None).await;
 
         fetch_link(&f, &path, |link| {
             assert_eq!(link.parent_topics.len(), 1);
@@ -125,8 +121,8 @@ mod upsert_link {
         let path = url.path(&f.repo.prefix);
         assert!(!f.repo.exists(&path).unwrap());
 
-        upsert_link(&f, &url, None, &[]).await;
-        upsert_link(&f, &url, None, &[]).await;
+        upsert_link(&f, &url, None, Some("/wiki/00001".to_owned())).await;
+        upsert_link(&f, &url, None, Some("/wiki/00001".to_owned())).await;
 
         assert!(f.repo.exists(&path).unwrap());
     }
@@ -138,7 +134,7 @@ mod upsert_link {
         let path = url.path(&f.repo.prefix);
         assert!(!f.repo.exists(&path).unwrap());
 
-        upsert_link(&f, &url, Some("A".into()), &["/wiki/00001"]).await;
+        upsert_link(&f, &url, Some("A".into()), Some("/wiki/00001".to_owned())).await;
 
         fetch_link(&f, &path, |link| {
             assert_eq!(link.metadata.title, "A");
@@ -152,7 +148,7 @@ mod upsert_link {
             assert_eq!(topics, &["/wiki/00001"]);
         });
 
-        upsert_link(&f, &url, Some("B".into()), &["/wiki/00002"]).await;
+        upsert_link(&f, &url, Some("B".into()), Some("/wiki/00002".to_owned())).await;
 
         fetch_link(&f, &path, |link| {
             assert_eq!(link.metadata.title, "B");
@@ -175,7 +171,7 @@ mod upsert_link {
         let topic = RepoPath::from("/wiki/00001");
         assert!(!f.repo.exists(&path).unwrap());
 
-        let result = upsert_link(&f, &url, Some("A".into()), &[&topic.inner]).await;
+        let result = upsert_link(&f, &url, Some("A".into()), Some(topic.inner.to_owned())).await;
         let link = result.link.unwrap();
 
         fetch_topic(&f, &topic, |parent| {
@@ -199,15 +195,25 @@ mod upsert_link {
         let topic = RepoPath::from("/wiki/00001");
         let search = Search::parse("a link").unwrap();
 
-        let UpsertLinkResult { link, .. } =
-            upsert_link(&f, &url, Some("a link title".into()), &[&topic.inner]).await;
+        let UpsertLinkResult { link, .. } = upsert_link(
+            &f,
+            &url,
+            Some("a link title".into()),
+            Some(topic.inner.to_owned()),
+        )
+        .await;
         assert!(f
             .repo
             .appears_in(&search, &link.unwrap().to_search_entry())
             .unwrap());
 
-        let UpsertLinkResult { link, .. } =
-            upsert_link(&f, &url, Some("a url title".into()), &[&topic.inner]).await;
+        let UpsertLinkResult { link, .. } = upsert_link(
+            &f,
+            &url,
+            Some("a url title".into()),
+            Some(topic.inner.to_owned()),
+        )
+        .await;
         assert!(!f
             .repo
             .appears_in(&search, &link.unwrap().to_search_entry())

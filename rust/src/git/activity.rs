@@ -1,14 +1,67 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::{Git, Locale, Topic};
+use super::{Git, Link, Locale, RepoPath, Synonym, Timerange, TimerangePrefixFormat, Topic};
 use crate::prelude::*;
 
-#[derive(Clone, Debug, Deserialize, Serialize, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SynonymInfo(pub BTreeMap<Locale, String>);
+#[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
+pub struct SynonymList(pub BTreeMap<Locale, String>);
 
-impl SynonymInfo {
-    pub fn from(topic: &Topic) -> Self {
+impl SynonymList {
+    pub fn get(&self, locale: &Locale) -> Option<&String> {
+        self.0.get(locale)
+    }
+}
+
+impl From<&Vec<Synonym>> for SynonymList {
+    fn from(synonyms: &Vec<Synonym>) -> Self {
+        let mut map = BTreeMap::new();
+        for synonym in synonyms {
+            map.entry(synonym.locale)
+                .or_insert_with(|| synonym.name.to_owned());
+        }
+        Self(map)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
+pub struct TopicInfo {
+    pub path: Option<String>,
+    pub synonyms: SynonymList,
+}
+
+impl std::cmp::Ord for TopicInfo {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.path.cmp(&other.path)
+    }
+}
+
+impl std::cmp::PartialOrd for TopicInfo {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl TopicInfo {
+    fn name(&self, locale: Locale) -> String {
+        if let Some(name) = self.synonyms.get(&locale) {
+            return name.to_owned();
+        }
+
+        if let Some(name) = self.synonyms.get(&Locale::EN) {
+            return name.to_owned();
+        }
+
+        "[missing topic]".to_owned()
+    }
+
+    fn path(&self) -> Option<RepoPath> {
+        self.path.as_ref().map(RepoPath::from)
+    }
+}
+
+impl From<&Topic> for TopicInfo {
+    fn from(topic: &Topic) -> Self {
         let mut synonyms = BTreeMap::new();
 
         for synonym in &topic.metadata.synonyms {
@@ -18,70 +71,99 @@ impl SynonymInfo {
             synonyms.insert(synonym.locale, synonym.name.to_owned());
         }
 
-        Self(synonyms)
-    }
-
-    pub fn get(&self, locale: Locale) -> Option<&String> {
-        self.0.get(&locale)
-    }
-
-    pub fn name(&self, locale: Locale) -> String {
-        if let Some(name) = self.0.get(&locale) {
-            return name.to_owned();
+        Self {
+            synonyms: SynonymList(synonyms),
+            path: Some(topic.metadata.path.to_owned()),
         }
+    }
+}
 
-        if let Some(name) = self.0.get(&Locale::EN) {
-            return name.to_owned();
+impl From<(Locale, String, Option<String>)> for TopicInfo {
+    fn from(info: (Locale, String, Option<String>)) -> Self {
+        let (locale, name, path) = info;
+        let synonyms = SynonymList(BTreeMap::from([(locale, name)]));
+        Self { synonyms, path }
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
+pub struct TopicInfoList(pub BTreeSet<TopicInfo>);
+
+impl TopicInfoList {
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl From<&Vec<Topic>> for TopicInfoList {
+    fn from(topics: &Vec<Topic>) -> Self {
+        let mut set = BTreeSet::new();
+        for topic in topics {
+            set.insert(TopicInfo::from(topic));
         }
-
-        "[missing topic]".to_owned()
+        Self(set)
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, Eq, Ord, PartialEq, PartialOrd)]
-#[serde(tag = "kind")]
-pub enum Role {
-    AddedChildLink { title: String, url: String },
-    AddedChildTopic { synonyms: SynonymInfo },
-    AddedParentTopic { synonyms: SynonymInfo },
-    DeletedLink { title: String, url: String },
-    DeletedTopic { synonyms: SynonymInfo },
-    RemovedChildLink { title: String, url: String },
-    RemovedChildTopic { synonyms: SynonymInfo },
-    RemovedParentTopic { synonyms: SynonymInfo },
-    UpdatedLink { title: String, url: String },
-    UpdatedTopic { synonyms: SynonymInfo },
-}
-
-pub type Paths = BTreeMap<String, Role>;
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Body {
-    pub date: Timestamp,
-    pub paths: Paths,
-    pub user_id: String,
-}
-
-fn find_topic(paths: &Paths) -> Result<&Role> {
-    let result = paths
-        .values()
-        .find(|value| matches!(value, Role::UpdatedTopic { .. }));
-
-    match result {
-        Some(topic) => Ok(topic),
-        None => Err(Error::Repo("no updated link found".to_owned())),
+impl From<&Vec<TopicInfo>> for TopicInfoList {
+    fn from(topics: &Vec<TopicInfo>) -> Self {
+        let mut set = BTreeSet::new();
+        for topic in topics {
+            set.insert(topic.to_owned());
+        }
+        Self(set)
     }
 }
 
-fn find_link(paths: &Paths) -> Result<&Role> {
-    let result = paths
-        .values()
-        .find(|value| matches!(value, Role::UpdatedLink { .. }));
+#[derive(Clone, Deserialize, Serialize, Eq, Ord, PartialEq, PartialOrd)]
+pub struct LinkInfo {
+    pub path: Option<String>,
+    pub title: String,
+    pub url: String,
+}
 
-    match result {
-        Some(link) => Ok(link),
-        None => Err(Error::Repo("no updated link found".to_owned())),
+impl From<&Link> for LinkInfo {
+    fn from(link: &Link) -> Self {
+        Self {
+            path: Some(link.metadata.path.to_owned()),
+            title: link.title().to_owned(),
+            url: link.url().to_owned(),
+        }
+    }
+}
+
+impl LinkInfo {
+    fn path(&self) -> Option<RepoPath> {
+        self.path.as_ref().map(RepoPath::from)
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
+pub struct LinkInfoList(pub BTreeSet<LinkInfo>);
+
+impl LinkInfoList {
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl From<&Vec<Link>> for LinkInfoList {
+    fn from(links: &Vec<Link>) -> Self {
+        let mut set = BTreeSet::new();
+        for link in links {
+            set.insert(LinkInfo::from(link));
+        }
+        Self(set)
+    }
+}
+
+impl From<&Vec<LinkInfo>> for LinkInfoList {
+    fn from(links: &Vec<LinkInfo>) -> Self {
+        let mut set = BTreeSet::new();
+        for link in links {
+            set.insert(link.to_owned());
+        }
+        Self(set)
     }
 }
 
@@ -90,9 +172,9 @@ fn find_link(paths: &Paths) -> Result<&Role> {
 pub enum Change {
     DeleteLink(DeleteLink),
     DeleteTopic(DeleteTopic),
-    DeleteTopicTimerange(DeleteTopicTimerange),
-    ImportLink(UpsertLink),
-    ImportTopic(UpsertTopic),
+    ImportLink(ImportLink),
+    ImportTopic(ImportTopic),
+    RemoveTopicTimerange(RemoveTopicTimerange),
     UpdateLinkParentTopics(UpdateLinkParentTopics),
     UpdateTopicSynonyms(UpdateTopicSynonyms),
     UpdateTopicParentTopics(UpdateTopicParentTopics),
@@ -115,39 +197,46 @@ impl std::cmp::PartialOrd for Change {
 }
 
 impl Change {
-    pub fn body(&self) -> &Body {
+    pub fn actor_id(&self) -> String {
         match self {
-            Self::DeleteLink(DeleteLink(body)) => body,
-            Self::DeleteTopic(DeleteTopic(body)) => body,
-            Self::DeleteTopicTimerange(DeleteTopicTimerange(body)) => body,
-            Self::ImportLink(UpsertLink(body)) => body,
-            Self::ImportTopic(UpsertTopic(body)) => body,
-            Self::UpdateLinkParentTopics(UpdateLinkParentTopics(body)) => body,
-            Self::UpdateTopicParentTopics(UpdateTopicParentTopics(body)) => body,
-            Self::UpdateTopicSynonyms(UpdateTopicSynonyms(body)) => body,
-            Self::UpsertLink(UpsertLink(body)) => body,
-            Self::UpsertTopic(UpsertTopic(body)) => body,
-            Self::UpsertTopicTimerange(UpsertTopicTimerange(body)) => body,
+            Self::DeleteLink(inner) => inner.actor_id.to_owned(),
+            Self::DeleteTopic(inner) => inner.actor_id.to_owned(),
+            Self::ImportLink(inner) => inner.actor_id.to_owned(),
+            Self::ImportTopic(inner) => inner.actor_id.to_owned(),
+            Self::RemoveTopicTimerange(inner) => inner.actor_id.to_owned(),
+            Self::UpdateLinkParentTopics(inner) => inner.actor_id.to_owned(),
+            Self::UpdateTopicParentTopics(inner) => inner.actor_id.to_owned(),
+            Self::UpdateTopicSynonyms(inner) => inner.actor_id.to_owned(),
+            Self::UpsertLink(inner) => inner.actor_id.to_owned(),
+            Self::UpsertTopic(inner) => inner.actor_id.to_owned(),
+            Self::UpsertTopicTimerange(inner) => inner.actor_id.to_owned(),
         }
     }
 
     pub fn date(&self) -> Timestamp {
-        self.body().date.to_owned()
+        match self {
+            Self::DeleteLink(inner) => inner.date,
+            Self::DeleteTopic(inner) => inner.date,
+            Self::ImportLink(inner) => inner.date,
+            Self::ImportTopic(inner) => inner.date,
+            Self::RemoveTopicTimerange(inner) => inner.date,
+            Self::UpdateLinkParentTopics(inner) => inner.date,
+            Self::UpdateTopicParentTopics(inner) => inner.date,
+            Self::UpdateTopicSynonyms(inner) => inner.date,
+            Self::UpsertLink(inner) => inner.date,
+            Self::UpsertTopic(inner) => inner.date,
+            Self::UpsertTopicTimerange(inner) => inner.date,
+        }
     }
 
-    pub fn markdown(
-        &self,
-        locale: Locale,
-        actor_name: &str,
-        context: Option<&RepoPath>,
-    ) -> Result<String> {
+    pub fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&RepoPath>) -> String {
         use crate::git::activity::markdown::Markdown;
         match self {
             Self::DeleteLink(inner) => inner.markdown(locale, actor_name, context),
             Self::DeleteTopic(inner) => inner.markdown(locale, actor_name, context),
-            Self::DeleteTopicTimerange(inner) => inner.markdown(locale, actor_name, context),
             Self::ImportLink(inner) => inner.markdown(locale, actor_name, context),
             Self::ImportTopic(inner) => inner.markdown(locale, actor_name, context),
+            Self::RemoveTopicTimerange(inner) => inner.markdown(locale, actor_name, context),
             Self::UpdateLinkParentTopics(inner) => inner.markdown(locale, actor_name, context),
             Self::UpdateTopicParentTopics(inner) => inner.markdown(locale, actor_name, context),
             Self::UpdateTopicSynonyms(inner) => inner.markdown(locale, actor_name, context),
@@ -157,217 +246,257 @@ impl Change {
         }
     }
 
-    pub fn paths(&self) -> &BTreeMap<String, Role> {
-        &self.body().paths
-    }
-
-    pub fn user_id(&self) -> String {
-        self.body().user_id.to_owned()
+    pub fn paths(&self) -> Vec<Option<RepoPath>> {
+        match self {
+            Self::DeleteLink(inner) => inner.paths(),
+            Self::DeleteTopic(inner) => inner.paths(),
+            Self::ImportLink(inner) => inner.paths(),
+            Self::ImportTopic(inner) => inner.paths(),
+            Self::RemoveTopicTimerange(inner) => inner.paths(),
+            Self::UpdateLinkParentTopics(inner) => inner.paths(),
+            Self::UpdateTopicParentTopics(inner) => inner.paths(),
+            Self::UpdateTopicSynonyms(inner) => inner.paths(),
+            Self::UpsertLink(inner) => inner.paths(),
+            Self::UpsertTopic(inner) => inner.paths(),
+            Self::UpsertTopicTimerange(inner) => inner.paths(),
+        }
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct DeleteLink(pub Body);
+#[serde(rename_all = "camelCase")]
+pub struct DeleteLink {
+    pub actor_id: String,
+    pub date: Timestamp,
+    pub deleted_link: LinkInfo,
+    pub parent_topics: TopicInfoList,
+}
 
 impl DeleteLink {
-    pub fn deleted_link(&self) -> Result<(&String, &String)> {
-        let result = self
-            .0
-            .paths
-            .values()
-            .find(|value| matches!(value, Role::DeletedLink { .. }));
-        match result {
-            Some(Role::DeletedLink { title, url }) => Ok((title, url)),
-            _ => Err(Error::Repo("expected a deleted link".to_owned())),
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        let mut paths = vec![self.deleted_link.path()];
+        for topic in &self.parent_topics.0 {
+            paths.push(topic.path());
         }
-    }
-
-    pub fn parent_topics(&self) -> Vec<(&String, &SynonymInfo)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(path, value)| match value {
-                Role::RemovedParentTopic { synonyms } => Some((path, synonyms)),
-                _ => None,
-            })
-            .collect()
+        paths
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct DeleteTopic(pub Body);
+#[serde(rename_all = "camelCase")]
+pub struct DeleteTopic {
+    pub actor_id: String,
+    pub child_links: LinkInfoList,
+    pub child_topics: TopicInfoList,
+    pub date: Timestamp,
+    pub deleted_topic: TopicInfo,
+    pub parent_topics: TopicInfoList,
+}
 
 impl DeleteTopic {
-    pub fn deleted_topic(&self) -> Result<(&String, &SynonymInfo)> {
-        let result = self
-            .0
-            .paths
-            .iter()
-            .find(|(_path, value)| matches!(value, Role::DeletedTopic { .. }));
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        let mut paths = vec![self.deleted_topic.path()];
 
-        if let Some((path, Role::DeletedTopic { synonyms })) = &result {
-            Ok((path, synonyms))
-        } else {
-            Err(Error::Repo("expected a deleted topic".to_owned()))
+        for link in &self.child_links.0 {
+            paths.push(link.path());
         }
-    }
 
-    pub fn child_links(&self) -> Vec<(&String, &String)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(_path, value)| match value {
-                Role::RemovedChildLink { title, url } => Some((title, url)),
-                _ => None,
-            })
-            .collect()
-    }
+        for topic in &self.child_topics.0 {
+            paths.push(topic.path());
+        }
 
-    pub fn child_topics(&self) -> Vec<(&String, &SynonymInfo)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(path, value)| match value {
-                Role::RemovedChildTopic { synonyms } => Some((path, synonyms)),
-                _ => None,
-            })
-            .collect()
-    }
+        for topic in &self.parent_topics.0 {
+            paths.push(topic.path());
+        }
 
-    pub fn parent_topics(&self) -> Vec<(&String, &SynonymInfo)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(path, value)| match value {
-                Role::RemovedParentTopic { synonyms } => Some((path, synonyms)),
-                _ => None,
-            })
-            .collect()
+        paths
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct DeleteTopicTimerange(pub Body);
+#[serde(rename_all = "camelCase")]
+pub struct ImportLink {
+    pub actor_id: String,
+    pub date: Timestamp,
+    pub imported_link: LinkInfo,
+    pub parent_topics: TopicInfoList,
+}
 
-impl DeleteTopicTimerange {
-    pub fn topic(&self) -> Result<&Role> {
-        find_topic(&self.0.paths)
+impl ImportLink {
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        let mut paths = vec![self.imported_link.path()];
+        for topic in &self.parent_topics.0 {
+            paths.push(topic.path());
+        }
+        paths
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct UpdateLinkParentTopics(pub Body);
+#[serde(rename_all = "camelCase")]
+pub struct ImportTopic {
+    pub actor_id: String,
+    pub child_links: LinkInfoList,
+    pub child_topics: TopicInfoList,
+    pub date: Timestamp,
+    pub imported_topic: TopicInfo,
+    pub parent_topics: TopicInfoList,
+}
+
+impl ImportTopic {
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        let mut paths = vec![self.imported_topic.path()];
+
+        for link in &self.child_links.0 {
+            paths.push(link.path());
+        }
+
+        for topic in &self.child_topics.0 {
+            paths.push(topic.path());
+        }
+
+        for topic in &self.parent_topics.0 {
+            paths.push(topic.path());
+        }
+
+        paths
+    }
+}
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct UpdateTopicParentTopics(pub Body);
+#[serde(rename_all = "camelCase")]
+pub struct RemoveTopicTimerange {
+    pub actor_id: String,
+    pub date: Timestamp,
+    // The RemoveTopicTimerange is idempotent, so the timerange might already have been removed.
+    pub previous_timerange: Option<Timerange>,
+    pub updated_topic: TopicInfo,
+}
+
+impl RemoveTopicTimerange {
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        vec![self.updated_topic.path()]
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateLinkParentTopics {
+    pub actor_id: String,
+    pub added_parent_topics: TopicInfoList,
+    pub date: Timestamp,
+    pub removed_parent_topics: TopicInfoList,
+    pub updated_link: LinkInfo,
+}
 
 impl UpdateLinkParentTopics {
-    pub fn added_topics(&self) -> Vec<(&String, &SynonymInfo)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(path, value)| {
-                if let Role::AddedParentTopic { synonyms } = value {
-                    Some((path, synonyms))
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<(&String, &SynonymInfo)>>()
-    }
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        let mut paths = vec![self.updated_link.path()];
 
-    pub fn removed_topics(&self) -> Vec<(&String, &SynonymInfo)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(path, value)| {
-                if let Role::RemovedParentTopic { synonyms } = value {
-                    Some((path, synonyms))
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<(&String, &SynonymInfo)>>()
-    }
+        for topic in &self.added_parent_topics.0 {
+            paths.push(topic.path());
+        }
 
-    pub fn link(&self) -> Result<&Role> {
-        find_link(&self.0.paths)
+        for topic in &self.removed_parent_topics.0 {
+            paths.push(topic.path());
+        }
+
+        paths
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct UpdateTopicSynonyms(pub Body);
+#[serde(rename_all = "camelCase")]
+pub struct UpdateTopicParentTopics {
+    pub actor_id: String,
+    pub added_parent_topics: TopicInfoList,
+    pub date: Timestamp,
+    pub removed_parent_topics: TopicInfoList,
+    pub updated_topic: TopicInfo,
+}
+
+impl UpdateTopicParentTopics {
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        let mut paths = vec![self.updated_topic.path()];
+
+        for topic in &self.added_parent_topics.0 {
+            paths.push(topic.path());
+        }
+
+        for topic in &self.removed_parent_topics.0 {
+            paths.push(topic.path());
+        }
+
+        paths
+    }
+}
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct UpsertLink(pub Body);
+#[serde(rename_all = "camelCase")]
+pub struct UpdateTopicSynonyms {
+    pub actor_id: String,
+    pub added_synonyms: SynonymList,
+    pub date: Timestamp,
+    pub removed_synonyms: SynonymList,
+    pub reordered: bool,
+    pub updated_topic: TopicInfo,
+}
+
+impl UpdateTopicSynonyms {
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        vec![self.updated_topic.path()]
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct UpsertLink {
+    pub add_parent_topic: Option<TopicInfo>,
+    pub actor_id: String,
+    pub date: Timestamp,
+    pub upserted_link: LinkInfo,
+}
 
 impl UpsertLink {
-    pub fn topics(&self) -> Vec<(&String, &SynonymInfo)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(path, value)| match value {
-                Role::AddedParentTopic { synonyms } => Some((path, synonyms)),
-                _ => None,
-            })
-            .collect::<Vec<(&String, &SynonymInfo)>>()
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        let mut paths = vec![self.upserted_link.path()];
+        if let Some(topic) = &self.add_parent_topic {
+            paths.push(topic.path());
+        }
+        paths
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct UpsertTopic(pub Body);
+#[serde(rename_all = "camelCase")]
+pub struct UpsertTopic {
+    pub actor_id: String,
+    pub date: Timestamp,
+    pub parent_topic: TopicInfo,
+    pub upserted_topic: TopicInfo,
+}
 
 impl UpsertTopic {
-    pub fn child_links(&self) -> Vec<(&String, &String)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(_path, value)| match value {
-                Role::AddedChildLink { title, url } => Some((title, url)),
-                _ => None,
-            })
-            .collect::<Vec<(&String, &String)>>()
-    }
-
-    pub fn child_topics(&self) -> Vec<(&String, &SynonymInfo)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(path, value)| match value {
-                Role::AddedChildTopic { synonyms } => Some((path, synonyms)),
-                _ => None,
-            })
-            .collect::<Vec<(&String, &SynonymInfo)>>()
-    }
-
-    pub fn parent_topics(&self) -> Vec<(&String, &SynonymInfo)> {
-        self.0
-            .paths
-            .iter()
-            .filter_map(|(path, value)| match value {
-                Role::AddedParentTopic { synonyms } => Some((path, synonyms)),
-                _ => None,
-            })
-            .collect::<Vec<(&String, &SynonymInfo)>>()
-    }
-
-    pub fn topic(&self) -> Option<(&String, &SynonymInfo)> {
-        let result = self
-            .0
-            .paths
-            .iter()
-            .find(|(_path, value)| matches!(value, Role::UpdatedTopic { .. }));
-
-        match result {
-            Some((path, Role::UpdatedTopic { synonyms })) => Some((path, synonyms)),
-            Some(_) => None,
-            None => None,
-        }
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        vec![self.upserted_topic.path(), self.parent_topic.path()]
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct UpsertTopicTimerange(pub Body);
+#[serde(rename_all = "camelCase")]
+pub struct UpsertTopicTimerange {
+    pub actor_id: String,
+    pub date: Timestamp,
+    pub previous_timerange: Option<Timerange>,
+    pub updated_timerange: Timerange,
+    pub updated_topic: TopicInfo,
+}
+
+impl UpsertTopicTimerange {
+    fn paths(&self) -> Vec<Option<RepoPath>> {
+        vec![self.updated_topic.path()]
+    }
+}
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", tag = "kind")]
@@ -380,71 +509,80 @@ mod markdown {
     use super::*;
 
     pub trait Markdown {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            context: Option<&RepoPath>,
-        ) -> Result<String>;
+        fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&RepoPath>) -> String;
     }
 
-    fn reference(text: &str, path: &str) -> String {
-        format!("[{}]({})", text, path)
-    }
-
-    fn link_reference(link: &(&String, &String)) -> String {
-        let (name, url) = link;
-        reference(name, url)
-    }
-
-    fn topic_reference(locale: Locale, path: &str, topic: &SynonymInfo) -> String {
-        let name = topic.name(locale);
-        reference(&name, path)
-    }
-
-    fn topic_desc(topics: &[(&String, &SynonymInfo)], locale: Locale) -> String {
-        use itertools::Itertools;
-        let topics = topics.to_vec();
-
-        match topics.len() {
-            0 => "".to_owned(),
-            1 => topics
-                .iter()
-                .map(|(path, topic)| topic_reference(locale, path, topic))
-                .join(""),
-            2 => topics
-                .iter()
-                .map(|(path, topic)| topic_reference(locale, path, topic))
-                .join(" and "),
-            3 => {
-                let mut markdown = topics
-                    .get(0..topics.len() - 1)
-                    .unwrap_or_default()
-                    .iter()
-                    .map(|(path, topic)| topic_reference(locale, path, topic))
-                    .join(", ");
-
-                match topics.last() {
-                    Some((path, topic)) => {
-                        markdown.push_str(" and ");
-                        markdown.push_str(&topic_reference(locale, path, topic));
-                        markdown
-                    }
-                    None => "[missing topic]".to_owned(),
-                }
-            }
-            _ => "a number of topics".to_owned(),
+    impl LinkInfo {
+        fn markdown(&self) -> String {
+            format!("[{}]({})", self.title, self.url)
         }
     }
 
-    fn link_desc(links: &[(&String, &String)]) -> String {
-        use itertools::Itertools;
+    impl TopicInfo {
+        fn markdown(&self, locale: Locale) -> String {
+            match &self.path {
+                Some(path) => format!("[{}]({})", self.name(locale), path),
+                None => format!("{} (deleted)", self.name(locale)),
+            }
+        }
+    }
 
-        match links.len() {
-            0 => "".to_owned(),
-            1 => links.iter().map(link_reference).join(""),
-            2 => links.iter().map(link_reference).join(" and "),
-            _ => "a number of links".to_owned(),
+    impl TopicInfoList {
+        fn markdown(&self, locale: Locale) -> String {
+            use itertools::Itertools;
+            let topics = &self.0.iter().collect::<Vec<&TopicInfo>>();
+
+            match topics.len() {
+                0 => "".to_owned(),
+                1 => topics.iter().map(|topic| topic.markdown(locale)).join(""),
+                2 => topics
+                    .iter()
+                    .map(|topic| topic.markdown(locale))
+                    .join(" and "),
+                3 => {
+                    let mut markdown = topics
+                        .get(0..topics.len() - 1)
+                        .unwrap_or_default()
+                        .iter()
+                        .map(|topic| topic.markdown(locale))
+                        .join(", ");
+
+                    match topics.last() {
+                        Some(topic) => {
+                            markdown.push_str(" and ");
+                            markdown.push_str(&topic.markdown(locale));
+                            markdown
+                        }
+                        None => "[missing topic]".to_owned(),
+                    }
+                }
+                _ => "a number of topics".to_owned(),
+            }
+        }
+    }
+
+    impl LinkInfoList {
+        fn markdown(&self) -> String {
+            use itertools::Itertools;
+            let links = &self.0;
+
+            match links.len() {
+                0 => "".to_owned(),
+                1 => links.iter().map(LinkInfo::markdown).join(""),
+                2 => links.iter().map(LinkInfo::markdown).join(" and "),
+                _ => "a number of links".to_owned(),
+            }
+        }
+    }
+
+    impl Timerange {
+        fn markdown(&self) -> String {
+            match self.prefix_format {
+                TimerangePrefixFormat::None => "(none)",
+                TimerangePrefixFormat::StartYear => "(start-year)",
+                TimerangePrefixFormat::StartYearMonth => "(start-year-month)",
+            }
+            .to_owned()
         }
     }
 
@@ -454,22 +592,17 @@ mod markdown {
             locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
-        ) -> Result<String> {
-            let (title, url) = self.deleted_link()?;
-            let parent_topics = self.parent_topics();
-
-            let markdown = if parent_topics.is_empty() {
-                format!("{} deleted {}", actor_name, reference(title, url))
+        ) -> String {
+            if self.parent_topics.is_empty() {
+                format!("{} deleted {}", actor_name, self.deleted_link.markdown())
             } else {
                 format!(
                     "{} deleted {}, removing it from {}",
                     actor_name,
-                    reference(title, url),
-                    topic_desc(&parent_topics, locale)
+                    self.deleted_link.markdown(),
+                    self.parent_topics.markdown(locale),
                 )
-            };
-
-            Ok(markdown)
+            }
         }
     }
 
@@ -479,39 +612,34 @@ mod markdown {
             locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
-        ) -> Result<String> {
-            let (path, synonyms) = self.deleted_topic()?;
-            let parent_topics = self.parent_topics();
-            let child_links = self.child_links();
-            let child_topics = self.child_topics();
-
+        ) -> String {
             let mut markdown = format!(
                 "{} deleted {}",
                 actor_name,
-                topic_reference(locale, path, synonyms)
+                self.deleted_topic.markdown(locale)
             );
             let mut children = String::new();
 
-            match (child_links.is_empty(), child_topics.is_empty()) {
+            match (self.child_links.is_empty(), self.child_topics.is_empty()) {
                 (true, true) => {}
                 (false, true) => {
-                    children.push_str(&link_desc(&child_links));
+                    children.push_str(&self.child_links.markdown());
                 }
                 (true, false) => {
-                    children.push_str(&topic_desc(&child_topics, locale));
+                    children.push_str(&self.child_topics.markdown(locale));
                 }
                 (false, false) => {
-                    children.push_str(&link_desc(&child_links));
+                    children.push_str(&self.child_links.markdown());
                     children.push_str(" and ");
-                    children.push_str(&topic_desc(&child_topics, locale));
+                    children.push_str(&self.child_topics.markdown(locale));
                 }
             }
 
-            match (children.is_empty(), parent_topics.is_empty()) {
+            match (children.is_empty(), self.parent_topics.is_empty()) {
                 (true, true) => {}
                 (true, false) => {
                     markdown.push_str(", removing it from ");
-                    markdown.push_str(&topic_desc(&parent_topics, locale));
+                    markdown.push_str(&self.parent_topics.markdown(locale));
                 }
                 (false, true) => {
                     markdown.push_str(", removing ");
@@ -522,34 +650,108 @@ mod markdown {
                     markdown.push_str(", removing ");
                     markdown.push_str(&children);
                     markdown.push_str(" from it, and removing it from ");
-                    markdown.push_str(&topic_desc(&parent_topics, locale));
+                    markdown.push_str(&self.parent_topics.markdown(locale));
                 }
             }
 
-            Ok(markdown)
+            markdown
         }
     }
 
-    impl Markdown for DeleteTopicTimerange {
+    impl Markdown for ImportLink {
         fn markdown(
             &self,
             locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
-        ) -> Result<String> {
-            let synonyms = if let Ok(Role::UpdatedTopic { synonyms }) = self.topic() {
-                synonyms
-            } else {
-                return Err(Error::Repo("expected a topic".to_owned()));
+        ) -> String {
+            format!(
+                "{} added {} to {}",
+                actor_name,
+                self.imported_link.markdown(),
+                self.parent_topics.markdown(locale),
+            )
+        }
+    }
+
+    impl Markdown for ImportTopic {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&RepoPath>,
+        ) -> String {
+            let mut children = vec![];
+
+            if !self.child_topics.is_empty() {
+                children.push(self.child_topics.markdown(locale));
+            }
+
+            if !self.child_links.is_empty() {
+                children.push(self.child_links.markdown());
+            }
+            let children = children.join(" and ");
+
+            let markdown = match (children.is_empty(), self.parent_topics.is_empty()) {
+                (true, true) => {
+                    format!(
+                        "updated {}, but the details are missing",
+                        self.imported_topic.markdown(locale)
+                    )
+                }
+
+                (true, false) => format!(
+                    "added {} to {}",
+                    self.imported_topic.markdown(locale),
+                    self.parent_topics.markdown(locale),
+                ),
+
+                (false, true) => format!(
+                    "added {} to {}",
+                    children,
+                    self.imported_topic.markdown(locale)
+                ),
+
+                (false, false) => {
+                    let topic = self.imported_topic.markdown(locale);
+                    format!(
+                        "added {} to {}, and added {} to {}",
+                        children,
+                        topic,
+                        topic,
+                        self.parent_topics.markdown(locale),
+                    )
+                }
             };
 
-            let markdown = format!(
-                r#"<user>{}</user> deleted topic "{}", removing it from TOPIC, TOPIC and TOPIC"#,
-                actor_name,
-                synonyms.name(locale),
-            );
+            format!("{} {}", actor_name, markdown)
+        }
+    }
 
-            Ok(markdown)
+    impl Markdown for RemoveTopicTimerange {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&RepoPath>,
+        ) -> String {
+            match &self.previous_timerange {
+                Some(timerange) => {
+                    format!(
+                        r#"{} removed the timerange prefix "{}" from {}"#,
+                        actor_name,
+                        timerange.markdown(),
+                        self.updated_topic.markdown(locale),
+                    )
+                }
+                None => {
+                    format!(
+                        r#"{} removed the timerange prefix from {}"#,
+                        actor_name,
+                        self.updated_topic.markdown(locale),
+                    )
+                }
+            }
         }
     }
 
@@ -559,43 +761,39 @@ mod markdown {
             locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
-        ) -> Result<String> {
-            let added = self.added_topics();
-            let removed = self.removed_topics();
-
-            if added.is_empty() && removed.is_empty() {
-                return Err(Error::Repo("no change to display".to_owned()));
+        ) -> String {
+            if self.added_parent_topics.is_empty() && self.removed_parent_topics.is_empty() {
+                return format!(
+                    "{} updated {}, but information about the change has been lost",
+                    actor_name,
+                    self.updated_link.markdown()
+                );
             }
 
             let mut markdown = actor_name.to_owned();
             markdown.push(' ');
             let mut changes = vec![];
 
-            if !added.is_empty() {
-                changes.push(format!("added {} to", topic_desc(&added, locale)));
+            if !self.added_parent_topics.is_empty() {
+                changes.push(format!(
+                    "added {} to",
+                    self.added_parent_topics.markdown(locale)
+                ));
             }
 
-            if !removed.is_empty() {
-                changes.push(format!("removed {} from", topic_desc(&removed, locale)));
+            if !self.removed_parent_topics.is_empty() {
+                changes.push(format!(
+                    "removed {} from",
+                    self.removed_parent_topics.markdown(locale)
+                ));
             }
 
             let changes = changes.join(" and ");
 
             markdown.push_str(&changes);
-            match self.link() {
-                Ok(Role::UpdatedLink { title, url }) => {
-                    markdown.push(' ');
-                    markdown.push_str(&reference(title, url));
-                }
-                Ok(_) => {
-                    markdown.push_str(" [missing link]");
-                }
-                Err(_) => {
-                    markdown.push_str(" [missing link]");
-                }
-            };
-
-            Ok(markdown)
+            markdown.push(' ');
+            markdown.push_str(&self.updated_link.markdown());
+            markdown
         }
     }
 
@@ -605,9 +803,8 @@ mod markdown {
             _locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
-        ) -> Result<String> {
-            let markdown = format!("{} added TOPIC to TOPIC and TOPIC", actor_name);
-            Ok(markdown)
+        ) -> String {
+            format!("{} added TOPIC to TOPIC and TOPIC", actor_name)
         }
     }
 
@@ -617,9 +814,8 @@ mod markdown {
             _locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
-        ) -> Result<String> {
-            let markdown = format!("{} added NAME to and removed NAME from TOPIC", actor_name);
-            Ok(markdown)
+        ) -> String {
+            format!("{} added NAME to and removed NAME from TOPIC", actor_name)
         }
     }
 
@@ -629,21 +825,16 @@ mod markdown {
             locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
-        ) -> Result<String> {
-            let (title, url) = if let Role::UpdatedLink { title, url } = find_link(&self.0.paths)? {
-                (title, url)
-            } else {
-                return Err(Error::Repo("no link found".to_owned()));
-            };
-            let topics = topic_desc(self.topics().as_slice(), locale);
-
-            let markdown = format!(
-                "{} added {} to {}",
-                actor_name,
-                reference(title, url),
-                topics,
-            );
-            Ok(markdown)
+        ) -> String {
+            match &self.add_parent_topic {
+                Some(topic) => format!(
+                    "{} added {} to {}",
+                    actor_name,
+                    self.upserted_link.markdown(),
+                    topic.markdown(locale)
+                ),
+                None => format!("{} updated {}", actor_name, self.upserted_link.markdown()),
+            }
         }
     }
 
@@ -653,62 +844,13 @@ mod markdown {
             locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
-        ) -> Result<String> {
-            let child_topics = self.child_topics();
-            let child_links = self.child_links();
-            let parent_topics = self.parent_topics();
-            let topic = self.topic();
-
-            let mut children = vec![];
-            if !child_topics.is_empty() {
-                children.push(topic_desc(&child_topics, locale));
-            }
-
-            if !child_links.is_empty() {
-                children.push(link_desc(&child_links));
-            }
-
-            let markdown = match (&topic, children.is_empty(), parent_topics.is_empty()) {
-                (None, true, true) => "made a change, but the details are missing".to_owned(),
-                (None, false, true) => format!("added {}", topic_desc(&child_topics, locale)),
-                (None, true, false) => format!("added {}", link_desc(&child_links)),
-
-                (None, false, false) => format!(
-                    "added {} and {}",
-                    topic_desc(&child_topics, locale),
-                    link_desc(&child_links)
-                ),
-
-                (Some((path, synonyms)), true, true) => {
-                    format!(
-                        "updated {}, but the details are missing",
-                        topic_reference(locale, path, synonyms)
-                    )
-                }
-
-                (Some((path, synonyms)), true, false) => format!(
-                    "added {} to {}",
-                    topic_reference(locale, path, synonyms),
-                    topic_desc(&parent_topics, locale),
-                ),
-
-                (Some((path, synonyms)), false, true) => format!(
-                    "added {} to {}",
-                    children.join(" and "),
-                    topic_reference(locale, path, synonyms)
-                ),
-
-                (Some((path, synonyms)), false, false) => format!(
-                    "added {} to {}, and added {} to {}",
-                    children.join(" and "),
-                    topic_reference(locale, path, synonyms),
-                    topic_reference(locale, path, synonyms),
-                    topic_desc(&parent_topics, locale),
-                ),
-            };
-
-            let markdown = format!("{} {}", actor_name, markdown,);
-            Ok(markdown)
+        ) -> String {
+            format!(
+                "{} added {} to {}",
+                actor_name,
+                self.upserted_topic.markdown(locale),
+                self.parent_topic.markdown(locale),
+            )
         }
     }
 
@@ -718,9 +860,8 @@ mod markdown {
             _locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
-        ) -> Result<String> {
-            let markdown = format!("{} updated the timerange on to TOPIC to be", actor_name);
-            Ok(markdown)
+        ) -> String {
+            format!("{} updated the timerange on to TOPIC to be", actor_name)
         }
     }
 }
@@ -811,34 +952,20 @@ mod tests {
 
     #[test]
     fn update_link_parent_topics() {
-        let link = Role::UpdatedLink {
-            title: "Reddit".to_owned(),
-            url: "http://www.reddit.com".to_owned(),
-        };
         let topic1 = topic("Climate change");
         let topic2 = topic("Weather");
 
-        let paths = BTreeMap::from([
-            ("/wiki/00010".to_owned(), link),
-            (
-                topic1.metadata.path.to_owned(),
-                Role::AddedParentTopic {
-                    synonyms: SynonymInfo::from(&topic1),
-                },
-            ),
-            (
-                topic2.metadata.path.to_owned(),
-                Role::RemovedParentTopic {
-                    synonyms: SynonymInfo::from(&topic2),
-                },
-            ),
-        ]);
-
-        let change = Change::UpdateLinkParentTopics(UpdateLinkParentTopics(Body {
+        let change = Change::UpdateLinkParentTopics(UpdateLinkParentTopics {
+            actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
-            paths,
-            user_id: "2".to_owned(),
-        }));
+            updated_link: LinkInfo {
+                title: "Reddit".to_owned(),
+                url: "http://www.reddit.com".to_owned(),
+                path: Some("some-path".to_owned()),
+            },
+            added_parent_topics: TopicInfoList(BTreeSet::from([TopicInfo::from(&topic1)])),
+            removed_parent_topics: TopicInfoList(BTreeSet::from([TopicInfo::from(&topic2)])),
+        });
 
         let markdown = format!(
             "Gnusto added [Climate change]({}) to and removed [Weather]({}) from \
@@ -849,9 +976,7 @@ mod tests {
 
         let context = RepoPath::from("/wiki/00010");
         assert_eq!(
-            change
-                .markdown(Locale::EN, "Gnusto", Some(&context))
-                .unwrap(),
+            change.markdown(Locale::EN, "Gnusto", Some(&context)),
             markdown
         );
     }
@@ -862,36 +987,22 @@ mod tests {
         let topic1 = topic("Climate change");
         let topic2 = topic("Weather");
 
-        let paths = BTreeMap::from([
-            (
-                link.metadata.path.to_owned(),
-                Role::DeletedLink {
-                    title: link.metadata.title.to_owned(),
-                    url: link.metadata.url,
-                },
-            ),
-            (
-                topic1.metadata.path.to_owned(),
-                Role::RemovedParentTopic {
-                    synonyms: SynonymInfo::from(&topic1),
-                },
-            ),
-            (
-                topic2.metadata.path.to_owned(),
-                Role::RemovedParentTopic {
-                    synonyms: SynonymInfo::from(&topic2),
-                },
-            ),
-        ]);
-
-        let change = Change::DeleteLink(DeleteLink(Body {
+        let change = Change::DeleteLink(DeleteLink {
+            actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
-            paths,
-            user_id: "2".to_owned(),
-        }));
+            deleted_link: LinkInfo {
+                title: link.metadata.title.to_owned(),
+                url: link.metadata.url,
+                path: Some(link.metadata.path),
+            },
+            parent_topics: TopicInfoList(BTreeSet::from([
+                TopicInfo::from(&topic1),
+                TopicInfo::from(&topic2),
+            ])),
+        });
 
         assert_eq!(
-            change.markdown(Locale::EN, "Gnusto", None).unwrap(),
+            change.markdown(Locale::EN, "Gnusto", None),
             format!(
                 "Gnusto deleted [Reddit](http://www.reddit.com), removing it from [Climate change]({}) and \
                 [Weather]({})",
@@ -907,36 +1018,17 @@ mod tests {
         let topic1 = topic("Climate change");
         let topic2 = topic("Weather");
 
-        let paths = BTreeMap::from([
-            (
-                link.metadata.path.to_owned(),
-                Role::RemovedChildLink {
-                    title: link.metadata.title.to_owned(),
-                    url: link.metadata.url,
-                },
-            ),
-            (
-                topic1.metadata.path.to_owned(),
-                Role::DeletedTopic {
-                    synonyms: SynonymInfo::from(&topic1),
-                },
-            ),
-            (
-                topic2.metadata.path.to_owned(),
-                Role::RemovedParentTopic {
-                    synonyms: SynonymInfo::from(&topic2),
-                },
-            ),
-        ]);
-
-        let change = Change::DeleteTopic(DeleteTopic(Body {
+        let change = Change::DeleteTopic(DeleteTopic {
+            actor_id: "2".to_owned(),
+            child_links: LinkInfoList(BTreeSet::from([LinkInfo::from(&link)])),
+            child_topics: TopicInfoList(BTreeSet::new()),
             date: chrono::Utc::now(),
-            paths,
-            user_id: "2".to_owned(),
-        }));
+            deleted_topic: TopicInfo::from(&topic1),
+            parent_topics: TopicInfoList(BTreeSet::from([TopicInfo::from(&topic2)])),
+        });
 
         assert_eq!(
-            change.markdown(Locale::EN, "Gnusto", None).unwrap(),
+            change.markdown(Locale::EN, "Gnusto", None),
             format!(
                 "Gnusto deleted [Climate change]({}), removing [Reddit](http://www.reddit.com) from it, and \
                 removing it from [Weather]({})",
@@ -948,23 +1040,24 @@ mod tests {
 
     #[test]
     fn upsert_topic_timerange() {
+        use chrono::TimeZone;
+
         let topic1 = topic("Climate change");
+        let date = chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444);
 
-        let paths = BTreeMap::from([(
-            topic1.metadata.path.to_owned(),
-            Role::UpdatedTopic {
-                synonyms: SynonymInfo::from(&topic1),
-            },
-        )]);
-
-        let change = Change::UpsertTopicTimerange(UpsertTopicTimerange(Body {
+        let change = Change::UpsertTopicTimerange(UpsertTopicTimerange {
+            actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
-            paths,
-            user_id: "2".to_owned(),
-        }));
+            updated_topic: TopicInfo::from(&topic1),
+            previous_timerange: None,
+            updated_timerange: Timerange {
+                starts: date,
+                prefix_format: TimerangePrefixFormat::StartYear,
+            },
+        });
 
         assert_eq!(
-            change.markdown(Locale::EN, "Gnusto", None).unwrap(),
+            change.markdown(Locale::EN, "Gnusto", None),
             "Gnusto updated the timerange on to TOPIC to be".to_string()
         );
     }
@@ -974,30 +1067,15 @@ mod tests {
         let topic1 = topic("Climate change");
         let link = link("Reddit", "https://www.reddit.com");
 
-        let paths = BTreeMap::from([
-            (
-                topic1.metadata.path.to_owned(),
-                Role::AddedParentTopic {
-                    synonyms: SynonymInfo::from(&topic1),
-                },
-            ),
-            (
-                link.metadata.path.to_owned(),
-                Role::UpdatedLink {
-                    title: link.title().to_owned(),
-                    url: link.url().to_owned(),
-                },
-            ),
-        ]);
-
-        let change = Change::UpsertLink(UpsertLink(Body {
+        let change = Change::UpsertLink(UpsertLink {
+            actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
-            paths,
-            user_id: "2".to_owned(),
-        }));
+            upserted_link: LinkInfo::from(&link),
+            add_parent_topic: Some(TopicInfo::from(&topic1)),
+        });
 
         assert_eq!(
-            change.markdown(Locale::EN, "Gnusto", None).unwrap(),
+            change.markdown(Locale::EN, "Gnusto", None),
             format!(
                 "Gnusto added [Reddit](https://www.reddit.com) to [Climate change]({})",
                 topic1.metadata.path
@@ -1010,29 +1088,15 @@ mod tests {
         let topic1 = topic("Climate change");
         let topic2 = topic("Climate");
 
-        let paths = BTreeMap::from([
-            (
-                topic1.metadata.path.to_owned(),
-                Role::UpdatedTopic {
-                    synonyms: SynonymInfo::from(&topic1),
-                },
-            ),
-            (
-                topic2.metadata.path.to_owned(),
-                Role::AddedParentTopic {
-                    synonyms: SynonymInfo::from(&topic2),
-                },
-            ),
-        ]);
-
-        let change = Change::UpsertTopic(UpsertTopic(Body {
+        let change = Change::UpsertTopic(UpsertTopic {
+            actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
-            paths,
-            user_id: "2".to_owned(),
-        }));
+            parent_topic: TopicInfo::from(&topic2),
+            upserted_topic: TopicInfo::from(&topic1),
+        });
 
         assert_eq!(
-            change.markdown(Locale::EN, "Gnusto", None).unwrap(),
+            change.markdown(Locale::EN, "Gnusto", None),
             format!(
                 "Gnusto added [Climate change]({}) to [Climate]({})",
                 topic1.metadata.path, topic2.metadata.path

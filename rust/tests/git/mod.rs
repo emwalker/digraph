@@ -55,23 +55,18 @@ async fn upsert_link(
     f: &Fixtures,
     url: &RepoUrl,
     title: Option<String>,
-    parent_topics: &[&str],
+    parent_topic: Option<String>,
 ) -> UpsertLinkResult {
-    use itertools::Itertools;
-
     let html = match &title {
         Some(title) => format!("<title>{}</title>", title),
         None => "<title>Some title</title>".into(),
     };
 
-    let parents = parent_topics
-        .iter()
-        .map(|path| RepoPath::from(*path))
-        .collect_vec();
+    let add_parent_topic_path = parent_topic.as_ref().map(RepoPath::from);
 
     UpsertLink {
         actor: actor(),
-        add_parent_topic_paths: parents,
+        add_parent_topic_path,
         fetcher: Box::new(Fetcher(html)),
         prefix: "/wiki".into(),
         url: url.normalized.to_owned(),

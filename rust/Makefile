@@ -5,11 +5,13 @@ build:
 check: format test
 	cargo check
 
+check-pre-push: check
+
 clean:
 	cargo clean
 
 format:
-	cargo clippy --fix
+	cargo clippy -- -D warnings
 	cargo fmt
 
 start:

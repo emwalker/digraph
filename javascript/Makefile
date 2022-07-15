@@ -2,9 +2,11 @@
 
 build: .PHONY
 	yarn relay || yarn relay
-	yarn build
+	NODE_OPTIONS=--no-experimental-fetch yarn build
 
 check: reinstall-javacript format test build
+
+check-pre-push: format test
 
 clean:
 	rm -rf node_modules

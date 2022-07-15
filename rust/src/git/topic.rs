@@ -1,9 +1,8 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap};
 
-use super::SaveChangesForPrefix;
 use super::{
-    activity, Git, IndexMode, Indexer, Kind, Link, Object, ParentTopic, Synonym, SynonymEntry,
-    SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
+    activity, Git, IndexMode, Indexer, Kind, Link, Object, ParentTopic, SaveChangesForPrefix,
+    Synonym, SynonymEntry, SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use crate::prelude::*;
 use crate::Alert;
@@ -99,89 +98,54 @@ impl DeleteTopic {
         child_topics: &Vec<Topic>,
         date: Timestamp,
     ) -> activity::Change {
-        let mut paths = BTreeMap::from([(
-            topic.metadata.path.to_owned(),
-            activity::Role::DeletedTopic {
-                synonyms: activity::SynonymInfo::from(topic),
-            },
-        )]);
-
-        for parent in parent_topics {
-            paths.insert(
-                parent.metadata.path.to_owned(),
-                activity::Role::RemovedParentTopic {
-                    synonyms: activity::SynonymInfo::from(parent),
-                },
-            );
-        }
-
-        for child in child_links {
-            paths.insert(
-                child.metadata.path.to_owned(),
-                activity::Role::RemovedChildLink {
-                    title: child.metadata.title.to_owned(),
-                    url: child.metadata.url.to_owned(),
-                },
-            );
-        }
-
-        for child in child_topics {
-            paths.insert(
-                child.metadata.path.to_owned(),
-                activity::Role::RemovedChildTopic {
-                    synonyms: activity::SynonymInfo::from(child),
-                },
-            );
-        }
-
-        activity::Change::DeleteTopic(activity::DeleteTopic(activity::Body {
+        activity::Change::DeleteTopic(activity::DeleteTopic {
+            actor_id: self.actor.user_id.to_owned(),
+            child_links: activity::LinkInfoList::from(child_links),
+            child_topics: activity::TopicInfoList::from(child_topics),
             date,
-            paths,
-            user_id: self.actor.user_id.to_owned(),
-        }))
+            deleted_topic: activity::TopicInfo::from(topic),
+            parent_topics: activity::TopicInfoList::from(parent_topics),
+        })
     }
 }
 
-pub struct DeleteTopicTimerange {
+pub struct RemoveTopicTimerange {
     pub actor: Viewer,
     pub topic_path: RepoPath,
 }
 
-pub struct DeleteTopicTimerangeResult {
+pub struct RemoveTopicTimerangeResult {
     pub alerts: Vec<Alert>,
     pub topic: Topic,
 }
 
-impl DeleteTopicTimerange {
-    pub fn call<S>(&self, git: &Git, store: &S) -> Result<DeleteTopicTimerangeResult>
+impl RemoveTopicTimerange {
+    pub fn call<S>(&self, git: &Git, store: &S) -> Result<RemoveTopicTimerangeResult>
     where
         S: SaveChangesForPrefix,
     {
         let mut topic = git.fetch_topic(&self.topic_path.inner)?;
+        let previous_timerange = topic.metadata.timerange.clone();
         let mut indexer = Indexer::new(git, IndexMode::Update);
 
         topic.metadata.timerange = None;
         git.save_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.add_change(&self.change(&topic))?;
+        indexer.add_change(&self.change(&topic, previous_timerange))?;
         indexer.save(store)?;
 
-        Ok(DeleteTopicTimerangeResult {
+        Ok(RemoveTopicTimerangeResult {
             alerts: vec![],
             topic,
         })
     }
 
-    pub fn change(&self, topic: &Topic) -> activity::Change {
-        activity::Change::DeleteTopicTimerange(activity::DeleteTopicTimerange(activity::Body {
+    pub fn change(&self, topic: &Topic, previous_timerange: Option<Timerange>) -> activity::Change {
+        activity::Change::RemoveTopicTimerange(activity::RemoveTopicTimerange {
+            actor_id: self.actor.user_id.to_owned(),
             date: chrono::Utc::now(),
-            user_id: self.actor.user_id.to_owned(),
-            paths: BTreeMap::from([(
-                self.topic_path.inner.to_owned(),
-                activity::Role::UpdatedTopic {
-                    synonyms: activity::SynonymInfo::from(topic),
-                },
-            )]),
-        }))
+            updated_topic: activity::TopicInfo::from(topic),
+            previous_timerange,
+        })
     }
 }
 
@@ -262,43 +226,18 @@ impl UpdateTopicParentTopics {
 
     fn change(
         &self,
-        child: &Topic,
+        topic: &Topic,
         added: &Vec<Topic>,
         removed: &Vec<Topic>,
         date: Timestamp,
     ) -> activity::Change {
-        let mut paths = BTreeMap::from([(
-            child.metadata.path.to_owned(),
-            activity::Role::UpdatedTopic {
-                synonyms: activity::SynonymInfo::from(child),
-            },
-        )]);
-
-        for parent in added {
-            paths.insert(
-                parent.metadata.path.to_owned(),
-                activity::Role::AddedParentTopic {
-                    synonyms: activity::SynonymInfo::from(parent),
-                },
-            );
-        }
-
-        for parent in removed {
-            paths.insert(
-                parent.metadata.path.to_owned(),
-                activity::Role::RemovedParentTopic {
-                    synonyms: activity::SynonymInfo::from(parent),
-                },
-            );
-        }
-
-        activity::Change::UpdateTopicParentTopics(activity::UpdateTopicParentTopics(
-            activity::Body {
-                date,
-                paths,
-                user_id: self.actor.user_id.to_owned(),
-            },
-        ))
+        activity::Change::UpdateTopicParentTopics(activity::UpdateTopicParentTopics {
+            actor_id: self.actor.user_id.to_owned(),
+            added_parent_topics: activity::TopicInfoList::from(added),
+            date,
+            removed_parent_topics: activity::TopicInfoList::from(removed),
+            updated_topic: activity::TopicInfo::from(topic),
+        })
     }
 
     fn validate(&self, git: &Git) -> Result<()> {
@@ -361,9 +300,12 @@ impl UpdateTopicSynonyms {
             }
         }
 
+        let added = vec![];
+        let removed = vec![];
+
         topic.metadata.synonyms = synonyms;
         git.save_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.add_change(&self.change(&topic))?;
+        indexer.add_change(&self.change(&topic, &added, &removed))?;
         indexer.save(store)?;
 
         Ok(UpdateTopicSynonymsResult {
@@ -372,17 +314,20 @@ impl UpdateTopicSynonyms {
         })
     }
 
-    fn change(&self, topic: &Topic) -> activity::Change {
-        activity::Change::UpdateTopicSynonyms(activity::UpdateTopicSynonyms(activity::Body {
+    fn change(
+        &self,
+        topic: &Topic,
+        added: &Vec<Synonym>,
+        removed: &Vec<Synonym>,
+    ) -> activity::Change {
+        activity::Change::UpdateTopicSynonyms(activity::UpdateTopicSynonyms {
+            actor_id: self.actor.user_id.to_owned(),
+            added_synonyms: activity::SynonymList::from(added),
             date: chrono::Utc::now(),
-            paths: BTreeMap::from([(
-                self.topic_path.inner.to_owned(),
-                activity::Role::UpdatedTopic {
-                    synonyms: activity::SynonymInfo::from(topic),
-                },
-            )]),
-            user_id: self.actor.user_id.to_owned(),
-        }))
+            updated_topic: activity::TopicInfo::from(topic),
+            reordered: added.is_empty() && removed.is_empty(),
+            removed_synonyms: activity::SynonymList::from(removed),
+        })
     }
 }
 
@@ -517,27 +462,13 @@ impl UpsertTopic {
         })
     }
 
-    fn change(&self, child: &Topic, parent: &Topic, date: Timestamp) -> activity::Change {
-        let paths = BTreeMap::from([
-            (
-                child.metadata.path.to_owned(),
-                activity::Role::UpdatedTopic {
-                    synonyms: activity::SynonymInfo::from(child),
-                },
-            ),
-            (
-                parent.metadata.path.to_owned(),
-                activity::Role::AddedParentTopic {
-                    synonyms: activity::SynonymInfo::from(parent),
-                },
-            ),
-        ]);
-
-        activity::Change::UpsertTopic(activity::UpsertTopic(activity::Body {
+    fn change(&self, topic: &Topic, parent: &Topic, date: Timestamp) -> activity::Change {
+        activity::Change::UpsertTopic(activity::UpsertTopic {
+            actor_id: self.actor.user_id.to_owned(),
             date,
-            paths,
-            user_id: self.actor.user_id.to_owned(),
-        }))
+            parent_topic: activity::TopicInfo::from(parent),
+            upserted_topic: activity::TopicInfo::from(topic),
+        })
     }
 
     fn make_topic(&self, parent: &Topic) -> (RepoPath, Topic) {
@@ -588,11 +519,12 @@ impl UpsertTopicTimerange {
         S: SaveChangesForPrefix,
     {
         let mut topic = git.fetch_topic(&self.topic_path.inner)?;
+        let previous_timerange = topic.metadata.timerange.clone();
 
         let mut indexer = Indexer::new(git, IndexMode::Update);
         topic.metadata.timerange = Some(self.timerange.clone());
         git.save_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.add_change(&self.change(&topic))?;
+        indexer.add_change(&self.change(&topic, previous_timerange))?;
         indexer.save(store)?;
 
         Ok(UpsertTopicTimerangeResult {
@@ -602,16 +534,13 @@ impl UpsertTopicTimerange {
         })
     }
 
-    fn change(&self, topic: &Topic) -> activity::Change {
-        activity::Change::UpsertTopicTimerange(activity::UpsertTopicTimerange(activity::Body {
+    fn change(&self, topic: &Topic, previous_timerange: Option<Timerange>) -> activity::Change {
+        activity::Change::UpsertTopicTimerange(activity::UpsertTopicTimerange {
+            actor_id: self.actor.user_id.to_owned(),
             date: chrono::Utc::now(),
-            paths: BTreeMap::from([(
-                self.topic_path.inner.to_owned(),
-                activity::Role::UpdatedTopic {
-                    synonyms: activity::SynonymInfo::from(topic),
-                },
-            )]),
-            user_id: self.actor.user_id.to_owned(),
-        }))
+            previous_timerange,
+            updated_topic: activity::TopicInfo::from(topic),
+            updated_timerange: self.timerange.clone(),
+        })
     }
 }

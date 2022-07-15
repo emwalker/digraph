@@ -3,14 +3,13 @@ kind: ChangeIndexMap
 apiVersion: objects/v1
 changes:
   - kind: UpsertLink
-    date: "2022-07-13T00:44:40.078499982Z"
-    paths:
-      /wiki/24ef1a588aa8242ed43193766154fd5f05d343dcdcd3690dda097979363776f2:
-        kind: UpdatedLink
-        title: Climate change
-        url: "https://en.wikipedia.org/wiki/Climate_change"
-      /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi:
-        kind: AddedParentTopic
-        synonyms:
-          en: Climate change
-    userId: "2"
+    addParentTopic:
+      path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
+      synonyms:
+        en: Climate change
+    actorId: "2"
+    date: "2022-07-15T22:18:13.997904751Z"
+    upsertedLink:
+      path: /wiki/24ef1a588aa8242ed43193766154fd5f05d343dcdcd3690dda097979363776f2
+      title: Climate change
+      url: "https://en.wikipedia.org/wiki/Climate_change"

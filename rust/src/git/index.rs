@@ -478,11 +478,14 @@ impl Indexer {
     pub fn add_change(&mut self, change: &activity::Change) -> Result<()> {
         let mut prefixes = HashSet::new();
 
-        for path in change.paths().keys() {
-            let index = self.activity(path)?;
-            index.add(change.to_owned());
+        for path in change.paths() {
+            if path.is_none() {
+                continue;
+            }
 
-            let path = RepoPath::from(path);
+            let path = path.unwrap();
+            let index = self.activity(&path.inner)?;
+            index.add(change.to_owned());
             prefixes.insert(path.prefix.to_owned());
         }
 

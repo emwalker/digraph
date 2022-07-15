@@ -1,11 +1,11 @@
 Soon:
-* Handle activity like indexes, so that line items don't overwrite one another
+* Normalize the activity logs in order to reduce the size of the Git repo
+* When a topic or link is deleted, go through existing logs and replace its path with None
 * Fix duplicate synonym bug
-* Activity feed using anonymous ids + user lookups
-* Add change entry to each parent topic
 * Restrict on org/repo prefix
 * Add limit to topic results (why did "Reading list" take such a long time?)
 * Switch to base62 hash for links and topics
+* Clean up history log
 
 Things that would be nice to eventually get to:
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales

@@ -1,5 +1,5 @@
 use chrono::Utc;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap};
 
 use crate::git::{
     activity, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, SaveChangesForPrefix,
@@ -8,6 +8,8 @@ use crate::git::{
 use crate::http::{self, RepoUrl};
 use crate::prelude::*;
 use crate::Alert;
+
+use super::activity::TopicInfoList;
 
 pub struct DeleteLink {
     pub actor: Viewer,
@@ -51,28 +53,12 @@ impl DeleteLink {
     }
 
     fn change(&self, link: &Link, parent_topics: &Vec<Topic>, date: Timestamp) -> activity::Change {
-        let mut paths = BTreeMap::from([(
-            self.link_path.inner.to_owned(),
-            activity::Role::DeletedLink {
-                title: link.metadata.title.to_owned(),
-                url: link.metadata.url.to_owned(),
-            },
-        )]);
-
-        for parent in parent_topics {
-            paths.insert(
-                parent.metadata.path.to_owned(),
-                activity::Role::RemovedParentTopic {
-                    synonyms: activity::SynonymInfo::from(parent),
-                },
-            );
-        }
-
-        activity::Change::DeleteLink(activity::DeleteLink(activity::Body {
+        activity::Change::DeleteLink(activity::DeleteLink {
+            actor_id: self.actor.user_id.to_owned(),
             date,
-            paths,
-            user_id: self.actor.user_id.to_owned(),
-        }))
+            deleted_link: activity::LinkInfo::from(link),
+            parent_topics: activity::TopicInfoList::from(parent_topics),
+        })
     }
 }
 
@@ -164,50 +150,28 @@ impl UpdateLinkParentTopics {
         removed: &Vec<Topic>,
         date: Timestamp,
     ) -> activity::Change {
-        let mut paths = BTreeMap::from([(
-            self.link_path.inner.to_owned(),
-            activity::Role::UpdatedLink {
-                title: link.metadata.title.to_owned(),
-                url: link.metadata.url.to_owned(),
-            },
-        )]);
-
-        for topic in added {
-            paths.insert(
-                topic.metadata.path.to_owned(),
-                activity::Role::AddedParentTopic {
-                    synonyms: activity::SynonymInfo::from(topic),
-                },
-            );
-        }
-
-        for topic in removed {
-            paths.insert(
-                topic.metadata.path.to_owned(),
-                activity::Role::RemovedParentTopic {
-                    synonyms: activity::SynonymInfo::from(topic),
-                },
-            );
-        }
-
-        activity::Change::UpdateLinkParentTopics(activity::UpdateLinkParentTopics(activity::Body {
+        activity::Change::UpdateLinkParentTopics(activity::UpdateLinkParentTopics {
+            actor_id: self.actor.user_id.to_owned(),
+            added_parent_topics: activity::TopicInfoList::from(added),
             date,
-            paths,
-            user_id: self.actor.user_id.to_owned(),
-        }))
+            updated_link: activity::LinkInfo::from(link),
+            removed_parent_topics: TopicInfoList::from(removed),
+        })
     }
 }
 
+// TODO: Refactor so that there's an UpsertLink mutation, which requires at least one topic, and an
+// UpdateLink mutation, which has a required link path field and doesn't modify the parent topics.
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct UpsertLink {
     pub actor: Viewer,
-    pub add_parent_topic_paths: Vec<RepoPath>,
+    pub add_parent_topic_path: Option<RepoPath>,
+    #[derivative(Debug = "ignore")]
+    pub fetcher: Box<dyn http::Fetch + Send + Sync>,
     pub prefix: String,
     pub title: Option<String>,
     pub url: String,
-    #[derivative(Debug = "ignore")]
-    pub fetcher: Box<dyn http::Fetch + Send + Sync>,
 }
 
 pub struct UpsertLinkResult {
@@ -237,17 +201,22 @@ impl UpsertLink {
             parent_topics.insert(parent.path.to_owned(), topic);
         }
 
-        for path in &self.add_parent_topic_paths {
-            let topic = git.fetch_topic(&path.inner)?;
-            parent_topics.insert(path.inner.to_owned(), topic);
-        }
+        let topic = if let Some(topic_path) = &self.add_parent_topic_path {
+            let topic = git.fetch_topic(&topic_path.inner)?;
+            parent_topics.insert(topic_path.inner.to_owned(), topic.to_owned());
+            Some(topic)
+        } else {
+            None
+        };
 
         if parent_topics.is_empty() {
+            // There's a client error if we get to this point.
+            log::warn!("no topic found, placing under root topic for /wiki");
             let topic = git.fetch_topic(WIKI_ROOT_TOPIC_PATH)?;
-            parent_topics.insert(WIKI_ROOT_TOPIC_PATH.to_owned(), topic);
+            parent_topics.insert(topic.metadata.path.to_owned(), topic);
         }
 
-        let change = self.change(&link, &parent_topics, date);
+        let change = self.change(&link, &topic, date);
         link.parent_topics = parent_topics
             .iter()
             .map(|(path, _topic)| ParentTopic { path: path.into() })
@@ -277,31 +246,19 @@ impl UpsertLink {
     fn change(
         &self,
         link: &Link,
-        parent_topics: &HashMap<String, Topic>,
+        parent_topic: &Option<Topic>,
         date: Timestamp,
     ) -> activity::Change {
-        let mut paths = BTreeMap::from([(
-            link.metadata.path.to_owned(),
-            activity::Role::UpdatedLink {
-                title: link.metadata.title.to_owned(),
-                url: link.metadata.url.to_owned(),
-            },
-        )]);
+        let add_parent_topic = parent_topic
+            .as_ref()
+            .map(|topic| activity::TopicInfo::from(&topic.to_owned()));
 
-        for (path, topic) in parent_topics {
-            paths.insert(
-                path.to_owned(),
-                activity::Role::AddedParentTopic {
-                    synonyms: activity::SynonymInfo::from(topic),
-                },
-            );
-        }
-
-        activity::Change::UpsertLink(activity::UpsertLink(activity::Body {
+        activity::Change::UpsertLink(activity::UpsertLink {
+            add_parent_topic,
+            actor_id: self.actor.user_id.to_owned(),
             date,
-            paths,
-            user_id: self.actor.user_id.to_owned(),
-        }))
+            upserted_link: activity::LinkInfo::from(link),
+        })
     }
 
     async fn make_link(&self, git: &Git, url: &RepoUrl, path: &RepoPath) -> Result<Link> {
@@ -315,13 +272,12 @@ impl UpsertLink {
                 response.title().unwrap_or_else(|| "Missing title".into())
             };
 
-            let parent_topics = self
-                .add_parent_topic_paths
-                .iter()
-                .map(|path| ParentTopic {
-                    path: path.to_string(),
-                })
-                .collect::<BTreeSet<ParentTopic>>();
+            let mut parent_topics = BTreeSet::new();
+            if let Some(path) = &self.add_parent_topic_path {
+                parent_topics.insert(ParentTopic {
+                    path: path.inner.to_owned(),
+                });
+            }
 
             Link {
                 api_version: API_VERSION.into(),

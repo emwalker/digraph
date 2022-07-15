@@ -30,12 +30,12 @@ impl View {
 
         let mut results = vec![];
         for change in activity {
-            let actor = repo.user_loader.load_one(change.user_id()).await?;
+            let actor = repo.user_loader.load_one(change.actor_id()).await?;
             let actor_name = actor
                 .map(|user| user.name)
                 .unwrap_or_else(|| "[missing user]".to_owned());
 
-            let markdown = change.markdown(Locale::EN, &actor_name, None)?;
+            let markdown = change.markdown(Locale::EN, &actor_name, None);
             results.push(ActivityLineItem {
                 created_at: change.date(),
                 description: markdown,

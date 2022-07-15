@@ -64,7 +64,7 @@ export default (environment: Environment, input: Input, config?: Config) => {
 
   const optimisticUpdater = (store: RecordSourceSelectorProxy) => {
     tmpId += 1
-    const parentTopicPaths = input.addParentTopicPaths || []
+    const parentTopicPath = input.addParentTopicPath || null
     const nodeId = `client:link:${tmpId}`
     const node = store.create(nodeId, 'Link')
 
@@ -73,12 +73,12 @@ export default (environment: Environment, input: Input, config?: Config) => {
     node.setValue(input.url, 'url')
     node.setValue(true, 'loading')
 
-    for (const path of parentTopicPaths) {
-      const topicProxy = store.get(path)
-      if (!topicProxy) continue
+    if (parentTopicPath) {
+      const topicProxy = store.get(parentTopicPath)
+      if (!topicProxy) return
 
       const conn = ConnectionHandler.getConnection(topicProxy, 'Topic_children')
-      if (!conn) continue
+      if (!conn) return
 
       const edge = store.create(`client:newEdge:${tmpId}`, 'TopicChildEdge')
       edge.setLinkedRecord(node, 'node')
@@ -96,16 +96,15 @@ export default (environment: Environment, input: Input, config?: Config) => {
     if (!edge) return
     if (!linkId) return
 
-    const parentTopicPaths = input.addParentTopicPaths || []
+    const parentTopicPath = input.addParentTopicPath || null
 
-    for (const path of parentTopicPaths) {
-      const topicProxy = store.get(path)
-      if (!topicProxy) continue
-
-      const conn = ConnectionHandler.getConnection(topicProxy, 'Topic_children')
-      if (!conn) continue
-
-      insertLink(conn, edge, linkId)
+    if (parentTopicPath) {
+      const topicProxy = store.get(parentTopicPath)
+      if (topicProxy) {
+        const conn = ConnectionHandler.getConnection(topicProxy, 'Topic_children')
+        if (conn)
+          insertLink(conn, edge, linkId)
+      }
     }
 
     flashMessageUpdater('upsertLink')

@@ -283,11 +283,11 @@ impl Repo {
         .call(&self.git, &self.redis)
     }
 
-    pub async fn delete_topic_timerange(
+    pub async fn remove_topic_timerange(
         &self,
         topic_path: &RepoPath,
-    ) -> Result<git::DeleteTopicTimerangeResult> {
-        git::DeleteTopicTimerange {
+    ) -> Result<git::RemoveTopicTimerangeResult> {
+        git::RemoveTopicTimerange {
             actor: self.viewer.clone(),
             topic_path: topic_path.clone(),
         }
@@ -506,15 +506,13 @@ impl Repo {
         &self,
         input: graphql::UpsertLinkInput,
     ) -> Result<git::UpsertLinkResult> {
-        let add_parent_topic_paths = input
-            .add_parent_topic_paths
-            .iter()
-            .map(RepoPath::from)
-            .collect_vec();
+        let add_parent_topic_path = input
+            .add_parent_topic_path
+            .map(|path| RepoPath::from(&path));
 
         git::UpsertLink {
+            add_parent_topic_path,
             actor: self.viewer.clone(),
-            add_parent_topic_paths,
             prefix: "/wiki".to_owned(),
             title: input.title,
             url: input.url,

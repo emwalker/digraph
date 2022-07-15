@@ -37,11 +37,16 @@ clean:
 	$(MAKE) -C javascript clean
 	$(MAKE) -C rust clean
 
-check: check-rust
+check-javascript: check-rust
 	$(MAKE) -C javascript check
 
 check-git-clean:
 	test -z "$(shell git diff-index --name-only HEAD --)"
+
+check-pre-push:
+	$(MAKE) -C rust check-pre-push
+	$(MAKE) -C javascript check-pre-push
+	test -z "$(shell git status --porcelain)"
 
 check-rust:
 	$(MAKE) -C rust check

@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use getopts::Options;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -234,20 +234,8 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             children: children.iter().map(TopicChild::from).collect(),
         };
 
-        let mut paths = BTreeMap::from([(
-            topic.metadata.path.to_owned(),
-            activity::Role::UpdatedTopic {
-                synonyms: activity::SynonymInfo::from(&topic),
-            },
-        )]);
-
-        for parent in parent_topics {
-            let synonyms = activity::SynonymInfo(BTreeMap::from([(Locale::EN, parent.name)]));
-            paths.insert(
-                parent.path.to_owned(),
-                activity::Role::AddedParentTopic { synonyms },
-            );
-        }
+        let mut child_links = vec![];
+        let mut child_topics = vec![];
 
         for child in children {
             let TopicChildRow {
@@ -260,31 +248,40 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
 
             match kind.as_str() {
                 "Topic" => {
-                    let synonyms =
-                        activity::SynonymInfo(BTreeMap::from([(Locale::EN, name.to_owned())]));
-                    paths.insert(
-                        path.to_owned(),
-                        activity::Role::AddedChildTopic { synonyms },
-                    );
+                    child_topics.push(activity::TopicInfo::from((
+                        Locale::EN,
+                        name.to_owned(),
+                        Some(path),
+                    )));
                 }
                 "Link" => {
-                    paths.insert(
-                        path.to_owned(),
-                        activity::Role::AddedChildLink {
-                            title: name.to_owned(),
-                            url: url.to_owned(),
-                        },
-                    );
+                    child_links.push(activity::LinkInfo {
+                        title: name.to_owned(),
+                        url: url.to_owned(),
+                        path: Some(path),
+                    });
                 }
                 _ => {}
             };
         }
 
-        let change = activity::Change::ImportTopic(activity::UpsertTopic(activity::Body {
+        let mut parents = vec![];
+        for topic in &parent_topics {
+            parents.push(activity::TopicInfo::from((
+                Locale::EN,
+                topic.name.to_owned(),
+                Some(topic.path.to_owned()),
+            )));
+        }
+
+        let change = activity::Change::ImportTopic(activity::ImportTopic {
+            actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
             date: chrono::Utc::now(),
-            paths,
-            user_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
-        }));
+            imported_topic: activity::TopicInfo::from(&topic),
+            child_links: activity::LinkInfoList::from(&child_links),
+            child_topics: activity::TopicInfoList::from(&child_topics),
+            parent_topics: activity::TopicInfoList::from(&parents),
+        });
 
         git.save_topic(&RepoPath::from(&meta.path), &topic, indexer)?;
         indexer.add_change(&change)?;
@@ -333,29 +330,21 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
                 .collect::<BTreeSet<ParentTopic>>(),
         };
 
-        let mut paths = BTreeMap::from([(
-            link.metadata.path.to_owned(),
-            activity::Role::UpdatedLink {
-                title: link.metadata.title.to_owned(),
-                url: link.metadata.url.to_owned(),
-            },
-        )]);
-
-        for parent in &parent_topics {
-            let synonyms =
-                activity::SynonymInfo(BTreeMap::from([(Locale::EN, parent.name.to_owned())]));
-
-            paths.insert(
-                parent.path.to_owned(),
-                activity::Role::AddedParentTopic { synonyms },
-            );
+        let mut topics = BTreeSet::new();
+        for topic in parent_topics {
+            topics.insert(activity::TopicInfo::from((
+                Locale::EN,
+                topic.name.to_owned(),
+                Some(topic.path.to_owned()),
+            )));
         }
 
-        let change = activity::Change::ImportLink(activity::UpsertLink(activity::Body {
+        let change = activity::Change::ImportLink(activity::ImportLink {
+            actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
             date: chrono::Utc::now(),
-            paths,
-            user_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
-        }));
+            imported_link: activity::LinkInfo::from(&link),
+            parent_topics: activity::TopicInfoList(topics),
+        });
 
         git.save_link(&RepoPath::from(&meta.path), &link, indexer)?;
         indexer.add_change(&change)?;

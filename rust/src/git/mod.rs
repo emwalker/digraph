@@ -209,14 +209,14 @@ impl std::cmp::PartialOrd for Synonym {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Timerange {
     pub starts: DateTime<Utc>,
     pub prefix_format: TimerangePrefixFormat,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TimerangePrefixFormat {
     #[serde(alias = "none")]
@@ -637,14 +637,14 @@ impl Git {
     pub fn fetch_topic(&self, path: &str) -> Result<Topic> {
         match &self.fetch(path)? {
             Object::Topic(topic) => Ok(topic.clone()),
-            other => return Err(Error::Repo(format!("not a topic: {:?}", other))),
+            other => return Err(Error::Repo(format!("{} not a topic: {:?}", path, other))),
         }
     }
 
     pub fn fetch_link(&self, path: &str) -> Result<Link> {
         match &self.fetch(path)? {
             Object::Link(link) => Ok(link.clone()),
-            other => return Err(Error::Repo(format!("not a link: {:?}", other))),
+            other => return Err(Error::Repo(format!("{} not a link: {:?}", path, other))),
         }
     }
 

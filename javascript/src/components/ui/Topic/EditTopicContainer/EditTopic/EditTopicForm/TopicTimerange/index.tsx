@@ -4,9 +4,9 @@ import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 import upsertTopicTimerangeMutation, {
   Input as UpdateInput,
 } from 'mutations/upsertTopicTimerangeMutation'
-import deleteTopicTimerangeMutation, {
+import removeTopicTimerangeMutation, {
   Input as DeleteInput,
-} from 'mutations/deleteTopicTimerangeMutation'
+} from 'mutations/removeTopicTimerangeMutation'
 import { TopicTimerange_topic as TopicType } from '__generated__/TopicTimerange_topic.graphql'
 import TopicTimerangeForm from './TopicTimerangeForm'
 
@@ -24,7 +24,7 @@ const updateOrDelete = (
 
   if (topic.timerange) {
     const input: DeleteInput = { topicPath: topic.path }
-    await deleteTopicTimerangeMutation(relay.environment, input)
+    await removeTopicTimerangeMutation(relay.environment, input)
   } else {
     const input: UpdateInput = {
       topicPath: topic.path,

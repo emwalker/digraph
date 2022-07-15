@@ -41,7 +41,8 @@ class EditLinkForm extends Component<Props, State> {
     const { name, organization: { login } } = this.props.link.repository
 
     const input: UpsertInput = {
-      addParentTopicPaths: [],
+      // Keep the existing parent topics
+      addParentTopicPath: null,
       organizationLogin: login,
       repositoryName: name,
       title: this.state.title,

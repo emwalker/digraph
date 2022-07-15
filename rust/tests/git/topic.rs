@@ -66,7 +66,7 @@ mod delete_topic {
 #[cfg(test)]
 mod delete_topic_timerange {
     use super::*;
-    use digraph::git::{DeleteTopicTimerange, Timerange, UpsertTopicTimerange};
+    use digraph::git::{RemoveTopicTimerange, Timerange, UpsertTopicTimerange};
 
     #[test]
     fn timerange_deleted() {
@@ -87,7 +87,7 @@ mod delete_topic_timerange {
         let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
         assert!(topic.metadata.timerange.is_some());
 
-        DeleteTopicTimerange {
+        RemoveTopicTimerange {
             actor: actor(),
             topic_path: path.clone(),
         }
