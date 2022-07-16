@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::{Git, Link, Locale, RepoPath, Synonym, Timerange, TimerangePrefixFormat, Topic};
+use super::{Git, Link, Locale, RepoPath, Synonym, Topic};
 use crate::prelude::*;
 use crate::types::{random_id, Prefix};
 
@@ -403,6 +403,7 @@ pub struct RemoveTopicTimerange {
     pub actor_id: String,
     pub date: Timestamp,
     pub id: ChangeId,
+    pub parent_topics: BTreeSet<String>,
     // The RemoveTopicTimerange is idempotent, so the timerange might already have been removed.
     pub previous_timerange: Option<Timerange>,
     pub updated_topic: TopicInfo,
@@ -529,13 +530,19 @@ pub struct UpsertTopicTimerange {
     pub id: ChangeId,
     pub date: Timestamp,
     pub previous_timerange: Option<Timerange>,
+    // Show change logs under parent topics as well
+    pub parent_topics: BTreeSet<String>,
     pub updated_timerange: Timerange,
     pub updated_topic: TopicInfo,
 }
 
 impl UpsertTopicTimerange {
     fn paths(&self) -> Vec<Option<RepoPath>> {
-        vec![self.updated_topic.path()]
+        let mut paths = vec![self.updated_topic.path()];
+        for path in &self.parent_topics {
+            paths.push(Some(RepoPath::from(path)));
+        }
+        paths
     }
 }
 
@@ -606,17 +613,6 @@ mod markdown {
                 2 => links.iter().map(LinkInfo::markdown).join(" and "),
                 _ => "a number of links".to_owned(),
             }
-        }
-    }
-
-    impl Timerange {
-        fn markdown(&self) -> String {
-            match self.prefix_format {
-                TimerangePrefixFormat::None => "(none)",
-                TimerangePrefixFormat::StartYear => "(start-year)",
-                TimerangePrefixFormat::StartYearMonth => "(start-year-month)",
-            }
-            .to_owned()
         }
     }
 
@@ -769,20 +765,30 @@ mod markdown {
             actor_name: &str,
             _context: Option<&RepoPath>,
         ) -> String {
+            let topic = self.updated_topic.markdown(locale);
+
             match &self.previous_timerange {
                 Some(timerange) => {
-                    format!(
-                        r#"{} removed the timerange prefix "{}" from {}"#,
-                        actor_name,
-                        timerange.markdown(),
-                        self.updated_topic.markdown(locale),
-                    )
+                    let prefix = Prefix::from(timerange);
+                    match prefix.prefix() {
+                        Some(prefix) => {
+                            format!(
+                                r#"{} removed the time prefix "{}" from {}"#,
+                                actor_name, prefix, topic,
+                            )
+                        }
+                        None => {
+                            format!(
+                                r#"{} removed the start time from {}, but no change will be seen"#,
+                                actor_name, topic,
+                            )
+                        }
+                    }
                 }
                 None => {
                     format!(
-                        r#"{} removed the timerange prefix from {}"#,
-                        actor_name,
-                        self.updated_topic.markdown(locale),
+                        r#"{} removed the start time from {}, but it was already blank"#,
+                        actor_name, topic,
                     )
                 }
             }
@@ -906,8 +912,10 @@ mod markdown {
                     )
                 }
                 None => format!(
-                    "{} updated the start time on to {}, but it will not be shown",
-                    topic, actor_name
+                    "{} updated the start time for {} to be {}, but it will not be shown",
+                    actor_name,
+                    topic,
+                    prefix.date_string()
                 ),
             }
         }
@@ -948,6 +956,7 @@ impl FetchActivity {
 
 #[cfg(test)]
 mod tests {
+    use chrono::TimeZone;
     use std::collections::BTreeSet;
 
     use super::*;
@@ -1085,61 +1094,6 @@ mod tests {
     }
 
     #[test]
-    fn upsert_topic_timerange() {
-        use chrono::TimeZone;
-
-        let topic1 = topic("Climate change");
-        let date = chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444);
-
-        let change = Change::UpsertTopicTimerange(UpsertTopicTimerange {
-            actor_id: "2".to_owned(),
-            date: chrono::Utc::now(),
-            id: Change::new_id(),
-            previous_timerange: None,
-            updated_timerange: Timerange {
-                starts: date,
-                prefix_format: TimerangePrefixFormat::StartYear,
-            },
-            updated_topic: TopicInfo::from(&topic1),
-        });
-
-        assert_eq!(
-            change.markdown(Locale::EN, "Gnusto", None),
-            format!(
-                r#"Gnusto updated the time prefix for [Climate change]({}) to be "1970""#,
-                topic1.metadata.path
-            )
-        );
-    }
-
-    #[test]
-    fn upsert_topic_timerange_links_to_parent_topics() {
-        use chrono::TimeZone;
-        let topic1 = topic("Climate change");
-        let date = Timerange {
-            starts: chrono::Utc.ymd(2022, 1, 1).and_hms(0, 0, 0),
-            prefix_format: TimerangePrefixFormat::StartYear,
-        };
-
-        let change = Change::UpsertTopicTimerange(UpsertTopicTimerange {
-            actor_id: "2".to_owned(),
-            date: chrono::Utc::now(),
-            id: Change::new_id(),
-            previous_timerange: None,
-            updated_timerange: date,
-            updated_topic: TopicInfo::from(&topic1),
-        });
-
-        assert_eq!(
-            change.markdown(Locale::EN, "Gnusto", None),
-            format!(
-                r#"Gnusto updated the time prefix for [Climate change]({}) to be "2022""#,
-                topic1.metadata.path,
-            ),
-        );
-    }
-
-    #[test]
     fn upsert_link() {
         let topic1 = topic("Climate change");
         let link = link("Reddit", "https://www.reddit.com");
@@ -1181,5 +1135,150 @@ mod tests {
                 topic1.metadata.path, topic2.metadata.path
             ),
         );
+    }
+
+    mod remove_topic_timerange {
+        use super::*;
+
+        fn date() -> chrono::DateTime<chrono::Utc> {
+            chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444)
+        }
+
+        fn change(topic: &Topic, previous: Option<Timerange>) -> Change {
+            let mut parent_topics = BTreeSet::new();
+            for parent in &topic.parent_topics {
+                parent_topics.insert(parent.path.to_owned());
+            }
+
+            Change::RemoveTopicTimerange(RemoveTopicTimerange {
+                actor_id: "2".to_owned(),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics,
+                previous_timerange: previous,
+                updated_topic: TopicInfo::from(topic),
+            })
+        }
+
+        #[test]
+        fn simple_case() {
+            let topic1 = topic("Climate change");
+            let change = change(
+                &topic1,
+                Some(Timerange {
+                    starts: date(),
+                    prefix_format: TimerangePrefixFormat::StartYear,
+                }),
+            );
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                "Gnusto removed the time prefix \"1970\" from \
+                [Climate change](/wiki/Climate change)"
+            );
+        }
+
+        #[test]
+        fn parent_topics() {
+            let topic1 = topic("Climate change");
+            let change = change(
+                &topic1,
+                Some(Timerange {
+                    starts: date(),
+                    prefix_format: TimerangePrefixFormat::StartYear,
+                }),
+            );
+
+            if let Change::RemoveTopicTimerange(RemoveTopicTimerange { parent_topics, .. }) = change
+            {
+                assert!(!parent_topics.is_empty());
+            } else {
+                unreachable!("expected RemoveTopicTimerange");
+            }
+        }
+    }
+
+    mod upsert_topic_timerange {
+        use super::*;
+
+        fn change(topic: &Topic, format: TimerangePrefixFormat) -> Change {
+            let date = chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444);
+
+            let mut parent_topics = BTreeSet::new();
+            for parent in &topic.parent_topics {
+                parent_topics.insert(parent.path.to_owned());
+            }
+
+            Change::UpsertTopicTimerange(UpsertTopicTimerange {
+                actor_id: "2".to_owned(),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics,
+                previous_timerange: None,
+                updated_timerange: Timerange {
+                    starts: date,
+                    prefix_format: format,
+                },
+                updated_topic: TopicInfo::from(topic),
+            })
+        }
+
+        #[test]
+        fn start_year_format() {
+            let topic1 = topic("Climate change");
+            let change = change(&topic1, TimerangePrefixFormat::StartYear);
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    r#"Gnusto updated the time prefix for [Climate change]({}) to be "1970""#,
+                    topic1.metadata.path
+                )
+            );
+        }
+
+        #[test]
+        fn start_year_month_format() {
+            let topic1 = topic("Climate change");
+            let change = change(&topic1, TimerangePrefixFormat::StartYearMonth);
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    r#"Gnusto updated the time prefix for [Climate change]({}) to be "1970-01""#,
+                    topic1.metadata.path
+                )
+            );
+        }
+
+        #[test]
+        fn none_format() {
+            let topic1 = topic("Climate change");
+            let change = change(&topic1, TimerangePrefixFormat::None);
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    "Gnusto updated the start time for [Climate change]({}) to be 1970-01-01, \
+                    but it will not be shown",
+                    topic1.metadata.path
+                )
+            );
+        }
+
+        #[test]
+        fn parent_references() {
+            // Show the change in the activity log for any parent topics, even though the parent
+            // topics aren't being updated with the change.
+            let topic1 = topic("Climate change");
+            let change = change(&topic1, TimerangePrefixFormat::None);
+
+            if let Change::UpsertTopicTimerange(UpsertTopicTimerange { parent_topics, .. }) = change
+            {
+                assert!(!parent_topics.is_empty());
+            } else {
+                unreachable!("expected UpsertTopicTimerange");
+            }
+        }
     }
 }

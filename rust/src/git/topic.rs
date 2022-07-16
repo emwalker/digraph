@@ -140,12 +140,18 @@ impl RemoveTopicTimerange {
     }
 
     pub fn change(&self, topic: &Topic, previous_timerange: Option<Timerange>) -> activity::Change {
+        let mut parent_topics = BTreeSet::new();
+        for parent in &topic.parent_topics {
+            parent_topics.insert(parent.path.to_owned());
+        }
+
         activity::Change::RemoveTopicTimerange(activity::RemoveTopicTimerange {
             actor_id: self.actor.user_id.to_owned(),
             date: chrono::Utc::now(),
             id: activity::Change::new_id(),
-            updated_topic: activity::TopicInfo::from(topic),
+            parent_topics,
             previous_timerange,
+            updated_topic: activity::TopicInfo::from(topic),
         })
     }
 }
@@ -539,10 +545,16 @@ impl UpsertTopicTimerange {
     }
 
     fn change(&self, topic: &Topic, previous_timerange: Option<Timerange>) -> activity::Change {
+        let mut parent_topics = BTreeSet::new();
+        for parent in &topic.parent_topics {
+            parent_topics.insert(parent.path.to_owned());
+        }
+
         activity::Change::UpsertTopicTimerange(activity::UpsertTopicTimerange {
             actor_id: self.actor.user_id.to_owned(),
             date: chrono::Utc::now(),
             id: activity::Change::new_id(),
+            parent_topics,
             previous_timerange,
             updated_topic: activity::TopicInfo::from(topic),
             updated_timerange: self.timerange.clone(),

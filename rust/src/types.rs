@@ -180,7 +180,7 @@ impl From<&str> for TimerangePrefixFormat {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Prefix {
-    None,
+    None(chrono::DateTime<chrono::Utc>),
     StartYear(chrono::DateTime<chrono::Utc>),
     StartYearMonth(chrono::DateTime<chrono::Utc>),
 }
@@ -193,11 +193,11 @@ impl From<&Option<Timerange>> for Prefix {
                 prefix_format,
                 ..
             }) => match prefix_format {
-                TimerangePrefixFormat::None => Self::None,
+                TimerangePrefixFormat::None => Self::None(*starts),
                 TimerangePrefixFormat::StartYear => Self::StartYear(*starts),
                 TimerangePrefixFormat::StartYearMonth => Self::StartYearMonth(*starts),
             },
-            None => Self::None,
+            None => Self::None(chrono::Utc::now()),
         }
     }
 }
@@ -209,7 +209,7 @@ impl From<&Timerange> for Prefix {
             prefix_format,
         } = timerange;
         match prefix_format {
-            TimerangePrefixFormat::None => Self::None,
+            TimerangePrefixFormat::None => Self::None(*starts),
             TimerangePrefixFormat::StartYear => Self::StartYear(*starts),
             TimerangePrefixFormat::StartYearMonth => Self::StartYearMonth(*starts),
         }
@@ -220,20 +220,29 @@ impl Prefix {
     pub fn new(prefix_format: Option<&str>, starts: Option<chrono::DateTime<chrono::Utc>>) -> Self {
         match prefix_format {
             Some(format) => match starts {
-                Some(starts_at) => match format {
-                    "START_YEAR" => Self::StartYear(starts_at),
-                    "START_YEAR_MONTH" => Self::StartYearMonth(starts_at),
-                    _ => Self::None,
+                Some(starts) => match format {
+                    "START_YEAR" => Self::StartYear(starts),
+                    "START_YEAR_MONTH" => Self::StartYearMonth(starts),
+                    _ => Self::None(starts),
                 },
-                None => Self::None,
+                None => Self::None(chrono::Utc::now()),
             },
-            None => Self::None,
+            None => Self::None(chrono::Utc::now()),
         }
+    }
+
+    pub fn date_string(&self) -> String {
+        let dt = match self {
+            Self::None(starts) => starts,
+            Self::StartYear(starts) => starts,
+            Self::StartYearMonth(starts) => starts,
+        };
+        format!("{}", dt.format("%Y-%m-%d"))
     }
 
     pub fn prefix(&self) -> Option<String> {
         match self {
-            Self::None => None,
+            Self::None(_) => None,
             Self::StartYear(starts) => Some(format!("{}", starts.format("%Y"))),
             Self::StartYearMonth(starts) => Some(format!("{}", starts.format("%Y-%m"))),
         }

@@ -1,12 +1,12 @@
 use async_graphql::connection::*;
 use itertools::Itertools;
 
+use super::timerange;
 use super::{
     relay::conn, ActivityLineItem, LinkConnection, Repository, Synonym, Synonyms,
     TopicChildConnection,
 };
 use super::{ActivityLineItemConnection, LinkConnectionFields};
-use super::timerange;
 use crate::repo::Repo;
 use crate::types::Prefix;
 use crate::{git, prelude::*};

@@ -621,8 +621,12 @@ impl Git {
             let filename = self.change_filename(&reference.path)?;
             let fh = std::fs::File::open(&filename)
                 .map_err(|e| Error::Repo(format!("problem opening file {:?}: {}", filename, e)))?;
-            let change: activity::Change = serde_yaml::from_reader(fh)?;
-            changes.push(change);
+            let result: std::result::Result<activity::Change, serde_yaml::Error> =
+                serde_yaml::from_reader(fh);
+            match result {
+                Ok(change) => changes.push(change),
+                Err(err) => log::warn!("failed to load change: {}", err),
+            }
         }
 
         Ok(changes)

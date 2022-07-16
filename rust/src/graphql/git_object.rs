@@ -1,11 +1,11 @@
 use async_graphql::dataloader::*;
 use std::collections::HashMap;
 
-use super::{Link, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChild};
 use super::timerange;
+use super::{Link, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChild};
 use crate::git;
-use crate::types;
 use crate::prelude::*;
+use crate::types;
 
 impl From<&git::Link> for Link {
     fn from(link: &git::Link) -> Self {
