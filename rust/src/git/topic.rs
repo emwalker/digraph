@@ -104,6 +104,7 @@ impl DeleteTopic {
             child_topics: activity::TopicInfoList::from(child_topics),
             date,
             deleted_topic: activity::TopicInfo::from(topic),
+            id: activity::Change::new_id(),
             parent_topics: activity::TopicInfoList::from(parent_topics),
         })
     }
@@ -143,6 +144,7 @@ impl RemoveTopicTimerange {
         activity::Change::RemoveTopicTimerange(activity::RemoveTopicTimerange {
             actor_id: self.actor.user_id.to_owned(),
             date: chrono::Utc::now(),
+            id: activity::Change::new_id(),
             updated_topic: activity::TopicInfo::from(topic),
             previous_timerange,
         })
@@ -234,6 +236,7 @@ impl UpdateTopicParentTopics {
         activity::Change::UpdateTopicParentTopics(activity::UpdateTopicParentTopics {
             actor_id: self.actor.user_id.to_owned(),
             added_parent_topics: activity::TopicInfoList::from(added),
+            id: activity::Change::new_id(),
             date,
             removed_parent_topics: activity::TopicInfoList::from(removed),
             updated_topic: activity::TopicInfo::from(topic),
@@ -323,6 +326,7 @@ impl UpdateTopicSynonyms {
         activity::Change::UpdateTopicSynonyms(activity::UpdateTopicSynonyms {
             actor_id: self.actor.user_id.to_owned(),
             added_synonyms: activity::SynonymList::from(added),
+            id: activity::Change::new_id(),
             date: chrono::Utc::now(),
             updated_topic: activity::TopicInfo::from(topic),
             reordered: added.is_empty() && removed.is_empty(),
@@ -465,6 +469,7 @@ impl UpsertTopic {
     fn change(&self, topic: &Topic, parent: &Topic, date: Timestamp) -> activity::Change {
         activity::Change::UpsertTopic(activity::UpsertTopic {
             actor_id: self.actor.user_id.to_owned(),
+            id: activity::Change::new_id(),
             date,
             parent_topic: activity::TopicInfo::from(parent),
             upserted_topic: activity::TopicInfo::from(topic),
@@ -538,6 +543,7 @@ impl UpsertTopicTimerange {
         activity::Change::UpsertTopicTimerange(activity::UpsertTopicTimerange {
             actor_id: self.actor.user_id.to_owned(),
             date: chrono::Utc::now(),
+            id: activity::Change::new_id(),
             previous_timerange,
             updated_topic: activity::TopicInfo::from(topic),
             updated_timerange: self.timerange.clone(),

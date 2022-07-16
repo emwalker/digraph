@@ -57,6 +57,7 @@ impl DeleteLink {
             actor_id: self.actor.user_id.to_owned(),
             date,
             deleted_link: activity::LinkInfo::from(link),
+            id: activity::Change::new_id(),
             parent_topics: activity::TopicInfoList::from(parent_topics),
         })
     }
@@ -154,6 +155,7 @@ impl UpdateLinkParentTopics {
             actor_id: self.actor.user_id.to_owned(),
             added_parent_topics: activity::TopicInfoList::from(added),
             date,
+            id: activity::Change::new_id(),
             updated_link: activity::LinkInfo::from(link),
             removed_parent_topics: TopicInfoList::from(removed),
         })
@@ -257,6 +259,7 @@ impl UpsertLink {
             add_parent_topic,
             actor_id: self.actor.user_id.to_owned(),
             date,
+            id: activity::Change::new_id(),
             upserted_link: activity::LinkInfo::from(link),
         })
     }

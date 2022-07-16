@@ -1,5 +1,6 @@
 Soon:
-* Normalize the activity logs in order to reduce the size of the Git repo
+* Displaying timerange prefixes
+* Indexing timerange prefixes
 * When a topic or link is deleted, go through existing logs and replace its path with None
 * Fix duplicate synonym bug
 * Restrict on org/repo prefix

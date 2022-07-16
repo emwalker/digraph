@@ -4,6 +4,15 @@ use std::collections::{BTreeMap, BTreeSet};
 use super::{Git, Link, Locale, RepoPath, Synonym, Timerange, TimerangePrefixFormat, Topic};
 use crate::prelude::*;
 
+#[derive(Clone, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct ChangeId(pub String);
+
+impl std::fmt::Display for ChangeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
 pub struct SynonymList(pub BTreeMap<Locale, String>);
 
@@ -197,6 +206,10 @@ impl std::cmp::PartialOrd for Change {
 }
 
 impl Change {
+    pub fn new_id() -> ChangeId {
+        ChangeId(random_id())
+    }
+
     pub fn actor_id(&self) -> String {
         match self {
             Self::DeleteLink(inner) => inner.actor_id.to_owned(),
@@ -226,6 +239,22 @@ impl Change {
             Self::UpsertLink(inner) => inner.date,
             Self::UpsertTopic(inner) => inner.date,
             Self::UpsertTopicTimerange(inner) => inner.date,
+        }
+    }
+
+    pub fn id(&self) -> ChangeId {
+        match self {
+            Self::DeleteLink(inner) => inner.id.to_owned(),
+            Self::DeleteTopic(inner) => inner.id.to_owned(),
+            Self::ImportLink(inner) => inner.id.to_owned(),
+            Self::ImportTopic(inner) => inner.id.to_owned(),
+            Self::RemoveTopicTimerange(inner) => inner.id.to_owned(),
+            Self::UpdateLinkParentTopics(inner) => inner.id.to_owned(),
+            Self::UpdateTopicParentTopics(inner) => inner.id.to_owned(),
+            Self::UpdateTopicSynonyms(inner) => inner.id.to_owned(),
+            Self::UpsertLink(inner) => inner.id.to_owned(),
+            Self::UpsertTopic(inner) => inner.id.to_owned(),
+            Self::UpsertTopicTimerange(inner) => inner.id.to_owned(),
         }
     }
 
@@ -267,6 +296,7 @@ impl Change {
 #[serde(rename_all = "camelCase")]
 pub struct DeleteLink {
     pub actor_id: String,
+    pub id: ChangeId,
     pub date: Timestamp,
     pub deleted_link: LinkInfo,
     pub parent_topics: TopicInfoList,
@@ -286,6 +316,7 @@ impl DeleteLink {
 #[serde(rename_all = "camelCase")]
 pub struct DeleteTopic {
     pub actor_id: String,
+    pub id: ChangeId,
     pub child_links: LinkInfoList,
     pub child_topics: TopicInfoList,
     pub date: Timestamp,
@@ -317,6 +348,7 @@ impl DeleteTopic {
 #[serde(rename_all = "camelCase")]
 pub struct ImportLink {
     pub actor_id: String,
+    pub id: ChangeId,
     pub date: Timestamp,
     pub imported_link: LinkInfo,
     pub parent_topics: TopicInfoList,
@@ -336,6 +368,7 @@ impl ImportLink {
 #[serde(rename_all = "camelCase")]
 pub struct ImportTopic {
     pub actor_id: String,
+    pub id: ChangeId,
     pub child_links: LinkInfoList,
     pub child_topics: TopicInfoList,
     pub date: Timestamp,
@@ -368,6 +401,7 @@ impl ImportTopic {
 pub struct RemoveTopicTimerange {
     pub actor_id: String,
     pub date: Timestamp,
+    pub id: ChangeId,
     // The RemoveTopicTimerange is idempotent, so the timerange might already have been removed.
     pub previous_timerange: Option<Timerange>,
     pub updated_topic: TopicInfo,
@@ -385,6 +419,7 @@ pub struct UpdateLinkParentTopics {
     pub actor_id: String,
     pub added_parent_topics: TopicInfoList,
     pub date: Timestamp,
+    pub id: ChangeId,
     pub removed_parent_topics: TopicInfoList,
     pub updated_link: LinkInfo,
 }
@@ -410,6 +445,7 @@ impl UpdateLinkParentTopics {
 pub struct UpdateTopicParentTopics {
     pub actor_id: String,
     pub added_parent_topics: TopicInfoList,
+    pub id: ChangeId,
     pub date: Timestamp,
     pub removed_parent_topics: TopicInfoList,
     pub updated_topic: TopicInfo,
@@ -436,6 +472,7 @@ impl UpdateTopicParentTopics {
 pub struct UpdateTopicSynonyms {
     pub actor_id: String,
     pub added_synonyms: SynonymList,
+    pub id: ChangeId,
     pub date: Timestamp,
     pub removed_synonyms: SynonymList,
     pub reordered: bool,
@@ -453,6 +490,7 @@ impl UpdateTopicSynonyms {
 pub struct UpsertLink {
     pub add_parent_topic: Option<TopicInfo>,
     pub actor_id: String,
+    pub id: ChangeId,
     pub date: Timestamp,
     pub upserted_link: LinkInfo,
 }
@@ -471,6 +509,7 @@ impl UpsertLink {
 #[serde(rename_all = "camelCase")]
 pub struct UpsertTopic {
     pub actor_id: String,
+    pub id: ChangeId,
     pub date: Timestamp,
     pub parent_topic: TopicInfo,
     pub upserted_topic: TopicInfo,
@@ -486,6 +525,7 @@ impl UpsertTopic {
 #[serde(rename_all = "camelCase")]
 pub struct UpsertTopicTimerange {
     pub actor_id: String,
+    pub id: ChangeId,
     pub date: Timestamp,
     pub previous_timerange: Option<Timerange>,
     pub updated_timerange: Timerange,
@@ -496,13 +536,6 @@ impl UpsertTopicTimerange {
     fn paths(&self) -> Vec<Option<RepoPath>> {
         vec![self.updated_topic.path()]
     }
-}
-
-#[derive(Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase", tag = "kind")]
-pub struct ChangeIndexMap {
-    pub api_version: String,
-    pub changes: BTreeSet<Change>,
 }
 
 mod markdown {
@@ -868,7 +901,7 @@ mod markdown {
 
 pub struct FetchActivity {
     pub actor: Viewer,
-    pub first: i32,
+    pub first: usize,
     pub topic_path: Option<RepoPath>,
 }
 
@@ -877,7 +910,7 @@ pub struct FetchActivityResult {
 }
 
 pub trait ActivityForPrefix {
-    fn fetch_activity(&self, prefix: &str) -> Result<Vec<Change>>;
+    fn fetch_activity(&self, prefix: &str, first: usize) -> Result<Vec<Change>>;
 }
 
 impl FetchActivity {
@@ -886,17 +919,12 @@ impl FetchActivity {
         F: ActivityForPrefix,
     {
         let changes = match &self.topic_path {
-            Some(path) => git
-                .fetch_activity(path)?
-                .changes()
-                .iter()
-                .cloned()
-                .collect::<Vec<Change>>(),
+            Some(path) => git.fetch_activity(path, self.first)?,
 
             // Fetch the top-level activity feed from Redis rather than Git so as to avoid
             // write contention on a single file for every update.  This could show up in the form
             // of merge conflicts when commits are being saved to Git.
-            None => fetch.fetch_activity(WIKI_REPO_PREFIX)?,
+            None => fetch.fetch_activity(WIKI_REPO_PREFIX, self.first)?,
         };
 
         Ok(FetchActivityResult { changes })
@@ -958,6 +986,7 @@ mod tests {
         let change = Change::UpdateLinkParentTopics(UpdateLinkParentTopics {
             actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
+            id: Change::new_id(),
             updated_link: LinkInfo {
                 title: "Reddit".to_owned(),
                 url: "http://www.reddit.com".to_owned(),
@@ -995,6 +1024,7 @@ mod tests {
                 url: link.metadata.url,
                 path: Some(link.metadata.path),
             },
+            id: Change::new_id(),
             parent_topics: TopicInfoList(BTreeSet::from([
                 TopicInfo::from(&topic1),
                 TopicInfo::from(&topic2),
@@ -1024,6 +1054,7 @@ mod tests {
             child_topics: TopicInfoList(BTreeSet::new()),
             date: chrono::Utc::now(),
             deleted_topic: TopicInfo::from(&topic1),
+            id: Change::new_id(),
             parent_topics: TopicInfoList(BTreeSet::from([TopicInfo::from(&topic2)])),
         });
 
@@ -1048,12 +1079,13 @@ mod tests {
         let change = Change::UpsertTopicTimerange(UpsertTopicTimerange {
             actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
-            updated_topic: TopicInfo::from(&topic1),
+            id: Change::new_id(),
             previous_timerange: None,
             updated_timerange: Timerange {
                 starts: date,
                 prefix_format: TimerangePrefixFormat::StartYear,
             },
+            updated_topic: TopicInfo::from(&topic1),
         });
 
         assert_eq!(
@@ -1070,6 +1102,7 @@ mod tests {
         let change = Change::UpsertLink(UpsertLink {
             actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
+            id: Change::new_id(),
             upserted_link: LinkInfo::from(&link),
             add_parent_topic: Some(TopicInfo::from(&topic1)),
         });
@@ -1091,6 +1124,7 @@ mod tests {
         let change = Change::UpsertTopic(UpsertTopic {
             actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
+            id: Change::new_id(),
             parent_topic: TopicInfo::from(&topic2),
             upserted_topic: TopicInfo::from(&topic1),
         });

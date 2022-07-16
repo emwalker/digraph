@@ -280,6 +280,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             imported_topic: activity::TopicInfo::from(&topic),
             child_links: activity::LinkInfoList::from(&child_links),
             child_topics: activity::TopicInfoList::from(&child_topics),
+            id: activity::Change::new_id(),
             parent_topics: activity::TopicInfoList::from(&parents),
         });
 
@@ -342,6 +343,7 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
         let change = activity::Change::ImportLink(activity::ImportLink {
             actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
             date: chrono::Utc::now(),
+            id: activity::Change::new_id(),
             imported_link: activity::LinkInfo::from(&link),
             parent_topics: activity::TopicInfoList(topics),
         });

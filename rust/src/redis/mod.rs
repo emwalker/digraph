@@ -1,5 +1,5 @@
 use redis_rs::{self, Commands};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::git;
@@ -12,7 +12,7 @@ impl git::SaveChangesForPrefix for Noop {
     fn save(
         &self,
         _prefix: &str,
-        _changes: &HashMap<String, Vec<git::activity::Change>>,
+        _changes: &HashMap<String, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         // Do nothing
         Ok(())
@@ -102,11 +102,11 @@ impl git::SaveChangesForPrefix for Redis {
     fn save(
         &self,
         prefix: &str,
-        prefix_changes: &HashMap<String, Vec<git::activity::Change>>,
+        prefix_changes: &HashMap<String, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         let mut con = self.connection()?;
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-        let empty = vec![];
+        let empty = BTreeSet::new();
         let changes = prefix_changes.get(prefix).unwrap_or(&empty);
 
         let mut args = vec![];
@@ -123,7 +123,7 @@ impl git::SaveChangesForPrefix for Redis {
 }
 
 impl git::activity::ActivityForPrefix for Redis {
-    fn fetch_activity(&self, prefix: &str) -> Result<Vec<git::activity::Change>> {
+    fn fetch_activity(&self, prefix: &str, first: usize) -> Result<Vec<git::activity::Change>> {
         let key = Key(format!("activity:{}", prefix));
         log::info!("fetching activity for prefix {:?} from Redis", key);
         let mut con = self.connection()?;
@@ -131,7 +131,7 @@ impl git::activity::ActivityForPrefix for Redis {
         let iter: redis_rs::Iter<redis_rs::Value> = redis_rs::cmd("zrevrange")
             .arg(&key)
             .arg(0)
-            .arg(3)
+            .arg(first)
             .clone()
             .iter(&mut con)?;
 

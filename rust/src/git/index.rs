@@ -383,16 +383,66 @@ impl SearchTokenIndex {
     }
 }
 
-pub struct ChangeIndex {
-    filename: PathBuf,
-    index: activity::ChangeIndexMap,
+#[derive(Clone, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct ChangePath {
+    #[serde(skip_serializing)]
+    prefix: String,
+    path: String,
 }
 
-impl ChangeIndex {
+impl std::fmt::Display for ChangePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.path)
+    }
+}
+
+#[derive(Clone, Deserialize, Eq, PartialEq, Serialize)]
+pub struct ChangeReference {
+    pub path: String,
+    pub date: Timestamp,
+}
+
+impl ChangeReference {
+    pub fn new(prefix: &str, change: &activity::Change) -> Self {
+        let id = change.id();
+
+        Self {
+            date: change.date(),
+            path: format!("{}/{}", prefix, id.0),
+        }
+    }
+}
+
+impl std::cmp::Ord for ChangeReference {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // Sort descending by date
+        (&other.date, &self.path).cmp(&(&self.date, &other.path))
+    }
+}
+
+impl std::cmp::PartialOrd for ChangeReference {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", tag = "kind")]
+pub struct ActivityIndexMap {
+    pub api_version: String,
+    pub changes: BTreeSet<ChangeReference>,
+}
+
+pub struct ActivityIndex {
+    filename: PathBuf,
+    index: ActivityIndexMap,
+}
+
+impl ActivityIndex {
     pub fn new(filename: &PathBuf) -> Self {
         Self {
             filename: filename.to_owned(),
-            index: activity::ChangeIndexMap {
+            index: ActivityIndexMap {
                 api_version: API_VERSION.to_owned(),
                 changes: BTreeSet::new(),
             },
@@ -404,7 +454,7 @@ impl ChangeIndex {
             let fh = std::fs::File::open(&filename).map_err(|e| Error::Repo(format!("{:?}", e)))?;
             serde_yaml::from_reader(fh)?
         } else {
-            activity::ChangeIndexMap {
+            ActivityIndexMap {
                 api_version: API_VERSION.to_owned(),
                 changes: BTreeSet::new(),
             }
@@ -416,16 +466,16 @@ impl ChangeIndex {
         })
     }
 
-    pub fn add(&mut self, change: activity::Change) {
-        self.index.changes.insert(change);
+    pub fn add(&mut self, reference: ChangeReference) {
+        self.index.changes.insert(reference);
     }
 
-    pub fn changes(&self) -> &BTreeSet<activity::Change> {
+    pub fn references(&self) -> &BTreeSet<ChangeReference> {
         &self.index.changes
     }
 }
 
-impl Index for ChangeIndex {
+impl Index for ActivityIndex {
     fn filename(&self) -> &PathBuf {
         &self.filename
     }
@@ -442,7 +492,11 @@ pub struct IndexKey {
 }
 
 pub trait SaveChangesForPrefix {
-    fn save(&self, prefix: &str, changes: &HashMap<String, Vec<activity::Change>>) -> Result<()>;
+    fn save(
+        &self,
+        prefix: &str,
+        changes: &HashMap<String, BTreeSet<activity::Change>>,
+    ) -> Result<()>;
 }
 
 pub struct Indexer {
@@ -451,8 +505,8 @@ pub struct Indexer {
     search_tokens: HashMap<IndexKey, SearchTokenIndex>,
     synonym_phrases: HashMap<IndexKey, SynonymIndex>,
     synonym_tokens: HashMap<IndexKey, SynonymIndex>,
-    path_changes: HashMap<String, ChangeIndex>,
-    prefix_changes: HashMap<String, Vec<activity::Change>>,
+    path_activity: HashMap<RepoPath, BTreeSet<activity::Change>>,
+    prefix_activity: HashMap<String, BTreeSet<activity::Change>>,
 }
 
 impl Indexer {
@@ -460,19 +514,19 @@ impl Indexer {
         Self {
             git: git.clone(),
             mode,
-            path_changes: HashMap::new(),
-            prefix_changes: HashMap::new(),
+            path_activity: HashMap::new(),
+            prefix_activity: HashMap::new(),
             search_tokens: HashMap::new(),
             synonym_phrases: HashMap::new(),
             synonym_tokens: HashMap::new(),
         }
     }
 
-    pub fn activity(&mut self, path: &str) -> Result<&mut ChangeIndex> {
+    pub fn activity(&mut self, path: &RepoPath) -> Result<&mut BTreeSet<activity::Change>> {
         Ok(self
-            .path_changes
+            .path_activity
             .entry(path.to_owned())
-            .or_insert(self.git.change_index(&RepoPath::from(path), self.mode)?))
+            .or_insert(BTreeSet::new()))
     }
 
     pub fn add_change(&mut self, change: &activity::Change) -> Result<()> {
@@ -484,17 +538,18 @@ impl Indexer {
             }
 
             let path = path.unwrap();
-            let index = self.activity(&path.inner)?;
-            index.add(change.to_owned());
-            prefixes.insert(path.prefix.to_owned());
+            let prefix = &path.prefix;
+            let set = self.activity(&path)?;
+            set.insert(change.to_owned());
+            prefixes.insert(prefix.to_owned());
         }
 
         for prefix in &prefixes {
-            let list = self
-                .prefix_changes
+            let set = self
+                .prefix_activity
                 .entry(prefix.to_owned())
-                .or_insert(Vec::new());
-            list.push(change.to_owned());
+                .or_insert(BTreeSet::new());
+            set.insert(change.to_owned());
         }
 
         Ok(())
@@ -574,12 +629,23 @@ impl Indexer {
             index.write()?;
         }
 
-        for index in self.path_changes.values() {
+        for (path, changes) in self.path_activity.iter() {
+            let mut index = self.git.change_index(path, self.mode)?;
+
+            for change in changes.iter() {
+                let reference = ChangeReference::new(&path.prefix, change);
+                index.add(reference.to_owned());
+
+                // Write the individual change to a /prefix/changes/ directory
+                self.git.save_change(&reference, change)?;
+            }
+
+            // Write the changes.yaml file of change references to the object directory
             index.write()?;
         }
 
-        match store.save(WIKI_REPO_PREFIX, &self.prefix_changes) {
-            Ok(_) => log::info!("changes saved to prefix key"),
+        match store.save(WIKI_REPO_PREFIX, &self.prefix_activity) {
+            Ok(_) => log::info!("changes saved to /wiki"),
             Err(err) => log::error!("problem saving changes to prefix key: {}", err),
         }
 

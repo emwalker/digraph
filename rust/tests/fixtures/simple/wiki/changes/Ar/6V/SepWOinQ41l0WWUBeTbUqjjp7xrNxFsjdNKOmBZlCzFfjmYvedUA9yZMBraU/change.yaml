@@ -1,0 +1,13 @@
+---
+kind: UpsertTopic
+actorId: "2"
+id: Ar6VSepWOinQ41l0WWUBeTbUqjjp7xrNxFsjdNKOmBZlCzFfjmYvedUA9yZMBraU
+date: "2022-07-16T03:52:51.327559564Z"
+parentTopic:
+  path: /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8
+  synonyms:
+    en: Root topic
+upsertedTopic:
+  path: /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj
+  synonyms:
+    en: Weather

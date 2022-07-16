@@ -1,15 +1,6 @@
 ---
-kind: ChangeIndexMap
+kind: ActivityIndexMap
 apiVersion: objects/v1
 changes:
-  - kind: UpsertLink
-    addParentTopic:
-      path: /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
-      synonyms:
-        en: Climate change and weather
-    actorId: "2"
-    date: "2022-07-15T22:18:14.053265081Z"
-    upsertedLink:
-      path: /wiki/3c2b7c32b8354560c6a88a8e94aef9644ae958d403f1a259981db7a12b758789
-      title: "Overview: Weather, Global Warming, and Climate Change"
-      url: "https://climate.nasa.gov/resources/global-warming-vs-climate-change/"
+  - path: /wiki/ZEtvrPEnfX09ju8IKWNj16nHNQcanWzavSI8NPWwCjzkEklorlxspoOldgXqMrWf
+    date: "2022-07-16T03:52:51.384451693Z"

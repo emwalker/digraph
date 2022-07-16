@@ -1,15 +1,6 @@
 ---
-kind: ChangeIndexMap
+kind: ActivityIndexMap
 apiVersion: objects/v1
 changes:
-  - kind: UpsertLink
-    addParentTopic:
-      path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
-      synonyms:
-        en: Climate change
-    actorId: "2"
-    date: "2022-07-15T22:18:13.997904751Z"
-    upsertedLink:
-      path: /wiki/24ef1a588aa8242ed43193766154fd5f05d343dcdcd3690dda097979363776f2
-      title: Climate change
-      url: "https://en.wikipedia.org/wiki/Climate_change"
+  - path: /wiki/CNfwG5nsFgI49CVa9OBRS1NtliFtJhmRc4l1qvA5w9wzP4MiuEFXkAe3QzVKKIcX
+    date: "2022-07-16T03:52:51.314466087Z"

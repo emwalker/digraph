@@ -1,3 +1,4 @@
+use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumString;
 
@@ -57,4 +58,12 @@ pub enum Locale {
     UA,
     UK,
     ZH,
+}
+
+pub fn random_id() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(64)
+        .map(char::from)
+        .collect()
 }

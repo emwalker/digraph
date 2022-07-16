@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 extern crate redis as redis_rs;
 extern crate strum;
 extern crate strum_macros;

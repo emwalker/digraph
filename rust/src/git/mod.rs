@@ -480,11 +480,15 @@ impl DataRoot {
         Self { root }
     }
 
-    pub fn change_index_filename(&self, path: &str) -> Result<PathBuf> {
-        Ok(self.object_basename(path)?.join("changes.yaml"))
+    pub fn change_filename(&self, path: &str) -> Result<PathBuf> {
+        Ok(self.basename("changes", path)?.join("change.yaml"))
     }
 
-    pub fn object_basename(&self, path: &str) -> Result<PathBuf> {
+    pub fn change_index_filename(&self, path: &str) -> Result<PathBuf> {
+        Ok(self.basename("objects", path)?.join("changes.yaml"))
+    }
+
+    pub fn basename(&self, subdirectory: &str, path: &str) -> Result<PathBuf> {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^(\w{2})(\w{2})([\w-]+)$").unwrap();
         }
@@ -509,13 +513,16 @@ impl DataRoot {
             _ => return Err(Error::Repo(format!("bad id: {}", path))),
         };
 
-        let basename = format!("{}/objects/{}/{}/{}", path.org_login, part1, part2, part3);
+        let basename = format!(
+            "{}/{}/{}/{}/{}",
+            path.org_login, subdirectory, part1, part2, part3
+        );
 
         Ok(self.root.join(basename))
     }
 
     pub fn object_filename(&self, path: &str) -> Result<PathBuf> {
-        Ok(self.object_basename(path)?.join("object.yaml"))
+        Ok(self.basename("objects", path)?.join("object.yaml"))
     }
 
     pub fn index_filename(&self, key: &IndexKey, index_type: IndexType) -> Result<PathBuf> {
@@ -608,13 +615,17 @@ impl Git {
         Self { root }
     }
 
-    pub fn change_index(&self, path: &RepoPath, index_mode: IndexMode) -> Result<ChangeIndex> {
+    pub fn change_index(&self, path: &RepoPath, index_mode: IndexMode) -> Result<ActivityIndex> {
         let filename = self.root.change_index_filename(&path.inner)?;
         match index_mode {
-            IndexMode::Replace => Ok(ChangeIndex::new(&filename)),
-            IndexMode::ReadOnly => ChangeIndex::load(&filename),
-            IndexMode::Update => ChangeIndex::load(&filename),
+            IndexMode::Replace => Ok(ActivityIndex::new(&filename)),
+            IndexMode::ReadOnly => ActivityIndex::load(&filename),
+            IndexMode::Update => ActivityIndex::load(&filename),
         }
+    }
+
+    pub fn change_filename(&self, path: &str) -> Result<PathBuf> {
+        self.root.change_filename(path)
     }
 
     pub fn exists(&self, path: &RepoPath) -> Result<bool> {
@@ -630,8 +641,19 @@ impl Git {
         Ok(object)
     }
 
-    pub fn fetch_activity(&self, path: &RepoPath) -> Result<ChangeIndex> {
-        self.change_index(path, IndexMode::ReadOnly)
+    pub fn fetch_activity(&self, path: &RepoPath, first: usize) -> Result<Vec<activity::Change>> {
+        let index = self.change_index(path, IndexMode::ReadOnly)?;
+        let mut changes = vec![];
+
+        for reference in index.references().iter().take(first) {
+            let filename = self.change_filename(&reference.path)?;
+            let fh = std::fs::File::open(&filename)
+                .map_err(|e| Error::Repo(format!("problem opening file {:?}: {}", filename, e)))?;
+            let change: activity::Change = serde_yaml::from_reader(fh)?;
+            changes.push(change);
+        }
+
+        Ok(changes)
     }
 
     pub fn fetch_topic(&self, path: &str) -> Result<Topic> {
@@ -722,13 +744,13 @@ impl Git {
         &self,
         filename: &PathBuf,
         index_mode: IndexMode,
-    ) -> Result<activity::ChangeIndexMap> {
+    ) -> Result<ActivityIndexMap> {
         let load = index_mode == IndexMode::Update || index_mode == IndexMode::ReadOnly;
         let activity = if load && filename.exists() {
             let fh = std::fs::File::open(&filename)?;
-            serde_yaml::from_reader::<_, activity::ChangeIndexMap>(fh)?
+            serde_yaml::from_reader::<_, ActivityIndexMap>(fh)?
         } else {
-            activity::ChangeIndexMap {
+            ActivityIndexMap {
                 api_version: API_VERSION.to_owned(),
                 ..Default::default()
             }
@@ -772,29 +794,34 @@ impl Git {
         Ok(())
     }
 
-    pub fn save_changes_file(
+    pub fn save_changes_index(
         &self,
+        prefix: &str,
         change: &activity::Change,
         indexer: &Indexer,
         filename: &PathBuf,
-        size: Option<usize>,
     ) -> Result<()> {
         let mut activity = self.load_activity(filename, indexer.mode)?;
-
-        if let Some(size) = size {
-            let changes = activity.changes.clone();
-            activity.changes.clear();
-            for existing in changes.iter().take(size.checked_sub(1).unwrap_or_default()) {
-                activity.changes.insert(existing.to_owned());
-            }
-            activity.changes.insert(change.to_owned());
-        } else {
-            activity.changes.insert(change.to_owned());
-        }
+        let reference = ChangeReference::new(prefix, change);
+        activity.changes.insert(reference);
 
         let dest = filename.parent().expect("expected a parent directory");
         fs::create_dir_all(&dest).ok();
         let s = serde_yaml::to_string(&activity)?;
+        log::debug!("saving {:?}", filename);
+        fs::write(&filename, s)?;
+        Ok(())
+    }
+
+    pub fn save_change(
+        &self,
+        reference: &ChangeReference,
+        change: &activity::Change,
+    ) -> Result<()> {
+        let filename = self.root.change_filename(&reference.path)?;
+        let dest = filename.parent().expect("expected a parent directory");
+        fs::create_dir_all(&dest).ok();
+        let s = serde_yaml::to_string(&change)?;
         log::debug!("saving {:?}", filename);
         fs::write(&filename, s)?;
         Ok(())
