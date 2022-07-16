@@ -1,5 +1,7 @@
 use async_graphql::*;
 
+use crate::types;
+
 #[derive(Clone, Copy, Debug, Enum, PartialEq, Eq)]
 pub enum AlertType {
     Success,
@@ -40,12 +42,12 @@ impl Alert {
     }
 }
 
-impl From<&crate::Alert> for Alert {
-    fn from(alert: &crate::Alert) -> Self {
+impl From<&types::Alert> for Alert {
+    fn from(alert: &types::Alert) -> Self {
         let (alert_type, text) = match alert {
-            crate::Alert::Danger(text) => (AlertType::Error, text),
-            crate::Alert::Success(text) => (AlertType::Success, text),
-            crate::Alert::Warning(text) => (AlertType::Warn, text),
+            types::Alert::Danger(text) => (AlertType::Error, text),
+            types::Alert::Success(text) => (AlertType::Success, text),
+            types::Alert::Warning(text) => (AlertType::Warn, text),
         };
 
         Alert {

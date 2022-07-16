@@ -383,23 +383,16 @@ impl SearchTokenIndex {
     }
 }
 
-#[derive(Clone, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct ChangePath {
-    #[serde(skip_serializing)]
-    prefix: String,
-    path: String,
-}
-
-impl std::fmt::Display for ChangePath {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.path)
-    }
-}
-
 #[derive(Clone, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ChangeReference {
     pub path: String,
     pub date: Timestamp,
+}
+
+impl std::fmt::Display for ChangeReference {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.path)
+    }
 }
 
 impl ChangeReference {

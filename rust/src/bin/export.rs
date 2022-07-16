@@ -10,10 +10,11 @@ use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
     activity, DataRoot, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Synonym,
-    Timerange, TimerangePrefixFormat, Topic, TopicChild, TopicMetadata, API_VERSION,
+    Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use digraph::prelude::*;
 use digraph::redis;
+use digraph::types::{Timerange, TimerangePrefixFormat};
 
 struct Opts {
     root: PathBuf,

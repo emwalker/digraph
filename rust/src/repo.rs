@@ -1,7 +1,5 @@
 use async_graphql::dataloader::*;
 use itertools::Itertools;
-use lazy_static::lazy_static;
-use regex::Regex;
 use sqlx::postgres::PgPool;
 use std::collections::BTreeSet;
 
@@ -11,84 +9,6 @@ use crate::http;
 use crate::prelude::*;
 use crate::psql;
 use crate::redis;
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct RepoPath {
-    pub inner: String,
-    pub org_login: String,
-    pub prefix: String,
-    pub short_id: String,
-    pub valid: bool,
-}
-
-impl std::fmt::Display for RepoPath {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
-    }
-}
-
-impl From<&String> for RepoPath {
-    fn from(input: &String) -> Self {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^(/([\w-]+))/([\w-]+)$").unwrap();
-        }
-
-        let cap = match RE.captures(input) {
-            Some(cap) => cap,
-            _ => return Self::invalid_path(input),
-        };
-
-        let (prefix, org_login, short_id) = match (cap.get(1), cap.get(2), cap.get(3)) {
-            (Some(prefix), Some(org_login), Some(short_id)) => {
-                (prefix.as_str(), org_login.as_str(), short_id.as_str())
-            }
-            _ => return Self::invalid_path(input),
-        };
-
-        RepoPath {
-            inner: input.to_string(),
-            org_login: org_login.to_string(),
-            prefix: prefix.to_string(),
-            short_id: short_id.to_string(),
-            valid: true,
-        }
-    }
-}
-
-impl From<&str> for RepoPath {
-    fn from(input: &str) -> Self {
-        Self::from(&input.to_string())
-    }
-}
-
-impl std::cmp::Ord for RepoPath {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.inner.cmp(&other.inner)
-    }
-}
-
-impl std::cmp::PartialOrd for RepoPath {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl RepoPath {
-    pub fn random(prefix: &String) -> Self {
-        let s: String = random_id();
-        Self::from(&format!("{}/{}", prefix, s))
-    }
-
-    fn invalid_path(input: &String) -> Self {
-        Self {
-            inner: input.clone(),
-            org_login: "wiki".into(),
-            prefix: "wiki".into(),
-            short_id: input.into(),
-            valid: false,
-        }
-    }
-}
 
 pub struct Repo {
     db: PgPool,
@@ -561,9 +481,9 @@ impl Repo {
     ) -> Result<git::UpsertTopicTimerangeResult> {
         git::UpsertTopicTimerange {
             actor: self.viewer.clone(),
-            timerange: git::Timerange {
+            timerange: Timerange {
                 starts: input.starts_at.0,
-                prefix_format: git::TimerangePrefixFormat::from(&input.prefix_format),
+                prefix_format: TimerangePrefixFormat::from(&input.prefix_format),
             },
             topic_path: RepoPath::from(&input.topic_path),
         }

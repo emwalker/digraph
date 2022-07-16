@@ -2,11 +2,13 @@ use async_graphql::connection::*;
 use itertools::Itertools;
 
 use super::{
-    relay::conn, ActivityLineItem, LinkConnection, Prefix, Repository, Synonym, Synonyms,
-    Timerange, TopicChildConnection,
+    relay::conn, ActivityLineItem, LinkConnection, Repository, Synonym, Synonyms,
+    TopicChildConnection,
 };
 use super::{ActivityLineItemConnection, LinkConnectionFields};
-use crate::repo::{Repo, RepoPath};
+use super::timerange;
+use crate::repo::Repo;
+use crate::types::Prefix;
 use crate::{git, prelude::*};
 
 #[derive(Debug, SimpleObject)]
@@ -29,7 +31,7 @@ pub struct Topic {
     pub prefix: Prefix,
     pub root: bool,
     pub synonyms: Synonyms,
-    pub timerange: Option<Timerange>,
+    pub timerange: Option<timerange::Timerange>,
 }
 
 pub type TopicEdge = Edge<String, Topic, EmptyFields>;
@@ -224,7 +226,7 @@ impl Topic {
         self.synonyms.into_iter().collect_vec()
     }
 
-    async fn timerange(&self) -> Option<Timerange> {
+    async fn timerange(&self) -> Option<timerange::Timerange> {
         self.timerange.clone()
     }
 

@@ -91,7 +91,7 @@ mod fetch_topic_live_search {
 #[cfg(test)]
 mod search_within_topic {
     use digraph::git::Git;
-    use digraph::DownSet;
+    use digraph::types::DownSet;
     use std::collections::HashSet;
 
     use super::*;

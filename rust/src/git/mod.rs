@@ -209,35 +209,6 @@ impl std::cmp::PartialOrd for Synonym {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Timerange {
-    pub starts: DateTime<Utc>,
-    pub prefix_format: TimerangePrefixFormat,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum TimerangePrefixFormat {
-    #[serde(alias = "none")]
-    None,
-    #[serde(alias = "startYear")]
-    StartYear,
-    #[serde(alias = "startYearMonth")]
-    StartYearMonth,
-}
-
-impl From<&str> for TimerangePrefixFormat {
-    fn from(format: &str) -> Self {
-        match format {
-            "NONE" => Self::None,
-            "START_YEAR" => Self::StartYear,
-            "START_YEAR_MONTH" => Self::StartYearMonth,
-            _ => Self::None,
-        }
-    }
-}
-
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicMetadata {
@@ -642,6 +613,7 @@ impl Git {
     }
 
     pub fn fetch_activity(&self, path: &RepoPath, first: usize) -> Result<Vec<activity::Change>> {
+        log::info!("fetching first {} change logs from Git for {}", first, path);
         let index = self.change_index(path, IndexMode::ReadOnly)?;
         let mut changes = vec![];
 

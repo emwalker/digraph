@@ -1,11 +1,10 @@
 use async_graphql::dataloader::*;
 use std::collections::HashMap;
 
-use super::{
-    DateTime, Link, Prefix, Synonym, SynonymInput, SynonymMatch, Synonyms, Timerange,
-    TimerangePrefixFormat, Topic, TopicChild,
-};
+use super::{Link, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChild};
+use super::timerange;
 use crate::git;
+use crate::types;
 use crate::prelude::*;
 
 impl From<&git::Link> for Link {
@@ -56,26 +55,6 @@ impl From<&SynonymInput> for git::Synonym {
     }
 }
 
-impl From<&git::TimerangePrefixFormat> for TimerangePrefixFormat {
-    fn from(format: &git::TimerangePrefixFormat) -> Self {
-        match format {
-            git::TimerangePrefixFormat::None => Self::None,
-            git::TimerangePrefixFormat::StartYear => Self::StartYear,
-            git::TimerangePrefixFormat::StartYearMonth => Self::StartYearMonth,
-        }
-    }
-}
-
-impl From<&git::Timerange> for Timerange {
-    fn from(timerange: &git::Timerange) -> Self {
-        Self {
-            ends_at: None,
-            starts_at: DateTime(timerange.starts),
-            prefix_format: TimerangePrefixFormat::from(&timerange.prefix_format),
-        }
-    }
-}
-
 impl From<&git::Topic> for Topic {
     fn from(topic: &git::Topic) -> Self {
         let meta = &topic.metadata;
@@ -92,8 +71,7 @@ impl From<&git::Topic> for Topic {
             .collect::<Vec<RepoPath>>();
 
         let synonyms = Synonyms::from(&meta.synonyms);
-        let timerange = meta.timerange.clone().map(|r| Timerange::from(&r));
-        let prefix = Prefix::from(&timerange);
+        let prefix = types::Prefix::from(&meta.timerange);
 
         Self {
             child_paths,
@@ -103,17 +81,7 @@ impl From<&git::Topic> for Topic {
             prefix,
             root: meta.root,
             synonyms,
-            timerange,
-        }
-    }
-}
-
-impl From<&TimerangePrefixFormat> for git::TimerangePrefixFormat {
-    fn from(prefix_format: &TimerangePrefixFormat) -> Self {
-        match prefix_format {
-            TimerangePrefixFormat::None => git::TimerangePrefixFormat::None,
-            TimerangePrefixFormat::StartYear => git::TimerangePrefixFormat::StartYear,
-            TimerangePrefixFormat::StartYearMonth => git::TimerangePrefixFormat::StartYearMonth,
+            timerange: meta.timerange.as_ref().map(timerange::Timerange::from),
         }
     }
 }

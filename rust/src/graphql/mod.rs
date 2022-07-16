@@ -151,7 +151,7 @@ impl State {
 
 #[Object]
 impl QueryRoot {
-    async fn alerts(&self) -> Vec<Alert> {
+    async fn alerts(&self) -> Vec<alert::Alert> {
         vec![]
     }
 

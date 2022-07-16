@@ -2,7 +2,7 @@ use async_graphql::SimpleObject;
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
 
-use super::timerange::Prefix;
+use crate::types::Prefix;
 
 #[derive(Deserialize, Serialize, sqlx::Type, Clone, Debug, PartialEq, Eq, Hash)]
 #[sqlx(transparent)]
@@ -66,7 +66,7 @@ impl Synonyms {
             .find(|s| s.locale == locale)
             .map(|s| s.name)
             .unwrap_or_else(|| default.to_owned());
-        prefix.display(&name)
+        prefix.format(&name)
     }
 }
 

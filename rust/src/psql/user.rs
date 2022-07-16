@@ -6,7 +6,6 @@ use std::collections::HashMap;
 use super::{CompleteRegistration, PgTransaction};
 use crate::graphql::{CreateGithubSessionInput, Viewer};
 use crate::prelude::*;
-use crate::Alert;
 
 pub const USER_FIELDS: &str = r#"
     u.id,

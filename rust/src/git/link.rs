@@ -7,7 +7,6 @@ use crate::git::{
 };
 use crate::http::{self, RepoUrl};
 use crate::prelude::*;
-use crate::Alert;
 
 use super::activity::TopicInfoList;
 

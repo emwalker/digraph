@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::{Git, Link, Locale, RepoPath, Synonym, Timerange, TimerangePrefixFormat, Topic};
 use crate::prelude::*;
+use crate::types::{random_id, Prefix};
 
 #[derive(Clone, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ChangeId(pub String);
@@ -890,11 +891,25 @@ mod markdown {
     impl Markdown for UpsertTopicTimerange {
         fn markdown(
             &self,
-            _locale: Locale,
+            locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
         ) -> String {
-            format!("{} updated the timerange on to TOPIC to be", actor_name)
+            let topic = self.updated_topic.markdown(locale);
+            let prefix = Prefix::from(&self.updated_timerange);
+
+            match prefix.prefix() {
+                Some(prefix) => {
+                    format!(
+                        r#"{} updated the time prefix for {} to be "{}""#,
+                        actor_name, topic, prefix
+                    )
+                }
+                None => format!(
+                    "{} updated the start time on to {}, but it will not be shown",
+                    topic, actor_name
+                ),
+            }
         }
     }
 }
@@ -1090,7 +1105,37 @@ mod tests {
 
         assert_eq!(
             change.markdown(Locale::EN, "Gnusto", None),
-            "Gnusto updated the timerange on to TOPIC to be".to_string()
+            format!(
+                r#"Gnusto updated the time prefix for [Climate change]({}) to be "1970""#,
+                topic1.metadata.path
+            )
+        );
+    }
+
+    #[test]
+    fn upsert_topic_timerange_links_to_parent_topics() {
+        use chrono::TimeZone;
+        let topic1 = topic("Climate change");
+        let date = Timerange {
+            starts: chrono::Utc.ymd(2022, 1, 1).and_hms(0, 0, 0),
+            prefix_format: TimerangePrefixFormat::StartYear,
+        };
+
+        let change = Change::UpsertTopicTimerange(UpsertTopicTimerange {
+            actor_id: "2".to_owned(),
+            date: chrono::Utc::now(),
+            id: Change::new_id(),
+            previous_timerange: None,
+            updated_timerange: date,
+            updated_topic: TopicInfo::from(&topic1),
+        });
+
+        assert_eq!(
+            change.markdown(Locale::EN, "Gnusto", None),
+            format!(
+                r#"Gnusto updated the time prefix for [Climate change]({}) to be "2022""#,
+                topic1.metadata.path,
+            ),
         );
     }
 

@@ -66,7 +66,8 @@ mod delete_topic {
 #[cfg(test)]
 mod delete_topic_timerange {
     use super::*;
-    use digraph::git::{RemoveTopicTimerange, Timerange, UpsertTopicTimerange};
+    use digraph::git::{RemoveTopicTimerange, UpsertTopicTimerange};
+    use digraph::types::{Timerange, TimerangePrefixFormat};
 
     #[test]
     fn timerange_deleted() {
@@ -76,7 +77,7 @@ mod delete_topic_timerange {
         UpsertTopicTimerange {
             actor: actor(),
             timerange: Timerange {
-                prefix_format: digraph::git::TimerangePrefixFormat::StartYearMonth,
+                prefix_format: TimerangePrefixFormat::StartYearMonth,
                 starts: chrono::Utc::now(),
             },
             topic_path: path.clone(),
@@ -103,7 +104,6 @@ mod delete_topic_timerange {
 mod upsert_topic {
     use super::*;
     use digraph::git::{OnMatchingSynonym, Search};
-    use digraph::Alert;
 
     #[test]
     fn topic_added() {
@@ -514,7 +514,8 @@ mod update_topic_synonyms {
 mod upsert_topic_timerange {
     use super::*;
 
-    use digraph::git::{Timerange, UpsertTopicTimerange};
+    use digraph::git::UpsertTopicTimerange;
+    use digraph::types::{Timerange, TimerangePrefixFormat};
 
     #[test]
     fn timerange_added() {
@@ -527,7 +528,7 @@ mod upsert_topic_timerange {
         UpsertTopicTimerange {
             actor: actor(),
             timerange: Timerange {
-                prefix_format: digraph::git::TimerangePrefixFormat::StartYearMonth,
+                prefix_format: TimerangePrefixFormat::StartYearMonth,
                 starts: chrono::Utc::now(),
             },
             topic_path: path.clone(),

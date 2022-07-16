@@ -2,8 +2,8 @@ use async_graphql::{Context, InputObject, Object, SimpleObject};
 use itertools::Itertools;
 
 use super::{
-    Alert, DateTime, Link, LinkEdge, Repository, Session, SessionEdge, Synonym, Timerange,
-    TimerangeEdge, TimerangePrefixFormat, Topic, TopicEdge, User, UserEdge,
+    alert, timerange, DateTime, Link, LinkEdge, Repository, Session, SessionEdge, Synonym,
+    TimerangeEdge, Topic, TopicEdge, User, UserEdge,
 };
 use crate::git;
 use crate::prelude::*;
@@ -22,7 +22,7 @@ pub struct CreateGithubSessionInput {
 
 #[derive(Debug, SimpleObject)]
 pub struct CreateSessionPayload {
-    alerts: Vec<Alert>,
+    alerts: Vec<alert::Alert>,
     user_edge: Option<UserEdge>,
     session_edge: Option<SessionEdge>,
 }
@@ -35,7 +35,7 @@ pub struct DeleteAccountInput {
 
 #[derive(Debug, SimpleObject)]
 pub struct DeleteAccountPayload {
-    alerts: Vec<Alert>,
+    alerts: Vec<alert::Alert>,
     client_mutation_id: Option<String>,
     deleted_user_id: ID,
 }
@@ -153,7 +153,7 @@ pub struct UpdateTopicSynonymsInput {
 
 #[derive(SimpleObject)]
 pub struct UpdateTopicSynonymsPayload {
-    alerts: Vec<Alert>,
+    alerts: Vec<alert::Alert>,
     client_mutation_id: Option<String>,
     topic: Option<Topic>,
 }
@@ -167,7 +167,7 @@ pub struct UpdateTopicParentTopicsInput {
 
 #[derive(SimpleObject)]
 pub struct UpdateTopicParentTopicsPayload {
-    alerts: Vec<Alert>,
+    alerts: Vec<alert::Alert>,
     topic: Topic,
 }
 
@@ -183,7 +183,7 @@ pub struct UpsertLinkInput {
 
 #[derive(SimpleObject)]
 pub struct UpsertLinkPayload {
-    alerts: Vec<Alert>,
+    alerts: Vec<alert::Alert>,
     link_edge: Option<LinkEdge>,
 }
 
@@ -199,7 +199,7 @@ pub struct UpsertTopicInput {
 
 #[derive(SimpleObject)]
 pub struct UpsertTopicPayload {
-    alerts: Vec<Alert>,
+    alerts: Vec<alert::Alert>,
     topic_edge: Option<TopicEdge>,
 }
 
@@ -209,12 +209,12 @@ pub struct UpsertTopicTimerangeInput {
     pub topic_path: String,
     pub starts_at: DateTime,
     pub ends_at: Option<DateTime>,
-    pub prefix_format: TimerangePrefixFormat,
+    pub prefix_format: timerange::TimerangePrefixFormat,
 }
 
 #[derive(SimpleObject)]
 pub struct UpsertTopicTimerangePayload {
-    alerts: Vec<Alert>,
+    alerts: Vec<alert::Alert>,
     timerange_edge: Option<TimerangeEdge>,
     topic: Topic,
 }
@@ -243,7 +243,7 @@ impl MutationRoot {
         );
 
         Ok(CreateSessionPayload {
-            alerts: result.alerts,
+            alerts: result.alerts.iter().map(alert::Alert::from).collect_vec(),
             user_edge: Some(UserEdge {
                 cursor: String::from("0"),
                 node: User::from(&result.user),
@@ -275,7 +275,7 @@ impl MutationRoot {
             .await?;
 
         Ok(DeleteAccountPayload {
-            alerts: alerts.iter().map(Alert::from).collect_vec(),
+            alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
             deleted_user_id: ID(deleted_user_id),
             client_mutation_id,
         })
@@ -428,7 +428,7 @@ impl MutationRoot {
             .await?;
 
         Ok(UpdateTopicParentTopicsPayload {
-            alerts: alerts.iter().map(Alert::from).collect_vec(),
+            alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
             topic: Topic::from(&topic),
         })
     }
@@ -445,7 +445,7 @@ impl MutationRoot {
             .await?;
 
         Ok(UpdateTopicSynonymsPayload {
-            alerts: alerts.iter().map(Alert::from).collect_vec(),
+            alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
             client_mutation_id,
             topic: Some(Topic::from(&topic)),
         })
@@ -463,7 +463,7 @@ impl MutationRoot {
             .map(|link| LinkEdge::new(String::from("0"), Link::from(link)));
 
         Ok(UpsertLinkPayload {
-            alerts: result.alerts.iter().map(Alert::from).collect_vec(),
+            alerts: result.alerts.iter().map(alert::Alert::from).collect_vec(),
             link_edge: edge,
         })
     }
@@ -481,7 +481,7 @@ impl MutationRoot {
             .map(|topic| TopicEdge::new(String::from("0"), Topic::from(topic)));
 
         Ok(UpsertTopicPayload {
-            alerts: result.alerts.iter().map(Alert::from).collect_vec(),
+            alerts: result.alerts.iter().map(alert::Alert::from).collect_vec(),
             topic_edge: edge,
         })
     }
@@ -501,11 +501,11 @@ impl MutationRoot {
             .await?;
 
         Ok(UpsertTopicTimerangePayload {
-            alerts: alerts.iter().map(Alert::from).collect_vec(),
+            alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
             topic: Topic::from(&topic),
             timerange_edge: Some(TimerangeEdge::new(
                 String::from("0"),
-                Timerange::from(&timerange),
+                timerange::Timerange::from(&timerange),
             )),
         })
     }

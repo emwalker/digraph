@@ -7,7 +7,7 @@ use strum_macros::EnumString;
 use super::{Git, Kind, Locale, Object, Phrase, SynonymEntry, Topic};
 use crate::prelude::*;
 use crate::redis;
-use crate::DownSet;
+use crate::types::DownSet;
 
 #[derive(
     Copy,

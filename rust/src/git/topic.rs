@@ -5,7 +5,6 @@ use super::{
     Synonym, SynonymEntry, SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use crate::prelude::*;
-use crate::Alert;
 
 pub struct DeleteTopic {
     pub actor: Viewer,

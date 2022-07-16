@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::git;
 use crate::prelude::*;
-use crate::DownSet;
+use crate::types::DownSet;
 
 pub struct Noop;
 
