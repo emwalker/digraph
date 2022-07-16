@@ -526,11 +526,6 @@ impl Indexer {
         let mut prefixes = HashSet::new();
 
         for path in change.paths() {
-            if path.is_none() {
-                continue;
-            }
-
-            let path = path.unwrap();
             let prefix = &path.prefix;
             let set = self.activity(&path)?;
             set.insert(change.to_owned());

@@ -1,0 +1,15 @@
+---
+kind: UpsertLink
+addParentTopic:
+  deleted: false
+  path: /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj
+  synonyms:
+    en: Weather
+actorId: "2"
+id: 7UrYZ5I6RQH6Xs4aBqUjwAAJQyc8lqIcvF4U7JkrDezrJbPDP4WRJ3yTKYlUU5Qc
+date: "2022-07-16T21:46:09.123279440Z"
+upsertedLink:
+  deleted: false
+  path: /wiki/74992432e0ab240ab3fabad30db4fc72145102167e8759816b4c84b5c4899433
+  title: Weather
+  url: "https://en.wikipedia.org/wiki/Weather"

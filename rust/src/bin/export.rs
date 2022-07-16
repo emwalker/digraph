@@ -252,14 +252,15 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                     child_topics.push(activity::TopicInfo::from((
                         Locale::EN,
                         name.to_owned(),
-                        Some(path),
+                        path,
                     )));
                 }
                 "Link" => {
                     child_links.push(activity::LinkInfo {
                         title: name.to_owned(),
                         url: url.to_owned(),
-                        path: Some(path),
+                        path,
+                        deleted: false,
                     });
                 }
                 _ => {}
@@ -271,7 +272,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             parents.push(activity::TopicInfo::from((
                 Locale::EN,
                 topic.name.to_owned(),
-                Some(topic.path.to_owned()),
+                topic.path.to_owned(),
             )));
         }
 
@@ -337,7 +338,7 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
             topics.insert(activity::TopicInfo::from((
                 Locale::EN,
                 topic.name.to_owned(),
-                Some(topic.path.to_owned()),
+                topic.path.to_owned(),
             )));
         }
 

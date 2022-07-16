@@ -32,6 +32,8 @@ impl DeleteLink {
         let mut indexer = Indexer::new(git, IndexMode::Update);
         let mut parent_topics = vec![];
 
+        git.mark_deleted(&self.link_path)?;
+
         for ParentTopic { path, .. } in &link.parent_topics {
             let mut parent = git.fetch_topic(path)?;
             parent.children.remove(&child);
@@ -52,10 +54,13 @@ impl DeleteLink {
     }
 
     fn change(&self, link: &Link, parent_topics: &Vec<Topic>, date: Timestamp) -> activity::Change {
+        let mut deleted_link = activity::LinkInfo::from(link);
+        deleted_link.deleted = true;
+
         activity::Change::DeleteLink(activity::DeleteLink {
             actor_id: self.actor.user_id.to_owned(),
             date,
-            deleted_link: activity::LinkInfo::from(link),
+            deleted_link,
             id: activity::Change::new_id(),
             parent_topics: activity::TopicInfoList::from(parent_topics),
         })

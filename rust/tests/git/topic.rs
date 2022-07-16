@@ -6,7 +6,10 @@ use std::collections::BTreeSet;
 #[cfg(test)]
 mod delete_topic {
     use super::*;
-    use digraph::git::{DeleteTopic, DeleteTopicResult};
+    use digraph::git::{
+        activity, DeleteTopic, DeleteTopicResult, OnMatchingSynonym, Topic, UpsertTopic,
+        UpsertTopicResult,
+    };
 
     #[test]
     fn topic_deleted() {
@@ -60,6 +63,57 @@ mod delete_topic {
         assert!(matches!(result, Err(Error::Repo(_))));
         let topic = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
         assert!(topic.metadata.root);
+    }
+
+    fn make_topic(f: &Fixtures, parent: &RepoPath, name: &str) -> Topic {
+        let path = RepoPath::from(
+            "/wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi",
+        );
+        let UpsertTopicResult { topic, .. } = UpsertTopic {
+            actor: actor(),
+            locale: Locale::EN,
+            name: name.to_owned(),
+            prefix: "/wiki".to_string(),
+            on_matching_synonym: OnMatchingSynonym::Update(path),
+            parent_topic: parent.to_owned(),
+        }
+        .call(&f.repo.git, &redis::Noop)
+        .unwrap();
+        topic.unwrap()
+    }
+
+    #[test]
+    fn change_entries_updated() {
+        let f = Fixtures::copy("simple");
+        let root = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
+
+        let climate_change = make_topic(&f, &root, "Climate change").path();
+        let activity = f.repo.git.fetch_activity(&climate_change, 1).unwrap();
+        assert!(!activity.is_empty());
+
+        DeleteTopic {
+            actor: actor(),
+            topic_path: climate_change.to_owned(),
+        }
+        .call(&f.repo.git, &redis::Noop)
+        .unwrap();
+
+        let activity = f.repo.git.fetch_activity(&climate_change, 100).unwrap();
+
+        let mut found = false;
+
+        for change in activity {
+            if let activity::Change::UpsertTopic(activity::UpsertTopic { upserted_topic, .. }) =
+                change
+            {
+                if upserted_topic.path == climate_change.inner {
+                    assert!(upserted_topic.deleted);
+                    found = true;
+                }
+            }
+        }
+
+        assert!(found);
     }
 }
 
@@ -516,7 +570,6 @@ mod upsert_topic_timerange {
 
     use digraph::git::UpsertTopicTimerange;
     use digraph::types::{Timerange, TimerangePrefixFormat};
-
 
     fn count(f: &Fixtures, name: &str) -> usize {
         f.repo

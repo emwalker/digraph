@@ -1,12 +1,8 @@
 Soon:
-* Displaying timerange prefixes
-* Indexing timerange prefixes
-* When a topic or link is deleted, go through existing logs and replace its path with None
 * Fix duplicate synonym bug
 * Restrict on org/repo prefix
-* Add limit to topic results (why did "Reading list" take such a long time?)
+* Add limit to topic results (why did "Reading list" take such a long time?; or figure out why Reading list can't be found in a search)
 * Switch to base62 hash for links and topics
-* Clean up history log
 
 Things that would be nice to eventually get to:
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
@@ -17,7 +13,9 @@ Things that would be nice to eventually get to:
 * Populate locale dropdown using a GraphQL field
 * Update [getting-started steps on Wiki](https://github.com/emwalker/digraph/wiki/Getting-started-with-development)
 * Switch the topic view to using search without descendents, and add a cursor for paging
+* Show synonyms rather than names in search results
 * Add paging
+* Clean up history log
 * Zero-copy search results
 * Move over to Primer React components
 * Revisit UI look and feel

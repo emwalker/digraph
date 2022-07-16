@@ -21,13 +21,15 @@ impl DeleteTopic {
     where
         S: SaveChangesForPrefix,
     {
-        let path = &self.topic_path;
+        let topic_path = &self.topic_path;
         let date = chrono::Utc::now();
-        let topic = git.fetch_topic(&path.inner)?;
+        let topic = git.fetch_topic(&topic_path.inner)?;
 
         if topic.metadata.root {
             return Err(Error::Repo("cannot delete root topic".to_owned()));
         }
+
+        git.mark_deleted(topic_path)?;
 
         let parent_topics = topic
             .parent_topics
@@ -47,7 +49,7 @@ impl DeleteTopic {
                 // The 'added' field is ignored
                 added: chrono::Utc::now(),
                 kind: Kind::Topic,
-                path: path.inner.to_owned(),
+                path: topic_path.inner.to_owned(),
             });
             git.save_topic(&parent.path(), &parent, &mut indexer)?;
             topics.push(parent.clone());
@@ -97,12 +99,15 @@ impl DeleteTopic {
         child_topics: &Vec<Topic>,
         date: Timestamp,
     ) -> activity::Change {
+        let mut deleted_topic = activity::TopicInfo::from(topic);
+        deleted_topic.deleted = true;
+
         activity::Change::DeleteTopic(activity::DeleteTopic {
             actor_id: self.actor.user_id.to_owned(),
             child_links: activity::LinkInfoList::from(child_links),
             child_topics: activity::TopicInfoList::from(child_topics),
             date,
-            deleted_topic: activity::TopicInfo::from(topic),
+            deleted_topic,
             id: activity::Change::new_id(),
             parent_topics: activity::TopicInfoList::from(parent_topics),
         })

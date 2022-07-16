@@ -1,0 +1,15 @@
+---
+kind: UpsertTopic
+actorId: "2"
+id: 8XAhYtdSm9fC20pHyekm2KUEAASS5SIrk89ArRqpFLg3jsxxhXATAkywszbVLZls
+date: "2022-07-16T21:46:09.075034194Z"
+parentTopic:
+  deleted: false
+  path: /wiki/df63295e-ee02-11e8-9e36-17d56b662bc8
+  synonyms:
+    en: Root topic
+upsertedTopic:
+  deleted: false
+  path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
+  synonyms:
+    en: Climate change

@@ -5,21 +5,23 @@ use super::{actor, fetch_link, fetch_topic, upsert_link, valid_url, Fixtures};
 
 mod delete_link {
     use super::*;
-    use digraph::git::{DeleteLink, UpsertLinkResult};
+    use digraph::git::{activity, DeleteLink, Link, UpsertLinkResult};
+
+    async fn link(f: &Fixtures, title: &str, parent_topic: &str) -> Link {
+        let url = valid_url();
+
+        let UpsertLinkResult { link, .. } =
+            upsert_link(&f, &url, Some(title.into()), Some(parent_topic.to_owned())).await;
+
+        link.unwrap()
+    }
 
     #[actix_web::test]
     async fn link_deleted() {
         let f = Fixtures::copy("simple");
-        let url = valid_url();
 
-        let UpsertLinkResult { link, .. } = upsert_link(
-            &f,
-            &url,
-            Some("Page title".into()),
-            Some("/wiki/00001".to_owned()),
-        )
-        .await;
-        let path = link.unwrap().path();
+        let link = link(&f, "Page title", "/wiki/00001").await;
+        let path = link.path();
         assert!(f.repo.exists(&path).unwrap());
 
         DeleteLink {
@@ -29,6 +31,39 @@ mod delete_link {
         .call(&f.repo.git, &redis::Noop)
         .unwrap();
         assert!(!f.repo.exists(&path).unwrap());
+    }
+
+    #[actix_web::test]
+    async fn activity_log_updated() {
+        let f = Fixtures::copy("simple");
+
+        let link = link(&f, "Page title", "/wiki/00001").await;
+        let path = link.path();
+
+        let activity = f.repo.git.fetch_activity(&path, 1).unwrap();
+        assert!(!activity.is_empty());
+
+        DeleteLink {
+            actor: actor(),
+            link_path: path.clone(),
+        }
+        .call(&f.repo.git, &redis::Noop)
+        .unwrap();
+
+        let activity = f.repo.git.fetch_activity(&path, 100).unwrap();
+        let mut found = false;
+
+        for change in activity {
+            if let activity::Change::UpsertLink(activity::UpsertLink { upserted_link, .. }) = change
+            {
+                if upserted_link.path == path.inner {
+                    assert!(upserted_link.deleted);
+                    found = true;
+                }
+            }
+        }
+
+        assert!(found);
     }
 }
 

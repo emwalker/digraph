@@ -1,0 +1,15 @@
+---
+kind: UpsertTopic
+actorId: "2"
+id: aKnZZLWLSntEPXjz24ThiAA3hpaBh4sAXMFvmY5G5ejBwI9zjzrw6tCkAOpnhN4z
+date: "2022-07-16T21:46:09.135939204Z"
+parentTopic:
+  deleted: false
+  path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
+  synonyms:
+    en: Climate change
+upsertedTopic:
+  deleted: false
+  path: /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
+  synonyms:
+    en: Climate change and weather

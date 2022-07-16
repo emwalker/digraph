@@ -36,7 +36,8 @@ impl From<&Vec<Synonym>> for SynonymList {
 
 #[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
 pub struct TopicInfo {
-    pub path: Option<String>,
+    pub deleted: bool,
+    pub path: String,
     pub synonyms: SynonymList,
 }
 
@@ -65,8 +66,14 @@ impl TopicInfo {
         "[missing topic]".to_owned()
     }
 
-    fn path(&self) -> Option<RepoPath> {
-        self.path.as_ref().map(RepoPath::from)
+    fn path(&self) -> RepoPath {
+        RepoPath::from(&self.path)
+    }
+
+    fn mark_deleted(&mut self, path: &String) {
+        if &self.path == path {
+            self.deleted = true;
+        }
     }
 }
 
@@ -83,16 +90,21 @@ impl From<&Topic> for TopicInfo {
 
         Self {
             synonyms: SynonymList(synonyms),
-            path: Some(topic.metadata.path.to_owned()),
+            path: topic.metadata.path.to_owned(),
+            deleted: false,
         }
     }
 }
 
-impl From<(Locale, String, Option<String>)> for TopicInfo {
-    fn from(info: (Locale, String, Option<String>)) -> Self {
+impl From<(Locale, String, String)> for TopicInfo {
+    fn from(info: (Locale, String, String)) -> Self {
         let (locale, name, path) = info;
         let synonyms = SynonymList(BTreeMap::from([(locale, name)]));
-        Self { synonyms, path }
+        Self {
+            synonyms,
+            path,
+            deleted: false,
+        }
     }
 }
 
@@ -125,9 +137,22 @@ impl From<&Vec<TopicInfo>> for TopicInfoList {
     }
 }
 
+impl TopicInfoList {
+    fn mark_deleted(&mut self, path: &String) {
+        let mut updated = BTreeSet::new();
+        for topic in &self.0 {
+            let mut topic = topic.to_owned();
+            topic.mark_deleted(path);
+            updated.insert(topic);
+        }
+        self.0 = updated;
+    }
+}
+
 #[derive(Clone, Deserialize, Serialize, Eq, Ord, PartialEq, PartialOrd)]
 pub struct LinkInfo {
-    pub path: Option<String>,
+    pub deleted: bool,
+    pub path: String,
     pub title: String,
     pub url: String,
 }
@@ -135,16 +160,23 @@ pub struct LinkInfo {
 impl From<&Link> for LinkInfo {
     fn from(link: &Link) -> Self {
         Self {
-            path: Some(link.metadata.path.to_owned()),
+            path: link.metadata.path.to_owned(),
             title: link.title().to_owned(),
             url: link.url().to_owned(),
+            deleted: false,
         }
     }
 }
 
 impl LinkInfo {
-    fn path(&self) -> Option<RepoPath> {
-        self.path.as_ref().map(RepoPath::from)
+    fn path(&self) -> RepoPath {
+        RepoPath::from(&self.path)
+    }
+
+    fn mark_deleted(&mut self, path: &String) {
+        if &self.path == path {
+            self.deleted = true;
+        }
     }
 }
 
@@ -174,6 +206,18 @@ impl From<&Vec<LinkInfo>> for LinkInfoList {
             set.insert(link.to_owned());
         }
         Self(set)
+    }
+}
+
+impl LinkInfoList {
+    fn mark_deleted(&mut self, path: &String) {
+        let mut updated = BTreeSet::new();
+        for link in &self.0 {
+            let mut link = link.to_owned();
+            link.mark_deleted(path);
+            updated.insert(link);
+        }
+        self.0 = updated;
     }
 }
 
@@ -276,7 +320,7 @@ impl Change {
         }
     }
 
-    pub fn paths(&self) -> Vec<Option<RepoPath>> {
+    pub fn paths(&self) -> Vec<RepoPath> {
         match self {
             Self::DeleteLink(inner) => inner.paths(),
             Self::DeleteTopic(inner) => inner.paths(),
@@ -289,6 +333,24 @@ impl Change {
             Self::UpsertLink(inner) => inner.paths(),
             Self::UpsertTopic(inner) => inner.paths(),
             Self::UpsertTopicTimerange(inner) => inner.paths(),
+        }
+    }
+
+    pub fn mark_deleted(&mut self, path: &RepoPath) {
+        let path = &path.inner.to_owned();
+
+        match self {
+            Self::DeleteLink(inner) => inner.remove_path(path),
+            Self::DeleteTopic(inner) => inner.remove_path(path),
+            Self::ImportLink(inner) => inner.mark_deleted(path),
+            Self::ImportTopic(inner) => inner.remove_path(path),
+            Self::RemoveTopicTimerange(inner) => inner.remove_path(path),
+            Self::UpdateLinkParentTopics(inner) => inner.remove_path(path),
+            Self::UpdateTopicParentTopics(inner) => inner.remove_path(path),
+            Self::UpdateTopicSynonyms(inner) => inner.remove_path(path),
+            Self::UpsertLink(inner) => inner.mark_deleted(path),
+            Self::UpsertTopic(inner) => inner.remove_path(path),
+            Self::UpsertTopicTimerange(inner) => inner.remove_path(path),
         }
     }
 }
@@ -304,12 +366,18 @@ pub struct DeleteLink {
 }
 
 impl DeleteLink {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         let mut paths = vec![self.deleted_link.path()];
         for topic in &self.parent_topics.0 {
             paths.push(topic.path());
         }
         paths
+    }
+
+    fn remove_path(&mut self, path: &String) {
+        self.parent_topics.mark_deleted(path);
+        // Keep a record of the path that was deleted
+        // self.deleted_link.remove_path(path);
     }
 }
 
@@ -326,7 +394,7 @@ pub struct DeleteTopic {
 }
 
 impl DeleteTopic {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         let mut paths = vec![self.deleted_topic.path()];
 
         for link in &self.child_links.0 {
@@ -343,6 +411,12 @@ impl DeleteTopic {
 
         paths
     }
+
+    fn remove_path(&mut self, path: &String) {
+        self.deleted_topic.mark_deleted(path);
+        self.child_links.mark_deleted(path);
+        self.parent_topics.mark_deleted(path);
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
@@ -356,12 +430,17 @@ pub struct ImportLink {
 }
 
 impl ImportLink {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         let mut paths = vec![self.imported_link.path()];
         for topic in &self.parent_topics.0 {
             paths.push(topic.path());
         }
         paths
+    }
+
+    fn mark_deleted(&mut self, path: &String) {
+        self.imported_link.mark_deleted(path);
+        self.parent_topics.mark_deleted(path);
     }
 }
 
@@ -378,7 +457,7 @@ pub struct ImportTopic {
 }
 
 impl ImportTopic {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         let mut paths = vec![self.imported_topic.path()];
 
         for link in &self.child_links.0 {
@@ -395,6 +474,13 @@ impl ImportTopic {
 
         paths
     }
+
+    fn remove_path(&mut self, path: &String) {
+        self.imported_topic.mark_deleted(path);
+        self.parent_topics.mark_deleted(path);
+        self.child_topics.mark_deleted(path);
+        self.child_links.mark_deleted(path);
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
@@ -410,8 +496,13 @@ pub struct RemoveTopicTimerange {
 }
 
 impl RemoveTopicTimerange {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         vec![self.updated_topic.path()]
+    }
+
+    fn remove_path(&mut self, path: &String) {
+        self.parent_topics.remove(path);
+        self.updated_topic.mark_deleted(path);
     }
 }
 
@@ -427,7 +518,7 @@ pub struct UpdateLinkParentTopics {
 }
 
 impl UpdateLinkParentTopics {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         let mut paths = vec![self.updated_link.path()];
 
         for topic in &self.added_parent_topics.0 {
@@ -439,6 +530,11 @@ impl UpdateLinkParentTopics {
         }
 
         paths
+    }
+
+    fn remove_path(&mut self, path: &String) {
+        self.added_parent_topics.mark_deleted(path);
+        self.removed_parent_topics.mark_deleted(path);
     }
 }
 
@@ -454,7 +550,7 @@ pub struct UpdateTopicParentTopics {
 }
 
 impl UpdateTopicParentTopics {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         let mut paths = vec![self.updated_topic.path()];
 
         for topic in &self.added_parent_topics.0 {
@@ -466,6 +562,12 @@ impl UpdateTopicParentTopics {
         }
 
         paths
+    }
+
+    fn remove_path(&mut self, path: &String) {
+        self.added_parent_topics.mark_deleted(path);
+        self.removed_parent_topics.mark_deleted(path);
+        self.updated_topic.mark_deleted(path);
     }
 }
 
@@ -482,8 +584,12 @@ pub struct UpdateTopicSynonyms {
 }
 
 impl UpdateTopicSynonyms {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         vec![self.updated_topic.path()]
+    }
+
+    fn remove_path(&mut self, path: &String) {
+        self.updated_topic.mark_deleted(path);
     }
 }
 
@@ -498,12 +604,20 @@ pub struct UpsertLink {
 }
 
 impl UpsertLink {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         let mut paths = vec![self.upserted_link.path()];
         if let Some(topic) = &self.add_parent_topic {
             paths.push(topic.path());
         }
         paths
+    }
+
+    fn mark_deleted(&mut self, path: &String) {
+        if let Some(topic) = &mut self.add_parent_topic {
+            topic.mark_deleted(path);
+        }
+
+        self.upserted_link.mark_deleted(path);
     }
 }
 
@@ -518,8 +632,13 @@ pub struct UpsertTopic {
 }
 
 impl UpsertTopic {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         vec![self.upserted_topic.path(), self.parent_topic.path()]
+    }
+
+    fn remove_path(&mut self, path: &String) {
+        self.parent_topic.mark_deleted(path);
+        self.upserted_topic.mark_deleted(path);
     }
 }
 
@@ -537,12 +656,18 @@ pub struct UpsertTopicTimerange {
 }
 
 impl UpsertTopicTimerange {
-    fn paths(&self) -> Vec<Option<RepoPath>> {
+    fn paths(&self) -> Vec<RepoPath> {
         let mut paths = vec![self.updated_topic.path()];
         for path in &self.parent_topics {
-            paths.push(Some(RepoPath::from(path)));
+            paths.push(RepoPath::from(path));
         }
         paths
+    }
+
+    fn remove_path(&mut self, path: &String) {
+        let parents = &mut self.parent_topics;
+        parents.remove(path);
+        self.updated_topic.mark_deleted(path);
     }
 }
 
@@ -555,15 +680,22 @@ mod markdown {
 
     impl LinkInfo {
         fn markdown(&self) -> String {
-            format!("[{}]({})", self.title, self.url)
+            if self.deleted {
+                // TODO: Add ~~strikethrough~~ markup once the JS client supports it
+                format!("[{}]({}) (deleted)", self.title, self.url)
+            } else {
+                format!("[{}]({})", self.title, self.url)
+            }
         }
     }
 
     impl TopicInfo {
         fn markdown(&self, locale: Locale) -> String {
-            match &self.path {
-                Some(path) => format!("[{}]({})", self.name(locale), path),
-                None => format!("{} (deleted)", self.name(locale)),
+            if self.deleted {
+                // TODO: Add ~~strikethrough~~ markup once the JS client supports it
+                format!(r#""{}" (deleted)"#, self.name(locale))
+            } else {
+                format!("[{}]({})", self.name(locale), self.path)
             }
         }
     }
@@ -973,9 +1105,10 @@ mod tests {
             date: chrono::Utc::now(),
             id: Change::new_id(),
             updated_link: LinkInfo {
+                deleted: false,
+                path: "some-path".to_owned(),
                 title: "Reddit".to_owned(),
                 url: "http://www.reddit.com".to_owned(),
-                path: Some("some-path".to_owned()),
             },
             added_parent_topics: TopicInfoList(BTreeSet::from([TopicInfo::from(&topic1)])),
             removed_parent_topics: TopicInfoList(BTreeSet::from([TopicInfo::from(&topic2)])),
@@ -1005,9 +1138,10 @@ mod tests {
             actor_id: "2".to_owned(),
             date: chrono::Utc::now(),
             deleted_link: LinkInfo {
+                deleted: false,
+                path: link.metadata.path.to_owned(),
                 title: link.metadata.title.to_owned(),
                 url: link.metadata.url,
-                path: Some(link.metadata.path),
             },
             id: Change::new_id(),
             parent_topics: TopicInfoList(BTreeSet::from([

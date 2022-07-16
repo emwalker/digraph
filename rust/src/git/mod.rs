@@ -799,6 +799,27 @@ impl Git {
         Ok(())
     }
 
+    pub fn mark_deleted(&self, path: &RepoPath) -> Result<()> {
+        let activity = self.fetch_activity(path, usize::MAX)?;
+
+        for mut change in activity {
+            let paths = change.paths();
+            let prefixes = paths
+                .iter()
+                .map(|path| path.prefix.to_owned())
+                .collect::<HashSet<String>>();
+
+            change.mark_deleted(path);
+
+            for prefix in prefixes {
+                let reference = ChangeReference::new(&prefix, &change);
+                self.save_change(&reference, &change)?;
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn save_changes_index(
         &self,
         prefix: &str,
