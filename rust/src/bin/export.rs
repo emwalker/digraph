@@ -10,7 +10,7 @@ use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
     activity, DataRoot, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Synonym,
-    Topic, TopicChild, TopicMetadata, API_VERSION,
+    Topic, TopicChild, TopicMetadata,
 };
 use digraph::prelude::*;
 use digraph::redis;

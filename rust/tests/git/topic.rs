@@ -517,6 +517,15 @@ mod upsert_topic_timerange {
     use digraph::git::UpsertTopicTimerange;
     use digraph::types::{Timerange, TimerangePrefixFormat};
 
+
+    fn count(f: &Fixtures, name: &str) -> usize {
+        f.repo
+            .git
+            .synonym_phrase_matches(&["/wiki"], name)
+            .unwrap()
+            .len()
+    }
+
     #[test]
     fn timerange_added() {
         let f = Fixtures::copy("simple");
@@ -538,5 +547,32 @@ mod upsert_topic_timerange {
 
         let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
         assert!(topic.metadata.timerange.is_some());
+    }
+
+    #[test]
+    fn synonym_indexes() {
+        use chrono::TimeZone;
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+        let date = chrono::Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
+
+        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        assert!(topic.metadata.timerange.is_none());
+
+        assert_eq!(count(&f, "A topic"), 1);
+        assert_eq!(count(&f, "1970 A topic"), 0);
+
+        UpsertTopicTimerange {
+            actor: actor(),
+            timerange: Timerange {
+                prefix_format: TimerangePrefixFormat::StartYear,
+                starts: date,
+            },
+            topic_path: path.to_owned(),
+        }
+        .call(&f.repo.git, &redis::Noop)
+        .unwrap();
+
+        assert_eq!(count(&f, "1970 A topic"), 1);
     }
 }

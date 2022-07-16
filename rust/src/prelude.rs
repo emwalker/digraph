@@ -7,6 +7,7 @@ pub use super::types::{
     Alert, Locale, RepoPath, Result, Timerange, TimerangePrefixFormat, Timestamp,
 };
 
+pub const API_VERSION: &str = "objects/v1";
 pub const DEFAULT_ORGANIZATION_NAME: &str = "system:default";
 pub const DEFAULT_REPOSITORY_NAME: &str = "system:default";
 pub const DEFAULT_ROOT_TOPIC_NAME: &str = "Everything";

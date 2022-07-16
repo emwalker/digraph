@@ -8,7 +8,6 @@ use super::{
 };
 use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::repo::Repo;
-use crate::types::Prefix;
 use crate::{git, prelude::*};
 
 #[derive(Debug, SimpleObject)]
@@ -28,7 +27,6 @@ pub struct Topic {
     pub path: RepoPath,
     pub name: String,
     pub parent_topic_paths: Vec<RepoPath>,
-    pub prefix: Prefix,
     pub root: bool,
     pub synonyms: Synonyms,
     pub timerange: Option<timerange::Timerange>,
@@ -105,8 +103,8 @@ impl Topic {
         None
     }
 
-    async fn display_name(&self) -> String {
-        self.synonyms.display_name("en", &self.name, &self.prefix)
+    async fn display_name(&self) -> &str {
+        &self.name
     }
 
     // TODO: rename to childLinks
@@ -162,7 +160,7 @@ impl Topic {
     }
 
     async fn name(&self) -> &str {
-        self.name.as_str()
+        &self.name
     }
 
     async fn newly_added(&self) -> bool {

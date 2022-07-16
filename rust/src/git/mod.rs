@@ -11,16 +11,16 @@ mod index;
 mod link;
 mod repository;
 mod search;
+pub mod testing;
 mod topic;
 
 use crate::prelude::*;
+use crate::types;
 pub use index::*;
 pub use link::*;
 pub use repository::*;
 pub use search::*;
 pub use topic::*;
-
-pub const API_VERSION: &str = "objects/v1";
 
 #[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum Kind {
@@ -189,6 +189,13 @@ pub struct Synonym {
     pub name: String,
 }
 
+impl std::hash::Hash for Synonym {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.locale.hash(state);
+        self.name.hash(state);
+    }
+}
+
 impl std::cmp::PartialEq for Synonym {
     fn eq(&self, other: &Self) -> bool {
         self.locale == other.locale && self.name == other.name
@@ -270,12 +277,34 @@ impl Topic {
         self.children.iter().any(|child| child.path == path.inner)
     }
 
-    pub fn name(&self, desired_locale: Locale) -> String {
-        self.metadata.name(desired_locale)
+    pub fn name(&self, locale: Locale) -> String {
+        self.prefix().format(&self.metadata.name(locale))
     }
 
     pub fn path(&self) -> RepoPath {
         RepoPath::from(&self.metadata.path)
+    }
+
+    fn prefix(&self) -> types::Prefix {
+        types::Prefix::from(&self.metadata.timerange)
+    }
+
+    pub fn prefixed_synonyms(&self) -> Vec<Synonym> {
+        let mut synonyms = vec![];
+        let prefix = self.prefix();
+        for Synonym {
+            added,
+            locale,
+            name,
+        } in &self.metadata.synonyms
+        {
+            synonyms.push(Synonym {
+                added: *added,
+                locale: *locale,
+                name: prefix.format(name),
+            })
+        }
+        synonyms
     }
 
     pub fn to_parent_topic(&self) -> ParentTopic {
@@ -983,6 +1012,7 @@ impl Git {
 
 #[cfg(test)]
 mod tests {
+    use super::testing::*;
     use super::*;
 
     #[test]
@@ -1066,5 +1096,18 @@ mod tests {
         assert_eq!(&a, &b);
 
         assert!(!set.insert(&b));
+    }
+
+    #[test]
+    fn topic_display_name() {
+        let date = unix_epoch();
+
+        let mut topic = topic("Climate change");
+        topic.metadata.timerange = Some(Timerange {
+            starts: date,
+            prefix_format: TimerangePrefixFormat::StartYear,
+        });
+
+        assert_eq!(topic.name(Locale::EN), "1970 Climate change");
     }
 }

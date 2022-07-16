@@ -707,20 +707,18 @@ impl Indexer {
 
         let before = match before {
             Some(before) => before
-                .metadata
-                .synonyms
+                .prefixed_synonyms()
                 .iter()
-                .map(|s| s.to_owned())
-                .collect::<BTreeSet<Synonym>>(),
-            None => BTreeSet::new(),
+                .cloned()
+                .collect::<HashSet<Synonym>>(),
+            None => HashSet::new(),
         };
 
         let after = after
-            .metadata
-            .synonyms
+            .prefixed_synonyms()
             .iter()
-            .map(|s| s.to_owned())
-            .collect::<BTreeSet<Synonym>>();
+            .cloned()
+            .collect::<HashSet<Synonym>>();
 
         self.synonym_indexes(
             &path.prefix,

@@ -5,7 +5,6 @@ use super::timerange;
 use super::{Link, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChild};
 use crate::git;
 use crate::prelude::*;
-use crate::types;
 
 impl From<&git::Link> for Link {
     fn from(link: &git::Link) -> Self {
@@ -69,16 +68,13 @@ impl From<&git::Topic> for Topic {
             .iter()
             .map(|p| RepoPath::from(&p.path))
             .collect::<Vec<RepoPath>>();
-
         let synonyms = Synonyms::from(&meta.synonyms);
-        let prefix = types::Prefix::from(&meta.timerange);
 
         Self {
             child_paths,
             path: RepoPath::from(&meta.path),
             parent_topic_paths,
             name: topic.name(Locale::EN),
-            prefix,
             root: meta.root,
             synonyms,
             timerange: meta.timerange.as_ref().map(timerange::Timerange::from),

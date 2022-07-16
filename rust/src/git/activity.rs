@@ -959,48 +959,9 @@ mod tests {
     use chrono::TimeZone;
     use std::collections::BTreeSet;
 
+    use super::super::testing::*;
     use super::*;
-    use crate::git::{
-        Link, LinkMetadata, Locale, ParentTopic, Synonym, Topic, TopicMetadata, API_VERSION,
-    };
-
-    fn topic(name: &str) -> Topic {
-        let added = chrono::Utc::now();
-        // Some unique path
-        let path = format!("/wiki/{}", name);
-        Topic {
-            api_version: API_VERSION.to_owned(),
-            metadata: TopicMetadata {
-                added,
-                path: path.to_owned(),
-                root: false,
-                timerange: None,
-                synonyms: Vec::from([Synonym {
-                    name: name.to_owned(),
-                    locale: Locale::EN,
-                    added,
-                }]),
-            },
-            parent_topics: BTreeSet::from([ParentTopic { path }]),
-            children: BTreeSet::new(),
-        }
-    }
-
-    fn link(title: &str, url: &str) -> Link {
-        let added = chrono::Utc::now();
-        Link {
-            api_version: API_VERSION.to_owned(),
-            metadata: LinkMetadata {
-                title: title.to_owned(),
-                url: url.to_owned(),
-                path: "/wiki/00002".to_owned(),
-                added,
-            },
-            parent_topics: BTreeSet::from([ParentTopic {
-                path: "/wiki/0001".to_owned(),
-            }]),
-        }
-    }
+    use crate::git::{Locale, Topic};
 
     #[test]
     fn update_link_parent_topics() {
