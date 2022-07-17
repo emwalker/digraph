@@ -29,7 +29,7 @@ impl Fixtures {
         let path = PathBuf::from(&tempdir.path());
         let root = DataRoot::new(path.clone());
         let git = Git::new(root);
-        let repo = Repository::new("/wiki", git);
+        let repo = Repository::new(&RepoPrefix::from("/wiki/"), git);
 
         Fixtures {
             _tempdir: tempdir,
@@ -61,7 +61,7 @@ impl Fixtures {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec!["/wiki".to_owned()],
+            prefixes: vec![RepoPrefix::from("/wiki/")],
             search: Search::parse(name).unwrap(),
             viewer: actor(),
         }
@@ -103,7 +103,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change".to_owned(),
-            prefix: "/wiki".to_string(),
+            prefix: RepoPrefix::from("/wiki/"),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root.clone(),
         }
@@ -127,7 +127,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Weather".to_owned(),
-            prefix: "/wiki".to_owned(),
+            prefix: RepoPrefix::from("/wiki/"),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root.clone(),
         }
@@ -151,7 +151,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change and weather".to_owned(),
-            prefix: "/wiki".to_string(),
+            prefix: RepoPrefix::from("/wiki/"),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: climate_change.clone(),
         }

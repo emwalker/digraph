@@ -11,8 +11,8 @@ pub struct Noop;
 impl git::SaveChangesForPrefix for Noop {
     fn save(
         &self,
-        _prefix: &str,
-        _changes: &HashMap<String, BTreeSet<git::activity::Change>>,
+        _prefix: &RepoPrefix,
+        _changes: &HashMap<RepoPrefix, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         // Do nothing
         Ok(())
@@ -101,8 +101,8 @@ impl Redis {
 impl git::SaveChangesForPrefix for Redis {
     fn save(
         &self,
-        prefix: &str,
-        prefix_changes: &HashMap<String, BTreeSet<git::activity::Change>>,
+        prefix: &RepoPrefix,
+        prefix_changes: &HashMap<RepoPrefix, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         let mut con = self.connection()?;
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
@@ -123,7 +123,7 @@ impl git::SaveChangesForPrefix for Redis {
 }
 
 impl git::activity::ActivityForPrefix for Redis {
-    fn fetch_activity(&self, prefix: &str, first: usize) -> Result<Vec<git::activity::Change>> {
+    fn fetch_activity(&self, prefix: &RepoPrefix, first: usize) -> Result<Vec<git::activity::Change>> {
         let key = Key(format!("activity:{}", prefix));
         log::info!("fetching activity for prefix {:?} from Redis", key);
         let mut con = self.connection()?;

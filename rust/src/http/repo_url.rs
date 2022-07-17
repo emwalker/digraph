@@ -79,8 +79,8 @@ impl RepoUrl {
         self.ends_with(".pdf")
     }
 
-    pub fn path(&self, prefix: &str) -> RepoPath {
-        RepoPath::from(&format!("{}/{}", prefix, self.sha256))
+    pub fn path(&self, prefix: &RepoPrefix) -> RepoPath {
+        RepoPath::from(&format!("{}{}", prefix, self.sha256))
     }
 }
 

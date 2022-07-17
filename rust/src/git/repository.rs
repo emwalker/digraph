@@ -3,13 +3,13 @@ use crate::prelude::*;
 
 pub struct Repository {
     pub git: Git,
-    pub prefix: String,
+    pub prefix: RepoPrefix,
 }
 
 impl Repository {
-    pub fn new(prefix: &str, git: Git) -> Self {
+    pub fn new(prefix: &RepoPrefix, git: Git) -> Self {
         Self {
-            prefix: prefix.to_string(),
+            prefix: prefix.to_owned(),
             git,
         }
     }

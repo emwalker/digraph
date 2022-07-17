@@ -68,7 +68,7 @@ async fn upsert_link(
         actor: actor(),
         add_parent_topic_path,
         fetcher: Box::new(Fetcher(html)),
-        prefix: "/wiki".into(),
+        prefix: RepoPrefix::from("/wiki/"),
         url: url.normalized.to_owned(),
         title,
     }
@@ -89,7 +89,7 @@ fn upsert_topic(
         locale: Locale::EN,
         name: name.into(),
         on_matching_synonym,
-        prefix: "/wiki".into(),
+        prefix: RepoPrefix::from("/wiki/"),
     }
     .call(&f.repo.git, &redis::Noop)
 }

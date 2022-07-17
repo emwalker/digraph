@@ -53,11 +53,54 @@ pub enum Locale {
     ZH,
 }
 
+#[derive(Clone, Debug)]
+#[allow(dead_code)]
+pub struct RepoPrefix {
+    inner: String,
+    valid: bool,
+}
+
+impl From<&str> for RepoPrefix {
+    fn from(prefix: &str) -> Self {
+        let valid = prefix.ends_with("/");
+        Self {
+            inner: prefix.to_owned(),
+            valid,
+        }
+    }
+}
+
+impl std::fmt::Display for RepoPrefix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.inner)
+    }
+}
+
+impl std::cmp::PartialEq for RepoPrefix {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
+}
+
+impl std::cmp::Eq for RepoPrefix {}
+
+impl std::hash::Hash for RepoPrefix {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.inner.hash(state);
+    }
+}
+
+impl RepoPrefix {
+    pub fn relative_path(&self) -> &str {
+        self.inner.trim_start_matches("/")
+    }
+}
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct RepoPath {
     pub inner: String,
     pub org_login: String,
-    pub prefix: String,
+    pub prefix: RepoPrefix,
     pub short_id: String,
     pub valid: bool,
 }
@@ -71,7 +114,7 @@ impl std::fmt::Display for RepoPath {
 impl From<&String> for RepoPath {
     fn from(input: &String) -> Self {
         lazy_static! {
-            static ref RE: Regex = Regex::new(r"^(/([\w-]+))/([\w-]+)$").unwrap();
+            static ref RE: Regex = Regex::new(r"^(/([\w-]+)/)([\w_-]+)$").unwrap();
         }
 
         let cap = match RE.captures(input) {
@@ -89,7 +132,7 @@ impl From<&String> for RepoPath {
         RepoPath {
             inner: input.to_string(),
             org_login: org_login.to_string(),
-            prefix: prefix.to_string(),
+            prefix: RepoPrefix::from(prefix),
             short_id: short_id.to_string(),
             valid: true,
         }
@@ -123,17 +166,17 @@ pub fn random_id() -> String {
 }
 
 impl RepoPath {
-    pub fn random(prefix: &String) -> Self {
+    pub fn make(prefix: &String) -> Self {
         let s: String = random_id();
-        Self::from(&format!("{}/{}", prefix, s))
+        Self::from(&format!("{}{}", prefix, s))
     }
 
     fn invalid_path(input: &String) -> Self {
         Self {
             inner: input.clone(),
-            org_login: "wiki".into(),
-            prefix: "wiki".into(),
-            short_id: input.into(),
+            org_login: "wiki".to_owned(),
+            prefix: RepoPrefix::from("/wiki/"),
+            short_id: "invalid-id".to_owned(),
             valid: false,
         }
     }
@@ -206,13 +249,13 @@ impl From<&str> for TimerangePrefixFormat {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum Prefix {
+pub enum TimerangePrefix {
     None(chrono::DateTime<chrono::Utc>),
     StartYear(chrono::DateTime<chrono::Utc>),
     StartYearMonth(chrono::DateTime<chrono::Utc>),
 }
 
-impl From<&Option<Timerange>> for Prefix {
+impl From<&Option<Timerange>> for TimerangePrefix {
     fn from(timerange: &Option<Timerange>) -> Self {
         match &timerange {
             Some(Timerange {
@@ -229,7 +272,7 @@ impl From<&Option<Timerange>> for Prefix {
     }
 }
 
-impl From<&Timerange> for Prefix {
+impl From<&Timerange> for TimerangePrefix {
     fn from(timerange: &Timerange) -> Self {
         let Timerange {
             starts,
@@ -243,8 +286,8 @@ impl From<&Timerange> for Prefix {
     }
 }
 
-impl Prefix {
-    pub fn new(prefix_format: Option<&str>, starts: Option<chrono::DateTime<chrono::Utc>>) -> Self {
+impl TimerangePrefix {
+    pub fn new(prefix_format: Option<&str>, starts: Option<Timestamp>) -> Self {
         match prefix_format {
             Some(format) => match starts {
                 Some(starts) => match format {
@@ -301,34 +344,75 @@ mod tests {
 
     #[test]
     fn none() {
-        let prefix = Prefix::new(None, None);
+        let prefix = TimerangePrefix::new(None, None);
         assert_eq!(prefix.format("a"), "a");
     }
 
     #[test]
     fn prefix_none() {
-        let prefix = Prefix::new(Some("NONE"), valid_date());
+        let prefix = TimerangePrefix::new(Some("NONE"), valid_date());
         assert_eq!(prefix.format("a"), "a");
     }
 
     #[test]
     fn start_year() {
-        let prefix = Prefix::new(Some("START_YEAR"), valid_date());
+        let prefix = TimerangePrefix::new(Some("START_YEAR"), valid_date());
         assert_eq!(prefix.format("a"), "2000 a");
     }
 
     #[test]
     fn start_year_month() {
-        let prefix = Prefix::new(Some("START_YEAR_MONTH"), valid_date());
+        let prefix = TimerangePrefix::new(Some("START_YEAR_MONTH"), valid_date());
         assert_eq!(prefix.format("a"), "2000-01 a");
     }
 
-    #[test]
-    fn test_repo_path_parts() {
-        let path = RepoPath::from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ");
-        assert_eq!(
-            path.parts().unwrap(),
-            ("q-", "ZZ", "meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
-        );
+    mod repo_path {
+        use super::*;
+
+        #[test]
+        fn simple_case() {
+            let path = RepoPath::from("/wiki/00001");
+            assert!(path.valid);
+            assert_eq!("/wiki/00001", path.inner);
+            assert_eq!(RepoPrefix::from("/wiki/"), path.prefix);
+            assert_eq!("wiki", path.org_login);
+            assert_eq!("00001", path.short_id);
+        }
+
+        #[test]
+        fn parts() {
+            let path = RepoPath::from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ");
+            assert_eq!(
+                path.parts().unwrap(),
+                ("q-", "ZZ", "meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
+            );
+        }
+    }
+
+    mod repo_prefix {
+        use super::*;
+
+        #[test]
+        fn prefix() {
+            let path = RepoPath::from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ");
+            assert_eq!(path.prefix, RepoPrefix::from("/wiki/"));
+        }
+
+        #[test]
+        fn equality() {
+            assert_eq!(RepoPrefix::from("/wiki/"), RepoPrefix::from("/wiki/"));
+        }
+
+        #[test]
+        fn relative_path() {
+            let prefix = RepoPrefix::from("/wiki/");
+            assert_eq!(prefix.relative_path(), "wiki/");
+        }
+
+        #[test]
+        fn display() {
+            let prefix = RepoPrefix::from("/wiki/");
+            assert_eq!(format!("{}", prefix), "/wiki/".to_owned());
+        }
     }
 }

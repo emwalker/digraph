@@ -396,12 +396,12 @@ impl std::fmt::Display for ChangeReference {
 }
 
 impl ChangeReference {
-    pub fn new(prefix: &str, change: &activity::Change) -> Self {
+    pub fn new(prefix: &RepoPrefix, change: &activity::Change) -> Self {
         let id = change.id();
 
         Self {
             date: change.date(),
-            path: format!("{}/{}", prefix, id.0),
+            path: format!("{}{}", prefix, id.0),
         }
     }
 }
@@ -480,15 +480,15 @@ impl Index for ActivityIndex {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct IndexKey {
-    pub prefix: String,
+    pub prefix: RepoPrefix,
     pub basename: String,
 }
 
 pub trait SaveChangesForPrefix {
     fn save(
         &self,
-        prefix: &str,
-        changes: &HashMap<String, BTreeSet<activity::Change>>,
+        prefix: &RepoPrefix,
+        changes: &HashMap<RepoPrefix, BTreeSet<activity::Change>>,
     ) -> Result<()>;
 }
 
@@ -499,7 +499,7 @@ pub struct Indexer {
     synonym_phrases: HashMap<IndexKey, SynonymIndex>,
     synonym_tokens: HashMap<IndexKey, SynonymIndex>,
     path_activity: HashMap<RepoPath, BTreeSet<activity::Change>>,
-    prefix_activity: HashMap<String, BTreeSet<activity::Change>>,
+    prefix_activity: HashMap<RepoPrefix, BTreeSet<activity::Change>>,
 }
 
 impl Indexer {
@@ -543,7 +543,7 @@ impl Indexer {
         Ok(())
     }
 
-    fn synonym_indexes<'s, S, F>(&mut self, prefix: &str, synonyms: S, f: F) -> Result<()>
+    fn synonym_indexes<'s, S, F>(&mut self, prefix: &RepoPrefix, synonyms: S, f: F) -> Result<()>
     where
         S: Iterator<Item = &'s Synonym>,
         F: Fn(&mut SynonymIndex, &Phrase, &String) -> Result<()>,
@@ -632,8 +632,8 @@ impl Indexer {
             index.write()?;
         }
 
-        match store.save(WIKI_REPO_PREFIX, &self.prefix_activity) {
-            Ok(_) => log::info!("changes saved to /wiki"),
+        match store.save(&RepoPrefix::from(WIKI_REPO_PREFIX), &self.prefix_activity) {
+            Ok(_) => log::info!("changes saved to {}", WIKI_REPO_PREFIX),
             Err(err) => log::error!("problem saving changes to prefix key: {}", err),
         }
 

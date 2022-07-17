@@ -175,7 +175,7 @@ pub struct UpsertLink {
     pub add_parent_topic_path: Option<RepoPath>,
     #[derivative(Debug = "ignore")]
     pub fetcher: Box<dyn http::Fetch + Send + Sync>,
-    pub prefix: String,
+    pub prefix: RepoPrefix,
     pub title: Option<String>,
     pub url: String,
 }

@@ -306,7 +306,7 @@ impl Repo {
         let git::SearchWithinTopicResult { matches, .. } = git::SearchWithinTopic {
             limit: 100,
             locale: Locale::EN,
-            prefixes: vec!["/wiki".to_owned()],
+            prefixes: vec![RepoPrefix::from("/wiki/")],
             recursive: true,
             search: git::Search::parse(&search_string)?,
             topic_path: parent_topic.path,
@@ -328,7 +328,7 @@ impl Repo {
         git::FetchTopicLiveSearch {
             limit: 10,
             viewer: self.viewer.to_owned(),
-            prefixes: vec!["/wiki".into()],
+            prefixes: vec![RepoPrefix::from("/wiki/")],
             search,
         }
         .call(&self.git)
@@ -428,7 +428,7 @@ impl Repo {
         git::UpsertLink {
             add_parent_topic_path,
             actor: self.viewer.clone(),
-            prefix: "/wiki".to_owned(),
+            prefix: RepoPrefix::from("/wiki/"),
             title: input.title,
             url: input.url,
             fetcher: Box::new(http::Fetcher),
@@ -469,7 +469,7 @@ impl Repo {
             locale: Locale::EN,
             name: input.name.to_owned(),
             on_matching_synonym: git::OnMatchingSynonym::Ask,
-            prefix: "/wiki".to_owned(),
+            prefix: RepoPrefix::from("/wiki/"),
             parent_topic: RepoPath::from(&input.parent_topic_path),
         }
         .call(&self.git, &self.redis)
@@ -497,20 +497,5 @@ impl Repo {
             .await?
             .map(|row| graphql::User::from(&row));
         Ok(user)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn simple_case() {
-        let path = RepoPath::from("/wiki/00001");
-        assert!(path.valid);
-        assert_eq!("/wiki/00001", path.inner);
-        assert_eq!("/wiki", path.prefix);
-        assert_eq!("wiki", path.org_login);
-        assert_eq!("00001", path.short_id);
     }
 }

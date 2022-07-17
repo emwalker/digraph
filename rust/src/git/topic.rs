@@ -357,7 +357,7 @@ pub struct UpsertTopic {
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
     pub parent_topic: RepoPath,
-    pub prefix: String,
+    pub prefix: RepoPrefix,
 }
 
 pub struct UpsertTopicResult {
@@ -488,7 +488,7 @@ impl UpsertTopic {
 
     fn make_topic(&self, parent: &Topic) -> (RepoPath, Topic) {
         let added = chrono::Utc::now();
-        let path = RepoPath::random(&self.prefix);
+        let path = RepoPath::make(&self.prefix.to_string());
 
         let topic = Topic {
             api_version: API_VERSION.into(),

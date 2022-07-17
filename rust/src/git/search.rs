@@ -119,7 +119,7 @@ impl Search {
 
 pub struct FetchTopicLiveSearch {
     pub limit: usize,
-    pub prefixes: Vec<String>,
+    pub prefixes: Vec<RepoPrefix>,
     pub search: Search,
     pub viewer: Viewer,
 }
@@ -153,7 +153,7 @@ impl FetchTopicLiveSearch {
         matches
     }
 
-    fn fetch_prefix(&self, git: &Git, prefix: &str, matches: &mut BTreeSet<SynonymEntry>) {
+    fn fetch_prefix(&self, git: &Git, prefix: &RepoPrefix, matches: &mut BTreeSet<SynonymEntry>) {
         let tokens = &mut self.search.tokens.iter();
         let start = match tokens.next() {
             Some(token) => git.synonym_token_prefix_matches(prefix, token),
@@ -230,7 +230,7 @@ impl DownSet for RedisFetchDownSet {
 pub struct SearchWithinTopic {
     pub limit: usize,
     pub locale: Locale,
-    pub prefixes: Vec<String>,
+    pub prefixes: Vec<RepoPrefix>,
     pub recursive: bool,
     pub search: Search,
     pub topic_path: RepoPath,

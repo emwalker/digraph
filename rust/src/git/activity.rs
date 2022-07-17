@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::{Git, Link, Locale, RepoPath, Synonym, Topic};
 use crate::prelude::*;
-use crate::types::{random_id, Prefix};
+use crate::types::{random_id, TimerangePrefix};
 
 #[derive(Clone, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ChangeId(pub String);
@@ -901,7 +901,7 @@ mod markdown {
 
             match &self.previous_timerange {
                 Some(timerange) => {
-                    let prefix = Prefix::from(timerange);
+                    let prefix = TimerangePrefix::from(timerange);
                     match prefix.prefix() {
                         Some(prefix) => {
                             format!(
@@ -1034,7 +1034,7 @@ mod markdown {
             _context: Option<&RepoPath>,
         ) -> String {
             let topic = self.updated_topic.markdown(locale);
-            let prefix = Prefix::from(&self.updated_timerange);
+            let prefix = TimerangePrefix::from(&self.updated_timerange);
 
             match prefix.prefix() {
                 Some(prefix) => {
@@ -1065,7 +1065,7 @@ pub struct FetchActivityResult {
 }
 
 pub trait ActivityForPrefix {
-    fn fetch_activity(&self, prefix: &str, first: usize) -> Result<Vec<Change>>;
+    fn fetch_activity(&self, prefix: &RepoPrefix, first: usize) -> Result<Vec<Change>>;
 }
 
 impl FetchActivity {
@@ -1079,7 +1079,7 @@ impl FetchActivity {
             // Fetch the top-level activity feed from Redis rather than Git so as to avoid
             // write contention on a single file for every update.  This could show up in the form
             // of merge conflicts when commits are being saved to Git.
-            None => fetch.fetch_activity(WIKI_REPO_PREFIX, self.first)?,
+            None => fetch.fetch_activity(&RepoPrefix::from(WIKI_REPO_PREFIX), self.first)?,
         };
 
         Ok(FetchActivityResult { changes })

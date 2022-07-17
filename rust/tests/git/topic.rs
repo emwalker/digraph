@@ -73,7 +73,7 @@ mod delete_topic {
             actor: actor(),
             locale: Locale::EN,
             name: name.to_owned(),
-            prefix: "/wiki".to_string(),
+            prefix: RepoPrefix::from("/wiki/"),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: parent.to_owned(),
         }
@@ -223,7 +223,7 @@ mod upsert_topic {
         )
         .unwrap();
         assert!(result.saved);
-        let path = RepoPath::from(&result.topic.unwrap().metadata.path);
+        let path = result.topic.unwrap().path();
 
         let result = upsert_topic(
             &f,
@@ -278,7 +278,7 @@ mod upsert_topic {
         let matches = f
             .repo
             .git
-            .synonym_phrase_matches(&["/wiki"], "Topic name")
+            .synonym_phrase_matches(&[&RepoPrefix::from("/wiki/")], "Topic name")
             .unwrap();
         let mut names = matches
             .iter()
@@ -436,7 +436,7 @@ mod update_topic_synonyms {
     fn count(f: &Fixtures, name: &str) -> usize {
         f.repo
             .git
-            .synonym_phrase_matches(&["/wiki"], name)
+            .synonym_phrase_matches(&[&RepoPrefix::from("/wiki/")], name)
             .unwrap()
             .len()
     }
@@ -574,7 +574,7 @@ mod upsert_topic_timerange {
     fn count(f: &Fixtures, name: &str) -> usize {
         f.repo
             .git
-            .synonym_phrase_matches(&["/wiki"], name)
+            .synonym_phrase_matches(&[&RepoPrefix::from("/wiki/")], name)
             .unwrap()
             .len()
     }

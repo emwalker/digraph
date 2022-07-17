@@ -2,7 +2,7 @@ use async_graphql::SimpleObject;
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
 
-use crate::types::Prefix;
+use crate::types::TimerangePrefix;
 
 #[derive(Deserialize, Serialize, sqlx::Type, Clone, Debug, PartialEq, Eq, Hash)]
 #[sqlx(transparent)]
@@ -60,7 +60,7 @@ impl Synonyms {
         serde_json::from_str(input).map(Self)
     }
 
-    pub fn display_name(&self, locale: &str, default: &str, prefix: &Prefix) -> String {
+    pub fn display_name(&self, locale: &str, default: &str, prefix: &TimerangePrefix) -> String {
         let name = self
             .into_iter()
             .find(|s| s.locale == locale)
@@ -92,7 +92,7 @@ mod tests {
     fn simple_display_name() {
         let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
-        assert_eq!(syn.display_name("en", "c", &Prefix::new(None, None)), "a");
+        assert_eq!(syn.display_name("en", "c", &TimerangePrefix::new(None, None)), "a");
     }
 
     #[test]
@@ -103,7 +103,7 @@ mod tests {
             syn.display_name(
                 "en",
                 "c",
-                &Prefix::new(Some("START_YEAR_MONTH"), valid_date())
+                &TimerangePrefix::new(Some("START_YEAR_MONTH"), valid_date())
             ),
             "2000-01 a"
         );
@@ -114,7 +114,7 @@ mod tests {
         let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(
-            syn.display_name("en", "c", &Prefix::new(Some("START_YEAR"), valid_date())),
+            syn.display_name("en", "c", &TimerangePrefix::new(Some("START_YEAR"), valid_date())),
             "2000 a"
         );
     }

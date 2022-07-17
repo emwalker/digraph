@@ -23,7 +23,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec!["/wiki".to_owned()],
+            prefixes: vec![RepoPrefix::from("/wiki/")],
             search: Search::parse("existing non-root topic").unwrap(),
             viewer: actor(),
         }
@@ -50,7 +50,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec!["/wiki".to_owned()],
+            prefixes: vec![RepoPrefix::from("/wiki/")],
             search: search.clone(),
             viewer: actor(),
         }
@@ -72,7 +72,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec!["/wiki".to_owned()],
+            prefixes: vec![RepoPrefix::from("/wiki/")],
             search,
             viewer: actor(),
         }
@@ -149,7 +149,7 @@ mod search_within_topic {
         let SearchWithinTopicResult { matches } = SearchWithinTopic {
             limit: 100,
             locale: Locale::EN,
-            prefixes: vec!["/wiki".to_owned()],
+            prefixes: vec![RepoPrefix::from("/wiki/")],
             recursive,
             search,
             topic_path: topic_path.to_owned(),

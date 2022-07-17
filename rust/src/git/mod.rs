@@ -285,8 +285,8 @@ impl Topic {
         RepoPath::from(&self.metadata.path)
     }
 
-    fn prefix(&self) -> types::Prefix {
-        types::Prefix::from(&self.metadata.timerange)
+    fn prefix(&self) -> types::TimerangePrefix {
+        types::TimerangePrefix::from(&self.metadata.timerange)
     }
 
     pub fn prefixed_synonyms(&self) -> Vec<Synonym> {
@@ -505,14 +505,15 @@ impl DataRoot {
     }
 
     pub fn index_filename(&self, key: &IndexKey, index_type: IndexType) -> Result<PathBuf> {
-        let prefix = &key.prefix[1..];
+        let prefix = &key.prefix.relative_path();
+
         let file_path = match index_type {
-            IndexType::Search => format!("{}/indexes/search/{}.yaml", prefix, key.basename),
+            IndexType::Search => format!("{}indexes/search/{}.yaml", prefix, key.basename),
             IndexType::SynonymPhrase => {
-                format!("{}/indexes/synonyms/phrases/{}.yaml", prefix, key.basename)
+                format!("{}indexes/synonyms/phrases/{}.yaml", prefix, key.basename)
             }
             IndexType::SynonymToken => {
-                format!("{}/indexes/synonyms/tokens/{}.yaml", prefix, key.basename)
+                format!("{}indexes/synonyms/tokens/{}.yaml", prefix, key.basename)
             }
         };
         Ok(self.root.join(file_path))
@@ -676,7 +677,7 @@ impl Git {
     // The value of `token` will sometimes need to be normalized by the caller in order for lookups
     // to work as expected.  We do not normalize the token here because some searches, e.g.,
     // of urls, are more sensitive to normalization, and so we omit it in those cases.
-    pub fn index_key(&self, prefix: &str, token: &Phrase) -> Result<IndexKey> {
+    pub fn index_key(&self, prefix: &RepoPrefix, token: &Phrase) -> Result<IndexKey> {
         if !token.is_valid() {
             return Err(Error::Repo(format!("a valid token is required: {}", token)));
         }
@@ -786,7 +787,7 @@ impl Git {
             let prefixes = paths
                 .iter()
                 .map(|path| path.prefix.to_owned())
-                .collect::<HashSet<String>>();
+                .collect::<HashSet<RepoPrefix>>();
 
             change.mark_deleted(path);
 
@@ -801,7 +802,7 @@ impl Git {
 
     pub fn save_changes_index(
         &self,
-        prefix: &str,
+        prefix: &RepoPrefix,
         change: &activity::Change,
         indexer: &Indexer,
         filename: &PathBuf,
@@ -879,7 +880,7 @@ impl Git {
     // alludes to the prefix scan that is done to find matching synonyms.
     pub fn search_token_prefix_matches(
         &self,
-        prefix: &str,
+        prefix: &RepoPrefix,
         token: &Phrase,
     ) -> HashSet<SearchEntry> {
         match self.index_key(prefix, token) {
@@ -913,7 +914,7 @@ impl Git {
 
     pub fn synonym_phrase_matches(
         &self,
-        prefixes: &[&str],
+        prefixes: &[&RepoPrefix],
         name: &str,
     ) -> Result<BTreeSet<SynonymMatch>> {
         let phrase = Phrase::parse(name);
@@ -942,7 +943,7 @@ impl Git {
     // alludes to the prefix scan that is done to find matching synonyms.
     pub fn synonym_token_prefix_matches(
         &self,
-        prefix: &str,
+        prefix: &RepoPrefix,
         token: &Phrase,
     ) -> BTreeSet<SynonymEntry> {
         match self.index_key(prefix, token) {

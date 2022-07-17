@@ -1,5 +1,4 @@
 Before switchover:
-* Update prefix so that it will work in prefix scans without resulting in incorrect matches (e.g., add a trailing "/")
 * Restrict on org/repo prefix
 * Add limit to topic results (why did "Reading list" take such a long time?; or figure out why Reading list can't be found in a search)
 * Fix duplicate synonym bug
