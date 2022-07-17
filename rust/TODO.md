@@ -1,4 +1,5 @@
-Soon:
+Before switchover:
+* Update prefix so that it will work in prefix scans without resulting in incorrect matches (e.g., add a trailing "/")
 * Restrict on org/repo prefix
 * Add limit to topic results (why did "Reading list" take such a long time?; or figure out why Reading list can't be found in a search)
 * Fix duplicate synonym bug
@@ -6,8 +7,25 @@ Soon:
 * Take another look at the relationship between root topics and repositories (probably add a string field for the
   root topic path)
 * Fix glitch after updating synonyms
+* Double-check that URL searches work (including normalization)
+* Migration to add a root_topic_path to the repo table and fill it in
+* Sort out logistics of merging branch and deploying
+* Migration to create read_prefixes and write_prefixes array columns on user
+* Make search work across all prefixes
+* Migration to drop topics and links tables and dependent relations
+* Migration to fill in the public/private logic with a public/private boolean?
+* Create repos on user signup
+* Delete repos when user asks for account to be dropped
+* 128 bit timestamp class
+* Run migration to create array columns
+* Current snapshot of database
+* Export people's repos
+* Figure out how to upload the repos
+* Figure out how to download a repo
+* Run migration to drop topics and links table
+* Make the switchover live
 
-Things that would be nice to eventually get to:
+Later:
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
 * Figure out how to display the same change in different contexts -- e.g., a topic is deleted, and its contents merged into the parent topics.  What does the change look like in each change history?
 * Figure out how to make history entries outlive the topic and links when they're deleted.  I think this means denormalizing title, url and synonym info in the changes themeslves, mabye with one level of indirection? Or maybe it means putting a marker on the deleted item to indicate that it's deleted rather than actually deleting it.  Maybe change "delete" to "remove" in the UI if this approach ends up being used.  There's also the problem of historical names and titles that change.
