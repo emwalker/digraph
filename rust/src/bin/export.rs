@@ -14,10 +14,23 @@ use digraph::git::{
 };
 use digraph::prelude::*;
 use digraph::redis;
-use digraph::types::{Timerange, TimerangePrefixFormat};
+use digraph::types::{sha256_base64, Timerange, TimerangePrefixFormat};
 
 struct Opts {
     root: PathBuf,
+}
+
+fn sha256_path(login: &str, id: &str, root: bool) -> RepoPath {
+    // Leave the root id unhashed until the relationship between repositories and root topics is
+    // revisited.
+    let id = if root {
+        id.to_owned()
+    } else {
+        sha256_base64(id)
+    };
+
+    let path = format!("/{}/{}", login, id);
+    RepoPath::from(&path)
 }
 
 fn parse_args() -> Opts {
@@ -68,32 +81,34 @@ impl From<&SynonymRow> for Synonym {
 #[derive(FromRow)]
 struct TopicMetadataRow {
     added: DateTime<Utc>,
-    path: String,
+    id: String,
+    login: String,
     name: String,
     root: bool,
     synonyms: serde_json::Value,
-    timerange_starts: Option<DateTime<Utc>>,
     timerange_prefix_format: Option<String>,
+    timerange_starts: Option<DateTime<Utc>>,
 }
 
 #[derive(Clone, FromRow)]
 struct ParentTopicRow {
-    path: String,
+    id: String,
+    login: String,
     name: String,
+    root: bool,
 }
 
 impl From<&ParentTopicRow> for ParentTopic {
     fn from(row: &ParentTopicRow) -> Self {
-        Self {
-            path: row.path.clone(),
-        }
+        let path = sha256_path(&row.login, &row.id, row.root);
+        Self { path: path.inner }
     }
 }
 
 #[derive(Clone, FromRow)]
 struct LinkMetadataRow {
     added: DateTime<Utc>,
-    path: String,
+    login: String,
     link_id: String,
     title: String,
     url: String,
@@ -101,9 +116,10 @@ struct LinkMetadataRow {
 
 impl From<&LinkMetadataRow> for LinkMetadata {
     fn from(row: &LinkMetadataRow) -> Self {
+        let path = sha256_path(&row.login, &row.link_id, false);
         Self {
             added: row.added,
-            path: row.path.clone(),
+            path: path.inner,
             title: row.title.clone(),
             url: row.url.clone(),
         }
@@ -114,18 +130,21 @@ impl From<&LinkMetadataRow> for LinkMetadata {
 #[serde(rename_all = "camelCase")]
 struct TopicChildRow {
     added: DateTime<Utc>,
+    id: String,
     kind: String,
-    path: String,
+    login: String,
     name: String,
+    root: bool,
     url: String,
 }
 
 impl From<&TopicChildRow> for TopicChild {
     fn from(row: &TopicChildRow) -> Self {
+        let path = sha256_path(&row.login, &row.id, row.root);
         Self {
             added: row.added,
             kind: Kind::from(&row.kind).unwrap(),
-            path: row.path.clone(),
+            path: path.inner,
         }
     }
 }
@@ -136,7 +155,8 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
     let rows = sqlx::query_as::<_, TopicMetadataRow>(
         r#"select
             t.name,
-            concat('/', o.login, '/', t.id) path,
+            o.login,
+            t.id::varchar,
             t.synonyms,
             t.created_at added,
             t.root,
@@ -151,11 +171,14 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
     .await?;
 
     for meta in &rows {
-        let topic_path = RepoPath::from(&meta.path);
+        let topic_path = sha256_path(&meta.login, &meta.id, meta.root);
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
-                concat('/', o.login, '/', tt.parent_id) path,
-                t.name
+                o.login,
+                tt.parent_id::varchar id,
+                t.name,
+                t.root
+
             from topic_topics tt
             join topics t on t.id = tt.parent_id
             join organizations o on o.id = t.organization_id
@@ -163,7 +186,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             where tt.child_id = $1::uuid
             order by t.name"#,
         )
-        .bind(&topic_path.short_id)
+        .bind(&meta.id)
         .fetch_all(pool)
         .await?;
 
@@ -172,9 +195,12 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                 select
                     t.created_at added,
                     'Topic' kind,
-                    concat('/', o.login, '/', tt.child_id) path,
+                    o.login,
+                    t.id::varchar,
                     t.name,
-                    'url' as url
+                    'url' as url,
+                    t.root
+
                 from topic_topics tt
                 join topics t on t.id = tt.child_id
                 join organizations o on o.id = t.organization_id
@@ -188,9 +214,12 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                 select
                     l.created_at added,
                     'Link' kind,
-                    concat('/', o.login, '/', encode(digest(l.id::varchar, 'sha256'), 'hex')) path,
+                    o.login,
+                    l.id::varchar,
                     l.title as name,
-                    l.url
+                    l.url,
+                    false root
+
                 from link_topics tt
                 join links l on l.id = tt.child_id
                 join organizations o on o.id = l.organization_id
@@ -198,7 +227,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                 order by l.created_at desc
             )"#,
         )
-        .bind(&topic_path.short_id)
+        .bind(&meta.id)
         .fetch_all(pool)
         .await?;
 
@@ -241,25 +270,28 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
         for child in children {
             let TopicChildRow {
                 kind,
-                path,
+                id,
+                login,
                 name,
                 url,
+                root,
                 ..
             } = child;
+            let path = sha256_path(&login, &id, root);
 
             match kind.as_str() {
                 "Topic" => {
                     child_topics.push(activity::TopicInfo::from((
                         Locale::EN,
                         name.to_owned(),
-                        path,
+                        path.inner,
                     )));
                 }
                 "Link" => {
                     child_links.push(activity::LinkInfo {
                         title: name.to_owned(),
                         url: url.to_owned(),
-                        path,
+                        path: path.inner,
                         deleted: false,
                     });
                 }
@@ -269,10 +301,11 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
 
         let mut parents = vec![];
         for topic in &parent_topics {
+            let path = sha256_path(&topic.login, &topic.id, topic.root);
             parents.push(activity::TopicInfo::from((
                 Locale::EN,
                 topic.name.to_owned(),
-                topic.path.to_owned(),
+                path.inner.to_owned(),
             )));
         }
 
@@ -286,7 +319,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             parent_topics: activity::TopicInfoList::from(&parents),
         });
 
-        git.save_topic(&RepoPath::from(&meta.path), &topic, indexer)?;
+        git.save_topic(&RepoPath::from(&topic.metadata.path), &topic, indexer)?;
         indexer.add_change(&change)?;
     }
 
@@ -299,10 +332,11 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
         r#"select
             l.created_at added,
-            concat('/', o.login, '/', encode(digest(l.id::varchar, 'sha256'), 'hex')) path,
+            o.login,
             l.id::varchar link_id,
             l.title,
             l.url
+
         from links l
         join organizations o on o.id = l.organization_id"#,
     )
@@ -313,8 +347,11 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
         let link_id = meta.link_id.clone();
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
-                concat('/', o.login, '/', lt.parent_id) path,
-                t.name
+                o.login,
+                t.id::varchar,
+                t.name,
+                t.root
+
             from link_topics lt
             join topics t on t.id = lt.parent_id
             join organizations o on o.id = t.organization_id
@@ -335,10 +372,11 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
 
         let mut topics = BTreeSet::new();
         for topic in parent_topics {
+            let path = sha256_path(&topic.login, &topic.id, topic.root);
             topics.insert(activity::TopicInfo::from((
                 Locale::EN,
                 topic.name.to_owned(),
-                topic.path.to_owned(),
+                path.inner.to_owned(),
             )));
         }
 
@@ -350,7 +388,7 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
             parent_topics: activity::TopicInfoList(topics),
         });
 
-        git.save_link(&RepoPath::from(&meta.path), &link, indexer)?;
+        git.save_link(&RepoPath::from(&link.metadata.path), &link, indexer)?;
         indexer.add_change(&change)?;
     }
 

@@ -1,7 +1,9 @@
+use base64;
 use lazy_static::lazy_static;
 use rand::{distributions::Alphanumeric, Rng};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use strum_macros::EnumString;
 
@@ -115,7 +117,7 @@ impl std::cmp::PartialOrd for RepoPath {
 pub fn random_id() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
-        .take(64)
+        .take(43)
         .map(char::from)
         .collect()
 }
@@ -133,6 +135,31 @@ impl RepoPath {
             prefix: "wiki".into(),
             short_id: input.into(),
             valid: false,
+        }
+    }
+
+    pub fn parts(&self) -> Result<(&str, &str, &str)> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^([\w_-]{2})([\w_-]{2})([\w_-]+)$").unwrap();
+        }
+
+        if !self.valid {
+            return Err(Error::Repo(format!("invalid path: {:?}", self)));
+        }
+
+        let cap = RE
+            .captures(&self.short_id)
+            .ok_or_else(|| Error::Repo(format!("bad id: {}", self)))?;
+
+        if cap.len() != 4 {
+            return Err(Error::Repo(format!("bad id: {}", self)));
+        }
+
+        match (cap.get(1), cap.get(2), cap.get(3)) {
+            (Some(part1), Some(part2), Some(part3)) => {
+                Ok((part1.as_str(), part2.as_str(), part3.as_str()))
+            }
+            _ => Err(Error::Repo(format!("bad id: {}", self))),
         }
     }
 }
@@ -256,6 +283,12 @@ impl Prefix {
     }
 }
 
+pub fn sha256_base64(normalized: &str) -> String {
+    let bytes = normalized.as_bytes();
+    let hash = Sha256::digest(bytes);
+    base64::encode_config(hash, base64::URL_SAFE_NO_PAD)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -288,5 +321,14 @@ mod tests {
     fn start_year_month() {
         let prefix = Prefix::new(Some("START_YEAR_MONTH"), valid_date());
         assert_eq!(prefix.format("a"), "2000-01 a");
+    }
+
+    #[test]
+    fn test_repo_path_parts() {
+        let path = RepoPath::from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ");
+        assert_eq!(
+            path.parts().unwrap(),
+            ("q-", "ZZ", "meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
+        );
     }
 }

@@ -1,9 +1,9 @@
-use sha2::{Digest, Sha256};
 use std::borrow::Cow;
 use std::hash::Hasher;
 use url;
 
 use crate::prelude::*;
+use crate::types::sha256_base64;
 
 // Struct for urls that are saved as links to a repo.  This class is not a general purpose wrapper
 // for urls, as the needs for keeping track of a page on a site differ from one site to another. For
@@ -57,13 +57,13 @@ impl RepoUrl {
         let url = parse_url(input)?;
         let input = input.to_string();
         let normalized = format!("{}", url);
-        let sha256 = sha256_digest(normalized.as_bytes());
+        let sha256_base64 = sha256_base64(&normalized);
 
         Ok(Self {
             input,
             normalized,
             path: url.path().to_string(),
-            sha256,
+            sha256: sha256_base64,
         })
     }
 
@@ -85,11 +85,6 @@ impl RepoUrl {
 }
 
 type Pair<'r> = (Cow<'r, str>, Cow<'r, str>);
-
-fn sha256_digest(normalized: &[u8]) -> String {
-    let hash = Sha256::digest(normalized);
-    format!("{:x}", hash)
-}
 
 fn make_filter<'r>(host: Option<&str>) -> impl Fn(&Pair<'r>) -> bool + '_ {
     move |p: &Pair<'r>| match host {
@@ -149,21 +144,15 @@ mod tests {
     }
 
     #[test]
-    fn sha1() {
+    fn sha256() {
         // The sha1 digest is based on the normalized url
         let url = parse("http://www.google.com");
         assert_eq!(url.normalized, "http://www.google.com/");
-        assert_eq!(
-            url.sha256,
-            "dd014af5ed6b38d9130e3f466f850e46d21b951199d53a18ef29ee9341614eaf"
-        );
+        assert_eq!(url.sha256, "3QFK9e1rONkTDj9Gb4UORtIblRGZ1ToY7ynuk0FhTq8");
 
         let url = parse("http://some.url.com");
         assert_eq!(url.normalized, "http://some.url.com/");
-        assert_eq!(
-            url.sha256,
-            "c54263cc494cbb1d846efe85ca6ece40221db8cbb58f40f2f26590ae86cc25b8"
-        );
+        assert_eq!(url.sha256, "xUJjzElMux2Ebv6Fym7OQCIduMu1j0Dy8mWQrobMJbg");
     }
 
     #[test]

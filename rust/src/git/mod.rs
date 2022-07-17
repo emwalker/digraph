@@ -447,7 +447,8 @@ impl std::fmt::Display for DataRoot {
 pub fn parse_path(input: &str) -> Result<(DataRoot, String)> {
     lazy_static! {
         static ref RE: Regex =
-            Regex::new(r"^(.+?)/(\w+)/objects/(\w{2})/(\w{2})/([\w-]+)/object.yaml$").unwrap();
+            Regex::new(r"^(.+?)/(\w+)/objects/([\w_-]{2})/([\w_-]{2})/([\w_-]+)/object.yaml$")
+                .unwrap();
     }
 
     let cap = RE
@@ -489,30 +490,8 @@ impl DataRoot {
     }
 
     pub fn basename(&self, subdirectory: &str, path: &str) -> Result<PathBuf> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^(\w{2})(\w{2})([\w-]+)$").unwrap();
-        }
-
         let path = RepoPath::from(path);
-        if !path.valid {
-            return Err(Error::Repo(format!("invalid path: {:?}", path)));
-        }
-
-        let cap = RE
-            .captures(&path.short_id)
-            .ok_or_else(|| Error::Repo(format!("bad id: {}", path)))?;
-
-        if cap.len() != 4 {
-            return Err(Error::Repo(format!("bad id: {}", path)));
-        }
-
-        let (part1, part2, part3) = match (cap.get(1), cap.get(2), cap.get(3)) {
-            (Some(part1), Some(part2), Some(part3)) => {
-                (part1.as_str(), part2.as_str(), part3.as_str())
-            }
-            _ => return Err(Error::Repo(format!("bad id: {}", path))),
-        };
-
+        let (part1, part2, part3) = path.parts()?;
         let basename = format!(
             "{}/{}/{}/{}/{}",
             path.org_login, subdirectory, part1, part2, part3
@@ -1044,6 +1023,16 @@ mod tests {
         let (root, id) = parse_path("../../wiki/objects/12/34/5678/object.yaml").unwrap();
         assert_eq!(root.root, PathBuf::from("../.."));
         assert_eq!(id, String::from("/wiki/12345678"));
+
+        let (root, id) = parse_path(
+            "../../wiki/objects/q-/ZZ/meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ/object.yaml",
+        )
+        .unwrap();
+        assert_eq!(root.root, PathBuf::from("../.."));
+        assert_eq!(
+            id,
+            String::from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
+        );
     }
 
     #[test]

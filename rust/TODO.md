@@ -1,8 +1,11 @@
 Soon:
-* Fix duplicate synonym bug
 * Restrict on org/repo prefix
 * Add limit to topic results (why did "Reading list" take such a long time?; or figure out why Reading list can't be found in a search)
-* Switch to base62 hash for links and topics
+* Fix duplicate synonym bug
+* Start work on git rebases and commits
+* Take another look at the relationship between root topics and repositories (probably add a string field for the
+  root topic path)
+* Fix glitch after updating synonyms
 
 Things that would be nice to eventually get to:
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
