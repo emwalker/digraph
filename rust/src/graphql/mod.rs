@@ -5,6 +5,7 @@ use crate::git;
 use crate::prelude::*;
 use crate::redis;
 use crate::repo::Repo;
+
 mod activity;
 pub use activity::*;
 pub mod alert;
@@ -42,30 +43,6 @@ pub use view::*;
 pub struct QueryRoot;
 
 pub type Schema = async_graphql::Schema<QueryRoot, MutationRoot, EmptySubscription>;
-
-#[derive(Clone, Debug)]
-pub struct Viewer {
-    pub query_ids: Vec<String>,
-    pub mutation_ids: Vec<String>,
-    pub session_id: Option<String>,
-    pub user_id: String,
-}
-
-impl Viewer {
-    pub fn guest() -> Self {
-        let user_id = GUEST_ID.to_string();
-        Viewer {
-            mutation_ids: vec![],
-            query_ids: vec![user_id.clone()],
-            session_id: None,
-            user_id,
-        }
-    }
-
-    pub fn is_guest(&self) -> bool {
-        self.session_id.is_none()
-    }
-}
 
 #[derive(Clone)]
 pub struct State {
@@ -106,34 +83,40 @@ impl State {
     pub async fn authenticate(&self, user_info: Option<(String, String)>) -> Viewer {
         match user_info {
             Some((user_id, session_id)) => {
-                let result = sqlx::query_as::<_, (i64,)>(
-                    r#"select count(*)
-                    from sessions
-                    where user_id = $1::uuid and session_id = decode($2, 'hex')"#,
+                let result = sqlx::query_as::<_, (Vec<String>,)>(
+                    r#"select u.write_prefixes
+                    from sessions s
+                    join users u on s.user_id = u.id
+                    where s.user_id = $1::uuid and s.session_id = decode($2, 'hex')"#,
                 )
                 .bind(&user_id)
                 .bind(&session_id)
-                .fetch_one(&self.pool)
+                .fetch_optional(&self.pool)
                 .await;
 
                 match result {
-                    Ok((count,)) => {
-                        if count == 0 {
+                    Ok(row) => match &row {
+                        Some((prefixes,)) => {
+                            log::info!("found user and session in database: {}", user_id);
+                            let prefixes = RepoPrefixList::from(prefixes);
+                            Viewer {
+                                write_prefixes: prefixes.clone(),
+                                read_prefixes: prefixes,
+                                session_id: Some(session_id),
+                                user_id,
+                            }
+                        }
+
+                        None => {
                             log::warn!(
                                 "no user session found in database, proceeding as guest: {}, {}",
                                 user_id,
                                 session_id
                             );
-                            return Viewer::guest();
+                            Viewer::guest()
                         }
-                        log::info!("found user and session in database: {}", user_id);
-                        Viewer {
-                            mutation_ids: vec![user_id.clone()],
-                            query_ids: vec![user_id.clone(), GUEST_ID.to_string()],
-                            session_id: Some(session_id),
-                            user_id,
-                        }
-                    }
+                    },
+
                     Err(err) => {
                         log::warn!("failed to fetch session info, proceeding as guest: {}", err);
                         Viewer::guest()

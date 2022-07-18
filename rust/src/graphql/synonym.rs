@@ -92,7 +92,10 @@ mod tests {
     fn simple_display_name() {
         let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
-        assert_eq!(syn.display_name("en", "c", &TimerangePrefix::new(None, None)), "a");
+        assert_eq!(
+            syn.display_name("en", "c", &TimerangePrefix::new(None, None)),
+            "a"
+        );
     }
 
     #[test]
@@ -114,7 +117,11 @@ mod tests {
         let syn = Synonyms::from_ref(r#"[{"Name":"a","Locale":"en"}, {"Name":"b","Locale":"en"}]"#)
             .unwrap();
         assert_eq!(
-            syn.display_name("en", "c", &TimerangePrefix::new(Some("START_YEAR"), valid_date())),
+            syn.display_name(
+                "en",
+                "c",
+                &TimerangePrefix::new(Some("START_YEAR"), valid_date())
+            ),
             "2000 a"
         );
     }

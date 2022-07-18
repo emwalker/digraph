@@ -62,11 +62,17 @@ pub struct RepoPrefix {
 
 impl From<&str> for RepoPrefix {
     fn from(prefix: &str) -> Self {
-        let valid = prefix.ends_with("/");
+        let valid = prefix.ends_with('/');
         Self {
             inner: prefix.to_owned(),
             valid,
         }
+    }
+}
+
+impl From<&String> for RepoPrefix {
+    fn from(prefix: &String) -> Self {
+        Self::from(prefix.as_str())
     }
 }
 
@@ -92,7 +98,39 @@ impl std::hash::Hash for RepoPrefix {
 
 impl RepoPrefix {
     pub fn relative_path(&self) -> &str {
-        self.inner.trim_start_matches("/")
+        self.inner.trim_start_matches('/')
+    }
+
+    pub fn test(&self, path: &RepoPath) -> bool {
+        path.starts_with(&self.inner)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RepoPrefixList(pub Vec<RepoPrefix>);
+
+impl From<&Vec<String>> for RepoPrefixList {
+    fn from(prefixes: &Vec<String>) -> Self {
+        Self(
+            prefixes
+                .iter()
+                .map(RepoPrefix::from)
+                .collect::<Vec<RepoPrefix>>(),
+        )
+    }
+}
+
+impl RepoPrefixList {
+    pub fn test(&self, path: &RepoPath) -> bool {
+        self.0.iter().any(|prefix| prefix.test(path))
+    }
+
+    pub fn to_vec(&self) -> Vec<String> {
+        let mut prefixes = vec![];
+        for prefix in &self.0 {
+            prefixes.push(prefix.to_string());
+        }
+        prefixes
     }
 }
 
@@ -171,9 +209,9 @@ impl RepoPath {
         Self::from(&format!("{}{}", prefix, s))
     }
 
-    fn invalid_path(input: &String) -> Self {
+    fn invalid_path(input: &str) -> Self {
         Self {
-            inner: input.clone(),
+            inner: input.to_owned(),
             org_login: "wiki".to_owned(),
             prefix: RepoPrefix::from("/wiki/"),
             short_id: "invalid-id".to_owned(),
@@ -204,6 +242,10 @@ impl RepoPath {
             }
             _ => Err(Error::Repo(format!("bad id: {}", self))),
         }
+    }
+
+    pub fn starts_with(&self, prefix: &str) -> bool {
+        self.inner.starts_with(prefix)
     }
 }
 
@@ -330,6 +372,45 @@ pub fn sha256_base64(normalized: &str) -> String {
     let bytes = normalized.as_bytes();
     let hash = Sha256::digest(bytes);
     base64::encode_config(hash, base64::URL_SAFE_NO_PAD)
+}
+
+#[derive(Clone, Debug)]
+pub struct Viewer {
+    pub read_prefixes: RepoPrefixList,
+    pub write_prefixes: RepoPrefixList,
+    pub session_id: Option<String>,
+    pub user_id: String,
+}
+
+impl Viewer {
+    pub fn guest() -> Self {
+        use crate::prelude::{GUEST_ID, WIKI_REPO_PREFIX};
+
+        let user_id = GUEST_ID.to_string();
+        Viewer {
+            write_prefixes: RepoPrefixList(vec![]),
+            read_prefixes: RepoPrefixList(vec![RepoPrefix::from(WIKI_REPO_PREFIX)]),
+            session_id: None,
+            user_id,
+        }
+    }
+
+    pub fn can_read(&self, path: &RepoPath) -> Result<()> {
+        for prefix in &self.read_prefixes.0 {
+            if prefix.test(path) {
+                return Ok(());
+            }
+        }
+
+        Err(Error::Repo(format!(
+            "{} cannot read path {}",
+            self.user_id, path
+        )))
+    }
+
+    pub fn is_guest(&self) -> bool {
+        self.session_id.is_none()
+    }
 }
 
 #[cfg(test)]

@@ -1,4 +1,5 @@
 use async_graphql::connection::*;
+use async_graphql::{Context, Object, SimpleObject, ID};
 
 use super::{Organization, Topic, User};
 use crate::prelude::*;
@@ -15,7 +16,7 @@ pub enum Repository {
         organization_id: String,
         owner_id: String,
         private: bool,
-        root_topic_id: String,
+        root_topic_path: Box<RepoPath>,
         system: bool,
     },
 }
@@ -39,7 +40,7 @@ impl Repository {
         match self {
             Self::Default => DEFAULT_REPOSITORY_NAME,
             Self::Fetched { name, .. } => {
-                if self.is_private(ctx).await.unwrap_or(false) {
+                if self.is_private(ctx).await.unwrap_or(true) {
                     "Private repository"
                 } else {
                     name
@@ -130,11 +131,13 @@ impl Repository {
     }
 
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
-        let topic_id = match self {
-            Self::Default => format!("/wiki/{}", WIKI_ROOT_TOPIC_PATH),
-            Self::Fetched { root_topic_id, .. } => format!("/wiki/{}", root_topic_id),
+        let path = match self {
+            Self::Default => RepoPath::from(WIKI_ROOT_TOPIC_PATH),
+            Self::Fetched {
+                root_topic_path, ..
+            } => *root_topic_path.to_owned(),
         };
-        let path = RepoPath::from(&topic_id);
+
         ctx.data_unchecked::<Repo>()
             .topic(&path)
             .await?

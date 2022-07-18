@@ -20,15 +20,8 @@ struct Opts {
     root: PathBuf,
 }
 
-fn sha256_path(login: &str, id: &str, root: bool) -> RepoPath {
-    // Leave the root id unhashed until the relationship between repositories and root topics is
-    // revisited.
-    let id = if root {
-        id.to_owned()
-    } else {
-        sha256_base64(id)
-    };
-
+fn sha256_path(login: &str, id: &str) -> RepoPath {
+    let id = sha256_base64(id);
     let path = format!("/{}/{}", login, id);
     RepoPath::from(&path)
 }
@@ -95,12 +88,11 @@ struct ParentTopicRow {
     id: String,
     login: String,
     name: String,
-    root: bool,
 }
 
 impl From<&ParentTopicRow> for ParentTopic {
     fn from(row: &ParentTopicRow) -> Self {
-        let path = sha256_path(&row.login, &row.id, row.root);
+        let path = sha256_path(&row.login, &row.id);
         Self { path: path.inner }
     }
 }
@@ -116,7 +108,7 @@ struct LinkMetadataRow {
 
 impl From<&LinkMetadataRow> for LinkMetadata {
     fn from(row: &LinkMetadataRow) -> Self {
-        let path = sha256_path(&row.login, &row.link_id, false);
+        let path = sha256_path(&row.login, &row.link_id);
         Self {
             added: row.added,
             path: path.inner,
@@ -134,13 +126,12 @@ struct TopicChildRow {
     kind: String,
     login: String,
     name: String,
-    root: bool,
     url: String,
 }
 
 impl From<&TopicChildRow> for TopicChild {
     fn from(row: &TopicChildRow) -> Self {
-        let path = sha256_path(&row.login, &row.id, row.root);
+        let path = sha256_path(&row.login, &row.id);
         Self {
             added: row.added,
             kind: Kind::from(&row.kind).unwrap(),
@@ -158,8 +149,8 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             o.login,
             t.id::varchar,
             t.synonyms,
-            t.created_at added,
             t.root,
+            t.created_at added,
             tr.starts_at timerange_starts,
             tr.prefix_format timerange_prefix_format
 
@@ -171,13 +162,12 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
     .await?;
 
     for meta in &rows {
-        let topic_path = sha256_path(&meta.login, &meta.id, meta.root);
+        let topic_path = sha256_path(&meta.login, &meta.id);
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
                 o.login,
                 tt.parent_id::varchar id,
-                t.name,
-                t.root
+                t.name
 
             from topic_topics tt
             join topics t on t.id = tt.parent_id
@@ -198,8 +188,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                     o.login,
                     t.id::varchar,
                     t.name,
-                    'url' as url,
-                    t.root
+                    'url' as url
 
                 from topic_topics tt
                 join topics t on t.id = tt.child_id
@@ -217,8 +206,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                     o.login,
                     l.id::varchar,
                     l.title as name,
-                    l.url,
-                    false root
+                    l.url
 
                 from link_topics tt
                 join links l on l.id = tt.child_id
@@ -274,10 +262,9 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                 login,
                 name,
                 url,
-                root,
                 ..
             } = child;
-            let path = sha256_path(&login, &id, root);
+            let path = sha256_path(&login, &id);
 
             match kind.as_str() {
                 "Topic" => {
@@ -301,7 +288,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
 
         let mut parents = vec![];
         for topic in &parent_topics {
-            let path = sha256_path(&topic.login, &topic.id, topic.root);
+            let path = sha256_path(&topic.login, &topic.id);
             parents.push(activity::TopicInfo::from((
                 Locale::EN,
                 topic.name.to_owned(),
@@ -372,7 +359,7 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
 
         let mut topics = BTreeSet::new();
         for topic in parent_topics {
-            let path = sha256_path(&topic.login, &topic.id, topic.root);
+            let path = sha256_path(&topic.login, &topic.id);
             topics.insert(activity::TopicInfo::from((
                 Locale::EN,
                 topic.name.to_owned(),

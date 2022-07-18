@@ -20,6 +20,10 @@ path = "src/bin/show.rs"
 name = "export"
 path = "src/bin/export.rs"
 
+[[bin]]
+name = "migrate"
+path = "src/bin/migrate.rs"
+
 [[test]]
 name = "integration-tests"
 path = "tests/lib.rs"

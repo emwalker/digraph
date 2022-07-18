@@ -15,7 +15,7 @@ format:
 	cargo fmt
 
 start:
-	RUST_LOG=warn,digraph=debug cargo run --bin frontend
+	RUST_LOG=info,digraph=debug cargo run --bin frontend
 
 start-prod:
 	RUST_LOG=warn,digraph=debug target/release/frontend

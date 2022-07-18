@@ -161,6 +161,20 @@ impl RemoveTopicTimerange {
     }
 }
 
+pub struct FetchTopicCount {
+    pub actor: Viewer,
+}
+
+pub struct FetchTopicCountResult {
+    pub count: usize,
+}
+
+impl FetchTopicCount {
+    pub fn call(&self, _git: &Git) -> Result<FetchTopicCountResult> {
+        Ok(FetchTopicCountResult { count: 100 })
+    }
+}
+
 pub struct UpdateTopicParentTopics {
     pub actor: Viewer,
     pub parent_topic_paths: BTreeSet<RepoPath>,

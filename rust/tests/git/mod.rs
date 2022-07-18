@@ -29,8 +29,8 @@ impl Fetch for Fetcher {
 fn actor() -> Viewer {
     Viewer {
         user_id: "2".into(),
-        query_ids: vec!["2".into()],
-        mutation_ids: vec!["2".into()],
+        read_prefixes: RepoPrefixList::from(&vec!["2".into()]),
+        write_prefixes: RepoPrefixList::from(&vec!["2".into()]),
         session_id: Some("2".into()),
     }
 }

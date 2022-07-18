@@ -1,3 +1,5 @@
+use async_graphql::Object;
+
 use super::{relay::conn, TopicConnection};
 use crate::prelude::*;
 

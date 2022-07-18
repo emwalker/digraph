@@ -123,7 +123,11 @@ impl git::SaveChangesForPrefix for Redis {
 }
 
 impl git::activity::ActivityForPrefix for Redis {
-    fn fetch_activity(&self, prefix: &RepoPrefix, first: usize) -> Result<Vec<git::activity::Change>> {
+    fn fetch_activity(
+        &self,
+        prefix: &RepoPrefix,
+        first: usize,
+    ) -> Result<Vec<git::activity::Change>> {
         let key = Key(format!("activity:{}", prefix));
         log::info!("fetching activity for prefix {:?} from Redis", key);
         let mut con = self.connection()?;

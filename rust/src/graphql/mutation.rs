@@ -1,4 +1,4 @@
-use async_graphql::{Context, InputObject, Object, SimpleObject};
+use async_graphql::{Context, InputObject, Object, SimpleObject, ID};
 use itertools::Itertools;
 
 use super::{
@@ -372,12 +372,15 @@ impl MutationRoot {
             reviewed,
             ..
         } = input;
-        let psql::ReviewLinkResult { link } = ctx
+
+        let psql::ReviewLinkResult { link, .. } = ctx
             .data_unchecked::<Repo>()
             .review_link(&RepoPath::from(&link_path), reviewed)
             .await?;
 
-        Ok(ReviewLinkPayload { link })
+        Ok(ReviewLinkPayload {
+            link: Link::from(&link),
+        })
     }
 
     async fn select_repository(

@@ -1,7 +1,6 @@
 use sqlx::{Postgres, Transaction};
 
 mod link;
-mod queries;
 pub use link::*;
 mod organization;
 pub use organization::*;

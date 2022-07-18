@@ -1,7 +1,7 @@
 use sqlx::{postgres::PgPool, types::Uuid, FromRow};
 
 use super::{user, UpsertRegisteredUser, UpsertUserResult};
-use crate::graphql::{CreateGithubSessionInput, Viewer};
+use crate::graphql::CreateGithubSessionInput;
 use crate::prelude::*;
 
 #[derive(FromRow, Clone, Debug)]

@@ -1,9 +1,10 @@
 use async_graphql::dataloader::*;
+pub use async_graphql::ID;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 
-use crate::graphql::{Organization, Viewer};
+use crate::graphql::Organization;
 use crate::prelude::*;
 
 #[derive(sqlx::FromRow, Clone, Debug)]
@@ -45,19 +46,18 @@ impl Loader<String> for OrganizationLoader {
         log::debug!("batch load organizations: {:?}", ids);
 
         let rows = sqlx::query_as::<_, Row>(
-            r#"select
+            "select
                 o.id,
                 o.name,
                 o.login,
                 r.id as default_repository_id
 
             from organizations o
-            join organization_members om on o.id = om.organization_id
             join repositories r on r.organization_id = o.id and r.system
-            where o.id = any($1::uuid[]) and om.user_id = any($2::uuid[])"#,
+            where o.id = any($1::uuid[]) and r.prefix = any($2::text[])",
         )
         .bind(&ids)
-        .bind(&self.viewer.query_ids)
+        .bind(&self.viewer.read_prefixes.to_vec())
         .fetch_all(&self.pool)
         .await
         .map_err(Error::from)?;
@@ -89,19 +89,18 @@ impl Loader<String> for OrganizationByLoginLoader {
         log::debug!("batch load organizations by login: {:?}", logins);
 
         let rows = sqlx::query_as::<_, Row>(
-            r#"select
+            "select
                 o.id,
                 o.name,
                 o.login,
                 r.id as default_repository_id
 
             from organizations o
-            join organization_members om on o.id = om.organization_id
             join repositories r on r.organization_id = o.id and r.system
-            where o.login = any($1) and om.user_id = any($2::uuid[])"#,
+            where o.login = any($1) and r.prefix = any($2::text[])",
         )
         .bind(&logins)
-        .bind(&self.viewer.query_ids)
+        .bind(&self.viewer.read_prefixes.to_vec())
         .fetch_all(&self.pool)
         .await
         .map_err(Error::from)?;

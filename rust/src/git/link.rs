@@ -67,6 +67,20 @@ impl DeleteLink {
     }
 }
 
+pub struct FetchLinkCount {
+    pub actor: Viewer,
+}
+
+pub struct FetchLinkCountResult {
+    pub count: usize,
+}
+
+impl FetchLinkCount {
+    pub fn call(&self, _git: &Git) -> Result<FetchLinkCountResult> {
+        Ok(FetchLinkCountResult { count: 1000 })
+    }
+}
+
 pub struct UpdateLinkParentTopics {
     pub actor: Viewer,
     pub link_path: RepoPath,

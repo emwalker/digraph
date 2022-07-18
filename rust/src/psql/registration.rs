@@ -80,7 +80,10 @@ impl CompleteRegistration {
         log::info!("marking user {} as registered", name);
         sqlx::query(
             r#"update users
-                set registered_at = now(), login = $1
+                set
+                    registered_at = now(),
+                    login = $1,
+                    write_prefixes = array['/wiki/', concat('/', $1, '/')]
                 where id = $2"#,
         )
         .bind(&self.login)

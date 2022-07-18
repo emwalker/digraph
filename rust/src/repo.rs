@@ -223,16 +223,11 @@ impl Repo {
     }
 
     pub async fn link_count(&self) -> Result<i64> {
-        let (count,) = sqlx::query_as::<_, (i64,)>(
-            r#"select count(*)
-            from links l
-            join organization_members om on l.organization_id = om.organization_id
-            where om.user_id = any($1::uuid[])"#,
-        )
-        .bind(&self.viewer.query_ids)
-        .fetch_one(&self.db)
-        .await?;
-        Ok(count)
+        let git::FetchLinkCountResult { count, .. } = git::FetchLinkCount {
+            actor: self.viewer.clone(),
+        }
+        .call(&self.git)?;
+        Ok(count.try_into().unwrap_or_default())
     }
 
     pub async fn organization(&self, id: String) -> Result<Option<graphql::Organization>> {
@@ -263,7 +258,7 @@ impl Repo {
     }
 
     pub async fn repositories_for_user(&self, user_id: String) -> Result<Vec<graphql::Repository>> {
-        psql::FetchRepositoriesForUser::new(self.viewer.clone(), user_id)
+        psql::FetchWriteableRepositoriesForUser::new(self.viewer.clone(), user_id)
             .call(&self.db)
             .await
     }
@@ -285,12 +280,25 @@ impl Repo {
 
     pub async fn review_link(
         &self,
-        link: &RepoPath,
+        link_path: &RepoPath,
         reviewed: bool,
     ) -> Result<psql::ReviewLinkResult> {
-        psql::ReviewLink::new(self.viewer.clone(), link.clone(), reviewed)
-            .call(&self.db)
-            .await
+        let object = self
+            .object_loader
+            .load_one(link_path.inner.to_owned())
+            .await?;
+
+        match object {
+            Some(git::Object::Link(link)) => {
+                psql::ReviewLink::new(self.viewer.clone(), link.clone(), reviewed)
+                    .call(&self.db)
+                    .await
+            }
+
+            Some(other) => Err(Error::Repo(format!("expected a link: {:?}", other))),
+
+            None => Err(Error::Repo(format!("no link found: {}", link_path))),
+        }
     }
 
     pub async fn search(
@@ -357,17 +365,11 @@ impl Repo {
     }
 
     pub async fn topic_count(&self) -> Result<i64> {
-        let (count,) = sqlx::query_as::<_, (i64,)>(
-            r#"select count(*)
-            from topics t
-            join organization_members om on t.organization_id = om.organization_id
-            where om.user_id = any($1::uuid[])
-            "#,
-        )
-        .bind(&self.viewer.query_ids)
-        .fetch_one(&self.db)
-        .await?;
-        Ok(count)
+        let git::FetchTopicCountResult { count, .. } = git::FetchTopicCount {
+            actor: self.viewer.clone(),
+        }
+        .call(&self.git)?;
+        Ok(count.try_into().unwrap_or_default())
     }
 
     pub async fn topics(&self, paths: &[RepoPath]) -> Result<Vec<Option<graphql::Topic>>> {

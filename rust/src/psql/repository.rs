@@ -4,41 +4,37 @@ use sqlx::types::Uuid;
 use std::collections::HashMap;
 
 use super::{fetch_user, repository, user};
-use crate::graphql::{Repository, Viewer};
+use crate::graphql::Repository;
 use crate::prelude::*;
 
 const REPOSITORY_FIELDS: &str = r#"
     r.id,
     r.name,
     r.organization_id,
-    r.system,
     r.owner_id,
-    -- Let's come up with something better than this
-    (r.system and r.name = 'system:default') private,
-    t.id root_topic_id,
-    o.login lookup_prefix
+    r.prefix,
+    r.private,
+    r.root_topic_path,
+    r.system
 "#;
 
 const REPOSITORY_JOINS: &str = r#"
     from repositories r
-    join organization_members om on r.organization_id = om.organization_id
-    join organizations o on o.id = r.organization_id
-    join topics t on r.id = t.repository_id
 "#;
 
 const REPOSITORY_GROUP_BY: &str = r#"
-    group by r.id, t.id, o.login
+    group by r.id
 "#;
 
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
     id: Uuid,
-    lookup_prefix: String,
     name: String,
     organization_id: Uuid,
     owner_id: Uuid,
+    prefix: String,
     private: bool,
-    root_topic_id: Uuid,
+    root_topic_path: String,
     system: bool,
 }
 
@@ -50,18 +46,18 @@ impl Row {
             organization_id: self.organization_id.to_string(),
             owner_id: self.owner_id.to_string(),
             private: self.private,
-            root_topic_id: self.root_topic_id.to_string(),
+            root_topic_path: Box::new(RepoPath::from(&self.root_topic_path)),
             system: self.system,
         }
     }
 }
 
-pub struct FetchRepositoriesForUser {
+pub struct FetchWriteableRepositoriesForUser {
     user_id: String,
     viewer: Viewer,
 }
 
-impl FetchRepositoriesForUser {
+impl FetchWriteableRepositoriesForUser {
     pub fn new(viewer: Viewer, user_id: String) -> Self {
         Self { viewer, user_id }
     }
@@ -74,16 +70,15 @@ impl FetchRepositoriesForUser {
             select
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
-                join organization_members om2 on om.organization_id = om2.organization_id
-                where om.user_id = $1::uuid
-                    and om2.user_id = any($2::uuid[])
-                    and t.root = true
-                {REPOSITORY_GROUP_BY}
+                join users u on r.prefix = any(u.write_prefixes)
+                where u.id = $1::uuid
+                    and r.prefix = any($2::text[])
+                group by r.id, u.id
             "#,
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&self.user_id)
-            .bind(&self.viewer.query_ids)
+            .bind(&self.viewer.write_prefixes.to_vec())
             .fetch_all(pool)
             .await?;
 
@@ -116,14 +111,13 @@ impl Loader<String> for RepositoryLoader {
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
                 where r.id = any($1::uuid[])
-                    and t.root = true
-                    and om.user_id = any($2::uuid[])
+                    and r.prefix = any($2::text[])
                 {REPOSITORY_GROUP_BY}
             "#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&ids)
-            .bind(&self.viewer.query_ids)
+            .bind(&self.viewer.read_prefixes.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
@@ -159,14 +153,12 @@ impl Loader<String> for RepositoryByNameLoader {
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
                 where r.name = any($1)
-                    and t.root = true
-                    and om.user_id = any($2::uuid[])
-                {REPOSITORY_GROUP_BY}
-           "#
+                    and r.prefix = any($2::text[])
+                {REPOSITORY_GROUP_BY}"#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&names)
-            .bind(&self.viewer.query_ids)
+            .bind(&self.viewer.read_prefixes.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
@@ -197,28 +189,27 @@ impl Loader<String> for RepositoryByPrefixLoader {
         log::debug!(
             "batch load repos by id prefixes {:?} for users {:?}",
             prefixes,
-            self.viewer.query_ids
+            self.viewer.read_prefixes
         );
 
         let query = format!(
             r#"select
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
-                where o.login = any($1::text[])
-                    and t.root = true
-                    and om.user_id = any($2::uuid[])
+                where r.prefix = any($1::text[])
+                    and r.prefix = any($2::text[])
                 {REPOSITORY_GROUP_BY}
            "#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&prefixes)
-            .bind(&self.viewer.query_ids)
+            .bind(&self.viewer.read_prefixes.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
         Ok(rows
             .iter()
-            .map(|r| (r.lookup_prefix.to_string(), r.to_repository()))
+            .map(|r| (r.prefix.to_string(), r.to_repository()))
             .collect::<HashMap<_, _>>())
     }
 }
@@ -262,15 +253,14 @@ impl SelectRepository {
                     {REPOSITORY_FIELDS}
                     {REPOSITORY_JOINS}
                     where r.id = $1::uuid
-                        and om.user_id = any($2::uuid[])
-                        and t.root = true
+                        and r.prefix = any($2::text[])
                     {REPOSITORY_GROUP_BY}
                 "#
             );
 
             let row = sqlx::query_as::<_, repository::Row>(&query)
                 .bind(repository_id)
-                .bind(&self.actor.mutation_ids)
+                .bind(&self.actor.write_prefixes.to_vec())
                 .fetch_one(pool)
                 .await?;
 
@@ -284,7 +274,7 @@ impl SelectRepository {
             None
         };
 
-        let row = fetch_user(&self.actor.mutation_ids, &self.actor.user_id, pool).await?;
+        let row = fetch_user(&self.actor.write_prefixes, &self.actor.user_id, pool).await?;
 
         Ok(SelectRepositoryResult {
             actor: row,

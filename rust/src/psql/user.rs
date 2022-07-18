@@ -4,7 +4,7 @@ use sqlx::types::Uuid;
 use std::collections::HashMap;
 
 use super::{CompleteRegistration, PgTransaction};
-use crate::graphql::{CreateGithubSessionInput, Viewer};
+use crate::graphql::CreateGithubSessionInput;
 use crate::prelude::*;
 
 pub const USER_FIELDS: &str = r#"
@@ -12,7 +12,8 @@ pub const USER_FIELDS: &str = r#"
     u.login,
     u.name,
     u.avatar_url,
-    u.selected_repository_id
+    u.selected_repository_id,
+    u.write_prefixes
 "#;
 
 #[derive(sqlx::FromRow, Clone, Debug)]
@@ -22,10 +23,14 @@ pub struct Row {
     pub login: Option<String>,
     pub name: String,
     pub selected_repository_id: Option<Uuid>,
+    pub write_prefixes: Vec<String>,
 }
 
-#[allow(unused_variables)]
-pub async fn fetch_user(query_ids: &[String], user_id: &String, pool: &PgPool) -> Result<Row> {
+pub async fn fetch_user(
+    _read_prefixes: &RepoPrefixList,
+    user_id: &String,
+    pool: &PgPool,
+) -> Result<Row> {
     // TODO: Filter on query_ids
     let query = format!(
         r#"select
@@ -182,7 +187,7 @@ impl DeleteAccount {
         }
 
         log::warn!("deleting account {}", self.user_id);
-        let row = fetch_user(&self.actor.mutation_ids, &self.user_id, pool).await?;
+        let row = fetch_user(&self.actor.write_prefixes, &self.user_id, pool).await?;
 
         let mut tx = pool.begin().await?;
 
