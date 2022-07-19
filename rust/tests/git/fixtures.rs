@@ -112,13 +112,14 @@ mod tests {
         let climate_change = topic.unwrap().path();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Climate_change").unwrap();
-        upsert_link(
+        let result = upsert_link(
             &f,
             &url,
             Some("Climate change".into()),
             Some(climate_change.inner.to_owned()),
         )
         .await;
+        println!("result: {:?}", result.link);
 
         let path = RepoPath::from(
             "/wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj",

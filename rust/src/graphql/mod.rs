@@ -25,8 +25,6 @@ pub use query::*;
 mod psql;
 mod repository;
 pub use repository::*;
-mod search;
-pub use search::*;
 mod session;
 pub use session::*;
 mod synonym;

@@ -235,6 +235,8 @@ mod search_within_topic {
         let query = format!("in:{}", climate_change);
         let search = Search::parse(&query).unwrap();
 
+        assert!(search.urls.is_empty());
+
         let SearchWithinTopicResult { matches } = SearchWithinTopic {
             limit: 3,
             locale: Locale::EN,
@@ -266,8 +268,18 @@ mod search_within_topic {
         }
     }
 
-    // #[test]
-    // fn url_search() {
-    //     todo!()
-    // }
+    #[test]
+    fn url_search() {
+        let f = Fixtures::copy("simple");
+        let root = root();
+
+        let matches = search(
+            &f,
+            &root,
+            "https://en.wikipedia.org/wiki/Climate_change",
+            true,
+        );
+        assert_eq!(count(Kind::Topic, &matches), 0);
+        assert_eq!(count(Kind::Link, &matches), 1);
+    }
 }

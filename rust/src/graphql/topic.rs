@@ -1,12 +1,9 @@
 use async_graphql::connection::*;
-use async_graphql::{Context, Object, SimpleObject};
+use async_graphql::{Context, Object, SimpleObject, Union};
 use itertools::Itertools;
 
 use super::timerange;
-use super::{
-    relay::conn, ActivityLineItem, LinkConnection, Repository, Synonym, Synonyms,
-    TopicChildConnection,
-};
+use super::{relay::conn, ActivityLineItem, Link, LinkConnection, Repository, Synonym, Synonyms};
 use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::repo::Repo;
 use crate::{git, prelude::*};
@@ -22,6 +19,13 @@ pub struct LiveSearchTopicsPayload {
     pub synonym_matches: Vec<SynonymMatch>,
 }
 
+#[derive(Union)]
+pub enum TopicChild {
+    Link(Link),
+    Topic(Topic),
+}
+
+pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
     pub child_paths: Vec<RepoPath>,

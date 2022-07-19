@@ -198,14 +198,55 @@ impl std::cmp::PartialEq for SearchMatch {
 
 impl std::cmp::Eq for SearchMatch {}
 
-struct Filter<T>(HashSet<T>);
+struct UrlMatches {
+    paths: HashSet<String>,
+    impossible_result: bool,
+}
 
-impl<T: Eq + std::hash::Hash> Filter<T> {
-    fn test(&self, value: &T) -> bool {
-        if self.0.is_empty() {
+impl UrlMatches {
+    fn impossible_result() -> Self {
+        Self {
+            paths: HashSet::new(),
+            impossible_result: true,
+        }
+    }
+
+    fn allow_everything() -> Self {
+        Self {
+            paths: HashSet::new(),
+            impossible_result: false,
+        }
+    }
+
+    fn test(&self, path: &str) -> bool {
+        if self.impossible_result {
+            return false;
+        }
+
+        if self.paths.is_empty() {
             return true;
         }
-        self.0.contains(value)
+
+        self.paths.contains(path)
+    }
+}
+
+struct Filter {
+    tokens: HashSet<String>,
+    urls: UrlMatches,
+}
+
+impl Filter {
+    fn test(&self, path: &str) -> bool {
+        if !self.urls.test(path) {
+            return false;
+        }
+
+        if !self.tokens.is_empty() && !self.tokens.contains(path) {
+            return false;
+        }
+
+        true
     }
 }
 
@@ -254,7 +295,7 @@ impl SearchWithinTopic {
         }
 
         let mut topics = self.topic_intersection(git, fetch)?;
-        let filter = self.token_filter(git);
+        let filter = self.filter(git);
         let mut matches = BTreeSet::new();
 
         for topic in topics.drain() {
@@ -273,6 +314,34 @@ impl SearchWithinTopic {
         Ok(SearchWithinTopicResult {
             matches: matches.iter().take(self.limit).cloned().collect(),
         })
+    }
+
+    fn filter(&self, git: &Git) -> Filter {
+        let mut token_matches = HashSet::new();
+
+        for prefix in &self.prefixes {
+            let mut iter = self.search.tokens.iter();
+
+            if let Some(token) = iter.next() {
+                let mut prefix_matches = git.search_token_prefix_matches(prefix, token);
+
+                for token in iter {
+                    let other = git.search_token_prefix_matches(prefix, token);
+                    prefix_matches.retain(|e| other.contains(e));
+                }
+
+                for entry in prefix_matches.drain() {
+                    token_matches.insert(entry.path);
+                }
+            }
+        }
+
+        let urls = self.url_paths();
+
+        Filter {
+            tokens: token_matches,
+            urls,
+        }
     }
 
     fn topic_intersection<F>(&self, git: &Git, fetch: &F) -> Result<HashSet<Topic>>
@@ -298,27 +367,48 @@ impl SearchWithinTopic {
         Ok(topics)
     }
 
-    fn token_filter(&self, git: &Git) -> Filter<String> {
-        let mut token_matches = HashSet::new();
-
-        for prefix in &self.prefixes {
-            let mut iter = self.search.tokens.iter();
-
-            if let Some(token) = iter.next() {
-                let mut prefix_matches = git.search_token_prefix_matches(prefix, token);
-
-                for token in iter {
-                    let other = git.search_token_prefix_matches(prefix, token);
-                    prefix_matches.retain(|e| other.contains(e));
-                }
-
-                for entry in prefix_matches.drain() {
-                    token_matches.insert(entry.path);
-                }
-            }
+    fn url_paths(&self) -> UrlMatches {
+        let mut urls = HashSet::new();
+        for url in &self.search.urls {
+            urls.insert(url.normalized.to_owned());
         }
 
-        Filter(token_matches)
+        if urls.is_empty() {
+            return UrlMatches::allow_everything();
+        }
+
+        if urls.len() != 1 {
+            return UrlMatches::impossible_result();
+        }
+
+        match urls.iter().next() {
+            Some(url) => {
+                let mut paths = HashSet::new();
+                let url = match RepoUrl::parse(url) {
+                    Ok(url) => url,
+                    Err(err) => {
+                        log::error!("problem parsing url: {}", err);
+                        return UrlMatches::impossible_result();
+                    }
+                };
+
+                for prefix in &self.prefixes {
+                    let path = url.path(prefix);
+                    paths.insert(path.inner.to_owned());
+                }
+
+                if paths.is_empty() {
+                    return UrlMatches::impossible_result();
+                }
+
+                UrlMatches {
+                    paths,
+                    impossible_result: false,
+                }
+            }
+
+            None => UrlMatches::impossible_result(),
+        }
     }
 }
 
