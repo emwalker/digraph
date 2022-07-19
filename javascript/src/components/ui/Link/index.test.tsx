@@ -8,6 +8,7 @@ const props = {
   link: {
     title: 'title',
     url: 'url',
+    viewerCanUpdate: true,
   },
   orgLogin: 'gnusto',
   relay: {},

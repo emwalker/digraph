@@ -91,6 +91,16 @@ impl Link {
         self.url.to_owned()
     }
 
+    async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
+        let repo = ctx.data_unchecked::<Repo>();
+        if repo.viewer.is_guest() {
+            return Ok(false);
+        }
+
+        // TODO: Narrow down write permissions to a specific topics and their subtopics
+        Ok(repo.viewer.write_prefixes.include(&self.path))
+    }
+
     async fn viewer_review(&self) -> Option<LinkReview> {
         self.viewer_review.clone()
     }

@@ -121,7 +121,7 @@ impl From<&Vec<String>> for RepoPrefixList {
 }
 
 impl RepoPrefixList {
-    pub fn test(&self, path: &RepoPath) -> bool {
+    pub fn include(&self, path: &RepoPath) -> bool {
         self.0.iter().any(|prefix| prefix.test(path))
     }
 
@@ -383,6 +383,14 @@ pub struct Viewer {
 }
 
 impl Viewer {
+    pub fn ensure_can_read(&self, path: &RepoPath) -> Result<()> {
+        if !self.can_read(path) {
+            return Err(Error::Repo("not allowed".into()));
+        }
+
+        Ok(())
+    }
+
     pub fn guest() -> Self {
         use crate::prelude::{GUEST_ID, WIKI_REPO_PREFIX};
 
@@ -395,17 +403,12 @@ impl Viewer {
         }
     }
 
-    pub fn can_read(&self, path: &RepoPath) -> Result<()> {
-        for prefix in &self.read_prefixes.0 {
-            if prefix.test(path) {
-                return Ok(());
-            }
-        }
+    pub fn can_read(&self, path: &RepoPath) -> bool {
+        self.read_prefixes.include(path)
+    }
 
-        Err(Error::Repo(format!(
-            "{} cannot read path {}",
-            self.user_id, path
-        )))
+    pub fn can_update(&self, path: &RepoPath) -> bool {
+        self.write_prefixes.include(path)
     }
 
     pub fn is_guest(&self) -> bool {
@@ -445,6 +448,31 @@ mod tests {
     fn start_year_month() {
         let prefix = TimerangePrefix::new(Some("START_YEAR_MONTH"), valid_date());
         assert_eq!(prefix.format("a"), "2000-01 a");
+    }
+
+    mod viewer {
+        use super::*;
+
+        #[test]
+        fn can_update() {
+            let path = RepoPath::from("/wiki/00001");
+
+            let viewer = Viewer::guest();
+            assert!(!viewer.can_update(&path));
+
+            let prefixes = RepoPrefixList(vec![RepoPrefix::from("/wiki/")]);
+            let viewer = Viewer {
+                write_prefixes: prefixes.to_owned(),
+                read_prefixes: prefixes,
+                session_id: Some("1".to_owned()),
+                user_id: "2".to_owned(),
+            };
+
+            assert!(viewer.can_update(&path));
+
+            let path = RepoPath::from("/private/00001");
+            assert!(!viewer.can_update(&path));
+        }
     }
 
     mod repo_path {

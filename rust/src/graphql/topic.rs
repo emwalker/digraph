@@ -242,21 +242,7 @@ impl Topic {
             return Ok(false);
         }
 
-        let repository = match self.repository(ctx).await {
-            Ok(repository) => match &repository {
-                Some(repository) => repository.clone(),
-                None => return Ok(false),
-            },
-            Err(_) => return Ok(false),
-        };
-
-        if let Repository::Fetched {
-            owner_id, private, ..
-        } = repository
-        {
-            Ok(!private || (owner_id == repo.viewer.user_id))
-        } else {
-            Ok(false)
-        }
+        // TODO: Narrow down write permissions to a specific topics and their subtopics
+        Ok(repo.viewer.write_prefixes.include(&self.path))
     }
 }

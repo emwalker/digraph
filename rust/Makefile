@@ -10,6 +10,9 @@ check-pre-push: check
 clean:
 	cargo clean
 
+export:
+	RUST_LOG=warn,export=info target/release/export --data-dir ~/data/digraph-data
+
 format:
 	cargo clippy -- -D warnings
 	cargo fmt

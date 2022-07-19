@@ -23,7 +23,7 @@ impl ReviewLink {
     }
 
     pub async fn call(&self, _pool: &PgPool) -> Result<ReviewLinkResult> {
-        self.actor.can_read(&self.link.path())?;
+        self.actor.ensure_can_read(&self.link.path())?;
 
         Ok(ReviewLinkResult {
             link: self.link.to_owned(),

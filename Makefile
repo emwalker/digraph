@@ -58,6 +58,9 @@ deploy-k8s:
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
 
+export:
+	$(MAKE) -C rust export
+
 fixtures: data/fixtures.sql
 	bash ./scripts/make-fixtures
 

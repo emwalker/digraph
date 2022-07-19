@@ -2,14 +2,13 @@ Before switchover:
 * Restrict on org/repo prefix
 * Add limit to topic results (why did "Reading list" take such a long time?; or figure out why Reading list can't be found in a search)
 * Fix duplicate synonym bug
-* Take another look at the relationship between root topics and repositories (probably add a string field for the
-  root topic path)
 * Fix glitch after updating synonyms
 * Double-check that URL searches work (including normalization)
+* Capture previous title in UpsertLink
+* Look into whether the ordering of changes is stable
+* Add link upsert change to parent topics
 * Start work on git rebases and commits
 * Decide whether to support link reviews or remove the feature
-* Simplify topic.viewerCanUpdate implementation
-* Add link.viewerCanUpdate to schema.graphql and use it in client
 * Sort out logistics of merging branch and deploying
 * Migration to create read_prefixes and write_prefixes array columns on user
 * Make search work across all prefixes

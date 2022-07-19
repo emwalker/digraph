@@ -22,6 +22,7 @@ exports[`<Link /> renders 1`] = `
       Object {
         "title": "title",
         "url": "url",
+        "viewerCanUpdate": true,
       }
     }
     orgLogin="gnusto"

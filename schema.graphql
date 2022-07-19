@@ -129,6 +129,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
   title: String!
   updatedAt: DateTime!
   url: String!
+  viewerCanUpdate: Boolean!
   viewerReview: LinkReview
 }
 

@@ -56,7 +56,7 @@ class Link extends Component<Props, State> {
   }
 
   get showEditButton(): boolean {
-    return !this.props.link.loading && !this.props.viewer.isGuest
+    return !this.props.link.loading && this.props.link.viewerCanUpdate
   }
 
   toggleForm = () => {
@@ -114,6 +114,7 @@ export default createFragmentContainer(Link, {
       path
       title
       url
+      viewerCanUpdate
 
       repository {
         displayColor

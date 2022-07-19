@@ -108,7 +108,7 @@ struct LinkMetadataRow {
 
 impl From<&LinkMetadataRow> for LinkMetadata {
     fn from(row: &LinkMetadataRow) -> Self {
-        let path = sha256_path(&row.login, &row.link_id);
+        let path = sha256_path(&row.login, &row.url);
         Self {
             added: row.added,
             path: path.inner,
@@ -131,7 +131,12 @@ struct TopicChildRow {
 
 impl From<&TopicChildRow> for TopicChild {
     fn from(row: &TopicChildRow) -> Self {
-        let path = sha256_path(&row.login, &row.id);
+        let path = match row.kind.as_str() {
+            "Link" => sha256_path(&row.login, &row.url),
+            "Topic" => sha256_path(&row.login, &row.id),
+            _ => sha256_path(&row.login, &row.id),
+        };
+
         Self {
             added: row.added,
             kind: Kind::from(&row.kind).unwrap(),
@@ -264,10 +269,10 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                 url,
                 ..
             } = child;
-            let path = sha256_path(&login, &id);
 
             match kind.as_str() {
                 "Topic" => {
+                    let path = sha256_path(&login, &id);
                     child_topics.push(activity::TopicInfo::from((
                         Locale::EN,
                         name.to_owned(),
@@ -275,6 +280,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
                     )));
                 }
                 "Link" => {
+                    let path = sha256_path(&login, &url);
                     child_links.push(activity::LinkInfo {
                         title: name.to_owned(),
                         url: url.to_owned(),
