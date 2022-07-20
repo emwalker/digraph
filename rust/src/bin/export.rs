@@ -399,7 +399,7 @@ async fn main() -> Result<()> {
         return Err(Error::NotFound(format!("{:?}", opts.root)));
     }
     let root = DataRoot::new(opts.root);
-    let git = Git::new(root.clone());
+    let git = Git::new(&Viewer::super_user(), &root);
     let mut indexer = Indexer::new(&git, IndexMode::Replace);
 
     save_topics(&git, &pool, &mut indexer).await?;

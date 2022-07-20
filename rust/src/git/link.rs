@@ -25,7 +25,12 @@ impl DeleteLink {
     where
         S: SaveChangesForPrefix,
     {
-        let link = git.fetch_link(&self.link_path.inner)?;
+        let link = git.fetch_link(&self.link_path);
+        if link.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", self.link_path)));
+        }
+        let link = link.unwrap();
+
         // Not actually used
         let date = chrono::Utc::now();
         let child = link.to_topic_child(date);
@@ -35,10 +40,12 @@ impl DeleteLink {
         git.mark_deleted(&self.link_path)?;
 
         for ParentTopic { path, .. } in &link.parent_topics {
-            let mut parent = git.fetch_topic(path)?;
-            parent.children.remove(&child);
-            git.save_topic(&RepoPath::from(path), &parent, &mut indexer)?;
-            parent_topics.push(parent);
+            let path = RepoPath::from(path);
+            if let Some(mut parent) = git.fetch_topic(&path) {
+                parent.children.remove(&child);
+                git.save_topic(&path, &parent, &mut indexer)?;
+                parent_topics.push(parent);
+            }
         }
 
         let change = self.change(&link, &parent_topics, date);
@@ -101,7 +108,11 @@ impl UpdateLinkParentTopics {
 
         let date = chrono::Utc::now();
         let mut indexer = Indexer::new(git, IndexMode::Update);
-        let mut link = git.fetch_link(&self.link_path.inner)?;
+        let link = git.fetch_link(&self.link_path);
+        if link.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", self.link_path)));
+        }
+        let mut link = link.unwrap();
 
         let parent_topics = self
             .parent_topic_paths
@@ -113,8 +124,9 @@ impl UpdateLinkParentTopics {
 
         let mut added = vec![];
         for parent in parent_topics.difference(&link.parent_topics) {
-            let topic = parent.fetch(git)?;
-            added.push(topic);
+            if let Some(topic) = parent.fetch(git) {
+                added.push(topic);
+            }
         }
 
         for topic in &mut added {
@@ -124,8 +136,9 @@ impl UpdateLinkParentTopics {
 
         let mut removed = vec![];
         for parent in link.parent_topics.difference(&parent_topics) {
-            let link = parent.fetch(git)?;
-            removed.push(link);
+            if let Some(link) = parent.fetch(git) {
+                removed.push(link);
+            }
         }
 
         for topic in &mut removed {
@@ -217,14 +230,17 @@ impl UpsertLink {
         let mut parent_topics = HashMap::new();
 
         for parent in &link.parent_topics {
-            let topic = git.fetch_topic(&parent.path)?;
-            parent_topics.insert(parent.path.to_owned(), topic);
+            if let Some(topic) = git.fetch_topic(&RepoPath::from(&parent.path)) {
+                parent_topics.insert(parent.path.to_owned(), topic);
+            }
         }
 
         let topic = if let Some(topic_path) = &self.add_parent_topic_path {
-            let topic = git.fetch_topic(&topic_path.inner)?;
-            parent_topics.insert(topic_path.inner.to_owned(), topic.to_owned());
-            Some(topic)
+            let topic = git.fetch_topic(topic_path);
+            if let Some(topic) = &topic {
+                parent_topics.insert(topic_path.to_string(), topic.to_owned());
+            }
+            topic
         } else {
             None
         };
@@ -232,14 +248,17 @@ impl UpsertLink {
         if parent_topics.is_empty() {
             // There's a client error if we get to this point.
             log::warn!("no topic found, placing under root topic for /wiki");
-            let topic = git.fetch_topic(WIKI_ROOT_TOPIC_PATH)?;
-            parent_topics.insert(topic.metadata.path.to_owned(), topic);
+            if let Some(topic) = git.fetch_topic(&RepoPath::from(WIKI_ROOT_TOPIC_PATH)) {
+                parent_topics.insert(topic.metadata.path.to_owned(), topic);
+            }
         }
 
         let change = self.change(&link, &topic, date);
         link.parent_topics = parent_topics
             .iter()
-            .map(|(path, _topic)| ParentTopic { path: path.into() })
+            .map(|(path, _topic)| ParentTopic {
+                path: path.to_owned(),
+            })
             .collect::<BTreeSet<ParentTopic>>();
 
         let mut indexer = Indexer::new(git, IndexMode::Update);
@@ -283,35 +302,35 @@ impl UpsertLink {
     }
 
     async fn make_link(&self, git: &Git, url: &RepoUrl, path: &RepoPath) -> Result<Link> {
-        let link = if git.exists(path)? {
-            git.fetch_link(&path.inner)?
+        if git.exists(path)? {
+            if let Some(link) = git.fetch_link(path) {
+                return Ok(link);
+            }
+        }
+
+        let title = if let Some(title) = &self.title {
+            title.clone()
         } else {
-            let title = if let Some(title) = &self.title {
-                title.clone()
-            } else {
-                let response = self.fetcher.fetch(url).await?;
-                response.title().unwrap_or_else(|| "Missing title".into())
-            };
-
-            let mut parent_topics = BTreeSet::new();
-            if let Some(path) = &self.add_parent_topic_path {
-                parent_topics.insert(ParentTopic {
-                    path: path.inner.to_owned(),
-                });
-            }
-
-            Link {
-                api_version: API_VERSION.into(),
-                parent_topics,
-                metadata: LinkMetadata {
-                    added: chrono::Utc::now(),
-                    path: path.to_string(),
-                    title,
-                    url: url.normalized.to_owned(),
-                },
-            }
+            let response = self.fetcher.fetch(url).await?;
+            response.title().unwrap_or_else(|| "Missing title".into())
         };
 
-        Ok(link)
+        let mut parent_topics = BTreeSet::new();
+        if let Some(path) = &self.add_parent_topic_path {
+            parent_topics.insert(ParentTopic {
+                path: path.to_string(),
+            });
+        }
+
+        Ok(Link {
+            api_version: API_VERSION.into(),
+            parent_topics,
+            metadata: LinkMetadata {
+                added: chrono::Utc::now(),
+                path: path.to_string(),
+                title,
+                url: url.normalized.to_owned(),
+            },
+        })
     }
 }

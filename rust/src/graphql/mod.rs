@@ -44,9 +44,9 @@ pub type Schema = async_graphql::Schema<QueryRoot, MutationRoot, EmptySubscripti
 
 #[derive(Clone)]
 pub struct State {
-    pub git: git::Git,
     pub pool: PgPool,
     pub redis: redis::Redis,
+    pub root: git::DataRoot,
     pub schema: Schema,
     pub server_secret: String,
 }
@@ -54,24 +54,24 @@ pub struct State {
 impl State {
     pub fn new(
         pool: PgPool,
+        root: git::DataRoot,
         schema: Schema,
         server_secret: String,
-        git: git::Git,
         redis: redis::Redis,
     ) -> Self {
         Self {
-            git,
             pool,
+            root,
             redis,
             schema,
             server_secret,
         }
     }
 
-    pub fn create_repo(&self, viewer: Viewer) -> Repo {
+    pub fn create_repo(&self, viewer: &Viewer) -> Repo {
         Repo::new(
-            viewer,
-            self.git.clone(),
+            viewer.to_owned(),
+            git::Git::new(viewer, &self.root),
             self.pool.clone(),
             self.server_secret.clone(),
             self.redis.clone(),
@@ -101,6 +101,7 @@ impl State {
                                 write_prefixes: prefixes.clone(),
                                 read_prefixes: prefixes,
                                 session_id: Some(session_id),
+                                super_user: false,
                                 user_id,
                             }
                         }

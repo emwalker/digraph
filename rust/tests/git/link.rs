@@ -11,7 +11,7 @@ mod delete_link {
         let url = valid_url();
 
         let UpsertLinkResult { link, .. } =
-            upsert_link(&f, &url, Some(title.into()), Some(parent_topic.to_owned())).await;
+            upsert_link(f, &url, Some(title.into()), Some(parent_topic.to_owned())).await;
 
         link.unwrap()
     }
@@ -97,7 +97,7 @@ mod update_link_parent_topics {
         .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
-        let link = f.repo.git.fetch_link(&link.path().inner).unwrap();
+        let link = f.repo.git.fetch_link(&link.path()).unwrap();
         assert_eq!(link.parent_topics.len(), 2);
     }
 }

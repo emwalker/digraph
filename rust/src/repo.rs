@@ -153,11 +153,13 @@ impl Repo {
         let mut children = vec![];
 
         for child_path in &child_paths {
-            let child = map
-                .get(child_path)
-                .ok_or_else(|| Error::NotFound(format!("no child: {}", child_path)))?;
+            let child = map.get(child_path);
+            if child.is_none() {
+                // Probably not visible to the current user
+                continue;
+            }
 
-            let child = match child {
+            let child = match child.unwrap() {
                 git::Object::Topic(topic) => {
                     graphql::TopicChild::Topic(graphql::Topic::from(topic))
                 }

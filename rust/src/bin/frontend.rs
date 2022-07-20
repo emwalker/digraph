@@ -67,7 +67,7 @@ async fn index(
 ) -> GraphQLResponse {
     let user_info = user_id_from_header(http_req);
     let viewer = state.authenticate(user_info).await;
-    let repo = state.create_repo(viewer);
+    let repo = state.create_repo(&viewer);
 
     state
         .schema
@@ -89,10 +89,8 @@ async fn main() -> async_graphql::Result<()> {
     let config = Config::load()?;
     env_logger::init();
 
-    let root = git::DataRoot::new(PathBuf::from(&config.digraph_data_directory));
-    let git = git::Git::new(root);
-
     let pool = db::db_connection(&config).await?;
+    let root = git::DataRoot::new(PathBuf::from(&config.digraph_data_directory));
 
     sqlx::migrate!("db/migrations").run(&pool).await?;
 
@@ -102,7 +100,7 @@ async fn main() -> async_graphql::Result<()> {
         .finish();
 
     let redis = redis::Redis::new("redis://localhost".to_owned())?;
-    let state = State::new(pool, schema, config.digraph_server_secret, git, redis);
+    let state = State::new(pool, root, schema, config.digraph_server_secret, redis);
 
     let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_owned());
     println!("Playground: http://localhost:8080");

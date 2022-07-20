@@ -300,9 +300,11 @@ impl SearchWithinTopic {
 
         for topic in topics.drain() {
             for child in &topic.children {
+                let path = RepoPath::from(&child.path);
                 if child.kind == Kind::Link && filter.test(&child.path) {
-                    let object = git.fetch(&child.path)?;
-                    matches.insert(object.to_search_match(self.locale, &self.search));
+                    if let Some(object) = git.fetch(&path) {
+                        matches.insert(object.to_search_match(self.locale, &self.search));
+                    }
                 }
             }
 
@@ -360,8 +362,10 @@ impl SearchWithinTopic {
         let mut topics = HashSet::new();
 
         for path in set.drain() {
-            let topic = git.fetch_topic(&path)?;
-            topics.insert(topic);
+            let path = RepoPath::from(&path);
+            if let Some(topic) = git.fetch_topic(&path) {
+                topics.insert(topic);
+            }
         }
 
         Ok(topics)

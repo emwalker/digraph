@@ -59,8 +59,8 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&topic.path)? {
-            Object::Topic(topic) => {
+        match &self.git.fetch(&RepoPath::from(&topic.path)) {
+            Some(Object::Topic(topic)) => {
                 let meta = &topic.metadata;
                 let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.path);
                 self.buf.push_str(&s);
@@ -95,8 +95,8 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&topic.path)? {
-            Object::Topic(topic) => {
+        match &self.git.fetch(&RepoPath::from(&topic.path)) {
+            Some(Object::Topic(topic)) => {
                 let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path());
                 self.buf.push_str(&line);
             }
@@ -106,13 +106,17 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
-        match &self.git.fetch(&child.path)? {
-            Object::Topic(topic) => {
+        let path = RepoPath::from(&child.path);
+        match &self.git.fetch(&path) {
+            Some(Object::Topic(topic)) => {
                 self.visit_child_topic(topic)?;
             }
-            Object::Link(link) => {
+
+            Some(Object::Link(link)) => {
                 self.visit_child_link(link)?;
             }
+
+            None => {}
         }
         Ok(())
     }
@@ -129,8 +133,12 @@ fn parse_args() -> Opts {
 async fn main() -> Result<()> {
     let opts = parse_args();
     let (root_directory, path) = parse_path(&opts.filename)?;
-    let mut git = Git::new(root_directory);
-    let object = git.fetch(&path)?;
+    let mut git = Git::new(&Viewer::super_user(), &root_directory);
+    let object = git.fetch(&path);
+    if object.is_none() {
+        return Err(Error::NotFound(format!("not found: {}", path)));
+    }
+    let object = object.unwrap();
 
     let mut output = ConsoleOutput {
         git: &mut git,

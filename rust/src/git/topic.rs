@@ -23,7 +23,12 @@ impl DeleteTopic {
     {
         let topic_path = &self.topic_path;
         let date = chrono::Utc::now();
-        let topic = git.fetch_topic(&topic_path.inner)?;
+
+        let topic = git.fetch_topic(topic_path);
+        if topic.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", topic_path)));
+        }
+        let topic = topic.unwrap();
 
         if topic.metadata.root {
             return Err(Error::Repo("cannot delete root topic".to_owned()));
@@ -44,15 +49,17 @@ impl DeleteTopic {
 
         // Remove the topic from the children of the parent topics
         for parent in &topic.parent_topics {
-            let mut parent = git.fetch_topic(&parent.path)?;
-            parent.children.remove(&TopicChild {
-                // The 'added' field is ignored
-                added: chrono::Utc::now(),
-                kind: Kind::Topic,
-                path: topic_path.inner.to_owned(),
-            });
-            git.save_topic(&parent.path(), &parent, &mut indexer)?;
-            topics.push(parent.clone());
+            let path = RepoPath::from(&parent.path);
+            if let Some(mut topic) = git.fetch_topic(&path) {
+                topic.children.remove(&TopicChild {
+                    // The 'added' field is ignored
+                    added: chrono::Utc::now(),
+                    kind: Kind::Topic,
+                    path: topic_path.inner.to_owned(),
+                });
+                git.save_topic(&path, &topic, &mut indexer)?;
+                topics.push(topic.clone());
+            }
         }
 
         let mut child_links = vec![];
@@ -60,22 +67,25 @@ impl DeleteTopic {
 
         // Remove the topic from its children, moving them onto the parent topics
         for child in &topic.children {
-            match git.fetch(&child.path)? {
-                Object::Link(child_link) => {
+            let path = RepoPath::from(&child.path);
+            match git.fetch(&path) {
+                Some(Object::Link(child_link)) => {
                     let mut link = child_link.to_owned();
                     link.parent_topics.remove(&topic.to_parent_topic());
                     link.parent_topics.append(&mut parent_topics.clone());
                     child_links.push(link.clone());
-                    git.save_link(&RepoPath::from(&child.path), &link, &mut indexer)?;
+                    git.save_link(&path, &link, &mut indexer)?;
                 }
 
-                Object::Topic(child_topic) => {
+                Some(Object::Topic(child_topic)) => {
                     let mut child_topic = child_topic.to_owned();
                     child_topic.parent_topics.remove(&topic.to_parent_topic());
                     child_topic.parent_topics.append(&mut parent_topics.clone());
                     child_topics.push(child_topic.clone());
-                    git.save_topic(&RepoPath::from(&child.path), &child_topic, &mut indexer)?;
+                    git.save_topic(&path, &child_topic, &mut indexer)?;
                 }
+
+                None => {}
             }
         }
 
@@ -114,6 +124,20 @@ impl DeleteTopic {
     }
 }
 
+pub struct FetchTopicCount {
+    pub actor: Viewer,
+}
+
+pub struct FetchTopicCountResult {
+    pub count: usize,
+}
+
+impl FetchTopicCount {
+    pub fn call(&self, _git: &Git) -> Result<FetchTopicCountResult> {
+        Ok(FetchTopicCountResult { count: 100 })
+    }
+}
+
 pub struct RemoveTopicTimerange {
     pub actor: Viewer,
     pub topic_path: RepoPath,
@@ -129,7 +153,12 @@ impl RemoveTopicTimerange {
     where
         S: SaveChangesForPrefix,
     {
-        let mut topic = git.fetch_topic(&self.topic_path.inner)?;
+        let topic = git.fetch_topic(&self.topic_path);
+        if topic.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
+        }
+        let mut topic = topic.unwrap();
+
         let previous_timerange = topic.metadata.timerange.clone();
         let mut indexer = Indexer::new(git, IndexMode::Update);
 
@@ -154,24 +183,10 @@ impl RemoveTopicTimerange {
             actor_id: self.actor.user_id.to_owned(),
             date: chrono::Utc::now(),
             id: activity::Change::new_id(),
-            parent_topics,
+            parent_topics: parent_topics.iter().map(|path| path.to_owned()).collect(),
             previous_timerange,
             updated_topic: activity::TopicInfo::from(topic),
         })
-    }
-}
-
-pub struct FetchTopicCount {
-    pub actor: Viewer,
-}
-
-pub struct FetchTopicCountResult {
-    pub count: usize,
-}
-
-impl FetchTopicCount {
-    pub fn call(&self, _git: &Git) -> Result<FetchTopicCountResult> {
-        Ok(FetchTopicCountResult { count: 100 })
     }
 }
 
@@ -195,7 +210,12 @@ impl UpdateTopicParentTopics {
 
         let date = chrono::Utc::now();
         let mut indexer = Indexer::new(git, IndexMode::Update);
-        let mut child = git.fetch_topic(&self.topic_path.inner)?;
+        let child = git.fetch_topic(&self.topic_path);
+        if child.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
+        }
+        let mut child = child.unwrap();
+
         let mut updates: Vec<Topic> = vec![];
 
         let parent_topics = self
@@ -213,11 +233,12 @@ impl UpdateTopicParentTopics {
         let mut added_topics = vec![];
 
         for parent in added {
-            let mut topic = parent.fetch(git)?;
-            topic.children.insert(child.to_topic_child(date));
-            child.parent_topics.insert(parent.to_owned());
-            added_topics.push(topic.clone());
-            updates.push(topic);
+            if let Some(mut topic) = parent.fetch(git) {
+                topic.children.insert(child.to_topic_child(date));
+                child.parent_topics.insert(parent.to_owned());
+                added_topics.push(topic.clone());
+                updates.push(topic);
+            }
         }
 
         let removed = child
@@ -228,11 +249,12 @@ impl UpdateTopicParentTopics {
         let mut removed_topics = vec![];
 
         for parent in removed {
-            let mut topic = parent.fetch(git)?;
-            topic.children.remove(&child.to_topic_child(date));
-            child.parent_topics.remove(&parent);
-            removed_topics.push(topic.clone());
-            updates.push(topic);
+            if let Some(mut topic) = parent.fetch(git) {
+                topic.children.remove(&child.to_topic_child(date));
+                child.parent_topics.remove(&parent);
+                removed_topics.push(topic.clone());
+                updates.push(topic);
+            }
         }
 
         let change = self.change(&child, &added_topics, &removed_topics, date);
@@ -303,7 +325,12 @@ impl UpdateTopicSynonyms {
     where
         S: SaveChangesForPrefix,
     {
-        let mut topic = git.fetch_topic(&self.topic_path.inner)?;
+        let topic = git.fetch_topic(&self.topic_path);
+        if topic.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
+        }
+        let mut topic = topic.unwrap();
+
         let mut indexer = Indexer::new(git, IndexMode::Update);
         let lookup = topic
             .metadata
@@ -386,7 +413,12 @@ impl UpsertTopic {
     where
         S: SaveChangesForPrefix,
     {
-        let mut parent = self.fetch_parent(git)?;
+        let parent = self.fetch_parent(git);
+        if parent.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", self.parent_topic)));
+        }
+        let mut parent = parent.unwrap();
+
         let mut matches = git.synonym_phrase_matches(&[&self.prefix], &self.name)?;
         let date = chrono::Utc::now();
 
@@ -432,7 +464,12 @@ impl UpsertTopic {
 
                 OnMatchingSynonym::Update(path) => {
                     if git.cycle_exists(path, &parent.path())? {
-                        let ancestor = git.fetch_topic(&path.inner)?;
+                        let ancestor = git.fetch_topic(path);
+                        if ancestor.is_none() {
+                            return Err(Error::NotFound(format!("not found: {}", path)));
+                        }
+                        let ancestor = ancestor.unwrap();
+
                         log::info!("a cycle was found");
                         let alerts = vec![Alert::Warning(format!(
                             "{} is a subtopic of {}",
@@ -459,7 +496,12 @@ impl UpsertTopic {
                     }
 
                     log::info!("updating existing topic {:?}", path);
-                    let mut topic = git.fetch_topic(&path.inner)?;
+                    let topic = git.fetch_topic(path);
+                    if topic.is_none() {
+                        return Err(Error::NotFound(format!("not found: {}", path)));
+                    }
+                    let mut topic = topic.unwrap();
+
                     topic.parent_topics.insert(parent.to_parent_topic());
 
                     topic.metadata.synonyms.push(Synonym {
@@ -524,9 +566,8 @@ impl UpsertTopic {
         (path, topic)
     }
 
-    fn fetch_parent(&self, git: &Git) -> Result<Topic> {
-        let path = &self.parent_topic.inner;
-        git.fetch_topic(path)
+    fn fetch_parent(&self, git: &Git) -> Option<Topic> {
+        git.fetch_topic(&self.parent_topic)
     }
 }
 
@@ -547,7 +588,12 @@ impl UpsertTopicTimerange {
     where
         S: SaveChangesForPrefix,
     {
-        let mut topic = git.fetch_topic(&self.topic_path.inner)?;
+        let topic = git.fetch_topic(&self.topic_path);
+        if topic.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
+        }
+        let mut topic = topic.unwrap();
+
         let previous_timerange = topic.metadata.timerange.clone();
 
         let mut indexer = Indexer::new(git, IndexMode::Update);
@@ -573,7 +619,7 @@ impl UpsertTopicTimerange {
             actor_id: self.actor.user_id.to_owned(),
             date: chrono::Utc::now(),
             id: activity::Change::new_id(),
-            parent_topics,
+            parent_topics: parent_topics.iter().map(|path| path.to_owned()).collect(),
             previous_timerange,
             updated_topic: activity::TopicInfo::from(topic),
             updated_timerange: self.timerange.clone(),

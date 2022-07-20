@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use strum_macros::EnumString;
+use void::Void;
 
 use crate::errors::Error;
 
@@ -195,6 +196,14 @@ impl std::cmp::PartialOrd for RepoPath {
     }
 }
 
+impl std::str::FromStr for RepoPath {
+    type Err = Void;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(RepoPath::from(s))
+    }
+}
+
 pub fn random_id() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -377,12 +386,23 @@ pub fn sha256_base64(normalized: &str) -> String {
 #[derive(Clone, Debug)]
 pub struct Viewer {
     pub read_prefixes: RepoPrefixList,
-    pub write_prefixes: RepoPrefixList,
     pub session_id: Option<String>,
+    pub super_user: bool,
     pub user_id: String,
+    pub write_prefixes: RepoPrefixList,
 }
 
 impl Viewer {
+    pub fn super_user() -> Self {
+        Self {
+            read_prefixes: RepoPrefixList(vec![]),
+            session_id: None,
+            super_user: true,
+            user_id: "".to_owned(),
+            write_prefixes: RepoPrefixList(vec![]),
+        }
+    }
+
     pub fn ensure_can_read(&self, path: &RepoPath) -> Result<()> {
         if !self.can_read(path) {
             return Err(Error::Repo("not allowed".into()));
@@ -399,15 +419,22 @@ impl Viewer {
             write_prefixes: RepoPrefixList(vec![]),
             read_prefixes: RepoPrefixList(vec![RepoPrefix::from(WIKI_REPO_PREFIX)]),
             session_id: None,
+            super_user: false,
             user_id,
         }
     }
 
     pub fn can_read(&self, path: &RepoPath) -> bool {
+        if self.super_user {
+            return true;
+        }
         self.read_prefixes.include(path)
     }
 
     pub fn can_update(&self, path: &RepoPath) -> bool {
+        if self.super_user {
+            return true;
+        }
         self.write_prefixes.include(path)
     }
 
@@ -465,6 +492,7 @@ mod tests {
                 write_prefixes: prefixes.to_owned(),
                 read_prefixes: prefixes,
                 session_id: Some("1".to_owned()),
+                super_user: false,
                 user_id: "2".to_owned(),
             };
 

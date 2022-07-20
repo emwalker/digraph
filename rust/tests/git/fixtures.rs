@@ -12,7 +12,7 @@ use tempfile::{self, TempDir};
 use super::{actor, upsert_link};
 
 pub struct Fixtures {
-    path: PathBuf,
+    pub path: PathBuf,
     source: PathBuf,
     pub repo: Repository,
     _tempdir: TempDir,
@@ -28,7 +28,7 @@ impl Fixtures {
         let tempdir = tempfile::tempdir().unwrap();
         let path = PathBuf::from(&tempdir.path());
         let root = DataRoot::new(path.clone());
-        let git = Git::new(root);
+        let git = Git::new(&Viewer::super_user(), &root);
         let repo = Repository::new(&RepoPrefix::from("/wiki/"), git);
 
         Fixtures {

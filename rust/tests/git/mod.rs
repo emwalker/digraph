@@ -31,6 +31,7 @@ fn actor() -> Viewer {
         user_id: "2".into(),
         read_prefixes: RepoPrefixList::from(&vec!["2".into()]),
         write_prefixes: RepoPrefixList::from(&vec!["2".into()]),
+        super_user: false,
         session_id: Some("2".into()),
     }
 }
@@ -39,7 +40,7 @@ fn fetch_link<F>(f: &Fixtures, path: &RepoPath, block: F)
 where
     F: Fn(Link),
 {
-    let link = f.repo.git.fetch_link(&path.inner).unwrap();
+    let link = f.repo.git.fetch_link(path).unwrap();
     block(link);
 }
 
@@ -47,7 +48,7 @@ fn fetch_topic<F>(f: &Fixtures, path: &RepoPath, block: F)
 where
     F: Fn(Topic),
 {
-    let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+    let topic = f.repo.git.fetch_topic(path).unwrap();
     block(topic);
 }
 

@@ -1249,7 +1249,7 @@ mod tests {
                 actor_id: "2".to_owned(),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topics,
+                parent_topics: parent_topics.iter().map(|path| path.to_owned()).collect(),
                 previous_timerange: previous,
                 updated_topic: TopicInfo::from(topic),
             })
@@ -1308,7 +1308,7 @@ mod tests {
                 actor_id: "2".to_owned(),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topics,
+                parent_topics: parent_topics.iter().map(|path| path.to_owned()).collect(),
                 previous_timerange: None,
                 updated_timerange: Timerange {
                     starts: date,

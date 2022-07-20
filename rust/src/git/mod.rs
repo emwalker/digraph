@@ -125,6 +125,7 @@ impl Link {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ParentTopic {
+    // RepoPath is hard to serialize and deserialize, so let's keep this a string
     pub path: String,
 }
 
@@ -141,8 +142,8 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, git: &Git) -> Result<Topic> {
-        git.fetch_topic(&self.path)
+    pub fn fetch(&self, git: &Git) -> Option<Topic> {
+        git.fetch_topic(&RepoPath::from(&self.path))
     }
 }
 
@@ -444,7 +445,7 @@ impl std::fmt::Display for DataRoot {
     }
 }
 
-pub fn parse_path(input: &str) -> Result<(DataRoot, String)> {
+pub fn parse_path(input: &str) -> Result<(DataRoot, RepoPath)> {
     lazy_static! {
         static ref RE: Regex =
             Regex::new(r"^(.+?)/(\w+)/objects/([\w_-]{2})/([\w_-]{2})/([\w_-]+)/object.yaml$")
@@ -470,10 +471,10 @@ pub fn parse_path(input: &str) -> Result<(DataRoot, String)> {
             _ => return Err(Error::Repo(format!("bad path: {}", input))),
         };
 
-    let id = format!("/{}/{}{}{}", org_login, part1, part2, part3);
+    let path = format!("/{}/{}{}{}", org_login, part1, part2, part3);
     let root = PathBuf::from(root);
 
-    Ok((DataRoot::new(root), id))
+    Ok((DataRoot::new(root), RepoPath::from(&path)))
 }
 
 impl DataRoot {
@@ -481,16 +482,15 @@ impl DataRoot {
         Self { root }
     }
 
-    pub fn change_filename(&self, path: &str) -> Result<PathBuf> {
+    pub fn change_filename(&self, path: &RepoPath) -> Result<PathBuf> {
         Ok(self.basename("changes", path)?.join("change.yaml"))
     }
 
-    pub fn change_index_filename(&self, path: &str) -> Result<PathBuf> {
+    pub fn change_index_filename(&self, path: &RepoPath) -> Result<PathBuf> {
         Ok(self.basename("objects", path)?.join("changes.yaml"))
     }
 
-    pub fn basename(&self, subdirectory: &str, path: &str) -> Result<PathBuf> {
-        let path = RepoPath::from(path);
+    pub fn basename(&self, subdirectory: &str, path: &RepoPath) -> Result<PathBuf> {
         let (part1, part2, part3) = path.parts()?;
         let basename = format!(
             "{}/{}/{}/{}/{}",
@@ -500,7 +500,7 @@ impl DataRoot {
         Ok(self.root.join(basename))
     }
 
-    pub fn object_filename(&self, path: &str) -> Result<PathBuf> {
+    pub fn object_filename(&self, path: &RepoPath) -> Result<PathBuf> {
         Ok(self.basename("objects", path)?.join("object.yaml"))
     }
 
@@ -542,21 +542,16 @@ impl Iterator for DownSetIter {
                     }
                     self.seen.insert(topic_child.clone());
 
-                    match self.git.fetch_topic(&topic_child.path) {
-                        Ok(topic) => {
-                            for child in &topic.children {
-                                if child.kind != Kind::Topic {
-                                    break;
-                                }
-                                self.stack.push(child.clone());
+                    let path = RepoPath::from(&topic_child.path);
+                    if let Some(topic) = self.git.fetch_topic(&path) {
+                        for child in &topic.children {
+                            if child.kind != Kind::Topic {
+                                break;
                             }
-                            log::debug!("yielding topic {}", topic_child.path);
-                            return Some(topic);
+                            self.stack.push(child.clone());
                         }
-
-                        Err(err) => {
-                            log::error!("failed to fetch topic: {}", err)
-                        }
+                        log::debug!("yielding topic {}", topic_child.path);
+                        return Some(topic);
                     };
                 }
 
@@ -585,18 +580,22 @@ impl DownSetIter {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Git {
-    root: DataRoot,
+    pub root: DataRoot,
+    viewer: Viewer,
 }
 
 impl Git {
-    pub fn new(root: DataRoot) -> Self {
-        Self { root }
+    pub fn new(viewer: &Viewer, root: &DataRoot) -> Self {
+        Self {
+            viewer: viewer.to_owned(),
+            root: root.to_owned(),
+        }
     }
 
     pub fn change_index(&self, path: &RepoPath, index_mode: IndexMode) -> Result<ActivityIndex> {
-        let filename = self.root.change_index_filename(&path.inner)?;
+        let filename = self.root.change_index_filename(path)?;
         match index_mode {
             IndexMode::Replace => Ok(ActivityIndex::new(&filename)),
             IndexMode::ReadOnly => ActivityIndex::load(&filename),
@@ -604,21 +603,45 @@ impl Git {
         }
     }
 
-    pub fn change_filename(&self, path: &str) -> Result<PathBuf> {
+    pub fn change_filename(&self, path: &RepoPath) -> Result<PathBuf> {
         self.root.change_filename(path)
     }
 
     pub fn exists(&self, path: &RepoPath) -> Result<bool> {
-        let filename = self.root.object_filename(&path.inner)?;
+        if !self.viewer.can_read(path) {
+            return Ok(false);
+        }
+        let filename = self.root.object_filename(path)?;
         Ok(Path::new(&filename).exists())
     }
 
-    pub fn fetch(&self, path: &str) -> Result<Object> {
-        let path = self.root.object_filename(path)?;
-        let fh = std::fs::File::open(&path)
-            .map_err(|e| Error::Repo(format!("problem opening file {:?}: {}", path, e)))?;
-        let object: Object = serde_yaml::from_reader(fh)?;
-        Ok(object)
+    pub fn fetch(&self, path: &RepoPath) -> Option<Object> {
+        if !self.viewer.can_read(path) {
+            return None;
+        }
+
+        let path = match self.root.object_filename(path) {
+            Ok(path) => path,
+            Err(_) => return None,
+        };
+
+        let fh = match std::fs::File::open(&path) {
+            Ok(fh) => fh,
+            Err(err) => {
+                log::error!("problem opening file {:?}: {}", path, err);
+                return None;
+            }
+        };
+
+        let object: Object = match serde_yaml::from_reader(fh) {
+            Ok(object) => object,
+            Err(err) => {
+                log::error!("problem deserializing result: {}", err);
+                return None;
+            }
+        };
+
+        Some(object)
     }
 
     pub fn fetch_activity(&self, path: &RepoPath, first: usize) -> Result<Vec<activity::Change>> {
@@ -627,11 +650,13 @@ impl Git {
         let mut changes = vec![];
 
         for reference in index.references().iter().take(first) {
-            let filename = self.change_filename(&reference.path)?;
+            let path = RepoPath::from(&reference.path);
+            let filename = self.change_filename(&path)?;
             let fh = std::fs::File::open(&filename)
                 .map_err(|e| Error::Repo(format!("problem opening file {:?}: {}", filename, e)))?;
             let result: std::result::Result<activity::Change, serde_yaml::Error> =
                 serde_yaml::from_reader(fh);
+
             match result {
                 Ok(change) => changes.push(change),
                 Err(err) => log::warn!("failed to load change: {}", err),
@@ -641,17 +666,17 @@ impl Git {
         Ok(changes)
     }
 
-    pub fn fetch_topic(&self, path: &str) -> Result<Topic> {
+    pub fn fetch_topic(&self, path: &RepoPath) -> Option<Topic> {
         match &self.fetch(path)? {
-            Object::Topic(topic) => Ok(topic.clone()),
-            other => return Err(Error::Repo(format!("{} not a topic: {:?}", path, other))),
+            Object::Topic(topic) => Some(topic.clone()),
+            _ => None,
         }
     }
 
-    pub fn fetch_link(&self, path: &str) -> Result<Link> {
+    pub fn fetch_link(&self, path: &RepoPath) -> Option<Link> {
         match &self.fetch(path)? {
-            Object::Link(link) => Ok(link.clone()),
-            other => return Err(Error::Repo(format!("{} not a link: {:?}", path, other))),
+            Object::Link(link) => Some(link.clone()),
+            _ => None,
         }
     }
 
@@ -708,7 +733,7 @@ impl Git {
 
     fn link(&self, path: &RepoPath) -> Result<Option<Link>> {
         if self.exists(path)? {
-            return Ok(Some(self.fetch_link(&path.inner)?));
+            return Ok(self.fetch_link(path));
         }
         Ok(None)
     }
@@ -745,7 +770,7 @@ impl Git {
     }
 
     fn remove(&self, path: &RepoPath) -> Result<()> {
-        let filename = self.root.object_filename(&path.inner)?;
+        let filename = self.root.object_filename(path)?;
         if filename.exists() {
             fs::remove_file(filename)?;
         }
@@ -824,7 +849,8 @@ impl Git {
         reference: &ChangeReference,
         change: &activity::Change,
     ) -> Result<()> {
-        let filename = self.root.change_filename(&reference.path)?;
+        let path = RepoPath::from(&reference.path);
+        let filename = self.root.change_filename(&path)?;
         let dest = filename.parent().expect("expected a parent directory");
         fs::create_dir_all(&dest).ok();
         let s = serde_yaml::to_string(&change)?;
@@ -867,7 +893,7 @@ impl Git {
     }
 
     fn save_object<T: Serialize>(&self, path: &RepoPath, object: &T) -> Result<()> {
-        let filename = self.root.object_filename(&path.inner)?;
+        let filename = self.root.object_filename(path)?;
         let dest = filename.parent().expect("expected a parent directory");
         fs::create_dir_all(&dest).ok();
         let s = serde_yaml::to_string(&object)?;
@@ -926,13 +952,15 @@ impl Git {
                 .synonym_index(&key, IndexType::SynonymPhrase, IndexMode::Update)?
                 .full_matches(&phrase)?
             {
-                let topic = self.fetch_topic(&entry.path)?;
-                matches.insert(SynonymMatch {
-                    cycle: false,
-                    entry: (*entry).clone(),
-                    name: name.to_string(),
-                    topic,
-                });
+                let path = RepoPath::from(&entry.path);
+                if let Some(topic) = self.fetch_topic(&path) {
+                    matches.insert(SynonymMatch {
+                        cycle: false,
+                        entry: (*entry).clone(),
+                        name: name.to_string(),
+                        topic,
+                    });
+                }
             }
         }
 
@@ -973,19 +1001,13 @@ impl Git {
 
     pub fn topic(&self, path: &RepoPath) -> Result<Option<Topic>> {
         if self.exists(path)? {
-            return Ok(Some(self.fetch_topic(&path.inner)?));
+            return Ok(self.fetch_topic(path));
         }
         Ok(None)
     }
 
     pub fn topic_down_set(&self, topic_path: &RepoPath) -> DownSetIter {
-        match self.fetch_topic(&topic_path.inner) {
-            Ok(topic) => DownSetIter::new(self.clone(), Some(topic)),
-            Err(err) => {
-                log::error!("problem fetching topic: {}", err);
-                DownSetIter::new(self.clone(), None)
-            }
-        }
+        DownSetIter::new(self.clone(), self.fetch_topic(topic_path))
     }
 
     fn topic_searches(&self, topic: Option<Topic>) -> Result<BTreeSet<Search>> {
@@ -1021,18 +1043,18 @@ mod tests {
         let result = parse_path("../../wiki/12/34/5678/object.yaml");
         assert!(matches!(result, Err(Error::Repo(_))));
 
-        let (root, id) = parse_path("../../wiki/objects/12/34/5678/object.yaml").unwrap();
+        let (root, path) = parse_path("../../wiki/objects/12/34/5678/object.yaml").unwrap();
         assert_eq!(root.root, PathBuf::from("../.."));
-        assert_eq!(id, String::from("/wiki/12345678"));
+        assert_eq!(path.inner, "/wiki/12345678".to_owned());
 
-        let (root, id) = parse_path(
+        let (root, path) = parse_path(
             "../../wiki/objects/q-/ZZ/meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ/object.yaml",
         )
         .unwrap();
         assert_eq!(root.root, PathBuf::from("../.."));
         assert_eq!(
-            id,
-            String::from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
+            path.inner,
+            "/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ".to_owned(),
         );
     }
 
@@ -1040,23 +1062,28 @@ mod tests {
     fn data_root_file_path() {
         let root = DataRoot::new(PathBuf::from("../.."));
 
-        assert!(matches!(root.object_filename("1234"), Err(Error::Repo(_))));
         assert!(matches!(
-            root.object_filename("wiki/123456"),
+            root.object_filename(&RepoPath::from("1234")),
             Err(Error::Repo(_))
         ));
         assert!(matches!(
-            root.object_filename("/wiki/1234"),
+            root.object_filename(&RepoPath::from("wiki/123456")),
+            Err(Error::Repo(_))
+        ));
+        assert!(matches!(
+            root.object_filename(&RepoPath::from("/wiki/1234")),
             Err(Error::Repo(_))
         ));
 
         assert_eq!(
-            root.object_filename("/wiki/123456").unwrap(),
+            root.object_filename(&RepoPath::from("/wiki/123456"))
+                .unwrap(),
             PathBuf::from("../../wiki/objects/12/34/56/object.yaml")
         );
 
         assert_eq!(
-            root.object_filename("/with-dash/123456").unwrap(),
+            root.object_filename(&RepoPath::from("/with-dash/123456"))
+                .unwrap(),
             PathBuf::from("../../with-dash/objects/12/34/56/object.yaml")
         );
     }

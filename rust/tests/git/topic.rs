@@ -4,6 +4,40 @@ use digraph::redis;
 use std::collections::BTreeSet;
 
 #[cfg(test)]
+mod visibility {
+    use super::*;
+    use digraph::git::Git;
+
+    fn viewer(prefixes: &Vec<String>) -> Viewer {
+        let prefixes = RepoPrefixList::from(prefixes);
+        Viewer {
+            read_prefixes: prefixes.to_owned(),
+            write_prefixes: prefixes,
+            session_id: Some("1".to_owned()),
+            super_user: false,
+            user_id: "2".to_owned(),
+        }
+    }
+
+    #[test]
+    fn viewer_can_read() {
+        let f = Fixtures::copy("simple");
+        let topic = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from(WIKI_ROOT_TOPIC_PATH))
+            .unwrap();
+
+        let git = Git::new(&viewer(&vec!["/wiki/".to_owned()]), &f.repo.git.root);
+        assert!(git.fetch(&topic.path()).is_some());
+
+        let git = Git::new(&viewer(&vec!["/other/".to_owned()]), &f.repo.git.root);
+        assert!(!git.exists(&topic.path()).unwrap());
+        assert!(git.fetch(&topic.path()).is_none());
+    }
+}
+
+#[cfg(test)]
 mod delete_topic {
     use super::*;
     use digraph::git::{
@@ -34,7 +68,8 @@ mod delete_topic {
     fn parent_topics_updated() {
         let f = Fixtures::copy("simple");
         let path = RepoPath::from("/wiki/00001");
-        let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let root = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
+        let parent = f.repo.git.fetch_topic(&root).unwrap();
         assert!(parent.has_child(&path));
 
         DeleteTopic {
@@ -44,14 +79,15 @@ mod delete_topic {
         .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
-        let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let parent = f.repo.git.fetch_topic(&root).unwrap();
         assert!(!parent.has_child(&path));
     }
 
     #[test]
     fn cannot_delete_root_topic() {
         let f = Fixtures::copy("simple");
-        let topic = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let root = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
+        let topic = f.repo.git.fetch_topic(&root).unwrap();
         assert!(topic.metadata.root);
 
         let result = DeleteTopic {
@@ -61,7 +97,7 @@ mod delete_topic {
         .call(&f.repo.git, &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
-        let topic = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let topic = f.repo.git.fetch_topic(&root).unwrap();
         assert!(topic.metadata.root);
     }
 
@@ -139,7 +175,7 @@ mod delete_topic_timerange {
         .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
-        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let topic = f.repo.git.fetch_topic(&path).unwrap();
         assert!(topic.metadata.timerange.is_some());
 
         RemoveTopicTimerange {
@@ -149,7 +185,7 @@ mod delete_topic_timerange {
         .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
-        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let topic = f.repo.git.fetch_topic(&path).unwrap();
         assert!(topic.metadata.timerange.is_none());
     }
 }
@@ -291,7 +327,11 @@ mod upsert_topic {
     #[test]
     fn parent_topic_updated() {
         let f = Fixtures::copy("simple");
-        let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
+        let parent = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00001"))
+            .unwrap();
         assert_eq!(parent.children, BTreeSet::new());
 
         let result = upsert_topic(
@@ -304,7 +344,11 @@ mod upsert_topic {
         assert!(result.saved);
         let child_path = &result.topic.unwrap().metadata.path;
 
-        let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
+        let parent = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00001"))
+            .unwrap();
         let children = parent
             .children
             .iter()
@@ -317,9 +361,13 @@ mod upsert_topic {
     #[test]
     fn no_cycles() {
         let f = Fixtures::copy("simple");
-        let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let parent = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from(WIKI_ROOT_TOPIC_PATH))
+            .unwrap();
         let path = RepoPath::from("/wiki/00001");
-        let child = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let child = f.repo.git.fetch_topic(&path).unwrap();
         assert!(parent.has_child(&path));
 
         let result = upsert_topic(
@@ -348,10 +396,18 @@ mod update_topic_parent_topics {
     #[test]
     fn parent_topic_added() {
         let f = Fixtures::copy("simple");
-        let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
+        let parent = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00001"))
+            .unwrap();
         assert_eq!(parent.children, BTreeSet::new());
 
-        let child = f.repo.git.fetch_topic("/wiki/00002").unwrap();
+        let child = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00002"))
+            .unwrap();
         assert!(!parent.has_child(&child.path()));
 
         let result = UpdateTopicParentTopics {
@@ -364,18 +420,34 @@ mod update_topic_parent_topics {
 
         assert_eq!(result.topic, child);
 
-        let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
-        let child = f.repo.git.fetch_topic("/wiki/00002").unwrap();
+        let parent = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00001"))
+            .unwrap();
+        let child = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00002"))
+            .unwrap();
         assert!(parent.has_child(&child.path()));
     }
 
     #[test]
     fn parent_topic_removed() {
         let f = Fixtures::copy("simple");
-        let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
+        let parent = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00001"))
+            .unwrap();
         assert_eq!(parent.children, BTreeSet::new());
 
-        let child = f.repo.git.fetch_topic("/wiki/00002").unwrap();
+        let child = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00002"))
+            .unwrap();
         assert!(!parent.has_child(&child.path()));
 
         let result = UpdateTopicParentTopics {
@@ -388,15 +460,27 @@ mod update_topic_parent_topics {
 
         assert_eq!(result.topic, child);
 
-        let parent = f.repo.git.fetch_topic("/wiki/00001").unwrap();
-        let child = f.repo.git.fetch_topic("/wiki/00002").unwrap();
+        let parent = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00001"))
+            .unwrap();
+        let child = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00002"))
+            .unwrap();
         assert!(parent.has_child(&child.path()));
     }
 
     #[test]
     fn no_orphans() {
         let f = Fixtures::copy("simple");
-        let child = f.repo.git.fetch_topic("/wiki/00002").unwrap();
+        let child = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00002"))
+            .unwrap();
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
@@ -411,8 +495,16 @@ mod update_topic_parent_topics {
     #[test]
     fn no_cycles() {
         let f = Fixtures::copy("simple");
-        let parent = f.repo.git.fetch_topic(WIKI_ROOT_TOPIC_PATH).unwrap();
-        let child = f.repo.git.fetch_topic("/wiki/00001").unwrap();
+        let parent = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from(WIKI_ROOT_TOPIC_PATH))
+            .unwrap();
+        let child = f
+            .repo
+            .git
+            .fetch_topic(&RepoPath::from("/wiki/00001"))
+            .unwrap();
         assert!(parent.has_child(&child.path()));
 
         let result = UpdateTopicParentTopics {
@@ -453,7 +545,7 @@ mod update_topic_synonyms {
     fn synonyms_added() {
         let f = Fixtures::copy("simple");
         let path = RepoPath::from("/wiki/00001");
-        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let topic = f.repo.git.fetch_topic(&path).unwrap();
 
         assert_eq!(topic.name(Locale::EN), "A topic");
         assert_eq!(topic.metadata.synonyms.len(), 1);
@@ -514,7 +606,7 @@ mod update_topic_synonyms {
         let f = Fixtures::copy("simple");
         let path = RepoPath::from("/wiki/00001");
 
-        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let topic = f.repo.git.fetch_topic(&path).unwrap();
         let syn = topic.metadata.synonyms.first().unwrap();
         let added = syn.added;
 
@@ -526,7 +618,7 @@ mod update_topic_synonyms {
         .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
-        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let topic = f.repo.git.fetch_topic(&path).unwrap();
         let syn = topic.metadata.synonyms.first().unwrap();
         assert_eq!(syn.added, added);
     }
@@ -584,7 +676,7 @@ mod upsert_topic_timerange {
         let f = Fixtures::copy("simple");
         let path = RepoPath::from("/wiki/00001");
 
-        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let topic = f.repo.git.fetch_topic(&path).unwrap();
         assert!(topic.metadata.timerange.is_none());
 
         UpsertTopicTimerange {
@@ -598,7 +690,7 @@ mod upsert_topic_timerange {
         .call(&f.repo.git, &redis::Noop)
         .unwrap();
 
-        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let topic = f.repo.git.fetch_topic(&path).unwrap();
         assert!(topic.metadata.timerange.is_some());
     }
 
@@ -609,7 +701,7 @@ mod upsert_topic_timerange {
         let path = RepoPath::from("/wiki/00001");
         let date = chrono::Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
 
-        let topic = f.repo.git.fetch_topic(&path.inner).unwrap();
+        let topic = f.repo.git.fetch_topic(&path).unwrap();
         assert!(topic.metadata.timerange.is_none());
 
         assert_eq!(count(&f, "A topic"), 1);
@@ -621,7 +713,7 @@ mod upsert_topic_timerange {
                 prefix_format: TimerangePrefixFormat::StartYear,
                 starts: date,
             },
-            topic_path: path.to_owned(),
+            topic_path: path,
         }
         .call(&f.repo.git, &redis::Noop)
         .unwrap();

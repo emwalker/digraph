@@ -60,7 +60,7 @@ impl From<&git::Topic> for Topic {
         let parent_topic_paths = topic
             .parent_topics
             .iter()
-            .map(|p| RepoPath::from(&p.path))
+            .map(|parent| RepoPath::from(&parent.path))
             .collect::<Vec<RepoPath>>();
 
         let child_paths = topic
@@ -104,8 +104,9 @@ impl Loader<String> for LinkLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for path in paths {
-            let link = &self.git.fetch_link(path)?;
-            map.insert(path.to_owned(), link.to_owned());
+            if let Some(link) = &self.git.fetch_link(&RepoPath::from(path)) {
+                map.insert(path.to_owned(), link.to_owned());
+            }
         }
 
         Ok(map)
@@ -134,8 +135,9 @@ impl Loader<String> for ObjectLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for path in paths {
-            let object = &self.git.fetch(path)?;
-            map.insert(path.to_owned(), object.clone());
+            if let Some(object) = &self.git.fetch(&RepoPath::from(path)) {
+                map.insert(path.to_owned(), object.clone());
+            }
         }
 
         Ok(map)
