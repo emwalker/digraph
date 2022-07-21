@@ -126,7 +126,7 @@ impl Repo {
         let children = self.topic_children(parent_topic).await?;
         let mut links = vec![];
 
-        for child in &children {
+        for child in children.iter().take(50) {
             if let graphql::TopicChild::Link(link) = &child {
                 links.push(link.to_owned());
             }
@@ -152,7 +152,7 @@ impl Repo {
 
         let mut children = vec![];
 
-        for child_path in &child_paths {
+        for child_path in child_paths.iter().take(50) {
             let child = map.get(child_path);
             if child.is_none() {
                 // Probably not visible to the current user
@@ -378,9 +378,9 @@ impl Repo {
         let paths = paths.iter().map(|p| p.to_string()).collect::<Vec<String>>();
         let map = self.object_loader.load_many(paths.clone()).await?;
         let mut topics: Vec<Option<graphql::Topic>> = Vec::new();
-        for path in paths {
+        for path in paths.iter().take(50) {
             let topic = map
-                .get(&path)
+                .get(path)
                 .ok_or_else(|| Error::NotFound(format!("no topic: {}", path)))?;
 
             let topic = match &topic {

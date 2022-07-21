@@ -1,7 +1,5 @@
 Before switchover:
-* Restrict on org/repo prefix
-* Add limit to topic results (why did "Reading list" take such a long time?; or figure out why Reading list can't be found in a search)
-* Fix duplicate synonym bug
+* Fix private topic / link coloring bug
 * Fix glitch after updating synonyms
 * Capture previous title in UpsertLink
 * Look into whether the ordering of changes is stable
