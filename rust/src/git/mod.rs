@@ -680,6 +680,7 @@ impl Git {
         }
     }
 
+    // How to handle path visibility?
     pub fn cycle_exists(
         &self,
         descendant_path: &RepoPath,
@@ -779,12 +780,20 @@ impl Git {
     }
 
     fn remove_link(&self, path: &RepoPath, link: &Link, indexer: &mut Indexer) -> Result<()> {
+        if !self.viewer.can_update(path) {
+            return Err(Error::NotFound(format!("not found: {}", path)));
+        }
+
         let searches = self.link_searches(Some(link.to_owned()))?;
         indexer.remove_searches(&link.to_search_entry(), searches.iter())?;
         self.remove(path)
     }
 
     fn remove_topic(&self, path: &RepoPath, topic: &Topic, indexer: &mut Indexer) -> Result<()> {
+        if !self.viewer.can_update(path) {
+            return Err(Error::NotFound(format!("not found: {}", path)));
+        }
+
         indexer.remove_synonyms(path, topic)?;
 
         let meta = &topic.metadata;
@@ -805,6 +814,10 @@ impl Git {
     }
 
     pub fn mark_deleted(&self, path: &RepoPath) -> Result<()> {
+        if !self.viewer.can_update(path) {
+            return Err(Error::NotFound(format!("not found: {}", path)));
+        }
+
         let activity = self.fetch_activity(path, usize::MAX)?;
 
         for mut change in activity {
@@ -893,6 +906,10 @@ impl Git {
     }
 
     fn save_object<T: Serialize>(&self, path: &RepoPath, object: &T) -> Result<()> {
+        if !self.viewer.can_update(path) {
+            return Err(Error::NotFound(format!("not found: {}", path)));
+        }
+
         let filename = self.root.object_filename(path)?;
         let dest = filename.parent().expect("expected a parent directory");
         fs::create_dir_all(&dest).ok();
@@ -953,6 +970,10 @@ impl Git {
                 .full_matches(&phrase)?
             {
                 let path = RepoPath::from(&entry.path);
+                if !self.viewer.can_read(&path) {
+                    continue;
+                }
+
                 if let Some(topic) = self.fetch_topic(&path) {
                     matches.insert(SynonymMatch {
                         cycle: false,
@@ -1013,6 +1034,11 @@ impl Git {
     fn topic_searches(&self, topic: Option<Topic>) -> Result<BTreeSet<Search>> {
         let searches = match topic {
             Some(topic) => {
+                let path = topic.path();
+                if !self.viewer.can_read(&path) {
+                    return Err(Error::NotFound(format!("not found: {}", path)));
+                }
+
                 let meta = &topic.metadata;
                 let mut searches = BTreeSet::new();
 
