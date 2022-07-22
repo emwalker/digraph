@@ -378,7 +378,7 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
             date: chrono::Utc::now(),
             id: activity::Change::new_id(),
             imported_link: activity::LinkInfo::from(&link),
-            parent_topics: activity::TopicInfoList(topics),
+            parent_topics: activity::TopicInfoList::from(&topics),
         });
 
         git.save_link(&RepoPath::from(&link.metadata.path), &link, indexer)?;

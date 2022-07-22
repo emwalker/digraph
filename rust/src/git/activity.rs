@@ -183,10 +183,20 @@ impl From<(Locale, String, String)> for TopicInfo {
 }
 
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct TopicInfoList(pub BTreeSet<TopicInfo>);
+pub struct TopicInfoList(BTreeSet<TopicInfo>);
+
+impl Default for TopicInfoList {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl TopicInfoList {
-    fn is_empty(&self) -> bool {
+    pub fn new() -> Self {
+        Self(BTreeSet::new())
+    }
+
+    pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 }
@@ -208,6 +218,18 @@ impl From<&Vec<TopicInfo>> for TopicInfoList {
             set.insert(topic.to_owned());
         }
         Self(set)
+    }
+}
+
+impl From<&Topic> for TopicInfoList {
+    fn from(topic: &Topic) -> Self {
+        Self(BTreeSet::from([TopicInfo::from(topic)]))
+    }
+}
+
+impl From<&BTreeSet<TopicInfo>> for TopicInfoList {
+    fn from(set: &BTreeSet<TopicInfo>) -> Self {
+        Self(set.clone())
     }
 }
 
@@ -394,7 +416,7 @@ impl Change {
         }
     }
 
-    pub fn paths(&self) -> Vec<RepoPath> {
+    pub fn paths(&self) -> HashSet<RepoPath> {
         match self {
             Self::DeleteLink(inner) => inner.paths(),
             Self::DeleteTopic(inner) => inner.paths(),
@@ -440,10 +462,10 @@ pub struct DeleteLink {
 }
 
 impl DeleteLink {
-    fn paths(&self) -> Vec<RepoPath> {
-        let mut paths = vec![self.deleted_link.path()];
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.deleted_link.path()]);
         for topic in &self.parent_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
         paths
     }
@@ -467,19 +489,19 @@ pub struct DeleteTopic {
 }
 
 impl DeleteTopic {
-    fn paths(&self) -> Vec<RepoPath> {
-        let mut paths = vec![self.deleted_topic.path()];
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.deleted_topic.path()]);
 
         for link in &self.child_links.0 {
-            paths.push(link.path());
+            paths.insert(link.path());
         }
 
         for topic in &self.child_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
 
         for topic in &self.parent_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
 
         paths
@@ -503,10 +525,10 @@ pub struct ImportLink {
 }
 
 impl ImportLink {
-    fn paths(&self) -> Vec<RepoPath> {
-        let mut paths = vec![self.imported_link.path()];
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.imported_link.path()]);
         for topic in &self.parent_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
         paths
     }
@@ -530,19 +552,19 @@ pub struct ImportTopic {
 }
 
 impl ImportTopic {
-    fn paths(&self) -> Vec<RepoPath> {
-        let mut paths = vec![self.imported_topic.path()];
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.imported_topic.path()]);
 
         for link in &self.child_links.0 {
-            paths.push(link.path());
+            paths.insert(link.path());
         }
 
         for topic in &self.child_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
 
         for topic in &self.parent_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
 
         paths
@@ -569,8 +591,8 @@ pub struct RemoveTopicTimerange {
 }
 
 impl RemoveTopicTimerange {
-    fn paths(&self) -> Vec<RepoPath> {
-        vec![self.updated_topic.path()]
+    fn paths(&self) -> HashSet<RepoPath> {
+        HashSet::from([self.updated_topic.path()])
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -591,15 +613,15 @@ pub struct UpdateLinkParentTopics {
 }
 
 impl UpdateLinkParentTopics {
-    fn paths(&self) -> Vec<RepoPath> {
-        let mut paths = vec![self.updated_link.path()];
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.updated_link.path()]);
 
         for topic in &self.added_parent_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
 
         for topic in &self.removed_parent_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
 
         paths
@@ -618,20 +640,25 @@ pub struct UpdateTopicParentTopics {
     pub added_parent_topics: TopicInfoList,
     pub id: ChangeId,
     pub date: Timestamp,
+    pub parent_topic_paths: BTreeSet<String>,
     pub removed_parent_topics: TopicInfoList,
     pub updated_topic: TopicInfo,
 }
 
 impl UpdateTopicParentTopics {
-    fn paths(&self) -> Vec<RepoPath> {
-        let mut paths = vec![self.updated_topic.path()];
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.updated_topic.path()]);
 
         for topic in &self.added_parent_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
 
         for topic in &self.removed_parent_topics.0 {
-            paths.push(topic.path());
+            paths.insert(topic.path());
+        }
+
+        for path in &self.parent_topic_paths {
+            paths.insert(RepoPath::from(path));
         }
 
         paths
@@ -658,8 +685,8 @@ pub struct UpdateTopicSynonyms {
 }
 
 impl UpdateTopicSynonyms {
-    fn paths(&self) -> Vec<RepoPath> {
-        let mut paths = vec![self.updated_topic.path()];
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.updated_topic.path()]);
         paths.extend(self.parent_topics.iter().map(RepoPath::from).collect_vec());
         paths
     }
@@ -682,15 +709,15 @@ pub struct UpsertLink {
 }
 
 impl UpsertLink {
-    fn paths(&self) -> Vec<RepoPath> {
-        let mut paths = vec![self.upserted_link.path()];
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.upserted_link.path()]);
 
         if let Some(topic) = &self.add_parent_topic {
-            paths.push(topic.path());
+            paths.insert(topic.path());
         }
 
         for path in &self.parent_topics {
-            paths.push(RepoPath::from(path));
+            paths.insert(RepoPath::from(path));
         }
 
         paths
@@ -712,12 +739,17 @@ pub struct UpsertTopic {
     pub id: ChangeId,
     pub date: Timestamp,
     pub parent_topic: TopicInfo,
+    pub parent_topic_paths: BTreeSet<String>,
     pub upserted_topic: TopicInfo,
 }
 
 impl UpsertTopic {
-    fn paths(&self) -> Vec<RepoPath> {
-        vec![self.upserted_topic.path(), self.parent_topic.path()]
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.upserted_topic.path(), self.parent_topic.path()]);
+        for path in &self.parent_topic_paths {
+            paths.insert(RepoPath::from(path));
+        }
+        paths
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -740,10 +772,10 @@ pub struct UpsertTopicTimerange {
 }
 
 impl UpsertTopicTimerange {
-    fn paths(&self) -> Vec<RepoPath> {
-        let mut paths = vec![self.updated_topic.path()];
+    fn paths(&self) -> HashSet<RepoPath> {
+        let mut paths = HashSet::from([self.updated_topic.path()]);
         for path in &self.parent_topics {
-            paths.push(RepoPath::from(path));
+            paths.insert(RepoPath::from(path));
         }
         paths
     }
@@ -1054,11 +1086,34 @@ mod markdown {
     impl Markdown for UpdateTopicParentTopics {
         fn markdown(
             &self,
-            _locale: Locale,
+            locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
         ) -> String {
-            format!("{} added TOPIC to TOPIC and TOPIC", actor_name)
+            let mut actions = vec![];
+            let updated_topic = self.updated_topic.markdown(locale);
+
+            if !self.added_parent_topics.is_empty() {
+                actions.push(format!(
+                    "placed {} under {}",
+                    updated_topic,
+                    self.added_parent_topics.markdown(locale)
+                ));
+            }
+
+            if !self.removed_parent_topics.is_empty() {
+                actions.push(format!(
+                    "removed {} from {}",
+                    updated_topic,
+                    self.removed_parent_topics.markdown(locale)
+                ));
+            }
+
+            if actions.is_empty() {
+                actions.push(format!("mysteriously updated {}", updated_topic));
+            }
+
+            format!("{} {}", actor_name, actions.join(" and "))
         }
     }
 
@@ -1081,7 +1136,7 @@ mod markdown {
                 actions.push(markdown);
             }
 
-            if self.added_synonyms.is_empty() && self.removed_synonyms.is_empty() {
+            if actions.is_empty() {
                 if self.reordered {
                     actions.push("reordered the synonyms for".to_owned());
                 } else {
@@ -1304,26 +1359,55 @@ mod tests {
         );
     }
 
-    #[test]
-    fn upsert_topic() {
-        let topic1 = topic("Climate change");
-        let topic2 = topic("Climate");
+    mod update_topic_parent_topics {
+        use super::*;
 
-        let change = Change::UpsertTopic(UpsertTopic {
-            actor_id: "2".to_owned(),
-            date: chrono::Utc::now(),
-            id: Change::new_id(),
-            parent_topic: TopicInfo::from(&topic2),
-            upserted_topic: TopicInfo::from(&topic1),
-        });
+        #[test]
+        fn simple_case() {
+            let topic1 = topic("Climate change");
+            let topic2 = topic("Climate");
+            let topic3 = topic("Weather");
 
-        assert_eq!(
-            change.markdown(Locale::EN, "Gnusto", None),
-            format!(
-                "Gnusto added [Climate change]({}) to [Climate]({})",
-                topic1.metadata.path, topic2.metadata.path
-            ),
-        );
+            let change = Change::UpdateTopicParentTopics(UpdateTopicParentTopics {
+                actor_id: "2".to_owned(),
+                added_parent_topics: TopicInfoList::from(&topic2),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topic_paths: BTreeSet::from([topic3.metadata.path.to_owned()]),
+                removed_parent_topics: TopicInfoList::new(),
+                updated_topic: TopicInfo::from(&topic1),
+            });
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    "Gnusto placed [Climate change]({}) under [Climate]({})",
+                    topic1.metadata.path, topic2.metadata.path
+                ),
+            );
+        }
+
+        #[test]
+        fn paths() {
+            let topic1 = topic("Climate change");
+            let topic2 = topic("Climate");
+            let topic3 = topic("Weather");
+
+            let change = Change::UpdateTopicParentTopics(UpdateTopicParentTopics {
+                actor_id: "2".to_owned(),
+                added_parent_topics: TopicInfoList::from(&topic2),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topic_paths: BTreeSet::from([topic3.metadata.path.to_owned()]),
+                removed_parent_topics: TopicInfoList::new(),
+                updated_topic: TopicInfo::from(&topic1),
+            });
+
+            assert_eq!(
+                change.paths(),
+                HashSet::from([topic1.path(), topic2.path(), topic3.path()])
+            );
+        }
     }
 
     mod update_topic_synonyms {
@@ -1428,7 +1512,10 @@ mod tests {
                 reordered: false,
             });
 
-            assert_eq!(change.paths(), [topic1.path(), topic2.path()]);
+            assert_eq!(
+                change.paths(),
+                HashSet::from([topic1.path(), topic2.path()])
+            );
         }
     }
 
@@ -1558,7 +1645,55 @@ mod tests {
                 add_parent_topic: None,
             });
 
-            assert_eq!(change.paths(), [link.path(), topic1.path()]);
+            assert_eq!(change.paths(), HashSet::from([link.path(), topic1.path()]));
+        }
+    }
+
+    mod upsert_topic {
+        use super::*;
+
+        #[test]
+        fn simple_case() {
+            let topic1 = topic("Climate change");
+            let topic2 = topic("Climate");
+
+            let change = Change::UpsertTopic(UpsertTopic {
+                actor_id: "2".to_owned(),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topic: TopicInfo::from(&topic2),
+                parent_topic_paths: BTreeSet::from([topic2.metadata.path.to_owned()]),
+                upserted_topic: TopicInfo::from(&topic1),
+            });
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    "Gnusto added [Climate change]({}) to [Climate]({})",
+                    topic1.metadata.path, topic2.metadata.path
+                ),
+            );
+        }
+
+        #[test]
+        fn paths() {
+            let topic1 = topic("Climate change");
+            let topic2 = topic("Climate");
+            let topic3 = topic("Weather");
+
+            let change = Change::UpsertTopic(UpsertTopic {
+                actor_id: "2".to_owned(),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topic: TopicInfo::from(&topic2),
+                parent_topic_paths: BTreeSet::from([topic3.metadata.path.to_owned()]),
+                upserted_topic: TopicInfo::from(&topic1),
+            });
+
+            assert_eq!(
+                change.paths(),
+                HashSet::from([topic1.path(), topic2.path(), topic3.path()]),
+            );
         }
     }
 

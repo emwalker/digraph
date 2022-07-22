@@ -257,7 +257,7 @@ impl UpdateTopicParentTopics {
             }
         }
 
-        let change = self.change(&child, &added_topics, &removed_topics, date);
+        let change = self.change(&child, &parent_topics, &added_topics, &removed_topics, date);
 
         updates.push(child.clone());
         for topic in updates {
@@ -275,6 +275,7 @@ impl UpdateTopicParentTopics {
     fn change(
         &self,
         topic: &Topic,
+        parent_topics: &BTreeSet<ParentTopic>,
         added: &Vec<Topic>,
         removed: &Vec<Topic>,
         date: Timestamp,
@@ -282,8 +283,12 @@ impl UpdateTopicParentTopics {
         activity::Change::UpdateTopicParentTopics(activity::UpdateTopicParentTopics {
             actor_id: self.actor.user_id.to_owned(),
             added_parent_topics: activity::TopicInfoList::from(added),
-            id: activity::Change::new_id(),
             date,
+            id: activity::Change::new_id(),
+            parent_topic_paths: parent_topics
+                .iter()
+                .map(|parent| parent.path.to_owned())
+                .collect::<BTreeSet<String>>(),
             removed_parent_topics: activity::TopicInfoList::from(removed),
             updated_topic: activity::TopicInfo::from(topic),
         })
@@ -451,7 +456,7 @@ impl UpsertTopic {
         let mut matches = git.synonym_phrase_matches(&[&self.prefix], &self.name)?;
         let date = chrono::Utc::now();
 
-        let (path, child) = if matches.is_empty() {
+        let (path, child, parent_topics) = if matches.is_empty() {
             self.make_topic(&parent)
         } else {
             match &self.on_matching_synonym {
@@ -530,6 +535,7 @@ impl UpsertTopic {
                         return Err(Error::NotFound(format!("not found: {}", path)));
                     }
                     let mut topic = topic.unwrap();
+                    let parent_topics = topic.parent_topics.clone();
 
                     topic.parent_topics.insert(parent.to_parent_topic());
 
@@ -539,14 +545,14 @@ impl UpsertTopic {
                         name: self.name.to_owned(),
                     });
 
-                    (path.clone(), topic)
+                    (path.clone(), topic, parent_topics)
                 }
             }
         };
 
         parent.children.insert(child.to_topic_child(date));
 
-        let change = self.change(&child, &parent, date);
+        let change = self.change(&child, &parent_topics, &parent, date);
         let mut indexer = Indexer::new(git, IndexMode::Update);
         git.save_topic(&path, &child, &mut indexer)?;
         git.save_topic(&parent.path(), &parent, &mut indexer)?;
@@ -561,19 +567,30 @@ impl UpsertTopic {
         })
     }
 
-    fn change(&self, topic: &Topic, parent: &Topic, date: Timestamp) -> activity::Change {
+    fn change(
+        &self,
+        topic: &Topic,
+        parent_topics: &BTreeSet<ParentTopic>,
+        parent: &Topic,
+        date: Timestamp,
+    ) -> activity::Change {
         activity::Change::UpsertTopic(activity::UpsertTopic {
             actor_id: self.actor.user_id.to_owned(),
             id: activity::Change::new_id(),
             date,
             parent_topic: activity::TopicInfo::from(parent),
+            parent_topic_paths: parent_topics
+                .iter()
+                .map(|parent| parent.path.to_owned())
+                .collect::<BTreeSet<String>>(),
             upserted_topic: activity::TopicInfo::from(topic),
         })
     }
 
-    fn make_topic(&self, parent: &Topic) -> (RepoPath, Topic) {
+    fn make_topic(&self, parent: &Topic) -> (RepoPath, Topic, BTreeSet<ParentTopic>) {
         let added = chrono::Utc::now();
         let path = RepoPath::make(&self.prefix.to_string());
+        let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
 
         let topic = Topic {
             api_version: API_VERSION.into(),
@@ -588,11 +605,11 @@ impl UpsertTopic {
                 }],
                 timerange: None,
             },
-            parent_topics: BTreeSet::from([parent.to_parent_topic()]),
+            parent_topics: parent_topics.clone(),
             children: BTreeSet::new(),
         };
 
-        (path, topic)
+        (path, topic, parent_topics)
     }
 
     fn fetch_parent(&self, git: &Git) -> Option<Topic> {

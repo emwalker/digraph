@@ -1,8 +1,5 @@
 Before switchover:
-* Fill out markdown for UpdateTopicParentTopics
-* Look into whether the ordering of changes is stable
 * Fix private topic / link coloring bug
-* Add link upsert change to parent topics
 * Decide whether to support link reviews or remove the feature
 * Start work on git rebases and commits
 * Sort out logistics of merging branch and deploying
@@ -22,6 +19,8 @@ Before switchover:
 * Make the switchover live
 
 Later:
+* Keep tabs on whether the ordering of changes is stable
+* Get the topic upsert working when the topic already exists
 * Show search input in input box when loaded from a url
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
 * Figure out how to display the same change in different contexts -- e.g., a topic is deleted, and its contents merged into the parent topics.  What does the change look like in each change history?
