@@ -1,6 +1,5 @@
 Before switchover:
-* Capture previous title in UpsertLink
-* Fill out markdoown for UpdateTopicParentTopics
+* Fill out markdown for UpdateTopicParentTopics
 * Look into whether the ordering of changes is stable
 * Fix private topic / link coloring bug
 * Add link upsert change to parent topics

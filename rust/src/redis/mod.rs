@@ -142,10 +142,10 @@ impl git::activity::ActivityForPrefix for Redis {
         let mut changes = vec![];
         for value in iter {
             match value {
-                redis_rs::Value::Data(data) => {
-                    let change = serde_yaml::from_slice(&data)?;
-                    changes.push(change);
-                }
+                redis_rs::Value::Data(data) => match serde_yaml::from_slice(&data) {
+                    Ok(change) => changes.push(change),
+                    Err(err) => log::error!("problem fetching change from redis: {}", err),
+                },
                 redis_rs::Value::Nil => {}
                 other => {
                     log::error!("unexpected Redis value: {:?}", other);

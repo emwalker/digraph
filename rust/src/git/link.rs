@@ -222,7 +222,7 @@ impl UpsertLink {
         let path = url.path(&self.prefix);
         let date = Utc::now();
 
-        let mut link = self.make_link(git, &url, &path).await?;
+        let (mut link, previous_title) = self.make_link(git, &url, &path).await?;
         if let Some(title) = &self.title {
             link.metadata.title = title.clone();
         }
@@ -253,7 +253,7 @@ impl UpsertLink {
             }
         }
 
-        let change = self.change(&link, &topic, date);
+        let change = self.change(&link, &topic, &previous_title, date);
         link.parent_topics = parent_topics
             .iter()
             .map(|(path, _topic)| ParentTopic {
@@ -286,6 +286,7 @@ impl UpsertLink {
         &self,
         link: &Link,
         parent_topic: &Option<Topic>,
+        previous_title: &Option<String>,
         date: Timestamp,
     ) -> activity::Change {
         let add_parent_topic = parent_topic
@@ -297,14 +298,26 @@ impl UpsertLink {
             actor_id: self.actor.user_id.to_owned(),
             date,
             id: activity::Change::new_id(),
+            parent_topics: link
+                .parent_topics
+                .iter()
+                .map(|parent| parent.path.to_owned())
+                .collect::<BTreeSet<String>>(),
+            previous_title: previous_title.to_owned(),
             upserted_link: activity::LinkInfo::from(link),
         })
     }
 
-    async fn make_link(&self, git: &Git, url: &RepoUrl, path: &RepoPath) -> Result<Link> {
+    async fn make_link(
+        &self,
+        git: &Git,
+        url: &RepoUrl,
+        path: &RepoPath,
+    ) -> Result<(Link, Option<String>)> {
         if git.exists(path)? {
             if let Some(link) = git.fetch_link(path) {
-                return Ok(link);
+                let title = link.metadata.title.to_owned();
+                return Ok((link, Some(title)));
             }
         }
 
@@ -322,7 +335,7 @@ impl UpsertLink {
             });
         }
 
-        Ok(Link {
+        let link = Link {
             api_version: API_VERSION.into(),
             parent_topics,
             metadata: LinkMetadata {
@@ -331,6 +344,8 @@ impl UpsertLink {
                 title,
                 url: url.normalized.to_owned(),
             },
-        })
+        };
+
+        Ok((link, None))
     }
 }

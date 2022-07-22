@@ -672,19 +672,27 @@ impl UpdateTopicSynonyms {
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UpsertLink {
-    pub add_parent_topic: Option<TopicInfo>,
     pub actor_id: String,
-    pub id: ChangeId,
+    pub add_parent_topic: Option<TopicInfo>,
     pub date: Timestamp,
+    pub id: ChangeId,
+    pub parent_topics: BTreeSet<String>,
+    pub previous_title: Option<String>,
     pub upserted_link: LinkInfo,
 }
 
 impl UpsertLink {
     fn paths(&self) -> Vec<RepoPath> {
         let mut paths = vec![self.upserted_link.path()];
+
         if let Some(topic) = &self.add_parent_topic {
             paths.push(topic.path());
         }
+
+        for path in &self.parent_topics {
+            paths.push(RepoPath::from(path));
+        }
+
         paths
     }
 
@@ -1104,7 +1112,16 @@ mod markdown {
                     self.upserted_link.markdown(),
                     topic.markdown(locale)
                 ),
-                None => format!("{} updated {}", actor_name, self.upserted_link.markdown()),
+                None => {
+                    if let Some(title) = &self.previous_title {
+                        format!(
+                            r#"{} changed the title of [{}]({}) to "{}""#,
+                            actor_name, title, self.upserted_link.url, self.upserted_link.title,
+                        )
+                    } else {
+                        format!("{} updated {}", actor_name, self.upserted_link.markdown())
+                    }
+                }
             }
         }
     }
@@ -1288,28 +1305,6 @@ mod tests {
     }
 
     #[test]
-    fn upsert_link() {
-        let topic1 = topic("Climate change");
-        let link = link("Reddit", "https://www.reddit.com");
-
-        let change = Change::UpsertLink(UpsertLink {
-            actor_id: "2".to_owned(),
-            date: chrono::Utc::now(),
-            id: Change::new_id(),
-            upserted_link: LinkInfo::from(&link),
-            add_parent_topic: Some(TopicInfo::from(&topic1)),
-        });
-
-        assert_eq!(
-            change.markdown(Locale::EN, "Gnusto", None),
-            format!(
-                "Gnusto added [Reddit](https://www.reddit.com) to [Climate change]({})",
-                topic1.metadata.path
-            ),
-        );
-    }
-
-    #[test]
     fn upsert_topic() {
         let topic1 = topic("Climate change");
         let topic2 = topic("Climate");
@@ -1329,67 +1324,6 @@ mod tests {
                 topic1.metadata.path, topic2.metadata.path
             ),
         );
-    }
-
-    mod remove_topic_timerange {
-        use super::*;
-
-        fn date() -> chrono::DateTime<chrono::Utc> {
-            chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444)
-        }
-
-        fn change(topic: &Topic, previous: Option<Timerange>) -> Change {
-            let mut parent_topics = BTreeSet::new();
-            for parent in &topic.parent_topics {
-                parent_topics.insert(parent.path.to_owned());
-            }
-
-            Change::RemoveTopicTimerange(RemoveTopicTimerange {
-                actor_id: "2".to_owned(),
-                date: chrono::Utc::now(),
-                id: Change::new_id(),
-                parent_topics: parent_topics.iter().map(|path| path.to_owned()).collect(),
-                previous_timerange: previous,
-                updated_topic: TopicInfo::from(topic),
-            })
-        }
-
-        #[test]
-        fn simple_case() {
-            let topic1 = topic("Climate change");
-            let change = change(
-                &topic1,
-                Some(Timerange {
-                    starts: date(),
-                    prefix_format: TimerangePrefixFormat::StartYear,
-                }),
-            );
-
-            assert_eq!(
-                change.markdown(Locale::EN, "Gnusto", None),
-                "Gnusto removed the time prefix \"1970\" from \
-                [Climate change](/wiki/Climate change)"
-            );
-        }
-
-        #[test]
-        fn parent_topics() {
-            let topic1 = topic("Climate change");
-            let change = change(
-                &topic1,
-                Some(Timerange {
-                    starts: date(),
-                    prefix_format: TimerangePrefixFormat::StartYear,
-                }),
-            );
-
-            if let Change::RemoveTopicTimerange(RemoveTopicTimerange { parent_topics, .. }) = change
-            {
-                assert!(!parent_topics.is_empty());
-            } else {
-                unreachable!("expected RemoveTopicTimerange");
-            }
-        }
     }
 
     mod update_topic_synonyms {
@@ -1495,6 +1429,136 @@ mod tests {
             });
 
             assert_eq!(change.paths(), [topic1.path(), topic2.path()]);
+        }
+    }
+
+    mod remove_topic_timerange {
+        use super::*;
+
+        fn date() -> chrono::DateTime<chrono::Utc> {
+            chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444)
+        }
+
+        fn change(topic: &Topic, previous: Option<Timerange>) -> Change {
+            let mut parent_topics = BTreeSet::new();
+            for parent in &topic.parent_topics {
+                parent_topics.insert(parent.path.to_owned());
+            }
+
+            Change::RemoveTopicTimerange(RemoveTopicTimerange {
+                actor_id: "2".to_owned(),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics: parent_topics.iter().map(|path| path.to_owned()).collect(),
+                previous_timerange: previous,
+                updated_topic: TopicInfo::from(topic),
+            })
+        }
+
+        #[test]
+        fn simple_case() {
+            let topic1 = topic("Climate change");
+            let change = change(
+                &topic1,
+                Some(Timerange {
+                    starts: date(),
+                    prefix_format: TimerangePrefixFormat::StartYear,
+                }),
+            );
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                "Gnusto removed the time prefix \"1970\" from \
+                [Climate change](/wiki/Climate change)"
+            );
+        }
+
+        #[test]
+        fn parent_topics() {
+            let topic1 = topic("Climate change");
+            let change = change(
+                &topic1,
+                Some(Timerange {
+                    starts: date(),
+                    prefix_format: TimerangePrefixFormat::StartYear,
+                }),
+            );
+
+            if let Change::RemoveTopicTimerange(RemoveTopicTimerange { parent_topics, .. }) = change
+            {
+                assert!(!parent_topics.is_empty());
+            } else {
+                unreachable!("expected RemoveTopicTimerange");
+            }
+        }
+    }
+
+    mod upsert_link {
+        use super::*;
+
+        #[test]
+        fn simple_case() {
+            let topic1 = topic("Climate change");
+            let link = link("Reddit", "https://www.reddit.com");
+
+            let change = Change::UpsertLink(UpsertLink {
+                actor_id: "2".to_owned(),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics: BTreeSet::from([topic1.metadata.path.to_owned()]),
+                previous_title: None,
+                upserted_link: LinkInfo::from(&link),
+                add_parent_topic: Some(TopicInfo::from(&topic1)),
+            });
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    "Gnusto added [Reddit](https://www.reddit.com) to [Climate change]({})",
+                    topic1.metadata.path
+                ),
+            );
+        }
+
+        #[test]
+        fn updated_title() {
+            let topic1 = topic("Climate change");
+            let link = link("Reddit", "https://www.reddit.com");
+
+            let change = Change::UpsertLink(UpsertLink {
+                actor_id: "2".to_owned(),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics: BTreeSet::from([topic1.metadata.path.to_owned()]),
+                previous_title: Some("Redis".to_owned()),
+                upserted_link: LinkInfo::from(&link),
+                add_parent_topic: None,
+            });
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    r#"Gnusto changed the title of [Redis](https://www.reddit.com) to "Reddit""#,
+                ),
+            );
+        }
+
+        #[test]
+        fn paths() {
+            let topic1 = topic("Climate change");
+            let link = link("Reddit", "https://www.reddit.com");
+
+            let change = Change::UpsertLink(UpsertLink {
+                actor_id: "2".to_owned(),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics: BTreeSet::from([topic1.metadata.path.to_owned()]),
+                previous_title: Some("Redis".to_owned()),
+                upserted_link: LinkInfo::from(&link),
+                add_parent_topic: None,
+            });
+
+            assert_eq!(change.paths(), [link.path(), topic1.path()]);
         }
     }
 
