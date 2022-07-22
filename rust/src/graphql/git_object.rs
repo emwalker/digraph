@@ -27,33 +27,6 @@ impl From<&git::Link> for Link {
     }
 }
 
-impl From<&git::Synonym> for Synonym {
-    fn from(synonym: &git::Synonym) -> Self {
-        Self {
-            name: synonym.name.clone(),
-            locale: synonym.locale.to_string(),
-        }
-    }
-}
-
-impl From<&Vec<git::Synonym>> for Synonyms {
-    fn from(synonyms: &Vec<git::Synonym>) -> Self {
-        Self(synonyms.iter().map(Synonym::from).collect())
-    }
-}
-
-impl From<&SynonymInput> for git::Synonym {
-    fn from(synonym: &SynonymInput) -> Self {
-        use std::str::FromStr;
-
-        Self {
-            added: chrono::Utc::now(),
-            name: synonym.name.clone(),
-            locale: Locale::from_str(&synonym.locale).unwrap_or(Locale::EN),
-        }
-    }
-}
-
 impl From<&git::Topic> for Topic {
     fn from(topic: &git::Topic) -> Self {
         let meta = &topic.metadata;
@@ -144,6 +117,15 @@ impl Loader<String> for ObjectLoader {
     }
 }
 
+impl From<&git::Object> for TopicChild {
+    fn from(object: &git::Object) -> Self {
+        match object {
+            git::Object::Link(link) => TopicChild::Link(Link::from(link)),
+            git::Object::Topic(topic) => TopicChild::Topic(Topic::from(topic)),
+        }
+    }
+}
+
 impl From<&git::SynonymEntry> for SynonymMatch {
     fn from(git::SynonymEntry { name, path }: &git::SynonymEntry) -> Self {
         Self {
@@ -153,11 +135,60 @@ impl From<&git::SynonymEntry> for SynonymMatch {
     }
 }
 
-impl From<&git::Object> for TopicChild {
-    fn from(object: &git::Object) -> Self {
+impl From<&git::Synonym> for Synonym {
+    fn from(synonym: &git::Synonym) -> Self {
+        Self {
+            name: synonym.name.clone(),
+            locale: synonym.locale.to_string().to_lowercase(),
+        }
+    }
+}
+
+impl From<&Vec<git::Synonym>> for Synonyms {
+    fn from(synonyms: &Vec<git::Synonym>) -> Self {
+        Self(synonyms.iter().map(Synonym::from).collect())
+    }
+}
+
+impl From<&SynonymInput> for git::Synonym {
+    fn from(synonym: &SynonymInput) -> Self {
+        use std::str::FromStr;
+
+        Self {
+            added: chrono::Utc::now(),
+            name: synonym.name.clone(),
+            locale: Locale::from_str(&synonym.locale).unwrap_or(Locale::EN),
+        }
+    }
+}
+
+impl From<&git::SearchMatch> for TopicChild {
+    fn from(item: &git::SearchMatch) -> Self {
+        let git::SearchMatch { object, .. } = item;
         match object {
-            git::Object::Link(link) => TopicChild::Link(Link::from(link)),
             git::Object::Topic(topic) => TopicChild::Topic(Topic::from(topic)),
+            git::Object::Link(link) => TopicChild::Link(Link::from(link)),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod synonyms {
+        use super::*;
+
+        #[test]
+        fn lowercase_serialization() {
+            let from = git::Synonym {
+                added: chrono::Utc::now(),
+                name: "Name".to_owned(),
+                locale: Locale::EN,
+            };
+
+            let to = Synonym::from(&from);
+            assert_eq!(to.locale, "en");
         }
     }
 }

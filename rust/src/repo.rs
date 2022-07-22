@@ -127,8 +127,9 @@ impl Repo {
         let mut links = vec![];
 
         for child in children.iter().take(50) {
-            if let graphql::TopicChild::Link(link) = &child {
-                links.push(link.to_owned());
+            let git::SearchMatch { object, .. } = &child;
+            if let git::Object::Link(link) = object {
+                links.push(graphql::Link::from(link));
             }
         }
 
@@ -138,7 +139,7 @@ impl Repo {
     pub async fn topic_children(
         &self,
         parent_topic: &RepoPath,
-    ) -> Result<Vec<graphql::TopicChild>> {
+    ) -> Result<BTreeSet<git::SearchMatch>> {
         let topic = self
             .topic(parent_topic)
             .await?
@@ -150,7 +151,8 @@ impl Repo {
             .collect_vec();
         let map = self.object_loader.load_many(child_paths.clone()).await?;
 
-        let mut children = vec![];
+        let empty = git::Search::empty();
+        let mut children = BTreeSet::new();
 
         for child_path in child_paths.iter().take(50) {
             let child = map.get(child_path);
@@ -159,14 +161,8 @@ impl Repo {
                 continue;
             }
 
-            let child = match child.unwrap() {
-                git::Object::Topic(topic) => {
-                    graphql::TopicChild::Topic(graphql::Topic::from(topic))
-                }
-                git::Object::Link(link) => graphql::TopicChild::Link(graphql::Link::from(link)),
-            };
-
-            children.push(child);
+            let child = child.unwrap().to_owned();
+            children.insert(child.to_search_match(Locale::EN, &empty));
         }
 
         Ok(children)

@@ -1,5 +1,6 @@
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use super::{Git, Link, Locale, RepoPath, Synonym, Topic};
 use crate::prelude::*;
@@ -31,6 +32,79 @@ impl From<&Vec<Synonym>> for SynonymList {
                 .or_insert_with(|| synonym.name.to_owned());
         }
         Self(map)
+    }
+}
+
+impl From<&HashSet<(String, Locale)>> for SynonymList {
+    fn from(synonyms: &HashSet<(String, Locale)>) -> Self {
+        let mut map = BTreeMap::new();
+        for (name, locale) in synonyms {
+            map.entry(locale.to_owned())
+                .or_insert_with(|| name.to_owned());
+        }
+        Self(map)
+    }
+}
+
+impl Default for SynonymList {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SynonymList {
+    pub fn new() -> Self {
+        Self(BTreeMap::new())
+    }
+
+    pub fn markdown(&self) -> String {
+        fn quote(name: &String) -> String {
+            format!("\"{}\"", name)
+        }
+
+        match self.len() {
+            0 => "[missing synonym]".to_owned(),
+            1 => self.0.iter().map(|(_locale, name)| quote(name)).join(""),
+
+            2 => self
+                .0
+                .iter()
+                .map(|(_locale, name)| quote(name))
+                .join(" and "),
+
+            3 => {
+                let mut result = String::new();
+
+                for (i, (_locale, name)) in self.0.iter().enumerate() {
+                    match i {
+                        0 => {
+                            result.push_str(&quote(name));
+                            result.push_str(", ");
+                        }
+                        1 => {
+                            result.push_str(&quote(name));
+                            result.push_str(" and ");
+                        }
+                        2 => {
+                            result.push_str(&quote(name));
+                        }
+                        _ => unreachable!("unexpected index"),
+                    }
+                }
+
+                result
+            }
+
+            _ => "several synonyms".to_owned(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }
 
@@ -376,8 +450,7 @@ impl DeleteLink {
 
     fn remove_path(&mut self, path: &String) {
         self.parent_topics.mark_deleted(path);
-        // Keep a record of the path that was deleted
-        // self.deleted_link.remove_path(path);
+        self.deleted_link.mark_deleted(path);
     }
 }
 
@@ -576,8 +649,9 @@ impl UpdateTopicParentTopics {
 pub struct UpdateTopicSynonyms {
     pub actor_id: String,
     pub added_synonyms: SynonymList,
-    pub id: ChangeId,
     pub date: Timestamp,
+    pub id: ChangeId,
+    pub parent_topics: BTreeSet<String>,
     pub removed_synonyms: SynonymList,
     pub reordered: bool,
     pub updated_topic: TopicInfo,
@@ -585,7 +659,9 @@ pub struct UpdateTopicSynonyms {
 
 impl UpdateTopicSynonyms {
     fn paths(&self) -> Vec<RepoPath> {
-        vec![self.updated_topic.path()]
+        let mut paths = vec![self.updated_topic.path()];
+        paths.extend(self.parent_topics.iter().map(RepoPath::from).collect_vec());
+        paths
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -702,7 +778,6 @@ mod markdown {
 
     impl TopicInfoList {
         fn markdown(&self, locale: Locale) -> String {
-            use itertools::Itertools;
             let topics = &self.0.iter().collect::<Vec<&TopicInfo>>();
 
             match topics.len() {
@@ -736,7 +811,6 @@ mod markdown {
 
     impl LinkInfoList {
         fn markdown(&self) -> String {
-            use itertools::Itertools;
             let links = &self.0;
 
             match links.len() {
@@ -983,11 +1057,36 @@ mod markdown {
     impl Markdown for UpdateTopicSynonyms {
         fn markdown(
             &self,
-            _locale: Locale,
+            locale: Locale,
             actor_name: &str,
             _context: Option<&RepoPath>,
         ) -> String {
-            format!("{} added NAME to and removed NAME from TOPIC", actor_name)
+            let mut actions = vec![];
+
+            if !self.added_synonyms.is_empty() {
+                let markdown = format!("added {} to", self.added_synonyms.markdown());
+                actions.push(markdown);
+            }
+
+            if !self.removed_synonyms.is_empty() {
+                let markdown = format!("removed {} from", self.removed_synonyms.markdown());
+                actions.push(markdown);
+            }
+
+            if self.added_synonyms.is_empty() && self.removed_synonyms.is_empty() {
+                if self.reordered {
+                    actions.push("reordered the synonyms for".to_owned());
+                } else {
+                    actions.push("mysteriousy updated".to_owned());
+                }
+            }
+
+            format!(
+                "{} {} {}",
+                actor_name,
+                actions.join(" and "),
+                self.updated_topic.markdown(locale)
+            )
         }
     }
 
@@ -1290,6 +1389,112 @@ mod tests {
             } else {
                 unreachable!("expected RemoveTopicTimerange");
             }
+        }
+    }
+
+    mod update_topic_synonyms {
+        use super::*;
+
+        #[test]
+        fn added_and_removed() {
+            let topic1 = topic("Climate change");
+
+            let change = Change::UpdateTopicSynonyms(UpdateTopicSynonyms {
+                actor_id: "2".to_owned(),
+                added_synonyms: SynonymList(BTreeMap::from([(
+                    Locale::EN,
+                    "Added synonym".to_owned(),
+                )])),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics: BTreeSet::new(),
+                removed_synonyms: SynonymList(BTreeMap::from([(
+                    Locale::EN,
+                    "Removed synonym".to_owned(),
+                )])),
+                reordered: false,
+                // parent_topic: TopicInfo::from(&topic2),
+                updated_topic: TopicInfo::from(&topic1),
+            });
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    "Gnusto added \"Added synonym\" to and removed \"Removed synonym\" \
+                    from [Climate change]({})",
+                    topic1.metadata.path,
+                ),
+            );
+        }
+
+        #[test]
+        fn removed() {
+            let topic1 = topic("Climate change");
+
+            let change = Change::UpdateTopicSynonyms(UpdateTopicSynonyms {
+                actor_id: "2".to_owned(),
+                added_synonyms: SynonymList(BTreeMap::new()),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics: BTreeSet::new(),
+                updated_topic: TopicInfo::from(&topic1),
+                removed_synonyms: SynonymList(BTreeMap::from([(
+                    Locale::EN,
+                    "Removed synonym".to_owned(),
+                )])),
+                reordered: false,
+            });
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    "Gnusto removed \"Removed synonym\" from [Climate change]({})",
+                    topic1.metadata.path,
+                ),
+            );
+        }
+
+        #[test]
+        fn reordered() {
+            let topic1 = topic("Climate change");
+
+            let change = Change::UpdateTopicSynonyms(UpdateTopicSynonyms {
+                actor_id: "2".to_owned(),
+                added_synonyms: SynonymList::new(),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics: BTreeSet::new(),
+                removed_synonyms: SynonymList::new(),
+                reordered: true,
+                updated_topic: TopicInfo::from(&topic1),
+            });
+
+            assert_eq!(
+                change.markdown(Locale::EN, "Gnusto", None),
+                format!(
+                    "Gnusto reordered the synonyms for [Climate change]({})",
+                    topic1.metadata.path,
+                ),
+            );
+        }
+
+        #[test]
+        fn paths() {
+            let topic1 = topic("Climate change");
+            let topic2 = topic("Climate");
+
+            let change = Change::UpdateTopicSynonyms(UpdateTopicSynonyms {
+                actor_id: "2".to_owned(),
+                added_synonyms: SynonymList(BTreeMap::new()),
+                date: chrono::Utc::now(),
+                id: Change::new_id(),
+                parent_topics: BTreeSet::from([topic2.metadata.path.to_owned()]),
+                updated_topic: TopicInfo::from(&topic1),
+                removed_synonyms: SynonymList::new(),
+                reordered: false,
+            });
+
+            assert_eq!(change.paths(), [topic1.path(), topic2.path()]);
         }
     }
 

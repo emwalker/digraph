@@ -570,6 +570,30 @@ mod update_topic_synonyms {
     }
 
     #[test]
+    fn synonyms_deduped() {
+        let f = Fixtures::copy("simple");
+        let path = RepoPath::from("/wiki/00001");
+        let topic = f.repo.git.fetch_topic(&path).unwrap();
+
+        assert_eq!(topic.name(Locale::EN), "A topic");
+        assert_eq!(topic.metadata.synonyms.len(), 1);
+
+        assert_eq!(count(&f, "A topic"), 1);
+
+        let UpdateTopicSynonymsResult { topic, .. } = UpdateTopicSynonyms {
+            actor: actor(),
+            topic_path: path,
+            synonyms: vec![synonym("A topic"), synonym("A topic")],
+        }
+        .call(&f.repo.git, &redis::Noop)
+        .unwrap();
+
+        assert_eq!(topic.metadata.synonyms.len(), 1);
+
+        assert_eq!(count(&f, "A topic"), 1);
+    }
+
+    #[test]
     fn synonyms_removed() {
         let f = Fixtures::copy("simple");
         let path = RepoPath::from("/wiki/00001");

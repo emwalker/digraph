@@ -7,8 +7,8 @@ declare type Props = {
     topic: TopicType;
 };
 declare type State = {
-    locale: string;
-    name: string;
+    inputLocale: string;
+    inputName: string;
 };
 declare class Synonyms extends Component<Props, State> {
     constructor(props: Props);

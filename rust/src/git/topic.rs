@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
     activity, Git, IndexMode, Indexer, Kind, Link, Object, ParentTopic, SaveChangesForPrefix,
@@ -336,14 +336,32 @@ impl UpdateTopicSynonyms {
             .metadata
             .synonyms
             .iter()
-            .map(|synonym| ((&synonym.name, &synonym.locale), synonym.to_owned()))
-            .collect::<HashMap<(&String, &Locale), Synonym>>();
+            .map(|synonym| {
+                (
+                    (synonym.name.to_owned(), synonym.locale.to_owned()),
+                    synonym.to_owned(),
+                )
+            })
+            .collect::<HashMap<(String, Locale), Synonym>>();
+
+        let before = lookup
+            .keys()
+            .map(|(name, locale)| (name.to_owned(), locale.to_owned()))
+            .collect::<HashSet<(String, Locale)>>();
 
         let mut synonyms = vec![];
+        let mut after = HashSet::new();
 
         // Preserve the date the synonym was added
         for new in &self.synonyms {
-            let key = (&new.name, &new.locale);
+            let key = (new.name.to_owned(), new.locale.to_owned());
+
+            // Remove duplicates
+            if after.contains(&key) {
+                continue;
+            }
+            after.insert(key.to_owned());
+
             if lookup.contains_key(&key) {
                 match lookup.get(&key) {
                     Some(existing) => synonyms.push(existing.to_owned()),
@@ -354,8 +372,14 @@ impl UpdateTopicSynonyms {
             }
         }
 
-        let added = vec![];
-        let removed = vec![];
+        let added = after
+            .difference(&before)
+            .cloned()
+            .collect::<HashSet<(String, Locale)>>();
+        let removed = before
+            .difference(&after)
+            .cloned()
+            .collect::<HashSet<(String, Locale)>>();
 
         topic.metadata.synonyms = synonyms;
         git.save_topic(&self.topic_path, &topic, &mut indexer)?;
@@ -371,17 +395,22 @@ impl UpdateTopicSynonyms {
     fn change(
         &self,
         topic: &Topic,
-        added: &Vec<Synonym>,
-        removed: &Vec<Synonym>,
+        added: &HashSet<(String, Locale)>,
+        removed: &HashSet<(String, Locale)>,
     ) -> activity::Change {
         activity::Change::UpdateTopicSynonyms(activity::UpdateTopicSynonyms {
             actor_id: self.actor.user_id.to_owned(),
             added_synonyms: activity::SynonymList::from(added),
             id: activity::Change::new_id(),
             date: chrono::Utc::now(),
-            updated_topic: activity::TopicInfo::from(topic),
+            parent_topics: topic
+                .parent_topics
+                .iter()
+                .map(|parent| parent.path.to_owned())
+                .collect::<BTreeSet<String>>(),
             reordered: added.is_empty() && removed.is_empty(),
             removed_synonyms: activity::SynonymList::from(removed),
+            updated_topic: activity::TopicInfo::from(topic),
         })
     }
 }

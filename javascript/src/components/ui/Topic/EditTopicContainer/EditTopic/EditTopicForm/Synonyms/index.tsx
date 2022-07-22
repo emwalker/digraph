@@ -13,8 +13,8 @@ type Props = {
 }
 
 type State = {
-  locale: string,
-  name: string,
+  inputLocale: string,
+  inputName: string,
 }
 
 const displayName = (synonyms: SynonymType[]) => {
@@ -24,8 +24,7 @@ const displayName = (synonyms: SynonymType[]) => {
         continue
       return synonym.name
     }
-    if (!displayName)
-      return synonyms[0].name
+    return synonyms[0].name
   }
 
   return 'Missing name'
@@ -35,22 +34,22 @@ class Synonyms extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      locale: 'en',
-      name: '',
+      inputLocale: 'en',
+      inputName: '',
     }
   }
 
   onLocaleChange = (event: FormEvent<HTMLSelectElement>) => {
-    this.setState({ locale: event.currentTarget.value })
+    this.setState({ inputLocale: event.currentTarget.value })
   }
 
   onNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ name: event.currentTarget.value })
+    this.setState({ inputName: event.currentTarget.value })
   }
 
   onAdd = () => {
     const update = copySynonyms(this.synonyms)
-    const synonym = { name: this.state.name, locale: this.state.locale }
+    const synonym = { name: this.state.inputName, locale: this.state.inputLocale }
     update.push(synonym)
     this.updateTopicSynonyms(update)
   }
@@ -85,7 +84,7 @@ class Synonyms extends Component<Props, State> {
   updateTopicSynonyms = (synonyms: SynonymType[]) => {
     const input: Input = { topicPath: this.props.topic.path, synonyms }
 
-    this.setState({ locale: 'en', name: '' }, () => {
+    this.setState({ inputName: '' }, () => {
       updateTopicSynonymsMutation(
         this.props.relay.environment,
         input,
@@ -109,7 +108,7 @@ class Synonyms extends Component<Props, State> {
         id="names-and-synonyms"
         className="form-control col-12 col-lg-10 mr-2"
         onChange={this.onNameChange}
-        value={this.state.name}
+        value={this.state.inputName}
       />
 
       <div className="col-12 col-lg-3 mt-2 d-inline-block">

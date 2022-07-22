@@ -42,7 +42,7 @@ const SortableList = SortableContainer(({ onDelete, items }: ContainerProps) => 
           // @ts-ignore
           dragHandle={<DragHandle />}
           index={index}
-          key={synonym.name}
+          key={`${synonym.name}:${synonym.locale}`}
           onDelete={onDelete}
           position={index}
           synonym={synonym}

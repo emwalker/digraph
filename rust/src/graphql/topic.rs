@@ -100,7 +100,11 @@ impl Topic {
         let results = ctx
             .data_unchecked::<Repo>()
             .topic_children(&self.path)
-            .await?;
+            .await?
+            .iter()
+            .map(TopicChild::from)
+            .collect_vec();
+
         conn(after, before, first, last, results)
     }
 

@@ -1,12 +1,11 @@
 Before switchover:
-* Fix private topic / link coloring bug
-* Fix glitch after updating synonyms
 * Capture previous title in UpsertLink
+* Fill out markdoown for UpdateTopicParentTopics
 * Look into whether the ordering of changes is stable
+* Fix private topic / link coloring bug
 * Add link upsert change to parent topics
-* Start work on git rebases and commits
 * Decide whether to support link reviews or remove the feature
-* Show search input in input box when loaded from a url
+* Start work on git rebases and commits
 * Sort out logistics of merging branch and deploying
 * Migration to create read_prefixes and write_prefixes array columns on user
 * Make search work across all prefixes
@@ -24,6 +23,7 @@ Before switchover:
 * Make the switchover live
 
 Later:
+* Show search input in input box when loaded from a url
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
 * Figure out how to display the same change in different contexts -- e.g., a topic is deleted, and its contents merged into the parent topics.  What does the change look like in each change history?
 * Figure out how to make history entries outlive the topic and links when they're deleted.  I think this means denormalizing title, url and synonym info in the changes themeslves, mabye with one level of indirection? Or maybe it means putting a marker on the deleted item to indicate that it's deleted rather than actually deleting it.  Maybe change "delete" to "remove" in the UI if this approach ends up being used.  There's also the problem of historical names and titles that change.

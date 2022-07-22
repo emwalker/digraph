@@ -29,7 +29,7 @@ start:
 	yarn start:prod
 
 start-dev:
-	yarn start
+	NODE_OPTIONS=--no-experimental-fetch yarn start
 
 test:
 	yarn jest

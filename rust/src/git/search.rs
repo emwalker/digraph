@@ -81,6 +81,15 @@ impl std::cmp::PartialOrd for Search {
 }
 
 impl Search {
+    pub fn empty() -> Self {
+        Self {
+            normalized: Phrase::parse(""),
+            urls: BTreeSet::new(),
+            tokens: BTreeSet::new(),
+            path_specs: BTreeSet::new(),
+        }
+    }
+
     pub fn parse(input: &str) -> Result<Self> {
         let mut tokens = BTreeSet::new();
         let mut urls = BTreeSet::new();

@@ -28,6 +28,7 @@ pub type Timestamp = chrono::DateTime<chrono::Utc>;
     strum_macros::Display,
 )]
 #[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
 pub enum Locale {
     EN,
     AR,
@@ -447,34 +448,54 @@ impl Viewer {
 mod tests {
     use super::*;
 
-    fn valid_date() -> Option<chrono::DateTime<chrono::Utc>> {
-        chrono::DateTime::parse_from_rfc2822("Sat, 1 Jan 2000 00:00:00 +0000")
-            .ok()
-            .map(|dt| dt.with_timezone(&chrono::Utc))
+    mod locale {
+        use std::str::FromStr;
+
+        use super::*;
+
+        #[test]
+        fn from_str() {
+            assert_eq!(Locale::from_str("en").unwrap(), Locale::EN);
+        }
+
+        #[test]
+        fn to_string() {
+            assert_eq!(Locale::EN.to_string(), "en");
+        }
     }
 
-    #[test]
-    fn none() {
-        let prefix = TimerangePrefix::new(None, None);
-        assert_eq!(prefix.format("a"), "a");
-    }
+    mod timerange {
+        use super::*;
 
-    #[test]
-    fn prefix_none() {
-        let prefix = TimerangePrefix::new(Some("NONE"), valid_date());
-        assert_eq!(prefix.format("a"), "a");
-    }
+        fn valid_date() -> Option<chrono::DateTime<chrono::Utc>> {
+            chrono::DateTime::parse_from_rfc2822("Sat, 1 Jan 2000 00:00:00 +0000")
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+        }
 
-    #[test]
-    fn start_year() {
-        let prefix = TimerangePrefix::new(Some("START_YEAR"), valid_date());
-        assert_eq!(prefix.format("a"), "2000 a");
-    }
+        #[test]
+        fn none() {
+            let prefix = TimerangePrefix::new(None, None);
+            assert_eq!(prefix.format("a"), "a");
+        }
 
-    #[test]
-    fn start_year_month() {
-        let prefix = TimerangePrefix::new(Some("START_YEAR_MONTH"), valid_date());
-        assert_eq!(prefix.format("a"), "2000-01 a");
+        #[test]
+        fn prefix_none() {
+            let prefix = TimerangePrefix::new(Some("NONE"), valid_date());
+            assert_eq!(prefix.format("a"), "a");
+        }
+
+        #[test]
+        fn start_year() {
+            let prefix = TimerangePrefix::new(Some("START_YEAR"), valid_date());
+            assert_eq!(prefix.format("a"), "2000 a");
+        }
+
+        #[test]
+        fn start_year_month() {
+            let prefix = TimerangePrefix::new(Some("START_YEAR_MONTH"), valid_date());
+            assert_eq!(prefix.format("a"), "2000-01 a");
+        }
     }
 
     mod viewer {

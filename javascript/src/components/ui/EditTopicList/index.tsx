@@ -16,7 +16,6 @@ type SelectedTopics = ({ label: string, value: string } | null)[]
 const color = '#0366d6'
 
 export const makeOptions = (matches: SynonymMatches | SelectedTopics): TopicOption[] => {
-  console.log('matches', matches)
   return matches
     ? (
       matches.map((match) => match
