@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use geotime::Geotime;
 use getopts::Options;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
@@ -238,7 +239,7 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
 
         let timerange = match (&meta.timerange_starts, &meta.timerange_prefix_format) {
             (Some(starts), Some(prefix_format)) => Some(Timerange {
-                starts: starts.to_owned(),
+                starts: Geotime::from(starts).into(),
                 prefix_format: TimerangePrefixFormat::from(prefix_format.as_str()),
             }),
             _ => None,

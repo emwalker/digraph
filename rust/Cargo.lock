@@ -870,6 +870,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "data-encoding"
+version = "2.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ee2393c4a91429dffb4bedf19f4d6abf27d8a732c8ce4980305d782e5426d57"
+
+[[package]]
+name = "data-encoding-macro"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86927b7cd2fe88fa698b87404b287ab98d1a0063a34071d92e575b72d3029aca"
+dependencies = [
+ "data-encoding",
+ "data-encoding-macro-internal",
+]
+
+[[package]]
+name = "data-encoding-macro-internal"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5bbed42daaa95e780b60a50546aa345b8413a1e46f9a40a12907d3598f038db"
+dependencies = [
+ "data-encoding",
+ "syn",
+]
+
+[[package]]
 name = "derivative"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -921,6 +947,7 @@ dependencies = [
  "envy",
  "fs_extra",
  "futures",
+ "geotime",
  "getopts",
  "itertools",
  "lazy_static",
@@ -1258,6 +1285,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "geotime"
+version = "0.0.1"
+source = "git+https://github.com/emwalker/geotime?branch=main#f63a864a56e518ed3c7d6b42739224b98dcabae7"
+dependencies = [
+ "base64",
+ "chrono",
+ "data-encoding",
+ "data-encoding-macro",
+ "hex",
+ "human_format",
+ "quick-error",
+ "serde",
+ "serde_test",
+]
+
+[[package]]
 name = "getopts"
 version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1441,6 +1484,12 @@ name = "httpdate"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
+
+[[package]]
+name = "human_format"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86cce260d758a9aa3d7c4b99d55c815a540f8a37514ba6046ab6be402a157cb0"
 
 [[package]]
 name = "humantime"
@@ -2437,6 +2486,15 @@ checksum = "82c2c1fdcd807d1098552c5b9a36e425e42e9fbd7c6a37a8425f390f781f7fa7"
 dependencies = [
  "itoa 1.0.2",
  "ryu",
+ "serde",
+]
+
+[[package]]
+name = "serde_test"
+version = "1.0.140"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38b0651a2f427e4a4d74d458947aa5ca36c62c1b503344d143763ec06216a975"
+dependencies = [
  "serde",
 ]
 

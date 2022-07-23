@@ -1520,10 +1520,13 @@ mod tests {
     }
 
     mod remove_topic_timerange {
+        use geotime::Geotime;
+
         use super::*;
 
-        fn date() -> chrono::DateTime<chrono::Utc> {
-            chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444)
+        fn date() -> Geotime {
+            let ts = chrono::Utc.ymd(1970, 1, 1).and_hms(0, 0, 1);
+            Geotime::from(&ts)
         }
 
         fn change(topic: &Topic, previous: Option<Timerange>) -> Change {
@@ -1548,7 +1551,7 @@ mod tests {
             let change = change(
                 &topic1,
                 Some(Timerange {
-                    starts: date(),
+                    starts: date().into(),
                     prefix_format: TimerangePrefixFormat::StartYear,
                 }),
             );
@@ -1566,7 +1569,7 @@ mod tests {
             let change = change(
                 &topic1,
                 Some(Timerange {
-                    starts: date(),
+                    starts: date().into(),
                     prefix_format: TimerangePrefixFormat::StartYear,
                 }),
             );
@@ -1698,10 +1701,13 @@ mod tests {
     }
 
     mod upsert_topic_timerange {
+        use geotime::Geotime;
+
         use super::*;
 
         fn change(topic: &Topic, format: TimerangePrefixFormat) -> Change {
-            let date = chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444);
+            let dt = chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444);
+            let ts = Geotime::from(&dt);
 
             let mut parent_topics = BTreeSet::new();
             for parent in &topic.parent_topics {
@@ -1715,7 +1721,7 @@ mod tests {
                 parent_topics: parent_topics.iter().map(|path| path.to_owned()).collect(),
                 previous_timerange: None,
                 updated_timerange: Timerange {
-                    starts: date,
+                    starts: ts.into(),
                     prefix_format: format,
                 },
                 updated_topic: TopicInfo::from(topic),

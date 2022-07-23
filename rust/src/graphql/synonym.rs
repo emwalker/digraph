@@ -73,12 +73,12 @@ impl Synonyms {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{DateTime, Utc};
+    use chrono::{TimeZone, Utc};
+    use geotime::Geotime;
 
-    fn valid_date() -> Option<DateTime<Utc>> {
-        DateTime::parse_from_rfc2822("Sat, 1 Jan 2000 00:00:00 +0000")
-            .ok()
-            .map(|dt| dt.with_timezone(&Utc))
+    fn valid_date() -> Option<Geotime> {
+        let dt = Utc.ymd(2000, 1, 1).and_hms(0, 0, 0);
+        Some(Geotime::from(&dt))
     }
 
     #[test]

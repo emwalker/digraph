@@ -359,7 +359,7 @@ impl MutationRoot {
 
         Ok(RemoveTopicTimerangePayload {
             client_mutation_id,
-            topic: Topic::from(&topic),
+            topic: Topic::try_from(&topic)?,
         })
     }
 
@@ -433,7 +433,7 @@ impl MutationRoot {
 
         Ok(UpdateTopicParentTopicsPayload {
             alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
-            topic: Topic::from(&topic),
+            topic: Topic::try_from(&topic)?,
         })
     }
 
@@ -451,7 +451,7 @@ impl MutationRoot {
         Ok(UpdateTopicSynonymsPayload {
             alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
             client_mutation_id,
-            topic: Some(Topic::from(&topic)),
+            topic: Some(Topic::try_from(&topic)?),
         })
     }
 
@@ -479,10 +479,11 @@ impl MutationRoot {
     ) -> Result<UpsertTopicPayload> {
         log::info!("upserting topic: {:?}", input);
         let result = ctx.data_unchecked::<Store>().upsert_topic(input).await?;
-        let edge = result
-            .topic
-            .as_ref()
-            .map(|topic| TopicEdge::new(String::from("0"), Topic::from(topic)));
+
+        let edge = match &result.topic {
+            Some(topic) => Some(TopicEdge::new(String::from("0"), Topic::try_from(topic)?)),
+            None => None,
+        };
 
         Ok(UpsertTopicPayload {
             alerts: result.alerts.iter().map(alert::Alert::from).collect_vec(),
@@ -506,10 +507,10 @@ impl MutationRoot {
 
         Ok(UpsertTopicTimerangePayload {
             alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
-            topic: Topic::from(&topic),
+            topic: Topic::try_from(&topic)?,
             timerange_edge: Some(TimerangeEdge::new(
                 String::from("0"),
-                timerange::Timerange::from(&timerange),
+                timerange::Timerange::try_from(&timerange)?,
             )),
         })
     }

@@ -1,7 +1,9 @@
 use async_graphql::connection::*;
 use async_graphql::{connection::EmptyFields, scalar, Enum, SimpleObject};
+use geotime::Geotime;
 use serde::{Deserialize, Serialize};
 
+use crate::prelude::*;
 use crate::types;
 
 #[derive(Enum, Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -50,16 +52,30 @@ scalar!(DateTime);
 pub struct Timerange {
     pub ends_at: Option<DateTime>,
     pub prefix_format: TimerangePrefixFormat,
-    pub starts_at: DateTime,
+    pub starts_at: Option<DateTime>,
 }
 
-impl From<&types::Timerange> for Timerange {
-    fn from(timerange: &types::Timerange) -> Self {
-        Self {
+impl TryFrom<Geotime> for DateTime {
+    type Error = Error;
+
+    fn try_from(ts: Geotime) -> Result<Self> {
+        let dt = chrono::DateTime::try_from(ts)?;
+        Ok(DateTime(dt))
+    }
+}
+
+impl TryFrom<&types::Timerange> for Timerange {
+    type Error = Error;
+
+    fn try_from(timerange: &types::Timerange) -> Result<Self> {
+        let ts = Geotime::from(timerange.starts.to_owned());
+        let starts_at = DateTime::try_from(ts)?;
+
+        Ok(Self {
             ends_at: None,
-            starts_at: DateTime(timerange.starts),
+            starts_at: Some(starts_at),
             prefix_format: TimerangePrefixFormat::from(&timerange.prefix_format),
-        }
+        })
     }
 }
 

@@ -27,6 +27,10 @@ quick_error! {
             from(err: serde_json::Error) -> (format!("{:?}", err))
         }
 
+        Geotime(err: geotime::Error) {
+            from()
+        }
+
         HeaderValue(err: String) {
             from(err: actix_web::http::header::ToStrError) -> (format!("{:?}", err))
         }

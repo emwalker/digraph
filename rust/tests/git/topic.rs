@@ -1,3 +1,5 @@
+use geotime::Geotime;
+
 use super::{actor, upsert_topic, Fixtures};
 use digraph::prelude::*;
 use digraph::redis;
@@ -168,7 +170,7 @@ mod delete_topic_timerange {
             actor: actor(),
             timerange: Timerange {
                 prefix_format: TimerangePrefixFormat::StartYearMonth,
-                starts: chrono::Utc::now(),
+                starts: Geotime::now().into(),
             },
             topic_path: path.clone(),
         }
@@ -743,7 +745,7 @@ mod upsert_topic_timerange {
             actor: actor(),
             timerange: Timerange {
                 prefix_format: TimerangePrefixFormat::StartYearMonth,
-                starts: chrono::Utc::now(),
+                starts: Geotime::now().into(),
             },
             topic_path: path.clone(),
         }
@@ -756,10 +758,9 @@ mod upsert_topic_timerange {
 
     #[test]
     fn synonym_indexes() {
-        use chrono::TimeZone;
         let f = Fixtures::copy("simple");
         let path = RepoPath::from("/wiki/00001");
-        let date = chrono::Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let date = Geotime::from(0);
 
         let topic = f.repo.git.fetch_topic(&path).unwrap();
         assert!(topic.metadata.timerange.is_none());
@@ -771,7 +772,7 @@ mod upsert_topic_timerange {
             actor: actor(),
             timerange: Timerange {
                 prefix_format: TimerangePrefixFormat::StartYear,
-                starts: date,
+                starts: date.into(),
             },
             topic_path: path,
         }

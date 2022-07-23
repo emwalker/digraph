@@ -1,4 +1,5 @@
 use async_graphql::dataloader::*;
+use geotime::Geotime;
 use itertools::Itertools;
 use sqlx::postgres::PgPool;
 use std::collections::BTreeSet;
@@ -320,10 +321,12 @@ impl Store {
         }
         .call(&self.git, &fetcher)?;
 
-        Ok(matches
-            .iter()
-            .map(|row| graphql::TopicChild::from(&row.object))
-            .collect())
+        let mut results = vec![];
+        for row in matches {
+            results.push(graphql::TopicChild::try_from(&row.object)?);
+        }
+
+        Ok(results)
     }
 
     pub async fn search_topics(
@@ -357,7 +360,7 @@ impl Store {
             .ok_or_else(|| Error::NotFound(format!("no topic: {}", path)))?;
 
         match result {
-            git::Object::Topic(topic) => Ok(Some(graphql::Topic::from(&topic))),
+            git::Object::Topic(topic) => Ok(Some(graphql::Topic::try_from(&topic)?)),
             _ => return Err(Error::NotFound(format!("no topic: {}", path))),
         }
     }
@@ -380,7 +383,7 @@ impl Store {
                 .ok_or_else(|| Error::NotFound(format!("no topic: {}", path)))?;
 
             let topic = match &topic {
-                git::Object::Topic(topic) => Some(graphql::Topic::from(topic)),
+                git::Object::Topic(topic) => Some(graphql::Topic::try_from(topic)?),
                 _ => None,
             };
 
@@ -479,10 +482,12 @@ impl Store {
         &self,
         input: graphql::UpsertTopicTimerangeInput,
     ) -> Result<git::UpsertTopicTimerangeResult> {
+        let starts = Geotime::from(&input.starts_at.0);
+
         git::UpsertTopicTimerange {
             actor: self.viewer.clone(),
             timerange: Timerange {
-                starts: input.starts_at.0,
+                starts: geotime::LexicalGeohash::from(starts),
                 prefix_format: TimerangePrefixFormat::from(&input.prefix_format),
             },
             topic_path: RepoPath::from(&input.topic_path),

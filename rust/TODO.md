@@ -1,24 +1,19 @@
 Before switchover:
 * When something is added to a private repo, don't include change logs in public repos
 * Decide whether to support link reviews or remove the feature
-* Start work on git rebases and commits
-* Sort out logistics of merging branch and deploying
-* Migration to create read_prefixes and write_prefixes array columns on user
 * Make search work across all prefixes
-* Migration to drop topics and links tables and dependent relations
-* Migration to fill in the public/private logic with a public/private boolean?
-* Create repos on user signup
-* Delete repos when user asks for account to be dropped
-* 128 bit timestamp class
-* Run migration to create array columns
-* Current snapshot of database
-* Export people's repos
-* Figure out how to upload the repos
-* Figure out how to download a repo
-* Run migration to drop topics and links table
-* Make the switchover live
-* Account creation
-* Account deletion
+* Git: Start work on git rebases and commits
+* Git: Sort out logistics of merging branch and deploying
+* Git: Create repos on user signup
+* Git: Delete repos when user asks for account to be dropped
+* Git: Figure out how to upload the repos
+* Git: Figure out how to download a repo
+* Git: Include current git commit in Redis key prefixes
+* Cutover: Current snapshot of database
+* Cutover: Export people's repos
+* Cutover: Run addititive migrations against database
+* Cutover: Make the switchover live
+* Cutover: Run migrations to clean up tables that are no longer needed
 
 Later:
 * Keep tabs on whether the ordering of changes is stable

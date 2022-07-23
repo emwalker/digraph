@@ -97,13 +97,15 @@ impl Topic {
         last: Option<i32>,
         search_string: Option<String>,
     ) -> Result<TopicChildConnection> {
-        let results = ctx
+        let iter = ctx
             .data_unchecked::<Store>()
             .topic_children(&self.path)
-            .await?
-            .iter()
-            .map(TopicChild::from)
-            .collect_vec();
+            .await?;
+
+        let mut results = vec![];
+        for child in iter {
+            results.push(TopicChild::try_from(&child)?);
+        }
 
         conn(after, before, first, last, results)
     }

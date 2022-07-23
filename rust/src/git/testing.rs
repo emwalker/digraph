@@ -1,12 +1,14 @@
 use chrono;
+use geotime::Geotime;
 use std::collections::BTreeSet;
 
 use super::{Link, LinkMetadata, ParentTopic, Synonym, Topic, TopicMetadata};
 use crate::prelude::*;
 
-pub fn unix_epoch() -> Timestamp {
+pub fn timerange_epoch() -> Geotime {
     use chrono::TimeZone;
-    chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0)
+    let dt = chrono::Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
+    Geotime::from(&dt)
 }
 
 pub fn topic(name: &str) -> Topic {

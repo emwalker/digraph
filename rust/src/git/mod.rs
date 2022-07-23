@@ -1164,11 +1164,11 @@ mod tests {
 
     #[test]
     fn topic_display_name() {
-        let date = unix_epoch();
+        let date = timerange_epoch();
 
         let mut topic = topic("Climate change");
         topic.metadata.timerange = Some(Timerange {
-            starts: date,
+            starts: date.into(),
             prefix_format: TimerangePrefixFormat::StartYear,
         });
 

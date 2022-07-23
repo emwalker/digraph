@@ -1,4 +1,5 @@
 use base64;
+use geotime::Geotime;
 use lazy_static::lazy_static;
 use rand::{distributions::Alphanumeric, Rng};
 use regex::Regex;
@@ -274,7 +275,7 @@ pub trait DownSet {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Timerange {
-    pub starts: chrono::DateTime<chrono::Utc>,
+    pub starts: geotime::LexicalGeohash,
     pub prefix_format: TimerangePrefixFormat,
 }
 
@@ -302,9 +303,9 @@ impl From<&str> for TimerangePrefixFormat {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum TimerangePrefix {
-    None(chrono::DateTime<chrono::Utc>),
-    StartYear(chrono::DateTime<chrono::Utc>),
-    StartYearMonth(chrono::DateTime<chrono::Utc>),
+    None(Geotime),
+    StartYear(Geotime),
+    StartYearMonth(Geotime),
 }
 
 impl From<&Option<Timerange>> for TimerangePrefix {
@@ -315,11 +316,11 @@ impl From<&Option<Timerange>> for TimerangePrefix {
                 prefix_format,
                 ..
             }) => match prefix_format {
-                TimerangePrefixFormat::None => Self::None(*starts),
-                TimerangePrefixFormat::StartYear => Self::StartYear(*starts),
-                TimerangePrefixFormat::StartYearMonth => Self::StartYearMonth(*starts),
+                TimerangePrefixFormat::None => Self::None((*starts).into()),
+                TimerangePrefixFormat::StartYear => Self::StartYear((*starts).into()),
+                TimerangePrefixFormat::StartYearMonth => Self::StartYearMonth((*starts).into()),
             },
-            None => Self::None(chrono::Utc::now()),
+            None => Self::None(Geotime::now()),
         }
     }
 }
@@ -331,42 +332,42 @@ impl From<&Timerange> for TimerangePrefix {
             prefix_format,
         } = timerange;
         match prefix_format {
-            TimerangePrefixFormat::None => Self::None(*starts),
-            TimerangePrefixFormat::StartYear => Self::StartYear(*starts),
-            TimerangePrefixFormat::StartYearMonth => Self::StartYearMonth(*starts),
+            TimerangePrefixFormat::None => Self::None((*starts).into()),
+            TimerangePrefixFormat::StartYear => Self::StartYear((*starts).into()),
+            TimerangePrefixFormat::StartYearMonth => Self::StartYearMonth((*starts).into()),
         }
     }
 }
 
 impl TimerangePrefix {
-    pub fn new(prefix_format: Option<&str>, starts: Option<Timestamp>) -> Self {
+    pub fn new(prefix_format: Option<&str>, starts: Option<Geotime>) -> Self {
         match prefix_format {
             Some(format) => match starts {
-                Some(starts) => match format {
-                    "START_YEAR" => Self::StartYear(starts),
-                    "START_YEAR_MONTH" => Self::StartYearMonth(starts),
-                    _ => Self::None(starts),
+                Some(ts) => match format {
+                    "START_YEAR" => Self::StartYear(ts),
+                    "START_YEAR_MONTH" => Self::StartYearMonth(ts),
+                    _ => Self::None(ts),
                 },
-                None => Self::None(chrono::Utc::now()),
+                None => Self::None(Geotime::now()),
             },
-            None => Self::None(chrono::Utc::now()),
+            None => Self::None(Geotime::now()),
         }
     }
 
     pub fn date_string(&self) -> String {
-        let dt = match self {
-            Self::None(starts) => starts,
-            Self::StartYear(starts) => starts,
-            Self::StartYearMonth(starts) => starts,
+        let ts = match self {
+            Self::None(ts) => ts,
+            Self::StartYear(ts) => ts,
+            Self::StartYearMonth(ts) => ts,
         };
-        format!("{}", dt.format("%Y-%m-%d"))
+        ts.display_string("%Y-%m-%d")
     }
 
     pub fn prefix(&self) -> Option<String> {
         match self {
             Self::None(_) => None,
-            Self::StartYear(starts) => Some(format!("{}", starts.format("%Y"))),
-            Self::StartYearMonth(starts) => Some(format!("{}", starts.format("%Y-%m"))),
+            Self::StartYear(ts) => Some(ts.display_string("%Y")),
+            Self::StartYearMonth(ts) => Some(ts.display_string("%Y-%m")),
         }
     }
 
@@ -465,12 +466,13 @@ mod tests {
     }
 
     mod timerange {
+        use chrono::TimeZone;
+
         use super::*;
 
-        fn valid_date() -> Option<chrono::DateTime<chrono::Utc>> {
-            chrono::DateTime::parse_from_rfc2822("Sat, 1 Jan 2000 00:00:00 +0000")
-                .ok()
-                .map(|dt| dt.with_timezone(&chrono::Utc))
+        fn valid_date() -> Option<Geotime> {
+            let dt = chrono::Utc.ymd(2000, 1, 1).and_hms(0, 0, 0);
+            Some(Geotime::from(&dt))
         }
 
         #[test]

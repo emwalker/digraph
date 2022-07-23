@@ -27,8 +27,10 @@ impl From<&git::Link> for Link {
     }
 }
 
-impl From<&git::Topic> for Topic {
-    fn from(topic: &git::Topic) -> Self {
+impl TryFrom<&git::Topic> for Topic {
+    type Error = Error;
+
+    fn try_from(topic: &git::Topic) -> Result<Self> {
         let meta = &topic.metadata;
         let parent_topic_paths = topic
             .parent_topics
@@ -43,15 +45,21 @@ impl From<&git::Topic> for Topic {
             .collect::<Vec<RepoPath>>();
         let synonyms = Synonyms::from(&meta.synonyms);
 
-        Self {
+        let timerange = meta.timerange.as_ref();
+        let timerange = match timerange {
+            Some(timerange) => Some(timerange::Timerange::try_from(timerange)?),
+            None => None,
+        };
+
+        Ok(Self {
             child_paths,
             path: RepoPath::from(&meta.path),
             parent_topic_paths,
             name: topic.name(Locale::EN),
             root: meta.root,
             synonyms,
-            timerange: meta.timerange.as_ref().map(timerange::Timerange::from),
-        }
+            timerange,
+        })
     }
 }
 
@@ -117,12 +125,15 @@ impl Loader<String> for ObjectLoader {
     }
 }
 
-impl From<&git::Object> for TopicChild {
-    fn from(object: &git::Object) -> Self {
-        match object {
+impl TryFrom<&git::Object> for TopicChild {
+    type Error = Error;
+
+    fn try_from(object: &git::Object) -> Result<Self> {
+        let object = match object {
             git::Object::Link(link) => TopicChild::Link(Link::from(link)),
-            git::Object::Topic(topic) => TopicChild::Topic(Topic::from(topic)),
-        }
+            git::Object::Topic(topic) => TopicChild::Topic(Topic::try_from(topic)?),
+        };
+        Ok(object)
     }
 }
 
@@ -162,13 +173,16 @@ impl From<&SynonymInput> for git::Synonym {
     }
 }
 
-impl From<&git::SearchMatch> for TopicChild {
-    fn from(item: &git::SearchMatch) -> Self {
+impl TryFrom<&git::SearchMatch> for TopicChild {
+    type Error = Error;
+
+    fn try_from(item: &git::SearchMatch) -> Result<Self> {
         let git::SearchMatch { object, .. } = item;
-        match object {
-            git::Object::Topic(topic) => TopicChild::Topic(Topic::from(topic)),
+        let object = match object {
+            git::Object::Topic(topic) => TopicChild::Topic(Topic::try_from(topic)?),
             git::Object::Link(link) => TopicChild::Link(Link::from(link)),
-        }
+        };
+        Ok(object)
     }
 }
 
