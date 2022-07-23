@@ -3,7 +3,7 @@ use async_graphql::{Context, Object, SimpleObject, ID};
 
 use super::{Repository, RepositoryConnection, RepositoryEdgeFields};
 use crate::prelude::*;
-use crate::repo::Repo;
+use crate::store::Store;
 
 #[derive(Clone, Debug)]
 pub enum User {
@@ -74,7 +74,7 @@ impl User {
                 ..
             } => {
                 let results = ctx
-                    .data_unchecked::<Repo>()
+                    .data_unchecked::<Store>()
                     .repositories_for_user(id.to_string())
                     .await?;
                 (selected_repository_id.clone().unwrap_or_default(), results)
@@ -117,7 +117,7 @@ impl User {
                 ..
             } => match selected_repository_id {
                 Some(id) => {
-                    ctx.data_unchecked::<Repo>()
+                    ctx.data_unchecked::<Store>()
                         .repository(id.to_string())
                         .await
                 }

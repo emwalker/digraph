@@ -113,6 +113,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
     searchString: String,
   ): LiveSearchTopicsPayload!
   createdAt: DateTime!
+  displayColor: Color!
   id: String!
   loading: Boolean!
   newlyAdded: Boolean!
@@ -266,6 +267,7 @@ type Repository {
   name: String!
   organization: Organization!
   owner: User!
+  prefix: String!
   rootTopic: Topic!
 }
 
@@ -339,6 +341,7 @@ type Topic implements ResourceIdentifiable & Namespaceable {
   ): TopicChildConnection!
   createdAt: DateTime!
   description: String
+  displayColor: Color!
   displayName(
     timerange: Boolean,
   ): String!
@@ -478,8 +481,7 @@ input UpsertLinkInput {
   # UpdateLink mutation, which has a required link path field and doesn't modify the parent topics.
   addParentTopicPath: String
   clientMutationId: String
-  organizationLogin: String!
-  repositoryName: String!
+  repoPrefix: String!
   title: String
   url: String!
 }
@@ -493,9 +495,8 @@ input UpsertTopicInput {
   clientMutationId: String
   description: String
   name: String!
-  organizationLogin: String!
   parentTopicPath: String!
-  repositoryName: String!
+  repoPrefix: String!
 }
 
 input UpsertTopicTimerangeInput {

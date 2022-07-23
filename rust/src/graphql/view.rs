@@ -4,7 +4,7 @@ use super::{
     relay::conn, ActivityLineItem, ActivityLineItemConnection, Link, LiveSearchTopicsPayload,
     Organization, QueryInfo, Repository, SynonymMatch, Topic, User, WIKI_REPOSITORY_ID,
 };
-use crate::repo::Repo;
+use crate::store::Store;
 use crate::{git, prelude::*};
 
 #[derive(Clone)]
@@ -27,7 +27,7 @@ impl View {
         last: Option<i32>,
         topic_path: Option<String>,
     ) -> Result<ActivityLineItemConnection> {
-        let repo = ctx.data_unchecked::<Repo>();
+        let repo = ctx.data_unchecked::<Store>();
         let activity = repo.activity(topic_path, first.unwrap_or(3)).await?;
 
         let mut results = vec![];
@@ -49,7 +49,7 @@ impl View {
 
     async fn current_organization(&self, ctx: &Context<'_>) -> Result<Organization> {
         Ok(ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .organization_by_login(self.current_organization_login.to_string())
             .await?
             .unwrap_or_default())
@@ -58,13 +58,13 @@ impl View {
     async fn current_repository(&self, ctx: &Context<'_>) -> Result<Repository> {
         match &self.current_repository_name {
             Some(name) => ctx
-                .data_unchecked::<Repo>()
+                .data_unchecked::<Store>()
                 .repository_by_name(name.to_string())
                 .await?
                 .ok_or_else(|| Error::NotFound(format!("repo name {}", name))),
 
             None => ctx
-                .data_unchecked::<Repo>()
+                .data_unchecked::<Store>()
                 .repository(WIKI_REPOSITORY_ID.to_string())
                 .await?
                 .ok_or_else(|| Error::NotFound(format!("repo id {}", WIKI_REPOSITORY_ID))),
@@ -73,11 +73,11 @@ impl View {
 
     async fn link(&self, ctx: &Context<'_>, path: String) -> Result<Option<Link>> {
         let path = RepoPath::from(&path.to_string());
-        ctx.data_unchecked::<Repo>().link(&path).await
+        ctx.data_unchecked::<Store>().link(&path).await
     }
 
     async fn link_count(&self, ctx: &Context<'_>) -> Result<i64> {
-        ctx.data_unchecked::<Repo>().link_count().await
+        ctx.data_unchecked::<Store>().link_count().await
     }
 
     async fn query_info(&self) -> QueryInfo {
@@ -87,13 +87,13 @@ impl View {
     }
 
     async fn topic(&self, ctx: &Context<'_>, path: String) -> Result<Option<Topic>> {
-        ctx.data_unchecked::<Repo>()
+        ctx.data_unchecked::<Store>()
             .topic(&RepoPath::from(&path))
             .await
     }
 
     async fn topic_count(&self, ctx: &Context<'_>) -> Result<i64> {
-        ctx.data_unchecked::<Repo>().topic_count().await
+        ctx.data_unchecked::<Store>().topic_count().await
     }
 
     async fn topic_live_search(
@@ -102,7 +102,7 @@ impl View {
         search_string: Option<String>,
     ) -> Result<LiveSearchTopicsPayload> {
         let git::FetchTopicLiveSearchResult { synonym_matches } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .search_topics(search_string)
             .await?;
         let synonym_matches = synonym_matches.iter().map(SynonymMatch::from).collect();
@@ -113,7 +113,7 @@ impl View {
         let user = match self.viewer_id.to_string().as_str() {
             "" => User::Guest,
             id => ctx
-                .data_unchecked::<Repo>()
+                .data_unchecked::<Store>()
                 .user(id.to_string())
                 .await?
                 .unwrap_or_default(),

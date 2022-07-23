@@ -117,6 +117,7 @@ mod tests {
             &url,
             Some("Climate change".into()),
             Some(climate_change.inner.to_owned()),
+            &RepoPrefix::from(WIKI_REPO_PREFIX),
         )
         .await;
         println!("result: {:?}", result.link);
@@ -142,6 +143,7 @@ mod tests {
             &url,
             Some("Weather".into()),
             Some(weather.inner.to_owned()),
+            &RepoPrefix::from(WIKI_REPO_PREFIX),
         )
         .await;
 
@@ -176,6 +178,7 @@ mod tests {
             &url,
             Some("13. How does climate change affect the strength and frequency of floods, droughts, hurricanes, and tornadoes?".into()),
             Some(climate_change_weather.inner.to_owned()),
+            &RepoPrefix::from(WIKI_REPO_PREFIX),
         )
         .await;
 
@@ -187,6 +190,7 @@ mod tests {
             &url,
             Some("Overview: Weather, Global Warming, and Climate Change".into()),
             Some(climate_change_weather.inner.to_owned()),
+            &RepoPrefix::from(WIKI_REPO_PREFIX),
         )
         .await;
 

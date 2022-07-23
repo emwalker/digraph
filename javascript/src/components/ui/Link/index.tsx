@@ -47,14 +47,6 @@ class Link extends Component<Props, State> {
     return liftNodes<ParentTopicType>(this.props.link.parentTopics)
   }
 
-  get displayColor() {
-    if (!this.repo) return 'transparent'
-
-    return this.linkBelongsToCurrentRepo
-      ? 'transparent'
-      : this.repo.displayColor
-  }
-
   get showEditButton(): boolean {
     return !this.props.link.loading && this.props.link.viewerCanUpdate
   }
@@ -67,7 +59,7 @@ class Link extends Component<Props, State> {
     <Item
       canEdit={!this.props.viewer.isGuest}
       className="Box-row--link"
-      displayColor={this.displayColor as string}
+      displayColor={this.props.link.displayColor as string}
       formIsOpen={this.state.formIsOpen}
       newlyAdded={this.props.link.newlyAdded}
       orgLogin={this.props.orgLogin}
@@ -115,9 +107,9 @@ export default createFragmentContainer(Link, {
       title
       url
       viewerCanUpdate
+      displayColor
 
       repository {
-        displayColor
         id
       }
 

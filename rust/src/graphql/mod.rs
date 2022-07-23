@@ -4,7 +4,7 @@ use sqlx::postgres::PgPool;
 use crate::git;
 use crate::prelude::*;
 use crate::redis;
-use crate::repo::Repo;
+use crate::store::Store;
 
 mod activity;
 pub use activity::*;
@@ -68,8 +68,8 @@ impl State {
         }
     }
 
-    pub fn create_repo(&self, viewer: &Viewer) -> Repo {
-        Repo::new(
+    pub fn create_repo(&self, viewer: &Viewer) -> Store {
+        Store::new(
             viewer.to_owned(),
             git::Git::new(viewer, &self.root),
             self.pool.clone(),

@@ -41,12 +41,6 @@ class Topic extends Component<Props, State> {
     return this.repo.id === this.currentRepo?.id
   }
 
-  get displayColor() {
-    return this.topicBelongsToCurrentRepo
-      ? 'transparent'
-      : this.props.topic.repository.displayColor as string
-  }
-
   get parentTopics() {
     return liftNodes<ParentTopicType>(this.props.topic.parentTopics)
   }
@@ -67,7 +61,7 @@ class Topic extends Component<Props, State> {
         canEdit={this.props.topic.viewerCanUpdate}
         className="topicTopicRow Box-row--topic"
         description={this.props.topic.description}
-        displayColor={this.displayColor}
+        displayColor={this.props.topic.displayColor as string}
         formIsOpen={this.state.formIsOpen}
         newlyAdded={this.props.topic.newlyAdded}
         orgLogin={this.props.orgLogin}
@@ -108,10 +102,10 @@ export default createFragmentContainer(Topic, {
       newlyAdded
       path
       viewerCanUpdate
+      displayColor
 
       repository {
         name
-        displayColor
         id
       }
 

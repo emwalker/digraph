@@ -8,7 +8,7 @@ use super::{
 use crate::git;
 use crate::prelude::*;
 use crate::psql;
-use crate::repo::Repo;
+use crate::store::Store;
 
 #[derive(Clone, Debug, InputObject)]
 pub struct CreateGithubSessionInput {
@@ -175,8 +175,7 @@ pub struct UpdateTopicParentTopicsPayload {
 pub struct UpsertLinkInput {
     pub add_parent_topic_path: Option<String>,
     pub client_mutation_id: Option<String>,
-    pub organization_login: String,
-    pub repository_name: String,
+    pub repo_prefix: String,
     pub title: Option<String>,
     pub url: String,
 }
@@ -192,8 +191,7 @@ pub struct UpsertTopicInput {
     pub client_mutation_id: Option<String>,
     pub description: Option<String>,
     pub name: String,
-    pub organization_login: String,
-    pub repository_name: String,
+    pub repo_prefix: String,
     pub parent_topic_path: String,
 }
 
@@ -229,7 +227,7 @@ impl MutationRoot {
         input: CreateGithubSessionInput,
     ) -> Result<CreateSessionPayload> {
         log::info!("creating GitHub session: {:?}", input);
-        let repo = ctx.data_unchecked::<Repo>();
+        let repo = ctx.data_unchecked::<Store>();
 
         if repo.server_secret != input.server_secret {
             log::warn!("server secret did not match secret provided by client");
@@ -270,7 +268,7 @@ impl MutationRoot {
             alerts,
             deleted_user_id,
         } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .delete_account(user_id.to_string())
             .await?;
 
@@ -293,7 +291,10 @@ impl MutationRoot {
         let link_path = RepoPath::from(&link_path);
         let git::DeleteLinkResult {
             deleted_link_path, ..
-        } = ctx.data_unchecked::<Repo>().delete_link(&link_path).await?;
+        } = ctx
+            .data_unchecked::<Store>()
+            .delete_link(&link_path)
+            .await?;
 
         Ok(DeleteLinkPayload {
             client_mutation_id,
@@ -311,7 +312,7 @@ impl MutationRoot {
             session_id,
         } = input;
         let psql::DeleteSessionResult { deleted_session_id } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .delete_session(session_id.to_string())
             .await?;
 
@@ -330,7 +331,7 @@ impl MutationRoot {
             client_mutation_id,
             topic_path,
         } = input;
-        ctx.data_unchecked::<Repo>()
+        ctx.data_unchecked::<Store>()
             .delete_topic(&RepoPath::from(&topic_path))
             .await?;
 
@@ -352,7 +353,7 @@ impl MutationRoot {
 
         let topic_path = RepoPath::from(&topic_path);
         let git::RemoveTopicTimerangeResult { topic, .. } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .remove_topic_timerange(&topic_path)
             .await?;
 
@@ -374,7 +375,7 @@ impl MutationRoot {
         } = input;
 
         let psql::ReviewLinkResult { link, .. } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .review_link(&RepoPath::from(&link_path), reviewed)
             .await?;
 
@@ -389,7 +390,7 @@ impl MutationRoot {
         input: SelectRepositoryInput,
     ) -> Result<SelectRepositoryPayload> {
         let psql::SelectRepositoryResult { repository, actor } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .select_repository(input.repository_id.map(|id| id.to_string()))
             .await?;
         Ok(SelectRepositoryPayload {
@@ -404,7 +405,7 @@ impl MutationRoot {
         input: UpdateLinkParentTopicsInput,
     ) -> Result<UpdateLinkParentTopicsPayload> {
         let git::UpdateLinkParentTopicsResult { link, .. } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .update_link_parent_topics(input)
             .await?;
         Ok(UpdateLinkParentTopicsPayload {
@@ -423,7 +424,7 @@ impl MutationRoot {
             ..
         } = input;
         let git::UpdateTopicParentTopicsResult { alerts, topic } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .update_topic_parent_topics(
                 &RepoPath::from(&topic_path),
                 parent_topic_paths.iter().map(RepoPath::from).collect(),
@@ -443,7 +444,7 @@ impl MutationRoot {
     ) -> Result<UpdateTopicSynonymsPayload> {
         let client_mutation_id = input.client_mutation_id.clone();
         let git::UpdateTopicSynonymsResult { alerts, topic } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .update_topic_synonyms(input)
             .await?;
 
@@ -459,7 +460,7 @@ impl MutationRoot {
         ctx: &Context<'_>,
         input: UpsertLinkInput,
     ) -> Result<UpsertLinkPayload> {
-        let result = ctx.data_unchecked::<Repo>().upsert_link(input).await?;
+        let result = ctx.data_unchecked::<Store>().upsert_link(input).await?;
         let edge = result
             .link
             .as_ref()
@@ -477,7 +478,7 @@ impl MutationRoot {
         input: UpsertTopicInput,
     ) -> Result<UpsertTopicPayload> {
         log::info!("upserting topic: {:?}", input);
-        let result = ctx.data_unchecked::<Repo>().upsert_topic(input).await?;
+        let result = ctx.data_unchecked::<Store>().upsert_topic(input).await?;
         let edge = result
             .topic
             .as_ref()
@@ -499,7 +500,7 @@ impl MutationRoot {
             topic,
             timerange,
         } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .upsert_topic_timerange(input)
             .await?;
 

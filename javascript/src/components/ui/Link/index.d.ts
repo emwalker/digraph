@@ -16,7 +16,6 @@ declare type State = {
 declare class Link extends Component<Props, State> {
     constructor(props: Props);
     get repo(): {
-        readonly displayColor: unknown;
         readonly id: string | null;
     };
     get currentRepo(): {
@@ -28,7 +27,6 @@ declare class Link extends Component<Props, State> {
         readonly displayName: string;
         readonly path: string;
     } | null)[];
-    get displayColor(): unknown;
     get showEditButton(): boolean;
     toggleForm: () => void;
     render: () => JSX.Element;

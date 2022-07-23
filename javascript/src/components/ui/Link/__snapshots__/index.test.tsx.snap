@@ -5,7 +5,6 @@ exports[`<Link /> renders 1`] = `
   canEdit={true}
   className="Box-row--link"
   description={null}
-  displayColor="transparent"
   formIsOpen={false}
   orgLogin="gnusto"
   repoName="General collection"

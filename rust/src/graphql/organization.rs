@@ -2,7 +2,7 @@ use async_graphql::{Context, Object, ID};
 
 use super::Repository;
 use crate::prelude::*;
-use crate::repo::Repo;
+use crate::store::Store;
 
 #[derive(Clone)]
 pub enum Organization {
@@ -31,7 +31,7 @@ impl Organization {
                 default_repository_id,
                 ..
             } => ctx
-                .data_unchecked::<Repo>()
+                .data_unchecked::<Store>()
                 .repository(default_repository_id.to_string())
                 .await?
                 .ok_or_else(|| Error::NotFound(format!("repo id {}", **default_repository_id,))),

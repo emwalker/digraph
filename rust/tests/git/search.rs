@@ -62,7 +62,8 @@ mod fetch_topic_live_search {
         upsert_topic(
             &f,
             "Climate change and society",
-            parent,
+            &parent,
+            &parent.prefix,
             OnMatchingSynonym::Ask,
         )
         .unwrap();

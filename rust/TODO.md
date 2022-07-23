@@ -1,5 +1,5 @@
 Before switchover:
-* Fix private topic / link coloring bug
+* When something is added to a private repo, don't include change logs in public repos
 * Decide whether to support link reviews or remove the feature
 * Start work on git rebases and commits
 * Sort out logistics of merging branch and deploying
@@ -17,6 +17,8 @@ Before switchover:
 * Figure out how to download a repo
 * Run migration to drop topics and links table
 * Make the switchover live
+* Account creation
+* Account deletion
 
 Later:
 * Keep tabs on whether the ordering of changes is stable
@@ -34,6 +36,7 @@ Later:
 * Add paging
 * Clean up history log
 * Zero-copy search results
+* Make /wiki/ the default prefix when someone logs in for the first time
 * Move over to Primer React components
 * Revisit UI look and feel
 * Get query info working again (the text and topics that appear in the search bar)

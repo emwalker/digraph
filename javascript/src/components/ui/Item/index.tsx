@@ -50,10 +50,10 @@ class Item extends Component<Props> {
   }
 
   get style() {
-    if (!this.props.displayColor) return {}
+    if (this.props.displayColor === null) return {}
 
     return {
-      borderLeft: `5px solid ${this.props.displayColor}`,
+      borderLeftColor: this.props.displayColor,
     }
   }
 

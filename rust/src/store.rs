@@ -10,7 +10,7 @@ use crate::prelude::*;
 use crate::psql;
 use crate::redis;
 
-pub struct Repo {
+pub struct Store {
     db: PgPool,
     git: git::Git,
     object_loader: DataLoader<graphql::ObjectLoader, HashMapCache>,
@@ -25,7 +25,7 @@ pub struct Repo {
     repository_loader: DataLoader<psql::RepositoryLoader, HashMapCache>,
 }
 
-impl Repo {
+impl Store {
     pub fn new(
         viewer: Viewer,
         git: git::Git,
@@ -90,7 +90,7 @@ impl Repo {
     }
 }
 
-impl Repo {
+impl Store {
     pub async fn activity(
         &self,
         topic_path: Option<String>,
@@ -428,7 +428,7 @@ impl Repo {
         git::UpsertLink {
             add_parent_topic_path,
             actor: self.viewer.clone(),
-            prefix: RepoPrefix::from("/wiki/"),
+            prefix: RepoPrefix::from(&input.repo_prefix),
             title: input.title,
             url: input.url,
             fetcher: Box::new(http::Fetcher),
@@ -469,7 +469,7 @@ impl Repo {
             locale: Locale::EN,
             name: input.name.to_owned(),
             on_matching_synonym: git::OnMatchingSynonym::Ask,
-            prefix: RepoPrefix::from("/wiki/"),
+            prefix: RepoPrefix::from(&input.repo_prefix),
             parent_topic: RepoPath::from(&input.parent_topic_path),
         }
         .call(&self.git, &self.redis)

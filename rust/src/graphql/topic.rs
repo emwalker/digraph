@@ -5,7 +5,7 @@ use itertools::Itertools;
 use super::timerange;
 use super::{relay::conn, ActivityLineItem, Link, LinkConnection, Repository, Synonym, Synonyms};
 use super::{ActivityLineItemConnection, LinkConnectionFields};
-use crate::repo::Repo;
+use crate::store::Store;
 use crate::{git, prelude::*};
 
 #[derive(Debug, SimpleObject)]
@@ -50,7 +50,7 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        let repo = ctx.data_unchecked::<Repo>();
+        let repo = ctx.data_unchecked::<Store>();
         let activity = repo
             .activity(Some(self.path.inner.clone()), first.unwrap_or(3))
             .await?;
@@ -77,7 +77,7 @@ impl Topic {
         search_string: Option<String>,
     ) -> Result<LiveSearchTopicsPayload> {
         let git::FetchTopicLiveSearchResult { synonym_matches } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .search_topics(search_string)
             .await?;
         let synonym_matches = synonym_matches
@@ -98,7 +98,7 @@ impl Topic {
         search_string: Option<String>,
     ) -> Result<TopicChildConnection> {
         let results = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .topic_children(&self.path)
             .await?
             .iter()
@@ -110,6 +110,14 @@ impl Topic {
 
     async fn description(&self) -> Option<String> {
         None
+    }
+
+    async fn display_color(&self) -> &str {
+        if self.path.starts_with(WIKI_REPO_PREFIX) {
+            ""
+        } else {
+            DEFAULT_PRIVATE_COLOR
+        }
     }
 
     async fn display_name(&self) -> &str {
@@ -136,7 +144,7 @@ impl Topic {
             last,
             |_after, _before, _first, _last| async move {
                 let results = ctx
-                    .data::<Repo>()?
+                    .data::<Store>()?
                     .child_links_for_topic(&self.path, reviewed)
                     .await?;
                 let mut connection = Connection::with_additional_fields(
@@ -189,7 +197,7 @@ impl Topic {
             before,
             first,
             last,
-            ctx.data_unchecked::<Repo>()
+            ctx.data_unchecked::<Store>()
                 .parent_topics_for_topic(&self.path)
                 .await?,
         )
@@ -200,7 +208,7 @@ impl Topic {
     }
 
     async fn repository(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
-        ctx.data_unchecked::<Repo>()
+        ctx.data_unchecked::<Store>()
             .repository_by_prefix(self.path.org_login.clone())
             .await
     }
@@ -223,7 +231,7 @@ impl Topic {
             before,
             first,
             last,
-            ctx.data_unchecked::<Repo>()
+            ctx.data_unchecked::<Store>()
                 .search(self.clone(), search_string)
                 .await?,
         )
@@ -245,7 +253,7 @@ impl Topic {
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
-        let repo = ctx.data_unchecked::<Repo>();
+        let repo = ctx.data_unchecked::<Store>();
         if repo.viewer.is_guest() {
             return Ok(false);
         }

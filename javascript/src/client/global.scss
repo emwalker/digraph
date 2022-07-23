@@ -104,6 +104,10 @@ select {
 }
 
 .Item-row {
+  border-left-width: 5px;
+  border-left-style: solid;
+  border-left-color: transparent;
+
   &.Box-row--hover-gray:first-of-type {
     border-top-color: #e1e4e8 !important;
   }

@@ -6,7 +6,7 @@ use super::{
 };
 use crate::git;
 use crate::prelude::*;
-use crate::repo::Repo;
+use crate::store::Store;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Link {
@@ -35,7 +35,7 @@ impl Link {
         search_string: Option<String>,
     ) -> Result<LiveSearchTopicsPayload> {
         let git::FetchTopicLiveSearchResult { synonym_matches } = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .search_topics(search_string)
             .await?;
         let synonym_matches = synonym_matches
@@ -43,6 +43,14 @@ impl Link {
             .map(SynonymMatch::from)
             .collect::<Vec<SynonymMatch>>();
         Ok(LiveSearchTopicsPayload { synonym_matches })
+    }
+
+    async fn display_color(&self) -> &str {
+        if self.path.starts_with(WIKI_REPO_PREFIX) {
+            ""
+        } else {
+            DEFAULT_PRIVATE_COLOR
+        }
     }
 
     async fn loading(&self) -> bool {
@@ -66,7 +74,7 @@ impl Link {
         last: Option<i32>,
     ) -> Result<TopicConnection> {
         let topics = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .parent_topics_for_link(&self.path)
             .await?;
         conn(after, before, first, last, topics)
@@ -77,7 +85,7 @@ impl Link {
     }
 
     async fn repository(&self, ctx: &Context<'_>) -> Result<Repository> {
-        ctx.data_unchecked::<Repo>()
+        ctx.data_unchecked::<Store>()
             .repository(self.repository_id.to_string())
             .await?
             .ok_or_else(|| Error::NotFound(format!("repo id {}", *self.repository_id)))
@@ -92,7 +100,7 @@ impl Link {
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
-        let repo = ctx.data_unchecked::<Repo>();
+        let repo = ctx.data_unchecked::<Store>();
         if repo.viewer.is_guest() {
             return Ok(false);
         }
@@ -120,7 +128,7 @@ impl LinkReview {
 
     async fn user(&self, ctx: &Context<'_>) -> Result<User> {
         let user = ctx
-            .data_unchecked::<Repo>()
+            .data_unchecked::<Store>()
             .user(self.user_id.clone())
             .await?;
 

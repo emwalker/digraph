@@ -29,9 +29,9 @@ declare class Item extends Component<Props> {
     get className(): string;
     get showEditButton(): boolean;
     get style(): {
-        borderLeft?: undefined;
+        borderLeftColor?: undefined;
     } | {
-        borderLeft: string;
+        borderLeftColor: string;
     };
     get url(): JSX.Element | null;
     get titleLink(): JSX.Element;

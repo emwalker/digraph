@@ -17,5 +17,5 @@ pub mod http;
 pub mod prelude;
 mod psql;
 pub mod redis;
-pub mod repo;
+pub mod store;
 pub mod types;

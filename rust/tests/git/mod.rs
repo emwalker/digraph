@@ -57,6 +57,7 @@ async fn upsert_link(
     url: &RepoUrl,
     title: Option<String>,
     parent_topic: Option<String>,
+    prefix: &RepoPrefix,
 ) -> UpsertLinkResult {
     let html = match &title {
         Some(title) => format!("<title>{}</title>", title),
@@ -69,7 +70,7 @@ async fn upsert_link(
         actor: actor(),
         add_parent_topic_path,
         fetcher: Box::new(Fetcher(html)),
-        prefix: RepoPrefix::from("/wiki/"),
+        prefix: prefix.to_owned(),
         url: url.normalized.to_owned(),
         title,
     }
@@ -81,16 +82,17 @@ async fn upsert_link(
 fn upsert_topic(
     f: &Fixtures,
     name: &str,
-    parent_topic: RepoPath,
+    parent_topic: &RepoPath,
+    prefix: &RepoPrefix,
     on_matching_synonym: OnMatchingSynonym,
 ) -> Result<UpsertTopicResult> {
     UpsertTopic {
         actor: actor(),
-        parent_topic,
+        parent_topic: parent_topic.to_owned(),
         locale: Locale::EN,
         name: name.into(),
         on_matching_synonym,
-        prefix: RepoPrefix::from("/wiki/"),
+        prefix: prefix.to_owned(),
     }
     .call(&f.repo.git, &redis::Noop)
 }

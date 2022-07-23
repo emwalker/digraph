@@ -34,35 +34,25 @@ class AddLink extends Component<Props, State> {
   }
 
   onKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') this.createLink()
+    if (event.key === 'Enter') this.upsertLink()
   }
 
   get selectedRepo(): RepositoryType {
     return this.props.viewer.selectedRepository
   }
 
-  get orgLogin() {
-    const repo = this.selectedRepo
-    if (!repo) return null
-    return repo.organization.login
-  }
-
   updateUrl = (event: FormEvent<HTMLInputElement>) => {
     this.setState({ url: event.currentTarget.value })
   }
 
-  createLink() {
-    const repo = this.selectedRepo
-    const repoName = repo ? repo.name : null
-    const { orgLogin } = this
+  upsertLink() {
+    const repoPrefix = this.selectedRepo?.prefix
 
-    if (!repoName) return
-    if (!orgLogin) return
+    if (!repoPrefix) return
 
     const input: Input = {
       addParentTopicPath: this.props.topic.path,
-      organizationLogin: orgLogin,
-      repositoryName: repoName,
+      repoPrefix,
       url: this.state.url,
     }
 
@@ -101,11 +91,7 @@ export default createFragmentContainer(AddLink, {
     fragment AddLink_viewer on User {
       selectedRepository {
         id
-        name
-
-        organization {
-          login
-        }
+        prefix
       }
     }
   `,

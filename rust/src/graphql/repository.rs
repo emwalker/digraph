@@ -3,7 +3,7 @@ use async_graphql::{Context, Object, SimpleObject, ID};
 
 use super::{Organization, Topic, User};
 use crate::prelude::*;
-use crate::repo::Repo;
+use crate::store::Store;
 
 const PRIVATE_REPOSITORY_COLOR: &str = "#dbedff";
 
@@ -15,6 +15,7 @@ pub enum Repository {
         name: String,
         organization_id: String,
         owner_id: String,
+        prefix: String,
         private: bool,
         root_topic_path: Box<RepoPath>,
         system: bool,
@@ -59,7 +60,7 @@ impl Repository {
                 ..
             } => {
                 let org = ctx
-                    .data_unchecked::<Repo>()
+                    .data_unchecked::<Store>()
                     .organization(organization_id.to_string())
                     .await?
                     .ok_or_else(|| {
@@ -108,7 +109,7 @@ impl Repository {
             Self::Fetched {
                 organization_id, ..
             } => ctx
-                .data_unchecked::<Repo>()
+                .data_unchecked::<Store>()
                 .organization(organization_id.to_string())
                 .await?
                 .ok_or_else(|| {
@@ -122,11 +123,18 @@ impl Repository {
             Repository::Default => Ok(None),
             Repository::Fetched { owner_id, .. } => {
                 let user = ctx
-                    .data_unchecked::<Repo>()
+                    .data_unchecked::<Store>()
                     .user(owner_id.to_string())
                     .await?;
                 Ok(user)
             }
+        }
+    }
+
+    async fn prefix(&self) -> &str {
+        match self {
+            Self::Default => WIKI_REPO_PREFIX,
+            Self::Fetched { prefix, .. } => prefix,
         }
     }
 
@@ -138,7 +146,7 @@ impl Repository {
             } => *root_topic_path.to_owned(),
         };
 
-        ctx.data_unchecked::<Repo>()
+        ctx.data_unchecked::<Store>()
             .topic(&path)
             .await?
             .ok_or_else(|| Error::NotFound(format!("root topic id: {}", path)))

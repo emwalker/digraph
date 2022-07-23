@@ -38,13 +38,12 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   onSave = () => {
-    const { name, organization: { login } } = this.props.link.repository
+    const { prefix } = this.props.link.repository
 
     const input: UpsertInput = {
       // Keep the existing parent topics
       addParentTopicPath: null,
-      organizationLogin: login,
-      repositoryName: name,
+      repoPrefix: prefix,
       title: this.state.title,
       url: this.state.url,
     }
@@ -170,11 +169,7 @@ export default createRefetchContainer(EditLinkForm, {
       url
 
       repository {
-        name
-
-        organization {
-          login
-        }
+        prefix
       }
 
       selectedTopics: parentTopics(first: 1000) {

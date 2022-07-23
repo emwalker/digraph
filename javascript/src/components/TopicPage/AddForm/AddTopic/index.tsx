@@ -42,12 +42,6 @@ class AddTopic extends Component<Props, State> {
     return this.props.viewer.selectedRepository
   }
 
-  get orgLogin(): string | null {
-    const repo = this.selectedRepo
-    if (!repo) return null
-    return repo.organization.login
-  }
-
   get relayConfigs(): DeclarativeMutationConfig[] {
     return [{
       type: 'RANGE_ADD',
@@ -66,9 +60,9 @@ class AddTopic extends Component<Props, State> {
 
   createTopic() {
     const repo = this.selectedRepo
-    if (!repo || !this.orgLogin) {
+    if (!repo) {
       // eslint-disable-next-line no-console
-      console.log('Missing org name or repo, unable to create topic')
+      console.log('missing repo')
       return
     }
 
@@ -76,8 +70,7 @@ class AddTopic extends Component<Props, State> {
       this.props.relay.environment,
       {
         name: this.state.name,
-        repositoryName: repo.name,
-        organizationLogin: this.orgLogin,
+        repoPrefix: repo.prefix,
         parentTopicPath: this.props.topic.path,
       },
       {
@@ -116,10 +109,7 @@ export default createFragmentContainer(AddTopic, {
   viewer: graphql`
     fragment AddTopic_viewer on User {
       selectedRepository {
-        name
-        organization {
-          login
-        }
+        prefix
       }
     }
   `,

@@ -46,6 +46,7 @@ impl Row {
             organization_id: self.organization_id.to_string(),
             owner_id: self.owner_id.to_string(),
             private: self.private,
+            prefix: self.prefix.to_owned(),
             root_topic_path: Box::new(RepoPath::from(&self.root_topic_path)),
             system: self.system,
         }
