@@ -1250,7 +1250,7 @@ impl FetchActivity {
             // Fetch the top-level activity feed from Redis rather than Git so as to avoid
             // write contention on a single file for every update.  This could show up in the form
             // of merge conflicts when commits are being saved to Git.
-            None => fetch.fetch_activity(&RepoPrefix::from(WIKI_REPO_PREFIX), self.first)?,
+            None => fetch.fetch_activity(&RepoPrefix::wiki(), self.first)?,
         };
 
         Ok(FetchActivityResult { changes })

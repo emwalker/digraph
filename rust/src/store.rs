@@ -313,7 +313,7 @@ impl Store {
         let git::SearchWithinTopicResult { matches, .. } = git::SearchWithinTopic {
             limit: 100,
             locale: Locale::EN,
-            prefixes: vec![RepoPrefix::from("/wiki/")],
+            prefixes: vec![RepoPrefix::wiki()],
             recursive: true,
             search: git::Search::parse(&search_string)?,
             topic_path: parent_topic.path,
@@ -337,7 +337,7 @@ impl Store {
         git::FetchTopicLiveSearch {
             limit: 10,
             viewer: self.viewer.to_owned(),
-            prefixes: vec![RepoPrefix::from("/wiki/")],
+            prefixes: vec![RepoPrefix::wiki()],
             search,
         }
         .call(&self.git)
@@ -431,7 +431,7 @@ impl Store {
         git::UpsertLink {
             add_parent_topic_path,
             actor: self.viewer.clone(),
-            prefix: RepoPrefix::from(&input.repo_prefix),
+            repo: RepoPrefix::from(&input.repo_prefix),
             title: input.title,
             url: input.url,
             fetcher: Box::new(http::Fetcher),
@@ -472,7 +472,7 @@ impl Store {
             locale: Locale::EN,
             name: input.name.to_owned(),
             on_matching_synonym: git::OnMatchingSynonym::Ask,
-            prefix: RepoPrefix::from(&input.repo_prefix),
+            repo: RepoPrefix::from(&input.repo_prefix),
             parent_topic: RepoPath::from(&input.parent_topic_path),
         }
         .call(&self.git, &self.redis)

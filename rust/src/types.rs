@@ -9,7 +9,7 @@ use std::collections::HashSet;
 use strum_macros::EnumString;
 use void::Void;
 
-use crate::errors::Error;
+use crate::{errors::Error, prelude::WIKI_REPO_PREFIX};
 
 pub type Result<T> = std::result::Result<T, Error>;
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
@@ -100,6 +100,14 @@ impl std::hash::Hash for RepoPrefix {
 }
 
 impl RepoPrefix {
+    pub fn wiki() -> Self {
+        Self::from(WIKI_REPO_PREFIX)
+    }
+
+    pub fn from_name(name: &str) -> Self {
+        Self::from(&format!("/{}/", name))
+    }
+
     pub fn relative_path(&self) -> &str {
         self.inner.trim_start_matches('/')
     }
@@ -110,9 +118,9 @@ impl RepoPrefix {
 }
 
 #[derive(Clone, Debug)]
-pub struct RepoPrefixList(pub Vec<RepoPrefix>);
+pub struct RepoList(pub Vec<RepoPrefix>);
 
-impl From<&Vec<String>> for RepoPrefixList {
+impl From<&Vec<String>> for RepoList {
     fn from(prefixes: &Vec<String>) -> Self {
         Self(
             prefixes
@@ -123,7 +131,7 @@ impl From<&Vec<String>> for RepoPrefixList {
     }
 }
 
-impl RepoPrefixList {
+impl RepoList {
     pub fn include(&self, path: &RepoPath) -> bool {
         self.0.iter().any(|prefix| prefix.test(path))
     }
@@ -141,7 +149,7 @@ impl RepoPrefixList {
 pub struct RepoPath {
     pub inner: String,
     pub org_login: String,
-    pub prefix: RepoPrefix,
+    pub repo: RepoPrefix,
     pub short_id: String,
     pub valid: bool,
 }
@@ -173,7 +181,7 @@ impl From<&String> for RepoPath {
         RepoPath {
             inner: input.to_string(),
             org_login: org_login.to_string(),
-            prefix: RepoPrefix::from(prefix),
+            repo: RepoPrefix::from(prefix),
             short_id: short_id.to_string(),
             valid: true,
         }
@@ -224,7 +232,7 @@ impl RepoPath {
         Self {
             inner: input.to_owned(),
             org_login: "wiki".to_owned(),
-            prefix: RepoPrefix::from("/wiki/"),
+            repo: RepoPrefix::wiki(),
             short_id: "invalid-id".to_owned(),
             valid: false,
         }
@@ -387,21 +395,21 @@ pub fn sha256_base64(normalized: &str) -> String {
 
 #[derive(Clone, Debug)]
 pub struct Viewer {
-    pub read_prefixes: RepoPrefixList,
+    pub read_prefixes: RepoList,
     pub session_id: Option<String>,
     pub super_user: bool,
     pub user_id: String,
-    pub write_prefixes: RepoPrefixList,
+    pub write_prefixes: RepoList,
 }
 
 impl Viewer {
     pub fn super_user() -> Self {
         Self {
-            read_prefixes: RepoPrefixList(vec![]),
+            read_prefixes: RepoList(vec![]),
             session_id: None,
             super_user: true,
             user_id: "".to_owned(),
-            write_prefixes: RepoPrefixList(vec![]),
+            write_prefixes: RepoList(vec![]),
         }
     }
 
@@ -414,12 +422,12 @@ impl Viewer {
     }
 
     pub fn guest() -> Self {
-        use crate::prelude::{GUEST_ID, WIKI_REPO_PREFIX};
+        use crate::prelude::GUEST_ID;
 
         let user_id = GUEST_ID.to_string();
         Viewer {
-            write_prefixes: RepoPrefixList(vec![]),
-            read_prefixes: RepoPrefixList(vec![RepoPrefix::from(WIKI_REPO_PREFIX)]),
+            write_prefixes: RepoList(vec![]),
+            read_prefixes: RepoList(vec![RepoPrefix::wiki()]),
             session_id: None,
             super_user: false,
             user_id,
@@ -510,7 +518,7 @@ mod tests {
             let viewer = Viewer::guest();
             assert!(!viewer.can_update(&path));
 
-            let prefixes = RepoPrefixList(vec![RepoPrefix::from("/wiki/")]);
+            let prefixes = RepoList(vec![RepoPrefix::wiki()]);
             let viewer = Viewer {
                 write_prefixes: prefixes.to_owned(),
                 read_prefixes: prefixes,
@@ -534,7 +542,7 @@ mod tests {
             let path = RepoPath::from("/wiki/00001");
             assert!(path.valid);
             assert_eq!("/wiki/00001", path.inner);
-            assert_eq!(RepoPrefix::from("/wiki/"), path.prefix);
+            assert_eq!(RepoPrefix::wiki(), path.repo);
             assert_eq!("wiki", path.org_login);
             assert_eq!("00001", path.short_id);
         }
@@ -555,23 +563,23 @@ mod tests {
         #[test]
         fn prefix() {
             let path = RepoPath::from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ");
-            assert_eq!(path.prefix, RepoPrefix::from("/wiki/"));
+            assert_eq!(path.repo, RepoPrefix::wiki());
         }
 
         #[test]
         fn equality() {
-            assert_eq!(RepoPrefix::from("/wiki/"), RepoPrefix::from("/wiki/"));
+            assert_eq!(RepoPrefix::wiki(), RepoPrefix::from("/wiki/"));
         }
 
         #[test]
         fn relative_path() {
-            let prefix = RepoPrefix::from("/wiki/");
+            let prefix = RepoPrefix::wiki();
             assert_eq!(prefix.relative_path(), "wiki/");
         }
 
         #[test]
         fn display() {
-            let prefix = RepoPrefix::from("/wiki/");
+            let prefix = RepoPrefix::wiki();
             assert_eq!(format!("{}", prefix), "/wiki/".to_owned());
         }
     }

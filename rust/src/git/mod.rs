@@ -7,6 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub mod activity;
+mod checks;
 mod index;
 mod link;
 mod repository;
@@ -16,6 +17,7 @@ mod topic;
 
 use crate::prelude::*;
 use crate::types;
+use checks::*;
 pub use index::*;
 pub use link::*;
 pub use repository::*;
@@ -398,35 +400,20 @@ impl Object {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum Row {
-    SearchEntry(SearchEntry),
-    Topic(Topic),
-    TopicChild(TopicChild),
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicReferenceMetadata {
+    pub path: String,
+    pub path_tracked: String,
 }
 
-impl std::cmp::PartialEq for Row {
-    fn eq(&self, other: &Self) -> bool {
-        self.path() == other.path()
-    }
-}
-
-impl std::cmp::Eq for Row {}
-
-impl std::hash::Hash for Row {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.path().hash(state);
-    }
-}
-
-impl Row {
-    fn path(&self) -> &String {
-        match self {
-            Self::SearchEntry(SearchEntry { path, .. }) => path,
-            Self::Topic(topic) => &topic.metadata.path,
-            Self::TopicChild(TopicChild { path, .. }) => path,
-        }
-    }
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicReference {
+    api_version: String,
+    pub metadata: TopicReferenceMetadata,
+    // pub parent_topics: BTreeSet<ParentTopic>,
+    pub children: BTreeSet<TopicChild>,
 }
 
 pub trait Visitor {
@@ -436,12 +423,12 @@ pub trait Visitor {
 
 #[derive(Clone, Debug, Default)]
 pub struct DataRoot {
-    root: PathBuf,
+    pub inner: PathBuf,
 }
 
 impl std::fmt::Display for DataRoot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.root)
+        write!(f, "{:?}", self.inner)
     }
 }
 
@@ -479,7 +466,7 @@ pub fn parse_path(input: &str) -> Result<(DataRoot, RepoPath)> {
 
 impl DataRoot {
     pub fn new(root: PathBuf) -> Self {
-        Self { root }
+        Self { inner: root }
     }
 
     pub fn change_filename(&self, path: &RepoPath) -> Result<PathBuf> {
@@ -497,7 +484,7 @@ impl DataRoot {
             path.org_login, subdirectory, part1, part2, part3
         );
 
-        Ok(self.root.join(basename))
+        Ok(self.inner.join(basename))
     }
 
     pub fn object_filename(&self, path: &RepoPath) -> Result<PathBuf> {
@@ -516,7 +503,7 @@ impl DataRoot {
                 format!("{}indexes/synonyms/tokens/{}.yaml", prefix, key.basename)
             }
         };
-        Ok(self.root.join(file_path))
+        Ok(self.inner.join(file_path))
     }
 }
 
@@ -594,6 +581,21 @@ impl Git {
         }
     }
 
+    pub fn appears_in(&self, search: &Search, entry: &SearchEntry) -> Result<bool> {
+        let path = entry.path();
+        for token in &search.tokens {
+            let key = self.index_key(&path.repo, token)?;
+            if !self
+                .token_index(&key, IndexMode::Update)?
+                .indexed_on(entry, token)?
+            {
+                return Ok(false);
+            }
+        }
+
+        Ok(true)
+    }
+
     pub fn change_index(&self, path: &RepoPath, index_mode: IndexMode) -> Result<ActivityIndex> {
         let filename = self.root.change_index_filename(path)?;
         match index_mode {
@@ -605,6 +607,26 @@ impl Git {
 
     pub fn change_filename(&self, path: &RepoPath) -> Result<PathBuf> {
         self.root.change_filename(path)
+    }
+
+    // How to handle path visibility?
+    pub fn cycle_exists(
+        &self,
+        descendant_path: &RepoPath,
+        ancestor_path: &RepoPath,
+    ) -> Result<bool> {
+        let mut i = 0;
+
+        for topic in self.topic_down_set(descendant_path) {
+            i += 1;
+            if topic.metadata.path == ancestor_path.inner {
+                log::info!("cycle found after {} iterations", i);
+                return Ok(true);
+            }
+        }
+
+        log::info!("no cycle found after {} iterations", i);
+        Ok(false)
     }
 
     pub fn exists(&self, path: &RepoPath) -> Result<bool> {
@@ -680,26 +702,6 @@ impl Git {
         }
     }
 
-    // How to handle path visibility?
-    pub fn cycle_exists(
-        &self,
-        descendant_path: &RepoPath,
-        ancestor_path: &RepoPath,
-    ) -> Result<bool> {
-        let mut i = 0;
-
-        for topic in self.topic_down_set(descendant_path) {
-            i += 1;
-            if topic.metadata.path == ancestor_path.inner {
-                log::info!("cycle found after {} iterations", i);
-                return Ok(true);
-            }
-        }
-
-        log::info!("no cycle found after {} iterations", i);
-        Ok(false)
-    }
-
     // The value of `token` will sometimes need to be normalized by the caller in order for lookups
     // to work as expected.  We do not normalize the token here because some searches, e.g.,
     // of urls, are more sensitive to normalization, and so we omit it in those cases.
@@ -717,19 +719,8 @@ impl Git {
         }
     }
 
-    pub fn indexed_on(&self, entry: &SearchEntry, search: &Search) -> Result<bool> {
-        let path = entry.path();
-        for token in &search.tokens {
-            let key = self.index_key(&path.prefix, token)?;
-            if !self
-                .token_index(&key, IndexMode::Update)?
-                .indexed_on(entry, token)?
-            {
-                return Ok(false);
-            }
-        }
-
-        Ok(true)
+    pub fn leaked_data(&self) -> Result<Vec<(RepoPrefix, String)>> {
+        LeakedData.call(self)
     }
 
     fn link(&self, path: &RepoPath) -> Result<Option<Link>> {
@@ -824,7 +815,7 @@ impl Git {
             let paths = change.paths();
             let prefixes = paths
                 .iter()
-                .map(|path| path.prefix.to_owned())
+                .map(|path| path.repo.to_owned())
                 .collect::<HashSet<RepoPrefix>>();
 
             change.mark_deleted(path);
@@ -1070,14 +1061,14 @@ mod tests {
         assert!(matches!(result, Err(Error::Repo(_))));
 
         let (root, path) = parse_path("../../wiki/objects/12/34/5678/object.yaml").unwrap();
-        assert_eq!(root.root, PathBuf::from("../.."));
+        assert_eq!(root.inner, PathBuf::from("../.."));
         assert_eq!(path.inner, "/wiki/12345678".to_owned());
 
         let (root, path) = parse_path(
             "../../wiki/objects/q-/ZZ/meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ/object.yaml",
         )
         .unwrap();
-        assert_eq!(root.root, PathBuf::from("../.."));
+        assert_eq!(root.inner, PathBuf::from("../.."));
         assert_eq!(
             path.inner,
             "/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ".to_owned(),

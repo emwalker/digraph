@@ -202,7 +202,7 @@ pub struct UpsertLink {
     pub add_parent_topic_path: Option<RepoPath>,
     #[derivative(Debug = "ignore")]
     pub fetcher: Box<dyn http::Fetch + Send + Sync>,
-    pub prefix: RepoPrefix,
+    pub repo: RepoPrefix,
     pub title: Option<String>,
     pub url: String,
 }
@@ -219,7 +219,7 @@ impl UpsertLink {
     {
         log::info!("upserting link: {:?}", self);
         let url = RepoUrl::parse(&self.url)?;
-        let path = url.path(&self.prefix);
+        let path = url.path(&self.repo);
         let date = Utc::now();
 
         let (mut link, previous_title) = self.make_link(git, &url, &path).await?;

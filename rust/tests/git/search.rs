@@ -7,7 +7,7 @@ use digraph::git::{
 use digraph::prelude::WIKI_ROOT_TOPIC_PATH;
 use digraph::prelude::*;
 
-use super::{actor, upsert_topic, Fixtures};
+use super::{actor, Fixtures};
 
 #[cfg(test)]
 mod fetch_topic_live_search {
@@ -23,11 +23,11 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![RepoPrefix::from("/wiki/")],
+            prefixes: vec![RepoPrefix::wiki()],
             search: Search::parse("existing non-root topic").unwrap(),
             viewer: actor(),
         }
-        .call(&f.repo.git)
+        .call(&f.git)
         .unwrap();
 
         assert_eq!(
@@ -42,6 +42,7 @@ mod fetch_topic_live_search {
     #[test]
     fn indexing_works() {
         let f = Fixtures::copy("simple");
+        let repo = RepoPrefix::wiki();
         let parent = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
         let search = Search::parse("clim chan soc").unwrap();
 
@@ -50,20 +51,19 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![RepoPrefix::from("/wiki/")],
+            prefixes: vec![repo.to_owned()],
             search: search.clone(),
             viewer: actor(),
         }
-        .call(&f.repo.git)
+        .call(&f.git)
         .unwrap();
 
         assert!(matches.is_empty());
 
-        upsert_topic(
-            &f,
+        f.upsert_topic(
+            &parent.repo,
             "Climate change and society",
             &parent,
-            &parent.prefix,
             OnMatchingSynonym::Ask,
         )
         .unwrap();
@@ -73,11 +73,11 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![RepoPrefix::from("/wiki/")],
+            prefixes: vec![repo.to_owned()],
             search,
             viewer: actor(),
         }
-        .call(&f.repo.git)
+        .call(&f.git)
         .unwrap();
 
         assert_eq!(matches.len(), 1);
@@ -144,19 +144,19 @@ mod search_within_topic {
         input: &str,
         recursive: bool,
     ) -> BTreeSet<SearchMatch> {
-        let fetcher = FetchDownSet(f.repo.git.clone());
+        let fetcher = FetchDownSet(f.git.clone());
         let search = Search::parse(input).unwrap();
 
         let SearchWithinTopicResult { matches } = SearchWithinTopic {
             limit: 100,
             locale: Locale::EN,
-            prefixes: vec![RepoPrefix::from("/wiki/")],
+            prefixes: vec![RepoPrefix::wiki()],
             recursive,
             search,
             topic_path: topic_path.to_owned(),
             viewer: actor(),
         }
-        .call(&f.repo.git, &fetcher)
+        .call(&f.git, &fetcher)
         .unwrap();
 
         matches
@@ -230,7 +230,7 @@ mod search_within_topic {
     fn result_size_and_order() {
         let f = Fixtures::copy("simple");
 
-        let fetcher = FetchDownSet(f.repo.git.clone());
+        let fetcher = FetchDownSet(f.git.clone());
         let root = root();
         let climate_change = f.topic_path("Climate change and weather").unwrap().unwrap();
         let query = format!("in:{}", climate_change);
@@ -241,13 +241,13 @@ mod search_within_topic {
         let SearchWithinTopicResult { matches } = SearchWithinTopic {
             limit: 3,
             locale: Locale::EN,
-            prefixes: vec![root.prefix.to_owned()],
+            prefixes: vec![root.repo.to_owned()],
             recursive: true,
             search,
             topic_path: root,
             viewer: actor(),
         }
-        .call(&f.repo.git, &fetcher)
+        .call(&f.git, &fetcher)
         .unwrap();
 
         assert_eq!(count(Kind::Topic, &matches), 1);

@@ -1,21 +1,37 @@
+use async_trait::async_trait;
 use digraph::git::{
-    DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, Git, OnMatchingSynonym, Repository,
-    Search,
+    DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, Git, Link, OnMatchingSynonym,
+    Search, Topic, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
 };
+use digraph::http::{Fetch, Response};
 use digraph::prelude::*;
 use digraph::redis;
 use fs_extra::dir;
+use futures::executor::block_on;
+use scraper::html::Html;
 use std::env;
 use std::path::PathBuf;
 use tempfile::{self, TempDir};
 
-use super::{actor, upsert_link};
+use super::actor;
+
+struct Fetcher(String);
+
+#[async_trait]
+impl Fetch for Fetcher {
+    async fn fetch(&self, url: &RepoUrl) -> Result<Response> {
+        Ok(Response {
+            url: url.to_owned(),
+            body: Html::parse_document(&self.0),
+        })
+    }
+}
 
 pub struct Fixtures {
+    _tempdir: TempDir,
+    pub git: Git,
     pub path: PathBuf,
     source: PathBuf,
-    pub repo: Repository,
-    _tempdir: TempDir,
 }
 
 impl Fixtures {
@@ -29,18 +45,15 @@ impl Fixtures {
         let path = PathBuf::from(&tempdir.path());
         let root = DataRoot::new(path.clone());
         let git = Git::new(&Viewer::super_user(), &root);
-        let repo = Repository::new(&RepoPrefix::from("/wiki/"), git);
 
         Fixtures {
             _tempdir: tempdir,
+            git,
             path,
-            repo,
             source,
         }
     }
-}
 
-impl Fixtures {
     pub fn copy(fixture_dirname: &str) -> Self {
         let fixture = Fixtures::blank(fixture_dirname);
         let options = dir::CopyOptions {
@@ -55,17 +68,41 @@ impl Fixtures {
         fixture
     }
 
+    pub fn no_leaks(&self) -> Result<bool> {
+        Ok(self.leaked_data()?.is_empty())
+    }
+
+    pub fn fetch_link<F>(&self, path: &RepoPath, block: F)
+    where
+        F: Fn(Link),
+    {
+        let link = self.git.fetch_link(path).unwrap();
+        block(link);
+    }
+
+    pub fn fetch_topic<F>(&self, path: &RepoPath, block: F)
+    where
+        F: Fn(Topic),
+    {
+        let topic = self.git.fetch_topic(path).unwrap();
+        block(topic);
+    }
+
+    pub fn leaked_data(&self) -> Result<Vec<(RepoPrefix, String)>> {
+        self.git.leaked_data()
+    }
+
     pub fn topic_path(&self, name: &str) -> Result<Option<RepoPath>> {
         let FetchTopicLiveSearchResult {
             synonym_matches: matches,
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![RepoPrefix::from("/wiki/")],
+            prefixes: vec![RepoPrefix::wiki()],
             search: Search::parse(name).unwrap(),
             viewer: actor(),
         }
-        .call(&self.repo.git)
+        .call(&self.git)
         .unwrap();
 
         let row = matches.iter().find(|row| row.name == name);
@@ -82,6 +119,50 @@ impl Fixtures {
         dir::copy(&self.path, &self.source, &options)
             .unwrap_or_else(|_| panic!("problem updating {:?} to {:?}", self.path, self.source));
     }
+
+    pub fn upsert_link(
+        &self,
+        repo: &RepoPrefix,
+        url: &RepoUrl,
+        title: Option<String>,
+        parent_topic: Option<String>,
+    ) -> UpsertLinkResult {
+        let html = match &title {
+            Some(title) => format!("<title>{}</title>", title),
+            None => "<title>Some title</title>".into(),
+        };
+
+        let add_parent_topic_path = parent_topic.as_ref().map(RepoPath::from);
+
+        let request = UpsertLink {
+            actor: actor(),
+            add_parent_topic_path,
+            fetcher: Box::new(Fetcher(html)),
+            repo: repo.to_owned(),
+            url: url.normalized.to_owned(),
+            title,
+        };
+
+        block_on(request.call(&self.git, &redis::Noop)).unwrap()
+    }
+
+    pub fn upsert_topic(
+        &self,
+        repo: &RepoPrefix,
+        name: &str,
+        parent_topic: &RepoPath,
+        on_matching_synonym: OnMatchingSynonym,
+    ) -> Result<UpsertTopicResult> {
+        UpsertTopic {
+            actor: actor(),
+            parent_topic: parent_topic.to_owned(),
+            locale: Locale::EN,
+            name: name.into(),
+            on_matching_synonym,
+            repo: repo.to_owned(),
+        }
+        .call(&self.git, &redis::Noop)
+    }
 }
 
 mod tests {
@@ -92,7 +173,7 @@ mod tests {
 
     // #[actix_web::test]
     #[allow(dead_code)]
-    async fn update_simple_fixtures() {
+    fn update_simple_fixtures() {
         let f = Fixtures::copy("simple");
         let root = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
 
@@ -103,23 +184,21 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change".to_owned(),
-            prefix: RepoPrefix::from("/wiki/"),
+            repo: RepoPrefix::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root.clone(),
         }
-        .call(&f.repo.git, &redis::Noop)
+        .call(&f.git, &redis::Noop)
         .unwrap();
         let climate_change = topic.unwrap().path();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Climate_change").unwrap();
-        let result = upsert_link(
-            &f,
+        let result = f.upsert_link(
+            &RepoPrefix::wiki(),
             &url,
             Some("Climate change".into()),
             Some(climate_change.inner.to_owned()),
-            &RepoPrefix::from(WIKI_REPO_PREFIX),
-        )
-        .await;
+        );
         println!("result: {:?}", result.link);
 
         let path = RepoPath::from(
@@ -129,23 +208,21 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Weather".to_owned(),
-            prefix: RepoPrefix::from("/wiki/"),
+            repo: RepoPrefix::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root.clone(),
         }
-        .call(&f.repo.git, &redis::Noop)
+        .call(&f.git, &redis::Noop)
         .unwrap();
         let weather = topic.unwrap().path();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Weather").unwrap();
-        upsert_link(
-            &f,
+        f.upsert_link(
+            &RepoPrefix::wiki(),
             &url,
             Some("Weather".into()),
             Some(weather.inner.to_owned()),
-            &RepoPrefix::from(WIKI_REPO_PREFIX),
-        )
-        .await;
+        );
 
         let path = RepoPath::from(
             "/wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13",
@@ -154,11 +231,11 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change and weather".to_owned(),
-            prefix: RepoPrefix::from("/wiki/"),
+            repo: RepoPrefix::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: climate_change.clone(),
         }
-        .call(&f.repo.git, &redis::Noop)
+        .call(&f.git, &redis::Noop)
         .unwrap();
         let climate_change_weather = topic.unwrap().path();
 
@@ -167,32 +244,28 @@ mod tests {
             parent_topic_paths: BTreeSet::from([climate_change.clone(), weather.clone()]),
             topic_path: climate_change_weather.clone(),
         }
-        .call(&f.repo.git, &redis::Noop)
+        .call(&f.git, &redis::Noop)
         .unwrap();
 
         let url =
             RepoUrl::parse("https://royalsociety.org/topics-policy/projects/climate-change-evidence-causes/question-13/")
                 .unwrap();
-        upsert_link(
-            &f,
+        f.upsert_link(
+            &RepoPrefix::wiki(),
             &url,
             Some("13. How does climate change affect the strength and frequency of floods, droughts, hurricanes, and tornadoes?".into()),
             Some(climate_change_weather.inner.to_owned()),
-            &RepoPrefix::from(WIKI_REPO_PREFIX),
-        )
-        .await;
+        );
 
         let url =
             RepoUrl::parse("https://climate.nasa.gov/resources/global-warming-vs-climate-change/")
                 .unwrap();
-        upsert_link(
-            &f,
+        f.upsert_link(
+            &RepoPrefix::wiki(),
             &url,
             Some("Overview: Weather, Global Warming, and Climate Change".into()),
             Some(climate_change_weather.inner.to_owned()),
-            &RepoPrefix::from(WIKI_REPO_PREFIX),
-        )
-        .await;
+        );
 
         f.update();
     }

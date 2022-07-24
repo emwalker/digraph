@@ -96,7 +96,7 @@ impl State {
                     Ok(row) => match &row {
                         Some((prefixes,)) => {
                             log::info!("found user and session in database: {}", user_id);
-                            let prefixes = RepoPrefixList::from(prefixes);
+                            let prefixes = RepoList::from(prefixes);
                             Viewer {
                                 write_prefixes: prefixes.clone(),
                                 read_prefixes: prefixes,

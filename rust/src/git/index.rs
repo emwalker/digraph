@@ -526,7 +526,7 @@ impl Indexer {
         let mut prefixes = HashSet::new();
 
         for path in change.paths() {
-            let prefix = &path.prefix;
+            let prefix = &path.repo;
             let set = self.activity(&path)?;
             set.insert(change.to_owned());
             prefixes.insert(prefix.to_owned());
@@ -579,7 +579,7 @@ impl Indexer {
         let path = entry.path();
         for search in searches {
             for token in &search.tokens {
-                let key = self.git.index_key(&path.prefix, token)?;
+                let key = self.git.index_key(&path.repo, token)?;
                 self.search_token_index(&key)?
                     .remove(entry, token.to_owned())?;
             }
@@ -590,7 +590,7 @@ impl Indexer {
 
     pub fn remove_synonyms(&mut self, path: &RepoPath, topic: &Topic) -> Result<()> {
         self.synonym_indexes(
-            &path.prefix,
+            &path.repo,
             topic.metadata.synonyms.iter(),
             |index, token, name| {
                 index.remove(path, token.to_owned(), name)?;
@@ -621,7 +621,7 @@ impl Indexer {
             let mut index = self.git.change_index(path, self.mode)?;
 
             for change in changes.iter() {
-                let reference = ChangeReference::new(&path.prefix, change);
+                let reference = ChangeReference::new(&path.repo, change);
                 index.add(reference.to_owned());
 
                 // Write the individual change to a /prefix/changes/ directory
@@ -632,7 +632,7 @@ impl Indexer {
             index.write()?;
         }
 
-        match store.save(&RepoPrefix::from(WIKI_REPO_PREFIX), &self.prefix_activity) {
+        match store.save(&RepoPrefix::wiki(), &self.prefix_activity) {
             Ok(_) => log::info!("changes saved to {}", WIKI_REPO_PREFIX),
             Err(err) => log::error!("problem saving changes to prefix key: {}", err),
         }
@@ -673,7 +673,7 @@ impl Indexer {
         let path = entry.path();
         for search in removed {
             for token in &search.tokens {
-                let key = self.git.index_key(&path.prefix, token)?;
+                let key = self.git.index_key(&path.repo, token)?;
                 self.search_token_index(&key)?
                     .remove(entry, token.to_owned())?;
             }
@@ -688,7 +688,7 @@ impl Indexer {
         let added = after.difference(before);
         for search in added {
             for token in &search.tokens {
-                let key = self.git.index_key(&path.prefix, token)?;
+                let key = self.git.index_key(&path.repo, token)?;
                 self.search_token_index(&key)?
                     .add(entry, token.to_owned())?;
             }
@@ -716,7 +716,7 @@ impl Indexer {
             .collect::<HashSet<Synonym>>();
 
         self.synonym_indexes(
-            &path.prefix,
+            &path.repo,
             after.difference(&before),
             |index, token, name| {
                 index.add(&path, token.to_owned(), name)?;
@@ -725,7 +725,7 @@ impl Indexer {
         )?;
 
         self.synonym_indexes(
-            &path.prefix,
+            &path.repo,
             before.difference(&after),
             |index, token, name| {
                 index.remove(&path, token.to_owned(), name)?;

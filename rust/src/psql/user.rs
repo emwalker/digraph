@@ -26,11 +26,7 @@ pub struct Row {
     pub write_prefixes: Vec<String>,
 }
 
-pub async fn fetch_user(
-    _read_prefixes: &RepoPrefixList,
-    user_id: &String,
-    pool: &PgPool,
-) -> Result<Row> {
+pub async fn fetch_user(_read_prefixes: &RepoList, user_id: &String, pool: &PgPool) -> Result<Row> {
     // TODO: Filter on query_ids
     let query = format!(
         r#"select

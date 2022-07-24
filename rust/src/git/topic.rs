@@ -432,7 +432,7 @@ pub struct UpsertTopic {
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
     pub parent_topic: RepoPath,
-    pub prefix: RepoPrefix,
+    pub repo: RepoPrefix,
 }
 
 pub struct UpsertTopicResult {
@@ -453,7 +453,7 @@ impl UpsertTopic {
         }
         let mut parent = parent.unwrap();
 
-        let mut matches = git.synonym_phrase_matches(&[&self.prefix], &self.name)?;
+        let mut matches = git.synonym_phrase_matches(&[&self.repo], &self.name)?;
         let date = chrono::Utc::now();
 
         let (path, child, parent_topics) = if matches.is_empty() {
@@ -589,7 +589,7 @@ impl UpsertTopic {
 
     fn make_topic(&self, parent: &Topic) -> (RepoPath, Topic, BTreeSet<ParentTopic>) {
         let added = chrono::Utc::now();
-        let path = RepoPath::make(&self.prefix.to_string());
+        let path = RepoPath::make(&self.repo.to_string());
         let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
 
         let topic = Topic {
