@@ -1,7 +1,8 @@
 Before switchover:
 * When something is added to a private repo, don't include change logs in public repos
-* Decide whether to support link reviews or remove the feature
+* Need a way to place a private topic child under a topic in a public repo without leaking data.  Maybe a placeholder/stand-in for the public topic in the private repo to hold the private topic children for that repo?
 * Make search work across all prefixes
+* Decide whether to support link reviews or remove the feature
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: Create repos on user signup
