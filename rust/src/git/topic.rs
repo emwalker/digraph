@@ -1,8 +1,8 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
-    activity, Git, IndexMode, Indexer, Kind, Link, Object, ParentTopic, SaveChangesForPrefix,
-    Synonym, SynonymEntry, SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
+    activity, Client, Kind, Link, Object, ParentTopic, SaveChangesForPrefix, Synonym, SynonymEntry,
+    SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, TreeBuilder, API_VERSION,
 };
 use crate::prelude::*;
 
@@ -17,14 +17,14 @@ pub struct DeleteTopicResult {
 }
 
 impl DeleteTopic {
-    pub fn call<S>(&self, git: &Git, store: &S) -> Result<DeleteTopicResult>
+    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<DeleteTopicResult>
     where
         S: SaveChangesForPrefix,
     {
         let topic_path = &self.topic_path;
         let date = chrono::Utc::now();
 
-        let topic = git.fetch_topic(topic_path);
+        let topic = builder.fetch_topic(topic_path);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", topic_path)));
         }
@@ -34,7 +34,7 @@ impl DeleteTopic {
             return Err(Error::Repo("cannot delete root topic".to_owned()));
         }
 
-        git.mark_deleted(topic_path)?;
+        builder.mark_deleted(topic_path)?;
 
         let parent_topics = topic
             .parent_topics
@@ -44,20 +44,19 @@ impl DeleteTopic {
             })
             .collect::<BTreeSet<ParentTopic>>();
 
-        let mut indexer = Indexer::new(git, IndexMode::Update);
         let mut topics = vec![];
 
         // Remove the topic from the children of the parent topics
         for parent in &topic.parent_topics {
             let path = RepoPath::from(&parent.path);
-            if let Some(mut topic) = git.fetch_topic(&path) {
+            if let Some(mut topic) = builder.fetch_topic(&path) {
                 topic.children.remove(&TopicChild {
                     // The 'added' field is ignored
                     added: chrono::Utc::now(),
                     kind: Kind::Topic,
                     path: topic_path.inner.to_owned(),
                 });
-                git.save_topic(&path, &topic, &mut indexer)?;
+                builder.save_topic(&path, &topic)?;
                 topics.push(topic.clone());
             }
         }
@@ -68,13 +67,13 @@ impl DeleteTopic {
         // Remove the topic from its children, moving them onto the parent topics
         for child in &topic.children {
             let path = RepoPath::from(&child.path);
-            match git.fetch(&path) {
+            match builder.fetch(&path) {
                 Some(Object::Link(child_link)) => {
                     let mut link = child_link.to_owned();
                     link.parent_topics.remove(&topic.to_parent_topic());
                     link.parent_topics.append(&mut parent_topics.clone());
                     child_links.push(link.clone());
-                    git.save_link(&path, &link, &mut indexer)?;
+                    builder.save_link(&path, &link)?;
                 }
 
                 Some(Object::Topic(child_topic)) => {
@@ -82,7 +81,7 @@ impl DeleteTopic {
                     child_topic.parent_topics.remove(&topic.to_parent_topic());
                     child_topic.parent_topics.append(&mut parent_topics.clone());
                     child_topics.push(child_topic.clone());
-                    git.save_topic(&path, &child_topic, &mut indexer)?;
+                    builder.save_topic(&path, &child_topic)?;
                 }
 
                 None => {}
@@ -91,9 +90,9 @@ impl DeleteTopic {
 
         let change = self.change(&topic, &topics, &child_links, &child_topics, date);
 
-        git.remove_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.add_change(&change)?;
-        indexer.save(store)?;
+        builder.remove_topic(&self.topic_path, &topic)?;
+        builder.add_change(&change)?;
+        builder.save(store)?;
 
         Ok(DeleteTopicResult {
             alerts: vec![],
@@ -133,7 +132,7 @@ pub struct FetchTopicCountResult {
 }
 
 impl FetchTopicCount {
-    pub fn call(&self, _git: &Git) -> Result<FetchTopicCountResult> {
+    pub fn call(&self, _git: &Client) -> Result<FetchTopicCountResult> {
         Ok(FetchTopicCountResult { count: 100 })
     }
 }
@@ -149,23 +148,22 @@ pub struct RemoveTopicTimerangeResult {
 }
 
 impl RemoveTopicTimerange {
-    pub fn call<S>(&self, git: &Git, store: &S) -> Result<RemoveTopicTimerangeResult>
+    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<RemoveTopicTimerangeResult>
     where
         S: SaveChangesForPrefix,
     {
-        let topic = git.fetch_topic(&self.topic_path);
+        let topic = builder.fetch_topic(&self.topic_path);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
         }
         let mut topic = topic.unwrap();
 
         let previous_timerange = topic.metadata.timerange.clone();
-        let mut indexer = Indexer::new(git, IndexMode::Update);
 
         topic.metadata.timerange = None;
-        git.save_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.add_change(&self.change(&topic, previous_timerange))?;
-        indexer.save(store)?;
+        builder.save_topic(&self.topic_path, &topic)?;
+        builder.add_change(&self.change(&topic, previous_timerange))?;
+        builder.save(store)?;
 
         Ok(RemoveTopicTimerangeResult {
             alerts: vec![],
@@ -202,15 +200,18 @@ pub struct UpdateTopicParentTopicsResult {
 }
 
 impl UpdateTopicParentTopics {
-    pub fn call<S>(&self, git: &Git, store: &S) -> Result<UpdateTopicParentTopicsResult>
+    pub fn call<S>(
+        &self,
+        mut builder: TreeBuilder,
+        store: &S,
+    ) -> Result<UpdateTopicParentTopicsResult>
     where
         S: SaveChangesForPrefix,
     {
-        self.validate(git)?;
+        self.validate(&builder)?;
 
         let date = chrono::Utc::now();
-        let mut indexer = Indexer::new(git, IndexMode::Update);
-        let child = git.fetch_topic(&self.topic_path);
+        let child = builder.fetch_topic(&self.topic_path);
         if child.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
         }
@@ -233,7 +234,7 @@ impl UpdateTopicParentTopics {
         let mut added_topics = vec![];
 
         for parent in added {
-            if let Some(mut topic) = parent.fetch(git) {
+            if let Some(mut topic) = parent.fetch(&builder) {
                 topic.children.insert(child.to_topic_child(date));
                 child.parent_topics.insert(parent.to_owned());
                 added_topics.push(topic.clone());
@@ -249,7 +250,7 @@ impl UpdateTopicParentTopics {
         let mut removed_topics = vec![];
 
         for parent in removed {
-            if let Some(mut topic) = parent.fetch(git) {
+            if let Some(mut topic) = parent.fetch(&builder) {
                 topic.children.remove(&child.to_topic_child(date));
                 child.parent_topics.remove(&parent);
                 removed_topics.push(topic.clone());
@@ -261,10 +262,10 @@ impl UpdateTopicParentTopics {
 
         updates.push(child.clone());
         for topic in updates {
-            git.save_topic(&topic.path(), &topic, &mut indexer)?;
+            builder.save_topic(&topic.path(), &topic)?;
         }
-        indexer.add_change(&change)?;
-        indexer.save(store)?;
+        builder.add_change(&change)?;
+        builder.save(store)?;
 
         Ok(UpdateTopicParentTopicsResult {
             alerts: vec![],
@@ -294,7 +295,7 @@ impl UpdateTopicParentTopics {
         })
     }
 
-    fn validate(&self, git: &Git) -> Result<()> {
+    fn validate(&self, builder: &TreeBuilder) -> Result<()> {
         if self.parent_topic_paths.is_empty() {
             return Err(Error::Repo(
                 "at least one parent topic must be provided".into(),
@@ -302,7 +303,7 @@ impl UpdateTopicParentTopics {
         }
 
         for parent in &self.parent_topic_paths {
-            if git.cycle_exists(&self.topic_path, parent)? {
+            if builder.cycle_exists(&self.topic_path, parent)? {
                 return Err(Error::Repo(format!(
                     "{} is a parent topic of {}",
                     self.topic_path, parent
@@ -326,17 +327,16 @@ pub struct UpdateTopicSynonymsResult {
 }
 
 impl UpdateTopicSynonyms {
-    pub fn call<S>(&self, git: &Git, store: &S) -> Result<UpdateTopicSynonymsResult>
+    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<UpdateTopicSynonymsResult>
     where
         S: SaveChangesForPrefix,
     {
-        let topic = git.fetch_topic(&self.topic_path);
+        let topic = builder.fetch_topic(&self.topic_path);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
         }
         let mut topic = topic.unwrap();
 
-        let mut indexer = Indexer::new(git, IndexMode::Update);
         let lookup = topic
             .metadata
             .synonyms
@@ -387,9 +387,9 @@ impl UpdateTopicSynonyms {
             .collect::<HashSet<(String, Locale)>>();
 
         topic.metadata.synonyms = synonyms;
-        git.save_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.add_change(&self.change(&topic, &added, &removed))?;
-        indexer.save(store)?;
+        builder.save_topic(&self.topic_path, &topic)?;
+        builder.add_change(&self.change(&topic, &added, &removed))?;
+        builder.save(store)?;
 
         Ok(UpdateTopicSynonymsResult {
             alerts: vec![],
@@ -443,17 +443,17 @@ pub struct UpsertTopicResult {
 }
 
 impl UpsertTopic {
-    pub fn call<S>(&self, git: &Git, store: &S) -> Result<UpsertTopicResult>
+    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<UpsertTopicResult>
     where
         S: SaveChangesForPrefix,
     {
-        let parent = self.fetch_parent(git);
+        let parent = self.fetch_parent(&builder);
         if parent.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.parent_topic)));
         }
         let mut parent = parent.unwrap();
 
-        let mut matches = git.synonym_phrase_matches(&[&self.repo], &self.name)?;
+        let mut matches = builder.synonym_phrase_matches(&[&self.repo], &self.name)?;
         let date = chrono::Utc::now();
 
         let (path, child, parent_topics) = if matches.is_empty() {
@@ -473,7 +473,7 @@ impl UpsertTopic {
 
                     for synonym_match in matches {
                         let path = &synonym_match.topic.path();
-                        if git.cycle_exists(path, parent_path)? {
+                        if builder.cycle_exists(path, parent_path)? {
                             matching_synonyms.insert(synonym_match.with_cycle(true));
                         } else {
                             matching_synonyms.insert(synonym_match);
@@ -497,8 +497,8 @@ impl UpsertTopic {
                 }
 
                 OnMatchingSynonym::Update(path) => {
-                    if git.cycle_exists(path, &parent.path())? {
-                        let ancestor = git.fetch_topic(path);
+                    if builder.cycle_exists(path, &parent.path())? {
+                        let ancestor = builder.fetch_topic(path);
                         if ancestor.is_none() {
                             return Err(Error::NotFound(format!("not found: {}", path)));
                         }
@@ -530,7 +530,7 @@ impl UpsertTopic {
                     }
 
                     log::info!("updating existing topic {:?}", path);
-                    let topic = git.fetch_topic(path);
+                    let topic = builder.fetch_topic(path);
                     if topic.is_none() {
                         return Err(Error::NotFound(format!("not found: {}", path)));
                     }
@@ -553,11 +553,10 @@ impl UpsertTopic {
         parent.children.insert(child.to_topic_child(date));
 
         let change = self.change(&child, &parent_topics, &parent, date);
-        let mut indexer = Indexer::new(git, IndexMode::Update);
-        git.save_topic(&path, &child, &mut indexer)?;
-        git.save_topic(&parent.path(), &parent, &mut indexer)?;
-        indexer.add_change(&change)?;
-        indexer.save(store)?;
+        builder.save_topic(&path, &child)?;
+        builder.save_topic(&parent.path(), &parent)?;
+        builder.add_change(&change)?;
+        builder.save(store)?;
 
         Ok(UpsertTopicResult {
             alerts: vec![],
@@ -612,8 +611,8 @@ impl UpsertTopic {
         (path, topic, parent_topics)
     }
 
-    fn fetch_parent(&self, git: &Git) -> Option<Topic> {
-        git.fetch_topic(&self.parent_topic)
+    fn fetch_parent(&self, builder: &TreeBuilder) -> Option<Topic> {
+        builder.fetch_topic(&self.parent_topic)
     }
 }
 
@@ -630,11 +629,11 @@ pub struct UpsertTopicTimerangeResult {
 }
 
 impl UpsertTopicTimerange {
-    pub fn call<S>(&self, git: &Git, store: &S) -> Result<UpsertTopicTimerangeResult>
+    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<UpsertTopicTimerangeResult>
     where
         S: SaveChangesForPrefix,
     {
-        let topic = git.fetch_topic(&self.topic_path);
+        let topic = builder.fetch_topic(&self.topic_path);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
         }
@@ -642,11 +641,10 @@ impl UpsertTopicTimerange {
 
         let previous_timerange = topic.metadata.timerange.clone();
 
-        let mut indexer = Indexer::new(git, IndexMode::Update);
         topic.metadata.timerange = Some(self.timerange.clone());
-        git.save_topic(&self.topic_path, &topic, &mut indexer)?;
-        indexer.add_change(&self.change(&topic, previous_timerange))?;
-        indexer.save(store)?;
+        builder.save_topic(&self.topic_path, &topic)?;
+        builder.add_change(&self.change(&topic, previous_timerange))?;
+        builder.save(store)?;
 
         Ok(UpsertTopicTimerangeResult {
             alerts: vec![],

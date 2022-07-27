@@ -71,7 +71,7 @@ impl State {
     pub fn create_repo(&self, viewer: &Viewer) -> Store {
         Store::new(
             viewer.to_owned(),
-            git::Git::new(viewer, &self.root),
+            git::Client::new(viewer, &self.root),
             self.pool.clone(),
             self.server_secret.clone(),
             self.redis.clone(),

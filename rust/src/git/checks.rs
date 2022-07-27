@@ -3,14 +3,14 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-use super::Git;
+use super::Client;
 use crate::prelude::*;
 use crate::types::RepoPrefix;
 
 pub struct LeakedData;
 
 impl LeakedData {
-    pub fn call(&self, git: &Git) -> Result<Vec<(RepoPrefix, String)>> {
+    pub fn call(&self, git: &Client) -> Result<Vec<(RepoPrefix, String)>> {
         let root = git.root.inner.to_owned();
         let repos = self.repos(&root)?;
         env::set_current_dir(&root)?;

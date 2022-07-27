@@ -33,7 +33,7 @@ mod delete_link {
             actor: actor(),
             link_path: path.clone(),
         }
-        .call(&f.git, &redis::Noop)
+        .call(f.builder(), &redis::Noop)
         .unwrap();
         assert!(!f.git.exists(&path).unwrap());
     }
@@ -52,7 +52,7 @@ mod delete_link {
             actor: actor(),
             link_path: path.clone(),
         }
-        .call(&f.git, &redis::Noop)
+        .call(f.builder(), &redis::Noop)
         .unwrap();
 
         let activity = f.git.fetch_activity(&path, 100).unwrap();
@@ -98,7 +98,7 @@ mod update_link_parent_topics {
             link_path: link.path(),
             parent_topic_paths: BTreeSet::from([parent1, parent2]),
         }
-        .call(&f.git, &redis::Noop)
+        .call(f.builder(), &redis::Noop)
         .unwrap();
 
         let link = f.git.fetch_link(&link.path()).unwrap();

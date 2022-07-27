@@ -9,7 +9,7 @@ struct Opts {
 }
 
 struct ConsoleOutput<'r> {
-    git: &'r mut Git,
+    git: &'r mut Client,
     buf: String,
 }
 
@@ -133,7 +133,7 @@ fn parse_args() -> Opts {
 async fn main() -> Result<()> {
     let opts = parse_args();
     let (root_directory, path) = parse_path(&opts.filename)?;
-    let mut git = Git::new(&Viewer::super_user(), &root_directory);
+    let mut git = Client::new(&Viewer::super_user(), &root_directory);
     let object = git.fetch(&path);
     if object.is_none() {
         return Err(Error::NotFound(format!("not found: {}", path)));

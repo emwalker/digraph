@@ -141,8 +141,8 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, git: &Git) -> Option<Topic> {
-        git.fetch_topic(&RepoPath::from(&self.path))
+    pub fn fetch(&self, builder: &TreeBuilder) -> Option<Topic> {
+        builder.fetch_topic(&RepoPath::from(&self.path))
     }
 }
 
@@ -420,7 +420,7 @@ pub trait Visitor {
 
 #[derive(Debug)]
 pub struct DownSetIter {
-    git: Git,
+    client: Client,
     seen: HashSet<TopicChild>,
     stack: Vec<TopicChild>,
 }
@@ -441,7 +441,7 @@ impl Iterator for DownSetIter {
                     self.seen.insert(topic_child.clone());
 
                     let path = RepoPath::from(&topic_child.path);
-                    if let Some(topic) = self.git.fetch_topic(&path) {
+                    if let Some(topic) = self.client.fetch_topic(&path) {
                         for child in &topic.children {
                             if child.kind != Kind::Topic {
                                 break;
@@ -464,14 +464,14 @@ impl Iterator for DownSetIter {
 }
 
 impl DownSetIter {
-    fn new(git: Git, topic: Option<Topic>) -> Self {
+    fn new(client: Client, topic: Option<Topic>) -> Self {
         let mut stack = vec![];
         if let Some(topic) = &topic {
             stack.push(topic.to_topic_child(chrono::Utc::now()));
         }
 
         Self {
-            git,
+            client,
             seen: HashSet::new(),
             stack,
         }

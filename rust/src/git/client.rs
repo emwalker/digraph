@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf};
 
 use super::checks::LeakedData;
 use super::index::{
-    ActivityIndex, ActivityIndexMap, ChangeReference, IndexKey, IndexMode, IndexType, Indexer,
-    Phrase, SearchEntry, SearchTokenIndex, SynonymEntry, SynonymIndex, SynonymMatch,
+    ActivityIndex, ChangeReference, IndexKey, IndexMode, IndexType, Indexer, Phrase,
+    SaveChangesForPrefix, SearchEntry, SearchTokenIndex, SynonymEntry, SynonymIndex, SynonymMatch,
 };
 use super::{activity, DownSetIter, Link, Object, Search, Topic};
 use crate::prelude::*;
@@ -100,12 +100,12 @@ impl DataRoot {
 }
 
 #[derive(Clone, Debug)]
-pub struct Git {
+pub struct Client {
     pub root: DataRoot,
     viewer: Viewer,
 }
 
-impl Git {
+impl Client {
     pub fn new(viewer: &Viewer, root: &DataRoot) -> Self {
         Self {
             viewer: viewer.to_owned(),
@@ -137,16 +137,12 @@ impl Git {
         }
     }
 
-    pub fn change_filename(&self, path: &RepoPath) -> Result<PathBuf> {
+    fn change_filename(&self, path: &RepoPath) -> Result<PathBuf> {
         self.root.change_filename(path)
     }
 
     // How to handle path visibility?
-    pub fn cycle_exists(
-        &self,
-        descendant_path: &RepoPath,
-        ancestor_path: &RepoPath,
-    ) -> Result<bool> {
+    fn cycle_exists(&self, descendant_path: &RepoPath, ancestor_path: &RepoPath) -> Result<bool> {
         let mut i = 0;
 
         for topic in self.topic_down_set(descendant_path) {
@@ -274,25 +270,6 @@ impl Git {
         Ok(searches)
     }
 
-    pub fn load_activity(
-        &self,
-        filename: &PathBuf,
-        index_mode: IndexMode,
-    ) -> Result<ActivityIndexMap> {
-        let load = index_mode == IndexMode::Update || index_mode == IndexMode::ReadOnly;
-        let activity = if load && filename.exists() {
-            let fh = std::fs::File::open(&filename)?;
-            serde_yaml::from_reader::<_, ActivityIndexMap>(fh)?
-        } else {
-            ActivityIndexMap {
-                api_version: API_VERSION.to_owned(),
-                ..Default::default()
-            }
-        };
-
-        Ok(activity)
-    }
-
     fn remove(&self, path: &RepoPath) -> Result<()> {
         let filename = self.root.object_filename(path)?;
         if filename.exists() {
@@ -302,46 +279,7 @@ impl Git {
         Ok(())
     }
 
-    pub fn remove_link(&self, path: &RepoPath, link: &Link, indexer: &mut Indexer) -> Result<()> {
-        if !self.viewer.can_update(path) {
-            return Err(Error::NotFound(format!("not found: {}", path)));
-        }
-
-        let searches = self.link_searches(Some(link.to_owned()))?;
-        indexer.remove_searches(&link.to_search_entry(), searches.iter())?;
-        self.remove(path)
-    }
-
-    pub fn remove_topic(
-        &self,
-        path: &RepoPath,
-        topic: &Topic,
-        indexer: &mut Indexer,
-    ) -> Result<()> {
-        if !self.viewer.can_update(path) {
-            return Err(Error::NotFound(format!("not found: {}", path)));
-        }
-
-        indexer.remove_synonyms(path, topic)?;
-
-        let meta = &topic.metadata;
-        let mut searches = vec![];
-        for synonym in &meta.synonyms {
-            let search = Search::parse(&synonym.name)?;
-            if search.is_empty() {
-                continue;
-            }
-            searches.push(search);
-        }
-
-        let entry = topic.to_search_entry();
-        indexer.remove_searches(&entry, searches.iter())?;
-        self.remove(path)?;
-
-        Ok(())
-    }
-
-    pub fn mark_deleted(&self, path: &RepoPath) -> Result<()> {
+    fn mark_deleted(&self, path: &RepoPath) -> Result<()> {
         if !self.viewer.can_update(path) {
             return Err(Error::NotFound(format!("not found: {}", path)));
         }
@@ -366,25 +304,6 @@ impl Git {
         Ok(())
     }
 
-    pub fn save_changes_index(
-        &self,
-        prefix: &RepoPrefix,
-        change: &activity::Change,
-        indexer: &Indexer,
-        filename: &PathBuf,
-    ) -> Result<()> {
-        let mut activity = self.load_activity(filename, indexer.mode)?;
-        let reference = ChangeReference::new(prefix, change);
-        activity.changes.insert(reference);
-
-        let dest = filename.parent().expect("expected a parent directory");
-        fs::create_dir_all(&dest).ok();
-        let s = serde_yaml::to_string(&activity)?;
-        log::debug!("saving {:?}", filename);
-        fs::write(&filename, s)?;
-        Ok(())
-    }
-
     pub fn save_change(
         &self,
         reference: &ChangeReference,
@@ -400,39 +319,6 @@ impl Git {
         Ok(())
     }
 
-    pub fn save_link(&self, path: &RepoPath, link: &Link, indexer: &mut Indexer) -> Result<()> {
-        let before = self.link(path)?;
-        let before = self.link_searches(before)?;
-        let after = self.link_searches(Some(link.to_owned()))?;
-        indexer.update(&link.to_search_entry(), &before, &after)?;
-        self.save_object(path, link)
-    }
-
-    pub fn save_topic(&self, path: &RepoPath, topic: &Topic, indexer: &mut Indexer) -> Result<()> {
-        let before = self.topic(path)?;
-        indexer.update_synonyms(&before, topic)?;
-
-        let before = self.topic_searches(before)?;
-        let after = self.topic_searches(Some(topic.to_owned()))?;
-        indexer.update(&topic.to_search_entry(), &before, &after)?;
-
-        self.save_object(path, topic)
-    }
-
-    pub fn search_index(
-        &self,
-        key: &IndexKey,
-        index_type: IndexType,
-        mode: IndexMode,
-    ) -> Result<SearchTokenIndex> {
-        let filename = self.root.index_filename(key, index_type)?;
-        match mode {
-            IndexMode::Replace => Ok(SearchTokenIndex::new(&filename)),
-            IndexMode::ReadOnly => SearchTokenIndex::load(&filename),
-            IndexMode::Update => SearchTokenIndex::load(&filename),
-        }
-    }
-
     fn save_object<T: Serialize>(&self, path: &RepoPath, object: &T) -> Result<()> {
         if !self.viewer.can_update(path) {
             return Err(Error::NotFound(format!("not found: {}", path)));
@@ -445,6 +331,20 @@ impl Git {
         log::debug!("saving {:?}", filename);
         fs::write(&filename, s)?;
         Ok(())
+    }
+
+    fn search_index(
+        &self,
+        key: &IndexKey,
+        index_type: IndexType,
+        mode: IndexMode,
+    ) -> Result<SearchTokenIndex> {
+        let filename = self.root.index_filename(key, index_type)?;
+        match mode {
+            IndexMode::Replace => Ok(SearchTokenIndex::new(&filename)),
+            IndexMode::ReadOnly => SearchTokenIndex::load(&filename),
+            IndexMode::Update => SearchTokenIndex::load(&filename),
+        }
     }
 
     // The "prefix" argument tells us which repo to look in.  The "prefix" in the method name
@@ -584,5 +484,128 @@ impl Git {
         };
 
         Ok(searches)
+    }
+
+    pub fn treebuilder(&self, mode: IndexMode) -> TreeBuilder {
+        TreeBuilder::new(self, mode)
+    }
+}
+
+#[derive(Debug)]
+pub struct TreeBuilder {
+    client: Client,
+    indexer: Indexer,
+}
+
+impl TreeBuilder {
+    pub fn new(client: &Client, mode: IndexMode) -> Self {
+        Self {
+            client: client.clone(),
+            indexer: Indexer::new(mode),
+        }
+    }
+
+    pub fn add_change(&mut self, change: &activity::Change) -> Result<()> {
+        self.indexer.add_change(change)
+    }
+
+    pub fn cycle_exists(
+        &self,
+        descendant_path: &RepoPath,
+        ancestor_path: &RepoPath,
+    ) -> Result<bool> {
+        self.client.cycle_exists(descendant_path, ancestor_path)
+    }
+
+    pub fn exists(&self, path: &RepoPath) -> Result<bool> {
+        self.client.exists(path)
+    }
+
+    pub fn fetch(&self, path: &RepoPath) -> Option<Object> {
+        self.client.fetch(path)
+    }
+
+    pub fn fetch_link(&self, path: &RepoPath) -> Option<Link> {
+        self.client.fetch_link(path)
+    }
+
+    pub fn fetch_topic(&self, path: &RepoPath) -> Option<Topic> {
+        self.client.fetch_topic(path)
+    }
+
+    pub fn mark_deleted(&self, path: &RepoPath) -> Result<()> {
+        self.client.mark_deleted(path)
+    }
+
+    pub fn remove_link(&mut self, path: &RepoPath, link: &Link) -> Result<()> {
+        if !self.client.viewer.can_update(path) {
+            return Err(Error::NotFound(format!("not found: {}", path)));
+        }
+
+        let searches = self.client.link_searches(Some(link.to_owned()))?;
+        self.indexer
+            .remove_searches(&self.client, &link.to_search_entry(), searches.iter())?;
+        self.client.remove(path)
+    }
+
+    pub fn remove_topic(&mut self, path: &RepoPath, topic: &Topic) -> Result<()> {
+        if !self.client.viewer.can_update(path) {
+            return Err(Error::NotFound(format!("not found: {}", path)));
+        }
+
+        self.indexer.remove_synonyms(&self.client, path, topic)?;
+
+        let meta = &topic.metadata;
+        let mut searches = vec![];
+        for synonym in &meta.synonyms {
+            let search = Search::parse(&synonym.name)?;
+            if search.is_empty() {
+                continue;
+            }
+            searches.push(search);
+        }
+
+        let entry = topic.to_search_entry();
+        self.indexer
+            .remove_searches(&self.client, &entry, searches.iter())?;
+        self.client.remove(path)?;
+
+        Ok(())
+    }
+
+    pub fn save<S>(&self, store: &S) -> Result<()>
+    where
+        S: SaveChangesForPrefix,
+    {
+        self.indexer.save(&self.client, store)
+    }
+
+    pub fn save_link(&mut self, path: &RepoPath, link: &Link) -> Result<()> {
+        let before = self.client.link(path)?;
+        let before = self.client.link_searches(before)?;
+        let after = self.client.link_searches(Some(link.to_owned()))?;
+        self.indexer
+            .update(&self.client, &link.to_search_entry(), &before, &after)?;
+        self.client.save_object(path, link)
+    }
+
+    pub fn save_topic(&mut self, path: &RepoPath, topic: &Topic) -> Result<()> {
+        let before = self.client.topic(path)?;
+        self.indexer.update_synonyms(&self.client, &before, topic)?;
+
+        let before = self.client.topic_searches(before)?;
+        let after = self.client.topic_searches(Some(topic.to_owned()))?;
+        self.indexer
+            .update(&self.client, &topic.to_search_entry(), &before, &after)?;
+
+        self.client.save_object(path, topic)
+    }
+
+    pub fn synonym_phrase_matches(
+        &self,
+        prefixes: &[&RepoPrefix],
+        name: &str,
+    ) -> Result<BTreeSet<SynonymMatch>> {
+        self.client.synonym_phrase_matches(prefixes, name)
     }
 }

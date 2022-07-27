@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use unidecode::unidecode;
 
-use super::{activity, Git, Kind, Search, Synonym, Topic, TopicChild, API_VERSION};
+use super::{activity, Client, Kind, Search, Synonym, Topic, TopicChild, API_VERSION};
 use crate::prelude::*;
 
 // Omit dashes so that we can split on them
@@ -493,7 +493,6 @@ pub trait SaveChangesForPrefix {
 }
 
 pub struct Indexer {
-    git: Git,
     pub mode: IndexMode,
     search_tokens: HashMap<IndexKey, SearchTokenIndex>,
     synonym_phrases: HashMap<IndexKey, SynonymIndex>,
@@ -503,9 +502,8 @@ pub struct Indexer {
 }
 
 impl Indexer {
-    pub fn new(git: &Git, mode: IndexMode) -> Self {
+    pub fn new(mode: IndexMode) -> Self {
         Self {
-            git: git.clone(),
             mode,
             path_activity: HashMap::new(),
             prefix_activity: HashMap::new(),
@@ -543,7 +541,13 @@ impl Indexer {
         Ok(())
     }
 
-    fn synonym_indexes<'s, S, F>(&mut self, prefix: &RepoPrefix, synonyms: S, f: F) -> Result<()>
+    fn synonym_indexes<'s, S, F>(
+        &mut self,
+        client: &Client,
+        prefix: &RepoPrefix,
+        synonyms: S,
+        f: F,
+    ) -> Result<()>
     where
         S: Iterator<Item = &'s Synonym>,
         F: Fn(&mut SynonymIndex, &Phrase, &String) -> Result<()>,
@@ -554,8 +558,8 @@ impl Indexer {
                 continue;
             }
 
-            let key = self.git.index_key(prefix, &phrase)?;
-            let index = self.synonym_index(&key, IndexType::SynonymPhrase)?;
+            let key = client.index_key(prefix, &phrase)?;
+            let index = self.synonym_index(client, &key, IndexType::SynonymPhrase)?;
             f(index, &phrase, &synonym.name)?;
 
             for token in phrase.tokens() {
@@ -563,8 +567,8 @@ impl Indexer {
                     continue;
                 }
 
-                let key = self.git.index_key(prefix, &token)?;
-                let index = self.synonym_index(&key, IndexType::SynonymToken)?;
+                let key = client.index_key(prefix, &token)?;
+                let index = self.synonym_index(client, &key, IndexType::SynonymToken)?;
                 f(index, &token, &synonym.name)?;
             }
         }
@@ -572,15 +576,20 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn remove_searches<'s, S>(&mut self, entry: &SearchEntry, searches: S) -> Result<()>
+    pub fn remove_searches<'s, S>(
+        &mut self,
+        client: &Client,
+        entry: &SearchEntry,
+        searches: S,
+    ) -> Result<()>
     where
         S: Iterator<Item = &'s Search>,
     {
         let path = entry.path();
         for search in searches {
             for token in &search.tokens {
-                let key = self.git.index_key(&path.repo, token)?;
-                self.search_token_index(&key)?
+                let key = client.index_key(&path.repo, token)?;
+                self.search_token_index(client, &key)?
                     .remove(entry, token.to_owned())?;
             }
         }
@@ -588,8 +597,14 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn remove_synonyms(&mut self, path: &RepoPath, topic: &Topic) -> Result<()> {
+    pub fn remove_synonyms(
+        &mut self,
+        client: &Client,
+        path: &RepoPath,
+        topic: &Topic,
+    ) -> Result<()> {
         self.synonym_indexes(
+            client,
             &path.repo,
             topic.metadata.synonyms.iter(),
             |index, token, name| {
@@ -601,7 +616,7 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn save<S>(&self, store: &S) -> Result<()>
+    pub fn save<S>(&self, client: &Client, store: &S) -> Result<()>
     where
         S: SaveChangesForPrefix,
     {
@@ -618,14 +633,14 @@ impl Indexer {
         }
 
         for (path, changes) in self.path_activity.iter() {
-            let mut index = self.git.change_index(path, self.mode)?;
+            let mut index = client.change_index(path, self.mode)?;
 
             for change in changes.iter() {
                 let reference = ChangeReference::new(&path.repo, change);
                 index.add(reference.to_owned());
 
                 // Write the individual change to a /prefix/changes/ directory
-                self.git.save_change(&reference, change)?;
+                client.save_change(&reference, change)?;
             }
 
             // Write the changes.yaml file of change references to the object directory
@@ -642,6 +657,7 @@ impl Indexer {
 
     fn synonym_index(
         &mut self,
+        client: &Client,
         key: &IndexKey,
         index_type: IndexType,
     ) -> Result<&mut SynonymIndex> {
@@ -653,18 +669,23 @@ impl Indexer {
 
         Ok(collection
             .entry(key.to_owned())
-            .or_insert(self.git.synonym_index(key, index_type, self.mode)?))
+            .or_insert(client.synonym_index(key, index_type, self.mode)?))
     }
 
-    fn search_token_index(&mut self, key: &IndexKey) -> Result<&mut SearchTokenIndex> {
+    fn search_token_index(
+        &mut self,
+        client: &Client,
+        key: &IndexKey,
+    ) -> Result<&mut SearchTokenIndex> {
         Ok(self
             .search_tokens
             .entry(key.to_owned())
-            .or_insert(self.git.token_index(key, self.mode)?))
+            .or_insert(client.token_index(key, self.mode)?))
     }
 
     pub fn update(
         &mut self,
+        client: &Client,
         entry: &SearchEntry,
         before: &BTreeSet<Search>,
         after: &BTreeSet<Search>,
@@ -673,8 +694,8 @@ impl Indexer {
         let path = entry.path();
         for search in removed {
             for token in &search.tokens {
-                let key = self.git.index_key(&path.repo, token)?;
-                self.search_token_index(&key)?
+                let key = client.index_key(&path.repo, token)?;
+                self.search_token_index(client, &key)?
                     .remove(entry, token.to_owned())?;
             }
         }
@@ -688,8 +709,8 @@ impl Indexer {
         let added = after.difference(before);
         for search in added {
             for token in &search.tokens {
-                let key = self.git.index_key(&path.repo, token)?;
-                self.search_token_index(&key)?
+                let key = client.index_key(&path.repo, token)?;
+                self.search_token_index(client, &key)?
                     .add(entry, token.to_owned())?;
             }
         }
@@ -697,7 +718,12 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn update_synonyms(&mut self, before: &Option<Topic>, after: &Topic) -> Result<()> {
+    pub fn update_synonyms(
+        &mut self,
+        client: &Client,
+        before: &Option<Topic>,
+        after: &Topic,
+    ) -> Result<()> {
         let path = after.path();
 
         let before = match before {
@@ -716,6 +742,7 @@ impl Indexer {
             .collect::<HashSet<Synonym>>();
 
         self.synonym_indexes(
+            client,
             &path.repo,
             after.difference(&before),
             |index, token, name| {
@@ -725,6 +752,7 @@ impl Indexer {
         )?;
 
         self.synonym_indexes(
+            client,
             &path.repo,
             before.difference(&after),
             |index, token, name| {

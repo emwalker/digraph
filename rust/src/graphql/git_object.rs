@@ -66,11 +66,11 @@ impl TryFrom<&git::Topic> for Topic {
 #[allow(dead_code)]
 pub struct LinkLoader {
     viewer: Viewer,
-    git: git::Git,
+    git: git::Client,
 }
 
 impl LinkLoader {
-    pub fn new(viewer: Viewer, git: git::Git) -> Self {
+    pub fn new(viewer: Viewer, git: git::Client) -> Self {
         Self { viewer, git }
     }
 }
@@ -97,11 +97,11 @@ impl Loader<String> for LinkLoader {
 #[allow(dead_code)]
 pub struct ObjectLoader {
     viewer: Viewer,
-    git: git::Git,
+    git: git::Client,
 }
 
 impl ObjectLoader {
-    pub fn new(viewer: Viewer, git: git::Git) -> Self {
+    pub fn new(viewer: Viewer, git: git::Client) -> Self {
         Self { viewer, git }
     }
 }

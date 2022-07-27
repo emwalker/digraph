@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
 use strum_macros::EnumString;
 
-use super::{Git, Kind, Locale, Object, Phrase, SynonymEntry, Topic};
+use super::{Client, Kind, Locale, Object, Phrase, SynonymEntry, Topic};
 use crate::prelude::*;
 use crate::redis;
 use crate::types::DownSet;
@@ -138,7 +138,7 @@ pub struct FetchTopicLiveSearchResult {
 }
 
 impl FetchTopicLiveSearch {
-    pub fn call(&self, git: &Git) -> Result<FetchTopicLiveSearchResult> {
+    pub fn call(&self, client: &Client) -> Result<FetchTopicLiveSearchResult> {
         if self.search.tokens.is_empty() {
             log::info!("empty search, returning no results");
             return Ok(FetchTopicLiveSearchResult {
@@ -147,30 +147,35 @@ impl FetchTopicLiveSearch {
         }
 
         log::info!("searching for topics: {:?}", self.search);
-        let matches = self.fetch(git);
+        let matches = self.fetch(client);
 
         Ok(FetchTopicLiveSearchResult {
             synonym_matches: matches.iter().take(self.limit).cloned().collect(),
         })
     }
 
-    fn fetch(&self, git: &Git) -> BTreeSet<SynonymEntry> {
+    fn fetch(&self, client: &Client) -> BTreeSet<SynonymEntry> {
         let mut matches = BTreeSet::new();
         for prefix in &self.prefixes {
-            self.fetch_prefix(git, prefix, &mut matches);
+            self.fetch_prefix(client, prefix, &mut matches);
         }
         matches
     }
 
-    fn fetch_prefix(&self, git: &Git, prefix: &RepoPrefix, matches: &mut BTreeSet<SynonymEntry>) {
+    fn fetch_prefix(
+        &self,
+        client: &Client,
+        prefix: &RepoPrefix,
+        matches: &mut BTreeSet<SynonymEntry>,
+    ) {
         let tokens = &mut self.search.tokens.iter();
         let start = match tokens.next() {
-            Some(token) => git.synonym_token_prefix_matches(prefix, token),
+            Some(token) => client.synonym_token_prefix_matches(prefix, token),
             None => BTreeSet::new(),
         };
 
         let mut result = tokens.fold(start, |acc, token| {
-            let result = git.synonym_token_prefix_matches(prefix, token);
+            let result = client.synonym_token_prefix_matches(prefix, token);
             acc.intersection(&result).cloned().collect()
         });
 
@@ -260,7 +265,7 @@ impl Filter {
 }
 
 pub struct RedisFetchDownSet {
-    pub git: Git,
+    pub client: Client,
     pub redis: redis::Redis,
 }
 
@@ -270,7 +275,7 @@ impl DownSet for RedisFetchDownSet {
     }
 
     fn down_set(&self, path: &RepoPath) -> HashSet<String> {
-        self.git
+        self.client
             .topic_down_set(path)
             .map(|topic| topic.metadata.path)
             .collect::<HashSet<String>>()
@@ -292,7 +297,7 @@ pub struct SearchWithinTopicResult {
 }
 
 impl SearchWithinTopic {
-    pub fn call<F>(&self, git: &Git, fetch: &F) -> Result<SearchWithinTopicResult>
+    pub fn call<F>(&self, client: &Client, fetch: &F) -> Result<SearchWithinTopicResult>
     where
         F: DownSet,
     {
@@ -303,15 +308,15 @@ impl SearchWithinTopic {
             });
         }
 
-        let mut topics = self.topic_intersection(git, fetch)?;
-        let filter = self.filter(git);
+        let mut topics = self.topic_intersection(client, fetch)?;
+        let filter = self.filter(client);
         let mut matches = BTreeSet::new();
 
         for topic in topics.drain() {
             for child in &topic.children {
                 let path = RepoPath::from(&child.path);
                 if child.kind == Kind::Link && filter.test(&child.path) {
-                    if let Some(object) = git.fetch(&path) {
+                    if let Some(object) = client.fetch(&path) {
                         matches.insert(object.to_search_match(self.locale, &self.search));
                     }
                 }
@@ -327,17 +332,17 @@ impl SearchWithinTopic {
         })
     }
 
-    fn filter(&self, git: &Git) -> Filter {
+    fn filter(&self, client: &Client) -> Filter {
         let mut token_matches = HashSet::new();
 
         for prefix in &self.prefixes {
             let mut iter = self.search.tokens.iter();
 
             if let Some(token) = iter.next() {
-                let mut prefix_matches = git.search_token_prefix_matches(prefix, token);
+                let mut prefix_matches = client.search_token_prefix_matches(prefix, token);
 
                 for token in iter {
-                    let other = git.search_token_prefix_matches(prefix, token);
+                    let other = client.search_token_prefix_matches(prefix, token);
                     prefix_matches.retain(|e| other.contains(e));
                 }
 
@@ -355,7 +360,7 @@ impl SearchWithinTopic {
         }
     }
 
-    fn topic_intersection<F>(&self, git: &Git, fetch: &F) -> Result<HashSet<Topic>>
+    fn topic_intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<Topic>>
     where
         F: DownSet,
     {
@@ -372,7 +377,7 @@ impl SearchWithinTopic {
 
         for path in set.drain() {
             let path = RepoPath::from(&path);
-            if let Some(topic) = git.fetch_topic(&path) {
+            if let Some(topic) = client.fetch_topic(&path) {
                 topics.insert(topic);
             }
         }

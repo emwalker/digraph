@@ -10,8 +10,8 @@ use std::path::{Path, PathBuf};
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    activity, DataRoot, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, Synonym,
-    Topic, TopicChild, TopicMetadata,
+    activity, Client, DataRoot, IndexMode, Kind, Link, LinkMetadata, ParentTopic, Synonym, Topic,
+    TopicChild, TopicMetadata, TreeBuilder,
 };
 use digraph::prelude::*;
 use digraph::redis;
@@ -146,7 +146,7 @@ impl From<&TopicChildRow> for TopicChild {
     }
 }
 
-async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<()> {
+async fn save_topics(builder: &mut TreeBuilder, pool: &PgPool) -> Result<()> {
     log::info!("saving topics");
 
     let rows = sqlx::query_as::<_, TopicMetadataRow>(
@@ -313,14 +313,14 @@ async fn save_topics(git: &Git, pool: &PgPool, indexer: &mut Indexer) -> Result<
             parent_topics: activity::TopicInfoList::from(&parents),
         });
 
-        git.save_topic(&RepoPath::from(&topic.metadata.path), &topic, indexer)?;
-        indexer.add_change(&change)?;
+        builder.save_topic(&topic.path(), &topic)?;
+        builder.add_change(&change)?;
     }
 
     Ok(())
 }
 
-async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> Result<()> {
+async fn save_links(builder: &mut TreeBuilder, pool: &PgPool) -> Result<()> {
     log::info!("saving links");
 
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
@@ -382,8 +382,8 @@ async fn save_links<'s>(git: &'s Git, pool: &PgPool, indexer: &mut Indexer) -> R
             parent_topics: activity::TopicInfoList::from(&topics),
         });
 
-        git.save_link(&RepoPath::from(&link.metadata.path), &link, indexer)?;
-        indexer.add_change(&change)?;
+        builder.save_link(&link.path(), &link)?;
+        builder.add_change(&change)?;
     }
 
     Ok(())
@@ -400,14 +400,14 @@ async fn main() -> Result<()> {
         return Err(Error::NotFound(format!("{:?}", opts.root)));
     }
     let root = DataRoot::new(opts.root);
-    let git = Git::new(&Viewer::super_user(), &root);
-    let mut indexer = Indexer::new(&git, IndexMode::Replace);
+    let client = Client::new(&Viewer::super_user(), &root);
+    let mut builder = client.treebuilder(IndexMode::Replace);
 
-    save_topics(&git, &pool, &mut indexer).await?;
-    save_links(&git, &pool, &mut indexer).await?;
+    save_topics(&mut builder, &pool).await?;
+    save_links(&mut builder, &pool).await?;
 
     log::info!("saving indexes");
-    indexer.save(&redis::Noop)?;
+    builder.save(&redis::Noop)?;
 
     log::info!("exported database to {}", root);
     Ok(())

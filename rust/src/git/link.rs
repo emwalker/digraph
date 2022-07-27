@@ -2,13 +2,14 @@ use chrono::Utc;
 use std::collections::{BTreeSet, HashMap};
 
 use crate::git::{
-    activity, Git, IndexMode, Indexer, Kind, Link, LinkMetadata, ParentTopic, SaveChangesForPrefix,
-    Topic, TopicChild, API_VERSION,
+    activity, Client, Kind, Link, LinkMetadata, ParentTopic, SaveChangesForPrefix, Topic,
+    TopicChild, API_VERSION,
 };
 use crate::http::{self, RepoUrl};
 use crate::prelude::*;
 
 use super::activity::TopicInfoList;
+use super::TreeBuilder;
 
 pub struct DeleteLink {
     pub actor: Viewer,
@@ -21,11 +22,11 @@ pub struct DeleteLinkResult {
 }
 
 impl DeleteLink {
-    pub fn call<S>(&self, git: &Git, store: &S) -> Result<DeleteLinkResult>
+    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<DeleteLinkResult>
     where
         S: SaveChangesForPrefix,
     {
-        let link = git.fetch_link(&self.link_path);
+        let link = builder.fetch_link(&self.link_path);
         if link.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.link_path)));
         }
@@ -34,25 +35,24 @@ impl DeleteLink {
         // Not actually used
         let date = chrono::Utc::now();
         let child = link.to_topic_child(date);
-        let mut indexer = Indexer::new(git, IndexMode::Update);
         let mut parent_topics = vec![];
 
-        git.mark_deleted(&self.link_path)?;
+        builder.mark_deleted(&self.link_path)?;
 
         for ParentTopic { path, .. } in &link.parent_topics {
             let path = RepoPath::from(path);
-            if let Some(mut parent) = git.fetch_topic(&path) {
+            if let Some(mut parent) = builder.fetch_topic(&path) {
                 parent.children.remove(&child);
-                git.save_topic(&path, &parent, &mut indexer)?;
+                builder.save_topic(&path, &parent)?;
                 parent_topics.push(parent);
             }
         }
 
         let change = self.change(&link, &parent_topics, date);
 
-        git.remove_link(&self.link_path, &link, &mut indexer)?;
-        indexer.add_change(&change)?;
-        indexer.save(store)?;
+        builder.remove_link(&self.link_path, &link)?;
+        builder.add_change(&change)?;
+        builder.save(store)?;
 
         Ok(DeleteLinkResult {
             alerts: vec![],
@@ -83,7 +83,7 @@ pub struct FetchLinkCountResult {
 }
 
 impl FetchLinkCount {
-    pub fn call(&self, _git: &Git) -> Result<FetchLinkCountResult> {
+    pub fn call(&self, _client: &Client) -> Result<FetchLinkCountResult> {
         Ok(FetchLinkCountResult { count: 1000 })
     }
 }
@@ -100,15 +100,18 @@ pub struct UpdateLinkParentTopicsResult {
 }
 
 impl UpdateLinkParentTopics {
-    pub fn call<S>(&self, git: &Git, store: &S) -> Result<UpdateLinkParentTopicsResult>
+    pub fn call<S>(
+        &self,
+        mut builder: TreeBuilder,
+        store: &S,
+    ) -> Result<UpdateLinkParentTopicsResult>
     where
         S: SaveChangesForPrefix,
     {
         self.validate()?;
 
         let date = chrono::Utc::now();
-        let mut indexer = Indexer::new(git, IndexMode::Update);
-        let link = git.fetch_link(&self.link_path);
+        let link = builder.fetch_link(&self.link_path);
         if link.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.link_path)));
         }
@@ -124,7 +127,7 @@ impl UpdateLinkParentTopics {
 
         let mut added = vec![];
         for parent in parent_topics.difference(&link.parent_topics) {
-            if let Some(topic) = parent.fetch(git) {
+            if let Some(topic) = parent.fetch(&builder) {
                 added.push(topic);
             }
         }
@@ -136,7 +139,7 @@ impl UpdateLinkParentTopics {
 
         let mut removed = vec![];
         for parent in link.parent_topics.difference(&parent_topics) {
-            if let Some(link) = parent.fetch(git) {
+            if let Some(link) = parent.fetch(&builder) {
                 removed.push(link);
             }
         }
@@ -149,16 +152,16 @@ impl UpdateLinkParentTopics {
         let change = self.change(&link, &added, &removed, date);
 
         for topic in &added {
-            git.save_topic(&topic.path(), topic, &mut indexer)?;
+            builder.save_topic(&topic.path(), topic)?;
         }
 
         for topic in &removed {
-            git.save_topic(&topic.path(), topic, &mut indexer)?;
+            builder.save_topic(&topic.path(), topic)?;
         }
 
-        git.save_link(&link.path(), &link, &mut indexer)?;
-        indexer.add_change(&change)?;
-        indexer.save(store)?;
+        builder.save_link(&link.path(), &link)?;
+        builder.add_change(&change)?;
+        builder.save(store)?;
 
         Ok(UpdateLinkParentTopicsResult {
             alerts: vec![],
@@ -213,7 +216,7 @@ pub struct UpsertLinkResult {
 }
 
 impl UpsertLink {
-    pub async fn call<S>(&self, git: &Git, store: &S) -> Result<UpsertLinkResult>
+    pub async fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<UpsertLinkResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -222,7 +225,7 @@ impl UpsertLink {
         let path = url.path(&self.repo);
         let date = Utc::now();
 
-        let (mut link, previous_title) = self.make_link(git, &url, &path).await?;
+        let (mut link, previous_title) = self.make_link(&builder, &url, &path).await?;
         if let Some(title) = &self.title {
             link.metadata.title = title.clone();
         }
@@ -230,13 +233,13 @@ impl UpsertLink {
         let mut parent_topics = HashMap::new();
 
         for parent in &link.parent_topics {
-            if let Some(topic) = git.fetch_topic(&RepoPath::from(&parent.path)) {
+            if let Some(topic) = builder.fetch_topic(&RepoPath::from(&parent.path)) {
                 parent_topics.insert(parent.path.to_owned(), topic);
             }
         }
 
         let topic = if let Some(topic_path) = &self.add_parent_topic_path {
-            let topic = git.fetch_topic(topic_path);
+            let topic = builder.fetch_topic(topic_path);
             if let Some(topic) = &topic {
                 parent_topics.insert(topic_path.to_string(), topic.to_owned());
             }
@@ -248,7 +251,7 @@ impl UpsertLink {
         if parent_topics.is_empty() {
             // There's a client error if we get to this point.
             log::warn!("no topic found, placing under root topic for /wiki");
-            if let Some(topic) = git.fetch_topic(&RepoPath::from(WIKI_ROOT_TOPIC_PATH)) {
+            if let Some(topic) = builder.fetch_topic(&RepoPath::from(WIKI_ROOT_TOPIC_PATH)) {
                 parent_topics.insert(topic.metadata.path.to_owned(), topic);
             }
         }
@@ -261,20 +264,18 @@ impl UpsertLink {
             })
             .collect::<BTreeSet<ParentTopic>>();
 
-        let mut indexer = Indexer::new(git, IndexMode::Update);
-
         for (path, topic) in &mut parent_topics {
             topic.children.insert(TopicChild {
                 added: date,
                 kind: Kind::Link,
                 path: link.metadata.path.to_owned(),
             });
-            git.save_topic(&RepoPath::from(path), topic, &mut indexer)?;
+            builder.save_topic(&RepoPath::from(path), topic)?;
         }
 
-        git.save_link(&path, &link, &mut indexer)?;
-        indexer.add_change(&change)?;
-        indexer.save(store)?;
+        builder.save_link(&path, &link)?;
+        builder.add_change(&change)?;
+        builder.save(store)?;
 
         Ok(UpsertLinkResult {
             alerts: vec![],
@@ -310,12 +311,12 @@ impl UpsertLink {
 
     async fn make_link(
         &self,
-        git: &Git,
+        builder: &TreeBuilder,
         url: &RepoUrl,
         path: &RepoPath,
     ) -> Result<(Link, Option<String>)> {
-        if git.exists(path)? {
-            if let Some(link) = git.fetch_link(path) {
+        if builder.exists(path)? {
+            if let Some(link) = builder.fetch_link(path) {
                 let title = link.metadata.title.to_owned();
                 return Ok((link, Some(title)));
             }

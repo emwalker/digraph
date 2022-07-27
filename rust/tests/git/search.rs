@@ -91,13 +91,13 @@ mod fetch_topic_live_search {
 
 #[cfg(test)]
 mod search_within_topic {
-    use digraph::git::Git;
+    use digraph::git::Client;
     use digraph::types::DownSet;
     use std::collections::HashSet;
 
     use super::*;
 
-    struct FetchDownSet(Git);
+    struct FetchDownSet(Client);
 
     impl DownSet for FetchDownSet {
         fn transitive_closure(&self, topic_paths: &[&RepoPath]) -> Result<HashSet<String>> {

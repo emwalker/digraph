@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use digraph::git::{
-    DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, Git, Link, OnMatchingSynonym,
-    Search, Topic, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
+    Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode, Link,
+    OnMatchingSynonym, Search, Topic, TreeBuilder, UpsertLink, UpsertLinkResult, UpsertTopic,
+    UpsertTopicResult,
 };
 use digraph::http::{Fetch, Response};
 use digraph::prelude::*;
@@ -29,7 +30,7 @@ impl Fetch for Fetcher {
 
 pub struct Fixtures {
     _tempdir: TempDir,
-    pub git: Git,
+    pub git: Client,
     pub path: PathBuf,
     source: PathBuf,
 }
@@ -44,7 +45,7 @@ impl Fixtures {
         let tempdir = tempfile::tempdir().unwrap();
         let path = PathBuf::from(&tempdir.path());
         let root = DataRoot::new(path.clone());
-        let git = Git::new(&Viewer::super_user(), &root);
+        let git = Client::new(&Viewer::super_user(), &root);
 
         Fixtures {
             _tempdir: tempdir,
@@ -52,6 +53,10 @@ impl Fixtures {
             path,
             source,
         }
+    }
+
+    pub fn builder(&self) -> TreeBuilder {
+        self.git.treebuilder(IndexMode::Update)
     }
 
     pub fn copy(fixture_dirname: &str) -> Self {
@@ -143,7 +148,7 @@ impl Fixtures {
             title,
         };
 
-        block_on(request.call(&self.git, &redis::Noop)).unwrap()
+        block_on(request.call(self.builder(), &redis::Noop)).unwrap()
     }
 
     pub fn upsert_topic(
@@ -161,7 +166,7 @@ impl Fixtures {
             on_matching_synonym,
             repo: repo.to_owned(),
         }
-        .call(&self.git, &redis::Noop)
+        .call(self.builder(), &redis::Noop)
     }
 }
 
@@ -188,7 +193,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root.clone(),
         }
-        .call(&f.git, &redis::Noop)
+        .call(f.builder(), &redis::Noop)
         .unwrap();
         let climate_change = topic.unwrap().path();
 
@@ -212,7 +217,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root.clone(),
         }
-        .call(&f.git, &redis::Noop)
+        .call(f.builder(), &redis::Noop)
         .unwrap();
         let weather = topic.unwrap().path();
 
@@ -235,7 +240,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: climate_change.clone(),
         }
-        .call(&f.git, &redis::Noop)
+        .call(f.builder(), &redis::Noop)
         .unwrap();
         let climate_change_weather = topic.unwrap().path();
 
@@ -244,7 +249,7 @@ mod tests {
             parent_topic_paths: BTreeSet::from([climate_change.clone(), weather.clone()]),
             topic_path: climate_change_weather.clone(),
         }
-        .call(&f.git, &redis::Noop)
+        .call(f.builder(), &redis::Noop)
         .unwrap();
 
         let url =

@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use super::{Git, Link, Locale, RepoPath, Synonym, Topic};
+use super::{Client, Link, Locale, RepoPath, Synonym, Topic};
 use crate::prelude::*;
 use crate::types::{random_id, TimerangePrefix};
 
@@ -1240,7 +1240,7 @@ pub trait ActivityForPrefix {
 }
 
 impl FetchActivity {
-    pub fn call<F>(&self, git: &Git, fetch: &F) -> Result<FetchActivityResult>
+    pub fn call<F>(&self, git: &Client, fetch: &F) -> Result<FetchActivityResult>
     where
         F: ActivityForPrefix,
     {
