@@ -1,11 +1,9 @@
 import React, { Component } from 'react'
 import { Link } from 'found'
-import classNames from 'classnames'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import { toEverything } from 'components/navigation'
 import { Menu_viewer as Viewer } from '__generated__/Menu_viewer.graphql'
-import styles from './styles.module.css'
 
 type Props = {
   viewer: Viewer,
@@ -34,7 +32,7 @@ class Menu extends Component<Props> {
   )
 
   render = () => (
-    <nav className={classNames(styles.menu, 'menu')} aria-label="Person settings">
+    <nav className="mobile-menu menu" aria-label="Person settings">
       <a
         className="menu-item Link--primary p-3"
         href="https://blog.digraph.app"

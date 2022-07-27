@@ -6,7 +6,6 @@ import createMentionPlugin from '@draft-js-plugins/mention'
 
 import { SearchBox_view as ViewType } from '__generated__/SearchBox_view.graphql'
 import rawFromQuery from './rawFromQuery'
-import styles from './styles.module.css'
 import TopicSuggestions from './TopicSuggestions'
 
 require('@draft-js-plugins/mention/lib/plugin.css')
@@ -58,7 +57,7 @@ const TextInput = ({ handleReturn, queryInfo }: Props) => {
   const focus = hasFocus ? 'focus' : ''
 
   return (
-    <div className={`${styles.textInput} form-control ${focus}`}>
+    <div className={`textInputTextInput form-control ${focus}`}>
       <Editor
         ref={editor}
         editorState={editorState}

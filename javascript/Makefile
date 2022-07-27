@@ -2,7 +2,7 @@
 
 build: .PHONY
 	yarn relay || yarn relay
-	yarn build
+	NODE_OPTIONS=--no-experimental-fetch yarn build
 
 check: reinstall-javacript format test build
 
@@ -23,7 +23,7 @@ start:
 	yarn start:prod
 
 start-dev:
-	yarn start
+	NODE_OPTIONS=--no-experimental-fetch yarn start
 
 test:
 	yarn jest

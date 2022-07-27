@@ -14,7 +14,7 @@ spec:
         spec:
           containers:
           - name: cron
-            image: emwalker/digraph-cron:v372
+            image: emwalker/digraph-cron:v373
             envFrom:
             - secretRef:
                 name: digraph-secrets

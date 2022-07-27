@@ -1,9 +1,0 @@
-:global(.Subhead) {
-  line-height: 1.3;
-  display: block;
-}
-
-:global(.Subhead-heading) {
-  font-size: 22px !important;
-  font-weight: 400;
-}

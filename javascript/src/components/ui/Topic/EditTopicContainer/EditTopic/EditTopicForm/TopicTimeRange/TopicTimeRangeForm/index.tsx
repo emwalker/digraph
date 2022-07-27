@@ -7,7 +7,6 @@ import upsertTopicTimeRangeMutation, { Input } from 'mutations/upsertTopicTimeRa
 import {
   TopicTimeRangeForm_topic as TopicType,
 } from '__generated__/TopicTimeRangeForm_topic.graphql'
-import styles from './styles.module.css'
 
 type PrefixFormat = NonNullable<TopicType['timeRange']>['prefixFormat']
 
@@ -57,7 +56,7 @@ const TopicTimeRangeForm = ({ relay, topic: { id: topicId, timeRange } }: Props)
   )
 
   return (
-    <div className={styles.formElements}>
+    <div className="topicTimeRangeFormFormElements">
       <dl className="form-group my-0">
         <dt><label htmlFor="time-range-prefix-format">Prefix</label></dt>
         <dd>
@@ -80,7 +79,7 @@ const TopicTimeRangeForm = ({ relay, topic: { id: topicId, timeRange } }: Props)
         </dt>
         <dd>
           <input
-            className={styles.startsAt}
+            className="topicTimeRangeFormStartsAt"
             id="time-range-starts-at"
             onChange={(e) => {
               e.persist()

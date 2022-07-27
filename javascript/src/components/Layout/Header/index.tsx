@@ -6,7 +6,6 @@ import { LocationType } from 'components/types'
 import { LayoutQueryResponse as Response } from '__generated__/LayoutQuery.graphql'
 import DesktopNav from './DesktopNav'
 import MobileNav from './MobileNav'
-import styles from './styles.module.css'
 
 type ViewType = Response['view']
 type ViewerType = ViewType['viewer']
@@ -19,7 +18,7 @@ type Props = {
 }
 
 export default ({ location, router, viewer, view }: Props) => (
-  <div className={`${styles.outerHeader} clearfix d-flex`}>
+  <div className="outerHeader clearfix d-flex">
     <div style={{ width: '100' }}>
       <MediaQuery query="(max-width: 768px)">
         <MobileNav

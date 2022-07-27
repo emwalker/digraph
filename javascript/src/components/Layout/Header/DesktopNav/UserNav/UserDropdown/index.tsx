@@ -3,7 +3,6 @@ import { createFragmentContainer, graphql } from 'react-relay'
 import { Link } from 'found'
 
 import { UserDropdown_viewer as Viewer } from '__generated__/UserDropdown_viewer.graphql'
-import styles from './styles.module.css'
 
 type Props = {
   viewer: Viewer,
@@ -15,10 +14,10 @@ const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
   }, [])
 
   return (
-    <div className={styles.dropdown}>
+    <div className="dropdown">
       <details className="dropdown details-reset details-overlay d-inline-block">
         <summary className="btn" aria-haspopup="true">
-          <div className={styles.summary}>
+          <div className="summary">
             <img
               alt={name}
               className="avatar"

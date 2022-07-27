@@ -7,7 +7,6 @@ import { everythingTopicPath } from 'components/constants'
 import { LocationType } from 'components/types'
 import { SearchBox_view as ViewType } from '__generated__/SearchBox_view.graphql'
 import TextInput from './TextInput'
-import styles from './styles.module.css'
 import queryFromState from './queryFromState'
 
 type Props = {
@@ -36,7 +35,7 @@ const inputSelect = (
 ) => {
   if (atHomepage(pathname)) {
     return (
-      <button className={classNames('btn', styles.button)} type="button">
+      <button className="btn searchBoxInnerButton" type="button">
         Everything
       </button>
     )
@@ -46,7 +45,7 @@ const inputSelect = (
     <select
       onChange={onSelectChange}
       value={selectedScope}
-      className={classNames('btn', styles.button)}
+      className="btn searchBoxInnerButton"
     >
       <option>Everything</option>
       <option>This topic</option>
@@ -78,7 +77,7 @@ const SearchBoxInner = ({ className, router, location, showButton, view }: Props
     setSelectedScope(value)
   }, [setSelectedScope])
 
-  const actualClassName = classNames(styles.searchBox, 'input-group', className)
+  const actualClassName = classNames('searchBoxInnerSearchBox input-group', className)
 
   return (
     <form className={actualClassName} onSubmit={onFormSubmit}>
@@ -87,7 +86,7 @@ const SearchBoxInner = ({ className, router, location, showButton, view }: Props
         queryInfo={view?.queryInfo}
       />
       {showButton && (
-        <div className={classNames('input-group-button', styles.buttonContainer)}>
+        <div className="input-group-button searchBoxInnerButtonContainer">
           {inputSelect(pathname, selectedScope, onSelectChange)}
         </div>
       )}
