@@ -1,45 +1,40 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<Layout /> renders 1`] = `
-<MediaQueryProvider
-  height={800}
-  width={1600}
+<div
+  className="layoutComponent"
 >
-  <div
-    className="layout"
-  >
-    <div>
-      <_default
-        location={
-          Object {
-            "query": Object {
-              "q": "",
-            },
-            "search": "",
-          }
+  <div>
+    <_default
+      location={
+        Object {
+          "query": Object {
+            "q": "",
+          },
+          "search": "",
         }
-        router={
-          Object {
-            "push": [MockFunction],
-          }
+      }
+      router={
+        Object {
+          "push": [MockFunction],
         }
-        view={
-          Object {
-            "viewer": Object {},
-          }
+      }
+      view={
+        Object {
+          "viewer": Object {},
         }
-        viewer={Object {}}
-      />
-      <div
-        className="clearfix"
-      >
-        <FlashMessages />
-        <div>
-          some view
-        </div>
+      }
+      viewer={Object {}}
+    />
+    <div
+      className="clearfix"
+    >
+      <FlashMessages />
+      <div>
+        some view
       </div>
-      <Footer />
     </div>
+    <Footer />
   </div>
-</MediaQueryProvider>
+</div>
 `;
