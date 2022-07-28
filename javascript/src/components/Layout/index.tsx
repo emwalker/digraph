@@ -50,19 +50,17 @@ query LayoutQuery(
 
 const Layout = ({ alerts, children, view, match, router }: Props) => (
   <div className="layoutComponent">
-    <div>
-      <Header
-        location={match.location}
-        router={router}
-        view={view}
-        viewer={view.viewer}
-      />
-      <div className="clearfix">
-        <FlashMessages initialAlerts={alerts} />
-        { children }
-      </div>
-      <Footer />
+    <Header
+      location={match.location}
+      router={router}
+      view={view}
+      viewer={view.viewer}
+    />
+    <div className="clearfix">
+      <FlashMessages initialAlerts={alerts} />
+      { children }
     </div>
+    <Footer />
   </div>
 )
 

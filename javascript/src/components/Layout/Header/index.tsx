@@ -17,13 +17,11 @@ type Props = {
 
 export default ({ location, router, viewer, view }: Props) => (
   <div className="outerHeader clearfix d-flex">
-    <div style={{ width: '100' }}>
-      <DesktopNav
-        location={location}
-        router={router}
-        view={view}
-        viewer={viewer}
-      />
-    </div>
+    <DesktopNav
+      location={location}
+      router={router}
+      view={view}
+      viewer={viewer}
+    />
   </div>
 )
