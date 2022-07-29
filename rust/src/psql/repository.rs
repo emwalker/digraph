@@ -79,7 +79,7 @@ impl FetchWriteableRepositoriesForUser {
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&self.user_id)
-            .bind(&self.viewer.write_prefixes.to_vec())
+            .bind(&self.viewer.write_repos.to_vec())
             .fetch_all(pool)
             .await?;
 
@@ -118,7 +118,7 @@ impl Loader<String> for RepositoryLoader {
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&ids)
-            .bind(&self.viewer.read_prefixes.to_vec())
+            .bind(&self.viewer.read_repos.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
@@ -159,7 +159,7 @@ impl Loader<String> for RepositoryByNameLoader {
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&names)
-            .bind(&self.viewer.read_prefixes.to_vec())
+            .bind(&self.viewer.read_repos.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
@@ -190,7 +190,7 @@ impl Loader<String> for RepositoryByPrefixLoader {
         log::debug!(
             "batch load repos by id prefixes {:?} for users {:?}",
             prefixes,
-            self.viewer.read_prefixes
+            self.viewer.read_repos
         );
 
         let query = format!(
@@ -204,7 +204,7 @@ impl Loader<String> for RepositoryByPrefixLoader {
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&prefixes)
-            .bind(&self.viewer.read_prefixes.to_vec())
+            .bind(&self.viewer.read_repos.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
@@ -261,7 +261,7 @@ impl SelectRepository {
 
             let row = sqlx::query_as::<_, repository::Row>(&query)
                 .bind(repository_id)
-                .bind(&self.actor.write_prefixes.to_vec())
+                .bind(&self.actor.write_repos.to_vec())
                 .fetch_one(pool)
                 .await?;
 
@@ -275,7 +275,7 @@ impl SelectRepository {
             None
         };
 
-        let row = fetch_user(&self.actor.write_prefixes, &self.actor.user_id, pool).await?;
+        let row = fetch_user(&self.actor.write_repos, &self.actor.user_id, pool).await?;
 
         Ok(SelectRepositoryResult {
             actor: row,

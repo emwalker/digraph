@@ -43,6 +43,7 @@ envy = "0"
 futures = "0"
 geotime = { git = "https://github.com/emwalker/geotime", branch = "main" }
 getopts = "0"
+git2 = "0"
 itertools = "0"
 lazy_static = "1"
 log = "0"

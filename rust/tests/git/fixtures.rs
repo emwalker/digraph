@@ -1,14 +1,13 @@
 use async_trait::async_trait;
 use digraph::git::{
-    Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode, Link,
-    OnMatchingSynonym, Search, Topic, TreeBuilder, UpsertLink, UpsertLinkResult, UpsertTopic,
+    BatchUpdate, Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode,
+    Link, OnMatchingSynonym, Search, Topic, UpsertLink, UpsertLinkResult, UpsertTopic,
     UpsertTopicResult,
 };
 use digraph::http::{Fetch, Response};
 use digraph::prelude::*;
 use digraph::redis;
 use fs_extra::dir;
-use futures::executor::block_on;
 use scraper::html::Html;
 use std::env;
 use std::path::PathBuf;
@@ -55,8 +54,8 @@ impl Fixtures {
         }
     }
 
-    pub fn builder(&self) -> TreeBuilder {
-        self.git.treebuilder(IndexMode::Update)
+    pub fn update(&self) -> Result<BatchUpdate> {
+        self.git.update(IndexMode::Update)
     }
 
     pub fn copy(fixture_dirname: &str) -> Self {
@@ -81,7 +80,10 @@ impl Fixtures {
     where
         F: Fn(Link),
     {
-        let link = self.git.fetch_link(path).unwrap();
+        let link = self
+            .git
+            .fetch_link(path)
+            .unwrap_or_else(|| panic!("expected a link: {:?}", path));
         block(link);
     }
 
@@ -89,7 +91,10 @@ impl Fixtures {
     where
         F: Fn(Topic),
     {
-        let topic = self.git.fetch_topic(path).unwrap();
+        let topic = self
+            .git
+            .fetch_topic(path)
+            .unwrap_or_else(|| panic!("expected a topic: {:?}", path));
         block(topic);
     }
 
@@ -115,7 +120,7 @@ impl Fixtures {
         Ok(row.map(|m| RepoPath::from(&m.path)))
     }
 
-    fn update(&self) {
+    fn write(&self) {
         let options = dir::CopyOptions {
             overwrite: true,
             content_only: true,
@@ -148,7 +153,9 @@ impl Fixtures {
             title,
         };
 
-        block_on(request.call(self.builder(), &redis::Noop)).unwrap()
+        request
+            .call(self.update().unwrap(), &redis::Noop)
+            .expect("expected a link")
     }
 
     pub fn upsert_topic(
@@ -166,7 +173,7 @@ impl Fixtures {
             on_matching_synonym,
             repo: repo.to_owned(),
         }
-        .call(self.builder(), &redis::Noop)
+        .call(self.update().unwrap(), &redis::Noop)
     }
 }
 
@@ -193,7 +200,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root.clone(),
         }
-        .call(f.builder(), &redis::Noop)
+        .call(f.update().unwrap(), &redis::Noop)
         .unwrap();
         let climate_change = topic.unwrap().path();
 
@@ -215,9 +222,9 @@ mod tests {
             name: "Weather".to_owned(),
             repo: RepoPrefix::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(path),
-            parent_topic: root.clone(),
+            parent_topic: root,
         }
-        .call(f.builder(), &redis::Noop)
+        .call(f.update().unwrap(), &redis::Noop)
         .unwrap();
         let weather = topic.unwrap().path();
 
@@ -240,16 +247,16 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: climate_change.clone(),
         }
-        .call(f.builder(), &redis::Noop)
+        .call(f.update().unwrap(), &redis::Noop)
         .unwrap();
         let climate_change_weather = topic.unwrap().path();
 
         UpdateTopicParentTopics {
             actor: actor(),
-            parent_topic_paths: BTreeSet::from([climate_change.clone(), weather.clone()]),
+            parent_topic_paths: BTreeSet::from([climate_change, weather]),
             topic_path: climate_change_weather.clone(),
         }
-        .call(f.builder(), &redis::Noop)
+        .call(f.update().unwrap(), &redis::Noop)
         .unwrap();
 
         let url =
@@ -269,9 +276,9 @@ mod tests {
             &RepoPrefix::wiki(),
             &url,
             Some("Overview: Weather, Global Warming, and Climate Change".into()),
-            Some(climate_change_weather.inner.to_owned()),
+            Some(climate_change_weather.inner),
         );
 
-        f.update();
+        f.write();
     }
 }

@@ -309,14 +309,15 @@ impl SearchWithinTopic {
         }
 
         let mut topics = self.topic_intersection(client, fetch)?;
-        let filter = self.filter(client);
+        let filter = self.filter(client)?;
         let mut matches = BTreeSet::new();
 
         for topic in topics.drain() {
             for child in &topic.children {
                 let path = RepoPath::from(&child.path);
                 if child.kind == Kind::Link && filter.test(&child.path) {
-                    if let Some(object) = client.fetch(&path) {
+                    if let Some(link) = client.fetch_link(&path) {
+                        let object = Object::Link(link);
                         matches.insert(object.to_search_match(self.locale, &self.search));
                     }
                 }
@@ -332,17 +333,17 @@ impl SearchWithinTopic {
         })
     }
 
-    fn filter(&self, client: &Client) -> Filter {
+    fn filter(&self, client: &Client) -> Result<Filter> {
         let mut token_matches = HashSet::new();
 
         for prefix in &self.prefixes {
             let mut iter = self.search.tokens.iter();
 
             if let Some(token) = iter.next() {
-                let mut prefix_matches = client.search_token_prefix_matches(prefix, token);
+                let mut prefix_matches = client.search_token_prefix_matches(prefix, token)?;
 
                 for token in iter {
-                    let other = client.search_token_prefix_matches(prefix, token);
+                    let other = client.search_token_prefix_matches(prefix, token)?;
                     prefix_matches.retain(|e| other.contains(e));
                 }
 
@@ -354,10 +355,10 @@ impl SearchWithinTopic {
 
         let urls = self.url_paths();
 
-        Filter {
+        Ok(Filter {
             tokens: token_matches,
             urls,
-        }
+        })
     }
 
     fn topic_intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<Topic>>

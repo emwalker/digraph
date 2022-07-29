@@ -73,7 +73,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![repo.to_owned()],
+            prefixes: vec![repo],
             search,
             viewer: actor(),
         }

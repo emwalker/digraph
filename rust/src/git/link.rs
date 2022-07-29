@@ -9,7 +9,7 @@ use crate::http::{self, RepoUrl};
 use crate::prelude::*;
 
 use super::activity::TopicInfoList;
-use super::TreeBuilder;
+use super::BatchUpdate;
 
 pub struct DeleteLink {
     pub actor: Viewer,
@@ -22,7 +22,7 @@ pub struct DeleteLinkResult {
 }
 
 impl DeleteLink {
-    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<DeleteLinkResult>
+    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<DeleteLinkResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -52,7 +52,7 @@ impl DeleteLink {
 
         builder.remove_link(&self.link_path, &link)?;
         builder.add_change(&change)?;
-        builder.save(store)?;
+        builder.write(store)?;
 
         Ok(DeleteLinkResult {
             alerts: vec![],
@@ -102,7 +102,7 @@ pub struct UpdateLinkParentTopicsResult {
 impl UpdateLinkParentTopics {
     pub fn call<S>(
         &self,
-        mut builder: TreeBuilder,
+        mut builder: BatchUpdate,
         store: &S,
     ) -> Result<UpdateLinkParentTopicsResult>
     where
@@ -161,7 +161,7 @@ impl UpdateLinkParentTopics {
 
         builder.save_link(&link.path(), &link)?;
         builder.add_change(&change)?;
-        builder.save(store)?;
+        builder.write(store)?;
 
         Ok(UpdateLinkParentTopicsResult {
             alerts: vec![],
@@ -216,7 +216,7 @@ pub struct UpsertLinkResult {
 }
 
 impl UpsertLink {
-    pub async fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<UpsertLinkResult>
+    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<UpsertLinkResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -225,7 +225,7 @@ impl UpsertLink {
         let path = url.path(&self.repo);
         let date = Utc::now();
 
-        let (mut link, previous_title) = self.make_link(&builder, &url, &path).await?;
+        let (mut link, previous_title) = self.make_link(&builder, &url, &path)?;
         if let Some(title) = &self.title {
             link.metadata.title = title.clone();
         }
@@ -275,7 +275,7 @@ impl UpsertLink {
 
         builder.save_link(&path, &link)?;
         builder.add_change(&change)?;
-        builder.save(store)?;
+        builder.write(store)?;
 
         Ok(UpsertLinkResult {
             alerts: vec![],
@@ -309,9 +309,9 @@ impl UpsertLink {
         })
     }
 
-    async fn make_link(
+    fn make_link(
         &self,
-        builder: &TreeBuilder,
+        builder: &BatchUpdate,
         url: &RepoUrl,
         path: &RepoPath,
     ) -> Result<(Link, Option<String>)> {
@@ -325,7 +325,7 @@ impl UpsertLink {
         let title = if let Some(title) = &self.title {
             title.clone()
         } else {
-            let response = self.fetcher.fetch(url).await?;
+            let response = futures::executor::block_on(self.fetcher.fetch(url))?;
             response.title().unwrap_or_else(|| "Missing title".into())
         };
 

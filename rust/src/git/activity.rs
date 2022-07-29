@@ -6,7 +6,7 @@ use super::{Client, Link, Locale, RepoPath, Synonym, Topic};
 use crate::prelude::*;
 use crate::types::{random_id, TimerangePrefix};
 
-#[derive(Clone, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ChangeId(pub String);
 
 impl std::fmt::Display for ChangeId {
@@ -245,12 +245,24 @@ impl TopicInfoList {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
 pub struct LinkInfo {
     pub deleted: bool,
     pub path: String,
     pub title: String,
     pub url: String,
+}
+
+impl std::cmp::Ord for LinkInfo {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (&self.path, &self.url, &self.title).cmp(&(&other.path, &other.url, &other.title))
+    }
+}
+
+impl std::cmp::PartialOrd for LinkInfo {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl From<&Link> for LinkInfo {
@@ -732,7 +744,7 @@ impl UpsertLink {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UpsertTopic {
     pub actor_id: String,
@@ -1373,7 +1385,7 @@ mod tests {
                 added_parent_topics: TopicInfoList::from(&topic2),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topic_paths: BTreeSet::from([topic3.metadata.path.to_owned()]),
+                parent_topic_paths: BTreeSet::from([topic3.metadata.path]),
                 removed_parent_topics: TopicInfoList::new(),
                 updated_topic: TopicInfo::from(&topic1),
             });
@@ -1619,7 +1631,7 @@ mod tests {
                 actor_id: "2".to_owned(),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topics: BTreeSet::from([topic1.metadata.path.to_owned()]),
+                parent_topics: BTreeSet::from([topic1.metadata.path]),
                 previous_title: Some("Redis".to_owned()),
                 upserted_link: LinkInfo::from(&link),
                 add_parent_topic: None,

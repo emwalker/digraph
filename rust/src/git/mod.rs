@@ -5,6 +5,7 @@ use std::collections::{BTreeSet, HashSet};
 pub mod activity;
 mod checks;
 mod client;
+mod core;
 mod index;
 mod link;
 mod repository;
@@ -141,7 +142,7 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, builder: &TreeBuilder) -> Option<Topic> {
+    pub fn fetch(&self, builder: &BatchUpdate) -> Option<Topic> {
         builder.fetch_topic(&RepoPath::from(&self.path))
     }
 }
@@ -491,47 +492,17 @@ mod tests {
         assert!(matches!(result, Err(Error::Repo(_))));
 
         let (root, path) = parse_path("../../wiki/objects/12/34/5678/object.yaml").unwrap();
-        assert_eq!(root.inner, PathBuf::from("../.."));
+        assert_eq!(root.path, PathBuf::from("../.."));
         assert_eq!(path.inner, "/wiki/12345678".to_owned());
 
         let (root, path) = parse_path(
             "../../wiki/objects/q-/ZZ/meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ/object.yaml",
         )
         .unwrap();
-        assert_eq!(root.inner, PathBuf::from("../.."));
+        assert_eq!(root.path, PathBuf::from("../.."));
         assert_eq!(
             path.inner,
             "/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ".to_owned(),
-        );
-    }
-
-    #[test]
-    fn data_root_file_path() {
-        let root = DataRoot::new(PathBuf::from("../.."));
-
-        assert!(matches!(
-            root.object_filename(&RepoPath::from("1234")),
-            Err(Error::Repo(_))
-        ));
-        assert!(matches!(
-            root.object_filename(&RepoPath::from("wiki/123456")),
-            Err(Error::Repo(_))
-        ));
-        assert!(matches!(
-            root.object_filename(&RepoPath::from("/wiki/1234")),
-            Err(Error::Repo(_))
-        ));
-
-        assert_eq!(
-            root.object_filename(&RepoPath::from("/wiki/123456"))
-                .unwrap(),
-            PathBuf::from("../../wiki/objects/12/34/56/object.yaml")
-        );
-
-        assert_eq!(
-            root.object_filename(&RepoPath::from("/with-dash/123456"))
-                .unwrap(),
-            PathBuf::from("../../with-dash/objects/12/34/56/object.yaml")
         );
     }
 

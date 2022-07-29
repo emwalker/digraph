@@ -8,7 +8,7 @@ mod topic_references {
     #[test]
     fn no_leaks() {
         let f = Fixtures::copy("simple");
-        let other = f.git.root.inner.join("other");
+        let other = f.git.root.path.join("other");
         fs::create_dir_all(&other).expect("unable create other repo");
 
         assert!(f.no_leaks().unwrap());

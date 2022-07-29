@@ -56,7 +56,7 @@ pub enum Locale {
     ZH,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Ord, PartialOrd)]
 #[allow(dead_code)]
 pub struct RepoPrefix {
     inner: String,
@@ -128,6 +128,15 @@ impl From<&Vec<String>> for RepoList {
                 .map(RepoPrefix::from)
                 .collect::<Vec<RepoPrefix>>(),
         )
+    }
+}
+
+impl IntoIterator for RepoList {
+    type Item = RepoPrefix;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 
@@ -395,21 +404,21 @@ pub fn sha256_base64(normalized: &str) -> String {
 
 #[derive(Clone, Debug)]
 pub struct Viewer {
-    pub read_prefixes: RepoList,
+    pub read_repos: RepoList,
     pub session_id: Option<String>,
     pub super_user: bool,
     pub user_id: String,
-    pub write_prefixes: RepoList,
+    pub write_repos: RepoList,
 }
 
 impl Viewer {
     pub fn super_user() -> Self {
         Self {
-            read_prefixes: RepoList(vec![]),
+            read_repos: RepoList(vec![]),
             session_id: None,
             super_user: true,
             user_id: "".to_owned(),
-            write_prefixes: RepoList(vec![]),
+            write_repos: RepoList(vec![]),
         }
     }
 
@@ -426,8 +435,8 @@ impl Viewer {
 
         let user_id = GUEST_ID.to_string();
         Viewer {
-            write_prefixes: RepoList(vec![]),
-            read_prefixes: RepoList(vec![RepoPrefix::wiki()]),
+            write_repos: RepoList(vec![]),
+            read_repos: RepoList(vec![RepoPrefix::wiki()]),
             session_id: None,
             super_user: false,
             user_id,
@@ -438,14 +447,14 @@ impl Viewer {
         if self.super_user {
             return true;
         }
-        self.read_prefixes.include(path)
+        self.read_repos.include(path)
     }
 
     pub fn can_update(&self, path: &RepoPath) -> bool {
         if self.super_user {
             return true;
         }
-        self.write_prefixes.include(path)
+        self.write_repos.include(path)
     }
 
     pub fn is_guest(&self) -> bool {
@@ -520,8 +529,8 @@ mod tests {
 
             let prefixes = RepoList(vec![RepoPrefix::wiki()]);
             let viewer = Viewer {
-                write_prefixes: prefixes.to_owned(),
-                read_prefixes: prefixes,
+                write_repos: prefixes.to_owned(),
+                read_repos: prefixes,
                 session_id: Some("1".to_owned()),
                 super_user: false,
                 user_id: "2".to_owned(),

@@ -261,6 +261,6 @@ impl Topic {
         }
 
         // TODO: Narrow down write permissions to a specific topics and their subtopics
-        Ok(repo.viewer.write_prefixes.include(&self.path))
+        Ok(repo.viewer.write_repos.include(&self.path))
     }
 }

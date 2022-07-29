@@ -183,7 +183,7 @@ impl DeleteAccount {
         }
 
         log::warn!("deleting account {}", self.user_id);
-        let row = fetch_user(&self.actor.write_prefixes, &self.user_id, pool).await?;
+        let row = fetch_user(&self.actor.write_repos, &self.user_id, pool).await?;
 
         let mut tx = pool.begin().await?;
 

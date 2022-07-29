@@ -98,8 +98,8 @@ impl State {
                             log::info!("found user and session in database: {}", user_id);
                             let prefixes = RepoList::from(prefixes);
                             Viewer {
-                                write_prefixes: prefixes.clone(),
-                                read_prefixes: prefixes,
+                                write_repos: prefixes.clone(),
+                                read_repos: prefixes,
                                 session_id: Some(session_id),
                                 super_user: false,
                                 user_id,

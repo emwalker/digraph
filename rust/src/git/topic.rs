@@ -1,8 +1,8 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
-    activity, Client, Kind, Link, Object, ParentTopic, SaveChangesForPrefix, Synonym, SynonymEntry,
-    SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, TreeBuilder, API_VERSION,
+    activity, BatchUpdate, Client, Kind, Link, Object, ParentTopic, SaveChangesForPrefix, Synonym,
+    SynonymEntry, SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use crate::prelude::*;
 
@@ -17,7 +17,7 @@ pub struct DeleteTopicResult {
 }
 
 impl DeleteTopic {
-    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<DeleteTopicResult>
+    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<DeleteTopicResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -92,7 +92,7 @@ impl DeleteTopic {
 
         builder.remove_topic(&self.topic_path, &topic)?;
         builder.add_change(&change)?;
-        builder.save(store)?;
+        builder.write(store)?;
 
         Ok(DeleteTopicResult {
             alerts: vec![],
@@ -148,7 +148,7 @@ pub struct RemoveTopicTimerangeResult {
 }
 
 impl RemoveTopicTimerange {
-    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<RemoveTopicTimerangeResult>
+    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<RemoveTopicTimerangeResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -163,7 +163,7 @@ impl RemoveTopicTimerange {
         topic.metadata.timerange = None;
         builder.save_topic(&self.topic_path, &topic)?;
         builder.add_change(&self.change(&topic, previous_timerange))?;
-        builder.save(store)?;
+        builder.write(store)?;
 
         Ok(RemoveTopicTimerangeResult {
             alerts: vec![],
@@ -202,7 +202,7 @@ pub struct UpdateTopicParentTopicsResult {
 impl UpdateTopicParentTopics {
     pub fn call<S>(
         &self,
-        mut builder: TreeBuilder,
+        mut builder: BatchUpdate,
         store: &S,
     ) -> Result<UpdateTopicParentTopicsResult>
     where
@@ -265,7 +265,7 @@ impl UpdateTopicParentTopics {
             builder.save_topic(&topic.path(), &topic)?;
         }
         builder.add_change(&change)?;
-        builder.save(store)?;
+        builder.write(store)?;
 
         Ok(UpdateTopicParentTopicsResult {
             alerts: vec![],
@@ -295,7 +295,7 @@ impl UpdateTopicParentTopics {
         })
     }
 
-    fn validate(&self, builder: &TreeBuilder) -> Result<()> {
+    fn validate(&self, builder: &BatchUpdate) -> Result<()> {
         if self.parent_topic_paths.is_empty() {
             return Err(Error::Repo(
                 "at least one parent topic must be provided".into(),
@@ -327,7 +327,7 @@ pub struct UpdateTopicSynonymsResult {
 }
 
 impl UpdateTopicSynonyms {
-    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<UpdateTopicSynonymsResult>
+    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<UpdateTopicSynonymsResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -389,7 +389,7 @@ impl UpdateTopicSynonyms {
         topic.metadata.synonyms = synonyms;
         builder.save_topic(&self.topic_path, &topic)?;
         builder.add_change(&self.change(&topic, &added, &removed))?;
-        builder.save(store)?;
+        builder.write(store)?;
 
         Ok(UpdateTopicSynonymsResult {
             alerts: vec![],
@@ -443,7 +443,7 @@ pub struct UpsertTopicResult {
 }
 
 impl UpsertTopic {
-    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<UpsertTopicResult>
+    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<UpsertTopicResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -556,7 +556,7 @@ impl UpsertTopic {
         builder.save_topic(&path, &child)?;
         builder.save_topic(&parent.path(), &parent)?;
         builder.add_change(&change)?;
-        builder.save(store)?;
+        builder.write(store)?;
 
         Ok(UpsertTopicResult {
             alerts: vec![],
@@ -611,7 +611,7 @@ impl UpsertTopic {
         (path, topic, parent_topics)
     }
 
-    fn fetch_parent(&self, builder: &TreeBuilder) -> Option<Topic> {
+    fn fetch_parent(&self, builder: &BatchUpdate) -> Option<Topic> {
         builder.fetch_topic(&self.parent_topic)
     }
 }
@@ -629,7 +629,7 @@ pub struct UpsertTopicTimerangeResult {
 }
 
 impl UpsertTopicTimerange {
-    pub fn call<S>(&self, mut builder: TreeBuilder, store: &S) -> Result<UpsertTopicTimerangeResult>
+    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<UpsertTopicTimerangeResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -644,7 +644,7 @@ impl UpsertTopicTimerange {
         topic.metadata.timerange = Some(self.timerange.clone());
         builder.save_topic(&self.topic_path, &topic)?;
         builder.add_change(&self.change(&topic, previous_timerange))?;
-        builder.save(store)?;
+        builder.write(store)?;
 
         Ok(UpsertTopicTimerangeResult {
             alerts: vec![],

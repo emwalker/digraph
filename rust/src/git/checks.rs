@@ -10,8 +10,8 @@ use crate::types::RepoPrefix;
 pub struct LeakedData;
 
 impl LeakedData {
-    pub fn call(&self, git: &Client) -> Result<Vec<(RepoPrefix, String)>> {
-        let root = git.root.inner.to_owned();
+    pub fn call(&self, client: &Client) -> Result<Vec<(RepoPrefix, String)>> {
+        let root = client.root.path.to_owned();
         let repos = self.repos(&root)?;
         env::set_current_dir(&root)?;
 

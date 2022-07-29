@@ -97,12 +97,12 @@ impl Loader<String> for LinkLoader {
 #[allow(dead_code)]
 pub struct ObjectLoader {
     viewer: Viewer,
-    git: git::Client,
+    client: git::Client,
 }
 
 impl ObjectLoader {
-    pub fn new(viewer: Viewer, git: git::Client) -> Self {
-        Self { viewer, git }
+    pub fn new(viewer: Viewer, client: git::Client) -> Self {
+        Self { viewer, client }
     }
 }
 
@@ -116,7 +116,7 @@ impl Loader<String> for ObjectLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for path in paths {
-            if let Some(object) = &self.git.fetch(&RepoPath::from(path)) {
+            if let Some(object) = &self.client.fetch(&RepoPath::from(path)) {
                 map.insert(path.to_owned(), object.clone());
             }
         }

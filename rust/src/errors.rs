@@ -31,6 +31,10 @@ quick_error! {
             from()
         }
 
+        Git2(err: String) {
+            from(err: git2::Error) -> (format!("{}", err))
+        }
+
         HeaderValue(err: String) {
             from(err: actix_web::http::header::ToStrError) -> (format!("{:?}", err))
         }

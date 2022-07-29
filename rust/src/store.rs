@@ -114,8 +114,8 @@ impl Store {
         }
     }
 
-    fn builder(&self) -> git::TreeBuilder {
-        self.git.treebuilder(git::IndexMode::Update)
+    fn update(&self) -> Result<git::BatchUpdate> {
+        self.git.update(git::IndexMode::Update)
     }
 
     async fn flat_topics(&self, paths: &[RepoPath]) -> Result<Vec<graphql::Topic>> {
@@ -184,7 +184,7 @@ impl Store {
             actor: self.viewer.clone(),
             link_path: link_path.clone(),
         }
-        .call(self.builder(), &self.redis)
+        .call(self.update()?, &self.redis)
     }
 
     pub async fn delete_session(&self, session_id: String) -> Result<psql::DeleteSessionResult> {
@@ -198,7 +198,7 @@ impl Store {
             actor: self.viewer.clone(),
             topic_path: path.clone(),
         }
-        .call(self.builder(), &self.redis)
+        .call(self.update()?, &self.redis)
     }
 
     pub async fn remove_topic_timerange(
@@ -209,7 +209,7 @@ impl Store {
             actor: self.viewer.clone(),
             topic_path: topic_path.clone(),
         }
-        .call(self.builder(), &self.redis)
+        .call(self.update()?, &self.redis)
     }
 
     pub async fn link(&self, path: &RepoPath) -> Result<Option<graphql::Link>> {
@@ -409,7 +409,7 @@ impl Store {
                 .map(RepoPath::from)
                 .collect::<BTreeSet<RepoPath>>(),
         }
-        .call(self.builder(), &self.redis)
+        .call(self.update()?, &self.redis)
     }
 
     pub async fn update_topic_synonyms(
@@ -421,7 +421,7 @@ impl Store {
             synonyms: input.synonyms.iter().map(git::Synonym::from).collect_vec(),
             topic_path: RepoPath::from(&input.topic_path),
         }
-        .call(self.builder(), &self.redis)
+        .call(self.update()?, &self.redis)
     }
 
     pub async fn upsert_link(
@@ -440,8 +440,7 @@ impl Store {
             url: input.url,
             fetcher: Box::new(http::Fetcher),
         }
-        .call(self.builder(), &self.redis)
-        .await
+        .call(self.update()?, &self.redis)
     }
 
     pub async fn update_topic_parent_topics(
@@ -457,7 +456,7 @@ impl Store {
                 .map(|p| p.to_owned())
                 .collect::<BTreeSet<RepoPath>>(),
         }
-        .call(self.builder(), &self.redis)
+        .call(self.update()?, &self.redis)
     }
 
     pub async fn upsert_session(
@@ -479,7 +478,7 @@ impl Store {
             repo: RepoPrefix::from(&input.repo_prefix),
             parent_topic: RepoPath::from(&input.parent_topic_path),
         }
-        .call(self.builder(), &self.redis)
+        .call(self.update()?, &self.redis)
     }
 
     pub async fn upsert_topic_timerange(
@@ -496,7 +495,7 @@ impl Store {
             },
             topic_path: RepoPath::from(&input.topic_path),
         }
-        .call(self.builder(), &self.redis)
+        .call(self.update()?, &self.redis)
     }
 
     pub async fn user(&self, id: String) -> Result<Option<graphql::User>> {

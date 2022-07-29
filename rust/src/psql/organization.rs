@@ -57,7 +57,7 @@ impl Loader<String> for OrganizationLoader {
             where o.id = any($1::uuid[]) and r.prefix = any($2::text[])",
         )
         .bind(&ids)
-        .bind(&self.viewer.read_prefixes.to_vec())
+        .bind(&self.viewer.read_repos.to_vec())
         .fetch_all(&self.pool)
         .await
         .map_err(Error::from)?;
@@ -100,7 +100,7 @@ impl Loader<String> for OrganizationByLoginLoader {
             where o.login = any($1) and r.prefix = any($2::text[])",
         )
         .bind(&logins)
-        .bind(&self.viewer.read_prefixes.to_vec())
+        .bind(&self.viewer.read_repos.to_vec())
         .fetch_all(&self.pool)
         .await
         .map_err(Error::from)?;
