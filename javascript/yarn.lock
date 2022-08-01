@@ -3033,6 +3033,13 @@ abab@^2.0.3, abab@^2.0.5:
   resolved "https://registry.yarnpkg.com/abab/-/abab-2.0.6.tgz#41b80f2c871d19686216b82309231cfd3cb3d291"
   integrity sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==
 
+abort-controller@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/abort-controller/-/abort-controller-3.0.0.tgz#eaf54d53b62bae4138e809ca225c8439a6efb392"
+  integrity sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==
+  dependencies:
+    event-target-shim "^5.0.0"
+
 accepts@~1.3.4, accepts@~1.3.5:
   version "1.3.7"
   resolved "https://registry.yarnpkg.com/accepts/-/accepts-1.3.7.tgz"
@@ -5414,7 +5421,7 @@ dom-serializer@^1.0.1, dom-serializer@~1.2.0:
     domhandler "^4.0.0"
     entities "^2.0.0"
 
-domain-browser@^4.19.0:
+domain-browser@^4.22.0:
   version "4.22.0"
   resolved "https://registry.yarnpkg.com/domain-browser/-/domain-browser-4.22.0.tgz#6ddd34220ec281f9a65d3386d267ddd35c491f9f"
   integrity sha512-IGBwjF7tNk3cwypFNH/7bfzBcgSCbaMOD3GsaY1AU/JRrnHnYgEM0+9kQt52iZxjNsjBtJYtao146V+f8jFZNw==
@@ -6170,6 +6177,11 @@ event-stream@=3.3.4:
     split "0.3"
     stream-combiner "~0.0.4"
     through "~2.3.1"
+
+event-target-shim@^5.0.0:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/event-target-shim/-/event-target-shim-5.0.1.tgz#5d4d3ebdf9583d63a5333ce2deb7480ab2b05789"
+  integrity sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==
 
 eventemitter3@^4.0.0:
   version "4.0.7"
@@ -10057,10 +10069,10 @@ node-notifier@^8.0.0:
     uuid "^8.3.0"
     which "^2.0.2"
 
-node-polyfill-webpack-plugin@^1.1.4:
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/node-polyfill-webpack-plugin/-/node-polyfill-webpack-plugin-1.1.4.tgz#56bfa4d16e17addb9d6b1ef3d04e790c401f5f1d"
-  integrity sha512-Z0XTKj1wRWO8o/Vjobsw5iOJCN+Sua3EZEUc2Ziy9CyVvmHKu6o+t4gUH9GOE0czyPR94LI6ZCV/PpcM8b5yow==
+node-polyfill-webpack-plugin@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/node-polyfill-webpack-plugin/-/node-polyfill-webpack-plugin-2.0.1.tgz#141d86f177103a8517c71d99b7c6a46edbb1bb58"
+  integrity sha512-ZUMiCnZkP1LF0Th2caY6J/eKKoA0TefpoVa68m/LQU1I/mE8rGt4fNYGgNuCcK+aG8P8P43nbeJ2RqJMOL/Y1A==
   dependencies:
     assert "^2.0.0"
     browserify-zlib "^0.2.0"
@@ -10068,7 +10080,7 @@ node-polyfill-webpack-plugin@^1.1.4:
     console-browserify "^1.2.0"
     constants-browserify "^1.0.0"
     crypto-browserify "^3.12.0"
-    domain-browser "^4.19.0"
+    domain-browser "^4.22.0"
     events "^3.3.0"
     filter-obj "^2.0.2"
     https-browserify "^1.0.0"
@@ -10077,12 +10089,13 @@ node-polyfill-webpack-plugin@^1.1.4:
     process "^0.11.10"
     punycode "^2.1.1"
     querystring-es3 "^0.2.1"
-    readable-stream "^3.6.0"
+    readable-stream "^4.0.0"
     stream-browserify "^3.0.0"
     stream-http "^3.2.0"
     string_decoder "^1.3.0"
     timers-browserify "^2.0.12"
     tty-browserify "^0.0.1"
+    type-fest "^2.14.0"
     url "^0.11.0"
     util "^0.12.4"
     vm-browserify "^1.1.2"
@@ -12238,6 +12251,13 @@ readable-stream@^3.0.6, readable-stream@^3.5.0, readable-stream@^3.6.0:
     string_decoder "^1.1.1"
     util-deprecate "^1.0.1"
 
+readable-stream@^4.0.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-4.1.0.tgz#280d0a29f559d3fb684a277254e02b6f61ae0631"
+  integrity sha512-sVisi3+P2lJ2t0BPbpK629j8wRW06yKGJUcaLAGXPAUhyUxVJm7VsCTit1PFgT4JHUDMrGNR+ZjSKpzGaRF3zw==
+  dependencies:
+    abort-controller "^3.0.0"
+
 readdirp@~3.6.0:
   version "3.6.0"
   resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-3.6.0.tgz#74a370bd857116e245b29cc97340cd431a02a6c7"
@@ -14063,6 +14083,11 @@ type-fest@^0.8.1:
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.8.1.tgz#09e249ebde851d3b1e48d27c105444667f17b83d"
   integrity sha512-4dbzIzqvjtgiM5rw1k5rEHtBANKmdudhGyBEajN01fEyhaAIhsoKNy6y7+IN93IfpFtwY9iqi7kD+xwKhQsNJA==
+
+type-fest@^2.14.0:
+  version "2.18.0"
+  resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-2.18.0.tgz#fdef3a74e0a9e68ebe46054836650fb91ac3881e"
+  integrity sha512-pRS+/yrW5TjPPHNOvxhbNZexr2bS63WjrMU8a+VzEBhUi9Tz1pZeD+vQz3ut0svZ46P+SRqMEPnJmk2XnvNzTw==
 
 type-is@~1.6.18:
   version "1.6.18"
