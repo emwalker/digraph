@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
 use digraph::git::{
-    FetchTopicLiveSearch, FetchTopicLiveSearchResult, Kind, Object, Search, SearchMatch,
-    SearchWithinTopic, SearchWithinTopicResult, SortKey,
+    FetchTopicLiveSearch, FetchTopicLiveSearchResult, FindMatches, FindMatchesResult, Kind, Object,
+    Search, SearchMatch, SortKey,
 };
 use digraph::prelude::WIKI_ROOT_TOPIC_PATH;
 use digraph::prelude::*;
@@ -43,7 +43,7 @@ mod fetch_topic_live_search {
     fn indexing_works() {
         let f = Fixtures::copy("simple");
         let repo = RepoPrefix::wiki();
-        let parent = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
+        let parent = PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
         let search = Search::parse("clim chan soc").unwrap();
 
         let FetchTopicLiveSearchResult {
@@ -90,23 +90,29 @@ mod fetch_topic_live_search {
 }
 
 #[cfg(test)]
-mod search_within_topic {
+mod fetch_matches {
     use digraph::git::Client;
-    use digraph::types::DownSet;
+    use digraph::types::{Downset, ReadPath, Timespec};
     use std::collections::HashSet;
+
+    use crate::git::valid_url;
 
     use super::*;
 
-    struct FetchDownSet(Client);
+    struct FetchDownset(Client);
 
-    impl DownSet for FetchDownSet {
-        fn transitive_closure(&self, topic_paths: &[&RepoPath]) -> Result<HashSet<String>> {
+    impl Downset for FetchDownset {
+        fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<String>> {
+            if topic_paths.is_empty() {
+                return Ok(HashSet::new());
+            }
+
             let (head, tail) = topic_paths.split_at(1);
             match head.get(0) {
                 Some(path) => {
-                    let mut set = self.down_set(path);
+                    let mut set = self.downset(path);
                     for other_path in tail {
-                        let other = self.down_set(other_path);
+                        let other = self.downset(other_path);
                         set.retain(|path| other.contains(path));
                     }
                     Ok(set)
@@ -116,16 +122,13 @@ mod search_within_topic {
             }
         }
 
-        fn down_set(&self, path: &RepoPath) -> HashSet<String> {
-            self.0
-                .topic_down_set(path)
-                .map(|topic| topic.metadata.path)
-                .collect::<HashSet<String>>()
+        fn downset(&self, path: &ReadPath) -> HashSet<String> {
+            self.0.downset(path).collect::<HashSet<String>>()
         }
     }
 
-    fn root() -> RepoPath {
-        RepoPath::from(WIKI_ROOT_TOPIC_PATH)
+    fn root() -> PathSpec {
+        PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap()
     }
 
     fn count(kind: Kind, matches: &BTreeSet<SearchMatch>) -> usize {
@@ -140,21 +143,23 @@ mod search_within_topic {
 
     fn search(
         f: &Fixtures,
-        topic_path: &RepoPath,
+        topic_path: &PathSpec,
         input: &str,
         recursive: bool,
     ) -> BTreeSet<SearchMatch> {
-        let fetcher = FetchDownSet(f.git.clone());
+        let fetcher = FetchDownset(f.git.clone());
         let search = Search::parse(input).unwrap();
+        let viewer = actor();
 
-        let SearchWithinTopicResult { matches } = SearchWithinTopic {
+        let FindMatchesResult { matches } = FindMatches {
             limit: 100,
             locale: Locale::EN,
-            prefixes: vec![RepoPrefix::wiki()],
+            repos: viewer.read_repos.to_owned(),
             recursive,
             search,
+            timespec: Timespec,
             topic_path: topic_path.to_owned(),
-            viewer: actor(),
+            viewer,
         }
         .call(&f.git, &fetcher)
         .unwrap();
@@ -230,7 +235,7 @@ mod search_within_topic {
     fn result_size_and_order() {
         let f = Fixtures::copy("simple");
 
-        let fetcher = FetchDownSet(f.git.clone());
+        let fetcher = FetchDownset(f.git.clone());
         let root = root();
         let climate_change = f.topic_path("Climate change and weather").unwrap().unwrap();
         let query = format!("in:{}", climate_change);
@@ -238,12 +243,13 @@ mod search_within_topic {
 
         assert!(search.urls.is_empty());
 
-        let SearchWithinTopicResult { matches } = SearchWithinTopic {
+        let FindMatchesResult { matches } = FindMatches {
             limit: 3,
             locale: Locale::EN,
-            prefixes: vec![root.repo.to_owned()],
             recursive: true,
+            repos: RepoList::from(&vec![root.repo.to_owned()]),
             search,
+            timespec: Timespec,
             topic_path: root,
             viewer: actor(),
         }
@@ -282,5 +288,29 @@ mod search_within_topic {
         );
         assert_eq!(count(Kind::Topic, &matches), 0);
         assert_eq!(count(Kind::Link, &matches), 1);
+    }
+
+    #[test]
+    fn search_works_across_prefixes() {
+        let f = Fixtures::copy("simple");
+        let repo = RepoPrefix::from("/other/");
+
+        let result = f.upsert_link(&repo, &valid_url(), Some("Other repo".to_owned()), None);
+        assert_eq!(result.link.unwrap().path().unwrap().repo, repo);
+
+        let matches = search(&f, &root(), "other repo", true);
+        assert!(!matches.is_empty());
+        let row = matches.iter().next().unwrap();
+
+        let SearchMatch { sort_key, object } = row;
+
+        assert_eq!(
+            sort_key,
+            &SortKey(Kind::Link, false, "Other repo".to_owned())
+        );
+
+        if let Object::Link(link) = &object {
+            assert_eq!(link.metadata.title, "Other repo");
+        }
     }
 }

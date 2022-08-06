@@ -15,16 +15,16 @@ use digraph::git::{
 };
 use digraph::prelude::*;
 use digraph::redis;
-use digraph::types::{sha256_base64, Timerange, TimerangePrefixFormat};
+use digraph::types::{sha256_base64, Timerange, TimerangePrefixFormat, Timespec};
 
 struct Opts {
     root: PathBuf,
 }
 
-fn sha256_path(login: &str, id: &str) -> RepoPath {
+fn sha256_path(login: &str, id: &str) -> Result<PathSpec> {
     let id = sha256_base64(id);
     let path = format!("/{}/{}", login, id);
-    RepoPath::from(&path)
+    PathSpec::try_from(&path)
 }
 
 fn parse_args() -> Opts {
@@ -91,10 +91,12 @@ struct ParentTopicRow {
     name: String,
 }
 
-impl From<&ParentTopicRow> for ParentTopic {
-    fn from(row: &ParentTopicRow) -> Self {
-        let path = sha256_path(&row.login, &row.id);
-        Self { path: path.inner }
+impl TryFrom<&ParentTopicRow> for ParentTopic {
+    type Error = Error;
+
+    fn try_from(row: &ParentTopicRow) -> Result<Self> {
+        let path = sha256_path(&row.login, &row.id)?;
+        Ok(Self { path: path.inner })
     }
 }
 
@@ -107,15 +109,17 @@ struct LinkMetadataRow {
     url: String,
 }
 
-impl From<&LinkMetadataRow> for LinkMetadata {
-    fn from(row: &LinkMetadataRow) -> Self {
-        let path = sha256_path(&row.login, &row.url);
-        Self {
+impl TryFrom<&LinkMetadataRow> for LinkMetadata {
+    type Error = Error;
+
+    fn try_from(row: &LinkMetadataRow) -> Result<Self> {
+        let path = sha256_path(&row.login, &row.url)?;
+        Ok(Self {
             added: row.added,
             path: path.inner,
             title: row.title.clone(),
             url: row.url.clone(),
-        }
+        })
     }
 }
 
@@ -130,19 +134,21 @@ struct TopicChildRow {
     url: String,
 }
 
-impl From<&TopicChildRow> for TopicChild {
-    fn from(row: &TopicChildRow) -> Self {
+impl TryFrom<&TopicChildRow> for TopicChild {
+    type Error = Error;
+
+    fn try_from(row: &TopicChildRow) -> Result<Self> {
         let path = match row.kind.as_str() {
-            "Link" => sha256_path(&row.login, &row.url),
-            "Topic" => sha256_path(&row.login, &row.id),
-            _ => sha256_path(&row.login, &row.id),
+            "Link" => sha256_path(&row.login, &row.url)?,
+            "Topic" => sha256_path(&row.login, &row.id)?,
+            _ => sha256_path(&row.login, &row.id)?,
         };
 
-        Self {
+        Ok(Self {
             added: row.added,
             kind: Kind::from(&row.kind).unwrap(),
             path: path.inner,
-        }
+        })
     }
 }
 
@@ -168,7 +174,7 @@ async fn save_topics(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
     .await?;
 
     for meta in &rows {
-        let topic_path = sha256_path(&meta.login, &meta.id);
+        let topic_path = sha256_path(&meta.login, &meta.id)?;
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
                 o.login,
@@ -254,8 +260,14 @@ async fn save_topics(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
                 synonyms: synonyms.iter().map(Synonym::from).collect(),
                 timerange,
             },
-            parent_topics: parent_topics.iter().map(ParentTopic::from).collect(),
-            children: children.iter().map(TopicChild::from).collect(),
+            parent_topics: parent_topics
+                .iter()
+                .map(ParentTopic::try_from)
+                .collect::<Result<BTreeSet<ParentTopic>>>()?,
+            children: children
+                .iter()
+                .map(TopicChild::try_from)
+                .collect::<Result<BTreeSet<TopicChild>>>()?,
         };
 
         let mut child_links = vec![];
@@ -273,7 +285,7 @@ async fn save_topics(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
 
             match kind.as_str() {
                 "Topic" => {
-                    let path = sha256_path(&login, &id);
+                    let path = sha256_path(&login, &id)?;
                     child_topics.push(activity::TopicInfo::from((
                         Locale::EN,
                         name.to_owned(),
@@ -281,7 +293,7 @@ async fn save_topics(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
                     )));
                 }
                 "Link" => {
-                    let path = sha256_path(&login, &url);
+                    let path = sha256_path(&login, &url)?;
                     child_links.push(activity::LinkInfo {
                         title: name.to_owned(),
                         url: url.to_owned(),
@@ -295,7 +307,7 @@ async fn save_topics(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
 
         let mut parents = vec![];
         for topic in &parent_topics {
-            let path = sha256_path(&topic.login, &topic.id);
+            let path = sha256_path(&topic.login, &topic.id)?;
             parents.push(activity::TopicInfo::from((
                 Locale::EN,
                 topic.name.to_owned(),
@@ -313,7 +325,7 @@ async fn save_topics(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
             parent_topics: activity::TopicInfoList::from(&parents),
         });
 
-        builder.save_topic(&topic.path(), &topic)?;
+        builder.save_topic(&topic.path()?, &topic)?;
         builder.add_change(&change)?;
     }
 
@@ -357,16 +369,16 @@ async fn save_links(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
 
         let link = Link {
             api_version: API_VERSION.to_string(),
-            metadata: LinkMetadata::from(&meta),
+            metadata: LinkMetadata::try_from(&meta)?,
             parent_topics: parent_topics
                 .iter()
-                .map(ParentTopic::from)
-                .collect::<BTreeSet<ParentTopic>>(),
+                .map(ParentTopic::try_from)
+                .collect::<Result<BTreeSet<ParentTopic>>>()?,
         };
 
         let mut topics = BTreeSet::new();
         for topic in parent_topics {
-            let path = sha256_path(&topic.login, &topic.id);
+            let path = sha256_path(&topic.login, &topic.id)?;
             topics.insert(activity::TopicInfo::from((
                 Locale::EN,
                 topic.name.to_owned(),
@@ -382,7 +394,7 @@ async fn save_links(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
             parent_topics: activity::TopicInfoList::from(&topics),
         });
 
-        builder.save_link(&link.path(), &link)?;
+        builder.save_link(&link.path()?, &link)?;
         builder.add_change(&change)?;
     }
 
@@ -400,7 +412,7 @@ async fn main() -> Result<()> {
         return Err(Error::NotFound(format!("{:?}", opts.root)));
     }
     let root = DataRoot::new(opts.root);
-    let client = Client::new(&Viewer::super_user(), &root);
+    let client = Client::new(&Viewer::super_user(), &root, Timespec);
     let mut builder = client.update(IndexMode::Replace)?;
 
     save_topics(&mut builder, &pool).await?;

@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use super::{Client, Link, Locale, RepoPath, Synonym, Topic};
+use super::{Client, Link, Locale, PathSpec, Synonym, Topic};
 use crate::prelude::*;
 use crate::types::{random_id, TimerangePrefix};
 
@@ -140,8 +140,8 @@ impl TopicInfo {
         "[missing topic]".to_owned()
     }
 
-    fn path(&self) -> RepoPath {
-        RepoPath::from(&self.path)
+    fn path(&self) -> Result<PathSpec> {
+        PathSpec::try_from(&self.path)
     }
 
     fn mark_deleted(&mut self, path: &String) {
@@ -277,8 +277,8 @@ impl From<&Link> for LinkInfo {
 }
 
 impl LinkInfo {
-    fn path(&self) -> RepoPath {
-        RepoPath::from(&self.path)
+    fn path(&self) -> Result<PathSpec> {
+        PathSpec::try_from(&self.path)
     }
 
     fn mark_deleted(&mut self, path: &String) {
@@ -411,7 +411,7 @@ impl Change {
         }
     }
 
-    pub fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&RepoPath>) -> String {
+    pub fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&PathSpec>) -> String {
         use crate::git::activity::markdown::Markdown;
         match self {
             Self::DeleteLink(inner) => inner.markdown(locale, actor_name, context),
@@ -428,7 +428,7 @@ impl Change {
         }
     }
 
-    pub fn paths(&self) -> HashSet<RepoPath> {
+    pub fn paths(&self) -> Result<HashSet<PathSpec>> {
         match self {
             Self::DeleteLink(inner) => inner.paths(),
             Self::DeleteTopic(inner) => inner.paths(),
@@ -444,7 +444,7 @@ impl Change {
         }
     }
 
-    pub fn mark_deleted(&mut self, path: &RepoPath) {
+    pub fn mark_deleted(&mut self, path: &PathSpec) {
         let path = &path.inner.to_owned();
 
         match self {
@@ -474,12 +474,12 @@ pub struct DeleteLink {
 }
 
 impl DeleteLink {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.deleted_link.path()]);
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.deleted_link.path()?]);
         for topic in &self.parent_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
-        paths
+        Ok(paths)
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -501,22 +501,22 @@ pub struct DeleteTopic {
 }
 
 impl DeleteTopic {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.deleted_topic.path()]);
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.deleted_topic.path()?]);
 
         for link in &self.child_links.0 {
-            paths.insert(link.path());
+            paths.insert(link.path()?);
         }
 
         for topic in &self.child_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
 
         for topic in &self.parent_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
 
-        paths
+        Ok(paths)
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -537,12 +537,12 @@ pub struct ImportLink {
 }
 
 impl ImportLink {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.imported_link.path()]);
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.imported_link.path()?]);
         for topic in &self.parent_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
-        paths
+        Ok(paths)
     }
 
     fn mark_deleted(&mut self, path: &String) {
@@ -564,22 +564,22 @@ pub struct ImportTopic {
 }
 
 impl ImportTopic {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.imported_topic.path()]);
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.imported_topic.path()?]);
 
         for link in &self.child_links.0 {
-            paths.insert(link.path());
+            paths.insert(link.path()?);
         }
 
         for topic in &self.child_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
 
         for topic in &self.parent_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
 
-        paths
+        Ok(paths)
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -603,8 +603,8 @@ pub struct RemoveTopicTimerange {
 }
 
 impl RemoveTopicTimerange {
-    fn paths(&self) -> HashSet<RepoPath> {
-        HashSet::from([self.updated_topic.path()])
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        Ok(HashSet::from([self.updated_topic.path()?]))
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -625,18 +625,18 @@ pub struct UpdateLinkParentTopics {
 }
 
 impl UpdateLinkParentTopics {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.updated_link.path()]);
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.updated_link.path()?]);
 
         for topic in &self.added_parent_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
 
         for topic in &self.removed_parent_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
 
-        paths
+        Ok(paths)
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -658,22 +658,22 @@ pub struct UpdateTopicParentTopics {
 }
 
 impl UpdateTopicParentTopics {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.updated_topic.path()]);
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.updated_topic.path()?]);
 
         for topic in &self.added_parent_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
 
         for topic in &self.removed_parent_topics.0 {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
 
         for path in &self.parent_topic_paths {
-            paths.insert(RepoPath::from(path));
+            paths.insert(PathSpec::try_from(path)?);
         }
 
-        paths
+        Ok(paths)
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -697,10 +697,15 @@ pub struct UpdateTopicSynonyms {
 }
 
 impl UpdateTopicSynonyms {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.updated_topic.path()]);
-        paths.extend(self.parent_topics.iter().map(RepoPath::from).collect_vec());
-        paths
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.updated_topic.path()?]);
+        paths.extend(
+            self.parent_topics
+                .iter()
+                .map(PathSpec::try_from)
+                .collect::<Result<Vec<PathSpec>>>()?,
+        );
+        Ok(paths)
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -721,18 +726,18 @@ pub struct UpsertLink {
 }
 
 impl UpsertLink {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.upserted_link.path()]);
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.upserted_link.path()?]);
 
         if let Some(topic) = &self.add_parent_topic {
-            paths.insert(topic.path());
+            paths.insert(topic.path()?);
         }
 
         for path in &self.parent_topics {
-            paths.insert(RepoPath::from(path));
+            paths.insert(PathSpec::try_from(path)?);
         }
 
-        paths
+        Ok(paths)
     }
 
     fn mark_deleted(&mut self, path: &String) {
@@ -756,12 +761,12 @@ pub struct UpsertTopic {
 }
 
 impl UpsertTopic {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.upserted_topic.path(), self.parent_topic.path()]);
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.upserted_topic.path()?, self.parent_topic.path()?]);
         for path in &self.parent_topic_paths {
-            paths.insert(RepoPath::from(path));
+            paths.insert(PathSpec::try_from(path)?);
         }
-        paths
+        Ok(paths)
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -784,12 +789,12 @@ pub struct UpsertTopicTimerange {
 }
 
 impl UpsertTopicTimerange {
-    fn paths(&self) -> HashSet<RepoPath> {
-        let mut paths = HashSet::from([self.updated_topic.path()]);
+    fn paths(&self) -> Result<HashSet<PathSpec>> {
+        let mut paths = HashSet::from([self.updated_topic.path()?]);
         for path in &self.parent_topics {
-            paths.insert(RepoPath::from(path));
+            paths.insert(PathSpec::try_from(path)?);
         }
-        paths
+        Ok(paths)
     }
 
     fn remove_path(&mut self, path: &String) {
@@ -803,7 +808,7 @@ mod markdown {
     use super::*;
 
     pub trait Markdown {
-        fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&RepoPath>) -> String;
+        fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&PathSpec>) -> String;
     }
 
     impl LinkInfo {
@@ -879,7 +884,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             if self.parent_topics.is_empty() {
                 format!("{} deleted {}", actor_name, self.deleted_link.markdown())
@@ -899,7 +904,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             let mut markdown = format!(
                 "{} deleted {}",
@@ -951,7 +956,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             format!(
                 "{} added {} to {}",
@@ -967,7 +972,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             let mut children = vec![];
 
@@ -1021,7 +1026,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             let topic = self.updated_topic.markdown(locale);
 
@@ -1058,7 +1063,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             if self.added_parent_topics.is_empty() && self.removed_parent_topics.is_empty() {
                 return format!(
@@ -1100,7 +1105,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             let mut actions = vec![];
             let updated_topic = self.updated_topic.markdown(locale);
@@ -1134,7 +1139,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             let mut actions = vec![];
 
@@ -1170,7 +1175,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             match &self.add_parent_topic {
                 Some(topic) => format!(
@@ -1198,7 +1203,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             format!(
                 "{} added {} to {}",
@@ -1214,7 +1219,7 @@ mod markdown {
             &self,
             locale: Locale,
             actor_name: &str,
-            _context: Option<&RepoPath>,
+            _context: Option<&PathSpec>,
         ) -> String {
             let topic = self.updated_topic.markdown(locale);
             let prefix = TimerangePrefix::from(&self.updated_timerange);
@@ -1240,7 +1245,7 @@ mod markdown {
 pub struct FetchActivity {
     pub actor: Viewer,
     pub first: usize,
-    pub topic_path: Option<RepoPath>,
+    pub topic_path: Option<PathSpec>,
 }
 
 pub struct FetchActivityResult {
@@ -1300,11 +1305,11 @@ mod tests {
         let markdown = format!(
             "Gnusto added [Climate change]({}) to and removed [Weather]({}) from \
             [Reddit](http://www.reddit.com)",
-            topic1.path(),
-            topic2.path()
+            topic1.path().unwrap(),
+            topic2.path().unwrap()
         );
 
-        let context = RepoPath::from("/wiki/00010");
+        let context = PathSpec::try_from("/wiki/00010").unwrap();
         assert_eq!(
             change.markdown(Locale::EN, "Gnusto", Some(&context)),
             markdown
@@ -1416,8 +1421,12 @@ mod tests {
             });
 
             assert_eq!(
-                change.paths(),
-                HashSet::from([topic1.path(), topic2.path(), topic3.path()])
+                change.paths().unwrap(),
+                HashSet::from([
+                    topic1.path().unwrap(),
+                    topic2.path().unwrap(),
+                    topic3.path().unwrap()
+                ])
             );
         }
     }
@@ -1525,8 +1534,8 @@ mod tests {
             });
 
             assert_eq!(
-                change.paths(),
-                HashSet::from([topic1.path(), topic2.path()])
+                change.paths().unwrap(),
+                HashSet::from([topic1.path().unwrap(), topic2.path().unwrap()])
             );
         }
     }
@@ -1570,8 +1579,10 @@ mod tests {
 
             assert_eq!(
                 change.markdown(Locale::EN, "Gnusto", None),
-                "Gnusto removed the time prefix \"1970\" from \
-                [Climate change](/wiki/Climate change)"
+                format!(
+                    "Gnusto removed the time prefix \"1970\" from [Climate change]({})",
+                    topic1.path().unwrap()
+                )
             );
         }
 
@@ -1660,7 +1671,10 @@ mod tests {
                 add_parent_topic: None,
             });
 
-            assert_eq!(change.paths(), HashSet::from([link.path(), topic1.path()]));
+            assert_eq!(
+                change.paths().unwrap(),
+                HashSet::from([link.path().unwrap(), topic1.path().unwrap()])
+            );
         }
     }
 
@@ -1706,8 +1720,12 @@ mod tests {
             });
 
             assert_eq!(
-                change.paths(),
-                HashSet::from([topic1.path(), topic2.path(), topic3.path()]),
+                change.paths().unwrap(),
+                HashSet::from([
+                    topic1.path().unwrap(),
+                    topic2.path().unwrap(),
+                    topic3.path().unwrap()
+                ]),
             );
         }
     }

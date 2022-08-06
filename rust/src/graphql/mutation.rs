@@ -288,7 +288,7 @@ impl MutationRoot {
             client_mutation_id,
             link_path,
         } = input;
-        let link_path = RepoPath::from(&link_path);
+        let link_path = PathSpec::try_from(&link_path)?;
         let git::DeleteLinkResult {
             deleted_link_path, ..
         } = ctx
@@ -332,7 +332,7 @@ impl MutationRoot {
             topic_path,
         } = input;
         ctx.data_unchecked::<Store>()
-            .delete_topic(&RepoPath::from(&topic_path))
+            .delete_topic(&PathSpec::try_from(&topic_path)?)
             .await?;
 
         Ok(DeleteTopicPayload {
@@ -351,7 +351,7 @@ impl MutationRoot {
             topic_path,
         } = input;
 
-        let topic_path = RepoPath::from(&topic_path);
+        let topic_path = PathSpec::try_from(&topic_path)?;
         let git::RemoveTopicTimerangeResult { topic, .. } = ctx
             .data_unchecked::<Store>()
             .remove_topic_timerange(&topic_path)
@@ -376,11 +376,11 @@ impl MutationRoot {
 
         let psql::ReviewLinkResult { link, .. } = ctx
             .data_unchecked::<Store>()
-            .review_link(&RepoPath::from(&link_path), reviewed)
+            .review_link(&PathSpec::try_from(&link_path)?, reviewed)
             .await?;
 
         Ok(ReviewLinkPayload {
-            link: Link::from(&link),
+            link: Link::try_from(&link)?,
         })
     }
 
@@ -409,7 +409,7 @@ impl MutationRoot {
             .update_link_parent_topics(input)
             .await?;
         Ok(UpdateLinkParentTopicsPayload {
-            link: Link::from(&link),
+            link: Link::try_from(&link)?,
         })
     }
 
@@ -426,8 +426,11 @@ impl MutationRoot {
         let git::UpdateTopicParentTopicsResult { alerts, topic } = ctx
             .data_unchecked::<Store>()
             .update_topic_parent_topics(
-                &RepoPath::from(&topic_path),
-                parent_topic_paths.iter().map(RepoPath::from).collect(),
+                &PathSpec::try_from(&topic_path)?,
+                parent_topic_paths
+                    .iter()
+                    .map(PathSpec::try_from)
+                    .collect::<Result<Vec<PathSpec>>>()?,
             )
             .await?;
 
@@ -461,10 +464,12 @@ impl MutationRoot {
         input: UpsertLinkInput,
     ) -> Result<UpsertLinkPayload> {
         let result = ctx.data_unchecked::<Store>().upsert_link(input).await?;
-        let edge = result
-            .link
-            .as_ref()
-            .map(|link| LinkEdge::new(String::from("0"), Link::from(link)));
+
+        let edge = if let Some(link) = &result.link {
+            Some(LinkEdge::new(String::from("0"), Link::try_from(link)?))
+        } else {
+            None
+        };
 
         Ok(UpsertLinkPayload {
             alerts: result.alerts.iter().map(alert::Alert::from).collect_vec(),

@@ -1,7 +1,7 @@
 pub use super::errors::Error;
 pub use super::http::RepoUrl;
 pub use super::types::{
-    Alert, Locale, RepoList, RepoPath, RepoPrefix, Result, Timerange, TimerangePrefixFormat,
+    Alert, Locale, PathSpec, RepoList, RepoPrefix, Result, Timerange, TimerangePrefixFormat,
     Timestamp, Viewer,
 };
 

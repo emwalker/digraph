@@ -71,6 +71,7 @@ load-fixtures:
 load-production:
 	bash ./scripts/load-production-db
 	psql $(DBNAME) < queries/transitive-closure.sql
+	$(MAKE) -C rust migrate
 
 logs:
 	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs

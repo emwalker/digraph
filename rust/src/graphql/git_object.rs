@@ -6,24 +6,26 @@ use super::{Link, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChi
 use crate::git;
 use crate::prelude::*;
 
-impl From<&git::Link> for Link {
-    fn from(link: &git::Link) -> Self {
+impl TryFrom<&git::Link> for Link {
+    type Error = Error;
+
+    fn try_from(link: &git::Link) -> Result<Self> {
         let meta = &link.metadata;
         let parent_topic_paths = link
             .parent_topics
             .iter()
-            .map(|topic| RepoPath::from(&topic.path))
-            .collect::<Vec<RepoPath>>();
+            .map(|topic| PathSpec::try_from(&topic.path))
+            .collect::<Result<Vec<PathSpec>>>()?;
 
-        Self {
-            path: RepoPath::from(&meta.path),
+        Ok(Self {
+            path: PathSpec::try_from(&meta.path)?,
             newly_added: false,
             parent_topic_paths,
             repository_id: WIKI_REPOSITORY_ID.into(),
             viewer_review: None,
             title: meta.title.clone(),
             url: meta.url.clone(),
-        }
+        })
     }
 }
 
@@ -35,14 +37,14 @@ impl TryFrom<&git::Topic> for Topic {
         let parent_topic_paths = topic
             .parent_topics
             .iter()
-            .map(|parent| RepoPath::from(&parent.path))
-            .collect::<Vec<RepoPath>>();
+            .map(|parent| PathSpec::try_from(&parent.path))
+            .collect::<Result<Vec<PathSpec>>>()?;
 
         let child_paths = topic
             .children
             .iter()
-            .map(|p| RepoPath::from(&p.path))
-            .collect::<Vec<RepoPath>>();
+            .map(|p| PathSpec::try_from(&p.path))
+            .collect::<Result<Vec<PathSpec>>>()?;
         let synonyms = Synonyms::from(&meta.synonyms);
 
         let timerange = meta.timerange.as_ref();
@@ -53,7 +55,7 @@ impl TryFrom<&git::Topic> for Topic {
 
         Ok(Self {
             child_paths,
-            path: RepoPath::from(&meta.path),
+            path: PathSpec::try_from(&meta.path)?,
             parent_topic_paths,
             name: topic.name(Locale::EN),
             root: meta.root,
@@ -85,7 +87,7 @@ impl Loader<String> for LinkLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for path in paths {
-            if let Some(link) = &self.git.fetch_link(&RepoPath::from(path)) {
+            if let Some(link) = &self.git.fetch_link(&PathSpec::try_from(path)?) {
                 map.insert(path.to_owned(), link.to_owned());
             }
         }
@@ -96,13 +98,12 @@ impl Loader<String> for LinkLoader {
 
 #[allow(dead_code)]
 pub struct ObjectLoader {
-    viewer: Viewer,
     client: git::Client,
 }
 
 impl ObjectLoader {
-    pub fn new(viewer: Viewer, client: git::Client) -> Self {
-        Self { viewer, client }
+    pub fn new(client: git::Client) -> Self {
+        Self { client }
     }
 }
 
@@ -115,9 +116,10 @@ impl Loader<String> for ObjectLoader {
         log::debug!("batch load topics: {:?}", paths);
         let mut map: HashMap<_, _> = HashMap::new();
 
-        for path in paths {
-            if let Some(object) = &self.client.fetch(&RepoPath::from(path)) {
-                map.insert(path.to_owned(), object.clone());
+        for string in paths {
+            let path = PathSpec::try_from(string)?;
+            if let Some(object) = &self.client.fetch(&path) {
+                map.insert(string.to_owned(), object.clone());
             }
         }
 
@@ -130,7 +132,7 @@ impl TryFrom<&git::Object> for TopicChild {
 
     fn try_from(object: &git::Object) -> Result<Self> {
         let object = match object {
-            git::Object::Link(link) => TopicChild::Link(Link::from(link)),
+            git::Object::Link(link) => TopicChild::Link(Link::try_from(link)?),
             git::Object::Topic(topic) => TopicChild::Topic(Topic::try_from(topic)?),
         };
         Ok(object)
@@ -180,7 +182,7 @@ impl TryFrom<&git::SearchMatch> for TopicChild {
         let git::SearchMatch { object, .. } = item;
         let object = match object {
             git::Object::Topic(topic) => TopicChild::Topic(Topic::try_from(topic)?),
-            git::Object::Link(link) => TopicChild::Link(Link::from(link)),
+            git::Object::Link(link) => TopicChild::Link(Link::try_from(link)?),
         };
         Ok(object)
     }

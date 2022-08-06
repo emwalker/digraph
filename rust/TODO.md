@@ -1,9 +1,6 @@
 Before switchover:
-* Clean up low-level Git code
-* Don't bother collecting downset for Everything topic
 * Need a way to place a private topic child under a topic in a public repo without leaking data.  Maybe a placeholder/stand-in for the public topic in the private repo to hold the private topic children for that repo?
 * When something is added to a private repo, don't include change logs in public repos
-* Make search work across all prefixes
 * Decide whether to support link reviews or remove the feature
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
@@ -19,6 +16,7 @@ Before switchover:
 * Cutover: Run migrations to clean up tables that are no longer needed
 
 Later:
+* Look into using iterators for the search code instead of copying large buffers around
 * Keep tabs on whether the ordering of changes is stable
 * Get the topic upsert working when the topic already exists
 * Show search input in input box when loaded from a url

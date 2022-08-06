@@ -3,6 +3,7 @@ use std::io::{self, Write};
 
 use digraph::git::*;
 use digraph::prelude::*;
+use digraph::types::Timespec;
 
 struct Opts {
     filename: String,
@@ -59,7 +60,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&RepoPath::from(&topic.path)) {
+        match &self.git.fetch(&PathSpec::try_from(&topic.path)?) {
             Some(Object::Topic(topic)) => {
                 let meta = &topic.metadata;
                 let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.path);
@@ -72,7 +73,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_topic(&mut self, topic: &Topic) -> Result<()> {
-        let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path());
+        let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path()?);
         self.buf.push_str(&line);
 
         for topic in &topic.parent_topics {
@@ -95,9 +96,9 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&RepoPath::from(&topic.path)) {
+        match &self.git.fetch(&PathSpec::try_from(&topic.path)?) {
             Some(Object::Topic(topic)) => {
-                let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path());
+                let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path()?);
                 self.buf.push_str(&line);
             }
             other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
@@ -106,7 +107,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
-        let path = RepoPath::from(&child.path);
+        let path = PathSpec::try_from(&child.path)?;
         match &self.git.fetch(&path) {
             Some(Object::Topic(topic)) => {
                 self.visit_child_topic(topic)?;
@@ -133,10 +134,13 @@ fn parse_args() -> Opts {
 async fn main() -> Result<()> {
     let opts = parse_args();
     let (root_directory, path) = parse_path(&opts.filename)?;
-    let mut git = Client::new(&Viewer::super_user(), &root_directory);
+    let mut git = Client::new(&Viewer::super_user(), &root_directory, Timespec);
     let object = git.fetch(&path);
     if object.is_none() {
-        return Err(Error::NotFound(format!("not found: {}", path)));
+        return Err(Error::NotFound(format!(
+            "{} does not contain {}",
+            root_directory, path
+        )));
     }
     let object = object.unwrap();
 
@@ -146,9 +150,6 @@ async fn main() -> Result<()> {
     };
     object.accept(&mut output)?;
     io::stdout().write_all(output.as_bytes())?;
-
-    let r = format!("\n{:?}\n", output.git);
-    io::stdout().write_all(r.as_bytes())?;
 
     Ok(())
 }

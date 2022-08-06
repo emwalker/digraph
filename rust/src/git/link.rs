@@ -13,20 +13,20 @@ use super::BatchUpdate;
 
 pub struct DeleteLink {
     pub actor: Viewer,
-    pub link_path: RepoPath,
+    pub link_path: PathSpec,
 }
 
 pub struct DeleteLinkResult {
     pub alerts: Vec<Alert>,
-    pub deleted_link_path: RepoPath,
+    pub deleted_link_path: PathSpec,
 }
 
 impl DeleteLink {
-    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<DeleteLinkResult>
+    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<DeleteLinkResult>
     where
         S: SaveChangesForPrefix,
     {
-        let link = builder.fetch_link(&self.link_path);
+        let link = update.fetch_link(&self.link_path);
         if link.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.link_path)));
         }
@@ -37,22 +37,22 @@ impl DeleteLink {
         let child = link.to_topic_child(date);
         let mut parent_topics = vec![];
 
-        builder.mark_deleted(&self.link_path)?;
+        update.mark_deleted(&self.link_path)?;
 
         for ParentTopic { path, .. } in &link.parent_topics {
-            let path = RepoPath::from(path);
-            if let Some(mut parent) = builder.fetch_topic(&path) {
+            let path = PathSpec::try_from(path)?;
+            if let Some(mut parent) = update.fetch_topic(&path) {
                 parent.children.remove(&child);
-                builder.save_topic(&path, &parent)?;
+                update.save_topic(&path, &parent)?;
                 parent_topics.push(parent);
             }
         }
 
         let change = self.change(&link, &parent_topics, date);
 
-        builder.remove_link(&self.link_path, &link)?;
-        builder.add_change(&change)?;
-        builder.write(store)?;
+        update.remove_link(&self.link_path, &link)?;
+        update.add_change(&change)?;
+        update.write(store)?;
 
         Ok(DeleteLinkResult {
             alerts: vec![],
@@ -90,8 +90,8 @@ impl FetchLinkCount {
 
 pub struct UpdateLinkParentTopics {
     pub actor: Viewer,
-    pub link_path: RepoPath,
-    pub parent_topic_paths: BTreeSet<RepoPath>,
+    pub link_path: PathSpec,
+    pub parent_topic_paths: BTreeSet<PathSpec>,
 }
 
 pub struct UpdateLinkParentTopicsResult {
@@ -102,7 +102,7 @@ pub struct UpdateLinkParentTopicsResult {
 impl UpdateLinkParentTopics {
     pub fn call<S>(
         &self,
-        mut builder: BatchUpdate,
+        mut update: BatchUpdate,
         store: &S,
     ) -> Result<UpdateLinkParentTopicsResult>
     where
@@ -111,7 +111,7 @@ impl UpdateLinkParentTopics {
         self.validate()?;
 
         let date = chrono::Utc::now();
-        let link = builder.fetch_link(&self.link_path);
+        let link = update.fetch_link(&self.link_path);
         if link.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.link_path)));
         }
@@ -127,7 +127,7 @@ impl UpdateLinkParentTopics {
 
         let mut added = vec![];
         for parent in parent_topics.difference(&link.parent_topics) {
-            if let Some(topic) = parent.fetch(&builder) {
+            if let Some(topic) = parent.fetch(&update)? {
                 added.push(topic);
             }
         }
@@ -139,7 +139,7 @@ impl UpdateLinkParentTopics {
 
         let mut removed = vec![];
         for parent in link.parent_topics.difference(&parent_topics) {
-            if let Some(link) = parent.fetch(&builder) {
+            if let Some(link) = parent.fetch(&update)? {
                 removed.push(link);
             }
         }
@@ -152,16 +152,16 @@ impl UpdateLinkParentTopics {
         let change = self.change(&link, &added, &removed, date);
 
         for topic in &added {
-            builder.save_topic(&topic.path(), topic)?;
+            update.save_topic(&topic.path()?, topic)?;
         }
 
         for topic in &removed {
-            builder.save_topic(&topic.path(), topic)?;
+            update.save_topic(&topic.path()?, topic)?;
         }
 
-        builder.save_link(&link.path(), &link)?;
-        builder.add_change(&change)?;
-        builder.write(store)?;
+        update.save_link(&link.path()?, &link)?;
+        update.add_change(&change)?;
+        update.write(store)?;
 
         Ok(UpdateLinkParentTopicsResult {
             alerts: vec![],
@@ -202,7 +202,7 @@ impl UpdateLinkParentTopics {
 #[derivative(Debug)]
 pub struct UpsertLink {
     pub actor: Viewer,
-    pub add_parent_topic_path: Option<RepoPath>,
+    pub add_parent_topic_path: Option<PathSpec>,
     #[derivative(Debug = "ignore")]
     pub fetcher: Box<dyn http::Fetch + Send + Sync>,
     pub repo: RepoPrefix,
@@ -216,16 +216,16 @@ pub struct UpsertLinkResult {
 }
 
 impl UpsertLink {
-    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<UpsertLinkResult>
+    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<UpsertLinkResult>
     where
         S: SaveChangesForPrefix,
     {
         log::info!("upserting link: {:?}", self);
         let url = RepoUrl::parse(&self.url)?;
-        let path = url.path(&self.repo);
+        let path = url.path(&self.repo)?;
         let date = Utc::now();
 
-        let (mut link, previous_title) = self.make_link(&builder, &url, &path)?;
+        let (mut link, previous_title) = self.make_link(&update, &url, &path)?;
         if let Some(title) = &self.title {
             link.metadata.title = title.clone();
         }
@@ -233,13 +233,13 @@ impl UpsertLink {
         let mut parent_topics = HashMap::new();
 
         for parent in &link.parent_topics {
-            if let Some(topic) = builder.fetch_topic(&RepoPath::from(&parent.path)) {
+            if let Some(topic) = update.fetch_topic(&PathSpec::try_from(&parent.path)?) {
                 parent_topics.insert(parent.path.to_owned(), topic);
             }
         }
 
         let topic = if let Some(topic_path) = &self.add_parent_topic_path {
-            let topic = builder.fetch_topic(topic_path);
+            let topic = update.fetch_topic(topic_path);
             if let Some(topic) = &topic {
                 parent_topics.insert(topic_path.to_string(), topic.to_owned());
             }
@@ -251,7 +251,9 @@ impl UpsertLink {
         if parent_topics.is_empty() {
             // There's a client error if we get to this point.
             log::warn!("no topic found, placing under root topic for /wiki");
-            if let Some(topic) = builder.fetch_topic(&RepoPath::from(WIKI_ROOT_TOPIC_PATH)) {
+            if let Some(topic) =
+                update.fetch_topic(&PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap())
+            {
                 parent_topics.insert(topic.metadata.path.to_owned(), topic);
             }
         }
@@ -270,12 +272,12 @@ impl UpsertLink {
                 kind: Kind::Link,
                 path: link.metadata.path.to_owned(),
             });
-            builder.save_topic(&RepoPath::from(path), topic)?;
+            update.save_topic(&PathSpec::try_from(path)?, topic)?;
         }
 
-        builder.save_link(&path, &link)?;
-        builder.add_change(&change)?;
-        builder.write(store)?;
+        update.save_link(&path, &link)?;
+        update.add_change(&change)?;
+        update.write(store)?;
 
         Ok(UpsertLinkResult {
             alerts: vec![],
@@ -313,7 +315,7 @@ impl UpsertLink {
         &self,
         builder: &BatchUpdate,
         url: &RepoUrl,
-        path: &RepoPath,
+        path: &PathSpec,
     ) -> Result<(Link, Option<String>)> {
         if builder.exists(path)? {
             if let Some(link) = builder.fetch_link(path) {

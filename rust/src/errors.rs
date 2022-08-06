@@ -53,6 +53,8 @@ quick_error! {
 
         Parse(err: String) {}
 
+        Path(err: String) {}
+
         RBAC(err: String) {}
 
         Redis(err: String) {

@@ -14,9 +14,7 @@ app.yaml
 tmp/
 *__generated__*
 /scratchpad
-/data/personal.nq
-/data/digraph.sql
-/data/*backup.*
+/data
 *.dump.gz
 *.code-workspace
 target/

@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::git;
 use crate::prelude::*;
-use crate::types::DownSet;
+use crate::types::{Downset, ReadPath};
 
 pub struct Noop;
 
@@ -20,7 +20,13 @@ impl git::SaveChangesForPrefix for Noop {
 }
 
 #[derive(Clone, Debug)]
-pub struct Key(pub String);
+pub struct Key(String);
+
+impl Key {
+    fn downset(path: &ReadPath) -> Self {
+        Self(format!("topic:{}:{}:down", path.spec, path.commit))
+    }
+}
 
 impl redis_rs::ToRedisArgs for Key {
     fn write_redis_args<W>(&self, out: &mut W)
@@ -29,10 +35,6 @@ impl redis_rs::ToRedisArgs for Key {
     {
         out.write_arg(self.0.as_bytes());
     }
-}
-
-fn down_set_key(path: &RepoPath) -> Key {
-    Key(format!("topic:{}:down", path))
 }
 
 #[derive(Clone)]
@@ -45,29 +47,36 @@ impl Redis {
         Ok(Redis { url })
     }
 
-    pub fn transitive_closure<F>(&self, fetch: &F, paths: &[&RepoPath]) -> Result<HashSet<String>>
+    pub fn intersection<F>(&self, fetch: &F, paths: &[ReadPath]) -> Result<HashSet<String>>
     where
-        F: DownSet,
+        F: Downset,
     {
+        if paths.is_empty() {
+            log::warn!("no paths provided for transitive closure, exiting early");
+            return Ok(HashSet::new());
+        }
+
         let (head, tail) = paths.split_at(1);
         let mut con = self.connection()?;
         let mut keys = vec![];
 
         match head.get(0) {
             Some(path) => {
-                let key = down_set_key(path);
+                let key = Key::downset(path);
                 keys.push(key.clone());
 
                 if !con.exists(&key)? {
-                    self.save_set(&mut con, &key, &fetch.down_set(*path))?;
+                    log::info!("redis: {:?} not found in redis, saving", key);
+                    self.save_downset(&mut con, &key, &fetch.downset(path))?;
                 }
 
                 for other_path in tail {
-                    let key = down_set_key(other_path);
+                    let key = Key::downset(other_path);
                     keys.push(key.clone());
 
                     if !con.exists(&key)? {
-                        self.save_set(&mut con, &key, &fetch.down_set(*other_path))?;
+                        log::info!("redis: {:?} not found in redis, saving", key);
+                        self.save_downset(&mut con, &key, &fetch.downset(other_path))?;
                     }
                 }
 
@@ -83,15 +92,16 @@ impl Redis {
         Ok(client.get_connection()?)
     }
 
-    // Within a transaction, write a set to a key and configure the key to expire in 60 seconds.
-    fn save_set(
+    // Since redis keys have the commit hash of an immutible Git commit, they do not need to have
+    // an expiry.
+    fn save_downset(
         &self,
         con: &mut redis_rs::Connection,
         key: &Key,
         set: &HashSet<String>,
     ) -> Result<()> {
         redis_rs::transaction(con, &[key], |con, pipe| {
-            pipe.sadd(key, set).ignore().expire(key, 60).query(con)
+            pipe.sadd(key, set).ignore().query(con)
         })?;
 
         Ok(())

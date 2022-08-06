@@ -95,8 +95,8 @@ impl std::cmp::PartialOrd for Link {
 }
 
 impl Link {
-    pub fn path(&self) -> RepoPath {
-        RepoPath::from(&self.metadata.path)
+    pub fn path(&self) -> Result<PathSpec> {
+        PathSpec::try_from(&self.metadata.path)
     }
 
     pub fn title(&self) -> &String {
@@ -142,8 +142,8 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, builder: &BatchUpdate) -> Option<Topic> {
-        builder.fetch_topic(&RepoPath::from(&self.path))
+    pub fn fetch(&self, builder: &BatchUpdate) -> Result<Option<Topic>> {
+        Ok(builder.fetch_topic(&PathSpec::try_from(&self.path)?))
     }
 }
 
@@ -274,7 +274,7 @@ impl std::hash::Hash for Topic {
 }
 
 impl Topic {
-    pub fn has_child(&self, path: &RepoPath) -> bool {
+    pub fn has_child(&self, path: &PathSpec) -> bool {
         self.children.iter().any(|child| child.path == path.inner)
     }
 
@@ -282,8 +282,8 @@ impl Topic {
         self.prefix().format(&self.metadata.name(locale))
     }
 
-    pub fn path(&self) -> RepoPath {
-        RepoPath::from(&self.metadata.path)
+    pub fn path(&self) -> Result<PathSpec> {
+        PathSpec::try_from(&self.metadata.path)
     }
 
     fn prefix(&self) -> types::TimerangePrefix {
@@ -368,6 +368,13 @@ impl Object {
         }
     }
 
+    pub fn parent_topics(&self) -> &BTreeSet<ParentTopic> {
+        match self {
+            Object::Topic(topic) => &topic.parent_topics,
+            Object::Link(link) => &link.parent_topics,
+        }
+    }
+
     fn search_string(&self, locale: Locale) -> Phrase {
         Phrase::parse(&self.display_string(locale))
     }
@@ -420,13 +427,13 @@ pub trait Visitor {
 }
 
 #[derive(Debug)]
-pub struct DownSetIter {
+pub struct TopicDownsetIter {
     client: Client,
     seen: HashSet<TopicChild>,
     stack: Vec<TopicChild>,
 }
 
-impl Iterator for DownSetIter {
+impl Iterator for TopicDownsetIter {
     type Item = Topic;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -441,7 +448,14 @@ impl Iterator for DownSetIter {
                     }
                     self.seen.insert(topic_child.clone());
 
-                    let path = RepoPath::from(&topic_child.path);
+                    let path = match PathSpec::try_from(&topic_child.path) {
+                        Ok(path) => path,
+                        Err(err) => {
+                            log::debug!("error parsing path, skipping topic: {}", err);
+                            continue;
+                        }
+                    };
+
                     if let Some(topic) = self.client.fetch_topic(&path) {
                         for child in &topic.children {
                             if child.kind != Kind::Topic {
@@ -464,7 +478,7 @@ impl Iterator for DownSetIter {
     }
 }
 
-impl DownSetIter {
+impl TopicDownsetIter {
     fn new(client: Client, topic: Option<Topic>) -> Self {
         let mut stack = vec![];
         if let Some(topic) = &topic {
@@ -475,6 +489,43 @@ impl DownSetIter {
             client,
             seen: HashSet::new(),
             stack,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct DownsetIter {
+    iter: TopicDownsetIter,
+    links: Vec<String>,
+}
+
+impl Iterator for DownsetIter {
+    type Item = String;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.links.is_empty() {
+            return self.links.pop();
+        }
+
+        if let Some(topic) = self.iter.next() {
+            for child in &topic.children {
+                if child.kind == Kind::Link {
+                    self.links.push(child.path.to_owned());
+                }
+            }
+
+            return Some(topic.metadata.path);
+        }
+
+        None
+    }
+}
+
+impl DownsetIter {
+    fn new(client: Client, topic: Option<Topic>) -> Self {
+        Self {
+            links: vec![],
+            iter: TopicDownsetIter::new(client, topic),
         }
     }
 }

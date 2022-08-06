@@ -8,23 +8,23 @@ use crate::prelude::*;
 
 pub struct DeleteTopic {
     pub actor: Viewer,
-    pub topic_path: RepoPath,
+    pub topic_path: PathSpec,
 }
 
 pub struct DeleteTopicResult {
     pub alerts: Vec<Alert>,
-    pub deleted_topic_path: RepoPath,
+    pub deleted_topic_path: PathSpec,
 }
 
 impl DeleteTopic {
-    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<DeleteTopicResult>
+    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<DeleteTopicResult>
     where
         S: SaveChangesForPrefix,
     {
         let topic_path = &self.topic_path;
         let date = chrono::Utc::now();
 
-        let topic = builder.fetch_topic(topic_path);
+        let topic = update.fetch_topic(topic_path);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", topic_path)));
         }
@@ -34,7 +34,7 @@ impl DeleteTopic {
             return Err(Error::Repo("cannot delete root topic".to_owned()));
         }
 
-        builder.mark_deleted(topic_path)?;
+        update.mark_deleted(topic_path)?;
 
         let parent_topics = topic
             .parent_topics
@@ -48,15 +48,15 @@ impl DeleteTopic {
 
         // Remove the topic from the children of the parent topics
         for parent in &topic.parent_topics {
-            let path = RepoPath::from(&parent.path);
-            if let Some(mut topic) = builder.fetch_topic(&path) {
+            let path = PathSpec::try_from(&parent.path)?;
+            if let Some(mut topic) = update.fetch_topic(&path) {
                 topic.children.remove(&TopicChild {
                     // The 'added' field is ignored
                     added: chrono::Utc::now(),
                     kind: Kind::Topic,
                     path: topic_path.inner.to_owned(),
                 });
-                builder.save_topic(&path, &topic)?;
+                update.save_topic(&path, &topic)?;
                 topics.push(topic.clone());
             }
         }
@@ -66,14 +66,14 @@ impl DeleteTopic {
 
         // Remove the topic from its children, moving them onto the parent topics
         for child in &topic.children {
-            let path = RepoPath::from(&child.path);
-            match builder.fetch(&path) {
+            let path = PathSpec::try_from(&child.path)?;
+            match update.fetch(&path) {
                 Some(Object::Link(child_link)) => {
                     let mut link = child_link.to_owned();
                     link.parent_topics.remove(&topic.to_parent_topic());
                     link.parent_topics.append(&mut parent_topics.clone());
                     child_links.push(link.clone());
-                    builder.save_link(&path, &link)?;
+                    update.save_link(&path, &link)?;
                 }
 
                 Some(Object::Topic(child_topic)) => {
@@ -81,7 +81,7 @@ impl DeleteTopic {
                     child_topic.parent_topics.remove(&topic.to_parent_topic());
                     child_topic.parent_topics.append(&mut parent_topics.clone());
                     child_topics.push(child_topic.clone());
-                    builder.save_topic(&path, &child_topic)?;
+                    update.save_topic(&path, &child_topic)?;
                 }
 
                 None => {}
@@ -90,9 +90,9 @@ impl DeleteTopic {
 
         let change = self.change(&topic, &topics, &child_links, &child_topics, date);
 
-        builder.remove_topic(&self.topic_path, &topic)?;
-        builder.add_change(&change)?;
-        builder.write(store)?;
+        update.remove_topic(&self.topic_path, &topic)?;
+        update.add_change(&change)?;
+        update.write(store)?;
 
         Ok(DeleteTopicResult {
             alerts: vec![],
@@ -139,7 +139,7 @@ impl FetchTopicCount {
 
 pub struct RemoveTopicTimerange {
     pub actor: Viewer,
-    pub topic_path: RepoPath,
+    pub topic_path: PathSpec,
 }
 
 pub struct RemoveTopicTimerangeResult {
@@ -148,11 +148,11 @@ pub struct RemoveTopicTimerangeResult {
 }
 
 impl RemoveTopicTimerange {
-    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<RemoveTopicTimerangeResult>
+    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<RemoveTopicTimerangeResult>
     where
         S: SaveChangesForPrefix,
     {
-        let topic = builder.fetch_topic(&self.topic_path);
+        let topic = update.fetch_topic(&self.topic_path);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
         }
@@ -161,9 +161,9 @@ impl RemoveTopicTimerange {
         let previous_timerange = topic.metadata.timerange.clone();
 
         topic.metadata.timerange = None;
-        builder.save_topic(&self.topic_path, &topic)?;
-        builder.add_change(&self.change(&topic, previous_timerange))?;
-        builder.write(store)?;
+        update.save_topic(&self.topic_path, &topic)?;
+        update.add_change(&self.change(&topic, previous_timerange))?;
+        update.write(store)?;
 
         Ok(RemoveTopicTimerangeResult {
             alerts: vec![],
@@ -190,8 +190,8 @@ impl RemoveTopicTimerange {
 
 pub struct UpdateTopicParentTopics {
     pub actor: Viewer,
-    pub parent_topic_paths: BTreeSet<RepoPath>,
-    pub topic_path: RepoPath,
+    pub parent_topic_paths: BTreeSet<PathSpec>,
+    pub topic_path: PathSpec,
 }
 
 pub struct UpdateTopicParentTopicsResult {
@@ -202,16 +202,16 @@ pub struct UpdateTopicParentTopicsResult {
 impl UpdateTopicParentTopics {
     pub fn call<S>(
         &self,
-        mut builder: BatchUpdate,
+        mut update: BatchUpdate,
         store: &S,
     ) -> Result<UpdateTopicParentTopicsResult>
     where
         S: SaveChangesForPrefix,
     {
-        self.validate(&builder)?;
+        self.validate(&update)?;
 
         let date = chrono::Utc::now();
-        let child = builder.fetch_topic(&self.topic_path);
+        let child = update.fetch_topic(&self.topic_path);
         if child.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
         }
@@ -234,7 +234,7 @@ impl UpdateTopicParentTopics {
         let mut added_topics = vec![];
 
         for parent in added {
-            if let Some(mut topic) = parent.fetch(&builder) {
+            if let Some(mut topic) = parent.fetch(&update)? {
                 topic.children.insert(child.to_topic_child(date));
                 child.parent_topics.insert(parent.to_owned());
                 added_topics.push(topic.clone());
@@ -250,7 +250,7 @@ impl UpdateTopicParentTopics {
         let mut removed_topics = vec![];
 
         for parent in removed {
-            if let Some(mut topic) = parent.fetch(&builder) {
+            if let Some(mut topic) = parent.fetch(&update)? {
                 topic.children.remove(&child.to_topic_child(date));
                 child.parent_topics.remove(&parent);
                 removed_topics.push(topic.clone());
@@ -262,10 +262,10 @@ impl UpdateTopicParentTopics {
 
         updates.push(child.clone());
         for topic in updates {
-            builder.save_topic(&topic.path(), &topic)?;
+            update.save_topic(&topic.path()?, &topic)?;
         }
-        builder.add_change(&change)?;
-        builder.write(store)?;
+        update.add_change(&change)?;
+        update.write(store)?;
 
         Ok(UpdateTopicParentTopicsResult {
             alerts: vec![],
@@ -318,7 +318,7 @@ impl UpdateTopicParentTopics {
 pub struct UpdateTopicSynonyms {
     pub actor: Viewer,
     pub synonyms: Vec<Synonym>,
-    pub topic_path: RepoPath,
+    pub topic_path: PathSpec,
 }
 
 pub struct UpdateTopicSynonymsResult {
@@ -327,11 +327,11 @@ pub struct UpdateTopicSynonymsResult {
 }
 
 impl UpdateTopicSynonyms {
-    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<UpdateTopicSynonymsResult>
+    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<UpdateTopicSynonymsResult>
     where
         S: SaveChangesForPrefix,
     {
-        let topic = builder.fetch_topic(&self.topic_path);
+        let topic = update.fetch_topic(&self.topic_path);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
         }
@@ -387,9 +387,9 @@ impl UpdateTopicSynonyms {
             .collect::<HashSet<(String, Locale)>>();
 
         topic.metadata.synonyms = synonyms;
-        builder.save_topic(&self.topic_path, &topic)?;
-        builder.add_change(&self.change(&topic, &added, &removed))?;
-        builder.write(store)?;
+        update.save_topic(&self.topic_path, &topic)?;
+        update.add_change(&self.change(&topic, &added, &removed))?;
+        update.write(store)?;
 
         Ok(UpdateTopicSynonymsResult {
             alerts: vec![],
@@ -423,7 +423,7 @@ impl UpdateTopicSynonyms {
 pub enum OnMatchingSynonym {
     Ask,
     CreateDistinct,
-    Update(RepoPath),
+    Update(PathSpec),
 }
 
 pub struct UpsertTopic {
@@ -431,7 +431,7 @@ pub struct UpsertTopic {
     pub locale: Locale,
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
-    pub parent_topic: RepoPath,
+    pub parent_topic: PathSpec,
     pub repo: RepoPrefix,
 }
 
@@ -443,21 +443,21 @@ pub struct UpsertTopicResult {
 }
 
 impl UpsertTopic {
-    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<UpsertTopicResult>
+    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<UpsertTopicResult>
     where
         S: SaveChangesForPrefix,
     {
-        let parent = self.fetch_parent(&builder);
+        let parent = self.fetch_parent(&update);
         if parent.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.parent_topic)));
         }
         let mut parent = parent.unwrap();
 
-        let mut matches = builder.synonym_phrase_matches(&[&self.repo], &self.name)?;
+        let mut matches = update.synonym_phrase_matches(&[&self.repo], &self.name)?;
         let date = chrono::Utc::now();
 
         let (path, child, parent_topics) = if matches.is_empty() {
-            self.make_topic(&parent)
+            self.make_topic(&parent)?
         } else {
             match &self.on_matching_synonym {
                 OnMatchingSynonym::Ask => {
@@ -468,12 +468,12 @@ impl UpsertTopic {
                         self.name
                     ));
 
-                    let parent_path = &parent.path();
+                    let parent_path = &parent.path()?;
                     let mut matching_synonyms: BTreeSet<SynonymMatch> = BTreeSet::new();
 
                     for synonym_match in matches {
-                        let path = &synonym_match.topic.path();
-                        if builder.cycle_exists(path, parent_path)? {
+                        let path = &synonym_match.topic.path()?;
+                        if update.cycle_exists(path, parent_path)? {
                             matching_synonyms.insert(synonym_match.with_cycle(true));
                         } else {
                             matching_synonyms.insert(synonym_match);
@@ -493,12 +493,12 @@ impl UpsertTopic {
                         "creating new topic even though there are matching synonyms: {:?}",
                         matches
                     );
-                    self.make_topic(&parent)
+                    self.make_topic(&parent)?
                 }
 
                 OnMatchingSynonym::Update(path) => {
-                    if builder.cycle_exists(path, &parent.path())? {
-                        let ancestor = builder.fetch_topic(path);
+                    if update.cycle_exists(path, &parent.path()?)? {
+                        let ancestor = update.fetch_topic(path);
                         if ancestor.is_none() {
                             return Err(Error::NotFound(format!("not found: {}", path)));
                         }
@@ -530,7 +530,7 @@ impl UpsertTopic {
                     }
 
                     log::info!("updating existing topic {:?}", path);
-                    let topic = builder.fetch_topic(path);
+                    let topic = update.fetch_topic(path);
                     if topic.is_none() {
                         return Err(Error::NotFound(format!("not found: {}", path)));
                     }
@@ -553,10 +553,10 @@ impl UpsertTopic {
         parent.children.insert(child.to_topic_child(date));
 
         let change = self.change(&child, &parent_topics, &parent, date);
-        builder.save_topic(&path, &child)?;
-        builder.save_topic(&parent.path(), &parent)?;
-        builder.add_change(&change)?;
-        builder.write(store)?;
+        update.save_topic(&path, &child)?;
+        update.save_topic(&parent.path()?, &parent)?;
+        update.add_change(&change)?;
+        update.write(store)?;
 
         Ok(UpsertTopicResult {
             alerts: vec![],
@@ -586,9 +586,9 @@ impl UpsertTopic {
         })
     }
 
-    fn make_topic(&self, parent: &Topic) -> (RepoPath, Topic, BTreeSet<ParentTopic>) {
+    fn make_topic(&self, parent: &Topic) -> Result<(PathSpec, Topic, BTreeSet<ParentTopic>)> {
         let added = chrono::Utc::now();
-        let path = RepoPath::make(&self.repo.to_string());
+        let path = PathSpec::make(&self.repo.to_string())?;
         let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
 
         let topic = Topic {
@@ -608,7 +608,7 @@ impl UpsertTopic {
             children: BTreeSet::new(),
         };
 
-        (path, topic, parent_topics)
+        Ok((path, topic, parent_topics))
     }
 
     fn fetch_parent(&self, builder: &BatchUpdate) -> Option<Topic> {
@@ -619,7 +619,7 @@ impl UpsertTopic {
 pub struct UpsertTopicTimerange {
     pub actor: Viewer,
     pub timerange: Timerange,
-    pub topic_path: RepoPath,
+    pub topic_path: PathSpec,
 }
 
 pub struct UpsertTopicTimerangeResult {
@@ -629,11 +629,11 @@ pub struct UpsertTopicTimerangeResult {
 }
 
 impl UpsertTopicTimerange {
-    pub fn call<S>(&self, mut builder: BatchUpdate, store: &S) -> Result<UpsertTopicTimerangeResult>
+    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<UpsertTopicTimerangeResult>
     where
         S: SaveChangesForPrefix,
     {
-        let topic = builder.fetch_topic(&self.topic_path);
+        let topic = update.fetch_topic(&self.topic_path);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_path)));
         }
@@ -642,9 +642,9 @@ impl UpsertTopicTimerange {
         let previous_timerange = topic.metadata.timerange.clone();
 
         topic.metadata.timerange = Some(self.timerange.clone());
-        builder.save_topic(&self.topic_path, &topic)?;
-        builder.add_change(&self.change(&topic, previous_timerange))?;
-        builder.write(store)?;
+        update.save_topic(&self.topic_path, &topic)?;
+        update.add_change(&self.change(&topic, previous_timerange))?;
+        update.write(store)?;
 
         Ok(UpsertTopicTimerangeResult {
             alerts: vec![],

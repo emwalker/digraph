@@ -2,7 +2,7 @@ use digraph::prelude::*;
 use digraph::redis;
 use itertools::Itertools;
 
-use super::{actor, valid_url, Fixtures};
+use super::{actor, path, valid_url, Fixtures};
 
 mod delete_link {
     use super::*;
@@ -26,7 +26,7 @@ mod delete_link {
         let f = Fixtures::copy("simple");
 
         let link = link(&f, "Page title", "/wiki/00001");
-        let path = link.path();
+        let path = link.path().unwrap();
         assert!(f.git.exists(&path).unwrap());
 
         DeleteLink {
@@ -44,7 +44,7 @@ mod delete_link {
         let f = Fixtures::copy("simple");
 
         let link = link(&f, "Page title", "/wiki/00001");
-        let path = link.path();
+        let path = link.path().unwrap();
 
         let activity = f.git.fetch_activity(&path, 1).unwrap();
 
@@ -82,8 +82,8 @@ mod update_link_parent_topics {
     #[test]
     fn topics_updated() {
         let f = Fixtures::copy("simple");
-        let parent1 = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
-        let parent2 = RepoPath::from("/wiki/00001");
+        let parent1 = path(WIKI_ROOT_TOPIC_PATH);
+        let parent2 = path("/wiki/00001");
         let url = valid_url();
 
         let UpsertLinkResult { link, .. } = f.upsert_link(
@@ -97,13 +97,13 @@ mod update_link_parent_topics {
 
         UpdateLinkParentTopics {
             actor: actor(),
-            link_path: link.path(),
+            link_path: link.path().unwrap(),
             parent_topic_paths: BTreeSet::from([parent1, parent2]),
         }
         .call(f.update().unwrap(), &redis::Noop)
         .unwrap();
 
-        let link = f.git.fetch_link(&link.path()).unwrap();
+        let link = f.git.fetch_link(&link.path().unwrap()).unwrap();
         assert_eq!(link.parent_topics.len(), 2);
     }
 }
@@ -117,7 +117,7 @@ mod upsert_link {
         let f = Fixtures::copy("simple");
         let url = valid_url();
         let repo = RepoPrefix::wiki();
-        let path = url.path(&repo);
+        let path = url.path(&repo).unwrap();
         let search = Search::parse("page title https://www.google.com/").unwrap();
         let entry = SearchEntry {
             path: path.inner.to_owned(),
@@ -143,7 +143,7 @@ mod upsert_link {
         let f = Fixtures::copy("simple");
         let url = valid_url();
         let repo = RepoPrefix::wiki();
-        let path = url.path(&repo);
+        let path = url.path(&repo).unwrap();
         assert!(!f.git.exists(&path).unwrap());
 
         f.upsert_link(&repo, &url, None, None);
@@ -159,7 +159,7 @@ mod upsert_link {
     fn updates_are_idempotent() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let path = url.path(&RepoPrefix::wiki());
+        let path = url.path(&RepoPrefix::wiki()).unwrap();
         assert!(!f.git.exists(&path).unwrap());
 
         f.upsert_link(
@@ -183,7 +183,7 @@ mod upsert_link {
         let f = Fixtures::copy("simple");
         let url = RepoUrl::parse("https://www.google.com").unwrap();
         let repo = RepoPrefix::wiki();
-        let path = url.path(&repo);
+        let path = url.path(&repo).unwrap();
         assert!(!f.git.exists(&path).unwrap());
 
         f.upsert_link(
@@ -230,8 +230,8 @@ mod upsert_link {
         let f = Fixtures::copy("simple");
         let url = RepoUrl::parse("https://www.google.com").unwrap();
         let repo = RepoPrefix::wiki();
-        let path = url.path(&repo);
-        let topic = RepoPath::from("/wiki/00001");
+        let path = url.path(&repo).unwrap();
+        let topic = PathSpec::try_from("/wiki/00001").unwrap();
         assert!(!f.git.exists(&path).unwrap());
 
         let result = f.upsert_link(&repo, &url, Some("A".into()), Some(topic.inner.to_owned()));
@@ -255,7 +255,7 @@ mod upsert_link {
     fn lookup_indexes_updated() {
         let f = Fixtures::copy("simple");
         let url = RepoUrl::parse("https://www.google.com").unwrap();
-        let topic = RepoPath::from("/wiki/00001");
+        let topic = PathSpec::try_from("/wiki/00001").unwrap();
         let search = Search::parse("a link").unwrap();
 
         let UpsertLinkResult { link, .. } = f.upsert_link(
@@ -286,7 +286,7 @@ mod upsert_link {
         let f = Fixtures::copy("simple");
         let url = valid_url();
         let repo = RepoPrefix::from("/other/");
-        let link_path = url.path(&repo);
+        let link_path = url.path(&repo).unwrap();
 
         assert_eq!(link_path.repo, repo);
         assert!(!f.git.exists(&link_path).unwrap());

@@ -3,7 +3,7 @@ use geotime::Geotime;
 use std::collections::BTreeSet;
 
 use super::{Link, LinkMetadata, ParentTopic, Synonym, Topic, TopicMetadata};
-use crate::prelude::*;
+use crate::{prelude::*, types::sha256_base64};
 
 pub fn timerange_epoch() -> Geotime {
     use chrono::TimeZone;
@@ -14,7 +14,8 @@ pub fn timerange_epoch() -> Geotime {
 pub fn topic(name: &str) -> Topic {
     let added = chrono::Utc::now();
     // Some unique path
-    let path = format!("/wiki/{}", name);
+    let id = sha256_base64(name);
+    let path = format!("/wiki/{}", id);
     Topic {
         api_version: API_VERSION.to_owned(),
         metadata: TopicMetadata {

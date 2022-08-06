@@ -6,13 +6,14 @@ use digraph::git::{
 use digraph::http::{Fetch, Response};
 use digraph::prelude::*;
 use digraph::redis;
+use digraph::types::Timespec;
 use fs_extra::dir;
 use scraper::html::Html;
 use std::env;
 use std::path::PathBuf;
 use tempfile::{self, TempDir};
 
-use super::actor;
+use super::{actor, path};
 
 struct Fetcher(String);
 
@@ -42,7 +43,7 @@ impl Fixtures {
         let tempdir = tempfile::tempdir().unwrap();
         let path = PathBuf::from(&tempdir.path());
         let root = DataRoot::new(path.clone());
-        let git = Client::new(&Viewer::super_user(), &root);
+        let git = Client::new(&Viewer::super_user(), &root, Timespec);
 
         Fixtures {
             _tempdir: tempdir,
@@ -74,7 +75,7 @@ impl Fixtures {
         Ok(self.leaked_data()?.is_empty())
     }
 
-    pub fn fetch_link<F>(&self, path: &RepoPath, block: F)
+    pub fn fetch_link<F>(&self, path: &PathSpec, block: F)
     where
         F: Fn(Link),
     {
@@ -85,7 +86,7 @@ impl Fixtures {
         block(link);
     }
 
-    pub fn fetch_topic<F>(&self, path: &RepoPath, block: F)
+    pub fn fetch_topic<F>(&self, path: &PathSpec, block: F)
     where
         F: Fn(Topic),
     {
@@ -100,7 +101,13 @@ impl Fixtures {
         self.git.leaked_data()
     }
 
-    pub fn topic_path(&self, name: &str) -> Result<Option<RepoPath>> {
+    pub fn topic(&self, path: &str) -> Topic {
+        self.git
+            .fetch_topic(&PathSpec::try_from(path).unwrap())
+            .unwrap()
+    }
+
+    pub fn topic_path(&self, name: &str) -> Result<Option<PathSpec>> {
         let FetchTopicLiveSearchResult {
             synonym_matches: matches,
             ..
@@ -115,7 +122,7 @@ impl Fixtures {
 
         let row = matches.iter().find(|row| row.name == name);
 
-        Ok(row.map(|m| RepoPath::from(&m.path)))
+        Ok(row.map(|m| PathSpec::try_from(&m.path).unwrap()))
     }
 
     fn write(&self) {
@@ -140,7 +147,11 @@ impl Fixtures {
             None => "<title>Some title</title>".into(),
         };
 
-        let add_parent_topic_path = parent_topic.as_ref().map(RepoPath::from);
+        let add_parent_topic_path = if let Some(path) = &parent_topic {
+            Some(PathSpec::try_from(path).unwrap())
+        } else {
+            None
+        };
 
         let request = UpsertLink {
             actor: actor(),
@@ -160,7 +171,7 @@ impl Fixtures {
         &self,
         repo: &RepoPrefix,
         name: &str,
-        parent_topic: &RepoPath,
+        parent_topic: &PathSpec,
         on_matching_synonym: OnMatchingSynonym,
     ) -> Result<UpsertTopicResult> {
         UpsertTopic {
@@ -185,22 +196,21 @@ mod tests {
     #[allow(dead_code)]
     fn update_simple_fixtures() {
         let f = Fixtures::copy("simple");
-        let root = RepoPath::from(WIKI_ROOT_TOPIC_PATH);
+        let root = PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
 
-        let path = RepoPath::from(
-            "/wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi",
-        );
+        let topic_path =
+            path("/wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change".to_owned(),
             repo: RepoPrefix::wiki(),
-            on_matching_synonym: OnMatchingSynonym::Update(path),
+            on_matching_synonym: OnMatchingSynonym::Update(topic_path),
             parent_topic: root.clone(),
         }
         .call(f.update().unwrap(), &redis::Noop)
         .unwrap();
-        let climate_change = topic.unwrap().path();
+        let climate_change = topic.unwrap().path().unwrap();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Climate_change").unwrap();
         let result = f.upsert_link(
@@ -211,9 +221,7 @@ mod tests {
         );
         println!("result: {:?}", result.link);
 
-        let path = RepoPath::from(
-            "/wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj",
-        );
+        let path = path("/wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj");
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
@@ -224,7 +232,7 @@ mod tests {
         }
         .call(f.update().unwrap(), &redis::Noop)
         .unwrap();
-        let weather = topic.unwrap().path();
+        let weather = topic.unwrap().path().unwrap();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Weather").unwrap();
         f.upsert_link(
@@ -234,9 +242,10 @@ mod tests {
             Some(weather.inner.to_owned()),
         );
 
-        let path = RepoPath::from(
+        let path = PathSpec::try_from(
             "/wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13",
-        );
+        )
+        .unwrap();
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
@@ -247,7 +256,7 @@ mod tests {
         }
         .call(f.update().unwrap(), &redis::Noop)
         .unwrap();
-        let climate_change_weather = topic.unwrap().path();
+        let climate_change_weather = topic.unwrap().path().unwrap();
 
         UpdateTopicParentTopics {
             actor: actor(),

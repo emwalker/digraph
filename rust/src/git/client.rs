@@ -1,7 +1,7 @@
 use git2;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::PathBuf;
 
 use super::checks::LeakedData;
@@ -10,9 +10,11 @@ use super::index::{
     SaveChangesForPrefix, SearchEntry, SynonymEntry, SynonymMatch,
 };
 use super::{
-    activity, core, DownSetIter, Link, Object, Search, SearchTokenIndex, SynonymIndex, Topic,
+    activity, core, DownsetIter, Link, Object, Search, SearchTokenIndex, SynonymIndex, Topic,
+    TopicDownsetIter,
 };
 use crate::prelude::*;
+use crate::types::{ReadPath, Timespec};
 
 #[derive(Clone, Debug, Default)]
 pub struct DataRoot {
@@ -25,7 +27,7 @@ impl std::fmt::Display for DataRoot {
     }
 }
 
-pub fn parse_path(input: &str) -> Result<(DataRoot, RepoPath)> {
+pub fn parse_path(input: &str) -> Result<(DataRoot, PathSpec)> {
     lazy_static! {
         static ref RE: Regex =
             Regex::new(r"^(.+?)/(\w+)/objects/([\w_-]{2})/([\w_-]{2})/([\w_-]+)/object.yaml$")
@@ -54,7 +56,7 @@ pub fn parse_path(input: &str) -> Result<(DataRoot, RepoPath)> {
     let path = format!("/{}/{}{}{}", org_login, part1, part2, part3);
     let root = PathBuf::from(root);
 
-    Ok((DataRoot::new(root), RepoPath::from(&path)))
+    Ok((DataRoot::new(root), PathSpec::try_from(&path)?))
 }
 
 impl DataRoot {
@@ -89,7 +91,7 @@ pub trait GitPaths {
     fn parts(&self) -> Result<(&str, &str, &str)>;
 }
 
-impl GitPaths for RepoPath {
+impl GitPaths for PathSpec {
     fn parts(&self) -> Result<(&str, &str, &str)> {
         self.parts()
     }
@@ -98,19 +100,21 @@ impl GitPaths for RepoPath {
 #[derive(Clone, Debug)]
 pub struct Client {
     pub root: DataRoot,
+    timespec: Timespec,
     viewer: Viewer,
 }
 
 impl Client {
-    pub fn new(viewer: &Viewer, root: &DataRoot) -> Self {
+    pub fn new(viewer: &Viewer, root: &DataRoot, timespec: Timespec) -> Self {
         Self {
             root: root.to_owned(),
+            timespec,
             viewer: viewer.to_owned(),
         }
     }
 
     pub fn appears_in(&self, search: &Search, entry: &SearchEntry) -> Result<bool> {
-        let path = entry.path();
+        let path = entry.path()?;
         for token in &search.tokens {
             let key = path.repo.index_key(token)?;
             if !key
@@ -126,11 +130,11 @@ impl Client {
 
     pub fn fetch_activity_log(
         &self,
-        path: &RepoPath,
+        path: &PathSpec,
         index_mode: IndexMode,
     ) -> Result<ActivityIndex> {
         let filename = path.activity_log_filename()?;
-        let repo = self.repo(&path.repo)?;
+        let repo = self.view(&path.repo)?;
         match index_mode {
             IndexMode::Replace => Ok(ActivityIndex::new(&filename)),
             IndexMode::ReadOnly => ActivityIndex::load(&filename, &repo),
@@ -139,10 +143,12 @@ impl Client {
     }
 
     // How to handle path visibility?
-    fn cycle_exists(&self, descendant_path: &RepoPath, ancestor_path: &RepoPath) -> Result<bool> {
+    fn cycle_exists(&self, descendant_path: &PathSpec, ancestor_path: &PathSpec) -> Result<bool> {
         let mut i = 0;
 
-        for topic in self.topic_down_set(descendant_path) {
+        let descendant_path = self.read_path(descendant_path)?;
+
+        for topic in self.topic_downset(&descendant_path) {
             i += 1;
             if topic.metadata.path == ancestor_path.inner {
                 log::info!("cycle found after {} iterations", i);
@@ -154,21 +160,21 @@ impl Client {
         Ok(false)
     }
 
-    pub fn exists(&self, path: &RepoPath) -> Result<bool> {
+    pub fn exists(&self, path: &PathSpec) -> Result<bool> {
         if !self.viewer.can_read(path) {
             return Ok(false);
         }
-        let repo = self.repo(&path.repo)?;
+        let repo = self.view(&path.repo)?;
         repo.object_exists(path)
     }
 
-    pub fn fetch(&self, path: &RepoPath) -> Option<Object> {
+    pub fn fetch(&self, path: &PathSpec) -> Option<Object> {
         if !self.viewer.can_read(path) {
             log::warn!("viewer cannot read path: {}", path);
             return None;
         }
 
-        match self.repo(&path.repo) {
+        match self.view(&path.repo) {
             Ok(repo) => match repo.object(path) {
                 Ok(object) => object,
                 Err(err) => {
@@ -188,8 +194,8 @@ impl Client {
         prefix: &RepoPrefix,
         filename: &PathBuf,
     ) -> Result<SynonymIndex> {
-        let repo = self.repo(prefix)?;
-        let result = repo.find_blob_by_filename(filename)?;
+        let view = self.view(prefix)?;
+        let result = view.find_blob_by_filename(filename)?;
         match result {
             Some(blob) => {
                 let index = blob.try_into()?;
@@ -204,8 +210,8 @@ impl Client {
         prefix: &RepoPrefix,
         filename: &PathBuf,
     ) -> Result<SearchTokenIndex> {
-        let repo = self.repo(prefix)?;
-        let result = repo.find_blob_by_filename(filename)?;
+        let view = self.view(prefix)?;
+        let result = view.find_blob_by_filename(filename)?;
         match result {
             Some(blob) => Ok(SearchTokenIndex::make(
                 filename.to_owned(),
@@ -215,14 +221,14 @@ impl Client {
         }
     }
 
-    pub fn fetch_activity(&self, path: &RepoPath, first: usize) -> Result<Vec<activity::Change>> {
+    pub fn fetch_activity(&self, path: &PathSpec, first: usize) -> Result<Vec<activity::Change>> {
         log::info!("fetching first {} change logs from Git for {}", first, path);
         let index = self.fetch_activity_log(path, IndexMode::ReadOnly)?;
         let mut changes = vec![];
 
         for reference in index.references().iter().take(first) {
-            let path = RepoPath::from(&reference.path);
-            let repo = self.repo(&path.repo)?;
+            let path = PathSpec::try_from(&reference.path)?;
+            let repo = self.view(&path.repo)?;
             let result = repo.change(&path);
             match result {
                 Ok(change) => changes.push(change),
@@ -233,14 +239,14 @@ impl Client {
         Ok(changes)
     }
 
-    pub fn fetch_topic(&self, path: &RepoPath) -> Option<Topic> {
+    pub fn fetch_topic(&self, path: &PathSpec) -> Option<Topic> {
         match &self.fetch(path)? {
             Object::Topic(topic) => Some(topic.to_owned()),
             _ => None,
         }
     }
 
-    pub fn fetch_link(&self, path: &RepoPath) -> Option<Link> {
+    pub fn fetch_link(&self, path: &PathSpec) -> Option<Link> {
         match &self.fetch(path)? {
             Object::Link(link) => Some(link.to_owned()),
             other => {
@@ -248,6 +254,10 @@ impl Client {
                 None
             }
         }
+    }
+
+    pub fn downset(&self, topic_path: &ReadPath) -> DownsetIter {
+        DownsetIter::new(self.clone(), self.fetch_topic(&topic_path.spec))
     }
 
     pub fn leaked_data(&self) -> Result<Vec<(RepoPrefix, String)>> {
@@ -264,6 +274,14 @@ impl Client {
             None => BTreeSet::new(),
         };
         Ok(searches)
+    }
+
+    pub fn read_path(&self, path: &PathSpec) -> Result<ReadPath> {
+        let commit = self.repo(&path.repo)?.commit_oid(&self.timespec)?;
+        Ok(ReadPath {
+            spec: path.to_owned(),
+            commit,
+        })
     }
 
     fn repo(&self, prefix: &RepoPrefix) -> Result<core::Repo> {
@@ -296,7 +314,7 @@ impl Client {
                 .synonym_index(self, IndexType::SynonymPhrase, IndexMode::Update)?
                 .full_matches(&phrase)?
             {
-                let path = RepoPath::from(&entry.path);
+                let path = PathSpec::try_from(&entry.path)?;
                 if !self.viewer.can_read(&path) {
                     continue;
                 }
@@ -339,14 +357,14 @@ impl Client {
         }
     }
 
-    pub fn topic_down_set(&self, topic_path: &RepoPath) -> DownSetIter {
-        DownSetIter::new(self.clone(), self.fetch_topic(topic_path))
+    pub fn topic_downset(&self, topic_path: &ReadPath) -> TopicDownsetIter {
+        TopicDownsetIter::new(self.clone(), self.fetch_topic(&topic_path.spec))
     }
 
     fn topic_searches(&self, topic: Option<Topic>) -> Result<BTreeSet<Search>> {
         let searches = match topic {
             Some(topic) => {
-                let path = topic.path();
+                let path = topic.path()?;
                 if !self.viewer.can_read(&path) {
                     return Err(Error::NotFound(format!("not found: {}", path)));
                 }
@@ -372,10 +390,15 @@ impl Client {
 
     pub fn update(&self, mode: IndexMode) -> Result<BatchUpdate> {
         Ok(BatchUpdate {
+            changes: vec![],
             client: self.to_owned(),
             files: BTreeMap::new(),
             indexer: Indexer::new(mode),
         })
+    }
+
+    fn view(&self, prefix: &RepoPrefix) -> Result<core::View> {
+        core::View::ensure(&self.root, prefix, &self.timespec)
     }
 }
 
@@ -383,6 +406,7 @@ pub struct BatchUpdate {
     client: Client,
     indexer: Indexer,
     files: BTreeMap<(RepoPrefix, PathBuf), Option<git2::Oid>>,
+    changes: Vec<activity::Change>,
 }
 
 impl std::fmt::Debug for BatchUpdate {
@@ -395,8 +419,13 @@ impl std::fmt::Debug for BatchUpdate {
 }
 
 impl BatchUpdate {
+    pub fn activity_log(&self, path: &PathSpec, index_mode: IndexMode) -> Result<ActivityIndex> {
+        self.client.fetch_activity_log(path, index_mode)
+    }
+
     pub fn add_change(&mut self, change: &activity::Change) -> Result<()> {
         let repos = self.indexer.add_change(&self.client, change)?;
+        self.changes.push(change.to_owned());
 
         for repo in repos {
             // Write the individual change to a /prefix/changes/ directory
@@ -407,48 +436,48 @@ impl BatchUpdate {
         Ok(())
     }
 
-    fn check_can_update(&self, path: &RepoPath) -> Result<()> {
+    fn check_can_update(&self, path: &PathSpec) -> Result<()> {
         if !self.client.viewer.can_update(path) {
             return Err(Error::NotFound(format!("not found: {}", path)));
         }
         Ok(())
     }
 
-    pub fn activity_log(&self, path: &RepoPath, index_mode: IndexMode) -> Result<ActivityIndex> {
-        self.client.fetch_activity_log(path, index_mode)
+    fn commit_message(&self) -> String {
+        "Add change".to_owned()
     }
 
     pub fn cycle_exists(
         &self,
-        descendant_path: &RepoPath,
-        ancestor_path: &RepoPath,
+        descendant_path: &PathSpec,
+        ancestor_path: &PathSpec,
     ) -> Result<bool> {
         self.client.cycle_exists(descendant_path, ancestor_path)
     }
 
-    pub fn exists(&self, path: &RepoPath) -> Result<bool> {
+    pub fn exists(&self, path: &PathSpec) -> Result<bool> {
         self.client.exists(path)
     }
 
-    pub fn fetch(&self, path: &RepoPath) -> Option<Object> {
+    pub fn fetch(&self, path: &PathSpec) -> Option<Object> {
         self.client.fetch(path)
     }
 
-    pub fn fetch_link(&self, path: &RepoPath) -> Option<Link> {
+    pub fn fetch_link(&self, path: &PathSpec) -> Option<Link> {
         self.client.fetch_link(path)
     }
 
-    pub fn fetch_topic(&self, path: &RepoPath) -> Option<Topic> {
+    pub fn fetch_topic(&self, path: &PathSpec) -> Option<Topic> {
         self.client.fetch_topic(path)
     }
 
-    pub fn mark_deleted(&mut self, path: &RepoPath) -> Result<()> {
+    pub fn mark_deleted(&mut self, path: &PathSpec) -> Result<()> {
         self.check_can_update(path)?;
 
         let activity = self.client.fetch_activity(path, usize::MAX)?;
 
         for mut change in activity {
-            let paths = change.paths();
+            let paths = change.paths()?;
             let repos = paths
                 .iter()
                 .map(|path| path.repo.to_owned())
@@ -465,13 +494,13 @@ impl BatchUpdate {
         Ok(())
     }
 
-    pub fn remove(&mut self, path: &RepoPath) -> Result<()> {
+    pub fn remove(&mut self, path: &PathSpec) -> Result<()> {
         let filename = path.object_filename()?;
         self.files.insert((path.repo.to_owned(), filename), None);
         Ok(())
     }
 
-    pub fn remove_link(&mut self, path: &RepoPath, link: &Link) -> Result<()> {
+    pub fn remove_link(&mut self, path: &PathSpec, link: &Link) -> Result<()> {
         self.check_can_update(path)?;
 
         let searches = self.client.link_searches(Some(link.to_owned()))?;
@@ -480,7 +509,7 @@ impl BatchUpdate {
         self.remove(path)
     }
 
-    pub fn remove_topic(&mut self, path: &RepoPath, topic: &Topic) -> Result<()> {
+    pub fn remove_topic(&mut self, path: &PathSpec, topic: &Topic) -> Result<()> {
         self.check_can_update(path)?;
 
         self.indexer.remove_synonyms(&self.client, path, topic)?;
@@ -511,77 +540,13 @@ impl BatchUpdate {
     where
         S: SaveChangesForPrefix,
     {
-        self.indexer.save(store)?;
+        self.indexer.write_repo_changes(store)?;
 
-        #[derive(Debug, Default)]
-        struct TreeNode {
-            files: HashMap<String, Option<git2::Oid>>,
-            subtrees: HashMap<String, TreeNode>,
-        }
-
-        impl TreeNode {
-            fn new() -> Self {
-                Self {
-                    ..Default::default()
-                }
-            }
-        }
-
-        fn add_blob(tree: &mut TreeNode, path: &mut VecDeque<String>, oid: &Option<git2::Oid>) {
-            if let Some(name) = path.pop_front() {
-                if path.is_empty() {
-                    tree.files.insert(name, oid.to_owned());
-                } else {
-                    let subtree = tree.subtrees.entry(name).or_insert_with(TreeNode::new);
-                    add_blob(subtree, path, oid);
-                }
-            }
-        }
-
-        fn write(
-            repo: &git2::Repository,
-            before: Option<git2::Tree>,
-            tree: &TreeNode,
-        ) -> Result<git2::Oid> {
-            let mut builder = repo.treebuilder(before.as_ref())?;
-
-            for (filename, subtree) in &tree.subtrees {
-                let before = match &before {
-                    Some(before) => match before.get_name(filename) {
-                        Some(entry) => {
-                            let tree_id = entry.id();
-                            Some(repo.find_tree(tree_id)?)
-                        }
-                        None => None,
-                    },
-                    None => None,
-                };
-
-                let oid = write(repo, before, subtree)?;
-                builder.insert(filename, oid, 0o040000)?;
-            }
-
-            for (filename, oid) in &tree.files {
-                if let Some(oid) = oid {
-                    builder.insert(filename, oid.to_owned(), 0o100644)?;
-                } else {
-                    builder.remove(filename)?;
-                }
-            }
-
-            let oid = builder.write()?;
-            Ok(oid)
-        }
-
-        let sig = git2::Signature::now("digraph-bot", "digraph-bot@digraph.app")?;
-
-        let mut repos = HashMap::new();
+        let mut update = core::Update::new();
 
         // Write topics and links
         for ((repo, filename), oid) in self.files.iter() {
-            let mut deque = core::deque_from_path(filename);
-            let root = repos.entry(repo).or_insert_with(TreeNode::new);
-            add_blob(root, &mut deque, oid);
+            update.add(repo, filename, oid)?;
         }
 
         let index_files = self.indexer.files()?;
@@ -590,23 +555,11 @@ impl BatchUpdate {
         for (prefix, filename, ser) in index_files {
             let repo = self.repo(prefix)?;
             let oid = repo.add_blob(ser.as_bytes())?;
-            let mut deque = core::deque_from_path(&filename);
-            let root = repos.entry(prefix).or_insert_with(TreeNode::new);
-            add_blob(root, &mut deque, &Some(oid));
+            update.add(prefix, &filename, &Some(oid))?;
         }
 
-        for (repo, root) in repos {
-            let repo = self.client.repo(repo)?;
-            let head = repo.inner.find_reference("HEAD")?;
-            let before = head.peel_to_tree()?;
-            let oid = write(&repo.inner, Some(before), &root)?;
-            let tree = repo.inner.find_tree(oid)?;
-            let parent = head.peel_to_commit()?;
-            repo.inner
-                .commit(Some("HEAD"), &sig, &sig, "Updated repo", &tree, &[&parent])?;
-        }
-
-        Ok(())
+        let sig = git2::Signature::now("digraph-bot", "digraph-bot@digraph.app")?;
+        update.write(&self.client.root, &sig, &self.commit_message())
     }
 
     pub fn save_change(
@@ -616,7 +569,7 @@ impl BatchUpdate {
     ) -> Result<()> {
         self.indexer.add_change(&self.client, change)?;
 
-        let path = RepoPath::from(&reference.path);
+        let path = PathSpec::try_from(&reference.path)?;
         let s = serde_yaml::to_string(&change)?;
         let oid = self.repo(&path.repo)?.add_blob(s.as_bytes())?;
         self.files
@@ -625,32 +578,37 @@ impl BatchUpdate {
         Ok(())
     }
 
-    pub fn save_link(&mut self, path: &RepoPath, link: &Link) -> Result<()> {
+    pub fn save_link(&mut self, path: &PathSpec, link: &Link) -> Result<()> {
         self.check_can_update(path)?;
 
         let repo = self.client.repo(&path.repo)?;
-        let before = repo.link(path)?;
+        let view = self.client.view(&path.repo)?;
+
+        let before = view.link(path)?;
         let before = self.client.link_searches(before)?;
         let after = self.client.link_searches(Some(link.to_owned()))?;
         self.indexer
             .update(&self.client, &link.to_search_entry(), &before, &after)?;
         let s = serde_yaml::to_string(&link)?;
         let oid = repo.add_blob(s.as_bytes())?;
+
         self.save_object(path, oid)
     }
 
-    fn save_object(&mut self, path: &RepoPath, oid: git2::Oid) -> Result<()> {
+    fn save_object(&mut self, path: &PathSpec, oid: git2::Oid) -> Result<()> {
         let filename = path.object_filename()?;
         self.files
             .insert((path.repo.to_owned(), filename), Some(oid));
         Ok(())
     }
 
-    pub fn save_topic(&mut self, path: &RepoPath, topic: &Topic) -> Result<()> {
+    pub fn save_topic(&mut self, path: &PathSpec, topic: &Topic) -> Result<()> {
         self.check_can_update(path)?;
 
+        let view = self.client.view(&path.repo)?;
         let repo = self.client.repo(&path.repo)?;
-        let before = repo.topic(path)?;
+
+        let before = view.topic(path)?;
         self.indexer.update_synonyms(&self.client, &before, topic)?;
 
         let before = self.client.topic_searches(before)?;
@@ -681,26 +639,17 @@ mod tests {
 
         #[test]
         fn object_filename() {
-            assert!(matches!(
-                RepoPath::from("1234").object_filename(),
-                Err(Error::Repo(_))
-            ));
-            assert!(matches!(
-                RepoPath::from("wiki/123456").object_filename(),
-                Err(Error::Repo(_))
-            ));
-            assert!(matches!(
-                RepoPath::from("/wiki/1234").object_filename(),
-                Err(Error::Repo(_))
-            ));
-
             assert_eq!(
-                RepoPath::from("/wiki/123456").object_filename().unwrap(),
+                PathSpec::try_from("/wiki/123456")
+                    .unwrap()
+                    .object_filename()
+                    .unwrap(),
                 PathBuf::from("objects/12/34/56/object.yaml")
             );
 
             assert_eq!(
-                RepoPath::from("/with-dash/123456")
+                PathSpec::try_from("/with-dash/123456")
+                    .unwrap()
                     .object_filename()
                     .unwrap(),
                 PathBuf::from("objects/12/34/56/object.yaml")

@@ -7,9 +7,11 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use strum_macros::EnumString;
-use void::Void;
 
-use crate::{errors::Error, prelude::WIKI_REPO_PREFIX};
+use crate::{
+    errors::Error,
+    prelude::{WIKI_REPO_PREFIX, WIKI_ROOT_TOPIC_PATH},
+};
 
 pub type Result<T> = std::result::Result<T, Error>;
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
@@ -112,16 +114,16 @@ impl RepoPrefix {
         self.inner.trim_start_matches('/')
     }
 
-    pub fn test(&self, path: &RepoPath) -> bool {
+    pub fn test(&self, path: &PathSpec) -> bool {
         path.starts_with(&self.inner)
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct RepoList(pub Vec<RepoPrefix>);
+pub struct RepoList(Vec<RepoPrefix>);
 
-impl From<&Vec<String>> for RepoList {
-    fn from(prefixes: &Vec<String>) -> Self {
+impl From<&[String]> for RepoList {
+    fn from(prefixes: &[String]) -> Self {
         Self(
             prefixes
                 .iter()
@@ -131,18 +133,37 @@ impl From<&Vec<String>> for RepoList {
     }
 }
 
-impl IntoIterator for RepoList {
-    type Item = RepoPrefix;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+impl From<&Vec<String>> for RepoList {
+    fn from(prefixes: &Vec<String>) -> Self {
+        Self::from(prefixes.as_slice())
+    }
+}
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
+impl From<&[RepoPrefix]> for RepoList {
+    fn from(prefixes: &[RepoPrefix]) -> Self {
+        Self(prefixes.to_owned())
+    }
+}
+
+impl From<&Vec<RepoPrefix>> for RepoList {
+    fn from(prefixes: &Vec<RepoPrefix>) -> Self {
+        Self(prefixes.to_vec())
+    }
+}
+
+impl From<&RepoList> for Vec<RepoPrefix> {
+    fn from(repos: &RepoList) -> Self {
+        repos.0.to_owned()
     }
 }
 
 impl RepoList {
-    pub fn include(&self, path: &RepoPath) -> bool {
+    pub fn include(&self, path: &PathSpec) -> bool {
         self.0.iter().any(|prefix| prefix.test(path))
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, RepoPrefix> {
+        self.0.iter()
     }
 
     pub fn to_vec(&self) -> Vec<String> {
@@ -155,71 +176,77 @@ impl RepoList {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct RepoPath {
+pub struct PathSpec {
     pub inner: String,
     pub org_login: String,
     pub repo: RepoPrefix,
     pub short_id: String,
-    pub valid: bool,
 }
 
-impl std::fmt::Display for RepoPath {
+impl std::fmt::Display for PathSpec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
-impl From<&String> for RepoPath {
-    fn from(input: &String) -> Self {
+impl TryFrom<&str> for PathSpec {
+    type Error = Error;
+
+    fn try_from(input: &str) -> Result<Self> {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^(/([\w-]+)/)([\w_-]+)$").unwrap();
         }
 
         let cap = match RE.captures(input) {
             Some(cap) => cap,
-            _ => return Self::invalid_path(input),
+            _ => {
+                return Err(Error::Path(format!("invalid path: {}", input)));
+            }
         };
 
         let (prefix, org_login, short_id) = match (cap.get(1), cap.get(2), cap.get(3)) {
             (Some(prefix), Some(org_login), Some(short_id)) => {
                 (prefix.as_str(), org_login.as_str(), short_id.as_str())
             }
-            _ => return Self::invalid_path(input),
+            _ => {
+                return Err(Error::Path(format!("invalid path: {}", input)));
+            }
         };
 
-        RepoPath {
+        Ok(PathSpec {
             inner: input.to_string(),
             org_login: org_login.to_string(),
             repo: RepoPrefix::from(prefix),
             short_id: short_id.to_string(),
-            valid: true,
-        }
+        })
     }
 }
 
-impl From<&str> for RepoPath {
-    fn from(input: &str) -> Self {
-        Self::from(&input.to_string())
+impl TryFrom<&String> for PathSpec {
+    type Error = Error;
+
+    fn try_from(input: &String) -> Result<Self> {
+        PathSpec::try_from(input.as_str())
     }
 }
 
-impl std::cmp::Ord for RepoPath {
+impl std::cmp::Ord for PathSpec {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.inner.cmp(&other.inner)
     }
 }
 
-impl std::cmp::PartialOrd for RepoPath {
+impl std::cmp::PartialOrd for PathSpec {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl std::str::FromStr for RepoPath {
-    type Err = Void;
+impl std::str::FromStr for PathSpec {
+    type Err = Error;
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Ok(RepoPath::from(s))
+    fn from_str(s: &str) -> Result<Self> {
+        PathSpec::try_from(s)
     }
 }
 
@@ -231,20 +258,14 @@ pub fn random_id() -> String {
         .collect()
 }
 
-impl RepoPath {
-    pub fn make(prefix: &String) -> Self {
+impl PathSpec {
+    pub fn make(prefix: &String) -> Result<Self> {
         let s: String = random_id();
-        Self::from(&format!("{}{}", prefix, s))
+        Self::try_from(&format!("{}{}", prefix, s))
     }
 
-    fn invalid_path(input: &str) -> Self {
-        Self {
-            inner: input.to_owned(),
-            org_login: "wiki".to_owned(),
-            repo: RepoPrefix::wiki(),
-            short_id: "invalid-id".to_owned(),
-            valid: false,
-        }
+    pub fn is_root(&self) -> bool {
+        self.inner == WIKI_ROOT_TOPIC_PATH
     }
 
     pub fn parts(&self) -> Result<(&str, &str, &str)> {
@@ -252,23 +273,19 @@ impl RepoPath {
             static ref RE: Regex = Regex::new(r"^([\w_-]{2})([\w_-]{2})([\w_-]+)$").unwrap();
         }
 
-        if !self.valid {
-            return Err(Error::Repo(format!("invalid path: {:?}", self)));
-        }
-
         let cap = RE
             .captures(&self.short_id)
-            .ok_or_else(|| Error::Repo(format!("bad id: {}", self)))?;
+            .ok_or_else(|| Error::Path(format!("bad id: {}", self)))?;
 
         if cap.len() != 4 {
-            return Err(Error::Repo(format!("bad id: {}", self)));
+            return Err(Error::Path(format!("bad id: {}", self)));
         }
 
         match (cap.get(1), cap.get(2), cap.get(3)) {
             (Some(part1), Some(part2), Some(part3)) => {
                 Ok((part1.as_str(), part2.as_str(), part3.as_str()))
             }
-            _ => Err(Error::Repo(format!("bad id: {}", self))),
+            _ => Err(Error::Path(format!("bad id: {}", self))),
         }
     }
 
@@ -283,10 +300,19 @@ pub enum Alert {
     Warning(String),
 }
 
-pub trait DownSet {
-    fn transitive_closure(&self, topic_paths: &[&RepoPath]) -> Result<HashSet<String>>;
+#[derive(Clone, Debug)]
+pub struct Timespec;
 
-    fn down_set(&self, key: &RepoPath) -> HashSet<String>;
+#[derive(Debug)]
+pub struct ReadPath {
+    pub commit: git2::Oid,
+    pub spec: PathSpec,
+}
+
+pub trait Downset {
+    fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<String>>;
+
+    fn downset(&self, key: &ReadPath) -> HashSet<String>;
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -422,7 +448,7 @@ impl Viewer {
         }
     }
 
-    pub fn ensure_can_read(&self, path: &RepoPath) -> Result<()> {
+    pub fn ensure_can_read(&self, path: &PathSpec) -> Result<()> {
         if !self.can_read(path) {
             return Err(Error::Repo("not allowed".into()));
         }
@@ -443,14 +469,14 @@ impl Viewer {
         }
     }
 
-    pub fn can_read(&self, path: &RepoPath) -> bool {
+    pub fn can_read(&self, path: &PathSpec) -> bool {
         if self.super_user {
             return true;
         }
         self.read_repos.include(path)
     }
 
-    pub fn can_update(&self, path: &RepoPath) -> bool {
+    pub fn can_update(&self, path: &PathSpec) -> bool {
         if self.super_user {
             return true;
         }
@@ -522,7 +548,7 @@ mod tests {
 
         #[test]
         fn can_update() {
-            let path = RepoPath::from("/wiki/00001");
+            let path = PathSpec::try_from("/wiki/00001").unwrap();
 
             let viewer = Viewer::guest();
             assert!(!viewer.can_update(&path));
@@ -538,7 +564,7 @@ mod tests {
 
             assert!(viewer.can_update(&path));
 
-            let path = RepoPath::from("/private/00001");
+            let path = PathSpec::try_from("/private/00001").unwrap();
             assert!(!viewer.can_update(&path));
         }
     }
@@ -548,8 +574,7 @@ mod tests {
 
         #[test]
         fn simple_case() {
-            let path = RepoPath::from("/wiki/00001");
-            assert!(path.valid);
+            let path = PathSpec::try_from("/wiki/00001").unwrap();
             assert_eq!("/wiki/00001", path.inner);
             assert_eq!(RepoPrefix::wiki(), path.repo);
             assert_eq!("wiki", path.org_login);
@@ -558,7 +583,8 @@ mod tests {
 
         #[test]
         fn parts() {
-            let path = RepoPath::from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ");
+            let path =
+                PathSpec::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
             assert_eq!(
                 path.parts().unwrap(),
                 ("q-", "ZZ", "meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
@@ -571,7 +597,8 @@ mod tests {
 
         #[test]
         fn prefix() {
-            let path = RepoPath::from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ");
+            let path =
+                PathSpec::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
             assert_eq!(path.repo, RepoPrefix::wiki());
         }
 

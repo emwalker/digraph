@@ -10,6 +10,7 @@ use crate::http;
 use crate::prelude::*;
 use crate::psql;
 use crate::redis;
+use crate::types::Timespec;
 
 pub struct Store {
     db: PgPool,
@@ -42,7 +43,7 @@ impl Store {
             psql::RepositoryByNameLoader::new(viewer.clone(), db.clone());
         let repository_by_prefix_loader =
             psql::RepositoryByPrefixLoader::new(viewer.clone(), db.clone());
-        let object_loader = graphql::ObjectLoader::new(viewer.clone(), git.clone());
+        let object_loader = graphql::ObjectLoader::new(git.clone());
         let user_loader = psql::UserLoader::new(viewer.clone(), db.clone());
 
         Self {
@@ -97,7 +98,12 @@ impl Store {
         topic_path: Option<String>,
         first: i32,
     ) -> Result<Vec<git::activity::Change>> {
-        let topic_path = topic_path.map(|s| RepoPath::from(&s));
+        let topic_path = if let Some(path) = topic_path {
+            Some(PathSpec::try_from(&path)?)
+        } else {
+            None
+        };
+
         let result = git::activity::FetchActivity {
             actor: self.viewer.clone(),
             topic_path,
@@ -118,14 +124,14 @@ impl Store {
         self.git.update(git::IndexMode::Update)
     }
 
-    async fn flat_topics(&self, paths: &[RepoPath]) -> Result<Vec<graphql::Topic>> {
+    async fn flat_topics(&self, paths: &[PathSpec]) -> Result<Vec<graphql::Topic>> {
         let result = self.topics(paths).await?;
         Ok(result.iter().flatten().cloned().collect())
     }
 
     pub async fn child_links_for_topic(
         &self,
-        parent_topic: &RepoPath,
+        parent_topic: &PathSpec,
         _reviewed: Option<bool>,
     ) -> Result<Vec<graphql::Link>> {
         let children = self.topic_children(parent_topic).await?;
@@ -134,7 +140,7 @@ impl Store {
         for child in children.iter().take(50) {
             let git::SearchMatch { object, .. } = &child;
             if let git::Object::Link(link) = object {
-                links.push(graphql::Link::from(link));
+                links.push(graphql::Link::try_from(link)?);
             }
         }
 
@@ -143,7 +149,7 @@ impl Store {
 
     pub async fn topic_children(
         &self,
-        parent_topic: &RepoPath,
+        parent_topic: &PathSpec,
     ) -> Result<BTreeSet<git::SearchMatch>> {
         let topic = self
             .topic(parent_topic)
@@ -152,7 +158,7 @@ impl Store {
         let child_paths = topic
             .child_paths
             .iter()
-            .map(RepoPath::to_string)
+            .map(PathSpec::to_string)
             .collect_vec();
         let map = self.object_loader.load_many(child_paths.clone()).await?;
 
@@ -179,7 +185,7 @@ impl Store {
             .await
     }
 
-    pub async fn delete_link(&self, link_path: &RepoPath) -> Result<git::DeleteLinkResult> {
+    pub async fn delete_link(&self, link_path: &PathSpec) -> Result<git::DeleteLinkResult> {
         git::DeleteLink {
             actor: self.viewer.clone(),
             link_path: link_path.clone(),
@@ -193,7 +199,7 @@ impl Store {
             .await
     }
 
-    pub async fn delete_topic(&self, path: &RepoPath) -> Result<git::DeleteTopicResult> {
+    pub async fn delete_topic(&self, path: &PathSpec) -> Result<git::DeleteTopicResult> {
         git::DeleteTopic {
             actor: self.viewer.clone(),
             topic_path: path.clone(),
@@ -203,7 +209,7 @@ impl Store {
 
     pub async fn remove_topic_timerange(
         &self,
-        topic_path: &RepoPath,
+        topic_path: &PathSpec,
     ) -> Result<git::RemoveTopicTimerangeResult> {
         git::RemoveTopicTimerange {
             actor: self.viewer.clone(),
@@ -212,7 +218,7 @@ impl Store {
         .call(self.update()?, &self.redis)
     }
 
-    pub async fn link(&self, path: &RepoPath) -> Result<Option<graphql::Link>> {
+    pub async fn link(&self, path: &PathSpec) -> Result<Option<graphql::Link>> {
         let result = self
             .object_loader
             .load_one(path.to_string())
@@ -220,7 +226,7 @@ impl Store {
             .ok_or_else(|| Error::NotFound(format!("no link: {}", path)))?;
 
         match result {
-            git::Object::Link(link) => Ok(Some(graphql::Link::from(&link))),
+            git::Object::Link(link) => Ok(Some(graphql::Link::try_from(&link)?)),
             _ => return Err(Error::NotFound(format!("no link: {}", path))),
         }
     }
@@ -244,7 +250,7 @@ impl Store {
         self.organization_by_login_loader.load_one(login).await
     }
 
-    pub async fn parent_topics_for_topic(&self, path: &RepoPath) -> Result<Vec<graphql::Topic>> {
+    pub async fn parent_topics_for_topic(&self, path: &PathSpec) -> Result<Vec<graphql::Topic>> {
         let topic = self
             .topic(path)
             .await?
@@ -252,7 +258,7 @@ impl Store {
         self.flat_topics(&topic.parent_topic_paths).await
     }
 
-    pub async fn parent_topics_for_link(&self, path: &RepoPath) -> Result<Vec<graphql::Topic>> {
+    pub async fn parent_topics_for_link(&self, path: &PathSpec) -> Result<Vec<graphql::Topic>> {
         let link = self
             .link(path)
             .await?
@@ -283,7 +289,7 @@ impl Store {
 
     pub async fn review_link(
         &self,
-        link_path: &RepoPath,
+        link_path: &PathSpec,
         reviewed: bool,
     ) -> Result<psql::ReviewLinkResult> {
         let object = self
@@ -309,19 +315,22 @@ impl Store {
         parent_topic: graphql::Topic,
         search_string: String,
     ) -> Result<Vec<graphql::TopicChild>> {
+        let viewer = &self.viewer;
+
         let fetcher = git::RedisFetchDownSet {
             client: self.git.clone(),
             redis: self.redis.clone(),
         };
 
-        let git::SearchWithinTopicResult { matches, .. } = git::SearchWithinTopic {
+        let git::FindMatchesResult { matches, .. } = git::FindMatches {
             limit: 100,
             locale: Locale::EN,
-            prefixes: vec![RepoPrefix::wiki()],
             recursive: true,
+            repos: viewer.read_repos.to_owned(),
             search: git::Search::parse(&search_string)?,
+            timespec: Timespec,
             topic_path: parent_topic.path,
-            viewer: self.viewer.clone(),
+            viewer: viewer.to_owned(),
         }
         .call(&self.git, &fetcher)?;
 
@@ -356,7 +365,7 @@ impl Store {
             .await
     }
 
-    pub async fn topic(&self, path: &RepoPath) -> Result<Option<graphql::Topic>> {
+    pub async fn topic(&self, path: &PathSpec) -> Result<Option<graphql::Topic>> {
         let result = self
             .object_loader
             .load_one(path.to_string())
@@ -377,7 +386,7 @@ impl Store {
         Ok(count.try_into().unwrap_or_default())
     }
 
-    pub async fn topics(&self, paths: &[RepoPath]) -> Result<Vec<Option<graphql::Topic>>> {
+    pub async fn topics(&self, paths: &[PathSpec]) -> Result<Vec<Option<graphql::Topic>>> {
         let paths = paths.iter().map(|p| p.to_string()).collect::<Vec<String>>();
         let map = self.object_loader.load_many(paths.clone()).await?;
         let mut topics: Vec<Option<graphql::Topic>> = Vec::new();
@@ -402,12 +411,12 @@ impl Store {
     ) -> Result<git::UpdateLinkParentTopicsResult> {
         git::UpdateLinkParentTopics {
             actor: self.viewer.clone(),
-            link_path: RepoPath::from(&input.link_path),
+            link_path: PathSpec::try_from(&input.link_path)?,
             parent_topic_paths: input
                 .parent_topic_paths
                 .iter()
-                .map(RepoPath::from)
-                .collect::<BTreeSet<RepoPath>>(),
+                .map(PathSpec::try_from)
+                .collect::<Result<BTreeSet<PathSpec>>>()?,
         }
         .call(self.update()?, &self.redis)
     }
@@ -419,7 +428,7 @@ impl Store {
         git::UpdateTopicSynonyms {
             actor: self.viewer.clone(),
             synonyms: input.synonyms.iter().map(git::Synonym::from).collect_vec(),
-            topic_path: RepoPath::from(&input.topic_path),
+            topic_path: PathSpec::try_from(&input.topic_path)?,
         }
         .call(self.update()?, &self.redis)
     }
@@ -428,9 +437,11 @@ impl Store {
         &self,
         input: graphql::UpsertLinkInput,
     ) -> Result<git::UpsertLinkResult> {
-        let add_parent_topic_path = input
-            .add_parent_topic_path
-            .map(|path| RepoPath::from(&path));
+        let add_parent_topic_path = if let Some(path) = input.add_parent_topic_path {
+            Some(PathSpec::try_from(&path)?)
+        } else {
+            None
+        };
 
         git::UpsertLink {
             add_parent_topic_path,
@@ -445,8 +456,8 @@ impl Store {
 
     pub async fn update_topic_parent_topics(
         &self,
-        topic_path: &RepoPath,
-        parent_topics: Vec<RepoPath>,
+        topic_path: &PathSpec,
+        parent_topics: Vec<PathSpec>,
     ) -> Result<git::UpdateTopicParentTopicsResult> {
         git::UpdateTopicParentTopics {
             actor: self.viewer.clone(),
@@ -454,7 +465,7 @@ impl Store {
             parent_topic_paths: parent_topics
                 .iter()
                 .map(|p| p.to_owned())
-                .collect::<BTreeSet<RepoPath>>(),
+                .collect::<BTreeSet<PathSpec>>(),
         }
         .call(self.update()?, &self.redis)
     }
@@ -476,7 +487,7 @@ impl Store {
             name: input.name.to_owned(),
             on_matching_synonym: git::OnMatchingSynonym::Ask,
             repo: RepoPrefix::from(&input.repo_prefix),
-            parent_topic: RepoPath::from(&input.parent_topic_path),
+            parent_topic: PathSpec::try_from(&input.parent_topic_path)?,
         }
         .call(self.update()?, &self.redis)
     }
@@ -493,7 +504,7 @@ impl Store {
                 starts: geotime::LexicalGeohash::from(starts),
                 prefix_format: TimerangePrefixFormat::from(&input.prefix_format),
             },
-            topic_path: RepoPath::from(&input.topic_path),
+            topic_path: PathSpec::try_from(&input.topic_path)?,
         }
         .call(self.update()?, &self.redis)
     }

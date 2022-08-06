@@ -5,6 +5,7 @@ use crate::git;
 use crate::prelude::*;
 use crate::redis;
 use crate::store::Store;
+use crate::types::Timespec;
 
 mod activity;
 pub use activity::*;
@@ -68,10 +69,10 @@ impl State {
         }
     }
 
-    pub fn create_repo(&self, viewer: &Viewer) -> Store {
+    pub fn store(&self, viewer: &Viewer, timespec: &Timespec) -> Store {
         Store::new(
             viewer.to_owned(),
-            git::Client::new(viewer, &self.root),
+            git::Client::new(viewer, &self.root, timespec.to_owned()),
             self.pool.clone(),
             self.server_secret.clone(),
             self.redis.clone(),

@@ -199,9 +199,9 @@ impl SynonymIndex {
         )
     }
 
-    pub fn load(filename: &PathBuf, repo: &core::Repo) -> Result<Self> {
-        let index = if repo.blob_exists(filename)? {
-            match repo.find_blob_by_filename(filename)? {
+    pub fn load(filename: &PathBuf, view: &core::View) -> Result<Self> {
+        let index = if view.blob_exists(filename)? {
+            match view.find_blob_by_filename(filename)? {
                 Some(blob) => Self {
                     filename: filename.to_owned(),
                     index: blob.try_into()?,
@@ -218,7 +218,7 @@ impl SynonymIndex {
         Self { filename, index }
     }
 
-    pub fn add(&mut self, path: &RepoPath, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn add(&mut self, path: &PathSpec, phrase: Phrase, name: &str) -> Result<()> {
         let paths = self.index.synonyms.entry(phrase).or_insert(BTreeSet::new());
 
         paths.insert(SynonymEntry {
@@ -233,7 +233,7 @@ impl SynonymIndex {
         Ok(self.index.full_matches(phrase))
     }
 
-    pub fn remove(&mut self, path: &RepoPath, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn remove(&mut self, path: &PathSpec, phrase: Phrase, name: &str) -> Result<()> {
         if let Some(paths) = self.index.synonyms.get_mut(&phrase) {
             paths.remove(&SynonymEntry {
                 name: name.to_owned(),
@@ -267,8 +267,8 @@ impl From<&TopicChild> for SearchEntry {
 }
 
 impl SearchEntry {
-    pub fn path(&self) -> RepoPath {
-        RepoPath::from(&self.path)
+    pub fn path(&self) -> Result<PathSpec> {
+        PathSpec::try_from(&self.path)
     }
 }
 
@@ -461,9 +461,9 @@ impl ActivityIndex {
         }
     }
 
-    pub fn load(filename: &PathBuf, repo: &core::Repo) -> Result<Self> {
-        let index = if repo.blob_exists(filename)? {
-            match repo.find_blob_by_filename(filename)? {
+    pub fn load(filename: &PathBuf, view: &core::View) -> Result<Self> {
+        let index = if view.blob_exists(filename)? {
+            match view.find_blob_by_filename(filename)? {
                 Some(blob) => Self {
                     filename: filename.to_owned(),
                     index: blob.try_into()?,
@@ -589,7 +589,7 @@ pub trait SaveChangesForPrefix {
 }
 
 pub struct Indexer {
-    path_activity: HashMap<RepoPath, ActivityIndex>,
+    path_activity: HashMap<PathSpec, ActivityIndex>,
     pub mode: IndexMode,
     repo_changes: HashMap<RepoPrefix, BTreeSet<activity::Change>>,
     search_tokens: HashMap<IndexKey, SearchTokenIndex>,
@@ -616,7 +616,7 @@ impl Indexer {
     ) -> Result<HashSet<RepoPrefix>> {
         let mut repos = HashSet::new();
 
-        for path in change.paths() {
+        for path in change.paths()? {
             let activity = self.path_activity(client, &path)?;
             let reference = ChangeReference::new(&path.repo, change);
             activity.add(reference);
@@ -637,7 +637,7 @@ impl Indexer {
     pub fn path_activity(
         &mut self,
         client: &Client,
-        path: &RepoPath,
+        path: &PathSpec,
     ) -> Result<&mut ActivityIndex> {
         let index = self
             .path_activity
@@ -736,7 +736,7 @@ impl Indexer {
     where
         S: Iterator<Item = &'s Search>,
     {
-        let path = entry.path();
+        let path = entry.path()?;
         for search in searches {
             for token in &search.tokens {
                 let key = path.repo.index_key(token)?;
@@ -751,7 +751,7 @@ impl Indexer {
     pub fn remove_synonyms(
         &mut self,
         client: &Client,
-        path: &RepoPath,
+        path: &PathSpec,
         topic: &Topic,
     ) -> Result<()> {
         self.synonym_indexes(
@@ -793,7 +793,7 @@ impl Indexer {
         for (repo, changes) in &self.repo_changes {
             for change in changes {
                 let reference = ChangeReference::new(repo, change);
-                let path = RepoPath::from(&reference.path);
+                let path = PathSpec::try_from(&reference.path)?;
                 files.push((
                     repo,
                     path.change_filename()?,
@@ -805,7 +805,7 @@ impl Indexer {
         Ok(files)
     }
 
-    pub fn save<S>(&self, store: &S) -> Result<()>
+    pub fn write_repo_changes<S>(&self, store: &S) -> Result<()>
     where
         S: SaveChangesForPrefix,
     {
@@ -836,7 +836,7 @@ impl Indexer {
         after: &BTreeSet<Search>,
     ) -> Result<()> {
         let removed = before.difference(after);
-        let path = entry.path();
+        let path = entry.path()?;
         for search in removed {
             for token in &search.tokens {
                 let key = path.repo.index_key(token)?;
@@ -869,7 +869,7 @@ impl Indexer {
         before: &Option<Topic>,
         after: &Topic,
     ) -> Result<()> {
-        let path = after.path();
+        let path = after.path()?;
 
         let before = match before {
             Some(before) => before

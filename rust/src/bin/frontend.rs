@@ -3,6 +3,7 @@ use async_graphql::extensions;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use digraph::types::Timespec;
 use std::path::PathBuf;
 
 use std::env;
@@ -67,11 +68,11 @@ async fn index(
 ) -> GraphQLResponse {
     let user_info = user_id_from_header(http_req);
     let viewer = state.authenticate(user_info).await;
-    let repo = state.create_repo(&viewer);
+    let store = state.store(&viewer, &Timespec);
 
     state
         .schema
-        .execute(req.into_inner().data(repo))
+        .execute(req.into_inner().data(store))
         .await
         .into()
 }

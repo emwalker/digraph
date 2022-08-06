@@ -1,10 +1,11 @@
 use git2;
 use std::{
-    collections::VecDeque,
+    collections::{HashMap, VecDeque},
     path::{Path, PathBuf},
 };
 
 use crate::prelude::*;
+use crate::types::Timespec;
 
 use super::{activity, DataRoot, GitPaths, Link, Object, Topic};
 
@@ -71,54 +72,14 @@ impl Repo {
         Ok(self.inner.odb()?.write(git2::ObjectType::Blob, ser)?)
     }
 
-    pub fn blob_exists(&self, filename: &Path) -> Result<bool> {
-        let blob = self.find_blob_by_filename(filename)?;
-        Ok(blob.is_some())
+    pub fn commit(&self, oid: git2::Oid) -> Result<git2::Commit<'_>> {
+        Ok(self.inner.find_commit(oid)?)
     }
 
-    pub(crate) fn find_blob_by_filename(&self, filename: &Path) -> Result<Option<git2::Blob>> {
-        let mut path = deque_from_path(filename);
-        let tree = self.tree("HEAD")?;
-
-        if let Some(oid) = self.path_to_oid(tree, &mut path) {
-            let blob = self.inner.find_blob(oid)?;
-            return Ok(Some(blob));
-        }
-
-        Ok(None)
-    }
-
-    pub fn change(&self, path: &RepoPath) -> Result<activity::Change> {
-        let result = self.find_blob_by_filename(&path.change_filename()?)?;
-        match result {
-            Some(blob) => Ok(blob.try_into()?),
-            None => Err(Error::NotFound(format!("not found: {}", path))),
-        }
-    }
-
-    pub fn object_exists(&self, path: &RepoPath) -> Result<bool> {
-        let path = path.object_filename()?;
-        self.blob_exists(&path)
-    }
-
-    fn find_blob(&self, path: &RepoPath) -> Result<Option<git2::Blob>> {
-        self.find_blob_by_filename(&path.object_filename()?)
-    }
-
-    pub fn link(&self, path: &RepoPath) -> Result<Option<Link>> {
-        let link = match self.find_blob(path)? {
-            Some(blob) => Some(blob.try_into()?),
-            None => None,
-        };
-        Ok(link)
-    }
-
-    pub fn object(&self, path: &RepoPath) -> Result<Option<Object>> {
-        let object = match self.find_blob(path)? {
-            Some(blob) => Some(blob.try_into()?),
-            None => None,
-        };
-        Ok(object)
+    pub fn commit_oid(&self, _timespec: &Timespec) -> Result<git2::Oid> {
+        let reference = self.inner.find_reference("HEAD")?;
+        let commit = reference.peel_to_commit()?;
+        Ok(commit.id())
     }
 
     fn path_to_oid(&self, tree: git2::Tree, path: &mut VecDeque<String>) -> Option<git2::Oid> {
@@ -143,19 +104,6 @@ impl Repo {
         };
 
         self.path_to_oid(subtree, path)
-    }
-
-    pub fn topic(&self, path: &RepoPath) -> Result<Option<Topic>> {
-        let topic = match self.find_blob(path)? {
-            Some(blob) => Some(blob.try_into()?),
-            None => None,
-        };
-        Ok(topic)
-    }
-
-    pub fn tree(&self, name: &str) -> Result<git2::Tree> {
-        let reference = self.inner.find_reference(name)?;
-        Ok(reference.peel_to_tree()?)
     }
 }
 
@@ -186,5 +134,169 @@ impl<'repo> TryInto<Topic> for git2::Blob<'repo> {
         let bytes = self.content();
         let topic: Topic = serde_yaml::from_slice(bytes)?;
         Ok(topic)
+    }
+}
+
+pub struct View {
+    repo: Repo,
+    commit: git2::Oid,
+}
+
+impl View {
+    pub fn ensure(root: &DataRoot, prefix: &RepoPrefix, timespec: &Timespec) -> Result<Self> {
+        let repo = Repo::ensure(root, prefix)?;
+        let commit = repo.commit_oid(timespec)?;
+        Ok(Self { repo, commit })
+    }
+
+    pub fn blob_exists(&self, filename: &Path) -> Result<bool> {
+        let blob = self.find_blob_by_filename(filename)?;
+        Ok(blob.is_some())
+    }
+
+    pub fn change(&self, path: &PathSpec) -> Result<activity::Change> {
+        let result = self.find_blob_by_filename(&path.change_filename()?)?;
+        match result {
+            Some(blob) => Ok(blob.try_into()?),
+            None => Err(Error::NotFound(format!("not found: {}", path))),
+        }
+    }
+
+    pub(crate) fn find_blob_by_filename(&self, filename: &Path) -> Result<Option<git2::Blob>> {
+        let mut path = deque_from_path(filename);
+        let tree = self.repo.commit(self.commit)?.tree()?;
+
+        if let Some(oid) = self.repo.path_to_oid(tree, &mut path) {
+            let blob = self.repo.inner.find_blob(oid)?;
+            return Ok(Some(blob));
+        }
+
+        Ok(None)
+    }
+
+    fn find_blob(&self, path: &PathSpec) -> Result<Option<git2::Blob>> {
+        self.find_blob_by_filename(&path.object_filename()?)
+    }
+
+    pub fn link(&self, path: &PathSpec) -> Result<Option<Link>> {
+        let link = match self.find_blob(path)? {
+            Some(blob) => Some(blob.try_into()?),
+            None => None,
+        };
+        Ok(link)
+    }
+
+    pub fn object(&self, path: &PathSpec) -> Result<Option<Object>> {
+        let object = match self.find_blob(path)? {
+            Some(blob) => Some(blob.try_into()?),
+            None => None,
+        };
+        Ok(object)
+    }
+
+    pub fn object_exists(&self, path: &PathSpec) -> Result<bool> {
+        let path = path.object_filename()?;
+        self.blob_exists(&path)
+    }
+
+    pub fn topic(&self, path: &PathSpec) -> Result<Option<Topic>> {
+        let topic = match self.find_blob(path)? {
+            Some(blob) => Some(blob.try_into()?),
+            None => None,
+        };
+        Ok(topic)
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct Tree {
+    files: HashMap<String, Option<git2::Oid>>,
+    subtrees: HashMap<String, Tree>,
+}
+
+impl Tree {
+    pub fn new() -> Self {
+        Self {
+            ..Default::default()
+        }
+    }
+
+    pub fn add_blob(&mut self, path: &mut VecDeque<String>, oid: &Option<git2::Oid>) {
+        if let Some(name) = path.pop_front() {
+            if path.is_empty() {
+                self.files.insert(name, oid.to_owned());
+            } else {
+                let subtree = self.subtrees.entry(name).or_insert_with(Tree::new);
+                subtree.add_blob(path, oid);
+            }
+        }
+    }
+
+    pub fn write(&self, repo: &git2::Repository, before: Option<git2::Tree>) -> Result<git2::Oid> {
+        let mut builder = repo.treebuilder(before.as_ref())?;
+
+        for (filename, subtree) in &self.subtrees {
+            let before = match &before {
+                Some(before) => match before.get_name(filename) {
+                    Some(entry) => {
+                        let tree_id = entry.id();
+                        Some(repo.find_tree(tree_id)?)
+                    }
+                    None => None,
+                },
+                None => None,
+            };
+
+            let oid = subtree.write(repo, before)?;
+            builder.insert(filename, oid, 0o040000)?;
+        }
+
+        for (filename, oid) in &self.files {
+            if let Some(oid) = oid {
+                builder.insert(filename, oid.to_owned(), 0o100644)?;
+            } else {
+                builder.remove(filename)?;
+            }
+        }
+
+        let oid = builder.write()?;
+        Ok(oid)
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct Update(HashMap<RepoPrefix, Tree>);
+
+impl Update {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn add(
+        &mut self,
+        repo: &RepoPrefix,
+        filename: &Path,
+        oid: &Option<git2::Oid>,
+    ) -> Result<()> {
+        let mut deque = deque_from_path(filename);
+        let tree = self.0.entry(repo.to_owned()).or_insert_with(Tree::new);
+        tree.add_blob(&mut deque, oid);
+        Ok(())
+    }
+
+    // Writes should only target HEAD
+    pub fn write(&self, root: &DataRoot, sig: &git2::Signature, message: &str) -> Result<()> {
+        for (prefix, tree) in &self.0 {
+            let repo = Repo::ensure(root, prefix)?;
+            let head = repo.inner.find_reference("HEAD")?;
+            let before = head.peel_to_tree()?;
+            let oid = tree.write(&repo.inner, Some(before))?;
+            let tree = repo.inner.find_tree(oid)?;
+            let parent = head.peel_to_commit()?;
+            repo.inner
+                .commit(Some("HEAD"), sig, sig, message, &tree, &[&parent])?;
+        }
+
+        Ok(())
     }
 }
