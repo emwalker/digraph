@@ -1,4 +1,6 @@
 Before switchover:
+* Clean up low-level Git code
+* Don't bother collecting downset for Everything topic
 * Need a way to place a private topic child under a topic in a public repo without leaking data.  Maybe a placeholder/stand-in for the public topic in the private repo to hold the private topic children for that repo?
 * When something is added to a private repo, don't include change logs in public repos
 * Make search work across all prefixes
