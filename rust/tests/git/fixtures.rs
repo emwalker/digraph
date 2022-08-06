@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use digraph::git::{
     BatchUpdate, Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode,
     Link, OnMatchingSynonym, Search, Topic, UpsertLink, UpsertLinkResult, UpsertTopic,
@@ -17,9 +16,8 @@ use super::actor;
 
 struct Fetcher(String);
 
-#[async_trait]
 impl Fetch for Fetcher {
-    async fn fetch(&self, url: &RepoUrl) -> Result<Response> {
+    fn fetch(&self, url: &RepoUrl) -> Result<Response> {
         Ok(Response {
             url: url.to_owned(),
             body: Html::parse_document(&self.0),

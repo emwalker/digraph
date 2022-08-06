@@ -325,7 +325,7 @@ impl UpsertLink {
         let title = if let Some(title) = &self.title {
             title.clone()
         } else {
-            let response = futures::executor::block_on(self.fetcher.fetch(url))?;
+            let response = self.fetcher.fetch(url)?;
             response.title().unwrap_or_else(|| "Missing title".into())
         };
 

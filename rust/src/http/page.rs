@@ -29,7 +29,7 @@ impl Page {
         Self(url.to_owned())
     }
 
-    pub async fn fetch(&self) -> Result<Response> {
+    pub fn fetch(&self) -> Result<Response> {
         if !self.should_fetch() {
             log::info!(
                 "document not suitable for fetching, skipping fetch: {}",
@@ -42,7 +42,7 @@ impl Page {
         }
 
         log::info!("fetching page: {}", self.0);
-        let client = reqwest::Client::builder()
+        let client = reqwest::blocking::Client::builder()
             .user_agent(USER_AGENT)
             // We're just interested in the link title for now, so this is hopefully not an unsafe
             // operation in our context.  The user's browser can take over when the user attempts
@@ -50,12 +50,7 @@ impl Page {
             .danger_accept_invalid_certs(true)
             .build()?;
 
-        let text = client
-            .get(self.0.normalized.clone())
-            .send()
-            .await?
-            .text()
-            .await?;
+        let text = client.get(self.0.normalized.clone()).send()?.text()?;
         let body = Html::parse_fragment(text.as_ref());
 
         log::info!("page fetched: {}", self.0);
