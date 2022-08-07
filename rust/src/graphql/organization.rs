@@ -9,10 +9,10 @@ pub enum Organization {
     #[allow(dead_code)]
     Wiki,
     Selected {
-        default_repository_id: ID,
         id: ID,
         login: String,
         name: String,
+        repo_prefix: RepoPrefix,
     },
 }
 
@@ -27,14 +27,11 @@ impl Organization {
     pub async fn default_repository(&self, ctx: &Context<'_>) -> Result<Repository> {
         match self {
             Self::Wiki => Ok(Repository::Default),
-            Self::Selected {
-                default_repository_id,
-                ..
-            } => ctx
+            Self::Selected { repo_prefix, .. } => ctx
                 .data_unchecked::<Store>()
-                .repository(default_repository_id.to_string())
+                .repository_by_prefix(repo_prefix.to_string())
                 .await?
-                .ok_or_else(|| Error::NotFound(format!("repo id {}", **default_repository_id,))),
+                .ok_or_else(|| Error::NotFound(format!("repo {}", repo_prefix))),
         }
     }
 

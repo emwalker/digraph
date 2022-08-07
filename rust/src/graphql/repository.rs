@@ -18,7 +18,6 @@ pub enum Repository {
         prefix: String,
         private: bool,
         root_topic_path: Box<PathSpec>,
-        system: bool,
     },
 }
 

@@ -123,8 +123,12 @@ impl RepoPrefix {
         Self::try_from(WIKI_REPO_PREFIX).unwrap()
     }
 
-    pub fn from_name(name: &str) -> Result<Self> {
-        Self::try_from(&format!("/{}/", name))
+    pub fn from_login(login: &str) -> Result<Self> {
+        Self::try_from(&format!("/{}/", login))
+    }
+
+    pub fn org_login(&self) -> &str {
+        self.inner.trim_start_matches('/').trim_end_matches('/')
     }
 
     pub fn default_topic_path(&self) -> Result<PathSpec> {

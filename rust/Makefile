@@ -20,6 +20,9 @@ format:
 migrate:
 	cargo run --bin migrate
 
+full-migration:
+	RUST_LOG=migrate=info cargo run --bin migrate -- --destructive
+
 start:
 	RUST_LOG=info,digraph=debug cargo run --bin frontend
 

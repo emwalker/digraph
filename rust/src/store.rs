@@ -505,7 +505,7 @@ impl Store {
         git::EnsurePersonalRepo {
             actor: actor.to_owned(),
             user_id: result.user.id.to_string(),
-            personal_repo: RepoPrefix::from_name(&login)?,
+            personal_repo: RepoPrefix::from_login(&login)?,
         }
         .call(self.update_by(&actor)?)?;
 

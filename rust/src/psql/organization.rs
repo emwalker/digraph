@@ -10,19 +10,21 @@ use crate::prelude::*;
 #[derive(sqlx::FromRow, Clone, Debug)]
 pub struct Row {
     id: Uuid,
-    name: String,
     login: String,
-    default_repository_id: Uuid,
+    name: String,
+    repo_prefix: String,
 }
 
-impl Row {
-    fn to_organization(&self) -> Organization {
-        Organization::Selected {
-            id: ID(self.id.to_string()),
-            name: self.name.to_owned(),
-            login: self.login.to_owned(),
-            default_repository_id: ID(self.default_repository_id.to_string()),
-        }
+impl TryFrom<Row> for Organization {
+    type Error = Error;
+
+    fn try_from(row: Row) -> Result<Self> {
+        Ok(Organization::Selected {
+            id: ID(row.id.to_string()),
+            name: row.name.to_owned(),
+            login: row.login.to_owned(),
+            repo_prefix: row.repo_prefix.try_into()?,
+        })
     }
 }
 
@@ -35,6 +37,15 @@ impl OrganizationLoader {
     pub fn new(viewer: Viewer, pool: PgPool) -> Self {
         Self { viewer, pool }
     }
+}
+
+fn try_convert(rows: Vec<Row>) -> Result<HashMap<String, Organization>> {
+    let mut map: HashMap<String, Organization> = HashMap::new();
+    for row in rows {
+        map.insert(row.id.to_string(), row.try_into()?);
+    }
+
+    Ok(map)
 }
 
 #[async_trait::async_trait]
@@ -50,11 +61,10 @@ impl Loader<String> for OrganizationLoader {
                 o.id,
                 o.name,
                 o.login,
-                r.id as default_repository_id
+                o.repo_prefix
 
             from organizations o
-            join repositories r on r.organization_id = o.id and r.system
-            where o.id = any($1::uuid[]) and r.prefix = any($2::text[])",
+            where o.id = any($1::uuid[]) and o.repo_prefix = any($2::text[])",
         )
         .bind(&ids)
         .bind(&self.viewer.read_repos.to_vec())
@@ -62,10 +72,7 @@ impl Loader<String> for OrganizationLoader {
         .await
         .map_err(Error::from)?;
 
-        Ok(rows
-            .iter()
-            .map(|r| (r.id.to_string(), r.to_organization()))
-            .collect::<HashMap<_, _>>())
+        try_convert(rows)
     }
 }
 
@@ -93,11 +100,10 @@ impl Loader<String> for OrganizationByLoginLoader {
                 o.id,
                 o.name,
                 o.login,
-                r.id as default_repository_id
+                o.repo_prefix
 
             from organizations o
-            join repositories r on r.organization_id = o.id and r.system
-            where o.login = any($1) and r.prefix = any($2::text[])",
+            where o.login = any($1) and o.repo_prefix = any($2::text[])",
         )
         .bind(&logins)
         .bind(&self.viewer.read_repos.to_vec())
@@ -105,9 +111,6 @@ impl Loader<String> for OrganizationByLoginLoader {
         .await
         .map_err(Error::from)?;
 
-        Ok(rows
-            .iter()
-            .map(|r| (r.id.to_string(), r.to_organization()))
-            .collect::<HashMap<_, _>>())
+        try_convert(rows)
     }
 }

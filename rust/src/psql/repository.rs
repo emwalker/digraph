@@ -14,8 +14,7 @@ const REPOSITORY_FIELDS: &str = r#"
     r.owner_id,
     r.prefix,
     r.private,
-    r.root_topic_path,
-    r.system
+    r.root_topic_path
 "#;
 
 const REPOSITORY_JOINS: &str = r#"
@@ -35,7 +34,6 @@ pub struct Row {
     prefix: String,
     private: bool,
     root_topic_path: String,
-    system: bool,
 }
 
 impl Row {
@@ -48,7 +46,6 @@ impl Row {
             private: self.private,
             prefix: self.prefix.to_owned(),
             root_topic_path: Box::new(PathSpec::try_from(&self.root_topic_path).unwrap()),
-            system: self.system,
         }
     }
 }

@@ -66,27 +66,16 @@ fixtures: data/fixtures.sql
 
 load-fixtures:
 	bash ./scripts/load-fixtures
-	psql $(DBNAME) < queries/transitive-closure.sql
 
 load-production:
 	bash ./scripts/load-production-db
-	psql $(DBNAME) < queries/transitive-closure.sql
-	$(MAKE) -C rust migrate
+	$(MAKE) -C rust full-migration
 
 logs:
 	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs
 
-migrate-up:
-	$(foreach database,$(DBNAME),\
-		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
-			-source file://migrations up 1 ;\
-	)
-
-migrate-down:
-	$(foreach database,$(DBNAME),\
-		migrate -database "postgres://postgres@localhost:5432/$(database)?sslmode=disable" \
-			-source file://migrations down 1 ;\
-	)
+migrate:
+	$(MAKE) -C rust full-migration
 
 proxy:
 	kubectl port-forward --namespace default svc/postgres-postgresql 5431:5432
@@ -100,10 +89,6 @@ push-deploy: check-git-clean build push-docker push-git deploy-k8s
 
 push-git:
 	git push origin main
-
-recreate-transitive-closures:
-	psql $(DBNAME) < queries/clear-transitive-closure.sql
-	psql $(DBNAME) < queries/transitive-closure.sql
 
 save-production:
 	bash ./scripts/save-production-db
