@@ -33,7 +33,7 @@ mod delete_link {
             actor: actor(),
             link_path: path.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert!(!f.git.exists(&path).unwrap());
@@ -54,7 +54,7 @@ mod delete_link {
             actor: actor(),
             link_path: path.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         let activity = f.git.fetch_activity(&path, 100).unwrap();
@@ -100,7 +100,7 @@ mod update_link_parent_topics {
             link_path: link.path().unwrap(),
             parent_topic_paths: BTreeSet::from([parent1, parent2]),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         let link = f.git.fetch_link(&link.path().unwrap()).unwrap();
@@ -285,7 +285,7 @@ mod upsert_link {
     fn another_prefix() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let repo = RepoPrefix::from("/other/");
+        let repo = RepoPrefix::try_from("/other/").unwrap();
         let link_path = url.path(&repo).unwrap();
 
         assert_eq!(link_path.repo, repo);

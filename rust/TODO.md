@@ -4,8 +4,6 @@ Before switchover:
 * Decide whether to support link reviews or remove the feature
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
-* Git: Create repos on user signup
-* Git: Delete repos when user asks for account to be dropped
 * Git: Figure out how to upload the repos
 * Git: Figure out how to download a repo
 * Git: Include current git commit in Redis key prefixes
@@ -30,7 +28,7 @@ Later:
 * Switch the topic view to using search without descendents, and add a cursor for paging
 * Show synonyms rather than names in search results
 * Add paging
-* Clean up history log
+* Use a service account for creating a new repo on session upsert
 * Zero-copy search results
 * Make /wiki/ the default prefix when someone logs in for the first time
 * Move over to Primer React components

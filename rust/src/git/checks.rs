@@ -57,7 +57,7 @@ impl LeakedData {
             };
 
             let repo = filename.to_string();
-            repos.push(RepoPrefix::from_name(&repo));
+            repos.push(RepoPrefix::from_name(&repo)?);
         }
 
         Ok(repos)

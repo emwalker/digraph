@@ -45,6 +45,18 @@ impl Repo {
         }
     }
 
+    pub fn delete(root: &DataRoot, prefix: &RepoPrefix) -> Result<()> {
+        let path = root.repo_path(prefix);
+        log::warn!("deleting repo {} at {:?}", prefix, path);
+
+        match std::fs::remove_dir_all(&path) {
+            Ok(()) => log::warn!("deleted {:?}", path),
+            Err(err) => log::warn!("failed to delete {:?}: {}", path, err),
+        }
+
+        Ok(())
+    }
+
     // https://github.com/rust-lang/git2-rs/blob/master/examples/init.rs#L94
     fn init(path: &PathBuf) -> Result<Self> {
         let repo = git2::Repository::init(&path)?;

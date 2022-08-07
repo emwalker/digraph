@@ -10,7 +10,7 @@ use strum_macros::EnumString;
 
 use crate::{
     errors::Error,
-    prelude::{WIKI_REPO_PREFIX, WIKI_ROOT_TOPIC_PATH},
+    prelude::{DEFAULT_ROOT_TOPIC_ID, WIKI_REPO_PREFIX, WIKI_ROOT_TOPIC_PATH},
 };
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -62,22 +62,39 @@ pub enum Locale {
 #[allow(dead_code)]
 pub struct RepoPrefix {
     inner: String,
-    valid: bool,
 }
 
-impl From<&str> for RepoPrefix {
-    fn from(prefix: &str) -> Self {
-        let valid = prefix.ends_with('/');
-        Self {
-            inner: prefix.to_owned(),
-            valid,
+impl TryFrom<&str> for RepoPrefix {
+    type Error = Error;
+
+    fn try_from(prefix: &str) -> Result<Self> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^/([\w][\w-]*)/$").unwrap();
         }
+
+        if !RE.is_match(prefix) {
+            return Err(Error::Path(format!("invalid repo: {}", prefix)));
+        }
+
+        Ok(Self {
+            inner: prefix.to_owned(),
+        })
     }
 }
 
-impl From<&String> for RepoPrefix {
-    fn from(prefix: &String) -> Self {
-        Self::from(prefix.as_str())
+impl TryFrom<&String> for RepoPrefix {
+    type Error = Error;
+
+    fn try_from(prefix: &String) -> Result<Self> {
+        Self::try_from(prefix.as_str())
+    }
+}
+
+impl TryFrom<String> for RepoPrefix {
+    type Error = Error;
+
+    fn try_from(prefix: String) -> Result<Self> {
+        Self::try_from(prefix.as_str())
     }
 }
 
@@ -103,11 +120,15 @@ impl std::hash::Hash for RepoPrefix {
 
 impl RepoPrefix {
     pub fn wiki() -> Self {
-        Self::from(WIKI_REPO_PREFIX)
+        Self::try_from(WIKI_REPO_PREFIX).unwrap()
     }
 
-    pub fn from_name(name: &str) -> Self {
-        Self::from(&format!("/{}/", name))
+    pub fn from_name(name: &str) -> Result<Self> {
+        Self::try_from(&format!("/{}/", name))
+    }
+
+    pub fn default_topic_path(&self) -> Result<PathSpec> {
+        PathSpec::try_from(&format!("{}{}", self.inner, DEFAULT_ROOT_TOPIC_ID))
     }
 
     pub fn relative_path(&self) -> &str {
@@ -122,20 +143,24 @@ impl RepoPrefix {
 #[derive(Clone, Debug)]
 pub struct RepoList(Vec<RepoPrefix>);
 
-impl From<&[String]> for RepoList {
-    fn from(prefixes: &[String]) -> Self {
-        Self(
+impl TryFrom<&[String]> for RepoList {
+    type Error = Error;
+
+    fn try_from(prefixes: &[String]) -> Result<Self> {
+        Ok(Self(
             prefixes
                 .iter()
-                .map(RepoPrefix::from)
-                .collect::<Vec<RepoPrefix>>(),
-        )
+                .map(RepoPrefix::try_from)
+                .collect::<Result<Vec<RepoPrefix>>>()?,
+        ))
     }
 }
 
-impl From<&Vec<String>> for RepoList {
-    fn from(prefixes: &Vec<String>) -> Self {
-        Self::from(prefixes.as_slice())
+impl TryFrom<&Vec<String>> for RepoList {
+    type Error = Error;
+
+    fn try_from(prefixes: &Vec<String>) -> Result<Self> {
+        Self::try_from(prefixes.as_slice())
     }
 }
 
@@ -216,7 +241,7 @@ impl TryFrom<&str> for PathSpec {
         Ok(PathSpec {
             inner: input.to_string(),
             org_login: org_login.to_string(),
-            repo: RepoPrefix::from(prefix),
+            repo: prefix.try_into()?,
             short_id: short_id.to_string(),
         })
     }
@@ -438,7 +463,7 @@ pub struct Viewer {
 }
 
 impl Viewer {
-    pub fn super_user() -> Self {
+    pub fn service_account() -> Self {
         Self {
             read_repos: RepoList(vec![]),
             session_id: None,
@@ -604,7 +629,7 @@ mod tests {
 
         #[test]
         fn equality() {
-            assert_eq!(RepoPrefix::wiki(), RepoPrefix::from("/wiki/"));
+            assert_eq!(RepoPrefix::wiki(), RepoPrefix::try_from("/wiki/").unwrap());
         }
 
         #[test]
@@ -617,6 +642,19 @@ mod tests {
         fn display() {
             let prefix = RepoPrefix::wiki();
             assert_eq!(format!("{}", prefix), "/wiki/".to_owned());
+        }
+
+        #[test]
+        fn validation() {
+            assert!(matches!(RepoPrefix::try_from("//"), Err(_)));
+            assert!(matches!(RepoPrefix::try_from("/"), Err(_)));
+            assert!(matches!(RepoPrefix::try_from("a"), Err(_)));
+            assert!(matches!(RepoPrefix::try_from("/a"), Err(_)));
+            assert!(matches!(RepoPrefix::try_from("a/"), Err(_)));
+            assert!(matches!(RepoPrefix::try_from("/-/"), Err(_)));
+            assert!(matches!(RepoPrefix::try_from("/./"), Err(_)));
+            assert!(matches!(RepoPrefix::try_from("/../"), Err(_)));
+            assert!(matches!(RepoPrefix::try_from("/other/../wiki/"), Err(_)));
         }
     }
 }

@@ -2,10 +2,11 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
 
+mod account;
 pub mod activity;
 mod checks;
 mod client;
-mod core;
+pub mod core;
 mod index;
 mod link;
 mod repository;
@@ -15,6 +16,7 @@ mod topic;
 
 use crate::prelude::*;
 use crate::types;
+pub use account::*;
 pub use client::*;
 pub use index::*;
 pub use link::*;
@@ -142,7 +144,7 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, builder: &BatchUpdate) -> Result<Option<Topic>> {
+    pub fn fetch(&self, builder: &Mutation) -> Result<Option<Topic>> {
         Ok(builder.fetch_topic(&PathSpec::try_from(&self.path)?))
     }
 }

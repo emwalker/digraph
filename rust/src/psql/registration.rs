@@ -17,17 +17,6 @@ impl CompleteRegistration {
         let (user_id, name) = self.user_info();
         log::info!("completing registration for {}", name);
 
-        log::info!("adding {} ({}) to the Wiki org", name, user_id);
-        sqlx::query(
-            r#"insert into organization_members
-                (organization_id, user_id)
-                values ($1, $2::uuid)"#,
-        )
-        .bind(WIKI_ORGANIZATION_ID)
-        .bind(&user_id)
-        .execute(&mut tx)
-        .await?;
-
         log::info!("creating default org {} for {}", self.login, name);
         let (organization_id,) = sqlx::query_as::<_, (Uuid,)>(
             r#"insert into organizations
@@ -40,28 +29,37 @@ impl CompleteRegistration {
         .fetch_one(&mut tx)
         .await?;
 
-        log::info!("adding {} ({}) to org {}", name, user_id, organization_id);
-        sqlx::query(
-            r#"insert into organization_members
-                (organization_id, user_id)
-                values ($1::uuid, $2)"#,
-        )
-        .bind(&organization_id.to_string())
-        .bind(&user_id)
-        .execute(&mut tx)
-        .await?;
-
         let repository_name = format!("{}/{}", self.login, DEFAULT_REPOSITORY_NAME);
+        let root_topic_path = format!("/{}/{}", self.login, DEFAULT_ROOT_TOPIC_ID);
+
         log::info!("creating default repo {} for {}", repository_name, name);
         let (repository_id,) = sqlx::query_as::<_, (Uuid,)>(
             r#"insert into repositories
-                (organization_id, name, owner_id, system)
-                values ($1::uuid, $2, $3, 't')
+                (
+                    organization_id,
+                    name,
+                    owner_id,
+                    system,
+                    private,
+                    prefix,
+                    root_topic_path
+                )
+                values (
+                    $1::uuid,
+                    $2,
+                    $3,
+                    't',
+                    't',
+                    concat('/', $4, '/'),
+                    $5
+                )
                 returning id"#,
         )
         .bind(&organization_id)
         .bind(&repository_name)
         .bind(&user_id)
+        .bind(&self.login)
+        .bind(&root_topic_path)
         .fetch_one(&mut tx)
         .await?;
 

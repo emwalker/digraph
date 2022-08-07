@@ -1,7 +1,7 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
-    activity, BatchUpdate, Client, Kind, Link, Object, ParentTopic, SaveChangesForPrefix, Synonym,
+    activity, Client, Kind, Link, Mutation, Object, ParentTopic, SaveChangesForPrefix, Synonym,
     SynonymEntry, SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use crate::prelude::*;
@@ -17,7 +17,7 @@ pub struct DeleteTopicResult {
 }
 
 impl DeleteTopic {
-    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<DeleteTopicResult>
+    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<DeleteTopicResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -148,7 +148,7 @@ pub struct RemoveTopicTimerangeResult {
 }
 
 impl RemoveTopicTimerange {
-    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<RemoveTopicTimerangeResult>
+    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<RemoveTopicTimerangeResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -200,11 +200,7 @@ pub struct UpdateTopicParentTopicsResult {
 }
 
 impl UpdateTopicParentTopics {
-    pub fn call<S>(
-        &self,
-        mut update: BatchUpdate,
-        store: &S,
-    ) -> Result<UpdateTopicParentTopicsResult>
+    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<UpdateTopicParentTopicsResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -295,7 +291,7 @@ impl UpdateTopicParentTopics {
         })
     }
 
-    fn validate(&self, builder: &BatchUpdate) -> Result<()> {
+    fn validate(&self, builder: &Mutation) -> Result<()> {
         if self.parent_topic_paths.is_empty() {
             return Err(Error::Repo(
                 "at least one parent topic must be provided".into(),
@@ -327,7 +323,7 @@ pub struct UpdateTopicSynonymsResult {
 }
 
 impl UpdateTopicSynonyms {
-    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<UpdateTopicSynonymsResult>
+    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<UpdateTopicSynonymsResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -443,7 +439,7 @@ pub struct UpsertTopicResult {
 }
 
 impl UpsertTopic {
-    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<UpsertTopicResult>
+    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<UpsertTopicResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -611,7 +607,7 @@ impl UpsertTopic {
         Ok((path, topic, parent_topics))
     }
 
-    fn fetch_parent(&self, builder: &BatchUpdate) -> Option<Topic> {
+    fn fetch_parent(&self, builder: &Mutation) -> Option<Topic> {
         builder.fetch_topic(&self.parent_topic)
     }
 }
@@ -629,7 +625,7 @@ pub struct UpsertTopicTimerangeResult {
 }
 
 impl UpsertTopicTimerange {
-    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<UpsertTopicTimerangeResult>
+    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<UpsertTopicTimerangeResult>
     where
         S: SaveChangesForPrefix,
     {

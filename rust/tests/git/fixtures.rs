@@ -1,7 +1,6 @@
 use digraph::git::{
-    BatchUpdate, Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode,
-    Link, OnMatchingSynonym, Search, Topic, UpsertLink, UpsertLinkResult, UpsertTopic,
-    UpsertTopicResult,
+    Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode, Link, Mutation,
+    OnMatchingSynonym, Search, Topic, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
 };
 use digraph::http::{Fetch, Response};
 use digraph::prelude::*;
@@ -43,7 +42,7 @@ impl Fixtures {
         let tempdir = tempfile::tempdir().unwrap();
         let path = PathBuf::from(&tempdir.path());
         let root = DataRoot::new(path.clone());
-        let git = Client::new(&Viewer::super_user(), &root, Timespec);
+        let git = Client::new(&Viewer::service_account(), &root, Timespec);
 
         Fixtures {
             _tempdir: tempdir,
@@ -53,8 +52,8 @@ impl Fixtures {
         }
     }
 
-    pub fn update(&self) -> Result<BatchUpdate> {
-        self.git.update(IndexMode::Update)
+    pub fn update(&self) -> Mutation {
+        self.git.update(IndexMode::Update).unwrap()
     }
 
     pub fn copy(fixture_dirname: &str) -> Self {
@@ -163,7 +162,7 @@ impl Fixtures {
         };
 
         request
-            .call(self.update().unwrap(), &redis::Noop)
+            .call(self.update(), &redis::Noop)
             .expect("expected a link")
     }
 
@@ -182,7 +181,7 @@ impl Fixtures {
             on_matching_synonym,
             repo: repo.to_owned(),
         }
-        .call(self.update().unwrap(), &redis::Noop)
+        .call(self.update(), &redis::Noop)
     }
 }
 
@@ -208,7 +207,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(topic_path),
             parent_topic: root.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
         let climate_change = topic.unwrap().path().unwrap();
 
@@ -230,7 +229,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root,
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
         let weather = topic.unwrap().path().unwrap();
 
@@ -254,7 +253,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: climate_change.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
         let climate_change_weather = topic.unwrap().path().unwrap();
 
@@ -263,7 +262,7 @@ mod tests {
             parent_topic_paths: BTreeSet::from([climate_change, weather]),
             topic_path: climate_change_weather.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         let url =

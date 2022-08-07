@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    activity, BatchUpdate, Client, DataRoot, IndexMode, Kind, Link, LinkMetadata, ParentTopic,
+    activity, Client, DataRoot, IndexMode, Kind, Link, LinkMetadata, Mutation, ParentTopic,
     Synonym, Topic, TopicChild, TopicMetadata,
 };
 use digraph::prelude::*;
@@ -152,7 +152,7 @@ impl TryFrom<&TopicChildRow> for TopicChild {
     }
 }
 
-async fn save_topics(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
+async fn save_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
     log::info!("saving topics");
 
     let rows = sqlx::query_as::<_, TopicMetadataRow>(
@@ -332,7 +332,7 @@ async fn save_topics(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
     Ok(())
 }
 
-async fn save_links(builder: &mut BatchUpdate, pool: &PgPool) -> Result<()> {
+async fn save_links(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
     log::info!("saving links");
 
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
@@ -412,14 +412,14 @@ async fn main() -> Result<()> {
         return Err(Error::NotFound(format!("{:?}", opts.root)));
     }
     let root = DataRoot::new(opts.root);
-    let client = Client::new(&Viewer::super_user(), &root, Timespec);
-    let mut builder = client.update(IndexMode::Replace)?;
+    let client = Client::new(&Viewer::service_account(), &root, Timespec);
+    let mut mutation = client.update(IndexMode::Replace)?;
 
-    save_topics(&mut builder, &pool).await?;
-    save_links(&mut builder, &pool).await?;
+    save_topics(&mut mutation, &pool).await?;
+    save_links(&mut mutation, &pool).await?;
 
     log::info!("saving indexes");
-    builder.write(&redis::Noop)?;
+    mutation.write(&redis::Noop)?;
 
     log::info!("exported database to {}", root);
     Ok(())

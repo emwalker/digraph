@@ -11,7 +11,7 @@ mod visibility {
     use digraph::{git::Client, types::Timespec};
 
     fn viewer(repos: &Vec<String>) -> Viewer {
-        let repos = RepoList::from(repos);
+        let repos = RepoList::try_from(repos).unwrap();
         Viewer {
             read_repos: repos.to_owned(),
             write_repos: repos,
@@ -56,7 +56,7 @@ mod delete_topic {
             actor: actor(),
             topic_path: path.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert_eq!(path, deleted_topic_path);
@@ -75,7 +75,7 @@ mod delete_topic {
             actor: actor(),
             topic_path: path.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         let parent = f.git.fetch_topic(&root).unwrap();
@@ -93,7 +93,7 @@ mod delete_topic {
             actor: actor(),
             topic_path: topic.path().unwrap(),
         }
-        .call(f.update().unwrap(), &redis::Noop);
+        .call(f.update(), &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
         let topic = f.git.fetch_topic(&root).unwrap();
@@ -113,7 +113,7 @@ mod delete_topic {
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: parent.to_owned(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
         topic.unwrap()
     }
@@ -131,7 +131,7 @@ mod delete_topic {
             actor: actor(),
             topic_path: climate_change.to_owned(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         let activity = f.git.fetch_activity(&climate_change, 100).unwrap();
@@ -172,7 +172,7 @@ mod delete_topic_timerange {
             },
             topic_path: path.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         let topic = f.git.fetch_topic(&path).unwrap();
@@ -182,7 +182,7 @@ mod delete_topic_timerange {
             actor: actor(),
             topic_path: path.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         let topic = f.git.fetch_topic(&path).unwrap();
@@ -209,7 +209,7 @@ mod update_topic_parent_topics {
             topic_path: child.path().unwrap(),
             parent_topic_paths: BTreeSet::from([parent.path().unwrap()]),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert_eq!(result.topic, child);
@@ -233,7 +233,7 @@ mod update_topic_parent_topics {
             topic_path: child.path().unwrap(),
             parent_topic_paths: BTreeSet::from([parent.path().unwrap()]),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert_eq!(result.topic, child);
@@ -253,7 +253,7 @@ mod update_topic_parent_topics {
             topic_path: child.path().unwrap(),
             parent_topic_paths: BTreeSet::new(),
         }
-        .call(f.update().unwrap(), &redis::Noop);
+        .call(f.update(), &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
     }
@@ -270,7 +270,7 @@ mod update_topic_parent_topics {
             topic_path: parent.path().unwrap(),
             parent_topic_paths: BTreeSet::from([child.path().unwrap()]),
         }
-        .call(f.update().unwrap(), &redis::Noop);
+        .call(f.update(), &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
     }
@@ -316,7 +316,7 @@ mod update_topic_synonyms {
             topic_path: path,
             synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.metadata.synonyms.len(), 3);
@@ -342,7 +342,7 @@ mod update_topic_synonyms {
             topic_path: path,
             synonyms: vec![synonym("A topic"), synonym("A topic")],
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.metadata.synonyms.len(), 1);
@@ -360,7 +360,7 @@ mod update_topic_synonyms {
             topic_path: path.clone(),
             synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.metadata.synonyms.len(), 3);
@@ -373,7 +373,7 @@ mod update_topic_synonyms {
             topic_path: path,
             synonyms: vec![synonym("C topic")],
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.metadata.synonyms.len(), 1);
@@ -396,7 +396,7 @@ mod update_topic_synonyms {
             topic_path: path.clone(),
             synonyms: vec![synonym(&syn.name)],
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         let topic = f.git.fetch_topic(&path).unwrap();
@@ -420,7 +420,7 @@ mod update_topic_synonyms {
             topic_path: path.clone(),
             synonyms: vec![synonym("topicA")],
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert!(f.git.appears_in(&search, &entry).unwrap());
@@ -430,7 +430,7 @@ mod update_topic_synonyms {
             topic_path: path,
             synonyms: vec![synonym("topicB")],
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert!(!f.git.appears_in(&search, &entry).unwrap());
@@ -618,7 +618,7 @@ mod upsert_topic {
     fn another_repo() {
         let f = Fixtures::copy("simple");
         let parent_path = path("/wiki/00001");
-        let repo = RepoPrefix::from("/other/");
+        let repo = RepoPrefix::try_from("/other/").unwrap();
 
         let result = f
             .upsert_topic(&repo, "Topic name", &parent_path, OnMatchingSynonym::Ask)
@@ -660,7 +660,7 @@ mod upsert_topic_timerange {
             },
             topic_path: path.clone(),
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         let topic = f.git.fetch_topic(&path).unwrap();
@@ -687,7 +687,7 @@ mod upsert_topic_timerange {
             },
             topic_path: path,
         }
-        .call(f.update().unwrap(), &redis::Noop)
+        .call(f.update(), &redis::Noop)
         .unwrap();
 
         assert_eq!(count(&f, "1970 A topic"), 1);

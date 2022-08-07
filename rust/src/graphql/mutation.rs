@@ -227,14 +227,14 @@ impl MutationRoot {
         input: CreateGithubSessionInput,
     ) -> Result<CreateSessionPayload> {
         log::info!("creating GitHub session: {:?}", input);
-        let repo = ctx.data_unchecked::<Store>();
+        let store = ctx.data_unchecked::<Store>();
 
-        if repo.server_secret != input.server_secret {
+        if store.server_secret != input.server_secret {
             log::warn!("server secret did not match secret provided by client");
             return Err(Error::Auth("failed to authenticate request".to_string()));
         }
 
-        let result = repo.upsert_session(input).await?;
+        let result = store.upsert_session(input).await?;
         log::info!(
             "server secret matched secret provided by client, user session created: {:?}",
             result.user

@@ -134,7 +134,7 @@ fn parse_args() -> Opts {
 async fn main() -> Result<()> {
     let opts = parse_args();
     let (root_directory, path) = parse_path(&opts.filename)?;
-    let mut git = Client::new(&Viewer::super_user(), &root_directory, Timespec);
+    let mut git = Client::new(&Viewer::service_account(), &root_directory, Timespec);
     let object = git.fetch(&path);
     if object.is_none() {
         return Err(Error::NotFound(format!(

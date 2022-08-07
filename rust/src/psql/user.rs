@@ -162,6 +162,35 @@ impl UpsertRegisteredUser {
     }
 }
 
+pub struct FetchAccountInfo {
+    pub viewer: Viewer,
+    pub user_id: String,
+}
+
+pub struct FetchAccountInfoResult {
+    pub personal_repos: RepoList,
+}
+
+impl FetchAccountInfo {
+    pub async fn call(&self, pool: &PgPool) -> Result<FetchAccountInfoResult> {
+        #[derive(sqlx::FromRow, Clone, Debug)]
+        struct AccountInfo {
+            pub personal_prefixes: Vec<String>,
+        }
+
+        let row = sqlx::query_as::<_, AccountInfo>(
+            "select personal_prefixes from users where id = $1::uuid",
+        )
+        .bind(&self.user_id)
+        .fetch_one(pool)
+        .await?;
+
+        Ok(FetchAccountInfoResult {
+            personal_repos: (&row.personal_prefixes).try_into()?,
+        })
+    }
+}
+
 pub struct DeleteAccount {
     actor: Viewer,
     user_id: String,

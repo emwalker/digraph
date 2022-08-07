@@ -100,8 +100,8 @@ impl GitPaths for PathSpec {
 #[derive(Clone, Debug)]
 pub struct Client {
     pub root: DataRoot,
-    timespec: Timespec,
-    viewer: Viewer,
+    pub timespec: Timespec,
+    pub viewer: Viewer,
 }
 
 impl Client {
@@ -388,8 +388,8 @@ impl Client {
         Ok(searches)
     }
 
-    pub fn update(&self, mode: IndexMode) -> Result<BatchUpdate> {
-        Ok(BatchUpdate {
+    pub fn update(&self, mode: IndexMode) -> Result<Mutation> {
+        Ok(Mutation {
             changes: vec![],
             client: self.to_owned(),
             files: BTreeMap::new(),
@@ -402,14 +402,14 @@ impl Client {
     }
 }
 
-pub struct BatchUpdate {
+pub struct Mutation {
     client: Client,
     indexer: Indexer,
     files: BTreeMap<(RepoPrefix, PathBuf), Option<git2::Oid>>,
     changes: Vec<activity::Change>,
 }
 
-impl std::fmt::Debug for BatchUpdate {
+impl std::fmt::Debug for Mutation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TreeBuilder")
             .field("client", &self.client)
@@ -418,7 +418,7 @@ impl std::fmt::Debug for BatchUpdate {
     }
 }
 
-impl BatchUpdate {
+impl Mutation {
     pub fn activity_log(&self, path: &PathSpec, index_mode: IndexMode) -> Result<ActivityIndex> {
         self.client.fetch_activity_log(path, index_mode)
     }
@@ -453,6 +453,10 @@ impl BatchUpdate {
         ancestor_path: &PathSpec,
     ) -> Result<bool> {
         self.client.cycle_exists(descendant_path, ancestor_path)
+    }
+
+    pub fn delete_repo(&self, repo: &RepoPrefix) -> Result<()> {
+        core::Repo::delete(&self.client.root, repo)
     }
 
     pub fn exists(&self, path: &PathSpec) -> Result<bool> {
@@ -532,7 +536,7 @@ impl BatchUpdate {
         Ok(())
     }
 
-    fn repo(&self, prefix: &RepoPrefix) -> Result<core::Repo> {
+    pub fn repo(&self, prefix: &RepoPrefix) -> Result<core::Repo> {
         self.client.repo(prefix)
     }
 

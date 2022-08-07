@@ -120,8 +120,18 @@ impl Store {
         }
     }
 
-    fn update(&self) -> Result<git::BatchUpdate> {
+    fn update(&self) -> Result<git::Mutation> {
         self.git.update(git::IndexMode::Update)
+    }
+
+    fn update_by(&self, actor: &Viewer) -> Result<git::Mutation> {
+        let git = git::Client {
+            root: self.git.root.to_owned(),
+            timespec: self.git.timespec.to_owned(),
+            viewer: actor.to_owned(),
+        };
+
+        git.update(git::IndexMode::Update)
     }
 
     async fn flat_topics(&self, paths: &[PathSpec]) -> Result<Vec<graphql::Topic>> {
@@ -180,6 +190,20 @@ impl Store {
     }
 
     pub async fn delete_account(&self, user_id: String) -> Result<psql::DeleteAccountResult> {
+        let psql::FetchAccountInfoResult { personal_repos } = psql::FetchAccountInfo {
+            user_id: user_id.to_owned(),
+            viewer: self.viewer.to_owned(),
+        }
+        .call(&self.db)
+        .await?;
+
+        git::DeleteAccount {
+            actor: self.viewer.to_owned(),
+            user_id: user_id.to_owned(),
+            personal_repos,
+        }
+        .call(&self.update()?)?;
+
         psql::DeleteAccount::new(self.viewer.clone(), user_id)
             .call(&self.db)
             .await
@@ -446,7 +470,7 @@ impl Store {
         git::UpsertLink {
             add_parent_topic_path,
             actor: self.viewer.clone(),
-            repo: RepoPrefix::from(&input.repo_prefix),
+            repo: input.repo_prefix.try_into()?,
             title: input.title,
             url: input.url,
             fetcher: Box::new(http::Fetcher),
@@ -474,7 +498,18 @@ impl Store {
         &self,
         input: graphql::CreateGithubSessionInput,
     ) -> Result<psql::CreateSessionResult> {
-        psql::CreateGithubSession::new(input).call(&self.db).await
+        let login = input.github_username.to_owned();
+        let result = psql::CreateGithubSession::new(input).call(&self.db).await?;
+
+        let actor = Viewer::service_account();
+        git::EnsurePersonalRepo {
+            actor: actor.to_owned(),
+            user_id: result.user.id.to_string(),
+            personal_repo: RepoPrefix::from_name(&login)?,
+        }
+        .call(self.update_by(&actor)?)?;
+
+        Ok(result)
     }
 
     pub async fn upsert_topic(
@@ -486,7 +521,7 @@ impl Store {
             locale: Locale::EN,
             name: input.name.to_owned(),
             on_matching_synonym: git::OnMatchingSynonym::Ask,
-            repo: RepoPrefix::from(&input.repo_prefix),
+            repo: input.repo_prefix.try_into()?,
             parent_topic: PathSpec::try_from(&input.parent_topic_path)?,
         }
         .call(self.update()?, &self.redis)

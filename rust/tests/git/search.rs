@@ -293,7 +293,7 @@ mod fetch_matches {
     #[test]
     fn search_works_across_prefixes() {
         let f = Fixtures::copy("simple");
-        let repo = RepoPrefix::from("/other/");
+        let repo = RepoPrefix::try_from("/other/").unwrap();
 
         let result = f.upsert_link(&repo, &valid_url(), Some("Other repo".to_owned()), None);
         assert_eq!(result.link.unwrap().path().unwrap().repo, repo);

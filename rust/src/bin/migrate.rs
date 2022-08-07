@@ -122,6 +122,21 @@ async fn add_prefix_columns_to_users(pool: &PgPool) -> Result<()> {
     .execute(pool)
     .await?;
 
+    sqlx::query(
+        r#"alter table users
+            add column if not exists
+            personal_prefixes text[] not null default '{}'"#,
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        r#"update users
+            set personal_prefixes = array[concat('/', login, '/')]"#,
+    )
+    .execute(pool)
+    .await?;
+
     Ok(())
 }
 

@@ -8,7 +8,7 @@ mod search;
 mod topic;
 
 fn actor() -> Viewer {
-    let repos = RepoList::from(&vec!["/wiki/".to_owned(), "/other/".to_owned()]);
+    let repos = RepoList::try_from(&vec!["/wiki/".to_owned(), "/other/".to_owned()]).unwrap();
     Viewer {
         user_id: "2".into(),
         read_repos: repos.to_owned(),

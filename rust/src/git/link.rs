@@ -9,7 +9,7 @@ use crate::http::{self, RepoUrl};
 use crate::prelude::*;
 
 use super::activity::TopicInfoList;
-use super::BatchUpdate;
+use super::Mutation;
 
 pub struct DeleteLink {
     pub actor: Viewer,
@@ -22,7 +22,7 @@ pub struct DeleteLinkResult {
 }
 
 impl DeleteLink {
-    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<DeleteLinkResult>
+    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<DeleteLinkResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -100,11 +100,7 @@ pub struct UpdateLinkParentTopicsResult {
 }
 
 impl UpdateLinkParentTopics {
-    pub fn call<S>(
-        &self,
-        mut update: BatchUpdate,
-        store: &S,
-    ) -> Result<UpdateLinkParentTopicsResult>
+    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<UpdateLinkParentTopicsResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -216,7 +212,7 @@ pub struct UpsertLinkResult {
 }
 
 impl UpsertLink {
-    pub fn call<S>(&self, mut update: BatchUpdate, store: &S) -> Result<UpsertLinkResult>
+    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<UpsertLinkResult>
     where
         S: SaveChangesForPrefix,
     {
@@ -313,7 +309,7 @@ impl UpsertLink {
 
     fn make_link(
         &self,
-        builder: &BatchUpdate,
+        builder: &Mutation,
         url: &RepoUrl,
         path: &PathSpec,
     ) -> Result<(Link, Option<String>)> {
