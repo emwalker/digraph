@@ -17,6 +17,7 @@ Before switchover:
 * Cutover: Run migrations to clean up tables that are no longer needed
 
 Later:
+* Use a queue for rebasing commits before mering, instead of retrying
 * Look into using iterators for the search code instead of copying large buffers around
 * Keep tabs on whether the ordering of changes is stable
 * Get the topic upsert working when the topic already exists
