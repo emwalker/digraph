@@ -1,0 +1,5 @@
+bases:
+  - ../../base/default
+
+patchesStrategicMerge:
+  - digraph-frontend-patch.yaml

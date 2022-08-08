@@ -2,7 +2,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: take-snapshot
+  name: digraph-take-snapshot
 spec:
   # Every 12 hours
   schedule: "0 */12 * * *"
@@ -14,7 +14,7 @@ spec:
         spec:
           containers:
           - name: cron
-            image: emwalker/digraph-cron:v372
+            image: emwalker/digraph-cron:v373
             envFrom:
             - secretRef:
                 name: digraph-secrets

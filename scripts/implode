@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -euo pipefail
+
+kubectl delete -k k8s/base/default/ --ignore-not-found

@@ -7,6 +7,7 @@ use super::prelude::*;
 pub struct Config {
     pub digraph_data_directory: String,
     pub digraph_postgres_connection: String,
+    pub digraph_redis_url: String,
     pub digraph_server_secret: String,
 }
 

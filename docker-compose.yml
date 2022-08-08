@@ -11,7 +11,7 @@ services:
     build:
       context: .
       dockerfile: k8s/docker/cron/Dockerfile
-    image: emwalker/digraph-cron
+    image: emwalker/digraph-cron:latest
     env_file:
     - .env.docker.local
     extra_hosts:
@@ -21,7 +21,7 @@ services:
     build:
       context: .
       dockerfile: k8s/docker/frontend/Dockerfile
-    image: emwalker/digraph-api
+    image: emwalker/digraph-api:latest
     expose:
       - "8080"
     env_file:
@@ -34,7 +34,7 @@ services:
       - redis
 
   node:
-    image: emwalker/digraph-node
+    image: emwalker/digraph-node:latest
     build:
       context: .
       dockerfile: k8s/docker/node/Dockerfile

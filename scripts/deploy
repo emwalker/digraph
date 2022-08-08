@@ -1,0 +1,57 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [ -z "${1:-}" ]; then
+  echo "usage: $0 {minkube,prod}"
+  exit 1
+fi
+
+env=$1
+rs_commit=$(git rev-parse HEAD:rust)
+js_commit=$(git rev-parse HEAD:javascript)
+
+build-rs-images() {
+  echo "building rust frontend container ..."
+  docker compose build api
+  docker tag emwalker/digraph-api:latest digraph-api:$rs_commit
+
+  # echo "building rust cron container ..."
+  # docker compose build cron
+  # docker tag emwalker/digraph-cron:latest emwalker/digraph-cron:$rs_commit
+}
+
+build-js-images() {
+  echo "building node container ..."
+  docker compose build node
+  docker tag emwalker/digraph-node:latest digraph-node:$js_commit
+}
+
+send-images-to-minikube() {
+  local api=digraph-api:$rs_commit
+  echo "sending $api to minikube ..."
+  minikube image load $api
+  # minikube image load emwalker/digraph-cron:$rs_commit
+
+  local node=digraph-node:$js_commit
+  echo "sending $node to minikube ..."
+  minikube image load $node
+}
+
+if [[ "$(docker images -q digraph-api:$rs_commit 2> /dev/null)" == "" ]]; then
+  build-rs-images
+fi
+
+if [[ "$(docker images -q digraph-node:$js_commit 2> /dev/null)" == "" ]]; then
+  build-js-images
+fi
+
+if [ "$env" == "minikube" ]; then
+  send-images-to-minikube
+fi
+
+echo "applying k8s config ..."
+kubectl apply -k k8s/overlays/$env/
+kubectl set image deployment/digraph-frontend api=digraph-api:$rs_commit
+kubectl set image deployment/digraph-frontend node=digraph-node:$js_commit
+echo "done."

@@ -90,22 +90,31 @@ async fn main() -> async_graphql::Result<()> {
     let config = Config::load()?;
     env_logger::init();
 
+    log::info!("setting up database connection");
     let pool = db::db_connection(&config).await?;
+
+    log::info!("reading data from {}", config.digraph_data_directory);
     let root = git::DataRoot::new(PathBuf::from(&config.digraph_data_directory));
 
-    sqlx::migrate!("db/migrations").run(&pool).await?;
+    log::info!("running migrations");
+    sqlx::migrate!("./db/migrations").run(&pool).await?;
 
+    log::info!("loading graphql schema");
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         .extension(extensions::Logger)
         // .extension(ApolloTracing)
         .finish();
 
-    let redis = redis::Redis::new("redis://localhost".to_owned())?;
+    log::info!("loading graphql schema");
+    let redis = redis::Redis::new(config.digraph_redis_url.to_owned())?;
+
+    log::info!("setting up app state");
     let state = State::new(pool, root, schema, config.digraph_server_secret, redis);
 
     let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_owned());
     println!("Playground: http://localhost:8080");
 
+    log::info!("starting server");
     // TODO: Look into switching to https://github.com/poem-web/poem
     HttpServer::new(move || {
         App::new()

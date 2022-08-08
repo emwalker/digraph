@@ -13,25 +13,8 @@ TIMESTAMP        = $(shell date -u +%s)
 LINT_DIRECTORIES = $(shell find cmd -type d ! -name "loaders" ! -name "server")
 DBNAME           := $(if $(DBNAME),$(DBNAME),digraph_dev)
 
-build: build-executables build-container-cron build-container-api build-container-node
-
 build-client:
 	$(MAKE) -C javascript build
-
-build-container-api:
-	docker-compose build api
-	docker tag emwalker/digraph-api:latest emwalker/digraph-api:$(shell cat k8s/release)
-
-build-container-cron:
-	docker-compose build cron
-	docker tag emwalker/digraph-cron:latest emwalker/digraph-cron:$(shell cat k8s/release)
-
-build-container-node: build-client
-	docker-compose build node
-	docker tag emwalker/digraph-node:latest emwalker/digraph-node:$(shell cat k8s/release)
-
-build-executables:
-	$(MAKE) -C rust build
 
 clean:
 	$(MAKE) -C javascript clean
@@ -52,7 +35,7 @@ check-rust:
 	$(MAKE) -C rust check
 
 deploy-k8s:
-	kubectl config use-context digraph-production
+	#kubectl config use-context digraph-production
 	kubectl apply -f k8s/cluster
 
 dump:

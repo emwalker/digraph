@@ -58,7 +58,7 @@ impl CompleteRegistration {
         .bind(&user_id)
         .bind(&self.login)
         .bind(&root_topic_path)
-        .fetch_one(&mut tx)
+        .execute(&mut tx)
         .await?;
 
         log::info!("marking user {} as registered", name);

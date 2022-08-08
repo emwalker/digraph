@@ -134,7 +134,12 @@ impl UpsertRegisteredUser {
             r#"insert into users
                 (name, avatar_url, primary_email, github_username, github_avatar_url)
                 values ($1, $2, $3, $4, $5)
-                returning id, avatar_url, name, null as login, null as selected_repository_id
+                returning id,
+                    avatar_url,
+                    name,
+                    null as login,
+                    null as selected_repository_id,
+                    write_prefixes
             "#,
         )
         .bind(&self.input.name)
