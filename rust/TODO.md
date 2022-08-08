@@ -10,6 +10,7 @@ Before switchover:
 * Git: Sort out logistics of merging branch and deploying
 * Git: Figure out how to upload the repos
 * Git: Figure out how to download a repo
+* Cutover: run some experiments using minikube
 * Cutover: Current snapshot of database
 * Cutover: Export people's repos
 * Cutover: Run addititive migrations against database
