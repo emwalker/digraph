@@ -61,7 +61,7 @@ migrate:
 	$(MAKE) -C rust full-migration
 
 proxy:
-	kubectl port-forward --namespace default svc/postgres-postgresql 5431:5432
+	overmind s -f Procfile.proxies
 
 push-docker:
 	docker push emwalker/digraph-cron:$(shell cat k8s/release)

@@ -21,6 +21,19 @@ spec:
   type: NodePort
 
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: digraph-data
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 10Gi
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,7 +42,7 @@ metadata:
     tier: digraph-frontend
   name: digraph-frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: digraph
@@ -45,6 +58,7 @@ spec:
         app: digraph
         tier: digraph-frontend
     spec:
+      restartPolicy: Always
       containers:
         - name: api
           envFrom:
@@ -60,7 +74,10 @@ spec:
             requests:
               memory: 100Mi
             limits:
-              memory: 200Mi
+              memory: 600Mi
+          volumeMounts:
+            - mountPath: /usr/local/digraph
+              name: digraph-data
         - name: node
           envFrom:
             - secretRef:
@@ -76,4 +93,5 @@ spec:
               memory: 150Mi
             limits:
               memory: 400Mi
-      restartPolicy: Always
+      volumes:
+        - name: digraph-data
