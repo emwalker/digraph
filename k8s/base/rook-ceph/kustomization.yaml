@@ -1,0 +1,18 @@
+resources:
+  - crds.yaml
+  - common.yaml
+  - operator.yaml
+  - cluster-test.yaml
+  - filesystem.yaml
+
+patchesStrategicMerge:
+  - cluster-test-patch.yaml
+
+patchesJson6902:
+  - target:
+      group: ceph.rook.io
+      version: v1
+      kind: CephCluster
+      name: my-cluster
+      namespace: rook-ceph
+    path: rename-cluster-patch.yaml

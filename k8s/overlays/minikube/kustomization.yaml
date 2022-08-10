@@ -1,4 +1,5 @@
 bases:
+  - ../../base/kube-system
   - ../../base/rook-ceph
   - ../../base/default
 
