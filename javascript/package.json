@@ -125,7 +125,7 @@
     "babel-jest": "^28.1.1",
     "babel-loader": "^8.2.5",
     "babel-plugin-react-css-modules": "~5.2.6",
-    "babel-plugin-relay": "^13.2.0",
+    "babel-plugin-relay": "^14.1.0",
     "babel-preset-razzle": "^4.2.16",
     "enzyme": "~3.11.0",
     "eslint": "^7.32.0",
