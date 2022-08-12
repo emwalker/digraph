@@ -1,4 +1,5 @@
 namespace: kube-system
 
 resources:
+  - cert-manager.yaml
   - metrics-server.yaml
