@@ -35,7 +35,6 @@ check-rust:
 	$(MAKE) -C rust check
 
 deploy-k8s:
-	#kubectl config use-context digraph-production
 	kubectl apply -f k8s/cluster
 
 dump:
@@ -52,7 +51,7 @@ load-fixtures:
 
 load-production:
 	bash ./scripts/load-production-db
-	$(MAKE) -C rust full-migration
+	$(MAKE) -C rust migrate
 
 logs:
 	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs

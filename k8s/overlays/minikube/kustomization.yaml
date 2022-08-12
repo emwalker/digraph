@@ -1,6 +1,8 @@
 bases:
-  - ../../base/rook-ceph
+  - ./nfs-provisioner
+  - ../../base/kube-system
   - ../../base/default
 
 patchesStrategicMerge:
   - digraph-frontend-patch.yaml
+  - digraph-cron-patch.yaml

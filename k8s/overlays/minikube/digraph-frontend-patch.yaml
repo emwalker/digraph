@@ -11,3 +11,11 @@ spec:
           imagePullPolicy: Never
         - name: node
           imagePullPolicy: Never
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: digraph-data
+spec:
+  storageClassName: nfs

@@ -28,7 +28,6 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  volumeMode: Filesystem
   resources:
     requests:
       storage: 10Gi
@@ -42,7 +41,7 @@ metadata:
     tier: digraph-frontend
   name: digraph-frontend
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: digraph
@@ -76,7 +75,7 @@ spec:
             limits:
               memory: 600Mi
           volumeMounts:
-            - mountPath: /usr/local/digraph
+            - mountPath: /var/lib/digraph
               name: digraph-data
         - name: node
           envFrom:
@@ -95,3 +94,5 @@ spec:
               memory: 400Mi
       volumes:
         - name: digraph-data
+          persistentVolumeClaim:
+            claimName: digraph-data
