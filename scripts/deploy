@@ -18,7 +18,7 @@ build-rs-images() {
 
   # echo "building rust cron container ..."
   # docker compose build cron
-  # docker tag emwalker/digraph-cron:latest emwalker/digraph-cron:$rs_commit
+  # docker tag emwalker/digraph-cron:latest digraph-cron:$rs_commit
 }
 
 build-js-images() {
@@ -53,5 +53,6 @@ fi
 echo "applying k8s config ..."
 kubectl apply -k k8s/overlays/$env/
 kubectl set image deployment/digraph-frontend api=digraph-api:$rs_commit
+# kubectl set image deployment/digraph-frontend api=digraph-cron:$rs_commit
 kubectl set image deployment/digraph-frontend node=digraph-node:$js_commit
 echo "done."

@@ -1,13 +1,6 @@
 ---
+$patch: delete
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: digraph-take-snapshot
-spec:
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-          - name: cron
-            imagePullPolicy: Never
