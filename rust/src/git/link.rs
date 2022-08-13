@@ -2,8 +2,8 @@ use chrono::Utc;
 use std::collections::{BTreeSet, HashMap};
 
 use crate::git::{
-    activity, Client, Kind, Link, LinkMetadata, ParentTopic, SaveChangesForPrefix, Topic,
-    TopicChild, API_VERSION,
+    activity, Kind, Link, LinkMetadata, ParentTopic, SaveChangesForPrefix, Topic, TopicChild,
+    API_VERSION,
 };
 use crate::http::{self, RepoUrl};
 use crate::prelude::*;
@@ -71,20 +71,6 @@ impl DeleteLink {
             id: activity::Change::new_id(),
             parent_topics: activity::TopicInfoList::from(parent_topics),
         })
-    }
-}
-
-pub struct FetchLinkCount {
-    pub actor: Viewer,
-}
-
-pub struct FetchLinkCountResult {
-    pub count: usize,
-}
-
-impl FetchLinkCount {
-    pub fn call(&self, _client: &Client) -> Result<FetchLinkCountResult> {
-        Ok(FetchLinkCountResult { count: 1000 })
     }
 }
 

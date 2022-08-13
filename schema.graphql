@@ -518,6 +518,12 @@ type UpsertTopicTimerangePayload implements Alertable {
   topic: Topic!
 }
 
+type ViewStats {
+  calculating: Boolean!
+  linkCount: Int
+  topicCount: Int
+}
+
 type View {
   activity(
     first: Int,
@@ -529,7 +535,6 @@ type View {
   currentRepository: Repository
   defaultOrganization: Organization!
   link(path: String!): Link
-  linkCount: Int!
   links(
     searchString: String,
     first: Int,
@@ -540,8 +545,8 @@ type View {
   ): LinkConnection!
   queryInfo: QueryInfo!
   searchString: String
+  stats: ViewStats!
   topic(path: String!): Topic
-  topicCount: Int!
   topicGraph: String
   topicLiveSearch(
     searchString: String,

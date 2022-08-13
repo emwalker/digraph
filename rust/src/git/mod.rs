@@ -11,6 +11,7 @@ mod index;
 mod link;
 mod repository;
 mod search;
+mod stats;
 pub mod testing;
 mod topic;
 
@@ -22,6 +23,7 @@ pub use index::*;
 pub use link::*;
 pub use repository::*;
 pub use search::*;
+pub use stats::*;
 pub use topic::*;
 
 #[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]

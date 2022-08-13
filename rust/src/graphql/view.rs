@@ -1,4 +1,4 @@
-use async_graphql::{Context, Object, ID};
+use async_graphql::{Context, Object, SimpleObject, ID};
 
 use super::{
     relay::conn, ActivityLineItem, ActivityLineItemConnection, Link, LiveSearchTopicsPayload,
@@ -6,6 +6,12 @@ use super::{
 };
 use crate::store::Store;
 use crate::{git, prelude::*};
+
+#[derive(SimpleObject)]
+pub struct ViewStats {
+    pub link_count: Option<i32>,
+    pub topic_count: Option<i32>,
+}
 
 #[derive(Clone)]
 pub struct View {
@@ -76,10 +82,6 @@ impl View {
         ctx.data_unchecked::<Store>().link(&path).await
     }
 
-    async fn link_count(&self, ctx: &Context<'_>) -> Result<i64> {
-        ctx.data_unchecked::<Store>().link_count().await
-    }
-
     async fn query_info(&self) -> QueryInfo {
         QueryInfo {
             string_tokens: vec![],
@@ -90,10 +92,6 @@ impl View {
         ctx.data_unchecked::<Store>()
             .topic(&PathSpec::try_from(&path)?)
             .await
-    }
-
-    async fn topic_count(&self, ctx: &Context<'_>) -> Result<i64> {
-        ctx.data_unchecked::<Store>().topic_count().await
     }
 
     async fn topic_live_search(
@@ -107,6 +105,10 @@ impl View {
             .await?;
         let synonym_matches = synonym_matches.iter().map(SynonymMatch::from).collect();
         Ok(LiveSearchTopicsPayload { synonym_matches })
+    }
+
+    async fn stats(&self, ctx: &Context<'_>) -> Result<ViewStats> {
+        ctx.data_unchecked::<Store>().view_stats().await
     }
 
     async fn viewer(&self, ctx: &Context<'_>) -> Result<User> {

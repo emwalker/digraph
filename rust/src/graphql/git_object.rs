@@ -1,7 +1,7 @@
 use async_graphql::dataloader::*;
 use std::collections::HashMap;
 
-use super::timerange;
+use super::{timerange, ViewStats};
 use super::{Link, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChild};
 use crate::git;
 use crate::prelude::*;
@@ -185,6 +185,33 @@ impl TryFrom<&git::SearchMatch> for TopicChild {
             git::Object::Link(link) => TopicChild::Link(Link::try_from(link)?),
         };
         Ok(object)
+    }
+}
+
+impl From<git::Stats> for ViewStats {
+    fn from(stats: git::Stats) -> Self {
+        let link_count = match stats.link_count().try_into() {
+            Ok(count) => count,
+
+            Err(err) => {
+                log::error!("failed to convert link count: {}", err);
+                0
+            }
+        };
+
+        let topic_count = match stats.topic_count().try_into() {
+            Ok(count) => count,
+
+            Err(err) => {
+                log::error!("failed to convert topic count: {}", err);
+                0
+            }
+        };
+
+        Self {
+            link_count: Some(link_count),
+            topic_count: Some(topic_count),
+        }
     }
 }
 

@@ -1,16 +1,13 @@
 Before switchover:
 * Ensure that organizations, users, and repos are being deleted when a person asks for their account to be destroyed
-* Fill in implementation for link and topic counts on home page, possibly using redis, possibly adding up across visible repos, possibly using grep
-  + grep -lr -E "^kind: Topic" objects/ | wc -l
-  + grep -lr -E "^kind: Link" objects/ | wc -l
 * Update db/schema.sql and add a make task to load it
 * Merge the contents of items with the same id and different repo prefixes
 * Decide whether to support link reviews or remove the feature
+* See if minikube still works with 2048 MB
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
-* Git: Figure out how to upload the repos
 * Git: Figure out how to download a repo
-* Cutover: run some experiments using minikube
+* Cutover: Figure out how to get an RWX pvc working (use Ceph?)
 * Cutover: Current snapshot of database
 * Cutover: Export people's repos
 * Cutover: Run addititive migrations against database
@@ -19,6 +16,7 @@ Before switchover:
 
 
 Later:
+* Kick off a background thread to compute repo stats so that homepage request returns quickly
 * Use a queue for rebasing commits before mering, instead of retrying
 * Look into using iterators for the search code instead of copying large buffers around
 * Keep tabs on whether the ordering of changes is stable

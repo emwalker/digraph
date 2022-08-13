@@ -19,6 +19,16 @@ impl git::SaveChangesForPrefix for Noop {
     }
 }
 
+impl git::CacheStats for Noop {
+    fn fetch(&self, _repo: &RepoPrefix, _commit: &str) -> Result<Option<git::RepoStats>> {
+        Ok(None)
+    }
+
+    fn save(&self, _repo: &RepoPrefix, _commit: &str, _stats: &git::RepoStats) -> Result<()> {
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Key(String);
 
@@ -40,6 +50,31 @@ impl redis_rs::ToRedisArgs for Key {
 #[derive(Clone)]
 pub struct Redis {
     url: String,
+}
+
+impl git::CacheStats for Redis {
+    fn fetch(&self, repo: &RepoPrefix, commit: &str) -> Result<Option<git::RepoStats>> {
+        let key = self.stats_key(repo, commit);
+        let mut con = self.connection().unwrap();
+        let s: Option<String> = redis::cmd("GET").arg(key).query(&mut con)?;
+
+        match s {
+            Some(s) => {
+                let stats: git::RepoStats = s.try_into()?;
+                Ok(Some(stats))
+            }
+
+            None => Ok(None),
+        }
+    }
+
+    fn save(&self, repo: &RepoPrefix, commit: &str, stats: &git::RepoStats) -> Result<()> {
+        let key = self.stats_key(repo, commit);
+        let mut con = self.connection().unwrap();
+        let s: String = stats.try_into()?;
+        redis::cmd("SET").arg(key).arg(s).query(&mut con)?;
+        Ok(())
+    }
 }
 
 impl Redis {
@@ -105,6 +140,10 @@ impl Redis {
         })?;
 
         Ok(())
+    }
+
+    fn stats_key(&self, repo: &RepoPrefix, commit: &str) -> String {
+        format!("stats:{}:{}", repo, commit)
     }
 }
 

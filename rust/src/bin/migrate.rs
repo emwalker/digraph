@@ -223,6 +223,7 @@ static DROP_ITEMS: &[(&str, &str)] = &[
     ("table", "link_transitive_closure"),
     ("table", "topics"),
     ("table", "timeranges"),
+    ("table", "schema_migrations"),
     ("function", "add_topic_to_link"),
     ("function", "add_topic_to_topic"),
     ("function", "link_down_set"),

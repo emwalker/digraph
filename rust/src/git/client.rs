@@ -10,8 +10,8 @@ use super::index::{
     SaveChangesForPrefix, SearchEntry, SynonymEntry, SynonymMatch,
 };
 use super::{
-    activity, core, DownsetIter, Link, Object, Search, SearchTokenIndex, SynonymIndex, Topic,
-    TopicDownsetIter,
+    activity, core, DownsetIter, Link, Object, RepoStats, Search, SearchTokenIndex, SynonymIndex,
+    Topic, TopicDownsetIter,
 };
 use crate::prelude::*;
 use crate::types::{ReadPath, Timespec};
@@ -300,6 +300,10 @@ impl Client {
         Ok(index.prefix_matches(token))
     }
 
+    pub fn view_stats(&self, repo: &RepoPrefix) -> Result<RepoStats> {
+        self.view(repo)?.stats()
+    }
+
     pub fn synonym_phrase_matches(
         &self,
         prefixes: &[&RepoPrefix],
@@ -397,7 +401,7 @@ impl Client {
         })
     }
 
-    fn view(&self, prefix: &RepoPrefix) -> Result<core::View> {
+    pub fn view(&self, prefix: &RepoPrefix) -> Result<core::View> {
         core::View::ensure(&self.root, prefix, &self.timespec)
     }
 }

@@ -255,14 +255,6 @@ impl Store {
         }
     }
 
-    pub async fn link_count(&self) -> Result<i64> {
-        let git::FetchLinkCountResult { count, .. } = git::FetchLinkCount {
-            actor: self.viewer.clone(),
-        }
-        .call(&self.git)?;
-        Ok(count.try_into().unwrap_or_default())
-    }
-
     pub async fn organization(&self, id: String) -> Result<Option<graphql::Organization>> {
         self.organization_loader.load_one(id).await
     }
@@ -400,14 +392,6 @@ impl Store {
             git::Object::Topic(topic) => Ok(Some(graphql::Topic::try_from(&topic)?)),
             _ => return Err(Error::NotFound(format!("no topic: {}", path))),
         }
-    }
-
-    pub async fn topic_count(&self) -> Result<i64> {
-        let git::FetchTopicCountResult { count, .. } = git::FetchTopicCount {
-            actor: self.viewer.clone(),
-        }
-        .call(&self.git)?;
-        Ok(count.try_into().unwrap_or_default())
     }
 
     pub async fn topics(&self, paths: &[PathSpec]) -> Result<Vec<Option<graphql::Topic>>> {
@@ -551,5 +535,14 @@ impl Store {
             .await?
             .map(|row| graphql::User::from(&row));
         Ok(user)
+    }
+
+    pub async fn view_stats(&self) -> Result<graphql::ViewStats> {
+        let git::FetchStatsResult { stats } = git::FetchStats {
+            viewer: self.viewer.clone(),
+        }
+        .call(&self.git, &self.redis)?;
+
+        Ok(stats.into())
     }
 }

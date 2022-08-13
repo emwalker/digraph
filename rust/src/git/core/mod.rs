@@ -7,7 +7,7 @@ use std::{
 use crate::prelude::*;
 use crate::types::Timespec;
 
-use super::{activity, DataRoot, GitPaths, Link, Object, Topic};
+use super::{activity, DataRoot, GitPaths, Link, Object, RepoStats, Topic};
 
 pub fn deque_from_path(path: &Path) -> VecDeque<String> {
     let mut deque = VecDeque::new();
@@ -149,9 +149,10 @@ impl<'repo> TryInto<Topic> for git2::Blob<'repo> {
     }
 }
 
+#[derive(Debug)]
 pub struct View {
     repo: Repo,
-    commit: git2::Oid,
+    pub commit: git2::Oid,
 }
 
 impl View {
@@ -209,6 +210,61 @@ impl View {
     pub fn object_exists(&self, path: &PathSpec) -> Result<bool> {
         let path = path.object_filename()?;
         self.blob_exists(&path)
+    }
+
+    pub fn stats(&self) -> Result<RepoStats> {
+        log::info!("computing stats for view {:?}", self);
+        let tree = self.repo.commit(self.commit)?.tree()?;
+
+        let mut topic_count = 0;
+        let mut link_count = 0;
+
+        tree.walk(git2::TreeWalkMode::PreOrder, |_root, entry| {
+            if let Some(name) = entry.name() {
+                if name != "object.yaml" {
+                    return git2::TreeWalkResult::Ok;
+                }
+
+                let oid = entry.id();
+
+                match self.repo.inner.find_blob(oid) {
+                    Ok(blob) => match std::str::from_utf8(blob.content()) {
+                        Ok(s) => {
+                            for line in s.lines() {
+                                match line {
+                                    "kind: Topic" => {
+                                        topic_count += 1;
+                                        break;
+                                    }
+
+                                    "kind: Link" => {
+                                        link_count += 1;
+                                        break;
+                                    }
+
+                                    _ => {}
+                                }
+                            }
+                        }
+
+                        Err(err) => {
+                            log::error!("failed to convert to string: {}", err);
+                        }
+                    },
+
+                    Err(err) => {
+                        log::error!("failed to fetch blob: {}", err);
+                    }
+                }
+            }
+
+            git2::TreeWalkResult::Ok
+        })?;
+
+        Ok(RepoStats {
+            link_count,
+            topic_count,
+        })
     }
 
     pub fn topic(&self, path: &PathSpec) -> Result<Option<Topic>> {

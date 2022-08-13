@@ -1,6 +1,6 @@
 use std::fs;
 
-use super::{actor, Fixtures};
+use super::{actor, viewer, Fixtures};
 use digraph::git;
 
 mod topic_references {
@@ -103,6 +103,7 @@ mod delete_account {
 
 mod ensure_personal_repo {
     use digraph::prelude::*;
+    use digraph::redis;
     use digraph::types::RepoPrefix;
 
     use super::*;
@@ -127,5 +128,27 @@ mod ensure_personal_repo {
         let path = repo.default_topic_path().unwrap();
         let topic = f.topic(&path.inner);
         assert_eq!(topic.name(Locale::EN), "Everything");
+    }
+
+    #[test]
+    fn view_stats() {
+        let f = Fixtures::copy("simple");
+        let stats = f.git.view_stats(&RepoPrefix::wiki()).unwrap();
+        assert_eq!(stats.topic_count, 9);
+        assert_eq!(stats.link_count, 4);
+    }
+
+    #[test]
+    fn fetch_stats() {
+        let f = Fixtures::copy("simple");
+        let repos = RepoList::try_from(&vec!["/wiki/".to_owned(), "/other/".to_owned()]).unwrap();
+        let viewer = viewer(&repos);
+
+        let git::FetchStatsResult { stats } = git::FetchStats { viewer }
+            .call(&f.git, &redis::Noop)
+            .unwrap();
+
+        assert_eq!(stats.topic_count(), 9);
+        assert_eq!(stats.link_count(), 4);
     }
 }

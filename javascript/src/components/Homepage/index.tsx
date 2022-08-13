@@ -29,6 +29,8 @@ const Homepage = ({ view, router }: Props) => {
     (edge) => edge && edge.node && <LineItem key={edge.node.description} item={edge.node} />,
   )
 
+  let stats = view.stats
+
   return (
     <div className="f4">
       <div className="homepageHero">
@@ -65,9 +67,9 @@ const Homepage = ({ view, router }: Props) => {
 
           <div>
             There are currently
-            {` ${view.linkCount.toLocaleString()} `}
+            {` ${stats.linkCount?.toLocaleString() || 0} `}
             links and
-            {` ${view.topicCount.toLocaleString()} `}
+            {` ${stats.topicCount?.toLocaleString() || 0} `}
             topics.
           </div>
         </div>
@@ -91,8 +93,10 @@ query Homepage_homepage_Query(
     currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
-    linkCount
-    topicCount
+    stats {
+      linkCount
+      topicCount
+    }
 
     activity(first: 3) {
       edges {

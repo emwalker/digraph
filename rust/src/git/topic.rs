@@ -1,7 +1,7 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
-    activity, Client, Kind, Link, Mutation, Object, ParentTopic, SaveChangesForPrefix, Synonym,
+    activity, Kind, Link, Mutation, Object, ParentTopic, SaveChangesForPrefix, Synonym,
     SynonymEntry, SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
 };
 use crate::prelude::*;
@@ -120,20 +120,6 @@ impl DeleteTopic {
             id: activity::Change::new_id(),
             parent_topics: activity::TopicInfoList::from(parent_topics),
         })
-    }
-}
-
-pub struct FetchTopicCount {
-    pub actor: Viewer,
-}
-
-pub struct FetchTopicCountResult {
-    pub count: usize,
-}
-
-impl FetchTopicCount {
-    pub fn call(&self, _git: &Client) -> Result<FetchTopicCountResult> {
-        Ok(FetchTopicCountResult { count: 100 })
     }
 }
 
