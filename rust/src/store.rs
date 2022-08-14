@@ -190,6 +190,7 @@ impl Store {
     }
 
     pub async fn delete_account(&self, user_id: String) -> Result<psql::DeleteAccountResult> {
+        log::info!("account deletion: fetching account info for {}", user_id);
         let psql::FetchAccountInfoResult { personal_repos } = psql::FetchAccountInfo {
             user_id: user_id.to_owned(),
             viewer: self.viewer.to_owned(),
@@ -197,6 +198,11 @@ impl Store {
         .call(&self.db)
         .await?;
 
+        log::info!(
+            "account deletion: deleting git repos for {}: {:?}",
+            user_id,
+            personal_repos
+        );
         git::DeleteAccount {
             actor: self.viewer.to_owned(),
             user_id: user_id.to_owned(),
@@ -204,6 +210,7 @@ impl Store {
         }
         .call(&self.update()?)?;
 
+        log::info!("account deletion: postgres data for {}", user_id);
         psql::DeleteAccount::new(self.viewer.clone(), user_id)
             .call(&self.db)
             .await

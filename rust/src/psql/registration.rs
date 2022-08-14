@@ -67,7 +67,8 @@ impl CompleteRegistration {
                 set
                     registered_at = now(),
                     login = $1,
-                    write_prefixes = array['/wiki/', concat('/', $1, '/')]
+                    write_prefixes = array['/wiki/', concat('/', $1, '/')],
+                    personal_prefixes = array[concat('/', $1, '/')]
                 where id = $2",
         )
         .bind(&self.login)

@@ -1,5 +1,4 @@
 Before switchover:
-* Ensure that organizations, users, and repos are being deleted when a person asks for their account to be destroyed
 * Update db/schema.sql and add a make task to load it
 * Merge the contents of items with the same id and different repo prefixes
 * Decide whether to support link reviews or remove the feature

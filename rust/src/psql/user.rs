@@ -228,7 +228,7 @@ impl DeleteAccount {
 
         if let Some(login) = row.login {
             log::warn!("deleting default organization {}", login);
-            sqlx::query(r#"delete from organizations where login = $1 and system"#)
+            sqlx::query(r#"delete from organizations where login = $1"#)
                 .bind(&login)
                 .bind(&self.user_id)
                 .execute(&mut tx)

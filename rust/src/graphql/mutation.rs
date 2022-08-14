@@ -264,6 +264,7 @@ impl MutationRoot {
             user_id,
             client_mutation_id,
         } = input;
+
         let psql::DeleteAccountResult {
             alerts,
             deleted_user_id,
