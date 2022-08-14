@@ -251,7 +251,7 @@ impl Store {
 
         match result {
             git::Object::Link(link) => Ok(Some(graphql::Link::try_from(&link)?)),
-            _ => return Err(Error::NotFound(format!("no link: {}", path))),
+            _ => Err(Error::NotFound(format!("no link: {}", path))),
         }
     }
 
@@ -390,7 +390,7 @@ impl Store {
 
         match result {
             git::Object::Topic(topic) => Ok(Some(graphql::Topic::try_from(&topic)?)),
-            _ => return Err(Error::NotFound(format!("no topic: {}", path))),
+            _ => Err(Error::NotFound(format!("no topic: {}", path))),
         }
     }
 

@@ -4,6 +4,7 @@ Before switchover:
 * Merge the contents of items with the same id and different repo prefixes
 * Decide whether to support link reviews or remove the feature
 * See if minikube still works with 2048 MB
+* Fix where new topics and links appear
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: Figure out how to download a repo
