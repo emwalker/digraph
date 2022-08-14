@@ -9,12 +9,12 @@ spec:
       nodePort: 30723
       port: 80
       protocol: TCP
-      targetPort: 3001
+      targetPort: 3000
     - name: digraph-frontend-https
       nodePort: 31583
       port: 443
       protocol: TCP
-      targetPort: 3001
+      targetPort: 3000
   selector:
     app: digraph
     tier: digraph-frontend
@@ -84,7 +84,7 @@ spec:
           image: emwalker/digraph-node:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 3001
+            - containerPort: 3000
               name: http
               protocol: TCP
           resources:
