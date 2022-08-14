@@ -1,10 +1,11 @@
 insert into users
-    (id, name, primary_email, system)
+    (id, name, primary_email, system, avatar_url)
     values (
         '461c87c8-fb8f-11e8-9cbc-afde6c54d881',
         'root',
         '',
-        't'
+        't',
+        'https://i.pravatar.cc/460?img=32'
     )
     on conflict do nothing;
 

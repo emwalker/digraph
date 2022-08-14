@@ -364,18 +364,6 @@ CREATE TABLE public.repositories (
 ALTER TABLE public.repositories OWNER TO postgres;
 
 --
--- Name: schema_migrations; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.schema_migrations (
-    version bigint NOT NULL,
-    dirty boolean NOT NULL
-);
-
-
-ALTER TABLE public.schema_migrations OWNER TO postgres;
-
---
 -- Name: sessions; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -418,7 +406,7 @@ CREATE TABLE public.users (
     login character varying(256),
     selected_repository_id uuid,
     system boolean DEFAULT false NOT NULL,
-    avatar_url character varying(256),
+    avatar_url character varying(256) NOT NULL,
     registered_at timestamp with time zone,
     write_prefixes text[] DEFAULT '{}'::text[] NOT NULL,
     personal_prefixes text[] DEFAULT '{}'::text[] NOT NULL
@@ -497,14 +485,6 @@ ALTER TABLE ONLY public.repositories
 
 ALTER TABLE ONLY public.repositories
     ADD CONSTRAINT repositories_pkey PRIMARY KEY (id);
-
-
---
--- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.schema_migrations
-    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
 
 
 --

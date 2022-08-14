@@ -46,9 +46,6 @@ export:
 fixtures: data/fixtures.sql
 	bash ./scripts/make-fixtures
 
-load-fixtures:
-	bash ./scripts/load-fixtures
-
 load-production:
 	bash ./scripts/load-production-db
 	$(MAKE) -C rust migrate
@@ -71,6 +68,9 @@ push-deploy: check-git-clean build push-docker push-git deploy-k8s
 
 push-git:
 	git push origin main
+
+reset-db:
+	bash ./scripts/reset-db
 
 save-production:
 	bash ./scripts/save-production-db

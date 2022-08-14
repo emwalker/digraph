@@ -1,4 +1,4 @@
-# Development setup
+# Cluster configuration
 
 ## NFS
 
