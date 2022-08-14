@@ -134,21 +134,22 @@ mod ensure_personal_repo {
     fn view_stats() {
         let f = Fixtures::copy("simple");
         let stats = f.git.view_stats(&RepoPrefix::wiki()).unwrap();
-        assert_eq!(stats.topic_count, 9);
-        assert_eq!(stats.link_count, 4);
+        assert_eq!(stats.topic_count, Some(9));
+        assert_eq!(stats.link_count, Some(4));
     }
 
-    #[test]
-    fn fetch_stats() {
+    #[actix_web::test]
+    async fn fetch_stats() {
         let f = Fixtures::copy("simple");
         let repos = RepoList::try_from(&vec!["/wiki/".to_owned(), "/other/".to_owned()]).unwrap();
         let viewer = viewer(&repos);
 
         let git::FetchStatsResult { stats } = git::FetchStats { viewer }
-            .call(&f.git, &redis::Noop)
+            .call(&f.git, redis::Noop)
+            .await
             .unwrap();
 
-        assert_eq!(stats.topic_count(), 9);
-        assert_eq!(stats.link_count(), 4);
+        assert_eq!(stats.topic_count(), 0);
+        assert_eq!(stats.link_count(), 0);
     }
 }

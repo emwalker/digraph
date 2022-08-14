@@ -6,6 +6,7 @@ use crate::git;
 use crate::prelude::*;
 use crate::types::{Downset, ReadPath};
 
+#[derive(Clone, Debug)]
 pub struct Noop;
 
 impl git::SaveChangesForPrefix for Noop {
@@ -24,7 +25,13 @@ impl git::CacheStats for Noop {
         Ok(None)
     }
 
-    fn save(&self, _repo: &RepoPrefix, _commit: &str, _stats: &git::RepoStats) -> Result<()> {
+    fn save(
+        &self,
+        _repo: &RepoPrefix,
+        _commit: &str,
+        _stats: &git::RepoStats,
+        _expires: Option<u32>,
+    ) -> Result<()> {
         Ok(())
     }
 }
@@ -47,7 +54,7 @@ impl redis_rs::ToRedisArgs for Key {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Redis {
     url: String,
 }
@@ -68,11 +75,24 @@ impl git::CacheStats for Redis {
         }
     }
 
-    fn save(&self, repo: &RepoPrefix, commit: &str, stats: &git::RepoStats) -> Result<()> {
+    fn save(
+        &self,
+        repo: &RepoPrefix,
+        commit: &str,
+        stats: &git::RepoStats,
+        ttl: Option<u32>,
+    ) -> Result<()> {
         let key = self.stats_key(repo, commit);
         let mut con = self.connection().unwrap();
         let s: String = stats.try_into()?;
-        redis::cmd("SET").arg(key).arg(s).query(&mut con)?;
+
+        let mut command = redis::cmd("SET");
+        let mut command = command.arg(key).arg(s);
+        if let Some(ttl) = ttl {
+            command = command.arg("EX").arg(ttl);
+        }
+        command.query(&mut con)?;
+
         Ok(())
     }
 }

@@ -541,7 +541,8 @@ impl Store {
         let git::FetchStatsResult { stats } = git::FetchStats {
             viewer: self.viewer.clone(),
         }
-        .call(&self.git, &self.redis)?;
+        .call(&self.git, self.redis.to_owned())
+        .await?;
 
         Ok(stats.into())
     }

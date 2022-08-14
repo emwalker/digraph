@@ -29,6 +29,7 @@ name = "integration-tests"
 path = "tests/lib.rs"
 
 [dependencies]
+actix-rt = "2"
 actix-web = "4"
 async-graphql = { version = "4", features = ["apollo_tracing", "cbor", "dataloader", "log", "uuid"] }
 async-graphql-actix-web = "4"

@@ -17,7 +17,7 @@ Before switchover:
 
 
 Later:
-* Kick off a background thread to compute repo stats so that homepage request returns quickly
+* Provide a guess as to what the stats are while they're being computed instead of return 0 topics and 0 links
 * Use a queue for rebasing commits before mering, instead of retrying
 * Look into using iterators for the search code instead of copying large buffers around
 * Keep tabs on whether the ordering of changes is stable

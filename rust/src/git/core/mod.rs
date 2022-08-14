@@ -35,7 +35,10 @@ impl std::fmt::Debug for Repo {
 impl Repo {
     pub fn ensure(root: &DataRoot, prefix: &RepoPrefix) -> Result<Self> {
         let path = root.repo_path(prefix);
+        Self::open(path)
+    }
 
+    pub fn open(path: PathBuf) -> Result<Self> {
         match git2::Repository::open(&path) {
             Ok(repo) => Ok(Repo { inner: repo, path }),
             Err(err) => match err.code() {
@@ -92,6 +95,10 @@ impl Repo {
         let reference = self.inner.find_reference("HEAD")?;
         let commit = reference.peel_to_commit()?;
         Ok(commit.id())
+    }
+
+    pub fn duplicate(&self) -> Result<Self> {
+        Self::open(self.path.to_owned())
     }
 
     fn path_to_oid(&self, tree: git2::Tree, path: &mut VecDeque<String>) -> Option<git2::Oid> {
@@ -151,7 +158,7 @@ impl<'repo> TryInto<Topic> for git2::Blob<'repo> {
 
 #[derive(Debug)]
 pub struct View {
-    repo: Repo,
+    pub repo: Repo,
     pub commit: git2::Oid,
 }
 
@@ -173,6 +180,13 @@ impl View {
             Some(blob) => Ok(blob.try_into()?),
             None => Err(Error::NotFound(format!("not found: {}", path))),
         }
+    }
+
+    pub fn duplicate(&self) -> Result<Self> {
+        Ok(Self {
+            repo: self.repo.duplicate()?,
+            commit: self.commit,
+        })
     }
 
     pub(crate) fn find_blob_by_filename(&self, filename: &Path) -> Result<Option<git2::Blob>> {
@@ -253,8 +267,9 @@ impl View {
         })?;
 
         Ok(RepoStats {
-            link_count,
-            topic_count,
+            computing: false,
+            link_count: Some(link_count),
+            topic_count: Some(topic_count),
         })
     }
 
