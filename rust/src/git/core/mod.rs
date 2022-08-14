@@ -219,6 +219,12 @@ impl View {
         let mut topic_count = 0;
         let mut link_count = 0;
 
+        fn has_subsequence(haystack: &[u8], needle: &[u8]) -> bool {
+            haystack
+                .windows(needle.len())
+                .any(|window| window == needle)
+        }
+
         tree.walk(git2::TreeWalkMode::PreOrder, |_root, entry| {
             if let Some(name) = entry.name() {
                 if name != "object.yaml" {
@@ -228,32 +234,17 @@ impl View {
                 let oid = entry.id();
 
                 match self.repo.inner.find_blob(oid) {
-                    Ok(blob) => match std::str::from_utf8(blob.content()) {
-                        Ok(s) => {
-                            for line in s.lines() {
-                                match line {
-                                    "kind: Topic" => {
-                                        topic_count += 1;
-                                        break;
-                                    }
-
-                                    "kind: Link" => {
-                                        link_count += 1;
-                                        break;
-                                    }
-
-                                    _ => {}
-                                }
-                            }
+                    Ok(blob) => {
+                        let haystack = blob.content();
+                        if has_subsequence(haystack, b"\nkind: Topic\n") {
+                            topic_count += 1;
+                        } else if has_subsequence(haystack, b"\nkind: Link\n") {
+                            link_count += 1;
                         }
-
-                        Err(err) => {
-                            log::error!("failed to convert to string: {}", err);
-                        }
-                    },
+                    }
 
                     Err(err) => {
-                        log::error!("failed to fetch blob: {}", err);
+                        log::error!("failed to convert to string: {}", err);
                     }
                 }
             }
