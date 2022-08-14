@@ -1,25 +1,8 @@
-use actix_rt;
+use actix_web;
 use serde::{Deserialize, Serialize};
 
-use super::{core, Client};
+use super::Client;
 use crate::prelude::*;
-
-async fn compute_stats<C>(
-    view: core::View,
-    prefix: RepoPrefix,
-    commit: String,
-    cache: C,
-) -> Result<()>
-where
-    C: CacheStats + Clone + std::fmt::Debug + Send + 'static,
-{
-    let key = format!("{}:{}", prefix, commit);
-    log::info!("computing stats for {} ...", key);
-    let stats = view.stats()?;
-    cache.save(&prefix, &commit, &stats, None)?;
-    log::info!("stats for {} saved to cache", key);
-    Ok(())
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RepoStats {
@@ -99,9 +82,19 @@ impl FetchStats {
                     cache.save(prefix, &commit, &stats, Some(120))?;
 
                     let view = view.duplicate()?;
-                    let background_task =
-                        compute_stats(view, prefix.to_owned(), commit.to_owned(), cache.to_owned());
-                    actix_rt::spawn(background_task);
+                    let cache = cache.to_owned();
+                    let commit = commit.to_owned();
+                    let prefix = prefix.to_owned();
+
+                    let _ = actix_web::web::block(move || {
+                        let key = format!("{}:{}", prefix, commit);
+                        log::info!("computing stats for {} ...", key);
+                        let stats = view.stats().expect("failed to fetch stats");
+                        cache
+                            .save(&prefix, &commit, &stats, None)
+                            .expect("failed to save stats");
+                        log::info!("stats for {} saved to cache", key);
+                    });
 
                     stats
                 }

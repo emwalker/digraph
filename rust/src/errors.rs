@@ -5,6 +5,10 @@ quick_error! {
     pub enum Error {
         Auth(err: String) {}
 
+        Blocking(err: String) {
+            from(err: actix_web::error::BlockingError) -> (format!("{}", err))
+        }
+
         Config(err: envy::Error) {
             from()
         }
