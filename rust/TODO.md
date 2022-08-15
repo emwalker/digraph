@@ -1,4 +1,5 @@
 Before switchover:
+* Update export to keep paths from different repos separate
 * Merge the contents of items with the same id and different repo prefixes
 * Decide whether to support link reviews or remove the feature
 * Fix where new topics and links appear
