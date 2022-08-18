@@ -2,12 +2,11 @@ Before switchover:
 * Update export to keep paths from different repos separate
 * Merge the contents of items with the same id and different repo prefixes
 * Decide whether to support link reviews or remove the feature
-* Fix where new topics and links appear
+* Fix the JS client to show new links and topics in the right place when they're added
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
-* Git: Figure out how to download a repo
-* Cutover: Figure out how to get an RWX pvc working (use Ceph?)
-* Cutover: Current snapshot of database
+* Cutover: Figure out how to get an RWX pvc working on Linode (use Ceph?)
+* Cutover: Take snapshot of database
 * Cutover: Export people's repos
 * Cutover: Run addititive migrations against database
 * Cutover: Make the switchover live
