@@ -121,6 +121,14 @@ impl std::cmp::PartialOrd for Link {
 }
 
 impl Link {
+    pub fn added(&self) -> Timestamp {
+        self.metadata.added
+    }
+
+    pub fn is_reference(&self) -> bool {
+        self.metadata.details.is_none()
+    }
+
     pub fn path(&self) -> Result<PathSpec> {
         PathSpec::try_from(&self.metadata.path)
     }
@@ -319,6 +327,10 @@ impl std::hash::Hash for Topic {
 }
 
 impl Topic {
+    pub fn added(&self) -> Timestamp {
+        self.metadata.added
+    }
+
     pub fn has_child(&self, path: &PathSpec) -> bool {
         self.children.iter().any(|child| child.path == path.inner)
     }

@@ -267,10 +267,13 @@ impl Client {
     fn link_searches(&self, link: Option<Link>) -> Result<BTreeSet<Search>> {
         let searches = match link {
             Some(link) => {
-                let meta = &link.metadata;
-                let url = RepoUrl::parse(meta.url())?;
+                if link.is_reference() {
+                    return Ok(BTreeSet::new());
+                }
+
+                let url = RepoUrl::parse(link.url())?;
                 BTreeSet::from([
-                    Search::parse(meta.title())?,
+                    Search::parse(link.title())?,
                     Search::parse(&url.normalized)?,
                 ])
             }

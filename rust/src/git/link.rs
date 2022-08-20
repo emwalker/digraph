@@ -198,16 +198,17 @@ pub struct UpsertLinkResult {
 }
 
 impl UpsertLink {
-    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<UpsertLinkResult>
+    pub fn call<S>(&self, mut mutation: Mutation, store: &S) -> Result<UpsertLinkResult>
     where
         S: SaveChangesForPrefix,
     {
         log::info!("upserting link: {:?}", self);
         let url = RepoUrl::parse(&self.url)?;
-        let path = url.path(&self.repo)?;
+        let link_path = url.path(&self.repo)?;
         let date = Utc::now();
 
-        let (mut link, previous_title) = self.make_link(&update, &url, &path)?;
+        let (mut link, previous_title) = self.make_link(&mutation, &link_path, &url)?;
+
         if let Some(title) = &self.title {
             match &mut link.metadata.details {
                 Some(extra) => {
@@ -221,33 +222,7 @@ impl UpsertLink {
             }
         }
 
-        let mut parent_topics = HashMap::new();
-
-        for parent in &link.parent_topics {
-            if let Some(topic) = update.fetch_topic(&PathSpec::try_from(&parent.path)?) {
-                parent_topics.insert(parent.path.to_owned(), topic);
-            }
-        }
-
-        let topic = if let Some(topic_path) = &self.add_parent_topic_path {
-            let topic = update.fetch_topic(topic_path);
-            if let Some(topic) = &topic {
-                parent_topics.insert(topic_path.to_string(), topic.to_owned());
-            }
-            topic
-        } else {
-            None
-        };
-
-        if parent_topics.is_empty() {
-            // There's a client error if we get to this point.
-            log::warn!("no topic found, placing under root topic for /wiki");
-            if let Some(topic) =
-                update.fetch_topic(&PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap())
-            {
-                parent_topics.insert(topic.metadata.path.to_owned(), topic);
-            }
-        }
+        let (topic, mut parent_topics) = self.maybe_topic(&mut mutation, &link)?;
 
         let change = self.change(&link, &topic, &previous_title, date);
         link.parent_topics = parent_topics
@@ -263,17 +238,54 @@ impl UpsertLink {
                 kind: Kind::Link,
                 path: link.metadata.path.to_owned(),
             });
-            update.save_topic(&PathSpec::try_from(path)?, topic)?;
+            mutation.save_topic(&PathSpec::try_from(path)?, topic)?;
         }
 
-        update.save_link(&path, &link)?;
-        update.add_change(&change)?;
-        update.write(store)?;
+        mutation.save_link(&link_path, &link)?;
+        mutation.add_change(&change)?;
+        mutation.write(store)?;
 
         Ok(UpsertLinkResult {
             alerts: vec![],
             link: Some(link),
         })
+    }
+
+    fn maybe_topic(
+        &self,
+        mutation: &mut Mutation,
+        link: &Link,
+    ) -> Result<(Option<Topic>, HashMap<String, Topic>)> {
+        let mut parent_topics = HashMap::new();
+
+        for parent in &link.parent_topics {
+            if let Some(topic) = mutation.fetch_topic(&PathSpec::try_from(&parent.path)?) {
+                parent_topics.insert(parent.path.to_owned(), topic);
+            }
+        }
+
+        let topic = if let Some(topic_path) = &self.add_parent_topic_path {
+            let topic_path = link.path()?.repo.path(&topic_path.short_id)?;
+            let topic = mutation.fetch_topic(&topic_path);
+            if let Some(topic) = &topic {
+                parent_topics.insert(topic_path.to_string(), topic.to_owned());
+            }
+            topic
+        } else {
+            None
+        };
+
+        if parent_topics.is_empty() {
+            // There's a client error if we get to this point.
+            log::warn!("no topic found, placing under root topic for /wiki");
+            if let Some(topic) =
+                mutation.fetch_topic(&PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap())
+            {
+                parent_topics.insert(topic.metadata.path.to_owned(), topic);
+            }
+        }
+
+        Ok((topic, parent_topics))
     }
 
     fn change(
@@ -304,12 +316,12 @@ impl UpsertLink {
 
     fn make_link(
         &self,
-        builder: &Mutation,
+        mutation: &Mutation,
+        link_path: &PathSpec,
         url: &RepoUrl,
-        path: &PathSpec,
     ) -> Result<(Link, Option<String>)> {
-        if builder.exists(path)? {
-            if let Some(link) = builder.fetch_link(path) {
+        if mutation.exists(link_path)? {
+            if let Some(link) = mutation.fetch_link(link_path) {
                 let title = link.metadata.title().to_owned();
                 return Ok((link, Some(title)));
             }
@@ -324,6 +336,7 @@ impl UpsertLink {
 
         let mut parent_topics = BTreeSet::new();
         if let Some(path) = &self.add_parent_topic_path {
+            let path = link_path.repo.path(&path.short_id)?;
             parent_topics.insert(ParentTopic {
                 path: path.to_string(),
             });
@@ -334,7 +347,7 @@ impl UpsertLink {
             parent_topics,
             metadata: LinkMetadata {
                 added: chrono::Utc::now(),
-                path: path.to_string(),
+                path: link_path.to_string(),
                 details: Some(LinkDetails {
                     title,
                     url: url.normalized.to_owned(),

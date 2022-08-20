@@ -1,4 +1,6 @@
 Before switchover:
+* Drop the notion of a "path" and a "repo prefix"
+* Don't save private links and topics to /wiki/.
 * Update export to keep paths from different repos separate
 * Merge the contents of items with the same id and different repo prefixes
 * Decide whether to support link reviews or remove the feature

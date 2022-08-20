@@ -282,22 +282,51 @@ mod upsert_link {
     }
 
     #[test]
-    fn another_prefix() {
+    fn link_added_to_correct_repo() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
         let repo = RepoPrefix::try_from("/other/").unwrap();
         let link_path = url.path(&repo).unwrap();
+        let parent_path = PathSpec::try_from("/wiki/00001").unwrap();
 
         assert_eq!(link_path.repo, repo);
         assert!(!f.git.exists(&link_path).unwrap());
 
+        // We're specifying /wiki/00001 as the parent topic, which is under /wiki/. But what will
+        // happen is that the link will be added with the path "/other/00001", which makes the
+        // topic a reference to /wiki/00001 under the /other/ repo.  No path with /other/ should
+        // appear within the /wiki/ repo.
         f.upsert_link(
             &link_path.repo,
             &url,
             Some("Page title".into()),
-            Some("/wiki/00001".to_owned()),
+            Some(parent_path.inner.to_owned()),
         );
 
         assert!(f.git.exists(&link_path).unwrap());
+
+        let topic = f.git.fetch_topic(&parent_path).expect("/wiki/00001");
+
+        for child in &topic.children {
+            let path = PathSpec::try_from(&child.path).unwrap();
+            assert!(
+                path.short_id != link_path.short_id,
+                "link placed under /wiki/ topic"
+            );
+        }
+
+        // let topic_path = repo.path(&parent_path.short_id).unwrap();
+        // let topic = f.git.fetch_topic(&topic_path).expect("/other/00001");
+        // let mut found = false;
+
+        // for child in &topic.children {
+        //     let path = PathSpec::try_from(&child.path).unwrap();
+        //     if path.short_id == link_path.short_id {
+        //         found = true;
+        //         break;
+        //     }
+        // }
+
+        // assert!(found, "link not found in topic children");
     }
 }

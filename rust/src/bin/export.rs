@@ -153,6 +153,116 @@ impl TryFrom<&TopicChildRow> for TopicChild {
     }
 }
 
+#[derive(Debug)]
+struct Topics {
+    topic: Topic,
+    topics: HashMap<RepoPrefix, Topic>,
+}
+
+impl Topics {
+    fn new(topic: Topic) -> Self {
+        let repo = topic.path().unwrap().repo;
+        let mut topics: HashMap<RepoPrefix, Topic> = HashMap::new();
+        topics.insert(repo, topic.clone());
+        Self { topic, topics }
+    }
+
+    fn get_mut(&mut self, repo: &RepoPrefix) -> &mut Topic {
+        let topics = &mut self.topics;
+
+        topics.entry(repo.to_owned()).or_insert_with(|| {
+            let id = &self.topic.path().unwrap().short_id;
+            let path = repo.path(id).unwrap();
+
+            Topic {
+                api_version: API_VERSION.to_string(),
+                metadata: TopicMetadata {
+                    added: self.topic.added(),
+                    path: path.inner,
+                    details: None,
+                },
+                parent_topics: BTreeSet::new(),
+                children: BTreeSet::new(),
+            }
+        })
+    }
+}
+
+fn persist_topic(
+    mutation: &mut Mutation,
+    repo: RepoPrefix,
+    topic: &mut Topic,
+    parent_topics: &Vec<ParentTopicRow>,
+    children: &Vec<TopicChildRow>,
+) -> Result<()> {
+    let mut child_links = vec![];
+    let mut child_topics = vec![];
+
+    for child in children {
+        let TopicChildRow {
+            kind,
+            id,
+            login,
+            name,
+            url,
+            ..
+        } = child;
+
+        if repo.org_login() != login {
+            continue;
+        }
+
+        match kind.as_str() {
+            "Topic" => {
+                let path = sha256_path(login, id)?;
+                child_topics.push(activity::TopicInfo::from((
+                    Locale::EN,
+                    name.to_owned(),
+                    path.inner,
+                )));
+            }
+            "Link" => {
+                let path = sha256_path(login, url)?;
+                child_links.push(activity::LinkInfo {
+                    title: name.to_owned(),
+                    url: url.to_owned(),
+                    path: path.inner,
+                    deleted: false,
+                });
+            }
+            _ => {}
+        };
+    }
+
+    let mut parents = vec![];
+    for topic in parent_topics {
+        if topic.login != repo.org_login() {
+            continue;
+        }
+
+        let path = sha256_path(&topic.login, &topic.id)?;
+        parents.push(activity::TopicInfo::from((
+            Locale::EN,
+            topic.name.to_owned(),
+            path.inner.to_owned(),
+        )));
+    }
+
+    let change = activity::Change::ImportTopic(activity::ImportTopic {
+        actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
+        date: chrono::Utc::now(),
+        imported_topic: activity::TopicInfo::from(&*topic),
+        child_links: activity::LinkInfoList::from(&child_links),
+        child_topics: activity::TopicInfoList::from(&child_topics),
+        id: activity::Change::new_id(),
+        parent_topics: activity::TopicInfoList::from(&parents),
+    });
+
+    mutation.save_topic(&topic.path()?, topic)?;
+    mutation.add_change(&change)
+}
+
+// 1. Don't place paths for items in private repos under /wiki/
 fn persist_topics(
     mutation: &mut Mutation,
     topic_path: &PathSpec,
@@ -191,79 +301,36 @@ fn persist_topics(
                 timerange,
             }),
         },
-        parent_topics: parent_topics
-            .iter()
-            .map(ParentTopic::try_from)
-            .collect::<Result<BTreeSet<ParentTopic>>>()?,
-        children: children
-            .iter()
-            .map(TopicChild::try_from)
-            .collect::<Result<BTreeSet<TopicChild>>>()?,
+        parent_topics: BTreeSet::new(),
+        children: BTreeSet::new(),
     };
 
-    let mut child_links = vec![];
-    let mut child_topics = vec![];
+    let mut topics = Topics::new(topic);
+
+    for parent in parent_topics {
+        let repo = RepoPrefix::from_login(&parent.login)?;
+        let topic = topics.get_mut(&repo);
+        topic.parent_topics.insert(parent.try_into()?);
+    }
 
     for child in children {
-        let TopicChildRow {
-            kind,
-            id,
-            login,
-            name,
-            url,
-            ..
-        } = child;
-
-        match kind.as_str() {
-            "Topic" => {
-                let path = sha256_path(login, id)?;
-                child_topics.push(activity::TopicInfo::from((
-                    Locale::EN,
-                    name.to_owned(),
-                    path.inner,
-                )));
-            }
-            "Link" => {
-                let path = sha256_path(login, url)?;
-                child_links.push(activity::LinkInfo {
-                    title: name.to_owned(),
-                    url: url.to_owned(),
-                    path: path.inner,
-                    deleted: false,
-                });
-            }
-            _ => {}
-        };
+        let parent_repo = RepoPrefix::from_login(&child.login)?;
+        let topic = topics.get_mut(&parent_repo);
+        topic.children.insert(child.try_into()?);
     }
 
-    let mut parents = vec![];
-    for topic in parent_topics {
-        let path = sha256_path(&topic.login, &topic.id)?;
-        parents.push(activity::TopicInfo::from((
-            Locale::EN,
-            topic.name.to_owned(),
-            path.inner.to_owned(),
-        )));
+    let repos = topics.topics.keys().cloned().collect::<Vec<RepoPrefix>>();
+
+    for repo in repos {
+        let topic = topics.get_mut(&repo);
+        persist_topic(mutation, repo, topic, parent_topics, children)?;
     }
-
-    let change = activity::Change::ImportTopic(activity::ImportTopic {
-        actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
-        date: chrono::Utc::now(),
-        imported_topic: activity::TopicInfo::from(&topic),
-        child_links: activity::LinkInfoList::from(&child_links),
-        child_topics: activity::TopicInfoList::from(&child_topics),
-        id: activity::Change::new_id(),
-        parent_topics: activity::TopicInfoList::from(&parents),
-    });
-
-    mutation.save_topic(&topic.path()?, &topic)?;
-    mutation.add_change(&change)?;
 
     Ok(())
 }
 
 async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
-    log::info!("saving topics");
+    log::info!("saving topic blobs");
 
     let rows = sqlx::query_as::<_, TopicMetadataRow>(
         r#"select
@@ -348,26 +415,57 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
     Ok(())
 }
 
-fn persist_links(
+#[derive(Debug)]
+struct Links {
+    link: Link,
+    links: HashMap<RepoPrefix, Link>,
+}
+
+impl Links {
+    fn new(link: Link) -> Self {
+        let repo = link.path().unwrap().repo;
+        let mut links: HashMap<RepoPrefix, Link> = HashMap::new();
+        links.insert(repo, link.clone());
+        Self { link, links }
+    }
+
+    fn get_mut(&mut self, repo: &RepoPrefix) -> &mut Link {
+        let links = &mut self.links;
+
+        links.entry(repo.to_owned()).or_insert_with(|| {
+            let id = &self.link.path().unwrap().short_id;
+            let path = repo.path(id).unwrap();
+
+            Link {
+                api_version: API_VERSION.to_string(),
+                metadata: LinkMetadata {
+                    added: self.link.added(),
+                    path: path.inner,
+                    details: None,
+                },
+                parent_topics: BTreeSet::new(),
+            }
+        })
+    }
+}
+
+fn persist_link(
     mutation: &mut Mutation,
-    meta: &LinkMetadataRow,
+    link: &mut Link,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
-    let link = Link {
-        api_version: API_VERSION.to_string(),
-        metadata: LinkMetadata::try_from(meta)?,
-        parent_topics: parent_topics
-            .iter()
-            .map(ParentTopic::try_from)
-            .collect::<Result<BTreeSet<ParentTopic>>>()?,
-    };
-
+    let repo = link.path()?.repo;
     let mut topics = BTreeSet::new();
-    for topic in parent_topics {
-        let path = sha256_path(&topic.login, &topic.id)?;
+
+    for parent in parent_topics {
+        if repo.org_login() != parent.login {
+            continue;
+        }
+
+        let path = sha256_path(&parent.login, &parent.id).unwrap();
         topics.insert(activity::TopicInfo::from((
             Locale::EN,
-            topic.name.to_owned(),
+            parent.name.to_owned(),
             path.inner.to_owned(),
         )));
     }
@@ -376,18 +474,47 @@ fn persist_links(
         actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
         date: chrono::Utc::now(),
         id: activity::Change::new_id(),
-        imported_link: activity::LinkInfo::from(&link),
+        imported_link: activity::LinkInfo::from(&*link),
         parent_topics: activity::TopicInfoList::from(&topics),
     });
 
-    mutation.save_link(&link.path()?, &link)?;
-    mutation.add_change(&change)?;
+    mutation.save_link(&link.path().unwrap(), link).unwrap();
+    mutation.add_change(&change).unwrap();
+
+    Ok(())
+}
+
+fn persist_links(
+    mutation: &mut Mutation,
+    meta: &LinkMetadataRow,
+    parent_topics: &Vec<ParentTopicRow>,
+) -> Result<()> {
+    let link = Link {
+        api_version: API_VERSION.to_string(),
+        metadata: LinkMetadata::try_from(meta).unwrap(),
+        parent_topics: BTreeSet::new(),
+    };
+
+    let mut links = Links::new(link);
+
+    for parent in parent_topics {
+        let repo = RepoPrefix::from_login(&parent.login).unwrap();
+        let link = links.get_mut(&repo);
+        link.parent_topics.insert(parent.try_into().unwrap());
+    }
+
+    let repos = links.links.keys().cloned().collect::<Vec<RepoPrefix>>();
+
+    for repo in repos {
+        let link = links.get_mut(&repo);
+        persist_link(mutation, link, parent_topics).unwrap();
+    }
 
     Ok(())
 }
 
 async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
-    log::info!("saving links");
+    log::info!("saving link blobs");
 
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
         r#"select
@@ -421,7 +548,7 @@ async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
         .fetch_all(pool)
         .await?;
 
-        persist_links(mutation, &meta, &parent_topics)?;
+        persist_links(mutation, &meta, &parent_topics).unwrap();
     }
 
     Ok(())
@@ -441,10 +568,10 @@ async fn main() -> Result<()> {
     let client = Client::new(&Viewer::service_account(), &root, Timespec);
     let mut mutation = client.mutation(IndexMode::Replace)?;
 
-    export_topics(&mut mutation, &pool).await?;
-    export_links(&mut mutation, &pool).await?;
+    export_topics(&mut mutation, &pool).await.unwrap();
+    export_links(&mut mutation, &pool).await.unwrap();
 
-    log::info!("saving indexes");
+    log::info!("saving trees and indexes");
     mutation.write(&redis::Noop)?;
 
     log::info!("exported database to {}", root);

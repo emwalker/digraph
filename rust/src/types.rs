@@ -132,7 +132,11 @@ impl RepoPrefix {
     }
 
     pub fn default_topic_path(&self) -> Result<PathSpec> {
-        PathSpec::try_from(&format!("{}{}", self.inner, DEFAULT_ROOT_TOPIC_ID))
+        self.path(DEFAULT_ROOT_TOPIC_ID)
+    }
+
+    pub fn path(&self, id: &str) -> Result<PathSpec> {
+        PathSpec::try_from(&format!("{}{}", self.inner, id))
     }
 
     pub fn relative_path(&self) -> &str {
