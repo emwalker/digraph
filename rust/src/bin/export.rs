@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use geotime::Geotime;
 use getopts::Options;
 use serde::{Deserialize, Serialize};
@@ -56,7 +55,7 @@ fn parse_args() -> Opts {
 #[derive(Clone, Deserialize, FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SynonymRow {
-    added: DateTime<Utc>,
+    added: Timestamp,
     locale: String,
     name: String,
 }
@@ -74,14 +73,14 @@ impl From<&SynonymRow> for Synonym {
 
 #[derive(FromRow)]
 struct TopicMetadataRow {
-    added: DateTime<Utc>,
+    added: Timestamp,
     id: String,
     login: String,
     name: String,
     root: bool,
     synonyms: serde_json::Value,
     timerange_prefix_format: Option<String>,
-    timerange_starts: Option<DateTime<Utc>>,
+    timerange_starts: Option<Timestamp>,
 }
 
 #[derive(Clone, FromRow)]
@@ -102,7 +101,7 @@ impl TryFrom<&ParentTopicRow> for ParentTopic {
 
 #[derive(Clone, FromRow)]
 struct LinkMetadataRow {
-    added: DateTime<Utc>,
+    added: Timestamp,
     login: String,
     link_id: String,
     title: String,
@@ -126,7 +125,7 @@ impl TryFrom<&LinkMetadataRow> for LinkMetadata {
 #[derive(FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct TopicChildRow {
-    added: DateTime<Utc>,
+    added: Timestamp,
     id: String,
     kind: String,
     login: String,

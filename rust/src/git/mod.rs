@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
 
@@ -63,7 +62,7 @@ impl std::cmp::PartialOrd for Kind {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LinkMetadata {
-    pub added: DateTime<Utc>,
+    pub added: Timestamp,
     pub path: String,
     pub title: String,
     pub url: String,
@@ -114,7 +113,7 @@ impl Link {
         }
     }
 
-    pub fn to_topic_child(&self, added: chrono::DateTime<Utc>) -> TopicChild {
+    pub fn to_topic_child(&self, added: Timestamp) -> TopicChild {
         TopicChild {
             added,
             kind: Kind::Link,
@@ -154,7 +153,7 @@ impl ParentTopic {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicChild {
-    pub added: DateTime<Utc>,
+    pub added: Timestamp,
     pub kind: Kind,
     pub path: String,
 }
@@ -189,7 +188,7 @@ impl std::hash::Hash for TopicChild {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Synonym {
-    pub added: DateTime<Utc>,
+    pub added: Timestamp,
     pub locale: Locale,
     pub name: String,
 }
@@ -224,7 +223,7 @@ impl std::cmp::PartialOrd for Synonym {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicMetadata {
-    pub added: DateTime<Utc>,
+    pub added: Timestamp,
     pub path: String,
     pub root: bool,
     pub synonyms: Vec<Synonym>,
@@ -325,7 +324,7 @@ impl Topic {
         }
     }
 
-    pub fn to_topic_child(&self, added: chrono::DateTime<Utc>) -> TopicChild {
+    pub fn to_topic_child(&self, added: Timestamp) -> TopicChild {
         TopicChild {
             added,
             kind: Kind::Topic,

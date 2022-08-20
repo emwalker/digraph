@@ -1,11 +1,12 @@
 use async_graphql::connection::*;
 use async_graphql::*;
-use chrono::{DateTime, Utc};
+
+use crate::prelude::*;
 
 #[derive(SimpleObject)]
 pub struct ActivityLineItem {
     pub description: String,
-    pub created_at: DateTime<Utc>,
+    pub created_at: Timestamp,
 }
 
 pub type ActivityLineItemConnection =
