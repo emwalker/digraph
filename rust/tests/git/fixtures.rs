@@ -53,7 +53,7 @@ impl Fixtures {
     }
 
     pub fn update(&self) -> Mutation {
-        self.git.update(IndexMode::Update).unwrap()
+        self.git.mutation(IndexMode::Update).unwrap()
     }
 
     pub fn copy(fixture_dirname: &str) -> Self {

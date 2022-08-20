@@ -4,57 +4,58 @@ apiVersion: objects/v1
 metadata:
   added: "2022-07-04T15:51:59.103316907Z"
   path: /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
-  root: false
-  synonyms:
-    - added: "2022-07-04T15:51:59.103316907Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-09T18:37:38.788704602Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-12T02:19:51.506128918Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-13T00:17:31.899876612Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-13T00:33:35.526130556Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-13T00:44:40.112997435Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-15T21:06:47.170331600Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-15T21:11:58.803827667Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-15T21:15:30.220560604Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-15T22:18:14.026485845Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-16T02:33:07.036558319Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-16T03:20:19.471737610Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-16T03:51:50.803923450Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-16T03:52:24.953208385Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-16T03:52:51.348923348Z"
-      locale: en
-      name: Climate change and weather
-    - added: "2022-07-16T21:46:09.135939204Z"
-      locale: en
-      name: Climate change and weather
-  timerange: ~
+  details:
+    root: false
+    synonyms:
+      - added: "2022-07-04T15:51:59.103316907Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-09T18:37:38.788704602Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-12T02:19:51.506128918Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-13T00:17:31.899876612Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-13T00:33:35.526130556Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-13T00:44:40.112997435Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-15T21:06:47.170331600Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-15T21:11:58.803827667Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-15T21:15:30.220560604Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-15T22:18:14.026485845Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-16T02:33:07.036558319Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-16T03:20:19.471737610Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-16T03:51:50.803923450Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-16T03:52:24.953208385Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-16T03:52:51.348923348Z"
+        locale: en
+        name: Climate change and weather
+      - added: "2022-07-16T21:46:09.135939204Z"
+        locale: en
+        name: Climate change and weather
+    timerange: ~
 parentTopics:
   - path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
   - path: /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj

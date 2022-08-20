@@ -4,57 +4,58 @@ apiVersion: objects/v1
 metadata:
   added: "2022-07-04T15:51:59.096651380Z"
   path: /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj
-  root: false
-  synonyms:
-    - added: "2022-07-04T15:51:59.096651380Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-09T18:37:38.765325664Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-12T02:19:51.495381549Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-13T00:17:31.885363777Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-13T00:33:35.505685571Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-13T00:44:40.091083433Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-15T21:06:47.147285064Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-15T21:11:58.781208904Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-15T21:15:30.196496435Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-15T22:18:14.009569290Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-16T02:33:07.018740238Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-16T03:20:19.440155407Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-16T03:51:50.775761006Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-16T03:52:24.934392701Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-16T03:52:51.327559564Z"
-      locale: en
-      name: Weather
-    - added: "2022-07-16T21:46:09.110626883Z"
-      locale: en
-      name: Weather
-  timerange: ~
+  details:
+    root: false
+    synonyms:
+      - added: "2022-07-04T15:51:59.096651380Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-09T18:37:38.765325664Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-12T02:19:51.495381549Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-13T00:17:31.885363777Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-13T00:33:35.505685571Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-13T00:44:40.091083433Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-15T21:06:47.147285064Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-15T21:11:58.781208904Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-15T21:15:30.196496435Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-15T22:18:14.009569290Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-16T02:33:07.018740238Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-16T03:20:19.440155407Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-16T03:51:50.775761006Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-16T03:52:24.934392701Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-16T03:52:51.327559564Z"
+        locale: en
+        name: Weather
+      - added: "2022-07-16T21:46:09.110626883Z"
+        locale: en
+        name: Weather
+    timerange: ~
 parentTopics:
   - path: /wiki/lBwR6Cvz4btdI23oscsp7THRytHohlol4o2IkqxcFN8
 children:

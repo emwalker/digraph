@@ -4,12 +4,13 @@ apiVersion: objects/v1
 metadata:
   added: "2022-07-12T01:38:47.004577497Z"
   path: /wiki/92nbFScT94LpKOgB8VQ9kttR1NXkzvB1AUQWyxaojk98CKaJYyqL5zfixRmSLrzh
-  root: false
-  synonyms:
-    - added: "2022-07-12T01:38:47.004577497Z"
-      locale: en
-      name: Climate change
-  timerange: ~
+  details:
+    root: false
+    synonyms:
+      - added: "2022-07-12T01:38:47.004577497Z"
+        locale: en
+        name: Climate change
+    timerange: ~
 parentTopics:
   - path: /wiki/lBwR6Cvz4btdI23oscsp7THRytHohlol4o2IkqxcFN8
 children:

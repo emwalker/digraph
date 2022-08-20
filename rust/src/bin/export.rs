@@ -9,8 +9,8 @@ use std::path::{Path, PathBuf};
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    activity, Client, DataRoot, IndexMode, Kind, Link, LinkMetadata, Mutation, ParentTopic,
-    Synonym, Topic, TopicChild, TopicMetadata,
+    activity, Client, DataRoot, IndexMode, Kind, Link, LinkDetails, LinkMetadata, Mutation,
+    ParentTopic, Synonym, Topic, TopicChild, TopicDetails, TopicMetadata,
 };
 use digraph::prelude::*;
 use digraph::redis;
@@ -116,8 +116,10 @@ impl TryFrom<&LinkMetadataRow> for LinkMetadata {
         Ok(Self {
             added: row.added,
             path: path.inner,
-            title: row.title.clone(),
-            url: row.url.clone(),
+            details: Some(LinkDetails {
+                title: row.title.clone(),
+                url: row.url.clone(),
+            }),
         })
     }
 }
@@ -151,7 +153,116 @@ impl TryFrom<&TopicChildRow> for TopicChild {
     }
 }
 
-async fn save_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
+fn persist_topics(
+    mutation: &mut Mutation,
+    topic_path: &PathSpec,
+    meta: &TopicMetadataRow,
+    parent_topics: &Vec<ParentTopicRow>,
+    children: &Vec<TopicChildRow>,
+) -> Result<()> {
+    let deserialized =
+        serde_json::from_value::<Vec<HashMap<String, String>>>(meta.synonyms.clone())?;
+
+    let mut synonyms: Vec<SynonymRow> = vec![];
+    for s in &deserialized {
+        synonyms.push(SynonymRow {
+            added: meta.added,
+            locale: s.get("Locale").unwrap_or(&String::from("en")).to_string(),
+            name: s.get("Name").unwrap_or(&meta.name).to_string(),
+        });
+    }
+
+    let timerange = match (&meta.timerange_starts, &meta.timerange_prefix_format) {
+        (Some(starts), Some(prefix_format)) => Some(Timerange {
+            starts: Geotime::from(starts).into(),
+            prefix_format: TimerangePrefixFormat::from(prefix_format.as_str()),
+        }),
+        _ => None,
+    };
+
+    let topic = Topic {
+        api_version: API_VERSION.to_string(),
+        metadata: TopicMetadata {
+            added: meta.added,
+            path: topic_path.inner.to_owned(),
+            details: Some(TopicDetails {
+                root: meta.root,
+                synonyms: synonyms.iter().map(Synonym::from).collect(),
+                timerange,
+            }),
+        },
+        parent_topics: parent_topics
+            .iter()
+            .map(ParentTopic::try_from)
+            .collect::<Result<BTreeSet<ParentTopic>>>()?,
+        children: children
+            .iter()
+            .map(TopicChild::try_from)
+            .collect::<Result<BTreeSet<TopicChild>>>()?,
+    };
+
+    let mut child_links = vec![];
+    let mut child_topics = vec![];
+
+    for child in children {
+        let TopicChildRow {
+            kind,
+            id,
+            login,
+            name,
+            url,
+            ..
+        } = child;
+
+        match kind.as_str() {
+            "Topic" => {
+                let path = sha256_path(login, id)?;
+                child_topics.push(activity::TopicInfo::from((
+                    Locale::EN,
+                    name.to_owned(),
+                    path.inner,
+                )));
+            }
+            "Link" => {
+                let path = sha256_path(login, url)?;
+                child_links.push(activity::LinkInfo {
+                    title: name.to_owned(),
+                    url: url.to_owned(),
+                    path: path.inner,
+                    deleted: false,
+                });
+            }
+            _ => {}
+        };
+    }
+
+    let mut parents = vec![];
+    for topic in parent_topics {
+        let path = sha256_path(&topic.login, &topic.id)?;
+        parents.push(activity::TopicInfo::from((
+            Locale::EN,
+            topic.name.to_owned(),
+            path.inner.to_owned(),
+        )));
+    }
+
+    let change = activity::Change::ImportTopic(activity::ImportTopic {
+        actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
+        date: chrono::Utc::now(),
+        imported_topic: activity::TopicInfo::from(&topic),
+        child_links: activity::LinkInfoList::from(&child_links),
+        child_topics: activity::TopicInfoList::from(&child_topics),
+        id: activity::Change::new_id(),
+        parent_topics: activity::TopicInfoList::from(&parents),
+    });
+
+    mutation.save_topic(&topic.path()?, &topic)?;
+    mutation.add_change(&change)?;
+
+    Ok(())
+}
+
+async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
     log::info!("saving topics");
 
     let rows = sqlx::query_as::<_, TopicMetadataRow>(
@@ -174,6 +285,7 @@ async fn save_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
 
     for meta in &rows {
         let topic_path = sha256_path(&meta.login, &meta.id)?;
+
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
                 o.login,
@@ -230,108 +342,51 @@ async fn save_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
         .fetch_all(pool)
         .await?;
 
-        let deserialized =
-            serde_json::from_value::<Vec<HashMap<String, String>>>(meta.synonyms.clone())?;
-
-        let mut synonyms: Vec<SynonymRow> = vec![];
-        for s in &deserialized {
-            synonyms.push(SynonymRow {
-                added: meta.added,
-                locale: s.get("Locale").unwrap_or(&String::from("en")).to_string(),
-                name: s.get("Name").unwrap_or(&meta.name).to_string(),
-            });
-        }
-
-        let timerange = match (&meta.timerange_starts, &meta.timerange_prefix_format) {
-            (Some(starts), Some(prefix_format)) => Some(Timerange {
-                starts: Geotime::from(starts).into(),
-                prefix_format: TimerangePrefixFormat::from(prefix_format.as_str()),
-            }),
-            _ => None,
-        };
-
-        let topic = Topic {
-            api_version: API_VERSION.to_string(),
-            metadata: TopicMetadata {
-                added: meta.added,
-                path: topic_path.inner,
-                root: meta.root,
-                synonyms: synonyms.iter().map(Synonym::from).collect(),
-                timerange,
-            },
-            parent_topics: parent_topics
-                .iter()
-                .map(ParentTopic::try_from)
-                .collect::<Result<BTreeSet<ParentTopic>>>()?,
-            children: children
-                .iter()
-                .map(TopicChild::try_from)
-                .collect::<Result<BTreeSet<TopicChild>>>()?,
-        };
-
-        let mut child_links = vec![];
-        let mut child_topics = vec![];
-
-        for child in children {
-            let TopicChildRow {
-                kind,
-                id,
-                login,
-                name,
-                url,
-                ..
-            } = child;
-
-            match kind.as_str() {
-                "Topic" => {
-                    let path = sha256_path(&login, &id)?;
-                    child_topics.push(activity::TopicInfo::from((
-                        Locale::EN,
-                        name.to_owned(),
-                        path.inner,
-                    )));
-                }
-                "Link" => {
-                    let path = sha256_path(&login, &url)?;
-                    child_links.push(activity::LinkInfo {
-                        title: name.to_owned(),
-                        url: url.to_owned(),
-                        path: path.inner,
-                        deleted: false,
-                    });
-                }
-                _ => {}
-            };
-        }
-
-        let mut parents = vec![];
-        for topic in &parent_topics {
-            let path = sha256_path(&topic.login, &topic.id)?;
-            parents.push(activity::TopicInfo::from((
-                Locale::EN,
-                topic.name.to_owned(),
-                path.inner.to_owned(),
-            )));
-        }
-
-        let change = activity::Change::ImportTopic(activity::ImportTopic {
-            actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
-            date: chrono::Utc::now(),
-            imported_topic: activity::TopicInfo::from(&topic),
-            child_links: activity::LinkInfoList::from(&child_links),
-            child_topics: activity::TopicInfoList::from(&child_topics),
-            id: activity::Change::new_id(),
-            parent_topics: activity::TopicInfoList::from(&parents),
-        });
-
-        builder.save_topic(&topic.path()?, &topic)?;
-        builder.add_change(&change)?;
+        persist_topics(builder, &topic_path, meta, &parent_topics, &children)?;
     }
 
     Ok(())
 }
 
-async fn save_links(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
+fn persist_links(
+    mutation: &mut Mutation,
+    meta: &LinkMetadataRow,
+    parent_topics: &Vec<ParentTopicRow>,
+) -> Result<()> {
+    let link = Link {
+        api_version: API_VERSION.to_string(),
+        metadata: LinkMetadata::try_from(meta)?,
+        parent_topics: parent_topics
+            .iter()
+            .map(ParentTopic::try_from)
+            .collect::<Result<BTreeSet<ParentTopic>>>()?,
+    };
+
+    let mut topics = BTreeSet::new();
+    for topic in parent_topics {
+        let path = sha256_path(&topic.login, &topic.id)?;
+        topics.insert(activity::TopicInfo::from((
+            Locale::EN,
+            topic.name.to_owned(),
+            path.inner.to_owned(),
+        )));
+    }
+
+    let change = activity::Change::ImportLink(activity::ImportLink {
+        actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
+        date: chrono::Utc::now(),
+        id: activity::Change::new_id(),
+        imported_link: activity::LinkInfo::from(&link),
+        parent_topics: activity::TopicInfoList::from(&topics),
+    });
+
+    mutation.save_link(&link.path()?, &link)?;
+    mutation.add_change(&change)?;
+
+    Ok(())
+}
+
+async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
     log::info!("saving links");
 
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
@@ -366,35 +421,7 @@ async fn save_links(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
         .fetch_all(pool)
         .await?;
 
-        let link = Link {
-            api_version: API_VERSION.to_string(),
-            metadata: LinkMetadata::try_from(&meta)?,
-            parent_topics: parent_topics
-                .iter()
-                .map(ParentTopic::try_from)
-                .collect::<Result<BTreeSet<ParentTopic>>>()?,
-        };
-
-        let mut topics = BTreeSet::new();
-        for topic in parent_topics {
-            let path = sha256_path(&topic.login, &topic.id)?;
-            topics.insert(activity::TopicInfo::from((
-                Locale::EN,
-                topic.name.to_owned(),
-                path.inner.to_owned(),
-            )));
-        }
-
-        let change = activity::Change::ImportLink(activity::ImportLink {
-            actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
-            date: chrono::Utc::now(),
-            id: activity::Change::new_id(),
-            imported_link: activity::LinkInfo::from(&link),
-            parent_topics: activity::TopicInfoList::from(&topics),
-        });
-
-        builder.save_link(&link.path()?, &link)?;
-        builder.add_change(&change)?;
+        persist_links(mutation, &meta, &parent_topics)?;
     }
 
     Ok(())
@@ -412,10 +439,10 @@ async fn main() -> Result<()> {
     }
     let root = DataRoot::new(opts.root);
     let client = Client::new(&Viewer::service_account(), &root, Timespec);
-    let mut mutation = client.update(IndexMode::Replace)?;
+    let mut mutation = client.mutation(IndexMode::Replace)?;
 
-    save_topics(&mut mutation, &pool).await?;
-    save_links(&mut mutation, &pool).await?;
+    export_topics(&mut mutation, &pool).await?;
+    export_links(&mut mutation, &pool).await?;
 
     log::info!("saving indexes");
     mutation.write(&redis::Noop)?;

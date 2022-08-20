@@ -194,7 +194,7 @@ mod upsert_link {
         );
 
         f.fetch_link(&path, |link| {
-            assert_eq!(link.metadata.title, "A");
+            assert_eq!(link.title(), "A");
 
             let topics = link
                 .parent_topics
@@ -213,7 +213,7 @@ mod upsert_link {
         );
 
         f.fetch_link(&path, |link| {
-            assert_eq!(link.metadata.title, "B");
+            assert_eq!(link.title(), "B");
 
             let topics = link
                 .parent_topics

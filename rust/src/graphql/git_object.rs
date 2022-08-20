@@ -6,6 +6,13 @@ use super::{Link, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChi
 use crate::git;
 use crate::prelude::*;
 
+impl From<&[git::Synonym]> for Synonyms {
+    fn from(slice: &[git::Synonym]) -> Self {
+        let vec = slice.iter().map(Synonym::from).collect::<Vec<Synonym>>();
+        Self(vec)
+    }
+}
+
 impl TryFrom<&git::Link> for Link {
     type Error = Error;
 
@@ -23,8 +30,8 @@ impl TryFrom<&git::Link> for Link {
             parent_topic_paths,
             repository_id: WIKI_REPOSITORY_ID.into(),
             viewer_review: None,
-            title: meta.title.clone(),
-            url: meta.url.clone(),
+            title: link.title().to_owned(),
+            url: link.url().to_owned(),
         })
     }
 }
@@ -33,7 +40,6 @@ impl TryFrom<&git::Topic> for Topic {
     type Error = Error;
 
     fn try_from(topic: &git::Topic) -> Result<Self> {
-        let meta = &topic.metadata;
         let parent_topic_paths = topic
             .parent_topics
             .iter()
@@ -45,9 +51,9 @@ impl TryFrom<&git::Topic> for Topic {
             .iter()
             .map(|p| PathSpec::try_from(&p.path))
             .collect::<Result<Vec<PathSpec>>>()?;
-        let synonyms = Synonyms::from(&meta.synonyms);
+        let synonyms = Synonyms::from(topic.synonyms());
 
-        let timerange = meta.timerange.as_ref();
+        let timerange = topic.timerange().as_ref();
         let timerange = match timerange {
             Some(timerange) => Some(timerange::Timerange::try_from(timerange)?),
             None => None,
@@ -55,10 +61,10 @@ impl TryFrom<&git::Topic> for Topic {
 
         Ok(Self {
             child_paths,
-            path: PathSpec::try_from(&meta.path)?,
+            path: topic.path()?,
             parent_topic_paths,
             name: topic.name(Locale::EN),
-            root: meta.root,
+            root: topic.root(),
             synonyms,
             timerange,
         })

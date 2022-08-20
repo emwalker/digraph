@@ -2,7 +2,8 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
     activity, Kind, Link, Mutation, Object, ParentTopic, SaveChangesForPrefix, Synonym,
-    SynonymEntry, SynonymMatch, Timerange, Topic, TopicChild, TopicMetadata, API_VERSION,
+    SynonymEntry, SynonymMatch, Timerange, Topic, TopicChild, TopicDetails, TopicMetadata,
+    API_VERSION,
 };
 use crate::prelude::*;
 
@@ -30,7 +31,7 @@ impl DeleteTopic {
         }
         let topic = topic.unwrap();
 
-        if topic.metadata.root {
+        if topic.root() {
             return Err(Error::Repo("cannot delete root topic".to_owned()));
         }
 
@@ -144,9 +145,16 @@ impl RemoveTopicTimerange {
         }
         let mut topic = topic.unwrap();
 
-        let previous_timerange = topic.metadata.timerange.clone();
+        let previous_timerange = topic.timerange().to_owned();
 
-        topic.metadata.timerange = None;
+        match &mut topic.metadata.details {
+            Some(details) => {
+                details.timerange = None;
+            }
+
+            None => {}
+        }
+
         update.save_topic(&self.topic_path, &topic)?;
         update.add_change(&self.change(&topic, previous_timerange))?;
         update.write(store)?;
@@ -320,8 +328,7 @@ impl UpdateTopicSynonyms {
         let mut topic = topic.unwrap();
 
         let lookup = topic
-            .metadata
-            .synonyms
+            .synonyms()
             .iter()
             .map(|synonym| {
                 (
@@ -368,7 +375,14 @@ impl UpdateTopicSynonyms {
             .cloned()
             .collect::<HashSet<(String, Locale)>>();
 
-        topic.metadata.synonyms = synonyms;
+        match &mut topic.metadata.details {
+            Some(details) => {
+                details.synonyms = synonyms;
+            }
+
+            None => {}
+        }
+
         update.save_topic(&self.topic_path, &topic)?;
         update.add_change(&self.change(&topic, &added, &removed))?;
         update.write(store)?;
@@ -521,11 +535,17 @@ impl UpsertTopic {
 
                     topic.parent_topics.insert(parent.to_parent_topic());
 
-                    topic.metadata.synonyms.push(Synonym {
-                        added: date,
-                        locale: self.locale,
-                        name: self.name.to_owned(),
-                    });
+                    match &mut topic.metadata.details {
+                        Some(details) => {
+                            details.synonyms.push(Synonym {
+                                added: date,
+                                locale: self.locale,
+                                name: self.name.to_owned(),
+                            });
+                        }
+
+                        None => {}
+                    }
 
                     (path.clone(), topic, parent_topics)
                 }
@@ -578,13 +598,15 @@ impl UpsertTopic {
             metadata: TopicMetadata {
                 added,
                 path: path.to_string(),
-                root: false,
-                synonyms: vec![Synonym {
-                    added,
-                    locale: self.locale.to_owned(),
-                    name: self.name.to_owned(),
-                }],
-                timerange: None,
+                details: Some(TopicDetails {
+                    root: false,
+                    synonyms: vec![Synonym {
+                        added,
+                        locale: self.locale.to_owned(),
+                        name: self.name.to_owned(),
+                    }],
+                    timerange: None,
+                }),
             },
             parent_topics: parent_topics.clone(),
             children: BTreeSet::new(),
@@ -621,9 +643,16 @@ impl UpsertTopicTimerange {
         }
         let mut topic = topic.unwrap();
 
-        let previous_timerange = topic.metadata.timerange.clone();
+        let previous_timerange = topic.timerange().clone();
 
-        topic.metadata.timerange = Some(self.timerange.clone());
+        match &mut topic.metadata.details {
+            Some(details) => {
+                details.timerange = Some(self.timerange.clone());
+            }
+
+            None => {}
+        }
+
         update.save_topic(&self.topic_path, &topic)?;
         update.add_change(&self.change(&topic, previous_timerange))?;
         update.write(store)?;

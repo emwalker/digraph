@@ -757,7 +757,7 @@ impl Indexer {
         self.synonym_indexes(
             client,
             &path.repo,
-            topic.metadata.synonyms.iter(),
+            topic.metadata.synonyms().iter(),
             |index, token, name| {
                 index.remove(path, token.to_owned(), name)?;
                 Ok(())

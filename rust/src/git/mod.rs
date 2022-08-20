@@ -59,13 +59,36 @@ impl std::cmp::PartialOrd for Kind {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct LinkDetails {
+    pub title: String,
+    pub url: String,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LinkMetadata {
     pub added: Timestamp,
     pub path: String,
-    pub title: String,
-    pub url: String,
+    pub details: Option<LinkDetails>,
+}
+
+impl LinkMetadata {
+    fn title(&self) -> &str {
+        if let Some(details) = &self.details {
+            &details.title
+        } else {
+            "no title"
+        }
+    }
+
+    fn url(&self) -> &str {
+        if let Some(details) = &self.details {
+            &details.url
+        } else {
+            "no url"
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -86,8 +109,8 @@ impl std::cmp::Eq for Link {}
 
 impl std::cmp::Ord for Link {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (&self.metadata.title, &self.metadata.path)
-            .cmp(&(&other.metadata.title, &other.metadata.path))
+        (&self.metadata.details, &self.metadata.path)
+            .cmp(&(&other.metadata.details, &other.metadata.path))
     }
 }
 
@@ -102,8 +125,8 @@ impl Link {
         PathSpec::try_from(&self.metadata.path)
     }
 
-    pub fn title(&self) -> &String {
-        &self.metadata.title
+    pub fn title(&self) -> &str {
+        self.metadata.title()
     }
 
     pub fn to_search_entry(&self) -> SearchEntry {
@@ -121,8 +144,8 @@ impl Link {
         }
     }
 
-    pub fn url(&self) -> &String {
-        &self.metadata.url
+    pub fn url(&self) -> &str {
+        self.metadata.url()
     }
 }
 
@@ -221,23 +244,42 @@ impl std::cmp::PartialOrd for Synonym {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TopicMetadata {
-    pub added: Timestamp,
-    pub path: String,
+pub struct TopicDetails {
     pub root: bool,
     pub synonyms: Vec<Synonym>,
     pub timerange: Option<Timerange>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicMetadata {
+    pub added: Timestamp,
+    pub path: String,
+    pub details: Option<TopicDetails>,
+}
+
 impl TopicMetadata {
     pub fn name(&self, locale: Locale) -> String {
-        for synonym in &self.synonyms {
+        for synonym in self.synonyms() {
             if synonym.locale == locale {
                 return synonym.name.clone();
             }
         }
         "Missing name".into()
+    }
+
+    fn synonyms(&self) -> &[Synonym] {
+        match &self.details {
+            Some(details) => &details.synonyms,
+            None => &[],
+        }
+    }
+
+    fn timerange(&self) -> &Option<Timerange> {
+        match &self.details {
+            Some(details) => &details.timerange,
+            None => &None,
+        }
     }
 }
 
@@ -290,7 +332,10 @@ impl Topic {
     }
 
     fn prefix(&self) -> types::TimerangePrefix {
-        types::TimerangePrefix::from(&self.metadata.timerange)
+        match &self.metadata.details {
+            Some(details) => types::TimerangePrefix::from(&details.timerange),
+            None => types::TimerangePrefix::from(&None),
+        }
     }
 
     pub fn prefixed_synonyms(&self) -> Vec<Synonym> {
@@ -300,7 +345,7 @@ impl Topic {
             added,
             locale,
             name,
-        } in &self.metadata.synonyms
+        } in self.metadata.synonyms()
         {
             synonyms.push(Synonym {
                 added: *added,
@@ -309,6 +354,21 @@ impl Topic {
             })
         }
         synonyms
+    }
+
+    pub fn root(&self) -> bool {
+        match &self.metadata.details {
+            Some(details) => details.root,
+            None => false,
+        }
+    }
+
+    pub fn synonyms(&self) -> &[Synonym] {
+        self.metadata.synonyms()
+    }
+
+    pub fn timerange(&self) -> &Option<Timerange> {
+        self.metadata.timerange()
     }
 
     pub fn to_parent_topic(&self) -> ParentTopic {
@@ -359,7 +419,7 @@ impl Object {
 
     fn display_string(&self, locale: Locale) -> String {
         match self {
-            Self::Link(link) => link.metadata.title.to_owned(),
+            Self::Link(link) => link.metadata.title().to_owned(),
             Self::Topic(topic) => topic.name(locale),
         }
     }
@@ -613,10 +673,16 @@ mod tests {
         let date = timerange_epoch();
 
         let mut topic = topic("Climate change");
-        topic.metadata.timerange = Some(Timerange {
-            starts: date.into(),
-            prefix_format: TimerangePrefixFormat::StartYear,
-        });
+        match &mut topic.metadata.details {
+            Some(details) => {
+                details.timerange = Some(Timerange {
+                    starts: date.into(),
+                    prefix_format: TimerangePrefixFormat::StartYear,
+                });
+            }
+
+            None => {}
+        }
 
         assert_eq!(topic.name(Locale::EN), "1970 Climate change");
     }

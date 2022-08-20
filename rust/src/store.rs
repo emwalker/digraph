@@ -121,7 +121,7 @@ impl Store {
     }
 
     fn update(&self) -> Result<git::Mutation> {
-        self.git.update(git::IndexMode::Update)
+        self.git.mutation(git::IndexMode::Update)
     }
 
     fn update_by(&self, actor: &Viewer) -> Result<git::Mutation> {
@@ -131,7 +131,7 @@ impl Store {
             viewer: actor.to_owned(),
         };
 
-        git.update(git::IndexMode::Update)
+        git.mutation(git::IndexMode::Update)
     }
 
     async fn flat_topics(&self, paths: &[PathSpec]) -> Result<Vec<graphql::Topic>> {

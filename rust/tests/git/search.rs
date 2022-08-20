@@ -310,7 +310,7 @@ mod fetch_matches {
         );
 
         if let Object::Link(link) = &object {
-            assert_eq!(link.metadata.title, "Other repo");
+            assert_eq!(link.title(), "Other repo");
         }
     }
 }

@@ -38,12 +38,12 @@ Parent topics:
     }
 
     fn visit_link(&mut self, link: &Link) -> Result<()> {
-        let meta = &link.metadata;
         let s = format! {r#"
 Link: [{}]({})
 Parent topics:
 "#,
-        meta.title, meta.url};
+        link.title(), link.url()};
+
         self.buf.push_str(&s);
 
         for topic in &link.parent_topics {
@@ -84,8 +84,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_link(&mut self, link: &Link) -> Result<()> {
-        let meta = &link.metadata;
-        let line = format!("- [{}]({})\n", meta.title, meta.url);
+        let line = format!("- [{}]({})\n", link.title(), link.url());
         self.buf.push_str(&line);
 
         for topic in &link.parent_topics {

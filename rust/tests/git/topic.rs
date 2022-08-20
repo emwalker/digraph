@@ -87,7 +87,7 @@ mod delete_topic {
         let f = Fixtures::copy("simple");
         let root = PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
         let topic = f.git.fetch_topic(&root).unwrap();
-        assert!(topic.metadata.root);
+        assert!(topic.root());
 
         let result = DeleteTopic {
             actor: actor(),
@@ -97,7 +97,7 @@ mod delete_topic {
 
         assert!(matches!(result, Err(Error::Repo(_))));
         let topic = f.git.fetch_topic(&root).unwrap();
-        assert!(topic.metadata.root);
+        assert!(topic.root());
     }
 
     fn make_topic(f: &Fixtures, parent: &PathSpec, name: &str) -> Topic {
@@ -176,7 +176,7 @@ mod delete_topic_timerange {
         .unwrap();
 
         let topic = f.git.fetch_topic(&path).unwrap();
-        assert!(topic.metadata.timerange.is_some());
+        assert!(topic.timerange().is_some());
 
         RemoveTopicTimerange {
             actor: actor(),
@@ -186,7 +186,7 @@ mod delete_topic_timerange {
         .unwrap();
 
         let topic = f.git.fetch_topic(&path).unwrap();
-        assert!(topic.metadata.timerange.is_none());
+        assert!(topic.timerange().is_none());
     }
 }
 
@@ -305,7 +305,7 @@ mod update_topic_synonyms {
         let topic = f.git.fetch_topic(&path).unwrap();
 
         assert_eq!(topic.name(Locale::EN), "A topic");
-        assert_eq!(topic.metadata.synonyms.len(), 1);
+        assert_eq!(topic.synonyms().len(), 1);
 
         assert_eq!(count(&f, "A topic"), 1);
         assert_eq!(count(&f, "B topic"), 0);
@@ -319,7 +319,7 @@ mod update_topic_synonyms {
         .call(f.update(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(topic.metadata.synonyms.len(), 3);
+        assert_eq!(topic.synonyms().len(), 3);
 
         assert_eq!(count(&f, "A topic"), 1);
         assert_eq!(count(&f, "B topic"), 1);
@@ -333,7 +333,7 @@ mod update_topic_synonyms {
         let topic = f.git.fetch_topic(&path).unwrap();
 
         assert_eq!(topic.name(Locale::EN), "A topic");
-        assert_eq!(topic.metadata.synonyms.len(), 1);
+        assert_eq!(topic.synonyms().len(), 1);
 
         assert_eq!(count(&f, "A topic"), 1);
 
@@ -345,7 +345,7 @@ mod update_topic_synonyms {
         .call(f.update(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(topic.metadata.synonyms.len(), 1);
+        assert_eq!(topic.synonyms().len(), 1);
 
         assert_eq!(count(&f, "A topic"), 1);
     }
@@ -363,7 +363,7 @@ mod update_topic_synonyms {
         .call(f.update(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(topic.metadata.synonyms.len(), 3);
+        assert_eq!(topic.synonyms().len(), 3);
         assert_eq!(count(&f, "A topic"), 1);
         assert_eq!(count(&f, "B topic"), 1);
         assert_eq!(count(&f, "C topic"), 1);
@@ -376,7 +376,7 @@ mod update_topic_synonyms {
         .call(f.update(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(topic.metadata.synonyms.len(), 1);
+        assert_eq!(topic.synonyms().len(), 1);
         assert_eq!(count(&f, "A topic"), 0);
         assert_eq!(count(&f, "B topic"), 0);
         assert_eq!(count(&f, "C topic"), 1);
@@ -388,7 +388,7 @@ mod update_topic_synonyms {
         let path = path("/wiki/00001");
 
         let topic = f.git.fetch_topic(&path).unwrap();
-        let syn = topic.metadata.synonyms.first().unwrap();
+        let syn = topic.synonyms().first().unwrap();
         let added = syn.added;
 
         UpdateTopicSynonyms {
@@ -400,7 +400,7 @@ mod update_topic_synonyms {
         .unwrap();
 
         let topic = f.git.fetch_topic(&path).unwrap();
-        let syn = topic.metadata.synonyms.first().unwrap();
+        let syn = topic.synonyms().first().unwrap();
         assert_eq!(syn.added, added);
     }
 
@@ -650,7 +650,7 @@ mod upsert_topic_timerange {
         let path = path("/wiki/00001");
 
         let topic = f.git.fetch_topic(&path).unwrap();
-        assert!(topic.metadata.timerange.is_none());
+        assert!(topic.timerange().is_none());
 
         UpsertTopicTimerange {
             actor: actor(),
@@ -664,7 +664,7 @@ mod upsert_topic_timerange {
         .unwrap();
 
         let topic = f.git.fetch_topic(&path).unwrap();
-        assert!(topic.metadata.timerange.is_some());
+        assert!(topic.timerange().is_some());
     }
 
     #[test]
@@ -674,7 +674,7 @@ mod upsert_topic_timerange {
         let date = Geotime::from(0);
 
         let topic = f.git.fetch_topic(&path).unwrap();
-        assert!(topic.metadata.timerange.is_none());
+        assert!(topic.timerange().is_none());
 
         assert_eq!(count(&f, "A topic"), 1);
         assert_eq!(count(&f, "1970 A topic"), 0);

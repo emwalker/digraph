@@ -4,12 +4,13 @@ apiVersion: objects/v1
 metadata:
   added: "2021-03-18T00:09:59.350933Z"
   path: /wiki/lBwR6Cvz4btdI23oscsp7THRytHohlol4o2IkqxcFN8
-  root: true
-  synonyms:
-    - added: "2021-03-18T00:09:59.350933Z"
-      locale: en
-      name: Root topic
-  timerange: ~
+  details:
+    root: true
+    synonyms:
+      - added: "2021-03-18T00:09:59.350933Z"
+        locale: en
+        name: Root topic
+    timerange: ~
 parentTopics: []
 children:
   - added: "2021-03-18T00:09:59.350933Z"

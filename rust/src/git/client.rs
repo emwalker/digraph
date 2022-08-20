@@ -268,8 +268,11 @@ impl Client {
         let searches = match link {
             Some(link) => {
                 let meta = &link.metadata;
-                let url = RepoUrl::parse(&meta.url)?;
-                BTreeSet::from([Search::parse(&meta.title)?, Search::parse(&url.normalized)?])
+                let url = RepoUrl::parse(meta.url())?;
+                BTreeSet::from([
+                    Search::parse(meta.title())?,
+                    Search::parse(&url.normalized)?,
+                ])
             }
             None => BTreeSet::new(),
         };
@@ -373,10 +376,9 @@ impl Client {
                     return Err(Error::NotFound(format!("not found: {}", path)));
                 }
 
-                let meta = &topic.metadata;
                 let mut searches = BTreeSet::new();
 
-                for synonym in &meta.synonyms {
+                for synonym in topic.synonyms() {
                     let search = Search::parse(&synonym.name)?;
                     if search.is_empty() {
                         continue;
@@ -392,7 +394,7 @@ impl Client {
         Ok(searches)
     }
 
-    pub fn update(&self, mode: IndexMode) -> Result<Mutation> {
+    pub fn mutation(&self, mode: IndexMode) -> Result<Mutation> {
         Ok(Mutation {
             changes: vec![],
             client: self.to_owned(),
@@ -524,7 +526,7 @@ impl Mutation {
 
         let meta = &topic.metadata;
         let mut searches = vec![];
-        for synonym in &meta.synonyms {
+        for synonym in meta.synonyms() {
             let search = Search::parse(&synonym.name)?;
             if search.is_empty() {
                 continue;

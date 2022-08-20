@@ -9,7 +9,7 @@ use crate::http::{self, RepoUrl};
 use crate::prelude::*;
 
 use super::activity::TopicInfoList;
-use super::Mutation;
+use super::{LinkDetails, Mutation};
 
 pub struct DeleteLink {
     pub actor: Viewer,
@@ -209,7 +209,16 @@ impl UpsertLink {
 
         let (mut link, previous_title) = self.make_link(&update, &url, &path)?;
         if let Some(title) = &self.title {
-            link.metadata.title = title.clone();
+            match &mut link.metadata.details {
+                Some(extra) => {
+                    extra.title = title.clone();
+                }
+
+                None => {
+                    let msg = format!("tried to save the title of a reference: {:?}", self);
+                    return Err(Error::Repo(msg));
+                }
+            }
         }
 
         let mut parent_topics = HashMap::new();
@@ -301,7 +310,7 @@ impl UpsertLink {
     ) -> Result<(Link, Option<String>)> {
         if builder.exists(path)? {
             if let Some(link) = builder.fetch_link(path) {
-                let title = link.metadata.title.to_owned();
+                let title = link.metadata.title().to_owned();
                 return Ok((link, Some(title)));
             }
         }
@@ -326,8 +335,10 @@ impl UpsertLink {
             metadata: LinkMetadata {
                 added: chrono::Utc::now(),
                 path: path.to_string(),
-                title,
-                url: url.normalized.to_owned(),
+                details: Some(LinkDetails {
+                    title,
+                    url: url.normalized.to_owned(),
+                }),
             },
         };
 

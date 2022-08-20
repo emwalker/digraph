@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 
 use super::{Mutation, Synonym, Topic, TopicMetadata};
+use crate::git::TopicDetails;
 use crate::prelude::*;
 use crate::redis;
 
@@ -68,13 +69,15 @@ impl EnsurePersonalRepo {
                 metadata: TopicMetadata {
                     added,
                     path: path.to_string(),
-                    root: false,
-                    synonyms: vec![Synonym {
-                        added,
-                        locale: Locale::EN,
-                        name: DEFAULT_ROOT_TOPIC_NAME.to_owned(),
-                    }],
-                    timerange: None,
+                    details: Some(TopicDetails {
+                        root: false,
+                        synonyms: vec![Synonym {
+                            added,
+                            locale: Locale::EN,
+                            name: DEFAULT_ROOT_TOPIC_NAME.to_owned(),
+                        }],
+                        timerange: None,
+                    }),
                 },
                 parent_topics: BTreeSet::new(),
                 children: BTreeSet::new(),

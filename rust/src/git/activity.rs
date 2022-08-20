@@ -155,7 +155,7 @@ impl From<&Topic> for TopicInfo {
     fn from(topic: &Topic) -> Self {
         let mut synonyms = BTreeMap::new();
 
-        for synonym in &topic.metadata.synonyms {
+        for synonym in topic.metadata.synonyms() {
             if synonyms.contains_key(&synonym.locale) {
                 continue;
             }
@@ -1328,8 +1328,8 @@ mod tests {
             deleted_link: LinkInfo {
                 deleted: false,
                 path: link.metadata.path.to_owned(),
-                title: link.metadata.title.to_owned(),
-                url: link.metadata.url,
+                title: link.title().to_owned(),
+                url: link.url().to_owned(),
             },
             id: Change::new_id(),
             parent_topics: TopicInfoList(BTreeSet::from([
