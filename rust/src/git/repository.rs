@@ -1,11 +1,11 @@
 use crate::prelude::*;
 
 pub struct Repository {
-    pub prefix: RepoPrefix,
+    pub prefix: RepoName,
 }
 
 impl Repository {
-    pub fn new(prefix: &RepoPrefix) -> Self {
+    pub fn new(prefix: &RepoName) -> Self {
         Self {
             prefix: prefix.to_owned(),
         }

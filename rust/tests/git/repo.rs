@@ -23,15 +23,15 @@ mod topic_references {
 
 mod delete_account {
     use digraph::prelude::*;
-    use digraph::types::{RepoList, RepoPrefix};
+    use digraph::types::{RepoName, RepoNames};
 
     use super::*;
 
-    fn delete(f: &Fixtures, repo: &RepoPrefix, actor: &Viewer, user_id: &str) -> Result<()> {
+    fn delete(f: &Fixtures, repo: &RepoName, actor: &Viewer, user_id: &str) -> Result<()> {
         git::DeleteAccount {
             actor: actor.to_owned(),
             user_id: user_id.to_owned(),
-            personal_repos: RepoList::try_from(&vec![repo.to_owned()]).unwrap(),
+            personal_repos: RepoNames::try_from(&vec![repo.to_owned()]).unwrap(),
         }
         .call(&f.update())
     }
@@ -72,7 +72,7 @@ mod delete_account {
         let f = Fixtures::copy("simple");
         let actor = actor();
 
-        let repo = RepoPrefix::wiki();
+        let repo = RepoName::wiki();
         let path = f.git.root.repo_path(&repo);
 
         assert!(path.exists());
@@ -104,11 +104,11 @@ mod delete_account {
 mod ensure_personal_repo {
     use digraph::prelude::*;
     use digraph::redis;
-    use digraph::types::RepoPrefix;
+    use digraph::types::RepoName;
 
     use super::*;
 
-    fn ensure(f: &Fixtures, repo: &RepoPrefix, actor: &Viewer, user_id: &str) -> Result<()> {
+    fn ensure(f: &Fixtures, repo: &RepoName, actor: &Viewer, user_id: &str) -> Result<()> {
         git::EnsurePersonalRepo {
             actor: actor.to_owned(),
             user_id: user_id.to_owned(),
@@ -133,7 +133,7 @@ mod ensure_personal_repo {
     #[test]
     fn view_stats() {
         let f = Fixtures::copy("simple");
-        let stats = f.git.view_stats(&RepoPrefix::wiki()).unwrap();
+        let stats = f.git.view_stats(&RepoName::wiki()).unwrap();
         assert_eq!(stats.topic_count, Some(9));
         assert_eq!(stats.link_count, Some(4));
     }
@@ -141,7 +141,7 @@ mod ensure_personal_repo {
     #[actix_web::test]
     async fn fetch_stats() {
         let f = Fixtures::copy("simple");
-        let repos = RepoList::try_from(&vec!["/wiki/".to_owned(), "/other/".to_owned()]).unwrap();
+        let repos = RepoNames::try_from(&vec!["/wiki/".to_owned(), "/other/".to_owned()]).unwrap();
         let viewer = viewer(&repos);
 
         let git::FetchStatsResult { stats } = git::FetchStats { viewer }

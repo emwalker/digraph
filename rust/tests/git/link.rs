@@ -12,7 +12,7 @@ mod delete_link {
         let url = valid_url();
 
         let UpsertLinkResult { link, .. } = f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             Some(title.into()),
             Some(parent_topic.to_owned()),
@@ -87,7 +87,7 @@ mod update_link_parent_topics {
         let url = valid_url();
 
         let UpsertLinkResult { link, .. } = f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             Some("Page title".into()),
             Some(parent1.inner.to_owned()),
@@ -116,7 +116,7 @@ mod upsert_link {
     fn link_added() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let repo = RepoPrefix::wiki();
+        let repo = RepoName::wiki();
         let path = url.path(&repo).unwrap();
         let search = Search::parse("page title https://www.google.com/").unwrap();
         let entry = SearchEntry {
@@ -142,7 +142,7 @@ mod upsert_link {
     fn no_orphans() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let repo = RepoPrefix::wiki();
+        let repo = RepoName::wiki();
         let path = url.path(&repo).unwrap();
         assert!(!f.git.exists(&path).unwrap());
 
@@ -159,17 +159,17 @@ mod upsert_link {
     fn updates_are_idempotent() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let path = url.path(&RepoPrefix::wiki()).unwrap();
+        let path = url.path(&RepoName::wiki()).unwrap();
         assert!(!f.git.exists(&path).unwrap());
 
         f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             None,
             Some("/wiki/00001".to_owned()),
         );
         f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             None,
             Some("/wiki/00001".to_owned()),
@@ -182,7 +182,7 @@ mod upsert_link {
     fn details_updated() {
         let f = Fixtures::copy("simple");
         let url = RepoUrl::parse("https://www.google.com").unwrap();
-        let repo = RepoPrefix::wiki();
+        let repo = RepoName::wiki();
         let path = url.path(&repo).unwrap();
         assert!(!f.git.exists(&path).unwrap());
 
@@ -229,9 +229,9 @@ mod upsert_link {
     fn parent_topic_updated() {
         let f = Fixtures::copy("simple");
         let url = RepoUrl::parse("https://www.google.com").unwrap();
-        let repo = RepoPrefix::wiki();
+        let repo = RepoName::wiki();
         let path = url.path(&repo).unwrap();
-        let topic = PathSpec::try_from("/wiki/00001").unwrap();
+        let topic = RepoId::try_from("/wiki/00001").unwrap();
         assert!(!f.git.exists(&path).unwrap());
 
         let result = f.upsert_link(&repo, &url, Some("A".into()), Some(topic.inner.to_owned()));
@@ -255,11 +255,11 @@ mod upsert_link {
     fn lookup_indexes_updated() {
         let f = Fixtures::copy("simple");
         let url = RepoUrl::parse("https://www.google.com").unwrap();
-        let topic = PathSpec::try_from("/wiki/00001").unwrap();
+        let topic = RepoId::try_from("/wiki/00001").unwrap();
         let search = Search::parse("a link").unwrap();
 
         let UpsertLinkResult { link, .. } = f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             Some("a link title".into()),
             Some(topic.inner.to_owned()),
@@ -270,7 +270,7 @@ mod upsert_link {
             .unwrap());
 
         let UpsertLinkResult { link, .. } = f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             Some("a url title".into()),
             Some(topic.inner),
@@ -285,9 +285,9 @@ mod upsert_link {
     fn link_added_to_correct_repo() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let repo = RepoPrefix::try_from("/other/").unwrap();
+        let repo = RepoName::try_from("/other/").unwrap();
         let link_path = url.path(&repo).unwrap();
-        let parent_path = PathSpec::try_from("/wiki/00001").unwrap();
+        let parent_path = RepoId::try_from("/wiki/00001").unwrap();
 
         assert_eq!(link_path.repo, repo);
         assert!(!f.git.exists(&link_path).unwrap());
@@ -308,7 +308,7 @@ mod upsert_link {
         let topic = f.git.fetch_topic(&parent_path).expect("/wiki/00001");
 
         for child in &topic.children {
-            let path = PathSpec::try_from(&child.path).unwrap();
+            let path = RepoId::try_from(&child.path).unwrap();
             assert!(
                 path.short_id != link_path.short_id,
                 "link placed under /wiki/ topic"

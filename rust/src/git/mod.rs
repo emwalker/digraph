@@ -129,8 +129,8 @@ impl Link {
         self.metadata.details.is_none()
     }
 
-    pub fn path(&self) -> Result<PathSpec> {
-        PathSpec::try_from(&self.metadata.path)
+    pub fn path(&self) -> Result<RepoId> {
+        RepoId::try_from(&self.metadata.path)
     }
 
     pub fn title(&self) -> &str {
@@ -177,7 +177,7 @@ impl std::cmp::PartialOrd for ParentTopic {
 
 impl ParentTopic {
     pub fn fetch(&self, builder: &Mutation) -> Result<Option<Topic>> {
-        Ok(builder.fetch_topic(&PathSpec::try_from(&self.path)?))
+        Ok(builder.fetch_topic(&RepoId::try_from(&self.path)?))
     }
 }
 
@@ -331,7 +331,7 @@ impl Topic {
         self.metadata.added
     }
 
-    pub fn has_child(&self, path: &PathSpec) -> bool {
+    pub fn has_child(&self, path: &RepoId) -> bool {
         self.children.iter().any(|child| child.path == path.inner)
     }
 
@@ -339,8 +339,8 @@ impl Topic {
         self.prefix().format(&self.metadata.name(locale))
     }
 
-    pub fn path(&self) -> Result<PathSpec> {
-        PathSpec::try_from(&self.metadata.path)
+    pub fn path(&self) -> Result<RepoId> {
+        RepoId::try_from(&self.metadata.path)
     }
 
     fn prefix(&self) -> types::TimerangePrefix {
@@ -523,7 +523,7 @@ impl Iterator for TopicDownsetIter {
                     }
                     self.seen.insert(topic_child.clone());
 
-                    let path = match PathSpec::try_from(&topic_child.path) {
+                    let path = match RepoId::try_from(&topic_child.path) {
                         Ok(path) => path,
                         Err(err) => {
                             log::debug!("error parsing path, skipping topic: {}", err);

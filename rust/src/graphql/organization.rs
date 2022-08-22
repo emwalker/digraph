@@ -12,7 +12,7 @@ pub enum Organization {
         id: ID,
         login: String,
         name: String,
-        repo_prefix: RepoPrefix,
+        repo_prefix: RepoName,
     },
 }
 

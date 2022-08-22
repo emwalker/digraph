@@ -11,7 +11,7 @@ mod visibility {
     use digraph::{git::Client, types::Timespec};
 
     fn viewer(repos: &Vec<String>) -> Viewer {
-        let repos = RepoList::try_from(repos).unwrap();
+        let repos = RepoNames::try_from(repos).unwrap();
         Viewer {
             read_repos: repos.to_owned(),
             write_repos: repos,
@@ -47,7 +47,7 @@ mod delete_topic {
     #[test]
     fn topic_deleted() {
         let f = Fixtures::copy("simple");
-        let path = PathSpec::try_from("/wiki/00001").unwrap();
+        let path = RepoId::try_from("/wiki/00001").unwrap();
         assert!(f.git.exists(&path).unwrap());
 
         let DeleteTopicResult {
@@ -66,8 +66,8 @@ mod delete_topic {
     #[test]
     fn parent_topics_updated() {
         let f = Fixtures::copy("simple");
-        let path = PathSpec::try_from("/wiki/00001").unwrap();
-        let root = PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let path = RepoId::try_from("/wiki/00001").unwrap();
+        let root = RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
         let parent = f.git.fetch_topic(&root).unwrap();
         assert!(parent.has_child(&path));
 
@@ -85,7 +85,7 @@ mod delete_topic {
     #[test]
     fn cannot_delete_root_topic() {
         let f = Fixtures::copy("simple");
-        let root = PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let root = RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
         let topic = f.git.fetch_topic(&root).unwrap();
         assert!(topic.root());
 
@@ -100,8 +100,8 @@ mod delete_topic {
         assert!(topic.root());
     }
 
-    fn make_topic(f: &Fixtures, parent: &PathSpec, name: &str) -> Topic {
-        let path = PathSpec::try_from(
+    fn make_topic(f: &Fixtures, parent: &RepoId, name: &str) -> Topic {
+        let path = RepoId::try_from(
             "/wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi",
         )
         .unwrap();
@@ -109,7 +109,7 @@ mod delete_topic {
             actor: actor(),
             locale: Locale::EN,
             name: name.to_owned(),
-            repo: RepoPrefix::wiki(),
+            repo: RepoName::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: parent.to_owned(),
         }
@@ -162,7 +162,7 @@ mod delete_topic_timerange {
     #[test]
     fn timerange_deleted() {
         let f = Fixtures::copy("simple");
-        let path = PathSpec::try_from("/wiki/00001").unwrap();
+        let path = RepoId::try_from("/wiki/00001").unwrap();
 
         UpsertTopicTimerange {
             actor: actor(),
@@ -285,7 +285,7 @@ mod update_topic_synonyms {
 
     fn count(f: &Fixtures, name: &str) -> usize {
         f.git
-            .synonym_phrase_matches(&[&RepoPrefix::wiki()], name)
+            .synonym_phrase_matches(&[&RepoName::wiki()], name)
             .unwrap()
             .len()
     }
@@ -555,7 +555,7 @@ mod upsert_topic {
 
         let matches = f
             .git
-            .synonym_phrase_matches(&[&RepoPrefix::wiki()], "Topic name")
+            .synonym_phrase_matches(&[&RepoName::wiki()], "Topic name")
             .unwrap();
         let mut names = matches
             .iter()
@@ -618,7 +618,7 @@ mod upsert_topic {
     fn another_repo() {
         let f = Fixtures::copy("simple");
         let parent_path = path("/wiki/00001");
-        let repo = RepoPrefix::try_from("/other/").unwrap();
+        let repo = RepoName::try_from("/other/").unwrap();
 
         let result = f
             .upsert_topic(&repo, "Topic name", &parent_path, OnMatchingSynonym::Ask)
@@ -639,7 +639,7 @@ mod upsert_topic_timerange {
 
     fn count(f: &Fixtures, name: &str) -> usize {
         f.git
-            .synonym_phrase_matches(&[&RepoPrefix::wiki()], name)
+            .synonym_phrase_matches(&[&RepoName::wiki()], name)
             .unwrap()
             .len()
     }

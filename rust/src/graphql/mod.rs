@@ -97,7 +97,7 @@ impl State {
                     Ok(row) => match &row {
                         Some((prefixes,)) => {
                             log::info!("found user and session in database: {}", user_id);
-                            match RepoList::try_from(prefixes) {
+                            match RepoNames::try_from(prefixes) {
                                 Ok(prefixes) => Viewer {
                                     write_repos: prefixes.clone(),
                                     read_repos: prefixes,

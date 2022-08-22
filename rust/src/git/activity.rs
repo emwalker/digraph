@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use super::{Client, Link, Locale, PathSpec, Synonym, Topic};
+use super::{Client, Link, Locale, RepoId, Synonym, Topic};
 use crate::prelude::*;
 use crate::types::{random_id, TimerangePrefix};
 
@@ -140,8 +140,8 @@ impl TopicInfo {
         "[missing topic]".to_owned()
     }
 
-    fn path(&self) -> Result<PathSpec> {
-        PathSpec::try_from(&self.path)
+    fn path(&self) -> Result<RepoId> {
+        RepoId::try_from(&self.path)
     }
 
     fn mark_deleted(&mut self, path: &String) {
@@ -277,8 +277,8 @@ impl From<&Link> for LinkInfo {
 }
 
 impl LinkInfo {
-    fn path(&self) -> Result<PathSpec> {
-        PathSpec::try_from(&self.path)
+    fn path(&self) -> Result<RepoId> {
+        RepoId::try_from(&self.path)
     }
 
     fn mark_deleted(&mut self, path: &String) {
@@ -411,7 +411,7 @@ impl Change {
         }
     }
 
-    pub fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&PathSpec>) -> String {
+    pub fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&RepoId>) -> String {
         use crate::git::activity::markdown::Markdown;
         match self {
             Self::DeleteLink(inner) => inner.markdown(locale, actor_name, context),
@@ -428,7 +428,7 @@ impl Change {
         }
     }
 
-    pub fn paths(&self) -> Result<HashSet<PathSpec>> {
+    pub fn paths(&self) -> Result<HashSet<RepoId>> {
         match self {
             Self::DeleteLink(inner) => inner.paths(),
             Self::DeleteTopic(inner) => inner.paths(),
@@ -444,7 +444,7 @@ impl Change {
         }
     }
 
-    pub fn mark_deleted(&mut self, path: &PathSpec) {
+    pub fn mark_deleted(&mut self, path: &RepoId) {
         let path = &path.inner.to_owned();
 
         match self {
@@ -474,7 +474,7 @@ pub struct DeleteLink {
 }
 
 impl DeleteLink {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.deleted_link.path()?]);
         for topic in &self.parent_topics.0 {
             paths.insert(topic.path()?);
@@ -501,7 +501,7 @@ pub struct DeleteTopic {
 }
 
 impl DeleteTopic {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.deleted_topic.path()?]);
 
         for link in &self.child_links.0 {
@@ -537,7 +537,7 @@ pub struct ImportLink {
 }
 
 impl ImportLink {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.imported_link.path()?]);
         for topic in &self.parent_topics.0 {
             paths.insert(topic.path()?);
@@ -564,7 +564,7 @@ pub struct ImportTopic {
 }
 
 impl ImportTopic {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.imported_topic.path()?]);
 
         for link in &self.child_links.0 {
@@ -603,7 +603,7 @@ pub struct RemoveTopicTimerange {
 }
 
 impl RemoveTopicTimerange {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         Ok(HashSet::from([self.updated_topic.path()?]))
     }
 
@@ -625,7 +625,7 @@ pub struct UpdateLinkParentTopics {
 }
 
 impl UpdateLinkParentTopics {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.updated_link.path()?]);
 
         for topic in &self.added_parent_topics.0 {
@@ -658,7 +658,7 @@ pub struct UpdateTopicParentTopics {
 }
 
 impl UpdateTopicParentTopics {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.updated_topic.path()?]);
 
         for topic in &self.added_parent_topics.0 {
@@ -670,7 +670,7 @@ impl UpdateTopicParentTopics {
         }
 
         for path in &self.parent_topic_paths {
-            paths.insert(PathSpec::try_from(path)?);
+            paths.insert(RepoId::try_from(path)?);
         }
 
         Ok(paths)
@@ -697,13 +697,13 @@ pub struct UpdateTopicSynonyms {
 }
 
 impl UpdateTopicSynonyms {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.updated_topic.path()?]);
         paths.extend(
             self.parent_topics
                 .iter()
-                .map(PathSpec::try_from)
-                .collect::<Result<Vec<PathSpec>>>()?,
+                .map(RepoId::try_from)
+                .collect::<Result<Vec<RepoId>>>()?,
         );
         Ok(paths)
     }
@@ -726,7 +726,7 @@ pub struct UpsertLink {
 }
 
 impl UpsertLink {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.upserted_link.path()?]);
 
         if let Some(topic) = &self.add_parent_topic {
@@ -734,7 +734,7 @@ impl UpsertLink {
         }
 
         for path in &self.parent_topics {
-            paths.insert(PathSpec::try_from(path)?);
+            paths.insert(RepoId::try_from(path)?);
         }
 
         Ok(paths)
@@ -761,10 +761,10 @@ pub struct UpsertTopic {
 }
 
 impl UpsertTopic {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.upserted_topic.path()?, self.parent_topic.path()?]);
         for path in &self.parent_topic_paths {
-            paths.insert(PathSpec::try_from(path)?);
+            paths.insert(RepoId::try_from(path)?);
         }
         Ok(paths)
     }
@@ -789,10 +789,10 @@ pub struct UpsertTopicTimerange {
 }
 
 impl UpsertTopicTimerange {
-    fn paths(&self) -> Result<HashSet<PathSpec>> {
+    fn paths(&self) -> Result<HashSet<RepoId>> {
         let mut paths = HashSet::from([self.updated_topic.path()?]);
         for path in &self.parent_topics {
-            paths.insert(PathSpec::try_from(path)?);
+            paths.insert(RepoId::try_from(path)?);
         }
         Ok(paths)
     }
@@ -808,7 +808,7 @@ mod markdown {
     use super::*;
 
     pub trait Markdown {
-        fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&PathSpec>) -> String;
+        fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&RepoId>) -> String;
     }
 
     impl LinkInfo {
@@ -880,12 +880,7 @@ mod markdown {
     }
 
     impl Markdown for DeleteLink {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             if self.parent_topics.is_empty() {
                 format!("{} deleted {}", actor_name, self.deleted_link.markdown())
             } else {
@@ -900,12 +895,7 @@ mod markdown {
     }
 
     impl Markdown for DeleteTopic {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             let mut markdown = format!(
                 "{} deleted {}",
                 actor_name,
@@ -952,12 +942,7 @@ mod markdown {
     }
 
     impl Markdown for ImportLink {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             format!(
                 "{} added {} to {}",
                 actor_name,
@@ -968,12 +953,7 @@ mod markdown {
     }
 
     impl Markdown for ImportTopic {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             let mut children = vec![];
 
             if !self.child_topics.is_empty() {
@@ -1022,12 +1002,7 @@ mod markdown {
     }
 
     impl Markdown for RemoveTopicTimerange {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             let topic = self.updated_topic.markdown(locale);
 
             match &self.previous_timerange {
@@ -1059,12 +1034,7 @@ mod markdown {
     }
 
     impl Markdown for UpdateLinkParentTopics {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             if self.added_parent_topics.is_empty() && self.removed_parent_topics.is_empty() {
                 return format!(
                     "{} updated {}, but information about the change has been lost",
@@ -1101,12 +1071,7 @@ mod markdown {
     }
 
     impl Markdown for UpdateTopicParentTopics {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             let mut actions = vec![];
             let updated_topic = self.updated_topic.markdown(locale);
 
@@ -1135,12 +1100,7 @@ mod markdown {
     }
 
     impl Markdown for UpdateTopicSynonyms {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             let mut actions = vec![];
 
             if !self.added_synonyms.is_empty() {
@@ -1171,12 +1131,7 @@ mod markdown {
     }
 
     impl Markdown for UpsertLink {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             match &self.add_parent_topic {
                 Some(topic) => format!(
                     "{} added {} to {}",
@@ -1199,12 +1154,7 @@ mod markdown {
     }
 
     impl Markdown for UpsertTopic {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             format!(
                 "{} added {} to {}",
                 actor_name,
@@ -1215,12 +1165,7 @@ mod markdown {
     }
 
     impl Markdown for UpsertTopicTimerange {
-        fn markdown(
-            &self,
-            locale: Locale,
-            actor_name: &str,
-            _context: Option<&PathSpec>,
-        ) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
             let topic = self.updated_topic.markdown(locale);
             let prefix = TimerangePrefix::from(&self.updated_timerange);
 
@@ -1245,7 +1190,7 @@ mod markdown {
 pub struct FetchActivity {
     pub actor: Viewer,
     pub first: usize,
-    pub topic_path: Option<PathSpec>,
+    pub topic_path: Option<RepoId>,
 }
 
 pub struct FetchActivityResult {
@@ -1253,7 +1198,7 @@ pub struct FetchActivityResult {
 }
 
 pub trait ActivityForPrefix {
-    fn fetch_activity(&self, prefix: &RepoPrefix, first: usize) -> Result<Vec<Change>>;
+    fn fetch_activity(&self, prefix: &RepoName, first: usize) -> Result<Vec<Change>>;
 }
 
 impl FetchActivity {
@@ -1267,7 +1212,7 @@ impl FetchActivity {
             // Fetch the top-level activity feed from Redis rather than Git so as to avoid
             // write contention on a single file for every update.  This could show up in the form
             // of merge conflicts when commits are being saved to Git.
-            None => fetch.fetch_activity(&RepoPrefix::wiki(), self.first)?,
+            None => fetch.fetch_activity(&RepoName::wiki(), self.first)?,
         };
 
         Ok(FetchActivityResult { changes })
@@ -1309,7 +1254,7 @@ mod tests {
             topic2.path().unwrap()
         );
 
-        let context = PathSpec::try_from("/wiki/00010").unwrap();
+        let context = RepoId::try_from("/wiki/00010").unwrap();
         assert_eq!(
             change.markdown(Locale::EN, "Gnusto", Some(&context)),
             markdown

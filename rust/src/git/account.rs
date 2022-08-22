@@ -8,7 +8,7 @@ use crate::redis;
 pub struct DeleteAccount {
     pub actor: Viewer,
     pub user_id: String,
-    pub personal_repos: RepoList,
+    pub personal_repos: RepoNames,
 }
 
 impl DeleteAccount {
@@ -19,7 +19,7 @@ impl DeleteAccount {
 
         log::warn!("deleting repos for {}", self.user_id);
 
-        let wiki = RepoPrefix::wiki();
+        let wiki = RepoName::wiki();
         for repo in self.personal_repos.iter() {
             if repo == &wiki {
                 return Err(Error::Repo(format!("not allowed to delete {}", wiki)));
@@ -38,7 +38,7 @@ impl DeleteAccount {
 pub struct EnsurePersonalRepo {
     pub actor: Viewer,
     pub user_id: String,
-    pub personal_repo: RepoPrefix,
+    pub personal_repo: RepoName,
 }
 
 impl EnsurePersonalRepo {
@@ -49,7 +49,7 @@ impl EnsurePersonalRepo {
 
         log::info!("ensuring personal repo for {}", self.user_id);
 
-        let wiki = RepoPrefix::wiki();
+        let wiki = RepoName::wiki();
         if self.personal_repo == wiki {
             return Err(Error::Repo(format!(
                 "not allowed to associate {} with {}",

@@ -27,7 +27,7 @@ impl std::fmt::Display for DataRoot {
     }
 }
 
-pub fn parse_path(input: &str) -> Result<(DataRoot, PathSpec)> {
+pub fn parse_path(input: &str) -> Result<(DataRoot, RepoId)> {
     lazy_static! {
         static ref RE: Regex =
             Regex::new(r"^(.+?)/(\w+)/objects/([\w_-]{2})/([\w_-]{2})/([\w_-]+)/object.yaml$")
@@ -56,7 +56,7 @@ pub fn parse_path(input: &str) -> Result<(DataRoot, PathSpec)> {
     let path = format!("/{}/{}{}{}", org_login, part1, part2, part3);
     let root = PathBuf::from(root);
 
-    Ok((DataRoot::new(root), PathSpec::try_from(&path)?))
+    Ok((DataRoot::new(root), RepoId::try_from(&path)?))
 }
 
 impl DataRoot {
@@ -64,7 +64,7 @@ impl DataRoot {
         Self { path: root }
     }
 
-    pub fn repo_path(&self, prefix: &RepoPrefix) -> PathBuf {
+    pub fn repo_path(&self, prefix: &RepoName) -> PathBuf {
         self.path.join(prefix.relative_path())
     }
 }
@@ -91,7 +91,7 @@ pub trait GitPaths {
     fn parts(&self) -> Result<(&str, &str, &str)>;
 }
 
-impl GitPaths for PathSpec {
+impl GitPaths for RepoId {
     fn parts(&self) -> Result<(&str, &str, &str)> {
         self.parts()
     }
@@ -130,7 +130,7 @@ impl Client {
 
     pub fn fetch_activity_log(
         &self,
-        path: &PathSpec,
+        path: &RepoId,
         index_mode: IndexMode,
     ) -> Result<ActivityIndex> {
         let filename = path.activity_log_filename()?;
@@ -143,7 +143,7 @@ impl Client {
     }
 
     // How to handle path visibility?
-    fn cycle_exists(&self, descendant_path: &PathSpec, ancestor_path: &PathSpec) -> Result<bool> {
+    fn cycle_exists(&self, descendant_path: &RepoId, ancestor_path: &RepoId) -> Result<bool> {
         let mut i = 0;
 
         let descendant_path = self.read_path(descendant_path)?;
@@ -160,7 +160,7 @@ impl Client {
         Ok(false)
     }
 
-    pub fn exists(&self, path: &PathSpec) -> Result<bool> {
+    pub fn exists(&self, path: &RepoId) -> Result<bool> {
         if !self.viewer.can_read(path) {
             return Ok(false);
         }
@@ -168,7 +168,7 @@ impl Client {
         repo.object_exists(path)
     }
 
-    pub fn fetch(&self, path: &PathSpec) -> Option<Object> {
+    pub fn fetch(&self, path: &RepoId) -> Option<Object> {
         if !self.viewer.can_read(path) {
             log::warn!("viewer cannot read path: {}", path);
             return None;
@@ -191,7 +191,7 @@ impl Client {
 
     pub fn fetch_synonym_index(
         &self,
-        prefix: &RepoPrefix,
+        prefix: &RepoName,
         filename: &PathBuf,
     ) -> Result<SynonymIndex> {
         let view = self.view(prefix)?;
@@ -207,7 +207,7 @@ impl Client {
 
     pub fn fetch_token_index(
         &self,
-        prefix: &RepoPrefix,
+        prefix: &RepoName,
         filename: &PathBuf,
     ) -> Result<SearchTokenIndex> {
         let view = self.view(prefix)?;
@@ -221,13 +221,13 @@ impl Client {
         }
     }
 
-    pub fn fetch_activity(&self, path: &PathSpec, first: usize) -> Result<Vec<activity::Change>> {
+    pub fn fetch_activity(&self, path: &RepoId, first: usize) -> Result<Vec<activity::Change>> {
         log::info!("fetching first {} change logs from Git for {}", first, path);
         let index = self.fetch_activity_log(path, IndexMode::ReadOnly)?;
         let mut changes = vec![];
 
         for reference in index.references().iter().take(first) {
-            let path = PathSpec::try_from(&reference.path)?;
+            let path = RepoId::try_from(&reference.path)?;
             let repo = self.view(&path.repo)?;
             let result = repo.change(&path);
             match result {
@@ -239,14 +239,14 @@ impl Client {
         Ok(changes)
     }
 
-    pub fn fetch_topic(&self, path: &PathSpec) -> Option<Topic> {
+    pub fn fetch_topic(&self, path: &RepoId) -> Option<Topic> {
         match &self.fetch(path)? {
             Object::Topic(topic) => Some(topic.to_owned()),
             _ => None,
         }
     }
 
-    pub fn fetch_link(&self, path: &PathSpec) -> Option<Link> {
+    pub fn fetch_link(&self, path: &RepoId) -> Option<Link> {
         match &self.fetch(path)? {
             Object::Link(link) => Some(link.to_owned()),
             other => {
@@ -260,7 +260,7 @@ impl Client {
         DownsetIter::new(self.clone(), self.fetch_topic(&topic_path.spec))
     }
 
-    pub fn leaked_data(&self) -> Result<Vec<(RepoPrefix, String)>> {
+    pub fn leaked_data(&self) -> Result<Vec<(RepoName, String)>> {
         LeakedData.call(self)
     }
 
@@ -282,7 +282,7 @@ impl Client {
         Ok(searches)
     }
 
-    pub fn read_path(&self, path: &PathSpec) -> Result<ReadPath> {
+    pub fn read_path(&self, path: &RepoId) -> Result<ReadPath> {
         let commit = self.repo(&path.repo)?.commit_oid(&self.timespec)?;
         Ok(ReadPath {
             spec: path.to_owned(),
@@ -290,7 +290,7 @@ impl Client {
         })
     }
 
-    fn repo(&self, prefix: &RepoPrefix) -> Result<core::Repo> {
+    fn repo(&self, prefix: &RepoName) -> Result<core::Repo> {
         core::Repo::ensure(&self.root, prefix)
     }
 
@@ -298,7 +298,7 @@ impl Client {
     // alludes to the prefix scan that is done to find matching synonyms.
     pub fn search_token_prefix_matches(
         &self,
-        prefix: &RepoPrefix,
+        prefix: &RepoName,
         token: &Phrase,
     ) -> Result<HashSet<SearchEntry>> {
         let key = prefix.index_key(token)?;
@@ -306,13 +306,13 @@ impl Client {
         Ok(index.prefix_matches(token))
     }
 
-    pub fn view_stats(&self, repo: &RepoPrefix) -> Result<RepoStats> {
+    pub fn view_stats(&self, repo: &RepoName) -> Result<RepoStats> {
         self.view(repo)?.stats()
     }
 
     pub fn synonym_phrase_matches(
         &self,
-        prefixes: &[&RepoPrefix],
+        prefixes: &[&RepoName],
         name: &str,
     ) -> Result<BTreeSet<SynonymMatch>> {
         let phrase = Phrase::parse(name);
@@ -324,7 +324,7 @@ impl Client {
                 .synonym_index(self, IndexType::SynonymPhrase, IndexMode::Update)?
                 .full_matches(&phrase)?
             {
-                let path = PathSpec::try_from(&entry.path)?;
+                let path = RepoId::try_from(&entry.path)?;
                 if !self.viewer.can_read(&path) {
                     continue;
                 }
@@ -347,7 +347,7 @@ impl Client {
     // alludes to the prefix scan that is done to find matching synonyms.
     pub fn synonym_token_prefix_matches(
         &self,
-        prefix: &RepoPrefix,
+        prefix: &RepoName,
         token: &Phrase,
     ) -> BTreeSet<SynonymEntry> {
         match prefix.index_key(token) {
@@ -406,7 +406,7 @@ impl Client {
         })
     }
 
-    pub fn view(&self, prefix: &RepoPrefix) -> Result<core::View> {
+    pub fn view(&self, prefix: &RepoName) -> Result<core::View> {
         core::View::ensure(&self.root, prefix, &self.timespec)
     }
 }
@@ -414,7 +414,7 @@ impl Client {
 pub struct Mutation {
     client: Client,
     indexer: Indexer,
-    files: BTreeMap<(RepoPrefix, PathBuf), Option<git2::Oid>>,
+    files: BTreeMap<(RepoName, PathBuf), Option<git2::Oid>>,
     changes: Vec<activity::Change>,
 }
 
@@ -428,7 +428,7 @@ impl std::fmt::Debug for Mutation {
 }
 
 impl Mutation {
-    pub fn activity_log(&self, path: &PathSpec, index_mode: IndexMode) -> Result<ActivityIndex> {
+    pub fn activity_log(&self, path: &RepoId, index_mode: IndexMode) -> Result<ActivityIndex> {
         self.client.fetch_activity_log(path, index_mode)
     }
 
@@ -445,7 +445,7 @@ impl Mutation {
         Ok(())
     }
 
-    fn check_can_update(&self, path: &PathSpec) -> Result<()> {
+    fn check_can_update(&self, path: &RepoId) -> Result<()> {
         if !self.client.viewer.can_update(path) {
             return Err(Error::NotFound(format!("not found: {}", path)));
         }
@@ -456,35 +456,31 @@ impl Mutation {
         "Add change".to_owned()
     }
 
-    pub fn cycle_exists(
-        &self,
-        descendant_path: &PathSpec,
-        ancestor_path: &PathSpec,
-    ) -> Result<bool> {
+    pub fn cycle_exists(&self, descendant_path: &RepoId, ancestor_path: &RepoId) -> Result<bool> {
         self.client.cycle_exists(descendant_path, ancestor_path)
     }
 
-    pub fn delete_repo(&self, repo: &RepoPrefix) -> Result<()> {
+    pub fn delete_repo(&self, repo: &RepoName) -> Result<()> {
         core::Repo::delete(&self.client.root, repo)
     }
 
-    pub fn exists(&self, path: &PathSpec) -> Result<bool> {
+    pub fn exists(&self, path: &RepoId) -> Result<bool> {
         self.client.exists(path)
     }
 
-    pub fn fetch(&self, path: &PathSpec) -> Option<Object> {
+    pub fn fetch(&self, path: &RepoId) -> Option<Object> {
         self.client.fetch(path)
     }
 
-    pub fn fetch_link(&self, path: &PathSpec) -> Option<Link> {
+    pub fn fetch_link(&self, path: &RepoId) -> Option<Link> {
         self.client.fetch_link(path)
     }
 
-    pub fn fetch_topic(&self, path: &PathSpec) -> Option<Topic> {
+    pub fn fetch_topic(&self, path: &RepoId) -> Option<Topic> {
         self.client.fetch_topic(path)
     }
 
-    pub fn mark_deleted(&mut self, path: &PathSpec) -> Result<()> {
+    pub fn mark_deleted(&mut self, path: &RepoId) -> Result<()> {
         self.check_can_update(path)?;
 
         let activity = self.client.fetch_activity(path, usize::MAX)?;
@@ -494,7 +490,7 @@ impl Mutation {
             let repos = paths
                 .iter()
                 .map(|path| path.repo.to_owned())
-                .collect::<HashSet<RepoPrefix>>();
+                .collect::<HashSet<RepoName>>();
 
             change.mark_deleted(path);
 
@@ -507,13 +503,13 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn remove(&mut self, path: &PathSpec) -> Result<()> {
+    pub fn remove(&mut self, path: &RepoId) -> Result<()> {
         let filename = path.object_filename()?;
         self.files.insert((path.repo.to_owned(), filename), None);
         Ok(())
     }
 
-    pub fn remove_link(&mut self, path: &PathSpec, link: &Link) -> Result<()> {
+    pub fn remove_link(&mut self, path: &RepoId, link: &Link) -> Result<()> {
         self.check_can_update(path)?;
 
         let searches = self.client.link_searches(Some(link.to_owned()))?;
@@ -522,7 +518,7 @@ impl Mutation {
         self.remove(path)
     }
 
-    pub fn remove_topic(&mut self, path: &PathSpec, topic: &Topic) -> Result<()> {
+    pub fn remove_topic(&mut self, path: &RepoId, topic: &Topic) -> Result<()> {
         self.check_can_update(path)?;
 
         self.indexer.remove_synonyms(&self.client, path, topic)?;
@@ -545,7 +541,7 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn repo(&self, prefix: &RepoPrefix) -> Result<core::Repo> {
+    pub fn repo(&self, prefix: &RepoName) -> Result<core::Repo> {
         self.client.repo(prefix)
     }
 
@@ -582,7 +578,7 @@ impl Mutation {
     ) -> Result<()> {
         self.indexer.add_change(&self.client, change)?;
 
-        let path = PathSpec::try_from(&reference.path)?;
+        let path = RepoId::try_from(&reference.path)?;
         let s = serde_yaml::to_string(&change)?;
         let oid = self.repo(&path.repo)?.add_blob(s.as_bytes())?;
         self.files
@@ -591,7 +587,7 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn save_link(&mut self, path: &PathSpec, link: &Link) -> Result<()> {
+    pub fn save_link(&mut self, path: &RepoId, link: &Link) -> Result<()> {
         self.check_can_update(path)?;
 
         let repo = self.client.repo(&path.repo)?;
@@ -608,14 +604,14 @@ impl Mutation {
         self.save_object(path, oid)
     }
 
-    fn save_object(&mut self, path: &PathSpec, oid: git2::Oid) -> Result<()> {
+    fn save_object(&mut self, path: &RepoId, oid: git2::Oid) -> Result<()> {
         let filename = path.object_filename()?;
         self.files
             .insert((path.repo.to_owned(), filename), Some(oid));
         Ok(())
     }
 
-    pub fn save_topic(&mut self, path: &PathSpec, topic: &Topic) -> Result<()> {
+    pub fn save_topic(&mut self, path: &RepoId, topic: &Topic) -> Result<()> {
         self.check_can_update(path)?;
 
         let view = self.client.view(&path.repo)?;
@@ -636,7 +632,7 @@ impl Mutation {
 
     pub fn synonym_phrase_matches(
         &self,
-        prefixes: &[&RepoPrefix],
+        prefixes: &[&RepoName],
         name: &str,
     ) -> Result<BTreeSet<SynonymMatch>> {
         self.client.synonym_phrase_matches(prefixes, name)
@@ -653,7 +649,7 @@ mod tests {
         #[test]
         fn object_filename() {
             assert_eq!(
-                PathSpec::try_from("/wiki/123456")
+                RepoId::try_from("/wiki/123456")
                     .unwrap()
                     .object_filename()
                     .unwrap(),
@@ -661,7 +657,7 @@ mod tests {
             );
 
             assert_eq!(
-                PathSpec::try_from("/with-dash/123456")
+                RepoId::try_from("/with-dash/123456")
                     .unwrap()
                     .object_filename()
                     .unwrap(),

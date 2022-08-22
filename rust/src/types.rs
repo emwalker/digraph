@@ -60,11 +60,11 @@ pub enum Locale {
 
 #[derive(Clone, Debug, Ord, PartialOrd)]
 #[allow(dead_code)]
-pub struct RepoPrefix {
+pub struct RepoName {
     inner: String,
 }
 
-impl TryFrom<&str> for RepoPrefix {
+impl TryFrom<&str> for RepoName {
     type Error = Error;
 
     fn try_from(prefix: &str) -> Result<Self> {
@@ -82,7 +82,7 @@ impl TryFrom<&str> for RepoPrefix {
     }
 }
 
-impl TryFrom<&String> for RepoPrefix {
+impl TryFrom<&String> for RepoName {
     type Error = Error;
 
     fn try_from(prefix: &String) -> Result<Self> {
@@ -90,7 +90,7 @@ impl TryFrom<&String> for RepoPrefix {
     }
 }
 
-impl TryFrom<String> for RepoPrefix {
+impl TryFrom<String> for RepoName {
     type Error = Error;
 
     fn try_from(prefix: String) -> Result<Self> {
@@ -98,27 +98,27 @@ impl TryFrom<String> for RepoPrefix {
     }
 }
 
-impl std::fmt::Display for RepoPrefix {
+impl std::fmt::Display for RepoName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
-impl std::cmp::PartialEq for RepoPrefix {
+impl std::cmp::PartialEq for RepoName {
     fn eq(&self, other: &Self) -> bool {
         self.inner == other.inner
     }
 }
 
-impl std::cmp::Eq for RepoPrefix {}
+impl std::cmp::Eq for RepoName {}
 
-impl std::hash::Hash for RepoPrefix {
+impl std::hash::Hash for RepoName {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.inner.hash(state);
     }
 }
 
-impl RepoPrefix {
+impl RepoName {
     pub fn wiki() -> Self {
         Self::try_from(WIKI_REPO_PREFIX).unwrap()
     }
@@ -131,40 +131,40 @@ impl RepoPrefix {
         self.inner.trim_start_matches('/').trim_end_matches('/')
     }
 
-    pub fn default_topic_path(&self) -> Result<PathSpec> {
+    pub fn default_topic_path(&self) -> Result<RepoId> {
         self.path(DEFAULT_ROOT_TOPIC_ID)
     }
 
-    pub fn path(&self, id: &str) -> Result<PathSpec> {
-        PathSpec::try_from(&format!("{}{}", self.inner, id))
+    pub fn path(&self, id: &str) -> Result<RepoId> {
+        RepoId::try_from(&format!("{}{}", self.inner, id))
     }
 
     pub fn relative_path(&self) -> &str {
         self.inner.trim_start_matches('/')
     }
 
-    pub fn test(&self, path: &PathSpec) -> bool {
+    pub fn test(&self, path: &RepoId) -> bool {
         path.starts_with(&self.inner)
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct RepoList(Vec<RepoPrefix>);
+pub struct RepoNames(Vec<RepoName>);
 
-impl TryFrom<&[String]> for RepoList {
+impl TryFrom<&[String]> for RepoNames {
     type Error = Error;
 
     fn try_from(prefixes: &[String]) -> Result<Self> {
         Ok(Self(
             prefixes
                 .iter()
-                .map(RepoPrefix::try_from)
-                .collect::<Result<Vec<RepoPrefix>>>()?,
+                .map(RepoName::try_from)
+                .collect::<Result<Vec<RepoName>>>()?,
         ))
     }
 }
 
-impl TryFrom<&Vec<String>> for RepoList {
+impl TryFrom<&Vec<String>> for RepoNames {
     type Error = Error;
 
     fn try_from(prefixes: &Vec<String>) -> Result<Self> {
@@ -172,30 +172,30 @@ impl TryFrom<&Vec<String>> for RepoList {
     }
 }
 
-impl From<&[RepoPrefix]> for RepoList {
-    fn from(prefixes: &[RepoPrefix]) -> Self {
+impl From<&[RepoName]> for RepoNames {
+    fn from(prefixes: &[RepoName]) -> Self {
         Self(prefixes.to_owned())
     }
 }
 
-impl From<&Vec<RepoPrefix>> for RepoList {
-    fn from(prefixes: &Vec<RepoPrefix>) -> Self {
+impl From<&Vec<RepoName>> for RepoNames {
+    fn from(prefixes: &Vec<RepoName>) -> Self {
         Self(prefixes.to_vec())
     }
 }
 
-impl From<&RepoList> for Vec<RepoPrefix> {
-    fn from(repos: &RepoList) -> Self {
+impl From<&RepoNames> for Vec<RepoName> {
+    fn from(repos: &RepoNames) -> Self {
         repos.0.to_owned()
     }
 }
 
-impl RepoList {
-    pub fn include(&self, path: &PathSpec) -> bool {
+impl RepoNames {
+    pub fn include(&self, path: &RepoId) -> bool {
         self.0.iter().any(|prefix| prefix.test(path))
     }
 
-    pub fn iter(&self) -> std::slice::Iter<'_, RepoPrefix> {
+    pub fn iter(&self) -> std::slice::Iter<'_, RepoName> {
         self.0.iter()
     }
 
@@ -209,20 +209,20 @@ impl RepoList {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct PathSpec {
+pub struct RepoId {
     pub inner: String,
     pub org_login: String,
-    pub repo: RepoPrefix,
+    pub repo: RepoName,
     pub short_id: String,
 }
 
-impl std::fmt::Display for PathSpec {
+impl std::fmt::Display for RepoId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
-impl TryFrom<&str> for PathSpec {
+impl TryFrom<&str> for RepoId {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
@@ -246,7 +246,7 @@ impl TryFrom<&str> for PathSpec {
             }
         };
 
-        Ok(PathSpec {
+        Ok(RepoId {
             inner: input.to_string(),
             org_login: org_login.to_string(),
             repo: prefix.try_into()?,
@@ -255,31 +255,31 @@ impl TryFrom<&str> for PathSpec {
     }
 }
 
-impl TryFrom<&String> for PathSpec {
+impl TryFrom<&String> for RepoId {
     type Error = Error;
 
     fn try_from(input: &String) -> Result<Self> {
-        PathSpec::try_from(input.as_str())
+        RepoId::try_from(input.as_str())
     }
 }
 
-impl std::cmp::Ord for PathSpec {
+impl std::cmp::Ord for RepoId {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.inner.cmp(&other.inner)
     }
 }
 
-impl std::cmp::PartialOrd for PathSpec {
+impl std::cmp::PartialOrd for RepoId {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl std::str::FromStr for PathSpec {
+impl std::str::FromStr for RepoId {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        PathSpec::try_from(s)
+        RepoId::try_from(s)
     }
 }
 
@@ -291,7 +291,7 @@ pub fn random_id() -> String {
         .collect()
 }
 
-impl PathSpec {
+impl RepoId {
     pub fn make(prefix: &String) -> Result<Self> {
         let s: String = random_id();
         Self::try_from(&format!("{}{}", prefix, s))
@@ -339,7 +339,7 @@ pub struct Timespec;
 #[derive(Debug)]
 pub struct ReadPath {
     pub commit: git2::Oid,
-    pub spec: PathSpec,
+    pub spec: RepoId,
 }
 
 pub trait Downset {
@@ -463,25 +463,25 @@ pub fn sha256_base64(normalized: &str) -> String {
 
 #[derive(Clone, Debug)]
 pub struct Viewer {
-    pub read_repos: RepoList,
+    pub read_repos: RepoNames,
     pub session_id: Option<String>,
     pub super_user: bool,
     pub user_id: String,
-    pub write_repos: RepoList,
+    pub write_repos: RepoNames,
 }
 
 impl Viewer {
     pub fn service_account() -> Self {
         Self {
-            read_repos: RepoList(vec![]),
+            read_repos: RepoNames(vec![]),
             session_id: None,
             super_user: true,
             user_id: "".to_owned(),
-            write_repos: RepoList(vec![]),
+            write_repos: RepoNames(vec![]),
         }
     }
 
-    pub fn ensure_can_read(&self, path: &PathSpec) -> Result<()> {
+    pub fn ensure_can_read(&self, path: &RepoId) -> Result<()> {
         if !self.can_read(path) {
             return Err(Error::Repo("not allowed".into()));
         }
@@ -494,22 +494,22 @@ impl Viewer {
 
         let user_id = GUEST_ID.to_string();
         Viewer {
-            write_repos: RepoList(vec![]),
-            read_repos: RepoList(vec![RepoPrefix::wiki()]),
+            write_repos: RepoNames(vec![]),
+            read_repos: RepoNames(vec![RepoName::wiki()]),
             session_id: None,
             super_user: false,
             user_id,
         }
     }
 
-    pub fn can_read(&self, path: &PathSpec) -> bool {
+    pub fn can_read(&self, path: &RepoId) -> bool {
         if self.super_user {
             return true;
         }
         self.read_repos.include(path)
     }
 
-    pub fn can_update(&self, path: &PathSpec) -> bool {
+    pub fn can_update(&self, path: &RepoId) -> bool {
         if self.super_user {
             return true;
         }
@@ -581,12 +581,12 @@ mod tests {
 
         #[test]
         fn can_update() {
-            let path = PathSpec::try_from("/wiki/00001").unwrap();
+            let path = RepoId::try_from("/wiki/00001").unwrap();
 
             let viewer = Viewer::guest();
             assert!(!viewer.can_update(&path));
 
-            let prefixes = RepoList(vec![RepoPrefix::wiki()]);
+            let prefixes = RepoNames(vec![RepoName::wiki()]);
             let viewer = Viewer {
                 write_repos: prefixes.to_owned(),
                 read_repos: prefixes,
@@ -597,7 +597,7 @@ mod tests {
 
             assert!(viewer.can_update(&path));
 
-            let path = PathSpec::try_from("/private/00001").unwrap();
+            let path = RepoId::try_from("/private/00001").unwrap();
             assert!(!viewer.can_update(&path));
         }
     }
@@ -607,9 +607,9 @@ mod tests {
 
         #[test]
         fn simple_case() {
-            let path = PathSpec::try_from("/wiki/00001").unwrap();
+            let path = RepoId::try_from("/wiki/00001").unwrap();
             assert_eq!("/wiki/00001", path.inner);
-            assert_eq!(RepoPrefix::wiki(), path.repo);
+            assert_eq!(RepoName::wiki(), path.repo);
             assert_eq!("wiki", path.org_login);
             assert_eq!("00001", path.short_id);
         }
@@ -617,7 +617,7 @@ mod tests {
         #[test]
         fn parts() {
             let path =
-                PathSpec::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
+                RepoId::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
             assert_eq!(
                 path.parts().unwrap(),
                 ("q-", "ZZ", "meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
@@ -631,38 +631,38 @@ mod tests {
         #[test]
         fn prefix() {
             let path =
-                PathSpec::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
-            assert_eq!(path.repo, RepoPrefix::wiki());
+                RepoId::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
+            assert_eq!(path.repo, RepoName::wiki());
         }
 
         #[test]
         fn equality() {
-            assert_eq!(RepoPrefix::wiki(), RepoPrefix::try_from("/wiki/").unwrap());
+            assert_eq!(RepoName::wiki(), RepoName::try_from("/wiki/").unwrap());
         }
 
         #[test]
         fn relative_path() {
-            let prefix = RepoPrefix::wiki();
+            let prefix = RepoName::wiki();
             assert_eq!(prefix.relative_path(), "wiki/");
         }
 
         #[test]
         fn display() {
-            let prefix = RepoPrefix::wiki();
+            let prefix = RepoName::wiki();
             assert_eq!(format!("{}", prefix), "/wiki/".to_owned());
         }
 
         #[test]
         fn validation() {
-            assert!(matches!(RepoPrefix::try_from("//"), Err(_)));
-            assert!(matches!(RepoPrefix::try_from("/"), Err(_)));
-            assert!(matches!(RepoPrefix::try_from("a"), Err(_)));
-            assert!(matches!(RepoPrefix::try_from("/a"), Err(_)));
-            assert!(matches!(RepoPrefix::try_from("a/"), Err(_)));
-            assert!(matches!(RepoPrefix::try_from("/-/"), Err(_)));
-            assert!(matches!(RepoPrefix::try_from("/./"), Err(_)));
-            assert!(matches!(RepoPrefix::try_from("/../"), Err(_)));
-            assert!(matches!(RepoPrefix::try_from("/other/../wiki/"), Err(_)));
+            assert!(matches!(RepoName::try_from("//"), Err(_)));
+            assert!(matches!(RepoName::try_from("/"), Err(_)));
+            assert!(matches!(RepoName::try_from("a"), Err(_)));
+            assert!(matches!(RepoName::try_from("/a"), Err(_)));
+            assert!(matches!(RepoName::try_from("a/"), Err(_)));
+            assert!(matches!(RepoName::try_from("/-/"), Err(_)));
+            assert!(matches!(RepoName::try_from("/./"), Err(_)));
+            assert!(matches!(RepoName::try_from("/../"), Err(_)));
+            assert!(matches!(RepoName::try_from("/other/../wiki/"), Err(_)));
         }
     }
 }

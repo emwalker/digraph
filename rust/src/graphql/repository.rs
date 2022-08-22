@@ -17,7 +17,7 @@ pub enum Repository {
         owner_id: String,
         prefix: String,
         private: bool,
-        root_topic_path: Box<PathSpec>,
+        root_topic_path: Box<RepoId>,
     },
 }
 
@@ -139,7 +139,7 @@ impl Repository {
 
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
         let path = match self {
-            Self::Default => PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap(),
+            Self::Default => RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap(),
             Self::Fetched {
                 root_topic_path, ..
             } => *root_topic_path.to_owned(),

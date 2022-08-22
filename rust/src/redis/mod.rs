@@ -12,8 +12,8 @@ pub struct Noop;
 impl git::SaveChangesForPrefix for Noop {
     fn save(
         &self,
-        _prefix: &RepoPrefix,
-        _changes: &HashMap<RepoPrefix, BTreeSet<git::activity::Change>>,
+        _prefix: &RepoName,
+        _changes: &HashMap<RepoName, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         // Do nothing
         Ok(())
@@ -21,13 +21,13 @@ impl git::SaveChangesForPrefix for Noop {
 }
 
 impl git::CacheStats for Noop {
-    fn fetch(&self, _repo: &RepoPrefix, _commit: &str) -> Result<Option<git::RepoStats>> {
+    fn fetch(&self, _repo: &RepoName, _commit: &str) -> Result<Option<git::RepoStats>> {
         Ok(None)
     }
 
     fn save(
         &self,
-        _repo: &RepoPrefix,
+        _repo: &RepoName,
         _commit: &str,
         _stats: &git::RepoStats,
         _expires: Option<u32>,
@@ -60,7 +60,7 @@ pub struct Redis {
 }
 
 impl git::CacheStats for Redis {
-    fn fetch(&self, repo: &RepoPrefix, commit: &str) -> Result<Option<git::RepoStats>> {
+    fn fetch(&self, repo: &RepoName, commit: &str) -> Result<Option<git::RepoStats>> {
         let key = self.stats_key(repo, commit);
         let mut con = self.connection().unwrap();
         let s: Option<String> = redis::cmd("GET").arg(key).query(&mut con)?;
@@ -77,7 +77,7 @@ impl git::CacheStats for Redis {
 
     fn save(
         &self,
-        repo: &RepoPrefix,
+        repo: &RepoName,
         commit: &str,
         stats: &git::RepoStats,
         ttl: Option<u32>,
@@ -162,7 +162,7 @@ impl Redis {
         Ok(())
     }
 
-    fn stats_key(&self, repo: &RepoPrefix, commit: &str) -> String {
+    fn stats_key(&self, repo: &RepoName, commit: &str) -> String {
         format!("stats:{}:{}", repo, commit)
     }
 }
@@ -170,8 +170,8 @@ impl Redis {
 impl git::SaveChangesForPrefix for Redis {
     fn save(
         &self,
-        prefix: &RepoPrefix,
-        prefix_changes: &HashMap<RepoPrefix, BTreeSet<git::activity::Change>>,
+        prefix: &RepoName,
+        prefix_changes: &HashMap<RepoName, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         let mut con = self.connection()?;
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
@@ -194,7 +194,7 @@ impl git::SaveChangesForPrefix for Redis {
 impl git::activity::ActivityForPrefix for Redis {
     fn fetch_activity(
         &self,
-        prefix: &RepoPrefix,
+        prefix: &RepoName,
         first: usize,
     ) -> Result<Vec<git::activity::Change>> {
         let key = Key(format!("activity:{}", prefix));

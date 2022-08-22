@@ -20,10 +20,10 @@ struct Opts {
     root: PathBuf,
 }
 
-fn sha256_path(login: &str, id: &str) -> Result<PathSpec> {
+fn sha256_path(login: &str, id: &str) -> Result<RepoId> {
     let id = sha256_base64(id);
     let path = format!("/{}/{}", login, id);
-    PathSpec::try_from(&path)
+    RepoId::try_from(&path)
 }
 
 fn parse_args() -> Opts {
@@ -156,18 +156,18 @@ impl TryFrom<&TopicChildRow> for TopicChild {
 #[derive(Debug)]
 struct Topics {
     topic: Topic,
-    topics: HashMap<RepoPrefix, Topic>,
+    topics: HashMap<RepoName, Topic>,
 }
 
 impl Topics {
     fn new(topic: Topic) -> Self {
         let repo = topic.path().unwrap().repo;
-        let mut topics: HashMap<RepoPrefix, Topic> = HashMap::new();
+        let mut topics: HashMap<RepoName, Topic> = HashMap::new();
         topics.insert(repo, topic.clone());
         Self { topic, topics }
     }
 
-    fn get_mut(&mut self, repo: &RepoPrefix) -> &mut Topic {
+    fn get_mut(&mut self, repo: &RepoName) -> &mut Topic {
         let topics = &mut self.topics;
 
         topics.entry(repo.to_owned()).or_insert_with(|| {
@@ -190,7 +190,7 @@ impl Topics {
 
 fn persist_topic(
     mutation: &mut Mutation,
-    repo: RepoPrefix,
+    repo: RepoName,
     topic: &mut Topic,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,
@@ -265,7 +265,7 @@ fn persist_topic(
 // 1. Don't place paths for items in private repos under /wiki/
 fn persist_topics(
     mutation: &mut Mutation,
-    topic_path: &PathSpec,
+    topic_path: &RepoId,
     meta: &TopicMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,
@@ -308,18 +308,18 @@ fn persist_topics(
     let mut topics = Topics::new(topic);
 
     for parent in parent_topics {
-        let repo = RepoPrefix::from_login(&parent.login)?;
+        let repo = RepoName::from_login(&parent.login)?;
         let topic = topics.get_mut(&repo);
         topic.parent_topics.insert(parent.try_into()?);
     }
 
     for child in children {
-        let parent_repo = RepoPrefix::from_login(&child.login)?;
+        let parent_repo = RepoName::from_login(&child.login)?;
         let topic = topics.get_mut(&parent_repo);
         topic.children.insert(child.try_into()?);
     }
 
-    let repos = topics.topics.keys().cloned().collect::<Vec<RepoPrefix>>();
+    let repos = topics.topics.keys().cloned().collect::<Vec<RepoName>>();
 
     for repo in repos {
         let topic = topics.get_mut(&repo);
@@ -418,18 +418,18 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
 #[derive(Debug)]
 struct Links {
     link: Link,
-    links: HashMap<RepoPrefix, Link>,
+    links: HashMap<RepoName, Link>,
 }
 
 impl Links {
     fn new(link: Link) -> Self {
         let repo = link.path().unwrap().repo;
-        let mut links: HashMap<RepoPrefix, Link> = HashMap::new();
+        let mut links: HashMap<RepoName, Link> = HashMap::new();
         links.insert(repo, link.clone());
         Self { link, links }
     }
 
-    fn get_mut(&mut self, repo: &RepoPrefix) -> &mut Link {
+    fn get_mut(&mut self, repo: &RepoName) -> &mut Link {
         let links = &mut self.links;
 
         links.entry(repo.to_owned()).or_insert_with(|| {
@@ -498,12 +498,12 @@ fn persist_links(
     let mut links = Links::new(link);
 
     for parent in parent_topics {
-        let repo = RepoPrefix::from_login(&parent.login).unwrap();
+        let repo = RepoName::from_login(&parent.login).unwrap();
         let link = links.get_mut(&repo);
         link.parent_topics.insert(parent.try_into().unwrap());
     }
 
-    let repos = links.links.keys().cloned().collect::<Vec<RepoPrefix>>();
+    let repos = links.links.keys().cloned().collect::<Vec<RepoName>>();
 
     for repo in repos {
         let link = links.get_mut(&repo);

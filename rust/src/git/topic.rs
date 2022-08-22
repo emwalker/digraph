@@ -9,12 +9,12 @@ use crate::prelude::*;
 
 pub struct DeleteTopic {
     pub actor: Viewer,
-    pub topic_path: PathSpec,
+    pub topic_path: RepoId,
 }
 
 pub struct DeleteTopicResult {
     pub alerts: Vec<Alert>,
-    pub deleted_topic_path: PathSpec,
+    pub deleted_topic_path: RepoId,
 }
 
 impl DeleteTopic {
@@ -49,7 +49,7 @@ impl DeleteTopic {
 
         // Remove the topic from the children of the parent topics
         for parent in &topic.parent_topics {
-            let path = PathSpec::try_from(&parent.path)?;
+            let path = RepoId::try_from(&parent.path)?;
             if let Some(mut topic) = update.fetch_topic(&path) {
                 topic.children.remove(&TopicChild {
                     // The 'added' field is ignored
@@ -67,7 +67,7 @@ impl DeleteTopic {
 
         // Remove the topic from its children, moving them onto the parent topics
         for child in &topic.children {
-            let path = PathSpec::try_from(&child.path)?;
+            let path = RepoId::try_from(&child.path)?;
             match update.fetch(&path) {
                 Some(Object::Link(child_link)) => {
                     let mut link = child_link.to_owned();
@@ -126,7 +126,7 @@ impl DeleteTopic {
 
 pub struct RemoveTopicTimerange {
     pub actor: Viewer,
-    pub topic_path: PathSpec,
+    pub topic_path: RepoId,
 }
 
 pub struct RemoveTopicTimerangeResult {
@@ -184,8 +184,8 @@ impl RemoveTopicTimerange {
 
 pub struct UpdateTopicParentTopics {
     pub actor: Viewer,
-    pub parent_topic_paths: BTreeSet<PathSpec>,
-    pub topic_path: PathSpec,
+    pub parent_topic_paths: BTreeSet<RepoId>,
+    pub topic_path: RepoId,
 }
 
 pub struct UpdateTopicParentTopicsResult {
@@ -308,7 +308,7 @@ impl UpdateTopicParentTopics {
 pub struct UpdateTopicSynonyms {
     pub actor: Viewer,
     pub synonyms: Vec<Synonym>,
-    pub topic_path: PathSpec,
+    pub topic_path: RepoId,
 }
 
 pub struct UpdateTopicSynonymsResult {
@@ -419,7 +419,7 @@ impl UpdateTopicSynonyms {
 pub enum OnMatchingSynonym {
     Ask,
     CreateDistinct,
-    Update(PathSpec),
+    Update(RepoId),
 }
 
 pub struct UpsertTopic {
@@ -427,8 +427,8 @@ pub struct UpsertTopic {
     pub locale: Locale,
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
-    pub parent_topic: PathSpec,
-    pub repo: RepoPrefix,
+    pub parent_topic: RepoId,
+    pub repo: RepoName,
 }
 
 pub struct UpsertTopicResult {
@@ -588,9 +588,9 @@ impl UpsertTopic {
         })
     }
 
-    fn make_topic(&self, parent: &Topic) -> Result<(PathSpec, Topic, BTreeSet<ParentTopic>)> {
+    fn make_topic(&self, parent: &Topic) -> Result<(RepoId, Topic, BTreeSet<ParentTopic>)> {
         let added = chrono::Utc::now();
-        let path = PathSpec::make(&self.repo.to_string())?;
+        let path = RepoId::make(&self.repo.to_string())?;
         let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
 
         let topic = Topic {
@@ -623,7 +623,7 @@ impl UpsertTopic {
 pub struct UpsertTopicTimerange {
     pub actor: Viewer,
     pub timerange: Timerange,
-    pub topic_path: PathSpec,
+    pub topic_path: RepoId,
 }
 
 pub struct UpsertTopicTimerangeResult {

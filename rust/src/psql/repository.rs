@@ -45,7 +45,7 @@ impl Row {
             owner_id: self.owner_id.to_string(),
             private: self.private,
             prefix: self.prefix.to_owned(),
-            root_topic_path: Box::new(PathSpec::try_from(&self.root_topic_path).unwrap()),
+            root_topic_path: Box::new(RepoId::try_from(&self.root_topic_path).unwrap()),
         }
     }
 }

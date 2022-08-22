@@ -43,10 +43,9 @@ impl Stats {
 }
 
 pub trait CacheStats {
-    fn fetch(&self, repo: &RepoPrefix, oid: &str) -> Result<Option<RepoStats>>;
+    fn fetch(&self, repo: &RepoName, oid: &str) -> Result<Option<RepoStats>>;
 
-    fn save(&self, repo: &RepoPrefix, oid: &str, stats: &RepoStats, ttl: Option<u32>)
-        -> Result<()>;
+    fn save(&self, repo: &RepoName, oid: &str, stats: &RepoStats, ttl: Option<u32>) -> Result<()>;
 }
 
 pub struct FetchStats {

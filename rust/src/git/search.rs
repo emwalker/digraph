@@ -33,7 +33,7 @@ pub enum PathSpecOperation {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct SearchPathSpec {
     pub op: PathSpecOperation,
-    pub path: PathSpec,
+    pub path: RepoId,
 }
 
 const PATH_PATTERN: &str = r#"^in:/\w+/[\w-]+$"#;
@@ -57,7 +57,7 @@ impl SearchPathSpec {
         let op = PathSpecOperation::from_str(&parts[0])?;
         Ok(Self {
             op,
-            path: PathSpec::try_from(&parts[1])?,
+            path: RepoId::try_from(&parts[1])?,
         })
     }
 }
@@ -134,7 +134,7 @@ impl Search {
 
 pub struct FetchTopicLiveSearch {
     pub limit: usize,
-    pub prefixes: Vec<RepoPrefix>,
+    pub prefixes: Vec<RepoName>,
     pub search: Search,
     pub viewer: Viewer,
 }
@@ -171,7 +171,7 @@ impl FetchTopicLiveSearch {
     fn fetch_prefix(
         &self,
         client: &Client,
-        prefix: &RepoPrefix,
+        prefix: &RepoName,
         matches: &mut BTreeSet<SynonymEntry>,
     ) {
         let tokens = &mut self.search.tokens.iter();
@@ -297,11 +297,11 @@ impl Downset for RedisFetchDownSet {
 pub struct FindMatches {
     pub limit: usize,
     pub locale: Locale,
-    pub repos: RepoList,
+    pub repos: RepoNames,
     pub recursive: bool,
     pub search: Search,
     pub timespec: Timespec,
-    pub topic_path: PathSpec,
+    pub topic_path: RepoId,
     pub viewer: Viewer,
 }
 
@@ -377,7 +377,7 @@ impl FindMatches {
         let mut count: usize = 0;
 
         for entry in entries.iter() {
-            let path = PathSpec::try_from(&entry.path)?;
+            let path = RepoId::try_from(&entry.path)?;
             if let Some(object) = client.fetch(&path) {
                 if !filter.test(&object) {
                     continue;
@@ -407,7 +407,7 @@ impl FindMatches {
         let mut count: usize = 0;
 
         for path in paths.iter().take(self.limit) {
-            let path = PathSpec::try_from(path)?;
+            let path = RepoId::try_from(path)?;
             if let Some(object) = client.fetch(&path) {
                 matches.insert(object.to_search_match(Locale::EN, &self.search));
                 count += 1;
@@ -530,7 +530,7 @@ mod tests {
         assert_eq!(s.op, PathSpecOperation::IN);
         assert_eq!(
             s.path,
-            PathSpec::try_from("/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap(),
+            RepoId::try_from("/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap(),
         );
     }
 

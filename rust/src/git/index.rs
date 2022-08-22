@@ -218,7 +218,7 @@ impl SynonymIndex {
         Self { filename, index }
     }
 
-    pub fn add(&mut self, path: &PathSpec, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn add(&mut self, path: &RepoId, phrase: Phrase, name: &str) -> Result<()> {
         let paths = self.index.synonyms.entry(phrase).or_insert(BTreeSet::new());
 
         paths.insert(SynonymEntry {
@@ -233,7 +233,7 @@ impl SynonymIndex {
         Ok(self.index.full_matches(phrase))
     }
 
-    pub fn remove(&mut self, path: &PathSpec, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn remove(&mut self, path: &RepoId, phrase: Phrase, name: &str) -> Result<()> {
         if let Some(paths) = self.index.synonyms.get_mut(&phrase) {
             paths.remove(&SynonymEntry {
                 name: name.to_owned(),
@@ -267,8 +267,8 @@ impl From<&TopicChild> for SearchEntry {
 }
 
 impl SearchEntry {
-    pub fn path(&self) -> Result<PathSpec> {
-        PathSpec::try_from(&self.path)
+    pub fn path(&self) -> Result<RepoId> {
+        RepoId::try_from(&self.path)
     }
 }
 
@@ -409,7 +409,7 @@ impl std::fmt::Display for ChangeReference {
 }
 
 impl ChangeReference {
-    pub fn new(prefix: &RepoPrefix, change: &activity::Change) -> Self {
+    pub fn new(prefix: &RepoName, change: &activity::Change) -> Self {
         let id = change.id();
 
         Self {
@@ -497,7 +497,7 @@ impl Index for ActivityIndex {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct IndexKey {
-    pub repo: RepoPrefix,
+    pub repo: RepoName,
     pub basename: String,
 }
 
@@ -519,10 +519,10 @@ pub trait GitIndexKey {
         }
     }
 
-    fn prefix(&self) -> RepoPrefix;
+    fn prefix(&self) -> RepoName;
 }
 
-impl GitIndexKey for RepoPrefix {
+impl GitIndexKey for RepoName {
     fn prefix(&self) -> Self {
         self.to_owned()
     }
@@ -583,15 +583,15 @@ impl IndexKey {
 pub trait SaveChangesForPrefix {
     fn save(
         &self,
-        prefix: &RepoPrefix,
-        changes: &HashMap<RepoPrefix, BTreeSet<activity::Change>>,
+        prefix: &RepoName,
+        changes: &HashMap<RepoName, BTreeSet<activity::Change>>,
     ) -> Result<()>;
 }
 
 pub struct Indexer {
-    path_activity: HashMap<PathSpec, ActivityIndex>,
+    path_activity: HashMap<RepoId, ActivityIndex>,
     pub mode: IndexMode,
-    repo_changes: HashMap<RepoPrefix, BTreeSet<activity::Change>>,
+    repo_changes: HashMap<RepoName, BTreeSet<activity::Change>>,
     search_tokens: HashMap<IndexKey, SearchTokenIndex>,
     synonym_phrases: HashMap<IndexKey, SynonymIndex>,
     synonym_tokens: HashMap<IndexKey, SynonymIndex>,
@@ -613,7 +613,7 @@ impl Indexer {
         &mut self,
         client: &Client,
         change: &activity::Change,
-    ) -> Result<HashSet<RepoPrefix>> {
+    ) -> Result<HashSet<RepoName>> {
         let mut repos = HashSet::new();
 
         for path in change.paths()? {
@@ -634,11 +634,7 @@ impl Indexer {
         Ok(repos)
     }
 
-    pub fn path_activity(
-        &mut self,
-        client: &Client,
-        path: &PathSpec,
-    ) -> Result<&mut ActivityIndex> {
+    pub fn path_activity(&mut self, client: &Client, path: &RepoId) -> Result<&mut ActivityIndex> {
         let index = self
             .path_activity
             .entry(path.to_owned())
@@ -695,7 +691,7 @@ impl Indexer {
     fn synonym_indexes<'s, S, F>(
         &mut self,
         client: &Client,
-        prefix: &RepoPrefix,
+        prefix: &RepoName,
         synonyms: S,
         f: F,
     ) -> Result<()>
@@ -748,12 +744,7 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn remove_synonyms(
-        &mut self,
-        client: &Client,
-        path: &PathSpec,
-        topic: &Topic,
-    ) -> Result<()> {
+    pub fn remove_synonyms(&mut self, client: &Client, path: &RepoId, topic: &Topic) -> Result<()> {
         self.synonym_indexes(
             client,
             &path.repo,
@@ -767,7 +758,7 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn files(&self) -> Result<Vec<(&RepoPrefix, PathBuf, String)>> {
+    pub fn files(&self) -> Result<Vec<(&RepoName, PathBuf, String)>> {
         let mut files = vec![];
 
         for (key, index) in &self.search_tokens {
@@ -793,7 +784,7 @@ impl Indexer {
         for (repo, changes) in &self.repo_changes {
             for change in changes {
                 let reference = ChangeReference::new(repo, change);
-                let path = PathSpec::try_from(&reference.path)?;
+                let path = RepoId::try_from(&reference.path)?;
                 files.push((
                     repo,
                     path.change_filename()?,
@@ -809,7 +800,7 @@ impl Indexer {
     where
         S: SaveChangesForPrefix,
     {
-        match store.save(&RepoPrefix::wiki(), &self.repo_changes) {
+        match store.save(&RepoName::wiki(), &self.repo_changes) {
             Ok(_) => log::info!("changes saved to {}", WIKI_REPO_PREFIX),
             Err(err) => log::error!("problem saving changes to prefix key: {}", err),
         }

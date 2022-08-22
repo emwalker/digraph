@@ -74,7 +74,7 @@ impl Fixtures {
         Ok(self.leaked_data()?.is_empty())
     }
 
-    pub fn fetch_link<F>(&self, path: &PathSpec, block: F)
+    pub fn fetch_link<F>(&self, path: &RepoId, block: F)
     where
         F: Fn(Link),
     {
@@ -85,7 +85,7 @@ impl Fixtures {
         block(link);
     }
 
-    pub fn fetch_topic<F>(&self, path: &PathSpec, block: F)
+    pub fn fetch_topic<F>(&self, path: &RepoId, block: F)
     where
         F: Fn(Topic),
     {
@@ -96,23 +96,23 @@ impl Fixtures {
         block(topic);
     }
 
-    pub fn leaked_data(&self) -> Result<Vec<(RepoPrefix, String)>> {
+    pub fn leaked_data(&self) -> Result<Vec<(RepoName, String)>> {
         self.git.leaked_data()
     }
 
     pub fn topic(&self, path: &str) -> Topic {
         self.git
-            .fetch_topic(&PathSpec::try_from(path).unwrap())
+            .fetch_topic(&RepoId::try_from(path).unwrap())
             .unwrap()
     }
 
-    pub fn topic_path(&self, name: &str) -> Result<Option<PathSpec>> {
+    pub fn topic_path(&self, name: &str) -> Result<Option<RepoId>> {
         let FetchTopicLiveSearchResult {
             synonym_matches: matches,
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![RepoPrefix::wiki()],
+            prefixes: vec![RepoName::wiki()],
             search: Search::parse(name).unwrap(),
             viewer: actor(),
         }
@@ -121,7 +121,7 @@ impl Fixtures {
 
         let row = matches.iter().find(|row| row.name == name);
 
-        Ok(row.map(|m| PathSpec::try_from(&m.path).unwrap()))
+        Ok(row.map(|m| RepoId::try_from(&m.path).unwrap()))
     }
 
     fn write(&self) {
@@ -136,7 +136,7 @@ impl Fixtures {
 
     pub fn upsert_link(
         &self,
-        repo: &RepoPrefix,
+        repo: &RepoName,
         url: &RepoUrl,
         title: Option<String>,
         parent_topic: Option<String>,
@@ -147,7 +147,7 @@ impl Fixtures {
         };
 
         let add_parent_topic_path = if let Some(path) = &parent_topic {
-            Some(PathSpec::try_from(path).unwrap())
+            Some(RepoId::try_from(path).unwrap())
         } else {
             None
         };
@@ -168,9 +168,9 @@ impl Fixtures {
 
     pub fn upsert_topic(
         &self,
-        repo: &RepoPrefix,
+        repo: &RepoName,
         name: &str,
-        parent_topic: &PathSpec,
+        parent_topic: &RepoId,
         on_matching_synonym: OnMatchingSynonym,
     ) -> Result<UpsertTopicResult> {
         UpsertTopic {
@@ -195,7 +195,7 @@ mod tests {
     #[allow(dead_code)]
     fn update_simple_fixtures() {
         let f = Fixtures::copy("simple");
-        let root = PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let root = RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
 
         let topic_path =
             path("/wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
@@ -203,7 +203,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change".to_owned(),
-            repo: RepoPrefix::wiki(),
+            repo: RepoName::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_path),
             parent_topic: root.clone(),
         }
@@ -213,7 +213,7 @@ mod tests {
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Climate_change").unwrap();
         let result = f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             Some("Climate change".into()),
             Some(climate_change.inner.to_owned()),
@@ -225,7 +225,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Weather".to_owned(),
-            repo: RepoPrefix::wiki(),
+            repo: RepoName::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root,
         }
@@ -235,13 +235,13 @@ mod tests {
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Weather").unwrap();
         f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             Some("Weather".into()),
             Some(weather.inner.to_owned()),
         );
 
-        let path = PathSpec::try_from(
+        let path = RepoId::try_from(
             "/wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13",
         )
         .unwrap();
@@ -249,7 +249,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change and weather".to_owned(),
-            repo: RepoPrefix::wiki(),
+            repo: RepoName::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: climate_change.clone(),
         }
@@ -269,7 +269,7 @@ mod tests {
             RepoUrl::parse("https://royalsociety.org/topics-policy/projects/climate-change-evidence-causes/question-13/")
                 .unwrap();
         f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             Some("13. How does climate change affect the strength and frequency of floods, droughts, hurricanes, and tornadoes?".into()),
             Some(climate_change_weather.inner.to_owned()),
@@ -279,7 +279,7 @@ mod tests {
             RepoUrl::parse("https://climate.nasa.gov/resources/global-warming-vs-climate-change/")
                 .unwrap();
         f.upsert_link(
-            &RepoPrefix::wiki(),
+            &RepoName::wiki(),
             &url,
             Some("Overview: Weather, Global Warming, and Climate Change".into()),
             Some(climate_change_weather.inner),

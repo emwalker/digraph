@@ -23,7 +23,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![RepoPrefix::wiki()],
+            prefixes: vec![RepoName::wiki()],
             search: Search::parse("existing non-root topic").unwrap(),
             viewer: actor(),
         }
@@ -42,8 +42,8 @@ mod fetch_topic_live_search {
     #[test]
     fn indexing_works() {
         let f = Fixtures::copy("simple");
-        let repo = RepoPrefix::wiki();
-        let parent = PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let repo = RepoName::wiki();
+        let parent = RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
         let search = Search::parse("clim chan soc").unwrap();
 
         let FetchTopicLiveSearchResult {
@@ -127,8 +127,8 @@ mod fetch_matches {
         }
     }
 
-    fn root() -> PathSpec {
-        PathSpec::try_from(WIKI_ROOT_TOPIC_PATH).unwrap()
+    fn root() -> RepoId {
+        RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap()
     }
 
     fn count(kind: Kind, matches: &BTreeSet<SearchMatch>) -> usize {
@@ -143,7 +143,7 @@ mod fetch_matches {
 
     fn search(
         f: &Fixtures,
-        topic_path: &PathSpec,
+        topic_path: &RepoId,
         input: &str,
         recursive: bool,
     ) -> BTreeSet<SearchMatch> {
@@ -247,7 +247,7 @@ mod fetch_matches {
             limit: 3,
             locale: Locale::EN,
             recursive: true,
-            repos: RepoList::from(&vec![root.repo.to_owned()]),
+            repos: RepoNames::from(&vec![root.repo.to_owned()]),
             search,
             timespec: Timespec,
             topic_path: root,
@@ -293,7 +293,7 @@ mod fetch_matches {
     #[test]
     fn search_works_across_prefixes() {
         let f = Fixtures::copy("simple");
-        let repo = RepoPrefix::try_from("/other/").unwrap();
+        let repo = RepoName::try_from("/other/").unwrap();
 
         let result = f.upsert_link(&repo, &valid_url(), Some("Other repo".to_owned()), None);
         assert_eq!(result.link.unwrap().path().unwrap().repo, repo);

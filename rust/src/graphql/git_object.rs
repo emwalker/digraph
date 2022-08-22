@@ -21,11 +21,11 @@ impl TryFrom<&git::Link> for Link {
         let parent_topic_paths = link
             .parent_topics
             .iter()
-            .map(|topic| PathSpec::try_from(&topic.path))
-            .collect::<Result<Vec<PathSpec>>>()?;
+            .map(|topic| RepoId::try_from(&topic.path))
+            .collect::<Result<Vec<RepoId>>>()?;
 
         Ok(Self {
-            path: PathSpec::try_from(&meta.path)?,
+            path: RepoId::try_from(&meta.path)?,
             newly_added: false,
             parent_topic_paths,
             repository_id: WIKI_REPOSITORY_ID.into(),
@@ -43,14 +43,14 @@ impl TryFrom<&git::Topic> for Topic {
         let parent_topic_paths = topic
             .parent_topics
             .iter()
-            .map(|parent| PathSpec::try_from(&parent.path))
-            .collect::<Result<Vec<PathSpec>>>()?;
+            .map(|parent| RepoId::try_from(&parent.path))
+            .collect::<Result<Vec<RepoId>>>()?;
 
         let child_paths = topic
             .children
             .iter()
-            .map(|p| PathSpec::try_from(&p.path))
-            .collect::<Result<Vec<PathSpec>>>()?;
+            .map(|p| RepoId::try_from(&p.path))
+            .collect::<Result<Vec<RepoId>>>()?;
         let synonyms = Synonyms::from(topic.synonyms());
 
         let timerange = topic.timerange().as_ref();
@@ -93,7 +93,7 @@ impl Loader<String> for LinkLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for path in paths {
-            if let Some(link) = &self.git.fetch_link(&PathSpec::try_from(path)?) {
+            if let Some(link) = &self.git.fetch_link(&RepoId::try_from(path)?) {
                 map.insert(path.to_owned(), link.to_owned());
             }
         }
@@ -123,7 +123,7 @@ impl Loader<String> for ObjectLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for string in paths {
-            let path = PathSpec::try_from(string)?;
+            let path = RepoId::try_from(string)?;
             if let Some(object) = &self.client.fetch(&path) {
                 map.insert(string.to_owned(), object.clone());
             }

@@ -78,7 +78,7 @@ impl View {
     }
 
     async fn link(&self, ctx: &Context<'_>, path: String) -> Result<Option<Link>> {
-        let path = PathSpec::try_from(&path.to_string())?;
+        let path = RepoId::try_from(&path.to_string())?;
         ctx.data_unchecked::<Store>().link(&path).await
     }
 
@@ -90,7 +90,7 @@ impl View {
 
     async fn topic(&self, ctx: &Context<'_>, path: String) -> Result<Option<Topic>> {
         ctx.data_unchecked::<Store>()
-            .topic(&PathSpec::try_from(&path)?)
+            .topic(&RepoId::try_from(&path)?)
             .await
     }
 
