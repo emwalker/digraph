@@ -13,7 +13,7 @@ use super::{LinkDetails, Mutation};
 
 pub struct DeleteLink {
     pub actor: Viewer,
-    pub link_path: RepoId,
+    pub link_id: RepoId,
 }
 
 pub struct DeleteLinkResult {
@@ -22,13 +22,13 @@ pub struct DeleteLinkResult {
 }
 
 impl DeleteLink {
-    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<DeleteLinkResult>
+    pub fn call<S>(&self, mut mutation: Mutation, store: &S) -> Result<DeleteLinkResult>
     where
         S: SaveChangesForPrefix,
     {
-        let link = update.fetch_link(&self.link_path);
+        let link = mutation.fetch_link(&self.link_id.repo, &self.link_id);
         if link.is_none() {
-            return Err(Error::NotFound(format!("not found: {}", self.link_path)));
+            return Err(Error::NotFound(format!("not found: {}", self.link_id)));
         }
         let link = link.unwrap();
 
@@ -37,26 +37,26 @@ impl DeleteLink {
         let child = link.to_topic_child(date);
         let mut parent_topics = vec![];
 
-        update.mark_deleted(&self.link_path)?;
+        mutation.mark_deleted(&self.link_id)?;
 
         for ParentTopic { path, .. } in &link.parent_topics {
-            let path = RepoId::try_from(path)?;
-            if let Some(mut parent) = update.fetch_topic(&path) {
+            let parent_id = RepoId::try_from(path)?;
+            if let Some(mut parent) = mutation.fetch_topic(&parent_id.repo, &parent_id) {
                 parent.children.remove(&child);
-                update.save_topic(&path, &parent)?;
+                mutation.save_topic(&parent_id.repo, &parent_id, &parent)?;
                 parent_topics.push(parent);
             }
         }
 
         let change = self.change(&link, &parent_topics, date);
 
-        update.remove_link(&self.link_path, &link)?;
-        update.add_change(&change)?;
-        update.write(store)?;
+        mutation.remove_link(&self.link_id, &link)?;
+        mutation.add_change(&change)?;
+        mutation.write(store)?;
 
         Ok(DeleteLinkResult {
             alerts: vec![],
-            deleted_link_path: self.link_path.clone(),
+            deleted_link_path: self.link_id.clone(),
         })
     }
 
@@ -76,8 +76,8 @@ impl DeleteLink {
 
 pub struct UpdateLinkParentTopics {
     pub actor: Viewer,
-    pub link_path: RepoId,
-    pub parent_topic_paths: BTreeSet<RepoId>,
+    pub link_id: RepoId,
+    pub parent_topic_ids: BTreeSet<RepoId>,
 }
 
 pub struct UpdateLinkParentTopicsResult {
@@ -86,21 +86,21 @@ pub struct UpdateLinkParentTopicsResult {
 }
 
 impl UpdateLinkParentTopics {
-    pub fn call<S>(&self, mut update: Mutation, store: &S) -> Result<UpdateLinkParentTopicsResult>
+    pub fn call<S>(&self, mut mutation: Mutation, store: &S) -> Result<UpdateLinkParentTopicsResult>
     where
         S: SaveChangesForPrefix,
     {
         self.validate()?;
 
         let date = chrono::Utc::now();
-        let link = update.fetch_link(&self.link_path);
+        let link = mutation.fetch_link(&self.link_id.repo, &self.link_id);
         if link.is_none() {
-            return Err(Error::NotFound(format!("not found: {}", self.link_path)));
+            return Err(Error::NotFound(format!("not found: {}", self.link_id)));
         }
         let mut link = link.unwrap();
 
         let parent_topics = self
-            .parent_topic_paths
+            .parent_topic_ids
             .iter()
             .map(|path| ParentTopic {
                 path: path.to_string(),
@@ -109,7 +109,7 @@ impl UpdateLinkParentTopics {
 
         let mut added = vec![];
         for parent in parent_topics.difference(&link.parent_topics) {
-            if let Some(topic) = parent.fetch(&update)? {
+            if let Some(topic) = parent.fetch(&mutation)? {
                 added.push(topic);
             }
         }
@@ -121,7 +121,7 @@ impl UpdateLinkParentTopics {
 
         let mut removed = vec![];
         for parent in link.parent_topics.difference(&parent_topics) {
-            if let Some(link) = parent.fetch(&update)? {
+            if let Some(link) = parent.fetch(&mutation)? {
                 removed.push(link);
             }
         }
@@ -134,16 +134,19 @@ impl UpdateLinkParentTopics {
         let change = self.change(&link, &added, &removed, date);
 
         for topic in &added {
-            update.save_topic(&topic.path()?, topic)?;
+            let topic_id = &topic.path()?;
+            mutation.save_topic(&topic_id.repo, topic_id, topic)?;
         }
 
         for topic in &removed {
-            update.save_topic(&topic.path()?, topic)?;
+            let topic_id = &topic.path()?;
+            mutation.save_topic(&topic_id.repo, &topic_id, topic)?;
         }
 
-        update.save_link(&link.path()?, &link)?;
-        update.add_change(&change)?;
-        update.write(store)?;
+        let link_id = link.path()?;
+        mutation.save_link(&link_id.repo, &link_id, &link)?;
+        mutation.add_change(&change)?;
+        mutation.write(store)?;
 
         Ok(UpdateLinkParentTopicsResult {
             alerts: vec![],
@@ -152,7 +155,7 @@ impl UpdateLinkParentTopics {
     }
 
     fn validate(&self) -> Result<()> {
-        if self.parent_topic_paths.is_empty() {
+        if self.parent_topic_ids.is_empty() {
             return Err(Error::Repo(
                 "at least one parent topic must be provided".into(),
             ));
@@ -204,10 +207,10 @@ impl UpsertLink {
     {
         log::info!("upserting link: {:?}", self);
         let url = RepoUrl::parse(&self.url)?;
-        let link_path = url.path(&self.repo)?;
+        let link_id = url.path(&self.repo)?;
         let date = Utc::now();
 
-        let (mut link, previous_title) = self.make_link(&mutation, &link_path, &url)?;
+        let (mut link, previous_title) = self.make_link(&mutation, &link_id, &url)?;
 
         if let Some(title) = &self.title {
             match &mut link.metadata.details {
@@ -232,16 +235,17 @@ impl UpsertLink {
             })
             .collect::<BTreeSet<ParentTopic>>();
 
-        for (path, topic) in &mut parent_topics {
+        for (parent_id, topic) in &mut parent_topics {
             topic.children.insert(TopicChild {
                 added: date,
                 kind: Kind::Link,
                 path: link.metadata.path.to_owned(),
             });
-            mutation.save_topic(&RepoId::try_from(path)?, topic)?;
+            let topic_id = RepoId::try_from(parent_id)?;
+            mutation.save_topic(&self.repo, &topic_id, topic)?;
         }
 
-        mutation.save_link(&link_path, &link)?;
+        mutation.save_link(&self.repo, &link_id, &link)?;
         mutation.add_change(&change)?;
         mutation.write(store)?;
 
@@ -259,14 +263,15 @@ impl UpsertLink {
         let mut parent_topics = HashMap::new();
 
         for parent in &link.parent_topics {
-            if let Some(topic) = mutation.fetch_topic(&RepoId::try_from(&parent.path)?) {
+            if let Some(topic) = mutation.fetch_topic(&self.repo, &RepoId::try_from(&parent.path)?)
+            {
                 parent_topics.insert(parent.path.to_owned(), topic);
             }
         }
 
         let topic = if let Some(topic_path) = &self.add_parent_topic_path {
             let topic_path = link.path()?.repo.path(&topic_path.short_id)?;
-            let topic = mutation.fetch_topic(&topic_path);
+            let topic = mutation.fetch_topic(&self.repo, &topic_path);
             if let Some(topic) = &topic {
                 parent_topics.insert(topic_path.to_string(), topic.to_owned());
             }
@@ -279,7 +284,7 @@ impl UpsertLink {
             // There's a client error if we get to this point.
             log::warn!("no topic found, placing under root topic for /wiki");
             if let Some(topic) =
-                mutation.fetch_topic(&RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap())
+                mutation.fetch_topic(&self.repo, &RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap())
             {
                 parent_topics.insert(topic.metadata.path.to_owned(), topic);
             }
@@ -317,11 +322,11 @@ impl UpsertLink {
     fn make_link(
         &self,
         mutation: &Mutation,
-        link_path: &RepoId,
+        link_id: &RepoId,
         url: &RepoUrl,
     ) -> Result<(Link, Option<String>)> {
-        if mutation.exists(link_path)? {
-            if let Some(link) = mutation.fetch_link(link_path) {
+        if mutation.exists(&link_id.repo, link_id)? {
+            if let Some(link) = mutation.fetch_link(&self.repo, link_id) {
                 let title = link.metadata.title().to_owned();
                 return Ok((link, Some(title)));
             }
@@ -336,7 +341,7 @@ impl UpsertLink {
 
         let mut parent_topics = BTreeSet::new();
         if let Some(path) = &self.add_parent_topic_path {
-            let path = link_path.repo.path(&path.short_id)?;
+            let path = link_id.repo.path(&path.short_id)?;
             parent_topics.insert(ParentTopic {
                 path: path.to_string(),
             });
@@ -347,7 +352,7 @@ impl UpsertLink {
             parent_topics,
             metadata: LinkMetadata {
                 added: chrono::Utc::now(),
-                path: link_path.to_string(),
+                path: link_id.to_string(),
                 details: Some(LinkDetails {
                     title,
                     url: url.normalized.to_owned(),

@@ -26,17 +26,18 @@ mod delete_link {
         let f = Fixtures::copy("simple");
 
         let link = link(&f, "Page title", "/wiki/00001");
-        let path = link.path().unwrap();
-        assert!(f.git.exists(&path).unwrap());
+        let link_id = link.path().unwrap();
+        let repo = &link_id.repo;
+        assert!(f.git.exists(repo, &link_id).unwrap());
 
         DeleteLink {
             actor: actor(),
-            link_path: path.clone(),
+            link_id: link_id.clone(),
         }
         .call(f.update(), &redis::Noop)
         .unwrap();
 
-        assert!(!f.git.exists(&path).unwrap());
+        assert!(!f.git.exists(repo, &link_id).unwrap());
     }
 
     #[test]
@@ -52,7 +53,7 @@ mod delete_link {
 
         DeleteLink {
             actor: actor(),
-            link_path: path.clone(),
+            link_id: path.clone(),
         }
         .call(f.update(), &redis::Noop)
         .unwrap();
@@ -97,13 +98,14 @@ mod update_link_parent_topics {
 
         UpdateLinkParentTopics {
             actor: actor(),
-            link_path: link.path().unwrap(),
-            parent_topic_paths: BTreeSet::from([parent1, parent2]),
+            link_id: link.path().unwrap(),
+            parent_topic_ids: BTreeSet::from([parent1, parent2]),
         }
         .call(f.update(), &redis::Noop)
         .unwrap();
 
-        let link = f.git.fetch_link(&link.path().unwrap()).unwrap();
+        let link_id = link.path().unwrap();
+        let link = f.git.fetch_link(&link_id.repo, &link_id).unwrap();
         assert_eq!(link.parent_topics.len(), 2);
     }
 }
@@ -124,7 +126,7 @@ mod upsert_link {
             kind: Kind::Link,
         };
 
-        assert!(!f.git.exists(&path).unwrap());
+        assert!(!f.git.exists(&repo, &path).unwrap());
         assert!(!f.git.appears_in(&search, &entry).unwrap());
 
         f.upsert_link(
@@ -134,7 +136,7 @@ mod upsert_link {
             Some("/wiki/00001".to_owned()),
         );
 
-        assert!(f.git.exists(&path).unwrap());
+        assert!(f.git.exists(&repo, &path).unwrap());
         assert!(f.git.appears_in(&search, &entry).unwrap());
     }
 
@@ -143,12 +145,12 @@ mod upsert_link {
         let f = Fixtures::copy("simple");
         let url = valid_url();
         let repo = RepoName::wiki();
-        let path = url.path(&repo).unwrap();
-        assert!(!f.git.exists(&path).unwrap());
+        let link_id = url.path(&repo).unwrap();
+        assert!(!f.git.exists(&repo, &link_id).unwrap());
 
         f.upsert_link(&repo, &url, None, None);
 
-        f.fetch_link(&path, |link| {
+        f.fetch_link(&link_id, |link| {
             assert_eq!(link.parent_topics.len(), 1);
             let topic = &link.parent_topics.iter().next().unwrap();
             assert_eq!(topic.path, WIKI_ROOT_TOPIC_PATH);
@@ -159,8 +161,9 @@ mod upsert_link {
     fn updates_are_idempotent() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let path = url.path(&RepoName::wiki()).unwrap();
-        assert!(!f.git.exists(&path).unwrap());
+        let link_id = url.path(&RepoName::wiki()).unwrap();
+        let repo = &link_id.repo;
+        assert!(!f.git.exists(repo, &link_id).unwrap());
 
         f.upsert_link(
             &RepoName::wiki(),
@@ -175,7 +178,7 @@ mod upsert_link {
             Some("/wiki/00001".to_owned()),
         );
 
-        assert!(f.git.exists(&path).unwrap());
+        assert!(f.git.exists(repo, &link_id).unwrap());
     }
 
     #[test]
@@ -184,7 +187,7 @@ mod upsert_link {
         let url = RepoUrl::parse("https://www.google.com").unwrap();
         let repo = RepoName::wiki();
         let path = url.path(&repo).unwrap();
-        assert!(!f.git.exists(&path).unwrap());
+        assert!(!f.git.exists(&repo, &path).unwrap());
 
         f.upsert_link(
             &repo,
@@ -232,7 +235,7 @@ mod upsert_link {
         let repo = RepoName::wiki();
         let path = url.path(&repo).unwrap();
         let topic = RepoId::try_from("/wiki/00001").unwrap();
-        assert!(!f.git.exists(&path).unwrap());
+        assert!(!f.git.exists(&repo, &path).unwrap());
 
         let result = f.upsert_link(&repo, &url, Some("A".into()), Some(topic.inner.to_owned()));
         let link = result.link.unwrap();
@@ -286,31 +289,34 @@ mod upsert_link {
         let f = Fixtures::copy("simple");
         let url = valid_url();
         let repo = RepoName::try_from("/other/").unwrap();
-        let link_path = url.path(&repo).unwrap();
-        let parent_path = RepoId::try_from("/wiki/00001").unwrap();
+        let link_id = url.path(&repo).unwrap();
+        let parent_id = RepoId::try_from("/wiki/00001").unwrap();
 
-        assert_eq!(link_path.repo, repo);
-        assert!(!f.git.exists(&link_path).unwrap());
+        assert_eq!(link_id.repo, repo);
+        assert!(!f.git.exists(&repo, &link_id).unwrap());
 
         // We're specifying /wiki/00001 as the parent topic, which is under /wiki/. But what will
         // happen is that the link will be added with the path "/other/00001", which makes the
         // topic a reference to /wiki/00001 under the /other/ repo.  No path with /other/ should
         // appear within the /wiki/ repo.
         f.upsert_link(
-            &link_path.repo,
+            &link_id.repo,
             &url,
             Some("Page title".into()),
-            Some(parent_path.inner.to_owned()),
+            Some(parent_id.inner.to_owned()),
         );
 
-        assert!(f.git.exists(&link_path).unwrap());
+        assert!(f.git.exists(&repo, &link_id).unwrap());
 
-        let topic = f.git.fetch_topic(&parent_path).expect("/wiki/00001");
+        let topic = f
+            .git
+            .fetch_topic(&parent_id.repo, &parent_id)
+            .expect("/wiki/00001");
 
         for child in &topic.children {
             let path = RepoId::try_from(&child.path).unwrap();
             assert!(
-                path.short_id != link_path.short_id,
+                path.short_id != link_id.short_id,
                 "link placed under /wiki/ topic"
             );
         }

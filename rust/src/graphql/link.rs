@@ -100,13 +100,13 @@ impl Link {
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
-        let repo = ctx.data_unchecked::<Store>();
-        if repo.viewer.is_guest() {
+        let store = ctx.data_unchecked::<Store>();
+        if store.viewer.is_guest() {
             return Ok(false);
         }
 
         // TODO: Narrow down write permissions to a specific topics and their subtopics
-        Ok(repo.viewer.write_repos.include(&self.path))
+        Ok(store.viewer.write_repos.include(&self.path.repo))
     }
 
     async fn viewer_review(&self) -> Option<LinkReview> {

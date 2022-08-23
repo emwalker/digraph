@@ -74,25 +74,25 @@ impl Fixtures {
         Ok(self.leaked_data()?.is_empty())
     }
 
-    pub fn fetch_link<F>(&self, path: &RepoId, block: F)
+    pub fn fetch_link<F>(&self, topic_id: &RepoId, block: F)
     where
         F: Fn(Link),
     {
         let link = self
             .git
-            .fetch_link(path)
-            .unwrap_or_else(|| panic!("expected a link: {:?}", path));
+            .fetch_link(&topic_id.repo, topic_id)
+            .unwrap_or_else(|| panic!("expected a link: {:?}", topic_id));
         block(link);
     }
 
-    pub fn fetch_topic<F>(&self, path: &RepoId, block: F)
+    pub fn fetch_topic<F>(&self, topic_id: &RepoId, block: F)
     where
         F: Fn(Topic),
     {
         let topic = self
             .git
-            .fetch_topic(path)
-            .unwrap_or_else(|| panic!("expected a topic: {:?}", path));
+            .fetch_topic(&topic_id.repo, topic_id)
+            .unwrap_or_else(|| panic!("expected a topic: {:?}", topic_id));
         block(topic);
     }
 
@@ -101,9 +101,8 @@ impl Fixtures {
     }
 
     pub fn topic(&self, path: &str) -> Topic {
-        self.git
-            .fetch_topic(&RepoId::try_from(path).unwrap())
-            .unwrap()
+        let topic_id = RepoId::try_from(path).unwrap();
+        self.git.fetch_topic(&topic_id.repo, &topic_id).unwrap()
     }
 
     pub fn topic_path(&self, name: &str) -> Result<Option<RepoId>> {
@@ -259,8 +258,8 @@ mod tests {
 
         UpdateTopicParentTopics {
             actor: actor(),
-            parent_topic_paths: BTreeSet::from([climate_change, weather]),
-            topic_path: climate_change_weather.clone(),
+            parent_topic_ids: BTreeSet::from([climate_change, weather]),
+            topic_id: climate_change_weather.clone(),
         }
         .call(f.update(), &redis::Noop)
         .unwrap();

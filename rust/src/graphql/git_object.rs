@@ -93,7 +93,8 @@ impl Loader<String> for LinkLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for path in paths {
-            if let Some(link) = &self.git.fetch_link(&RepoId::try_from(path)?) {
+            let link_id = RepoId::try_from(path)?;
+            if let Some(link) = &self.git.fetch_link(&link_id.repo, &link_id) {
                 map.insert(path.to_owned(), link.to_owned());
             }
         }
@@ -123,8 +124,8 @@ impl Loader<String> for ObjectLoader {
         let mut map: HashMap<_, _> = HashMap::new();
 
         for string in paths {
-            let path = RepoId::try_from(string)?;
-            if let Some(object) = &self.client.fetch(&path) {
+            let id = RepoId::try_from(string)?;
+            if let Some(object) = &self.client.fetch(&id.repo, &id) {
                 map.insert(string.to_owned(), object.clone());
             }
         }

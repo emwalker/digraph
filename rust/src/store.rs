@@ -219,7 +219,7 @@ impl Store {
     pub async fn delete_link(&self, link_path: &RepoId) -> Result<git::DeleteLinkResult> {
         git::DeleteLink {
             actor: self.viewer.clone(),
-            link_path: link_path.clone(),
+            link_id: link_path.clone(),
         }
         .call(self.update()?, &self.redis)
     }
@@ -233,7 +233,7 @@ impl Store {
     pub async fn delete_topic(&self, path: &RepoId) -> Result<git::DeleteTopicResult> {
         git::DeleteTopic {
             actor: self.viewer.clone(),
-            topic_path: path.clone(),
+            topic_id: path.clone(),
         }
         .call(self.update()?, &self.redis)
     }
@@ -244,7 +244,7 @@ impl Store {
     ) -> Result<git::RemoveTopicTimerangeResult> {
         git::RemoveTopicTimerange {
             actor: self.viewer.clone(),
-            topic_path: topic_path.clone(),
+            topic_id: topic_path.clone(),
         }
         .call(self.update()?, &self.redis)
     }
@@ -426,8 +426,8 @@ impl Store {
     ) -> Result<git::UpdateLinkParentTopicsResult> {
         git::UpdateLinkParentTopics {
             actor: self.viewer.clone(),
-            link_path: RepoId::try_from(&input.link_path)?,
-            parent_topic_paths: input
+            link_id: RepoId::try_from(&input.link_path)?,
+            parent_topic_ids: input
                 .parent_topic_paths
                 .iter()
                 .map(RepoId::try_from)
@@ -443,7 +443,7 @@ impl Store {
         git::UpdateTopicSynonyms {
             actor: self.viewer.clone(),
             synonyms: input.synonyms.iter().map(git::Synonym::from).collect_vec(),
-            topic_path: RepoId::try_from(&input.topic_path)?,
+            topic_id: RepoId::try_from(&input.topic_path)?,
         }
         .call(self.update()?, &self.redis)
     }
@@ -476,8 +476,8 @@ impl Store {
     ) -> Result<git::UpdateTopicParentTopicsResult> {
         git::UpdateTopicParentTopics {
             actor: self.viewer.clone(),
-            topic_path: topic_path.clone(),
-            parent_topic_paths: parent_topics
+            topic_id: topic_path.clone(),
+            parent_topic_ids: parent_topics
                 .iter()
                 .map(|p| p.to_owned())
                 .collect::<BTreeSet<RepoId>>(),
@@ -530,7 +530,7 @@ impl Store {
                 starts: geotime::LexicalGeohash::from(starts),
                 prefix_format: TimerangePrefixFormat::from(&input.prefix_format),
             },
-            topic_path: RepoId::try_from(&input.topic_path)?,
+            topic_id: RepoId::try_from(&input.topic_path)?,
         }
         .call(self.update()?, &self.redis)
     }

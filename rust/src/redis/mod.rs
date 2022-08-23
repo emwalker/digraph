@@ -122,7 +122,7 @@ impl Redis {
 
                 if !con.exists(&key)? {
                     log::info!("redis: {:?} not found in redis, saving", key);
-                    self.save_downset(&mut con, &key, &fetch.downset(path))?;
+                    self.save_downset(&mut con, &key, &fetch.downset(&path.spec.repo, path))?;
                 }
 
                 for other_path in tail {
@@ -131,7 +131,11 @@ impl Redis {
 
                     if !con.exists(&key)? {
                         log::info!("redis: {:?} not found in redis, saving", key);
-                        self.save_downset(&mut con, &key, &fetch.downset(other_path))?;
+                        self.save_downset(
+                            &mut con,
+                            &key,
+                            &fetch.downset(&other_path.spec.repo, other_path),
+                        )?;
                     }
                 }
 

@@ -42,7 +42,7 @@ pub struct EnsurePersonalRepo {
 }
 
 impl EnsurePersonalRepo {
-    pub fn call(&self, mut update: Mutation) -> Result<()> {
+    pub fn call(&self, mut mutation: Mutation) -> Result<()> {
         if !self.actor.super_user {
             return Err(Error::Repo("not allowed to do that".into()));
         }
@@ -57,18 +57,18 @@ impl EnsurePersonalRepo {
             )));
         }
 
-        update.repo(&self.personal_repo)?;
-        let path = self.personal_repo.default_topic_path()?;
+        mutation.repo(&self.personal_repo)?;
+        let topic_id = self.personal_repo.default_topic_path()?;
 
-        if !update.exists(&path)? {
-            log::info!("creating root topic: {}", path);
+        if !mutation.exists(&topic_id.repo, &topic_id)? {
+            log::info!("creating root topic: {}", topic_id);
             let added = chrono::Utc::now();
 
             let root = Topic {
                 api_version: API_VERSION.into(),
                 metadata: TopicMetadata {
                     added,
-                    path: path.to_string(),
+                    path: topic_id.to_string(),
                     details: Some(TopicDetails {
                         root: false,
                         synonyms: vec![Synonym {
@@ -83,8 +83,8 @@ impl EnsurePersonalRepo {
                 children: BTreeSet::new(),
             };
 
-            update.save_topic(&path, &root)?;
-            update.write(&redis::Noop)?;
+            mutation.save_topic(&topic_id.repo, &topic_id, &root)?;
+            mutation.write(&redis::Noop)?;
         }
 
         log::info!("personal repo of {} exists", self.user_id);

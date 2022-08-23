@@ -176,8 +176,9 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, builder: &Mutation) -> Result<Option<Topic>> {
-        Ok(builder.fetch_topic(&RepoId::try_from(&self.path)?))
+    pub fn fetch(&self, mutation: &Mutation) -> Result<Option<Topic>> {
+        let topic_id = RepoId::try_from(&self.path)?;
+        Ok(mutation.fetch_topic(&topic_id.repo, &topic_id))
     }
 }
 
@@ -523,7 +524,7 @@ impl Iterator for TopicDownsetIter {
                     }
                     self.seen.insert(topic_child.clone());
 
-                    let path = match RepoId::try_from(&topic_child.path) {
+                    let topic_id = match RepoId::try_from(&topic_child.path) {
                         Ok(path) => path,
                         Err(err) => {
                             log::debug!("error parsing path, skipping topic: {}", err);
@@ -531,7 +532,7 @@ impl Iterator for TopicDownsetIter {
                         }
                     };
 
-                    if let Some(topic) = self.client.fetch_topic(&path) {
+                    if let Some(topic) = self.client.fetch_topic(&topic_id.repo, &topic_id) {
                         for child in &topic.children {
                             if child.kind != Kind::Topic {
                                 break;

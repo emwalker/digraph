@@ -110,9 +110,9 @@ mod fetch_matches {
             let (head, tail) = topic_paths.split_at(1);
             match head.get(0) {
                 Some(path) => {
-                    let mut set = self.downset(path);
+                    let mut set = self.downset(&path.spec.repo, path);
                     for other_path in tail {
-                        let other = self.downset(other_path);
+                        let other = self.downset(&other_path.spec.repo, other_path);
                         set.retain(|path| other.contains(path));
                     }
                     Ok(set)
@@ -122,8 +122,8 @@ mod fetch_matches {
             }
         }
 
-        fn downset(&self, path: &ReadPath) -> HashSet<String> {
-            self.0.downset(path).collect::<HashSet<String>>()
+        fn downset(&self, repo: &RepoName, id: &ReadPath) -> HashSet<String> {
+            self.0.downset(repo, id).collect::<HashSet<String>>()
         }
     }
 

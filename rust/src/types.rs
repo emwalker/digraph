@@ -191,8 +191,8 @@ impl From<&RepoNames> for Vec<RepoName> {
 }
 
 impl RepoNames {
-    pub fn include(&self, path: &RepoId) -> bool {
-        self.0.iter().any(|prefix| prefix.test(path))
+    pub fn include(&self, repo: &RepoName) -> bool {
+        self.0.iter().any(|prefix| prefix == repo)
     }
 
     pub fn iter(&self) -> std::slice::Iter<'_, RepoName> {
@@ -343,9 +343,9 @@ pub struct ReadPath {
 }
 
 pub trait Downset {
-    fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<String>>;
+    fn intersection(&self, topic_ids: &[ReadPath]) -> Result<HashSet<String>>;
 
-    fn downset(&self, key: &ReadPath) -> HashSet<String>;
+    fn downset(&self, repo: &RepoName, key: &ReadPath) -> HashSet<String>;
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -482,7 +482,7 @@ impl Viewer {
     }
 
     pub fn ensure_can_read(&self, path: &RepoId) -> Result<()> {
-        if !self.can_read(path) {
+        if !self.can_read(&path.repo) {
             return Err(Error::Repo("not allowed".into()));
         }
 
@@ -502,18 +502,18 @@ impl Viewer {
         }
     }
 
-    pub fn can_read(&self, path: &RepoId) -> bool {
+    pub fn can_read(&self, repo: &RepoName) -> bool {
         if self.super_user {
             return true;
         }
-        self.read_repos.include(path)
+        self.read_repos.include(repo)
     }
 
-    pub fn can_update(&self, path: &RepoId) -> bool {
+    pub fn can_update(&self, repo: &RepoName) -> bool {
         if self.super_user {
             return true;
         }
-        self.write_repos.include(path)
+        self.write_repos.include(repo)
     }
 
     pub fn is_guest(&self) -> bool {
@@ -584,7 +584,7 @@ mod tests {
             let path = RepoId::try_from("/wiki/00001").unwrap();
 
             let viewer = Viewer::guest();
-            assert!(!viewer.can_update(&path));
+            assert!(!viewer.can_update(&path.repo));
 
             let prefixes = RepoNames(vec![RepoName::wiki()]);
             let viewer = Viewer {
@@ -595,10 +595,10 @@ mod tests {
                 user_id: "2".to_owned(),
             };
 
-            assert!(viewer.can_update(&path));
+            assert!(viewer.can_update(&path.repo));
 
             let path = RepoId::try_from("/private/00001").unwrap();
-            assert!(!viewer.can_update(&path));
+            assert!(!viewer.can_update(&path.repo));
         }
     }
 

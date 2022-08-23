@@ -60,7 +60,9 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&RepoId::try_from(&topic.path)?) {
+        let topic_id = RepoId::try_from(&topic.path)?;
+
+        match &self.git.fetch(&topic_id.repo, &topic_id) {
             Some(Object::Topic(topic)) => {
                 let meta = &topic.metadata;
                 let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.path);
@@ -95,7 +97,8 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&RepoId::try_from(&topic.path)?) {
+        let topic_id = RepoId::try_from(&topic.path)?;
+        match &self.git.fetch(&topic_id.repo, &topic_id) {
             Some(Object::Topic(topic)) => {
                 let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path()?);
                 self.buf.push_str(&line);
@@ -106,8 +109,8 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
-        let path = RepoId::try_from(&child.path)?;
-        match &self.git.fetch(&path) {
+        let id = RepoId::try_from(&child.path)?;
+        match &self.git.fetch(&id.repo, &id) {
             Some(Object::Topic(topic)) => {
                 self.visit_child_topic(topic)?;
             }
@@ -134,7 +137,7 @@ async fn main() -> Result<()> {
     let opts = parse_args();
     let (root_directory, path) = parse_path(&opts.filename)?;
     let mut git = Client::new(&Viewer::service_account(), &root_directory, Timespec);
-    let object = git.fetch(&path);
+    let object = git.fetch(&path.repo, &path);
     if object.is_none() {
         return Err(Error::NotFound(format!(
             "{} does not contain {}",

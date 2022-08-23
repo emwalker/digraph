@@ -289,8 +289,8 @@ impl Downset for RedisFetchDownSet {
         self.redis.intersection(self, topic_paths)
     }
 
-    fn downset(&self, path: &ReadPath) -> HashSet<String> {
-        self.client.downset(path).collect::<HashSet<String>>()
+    fn downset(&self, repo: &RepoName, path: &ReadPath) -> HashSet<String> {
+        self.client.downset(repo, path).collect::<HashSet<String>>()
     }
 }
 
@@ -377,8 +377,8 @@ impl FindMatches {
         let mut count: usize = 0;
 
         for entry in entries.iter() {
-            let path = RepoId::try_from(&entry.path)?;
-            if let Some(object) = client.fetch(&path) {
+            let id = RepoId::try_from(&entry.path)?;
+            if let Some(object) = client.fetch(&id.repo, &id) {
                 if !filter.test(&object) {
                     continue;
                 }
@@ -407,8 +407,8 @@ impl FindMatches {
         let mut count: usize = 0;
 
         for path in paths.iter().take(self.limit) {
-            let path = RepoId::try_from(path)?;
-            if let Some(object) = client.fetch(&path) {
+            let id = RepoId::try_from(path)?;
+            if let Some(object) = client.fetch(&id.repo, &id) {
                 matches.insert(object.to_search_match(Locale::EN, &self.search));
                 count += 1;
 
