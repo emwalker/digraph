@@ -1276,14 +1276,7 @@
     core-js-pure "^3.0.0"
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.0.0", "@babel/runtime@^7.10.2", "@babel/runtime@^7.12.0", "@babel/runtime@^7.12.1", "@babel/runtime@^7.13.10", "@babel/runtime@^7.13.9", "@babel/runtime@^7.15.4", "@babel/runtime@^7.16.3", "@babel/runtime@^7.16.5", "@babel/runtime@^7.18.3", "@babel/runtime@^7.5.5", "@babel/runtime@^7.7.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2":
-  version "7.18.3"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.18.3.tgz#c7b654b57f6f63cf7f8b418ac9ca04408c4579f4"
-  integrity sha512-38Y8f7YUhce/K7RMwTp7m0uCumpv9hZkitCbBClqQIow1qSbCvGkcegKOXpEWCQLfWmevgRiWokZ1GkpfhbZug==
-  dependencies:
-    regenerator-runtime "^0.13.4"
-
-"@babel/runtime@^7.2.0":
+"@babel/runtime@^7.0.0", "@babel/runtime@^7.10.2", "@babel/runtime@^7.12.0", "@babel/runtime@^7.12.1", "@babel/runtime@^7.13.10", "@babel/runtime@^7.15.4", "@babel/runtime@^7.16.3", "@babel/runtime@^7.16.5", "@babel/runtime@^7.17.9", "@babel/runtime@^7.18.3", "@babel/runtime@^7.2.0", "@babel/runtime@^7.5.5", "@babel/runtime@^7.7.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2":
   version "7.18.9"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.18.9.tgz#b4fcfce55db3d2e5e080d2490f608a3b9f407f4a"
   integrity sha512-lkqXDcvlFT5rvEjiu6+QYO+1GXrEHRo2LOtS7E4GtX5ESIZOgepqsZBVIj6Pv+a6zqsya9VCgiK1KAK4BvJDAw==
@@ -6712,14 +6705,14 @@ forwarded@0.2.0:
   resolved "https://registry.yarnpkg.com/forwarded/-/forwarded-0.2.0.tgz#2269936428aad4c15c7ebe9779a84bf0b2a81811"
   integrity sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==
 
-found-relay@^0.9.1:
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/found-relay/-/found-relay-0.9.1.tgz#d8ec624b5f46e4d4b665cf5489768a14687e1e81"
-  integrity sha512-43Tqv3mmWfXBVVwkLZrsIkXm0ZIxtsL3DOHZjhmiR8FW4f6ZZTwfk2TgxhwhS85K5TEDI6PLlsLU+DEhw0rd6w==
+found-relay@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/found-relay/-/found-relay-1.0.2.tgz#fa9f41acd44dfd61974ac52a5187a9716a2cd86a"
+  integrity sha512-VyEJkQu3nqHKBqxYvCbMzOBWWVWs/hi1XW2Ob8fcNKc3LcbUg1RUWT5QXjHUFDGF42swpoNyyPz7jCGcyELWsQ==
   dependencies:
-    "@babel/runtime" "^7.13.9"
+    "@babel/runtime" "^7.17.9"
+    dequal "^2.0.2"
     is-promise "^4.0.0"
-    lodash "^4.17.21"
     prop-types "^15.7.2"
     warning "^4.0.3"
 
