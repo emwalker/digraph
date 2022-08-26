@@ -20,10 +20,10 @@ struct Opts {
     root: PathBuf,
 }
 
-fn sha256_path(login: &str, id: &str) -> Result<RepoId> {
+fn sha256_path(login: &str, id: &str) -> Result<RepoPath> {
     let id = sha256_base64(id);
     let path = format!("/{}/{}", login, id);
-    RepoId::try_from(&path)
+    RepoPath::try_from(&path)
 }
 
 fn parse_args() -> Opts {
@@ -148,7 +148,7 @@ impl TryFrom<&TopicChildRow> for TopicChild {
         Ok(Self {
             added: row.added,
             kind: Kind::from(&row.kind).unwrap(),
-            path: path.inner,
+            path: path.to_string(),
         })
     }
 }
@@ -171,7 +171,7 @@ impl Topics {
         let topics = &mut self.topics;
 
         topics.entry(repo.to_owned()).or_insert_with(|| {
-            let id = &self.topic.path().unwrap().short_id;
+            let id = &self.topic.path().unwrap().id;
             let path = repo.path(id).unwrap();
 
             Topic {
@@ -266,7 +266,7 @@ fn persist_topic(
 // 1. Don't place paths for items in private repos under /wiki/
 fn persist_topics(
     mutation: &mut Mutation,
-    topic_path: &RepoId,
+    topic_path: &RepoPath,
     meta: &TopicMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,
@@ -434,7 +434,7 @@ impl Links {
         let links = &mut self.links;
 
         links.entry(repo.to_owned()).or_insert_with(|| {
-            let id = &self.link.path().unwrap().short_id;
+            let id = &self.link.path().unwrap().id;
             let path = repo.path(id).unwrap();
 
             Link {

@@ -26,6 +26,6 @@ fn valid_url() -> RepoUrl {
     RepoUrl::parse("https://www.google.com").unwrap()
 }
 
-fn path(path: &str) -> RepoId {
-    RepoId::try_from(path).unwrap()
+fn path(path: &str) -> RepoPath {
+    RepoPath::try_from(path).unwrap()
 }

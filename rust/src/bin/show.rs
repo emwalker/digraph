@@ -60,7 +60,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        let topic_id = RepoId::try_from(&topic.path)?;
+        let topic_id = RepoPath::try_from(&topic.path)?;
 
         match &self.git.fetch(&topic_id.repo, &topic_id) {
             Some(Object::Topic(topic)) => {
@@ -97,7 +97,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        let topic_id = RepoId::try_from(&topic.path)?;
+        let topic_id = RepoPath::try_from(&topic.path)?;
         match &self.git.fetch(&topic_id.repo, &topic_id) {
             Some(Object::Topic(topic)) => {
                 let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path()?);
@@ -109,7 +109,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
-        let id = RepoId::try_from(&child.path)?;
+        let id = RepoPath::try_from(&child.path)?;
         match &self.git.fetch(&id.repo, &id) {
             Some(Object::Topic(topic)) => {
                 self.visit_child_topic(topic)?;

@@ -10,9 +10,9 @@ use crate::store::Store;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Link {
-    pub path: RepoId,
+    pub path: RepoPath,
     pub newly_added: bool,
-    pub parent_topic_paths: Vec<RepoId>,
+    pub parent_topic_paths: Vec<RepoPath>,
     pub repository_id: ID,
     pub viewer_review: Option<LinkReview>,
     pub title: String,

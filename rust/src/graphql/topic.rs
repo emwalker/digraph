@@ -28,10 +28,10 @@ pub enum TopicChild {
 pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
-    pub child_paths: Vec<RepoId>,
-    pub path: RepoId,
+    pub child_paths: Vec<RepoPath>,
+    pub path: RepoPath,
     pub name: String,
-    pub parent_topic_paths: Vec<RepoId>,
+    pub parent_topic_paths: Vec<RepoPath>,
     pub root: bool,
     pub synonyms: Synonyms,
     pub timerange: Option<timerange::Timerange>,

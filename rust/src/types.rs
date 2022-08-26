@@ -131,19 +131,19 @@ impl RepoName {
         self.inner.trim_start_matches('/').trim_end_matches('/')
     }
 
-    pub fn default_topic_path(&self) -> Result<RepoId> {
-        self.path(DEFAULT_ROOT_TOPIC_ID)
+    pub fn default_topic_path(&self) -> Result<RepoPath> {
+        self.path(&DEFAULT_ROOT_TOPIC_ID.try_into()?)
     }
 
-    pub fn path(&self, id: &str) -> Result<RepoId> {
-        RepoId::try_from(&format!("{}{}", self.inner, id))
+    pub fn path(&self, id: &RepoId) -> Result<RepoPath> {
+        RepoPath::try_from(&format!("{}{}", self.inner, id))
     }
 
     pub fn relative_path(&self) -> &str {
         self.inner.trim_start_matches('/')
     }
 
-    pub fn test(&self, path: &RepoId) -> bool {
+    pub fn test(&self, path: &RepoPath) -> bool {
         path.starts_with(&self.inner)
     }
 }
@@ -209,20 +209,46 @@ impl RepoNames {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct RepoId {
+pub struct RepoId(String);
+
+impl std::fmt::Display for RepoId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl TryFrom<&str> for RepoId {
+    type Error = Error;
+
+    fn try_from(id: &str) -> Result<Self> {
+        if id.len() < 4 {
+            return Err(Error::Path(format!("bad id: {}", id)))
+        }
+        Ok(Self(id.to_owned()))
+    }
+}
+
+impl RepoId {
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct RepoPath {
+    pub id: RepoId,
     pub inner: String,
     pub org_login: String,
     pub repo: RepoName,
-    pub short_id: String,
 }
 
-impl std::fmt::Display for RepoId {
+impl std::fmt::Display for RepoPath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
-impl TryFrom<&str> for RepoId {
+impl TryFrom<&str> for RepoPath {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
@@ -246,40 +272,40 @@ impl TryFrom<&str> for RepoId {
             }
         };
 
-        Ok(RepoId {
+        Ok(RepoPath {
             inner: input.to_string(),
             org_login: org_login.to_string(),
             repo: prefix.try_into()?,
-            short_id: short_id.to_string(),
+            id: short_id.try_into()?,
         })
     }
 }
 
-impl TryFrom<&String> for RepoId {
+impl TryFrom<&String> for RepoPath {
     type Error = Error;
 
     fn try_from(input: &String) -> Result<Self> {
-        RepoId::try_from(input.as_str())
+        RepoPath::try_from(input.as_str())
     }
 }
 
-impl std::cmp::Ord for RepoId {
+impl std::cmp::Ord for RepoPath {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.inner.cmp(&other.inner)
     }
 }
 
-impl std::cmp::PartialOrd for RepoId {
+impl std::cmp::PartialOrd for RepoPath {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl std::str::FromStr for RepoId {
+impl std::str::FromStr for RepoPath {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        RepoId::try_from(s)
+        RepoPath::try_from(s)
     }
 }
 
@@ -291,7 +317,7 @@ pub fn random_id() -> String {
         .collect()
 }
 
-impl RepoId {
+impl RepoPath {
     pub fn make(prefix: &String) -> Result<Self> {
         let s: String = random_id();
         Self::try_from(&format!("{}{}", prefix, s))
@@ -307,7 +333,7 @@ impl RepoId {
         }
 
         let cap = RE
-            .captures(&self.short_id)
+            .captures(self.id.as_str())
             .ok_or_else(|| Error::Path(format!("bad id: {}", self)))?;
 
         if cap.len() != 4 {
@@ -339,7 +365,7 @@ pub struct Timespec;
 #[derive(Debug)]
 pub struct ReadPath {
     pub commit: git2::Oid,
-    pub spec: RepoId,
+    pub spec: RepoPath,
 }
 
 pub trait Downset {
@@ -481,7 +507,7 @@ impl Viewer {
         }
     }
 
-    pub fn ensure_can_read(&self, path: &RepoId) -> Result<()> {
+    pub fn ensure_can_read(&self, path: &RepoPath) -> Result<()> {
         if !self.can_read(&path.repo) {
             return Err(Error::Repo("not allowed".into()));
         }
@@ -581,7 +607,7 @@ mod tests {
 
         #[test]
         fn can_update() {
-            let path = RepoId::try_from("/wiki/00001").unwrap();
+            let path = RepoPath::try_from("/wiki/00001").unwrap();
 
             let viewer = Viewer::guest();
             assert!(!viewer.can_update(&path.repo));
@@ -597,7 +623,7 @@ mod tests {
 
             assert!(viewer.can_update(&path.repo));
 
-            let path = RepoId::try_from("/private/00001").unwrap();
+            let path = RepoPath::try_from("/private/00001").unwrap();
             assert!(!viewer.can_update(&path.repo));
         }
     }
@@ -607,17 +633,17 @@ mod tests {
 
         #[test]
         fn simple_case() {
-            let path = RepoId::try_from("/wiki/00001").unwrap();
+            let path = RepoPath::try_from("/wiki/00001").unwrap();
             assert_eq!("/wiki/00001", path.inner);
             assert_eq!(RepoName::wiki(), path.repo);
             assert_eq!("wiki", path.org_login);
-            assert_eq!("00001", path.short_id);
+            assert_eq!("00001", path.id.as_str());
         }
 
         #[test]
         fn parts() {
             let path =
-                RepoId::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
+                RepoPath::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
             assert_eq!(
                 path.parts().unwrap(),
                 ("q-", "ZZ", "meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
@@ -631,7 +657,7 @@ mod tests {
         #[test]
         fn prefix() {
             let path =
-                RepoId::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
+                RepoPath::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
             assert_eq!(path.repo, RepoName::wiki());
         }
 

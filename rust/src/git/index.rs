@@ -218,7 +218,7 @@ impl SynonymIndex {
         Self { filename, index }
     }
 
-    pub fn add(&mut self, path: &RepoId, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn add(&mut self, path: &RepoPath, phrase: Phrase, name: &str) -> Result<()> {
         let paths = self.index.synonyms.entry(phrase).or_insert(BTreeSet::new());
 
         paths.insert(SynonymEntry {
@@ -233,7 +233,7 @@ impl SynonymIndex {
         Ok(self.index.full_matches(phrase))
     }
 
-    pub fn remove(&mut self, path: &RepoId, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn remove(&mut self, path: &RepoPath, phrase: Phrase, name: &str) -> Result<()> {
         if let Some(paths) = self.index.synonyms.get_mut(&phrase) {
             paths.remove(&SynonymEntry {
                 name: name.to_owned(),
@@ -267,8 +267,8 @@ impl From<&TopicChild> for SearchEntry {
 }
 
 impl SearchEntry {
-    pub fn path(&self) -> Result<RepoId> {
-        RepoId::try_from(&self.path)
+    pub fn path(&self) -> Result<RepoPath> {
+        RepoPath::try_from(&self.path)
     }
 }
 
@@ -589,7 +589,7 @@ pub trait SaveChangesForPrefix {
 }
 
 pub struct Indexer {
-    path_activity: HashMap<RepoId, ActivityIndex>,
+    path_activity: HashMap<RepoPath, ActivityIndex>,
     pub mode: IndexMode,
     repo_changes: HashMap<RepoName, BTreeSet<activity::Change>>,
     search_tokens: HashMap<IndexKey, SearchTokenIndex>,
@@ -634,7 +634,7 @@ impl Indexer {
         Ok(repos)
     }
 
-    pub fn path_activity(&mut self, client: &Client, path: &RepoId) -> Result<&mut ActivityIndex> {
+    pub fn path_activity(&mut self, client: &Client, path: &RepoPath) -> Result<&mut ActivityIndex> {
         let index = self
             .path_activity
             .entry(path.to_owned())
@@ -744,7 +744,7 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn remove_synonyms(&mut self, client: &Client, path: &RepoId, topic: &Topic) -> Result<()> {
+    pub fn remove_synonyms(&mut self, client: &Client, path: &RepoPath, topic: &Topic) -> Result<()> {
         self.synonym_indexes(
             client,
             &path.repo,
@@ -784,7 +784,7 @@ impl Indexer {
         for (repo, changes) in &self.repo_changes {
             for change in changes {
                 let reference = ChangeReference::new(repo, change);
-                let path = RepoId::try_from(&reference.path)?;
+                let path = RepoPath::try_from(&reference.path)?;
                 files.push((
                     repo,
                     path.change_filename()?,

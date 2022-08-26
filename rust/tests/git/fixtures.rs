@@ -74,7 +74,7 @@ impl Fixtures {
         Ok(self.leaked_data()?.is_empty())
     }
 
-    pub fn fetch_link<F>(&self, topic_id: &RepoId, block: F)
+    pub fn fetch_link<F>(&self, topic_id: &RepoPath, block: F)
     where
         F: Fn(Link),
     {
@@ -85,7 +85,7 @@ impl Fixtures {
         block(link);
     }
 
-    pub fn fetch_topic<F>(&self, topic_id: &RepoId, block: F)
+    pub fn fetch_topic<F>(&self, topic_id: &RepoPath, block: F)
     where
         F: Fn(Topic),
     {
@@ -101,11 +101,11 @@ impl Fixtures {
     }
 
     pub fn topic(&self, path: &str) -> Topic {
-        let topic_id = RepoId::try_from(path).unwrap();
+        let topic_id = RepoPath::try_from(path).unwrap();
         self.git.fetch_topic(&topic_id.repo, &topic_id).unwrap()
     }
 
-    pub fn topic_path(&self, name: &str) -> Result<Option<RepoId>> {
+    pub fn topic_path(&self, name: &str) -> Result<Option<RepoPath>> {
         let FetchTopicLiveSearchResult {
             synonym_matches: matches,
             ..
@@ -120,7 +120,7 @@ impl Fixtures {
 
         let row = matches.iter().find(|row| row.name == name);
 
-        Ok(row.map(|m| RepoId::try_from(&m.path).unwrap()))
+        Ok(row.map(|m| RepoPath::try_from(&m.path).unwrap()))
     }
 
     fn write(&self) {
@@ -146,7 +146,7 @@ impl Fixtures {
         };
 
         let add_parent_topic_path = if let Some(path) = &parent_topic {
-            Some(RepoId::try_from(path).unwrap())
+            Some(RepoPath::try_from(path).unwrap())
         } else {
             None
         };
@@ -169,7 +169,7 @@ impl Fixtures {
         &self,
         repo: &RepoName,
         name: &str,
-        parent_topic: &RepoId,
+        parent_topic: &RepoPath,
         on_matching_synonym: OnMatchingSynonym,
     ) -> Result<UpsertTopicResult> {
         UpsertTopic {
@@ -194,7 +194,7 @@ mod tests {
     #[allow(dead_code)]
     fn update_simple_fixtures() {
         let f = Fixtures::copy("simple");
-        let root = RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let root = RepoPath::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
 
         let topic_path =
             path("/wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
@@ -240,7 +240,7 @@ mod tests {
             Some(weather.inner.to_owned()),
         );
 
-        let path = RepoId::try_from(
+        let path = RepoPath::try_from(
             "/wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13",
         )
         .unwrap();

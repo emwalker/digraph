@@ -27,7 +27,7 @@ impl std::fmt::Display for DataRoot {
     }
 }
 
-pub fn parse_path(input: &str) -> Result<(DataRoot, RepoId)> {
+pub fn parse_path(input: &str) -> Result<(DataRoot, RepoPath)> {
     lazy_static! {
         static ref RE: Regex =
             Regex::new(r"^(.+?)/(\w+)/objects/([\w_-]{2})/([\w_-]{2})/([\w_-]+)/object.yaml$")
@@ -56,7 +56,7 @@ pub fn parse_path(input: &str) -> Result<(DataRoot, RepoId)> {
     let path = format!("/{}/{}{}{}", org_login, part1, part2, part3);
     let root = PathBuf::from(root);
 
-    Ok((DataRoot::new(root), RepoId::try_from(&path)?))
+    Ok((DataRoot::new(root), RepoPath::try_from(&path)?))
 }
 
 impl DataRoot {
@@ -91,7 +91,7 @@ pub trait GitPaths {
     fn parts(&self) -> Result<(&str, &str, &str)>;
 }
 
-impl GitPaths for RepoId {
+impl GitPaths for RepoPath {
     fn parts(&self) -> Result<(&str, &str, &str)> {
         self.parts()
     }
@@ -130,7 +130,7 @@ impl Client {
 
     pub fn fetch_activity_log(
         &self,
-        path: &RepoId,
+        path: &RepoPath,
         index_mode: IndexMode,
     ) -> Result<ActivityIndex> {
         let filename = path.activity_log_filename()?;
@@ -146,8 +146,8 @@ impl Client {
     fn cycle_exists(
         &self,
         repo: &RepoName,
-        descendant_id: &RepoId,
-        ancestor_id: &RepoId,
+        descendant_id: &RepoPath,
+        ancestor_id: &RepoPath,
     ) -> Result<bool> {
         let mut i = 0;
 
@@ -165,7 +165,7 @@ impl Client {
         Ok(false)
     }
 
-    pub fn exists(&self, repo: &RepoName, id: &RepoId) -> Result<bool> {
+    pub fn exists(&self, repo: &RepoName, id: &RepoPath) -> Result<bool> {
         if !self.viewer.can_read(repo) {
             return Ok(false);
         }
@@ -173,7 +173,7 @@ impl Client {
         repo.object_exists(id)
     }
 
-    pub fn fetch(&self, repo: &RepoName, id: &RepoId) -> Option<Object> {
+    pub fn fetch(&self, repo: &RepoName, id: &RepoPath) -> Option<Object> {
         if !self.viewer.can_read(repo) {
             log::warn!("viewer cannot read path: {}", id);
             return None;
@@ -226,13 +226,13 @@ impl Client {
         }
     }
 
-    pub fn fetch_activity(&self, id: &RepoId, first: usize) -> Result<Vec<activity::Change>> {
+    pub fn fetch_activity(&self, id: &RepoPath, first: usize) -> Result<Vec<activity::Change>> {
         log::info!("fetching first {} change logs from Git for {}", first, id);
         let index = self.fetch_activity_log(id, IndexMode::ReadOnly)?;
         let mut changes = vec![];
 
         for reference in index.references().iter().take(first) {
-            let id = RepoId::try_from(&reference.path)?;
+            let id = RepoPath::try_from(&reference.path)?;
             let repo = self.view(&id.repo)?;
             let result = repo.change(&id);
             match result {
@@ -244,14 +244,14 @@ impl Client {
         Ok(changes)
     }
 
-    pub fn fetch_topic(&self, repo: &RepoName, topic_id: &RepoId) -> Option<Topic> {
+    pub fn fetch_topic(&self, repo: &RepoName, topic_id: &RepoPath) -> Option<Topic> {
         match &self.fetch(repo, topic_id)? {
             Object::Topic(topic) => Some(topic.to_owned()),
             _ => None,
         }
     }
 
-    pub fn fetch_link(&self, repo: &RepoName, link_id: &RepoId) -> Option<Link> {
+    pub fn fetch_link(&self, repo: &RepoName, link_id: &RepoPath) -> Option<Link> {
         match &self.fetch(repo, link_id)? {
             Object::Link(link) => Some(link.to_owned()),
             other => {
@@ -287,7 +287,7 @@ impl Client {
         Ok(searches)
     }
 
-    pub fn read_path(&self, id: &RepoId) -> Result<ReadPath> {
+    pub fn read_path(&self, id: &RepoPath) -> Result<ReadPath> {
         let commit = self.repo(&id.repo)?.commit_oid(&self.timespec)?;
         Ok(ReadPath {
             spec: id.to_owned(),
@@ -329,7 +329,7 @@ impl Client {
                 .synonym_index(self, IndexType::SynonymPhrase, IndexMode::Update)?
                 .full_matches(&phrase)?
             {
-                let topic_id = RepoId::try_from(&entry.path)?;
+                let topic_id = RepoPath::try_from(&entry.path)?;
                 if !self.viewer.can_read(repo) {
                     continue;
                 }
@@ -433,7 +433,7 @@ impl std::fmt::Debug for Mutation {
 }
 
 impl Mutation {
-    pub fn activity_log(&self, path: &RepoId, index_mode: IndexMode) -> Result<ActivityIndex> {
+    pub fn activity_log(&self, path: &RepoPath, index_mode: IndexMode) -> Result<ActivityIndex> {
         self.client.fetch_activity_log(path, index_mode)
     }
 
@@ -464,8 +464,8 @@ impl Mutation {
     pub fn cycle_exists(
         &self,
         repo: &RepoName,
-        descendant_id: &RepoId,
-        ancestor_id: &RepoId,
+        descendant_id: &RepoPath,
+        ancestor_id: &RepoPath,
     ) -> Result<bool> {
         self.client.cycle_exists(repo, descendant_id, ancestor_id)
     }
@@ -474,23 +474,23 @@ impl Mutation {
         core::Repo::delete(&self.client.root, repo)
     }
 
-    pub fn exists(&self, repo: &RepoName, id: &RepoId) -> Result<bool> {
+    pub fn exists(&self, repo: &RepoName, id: &RepoPath) -> Result<bool> {
         self.client.exists(repo, id)
     }
 
-    pub fn fetch(&self, repo: &RepoName, id: &RepoId) -> Option<Object> {
+    pub fn fetch(&self, repo: &RepoName, id: &RepoPath) -> Option<Object> {
         self.client.fetch(repo, id)
     }
 
-    pub fn fetch_link(&self, repo: &RepoName, link_id: &RepoId) -> Option<Link> {
+    pub fn fetch_link(&self, repo: &RepoName, link_id: &RepoPath) -> Option<Link> {
         self.client.fetch_link(repo, link_id)
     }
 
-    pub fn fetch_topic(&self, repo: &RepoName, topic_id: &RepoId) -> Option<Topic> {
+    pub fn fetch_topic(&self, repo: &RepoName, topic_id: &RepoPath) -> Option<Topic> {
         self.client.fetch_topic(repo, topic_id)
     }
 
-    pub fn mark_deleted(&mut self, path: &RepoId) -> Result<()> {
+    pub fn mark_deleted(&mut self, path: &RepoPath) -> Result<()> {
         self.check_can_update(&path.repo)?;
 
         let activity = self.client.fetch_activity(path, usize::MAX)?;
@@ -513,13 +513,13 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn remove(&mut self, path: &RepoId) -> Result<()> {
+    pub fn remove(&mut self, path: &RepoPath) -> Result<()> {
         let filename = path.object_filename()?;
         self.files.insert((path.repo.to_owned(), filename), None);
         Ok(())
     }
 
-    pub fn remove_link(&mut self, link_id: &RepoId, link: &Link) -> Result<()> {
+    pub fn remove_link(&mut self, link_id: &RepoPath, link: &Link) -> Result<()> {
         self.check_can_update(&link_id.repo)?;
 
         let searches = self.client.link_searches(Some(link.to_owned()))?;
@@ -528,7 +528,7 @@ impl Mutation {
         self.remove(link_id)
     }
 
-    pub fn remove_topic(&mut self, topic_id: &RepoId, topic: &Topic) -> Result<()> {
+    pub fn remove_topic(&mut self, topic_id: &RepoPath, topic: &Topic) -> Result<()> {
         self.check_can_update(&topic_id.repo)?;
 
         self.indexer
@@ -589,7 +589,7 @@ impl Mutation {
     ) -> Result<()> {
         self.indexer.add_change(&self.client, change)?;
 
-        let path = RepoId::try_from(&reference.path)?;
+        let path = RepoPath::try_from(&reference.path)?;
         let s = serde_yaml::to_string(&change)?;
         let oid = self.repo(&path.repo)?.add_blob(s.as_bytes())?;
         self.files
@@ -598,7 +598,7 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn save_link(&mut self, repo_name: &RepoName, path: &RepoId, link: &Link) -> Result<()> {
+    pub fn save_link(&mut self, repo_name: &RepoName, path: &RepoPath, link: &Link) -> Result<()> {
         self.check_can_update(&path.repo)?;
 
         let repo = self.client.repo(repo_name)?;
@@ -615,7 +615,7 @@ impl Mutation {
         self.save_object(repo_name, path, oid)
     }
 
-    fn save_object(&mut self, repo: &RepoName, path: &RepoId, oid: git2::Oid) -> Result<()> {
+    fn save_object(&mut self, repo: &RepoName, path: &RepoPath, oid: git2::Oid) -> Result<()> {
         let filename = path.object_filename()?;
         self.files.insert((repo.to_owned(), filename), Some(oid));
         Ok(())
@@ -624,7 +624,7 @@ impl Mutation {
     pub fn save_topic(
         &mut self,
         repo_name: &RepoName,
-        topic_id: &RepoId,
+        topic_id: &RepoPath,
         topic: &Topic,
     ) -> Result<()> {
         self.check_can_update(repo_name)?;
@@ -664,7 +664,7 @@ mod tests {
         #[test]
         fn object_filename() {
             assert_eq!(
-                RepoId::try_from("/wiki/123456")
+                RepoPath::try_from("/wiki/123456")
                     .unwrap()
                     .object_filename()
                     .unwrap(),
@@ -672,7 +672,7 @@ mod tests {
             );
 
             assert_eq!(
-                RepoId::try_from("/with-dash/123456")
+                RepoPath::try_from("/with-dash/123456")
                     .unwrap()
                     .object_filename()
                     .unwrap(),

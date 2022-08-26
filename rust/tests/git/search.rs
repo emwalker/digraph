@@ -43,7 +43,7 @@ mod fetch_topic_live_search {
     fn indexing_works() {
         let f = Fixtures::copy("simple");
         let repo = RepoName::wiki();
-        let parent = RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let parent = RepoPath::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
         let search = Search::parse("clim chan soc").unwrap();
 
         let FetchTopicLiveSearchResult {
@@ -127,8 +127,8 @@ mod fetch_matches {
         }
     }
 
-    fn root() -> RepoId {
-        RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap()
+    fn root() -> RepoPath {
+        RepoPath::try_from(WIKI_ROOT_TOPIC_PATH).unwrap()
     }
 
     fn count(kind: Kind, matches: &BTreeSet<SearchMatch>) -> usize {
@@ -143,7 +143,7 @@ mod fetch_matches {
 
     fn search(
         f: &Fixtures,
-        topic_path: &RepoId,
+        topic_path: &RepoPath,
         input: &str,
         recursive: bool,
     ) -> BTreeSet<SearchMatch> {

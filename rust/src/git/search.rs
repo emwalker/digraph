@@ -33,7 +33,7 @@ pub enum PathSpecOperation {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct SearchPathSpec {
     pub op: PathSpecOperation,
-    pub path: RepoId,
+    pub path: RepoPath,
 }
 
 const PATH_PATTERN: &str = r#"^in:/\w+/[\w-]+$"#;
@@ -57,7 +57,7 @@ impl SearchPathSpec {
         let op = PathSpecOperation::from_str(&parts[0])?;
         Ok(Self {
             op,
-            path: RepoId::try_from(&parts[1])?,
+            path: RepoPath::try_from(&parts[1])?,
         })
     }
 }
@@ -301,7 +301,7 @@ pub struct FindMatches {
     pub recursive: bool,
     pub search: Search,
     pub timespec: Timespec,
-    pub topic_path: RepoId,
+    pub topic_path: RepoPath,
     pub viewer: Viewer,
 }
 
@@ -377,7 +377,7 @@ impl FindMatches {
         let mut count: usize = 0;
 
         for entry in entries.iter() {
-            let id = RepoId::try_from(&entry.path)?;
+            let id = RepoPath::try_from(&entry.path)?;
             if let Some(object) = client.fetch(&id.repo, &id) {
                 if !filter.test(&object) {
                     continue;
@@ -407,7 +407,7 @@ impl FindMatches {
         let mut count: usize = 0;
 
         for path in paths.iter().take(self.limit) {
-            let id = RepoId::try_from(path)?;
+            let id = RepoPath::try_from(path)?;
             if let Some(object) = client.fetch(&id.repo, &id) {
                 matches.insert(object.to_search_match(Locale::EN, &self.search));
                 count += 1;
@@ -530,7 +530,7 @@ mod tests {
         assert_eq!(s.op, PathSpecOperation::IN);
         assert_eq!(
             s.path,
-            RepoId::try_from("/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap(),
+            RepoPath::try_from("/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap(),
         );
     }
 

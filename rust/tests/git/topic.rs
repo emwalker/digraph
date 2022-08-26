@@ -48,7 +48,7 @@ mod delete_topic {
     #[test]
     fn topic_deleted() {
         let f = Fixtures::copy("simple");
-        let topic_id = RepoId::try_from("/wiki/00001").unwrap();
+        let topic_id = RepoPath::try_from("/wiki/00001").unwrap();
         let repo = &topic_id.repo;
         assert!(f.git.exists(repo, &topic_id).unwrap());
 
@@ -68,9 +68,9 @@ mod delete_topic {
     #[test]
     fn parent_topics_updated() {
         let f = Fixtures::copy("simple");
-        let path = RepoId::try_from("/wiki/00001").unwrap();
+        let path = RepoPath::try_from("/wiki/00001").unwrap();
         let repo = &path.repo;
-        let root = RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let root = RepoPath::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
         let parent = f.git.fetch_topic(repo, &root).unwrap();
         assert!(parent.has_child(&path));
 
@@ -88,7 +88,7 @@ mod delete_topic {
     #[test]
     fn cannot_delete_root_topic() {
         let f = Fixtures::copy("simple");
-        let root = RepoId::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let root = RepoPath::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
         let repo = &root.repo;
         let topic = f.git.fetch_topic(repo, &root).unwrap();
         assert!(topic.root());
@@ -104,8 +104,8 @@ mod delete_topic {
         assert!(topic.root());
     }
 
-    fn make_topic(f: &Fixtures, parent: &RepoId, name: &str) -> Topic {
-        let path = RepoId::try_from(
+    fn make_topic(f: &Fixtures, parent: &RepoPath, name: &str) -> Topic {
+        let path = RepoPath::try_from(
             "/wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi",
         )
         .unwrap();
@@ -166,7 +166,7 @@ mod delete_topic_timerange {
     #[test]
     fn timerange_deleted() {
         let f = Fixtures::copy("simple");
-        let topic_id = RepoId::try_from("/wiki/00001").unwrap();
+        let topic_id = RepoPath::try_from("/wiki/00001").unwrap();
         let repo = &topic_id.repo;
 
         UpsertTopicTimerange {
