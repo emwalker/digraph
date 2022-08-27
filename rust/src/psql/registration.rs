@@ -31,7 +31,7 @@ impl CompleteRegistration {
         .await?;
 
         let repository_name = format!("{}/{}", self.login, DEFAULT_REPOSITORY_NAME);
-        let root_topic_path = format!("/{}/{}", self.login, DEFAULT_ROOT_TOPIC_ID);
+        let root_topic_path = format!("/{}/{}", self.login, ROOT_TOPIC_ID);
 
         log::info!("creating default repo {} for {}", repository_name, name);
         sqlx::query(

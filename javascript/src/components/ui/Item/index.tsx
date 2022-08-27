@@ -1,6 +1,7 @@
 import React, { Component, ReactNode } from 'react'
 import classNames from 'classnames'
 
+import { topicPath } from 'components/helpers'
 import { LocationType } from 'components/types'
 import LinkOrA from './LinkOrA'
 import TopicBadge from '../TopicBadge'
@@ -9,7 +10,7 @@ import TopicBadge from '../TopicBadge'
 
 type Topic = {
   displayName: string,
-  path: string,
+  id: string,
 } | null
 
 type Props = {
@@ -22,8 +23,6 @@ type Props = {
   newlyAdded: boolean,
   showEditButton: boolean | null,
   showLink?: boolean,
-  orgLogin: string,
-  repoName: string | null,
   title: string,
   toggleForm: () => void,
   topics: Topic[],
@@ -96,8 +95,6 @@ class Item extends Component<Props> {
       query: {},
       search: '',
       state: {
-        orgLogin: this.props.orgLogin,
-        repoName: this.props.repoName,
         itemTitle,
       },
     }
@@ -105,12 +102,12 @@ class Item extends Component<Props> {
 
   renderTopicBadge = (topic: Topic) => {
     if (!topic) return null
-    const { path, displayName } = topic
+    const { id, displayName } = topic
     return (
       <TopicBadge
-        key={path}
+        key={id}
         displayName={displayName}
-        to={this.locationDescriptor(path, displayName)}
+        to={this.locationDescriptor(topicPath(id), displayName)}
       />
     )
   }

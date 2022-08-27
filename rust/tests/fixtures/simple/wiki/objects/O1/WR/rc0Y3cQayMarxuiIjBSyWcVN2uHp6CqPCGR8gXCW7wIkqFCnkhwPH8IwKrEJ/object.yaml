@@ -3,7 +3,7 @@ kind: Topic
 apiVersion: objects/v1
 metadata:
   added: "2022-07-12T01:38:47.027655176Z"
-  path: /wiki/O1WRrc0Y3cQayMarxuiIjBSyWcVN2uHp6CqPCGR8gXCW7wIkqFCnkhwPH8IwKrEJ
+  id: O1WRrc0Y3cQayMarxuiIjBSyWcVN2uHp6CqPCGR8gXCW7wIkqFCnkhwPH8IwKrEJ
   details:
     root: false
     synonyms:
@@ -12,12 +12,12 @@ metadata:
         name: Climate change and weather
     timerange: ~
 parentTopics:
-  - path: /wiki/92nbFScT94LpKOgB8VQ9kttR1NXkzvB1AUQWyxaojk98CKaJYyqL5zfixRmSLrzh
-  - path: /wiki/tM10SQleRcrcyjR8NhY33KILvNqjCRctHqJ8WASfddYt6ZWvuHofEMsZjGQxeWfT
+  - id: 92nbFScT94LpKOgB8VQ9kttR1NXkzvB1AUQWyxaojk98CKaJYyqL5zfixRmSLrzh
+  - id: tM10SQleRcrcyjR8NhY33KILvNqjCRctHqJ8WASfddYt6ZWvuHofEMsZjGQxeWfT
 children:
   - added: "2022-07-12T01:38:47.046147614Z"
     kind: Link
-    path: /wiki/3c2b7c32b8354560c6a88a8e94aef9644ae958d403f1a259981db7a12b758789
+    id: 3c2b7c32b8354560c6a88a8e94aef9644ae958d403f1a259981db7a12b758789
   - added: "2022-07-12T01:38:47.038921719Z"
     kind: Link
-    path: /wiki/d72b7df807ba4a386b8fb8efa8789d656b43c02ce2cd4348b1dd4885c07c95d7
+    id: d72b7df807ba4a386b8fb8efa8789d656b43c02ce2cd4348b1dd4885c07c95d7

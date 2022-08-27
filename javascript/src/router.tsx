@@ -5,7 +5,6 @@ import { queryMiddleware } from 'farce'
 import { Store, Action, Middleware, Dispatch, AnyAction } from 'redux'
 import { Resolver } from 'found-relay'
 
-import { defaultOrganizationLogin } from 'components/constants'
 import Homepage, { query as homepageQuery } from 'components/Homepage'
 import TermsOfUse from 'components/TermsOfUse'
 import RecentPage, { query as recentPageQuery } from 'components/RecentPage'
@@ -33,13 +32,11 @@ export function createResolver(fetcher: FetcherBase) {
 const prepareVariablesFn = (viewer: Express.User) => (variables: FoundRelayVariables) => {
   const viewerId = viewer?.id || ''
   const sessionId = viewer?.sessionId || ''
-  const { orgLogin, topicId } = variables
-  const topicPath = topicId ? `/${orgLogin}/${topicId}` : null
+  const { topicId } = variables
 
   return {
-    orgLogin: defaultOrganizationLogin,
     ...variables,
-    topicPath,
+    topicId,
     sessionId,
     viewerId,
   }
@@ -114,7 +111,7 @@ export const createRouteConfig = (store: RouteStore) => {
         path="/terms-of-use"
         Component={TermsOfUse}
       />
-      <Route path=":orgLogin">
+      <Route path="topics">
         <Route
           path=":topicId"
         >

@@ -20,10 +20,9 @@ struct Opts {
     root: PathBuf,
 }
 
-fn sha256_path(login: &str, id: &str) -> Result<RepoPath> {
+fn sha256_id(id: &str) -> RepoId {
     let id = sha256_base64(id);
-    let path = format!("/{}/{}", login, id);
-    RepoPath::try_from(&path)
+    RepoId::try_from(&id).unwrap()
 }
 
 fn parse_args() -> Opts {
@@ -94,8 +93,8 @@ impl TryFrom<&ParentTopicRow> for ParentTopic {
     type Error = Error;
 
     fn try_from(row: &ParentTopicRow) -> Result<Self> {
-        let path = sha256_path(&row.login, &row.id)?;
-        Ok(Self { path: path.inner })
+        let id = sha256_id(&row.id);
+        Ok(Self { id })
     }
 }
 
@@ -112,10 +111,10 @@ impl TryFrom<&LinkMetadataRow> for LinkMetadata {
     type Error = Error;
 
     fn try_from(row: &LinkMetadataRow) -> Result<Self> {
-        let path = sha256_path(&row.login, &row.url)?;
+        let id = sha256_id(&row.url);
         Ok(Self {
             added: row.added,
-            path: path.inner,
+            id,
             details: Some(LinkDetails {
                 title: row.title.clone(),
                 url: row.url.clone(),
@@ -139,16 +138,16 @@ impl TryFrom<&TopicChildRow> for TopicChild {
     type Error = Error;
 
     fn try_from(row: &TopicChildRow) -> Result<Self> {
-        let path = match row.kind.as_str() {
-            "Link" => sha256_path(&row.login, &row.url)?,
-            "Topic" => sha256_path(&row.login, &row.id)?,
-            _ => sha256_path(&row.login, &row.id)?,
+        let id = match row.kind.as_str() {
+            "Link" => sha256_id(&row.url),
+            "Topic" => sha256_id(&row.id),
+            _ => sha256_id(&row.id),
         };
 
         Ok(Self {
             added: row.added,
             kind: Kind::from(&row.kind).unwrap(),
-            path: path.to_string(),
+            id,
         })
     }
 }
@@ -160,8 +159,7 @@ struct Topics {
 }
 
 impl Topics {
-    fn new(topic: Topic) -> Self {
-        let repo = topic.path().unwrap().repo;
+    fn new(repo: RepoName, topic: Topic) -> Self {
         let mut topics: HashMap<RepoName, Topic> = HashMap::new();
         topics.insert(repo, topic.clone());
         Self { topic, topics }
@@ -171,14 +169,13 @@ impl Topics {
         let topics = &mut self.topics;
 
         topics.entry(repo.to_owned()).or_insert_with(|| {
-            let id = &self.topic.path().unwrap().id;
-            let path = repo.path(id).unwrap();
+            let id = self.topic.id().to_owned();
 
             Topic {
                 api_version: API_VERSION.to_string(),
                 metadata: TopicMetadata {
                     added: self.topic.added(),
-                    path: path.inner,
+                    id,
                     details: None,
                 },
                 parent_topics: BTreeSet::new(),
@@ -214,19 +211,15 @@ fn persist_topic(
 
         match kind.as_str() {
             "Topic" => {
-                let path = sha256_path(login, id)?;
-                child_topics.push(activity::TopicInfo::from((
-                    Locale::EN,
-                    name.to_owned(),
-                    path.inner,
-                )));
+                let id = sha256_id(id);
+                child_topics.push(activity::TopicInfo::from((Locale::EN, name.to_owned(), id)));
             }
             "Link" => {
-                let path = sha256_path(login, url)?;
+                let id = sha256_id(url);
                 child_links.push(activity::LinkInfo {
                     title: name.to_owned(),
                     url: url.to_owned(),
-                    path: path.inner,
+                    id,
                     deleted: false,
                 });
             }
@@ -240,11 +233,11 @@ fn persist_topic(
             continue;
         }
 
-        let path = sha256_path(&topic.login, &topic.id)?;
+        let id = sha256_id(&topic.id);
         parents.push(activity::TopicInfo::from((
             Locale::EN,
             topic.name.to_owned(),
-            path.inner.to_owned(),
+            id,
         )));
     }
 
@@ -258,15 +251,16 @@ fn persist_topic(
         parent_topics: activity::TopicInfoList::from(&parents),
     });
 
-    let topic_id = topic.path()?;
-    mutation.save_topic(&topic_id.repo, &topic_id, topic)?;
-    mutation.add_change(&change)
+    let topic_id = topic.id();
+    mutation.save_topic(&repo, topic_id, topic)?;
+    mutation.add_change(&repo, &change)
 }
 
 // 1. Don't place paths for items in private repos under /wiki/
 fn persist_topics(
     mutation: &mut Mutation,
-    topic_path: &RepoPath,
+    repo: &RepoName,
+    topic_id: &RepoId,
     meta: &TopicMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,
@@ -295,7 +289,7 @@ fn persist_topics(
         api_version: API_VERSION.to_string(),
         metadata: TopicMetadata {
             added: meta.added,
-            path: topic_path.inner.to_owned(),
+            id: topic_id.to_owned(),
             details: Some(TopicDetails {
                 root: meta.root,
                 synonyms: synonyms.iter().map(Synonym::from).collect(),
@@ -306,7 +300,7 @@ fn persist_topics(
         children: BTreeSet::new(),
     };
 
-    let mut topics = Topics::new(topic);
+    let mut topics = Topics::new(repo.to_owned(), topic);
 
     for parent in parent_topics {
         let repo = RepoName::from_login(&parent.login)?;
@@ -352,7 +346,8 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
     .await?;
 
     for meta in &rows {
-        let topic_path = sha256_path(&meta.login, &meta.id)?;
+        let repo = RepoName::from_login(&meta.login).expect("failed to parse repo name");
+        let topic_id = sha256_id(&meta.id);
 
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
@@ -410,7 +405,7 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
         .fetch_all(pool)
         .await?;
 
-        persist_topics(builder, &topic_path, meta, &parent_topics, &children)?;
+        persist_topics(builder, &repo, &topic_id, meta, &parent_topics, &children)?;
     }
 
     Ok(())
@@ -423,8 +418,7 @@ struct Links {
 }
 
 impl Links {
-    fn new(link: Link) -> Self {
-        let repo = link.path().unwrap().repo;
+    fn new(repo: RepoName, link: Link) -> Self {
         let mut links: HashMap<RepoName, Link> = HashMap::new();
         links.insert(repo, link.clone());
         Self { link, links }
@@ -433,29 +427,24 @@ impl Links {
     fn get_mut(&mut self, repo: &RepoName) -> &mut Link {
         let links = &mut self.links;
 
-        links.entry(repo.to_owned()).or_insert_with(|| {
-            let id = &self.link.path().unwrap().id;
-            let path = repo.path(id).unwrap();
-
-            Link {
-                api_version: API_VERSION.to_string(),
-                metadata: LinkMetadata {
-                    added: self.link.added(),
-                    path: path.inner,
-                    details: None,
-                },
-                parent_topics: BTreeSet::new(),
-            }
+        links.entry(repo.to_owned()).or_insert_with(|| Link {
+            api_version: API_VERSION.to_string(),
+            metadata: LinkMetadata {
+                added: self.link.added(),
+                id: self.link.id().to_owned(),
+                details: None,
+            },
+            parent_topics: BTreeSet::new(),
         })
     }
 }
 
 fn persist_link(
     mutation: &mut Mutation,
+    repo: &RepoName,
     link: &mut Link,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
-    let repo = link.path()?.repo;
     let mut topics = BTreeSet::new();
 
     for parent in parent_topics {
@@ -463,11 +452,11 @@ fn persist_link(
             continue;
         }
 
-        let path = sha256_path(&parent.login, &parent.id).unwrap();
+        let id = sha256_id(&parent.id);
         topics.insert(activity::TopicInfo::from((
             Locale::EN,
             parent.name.to_owned(),
-            path.inner.to_owned(),
+            id,
         )));
     }
 
@@ -479,15 +468,15 @@ fn persist_link(
         parent_topics: activity::TopicInfoList::from(&topics),
     });
 
-    let link_id = link.path().unwrap();
-    mutation.save_link(&link_id.repo, &link_id, link).unwrap();
-    mutation.add_change(&change).unwrap();
+    mutation.save_link(repo, link.id(), link).unwrap();
+    mutation.add_change(repo, &change).unwrap();
 
     Ok(())
 }
 
 fn persist_links(
     mutation: &mut Mutation,
+    repo: &RepoName,
     meta: &LinkMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
@@ -497,7 +486,7 @@ fn persist_links(
         parent_topics: BTreeSet::new(),
     };
 
-    let mut links = Links::new(link);
+    let mut links = Links::new(repo.to_owned(), link);
 
     for parent in parent_topics {
         let repo = RepoName::from_login(&parent.login).unwrap();
@@ -509,7 +498,7 @@ fn persist_links(
 
     for repo in repos {
         let link = links.get_mut(&repo);
-        persist_link(mutation, link, parent_topics).unwrap();
+        persist_link(mutation, &repo, link, parent_topics).unwrap();
     }
 
     Ok(())
@@ -533,6 +522,7 @@ async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
     .await?;
 
     for meta in rows {
+        let repo = RepoName::from_login(&meta.login).expect("failed to parse repo");
         let link_id = meta.link_id.clone();
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
@@ -550,7 +540,7 @@ async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
         .fetch_all(pool)
         .await?;
 
-        persist_links(mutation, &meta, &parent_topics).unwrap();
+        persist_links(mutation, &repo, &meta, &parent_topics).unwrap();
     }
 
     Ok(())

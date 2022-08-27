@@ -4,4 +4,4 @@ kind: SynonymIndex
 synonyms:
   a topic:
     - name: A topic
-      path: /wiki/00001
+      id: "00001"

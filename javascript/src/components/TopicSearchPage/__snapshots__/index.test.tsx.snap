@@ -5,14 +5,6 @@ exports[`<TopicPage /> renders 1`] = `
   <div
     className="px-3 px-md-6 px-lg-0"
   >
-    <Breadcrumbs
-      repository={
-        Object {
-          "displayName": "Private collection",
-          "isPrivate": true,
-        }
-      }
-    />
     <Subhead
       heading="Frotz"
       renderHeadingDetail={null}
@@ -22,7 +14,6 @@ exports[`<TopicPage /> renders 1`] = `
         <_default
           items={Array []}
           placeholder="There are no parent topics for this topic."
-          repoName="Private collection"
           title="Parent topics"
         />
       </RightColumn>

@@ -1,19 +1,16 @@
 use async_graphql::connection::*;
-use async_graphql::{Context, Object, SimpleObject, ID};
+use async_graphql::{Context, Object, SimpleObject};
 
-use super::{
-    relay::conn, DateTime, LiveSearchTopicsPayload, Repository, SynonymMatch, TopicConnection, User,
-};
+use super::{relay::conn, DateTime, LiveSearchTopicsPayload, SynonymMatch, TopicConnection, User};
 use crate::git;
 use crate::prelude::*;
 use crate::store::Store;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Link {
-    pub path: RepoPath,
+    pub id: String,
     pub newly_added: bool,
-    pub parent_topic_paths: Vec<RepoPath>,
-    pub repository_id: ID,
+    pub parent_topic_ids: Vec<String>,
     pub viewer_review: Option<LinkReview>,
     pub title: String,
     pub url: String,
@@ -46,11 +43,8 @@ impl Link {
     }
 
     async fn display_color(&self) -> &str {
-        if self.path.starts_with(WIKI_REPO_PREFIX) {
-            ""
-        } else {
-            DEFAULT_PRIVATE_COLOR
-        }
+        // FIXME
+        ""
     }
 
     async fn loading(&self) -> bool {
@@ -58,7 +52,7 @@ impl Link {
     }
 
     async fn id(&self) -> String {
-        self.path.to_string()
+        self.id.to_string()
     }
 
     async fn newly_added(&self) -> bool {
@@ -73,22 +67,17 @@ impl Link {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<TopicConnection> {
+        let link_id: RepoId = (&self.id).try_into()?;
         let topics = ctx
             .data_unchecked::<Store>()
-            .parent_topics_for_link(&self.path)
+            // FIXME
+            .parent_topics_for_link(&RepoName::wiki(), &link_id)
             .await?;
         conn(after, before, first, last, topics)
     }
 
     async fn path(&self) -> String {
-        self.path.to_string()
-    }
-
-    async fn repository(&self, ctx: &Context<'_>) -> Result<Repository> {
-        ctx.data_unchecked::<Store>()
-            .repository(self.repository_id.to_string())
-            .await?
-            .ok_or_else(|| Error::NotFound(format!("repo id {}", *self.repository_id)))
+        self.id.to_string()
     }
 
     async fn title(&self) -> String {
@@ -105,8 +94,8 @@ impl Link {
             return Ok(false);
         }
 
-        // TODO: Narrow down write permissions to a specific topics and their subtopics
-        Ok(store.viewer.write_repos.include(&self.path.repo))
+        // FIXME
+        Ok(true)
     }
 
     async fn viewer_review(&self) -> Option<LinkReview> {

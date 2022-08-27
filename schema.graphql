@@ -70,12 +70,13 @@ type DeleteAccountPayload implements Alertable {
 
 input DeleteLinkInput {
   clientMutationId: String
-  linkPath: String!
+  linkId: String!
+  repoId: String!
 }
 
 type DeleteLinkPayload {
   clientMutationId: String
-  deletedLinkPath: String
+  deletedLinkId: String
 }
 
 input DeleteSessionInput {
@@ -90,17 +91,19 @@ type DeleteSessionPayload {
 
 input DeleteTopicInput {
   clientMutationId: String
-  topicPath: String!
+  repoId: String!
+  topicId: String!
 }
 
 type DeleteTopicPayload {
   clientMutationId: String
-  deletedTopicPath: String
+  deletedTopicId: String
 }
 
 input RemoveTopicTimerangeInput {
   clientMutationId: String
-  topicPath: String!
+  repoId: String!
+  topicId: String!
 }
 
 type RemoveTopicTimerangePayload {
@@ -108,7 +111,7 @@ type RemoveTopicTimerangePayload {
   topic: Topic!
 }
 
-type Link implements ResourceIdentifiable & Namespaceable {
+type Link implements Namespaceable {
   availableParentTopics(
     searchString: String,
   ): LiveSearchTopicsPayload!
@@ -124,8 +127,7 @@ type Link implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection!
-  path: String!
-  repository: Repository!
+  # repository: Repository!
   sha1: String!
   title: String!
   updatedAt: DateTime!
@@ -177,7 +179,7 @@ type LinkReview {
 
 type SynonymMatch {
   displayName: String!
-  path: String!
+  id: String!
 }
 
 type LiveSearchTopicsPayload {
@@ -206,13 +208,12 @@ interface Namespaceable {
   organization: Organization!
 }
 
-type Organization implements ResourceIdentifiable {
+type Organization {
   createdAt: DateTime!
   defaultRepository: Repository!
   id: ID
   login: String!
   name: String!
-  path: String!
   public: Boolean!
   updatedAt: DateTime!
 }
@@ -241,8 +242,6 @@ type Query {
   fakeError: String
   view(
     viewerId: ID!
-    currentOrganizationLogin: String!,
-    currentRepositoryName: String,
     repositoryIds: [ID!],
     searchString: String,
   ): View!
@@ -251,7 +250,7 @@ type Query {
 input ReorderSynonymsInput {
   clientMutationId: String
   synonymIds: [ID!]!
-  topicPath: String!
+  topicId: String!
 }
 
 type ReorderSynonymsPayload {
@@ -281,13 +280,9 @@ type RepositoryEdge {
   isSelected: Boolean!
 }
 
-interface ResourceIdentifiable {
-  path: String!
-}
-
 input ReviewLinkInput {
   clientMutationId: String
-  linkPath: String!
+  linkId: String!
   reviewed: Boolean!
 }
 
@@ -322,7 +317,7 @@ type Synonym {
   name: String!
 }
 
-type Topic implements ResourceIdentifiable & Namespaceable {
+type Topic implements Namespaceable {
   activity(
     first: Int,
     after: String,
@@ -365,8 +360,6 @@ type Topic implements ResourceIdentifiable & Namespaceable {
     last: Int,
     before: String
   ): TopicConnection!
-  path: String!
-  repository: Repository!
   search(
     searchString: String!,
     first: Int,
@@ -441,8 +434,9 @@ input SynonymInput {
 
 input UpdateTopicSynonymsInput {
   clientMutationId: String
+  repoId: String!
   synonyms: [SynonymInput!]!
-  topicPath: String!
+  topicId: String!
 }
 
 type UpdateTopicSynonymsPayload {
@@ -453,8 +447,9 @@ type UpdateTopicSynonymsPayload {
 
 input UpdateLinkParentTopicsInput {
   clientMutationId: String
-  linkPath: String!
-  parentTopicPaths: [String!]
+  linkId: String!
+  parentTopicIds: [String!]
+  repoId: String!
 }
 
 type UpdateLinkParentTopicsPayload {
@@ -463,8 +458,9 @@ type UpdateLinkParentTopicsPayload {
 
 input UpdateTopicParentTopicsInput {
   clientMutationId: String
-  topicPath: String!
-  parentTopicPaths: [String!]
+  repoId: String!,
+  topicId: String!
+  parentTopicIds: [String!]
 }
 
 type UpdateTopicParentTopicsPayload implements Alertable {
@@ -478,10 +474,10 @@ input UpsertLinkInput {
   #     ones.
   #   - Upserting a link that might exist.  Pass the topic under which the link is being upserted.
   # TODO: Refactor so that there's an UpsertLink mutation, which requires at least one topic, and an
-  # UpdateLink mutation, which has a required link path field and doesn't modify the parent topics.
-  addParentTopicPath: String
+  # UpdateLink mutation, which has a required link id field and doesn't modify the parent topics.
+  addParentTopicId: String
   clientMutationId: String
-  repoPrefix: String!
+  repoId: String!
   title: String
   url: String!
 }
@@ -495,16 +491,17 @@ input UpsertTopicInput {
   clientMutationId: String
   description: String
   name: String!
-  parentTopicPath: String!
-  repoPrefix: String!
+  parentTopicId: String!
+  repoId: String!
 }
 
 input UpsertTopicTimerangeInput {
   clientMutationId: String
-  topicPath: String!
-  startsAt: DateTime!
   endsAt: DateTime
   prefixFormat: TimerangePrefixFormat!
+  repoId: String!
+  startsAt: DateTime!
+  topicId: String!
 }
 
 type UpsertTopicPayload implements Alertable {
@@ -530,11 +527,11 @@ type View {
     after: String,
     last: Int,
     before: String
-    topicPath: String,
+    topicId: String,
   ): ActivityLineItemConnection!
   currentRepository: Repository
   defaultOrganization: Organization!
-  link(path: String!): Link
+  link(id: String!): Link
   links(
     searchString: String,
     first: Int,
@@ -546,7 +543,7 @@ type View {
   queryInfo: QueryInfo!
   searchString: String
   stats: ViewStats!
-  topic(path: String!): Topic
+  topic(id: String!): Topic
   topicGraph: String
   topicLiveSearch(
     searchString: String,

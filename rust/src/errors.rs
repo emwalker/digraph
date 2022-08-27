@@ -65,10 +65,6 @@ quick_error! {
             from(err: redis_rs::RedisError) -> (format!("{}", err))
         }
 
-        Reqwest(err: String) {
-            from(err: reqwest::Error) -> (format!("{:?}", err))
-        }
-
         Repo(err: String) { }
 
         Resolver(err: async_graphql::Error) {
@@ -77,6 +73,10 @@ quick_error! {
 
         SystemTime(err: std::time::SystemTimeError) {
             from()
+        }
+
+        Ureq(err: String) {
+            from(err: ureq::Error) -> (format!("{}", err))
         }
 
         UrlParse(err: String) {

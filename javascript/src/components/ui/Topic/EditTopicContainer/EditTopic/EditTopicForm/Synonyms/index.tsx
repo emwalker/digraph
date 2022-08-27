@@ -82,7 +82,7 @@ class Synonyms extends Component<Props, State> {
   }
 
   updateTopicSynonyms = (synonyms: SynonymType[]) => {
-    const input: Input = { topicPath: this.props.topic.path, synonyms }
+    const input: Input = { repoId: '/wiki/', topicId: this.props.topic.id, synonyms }
 
     this.setState({ inputName: '' }, () => {
       updateTopicSynonymsMutation(
@@ -166,7 +166,6 @@ export default createFragmentContainer(Synonyms, {
     fragment Synonyms_topic on Topic {
       id
       displayName: name
-      path
       viewerCanDeleteSynonyms
       viewerCanUpdate
 

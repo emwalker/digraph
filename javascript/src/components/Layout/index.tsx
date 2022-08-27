@@ -21,8 +21,6 @@ type Props = {
 export const query = graphql`
 query LayoutQuery(
   $viewerId: ID!,
-  $orgLogin: String!,
-  $repoName: String,
   $repoIds: [ID!],
   $searchString: String,
 ) {
@@ -34,8 +32,6 @@ query LayoutQuery(
 
   view(
     viewerId: $viewerId,
-    currentOrganizationLogin: $orgLogin,
-    currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
     searchString: $searchString,
   ) {

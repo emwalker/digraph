@@ -58,9 +58,9 @@ impl EnsurePersonalRepo {
         }
 
         mutation.repo(&self.personal_repo)?;
-        let topic_id = self.personal_repo.default_topic_path()?;
+        let topic_id = self.personal_repo.root_topic_id();
 
-        if !mutation.exists(&topic_id.repo, &topic_id)? {
+        if !mutation.exists(&self.personal_repo, &topic_id)? {
             log::info!("creating root topic: {}", topic_id);
             let added = chrono::Utc::now();
 
@@ -68,7 +68,7 @@ impl EnsurePersonalRepo {
                 api_version: API_VERSION.into(),
                 metadata: TopicMetadata {
                     added,
-                    path: topic_id.to_string(),
+                    id: topic_id.to_owned(),
                     details: Some(TopicDetails {
                         root: false,
                         synonyms: vec![Synonym {
@@ -83,7 +83,7 @@ impl EnsurePersonalRepo {
                 children: BTreeSet::new(),
             };
 
-            mutation.save_topic(&topic_id.repo, &topic_id, &root)?;
+            mutation.save_topic(&self.personal_repo, &topic_id, &root)?;
             mutation.write(&redis::Noop)?;
         }
 

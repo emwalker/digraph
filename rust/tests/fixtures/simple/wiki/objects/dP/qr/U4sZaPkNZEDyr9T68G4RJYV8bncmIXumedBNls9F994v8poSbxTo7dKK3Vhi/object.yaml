@@ -3,65 +3,20 @@ kind: Topic
 apiVersion: objects/v1
 metadata:
   added: "2022-07-04T15:51:59.087031182Z"
-  path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
+  id: dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
   details:
     root: false
     synonyms:
       - added: "2022-07-04T15:51:59.087031182Z"
         locale: en
         name: Climate change
-      - added: "2022-07-09T18:37:38.738272809Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-12T02:19:51.478712616Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-13T00:17:31.868056383Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-13T00:33:35.478321288Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-13T00:44:40.059743220Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-15T21:06:47.115634345Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-15T21:11:58.751299042Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-15T21:15:30.164927215Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-15T22:18:13.981211916Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-16T02:33:06.992863751Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-16T03:20:19.389588746Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-16T03:51:50.737590623Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-16T03:52:24.908786082Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-16T03:52:51.298403661Z"
-        locale: en
-        name: Climate change
-      - added: "2022-07-16T21:46:09.075034194Z"
-        locale: en
-        name: Climate change
     timerange: ~
 parentTopics:
-  - path: /wiki/lBwR6Cvz4btdI23oscsp7THRytHohlol4o2IkqxcFN8
+  - id: lBwR6Cvz4btdI23oscsp7THRytHohlol4o2IkqxcFN8
 children:
   - added: "2022-07-04T15:51:59.103315918Z"
     kind: Topic
-    path: /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
+    id: F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
   - added: "2022-07-04T15:51:59.092757344Z"
     kind: Link
-    path: /wiki/JO8aWIqoJC7UMZN2YVT9XwXTQ9zc02kN2gl5eTY3dvI
+    id: JO8aWIqoJC7UMZN2YVT9XwXTQ9zc02kN2gl5eTY3dvI

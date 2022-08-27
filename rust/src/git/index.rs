@@ -97,7 +97,7 @@ pub trait Index {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct SynonymEntry {
     pub name: String,
-    pub path: String,
+    pub id: RepoId,
 }
 
 impl std::cmp::PartialOrd for SynonymEntry {
@@ -108,7 +108,7 @@ impl std::cmp::PartialOrd for SynonymEntry {
 
 impl std::cmp::Ord for SynonymEntry {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (self.name.len(), &self.name, &self.path).cmp(&(other.name.len(), &other.name, &other.path))
+        (self.name.len(), &self.name, &self.id).cmp(&(other.name.len(), &other.name, &other.id))
     }
 }
 
@@ -218,12 +218,12 @@ impl SynonymIndex {
         Self { filename, index }
     }
 
-    pub fn add(&mut self, path: &RepoPath, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn add(&mut self, topic_id: &RepoId, phrase: Phrase, name: &str) -> Result<()> {
         let paths = self.index.synonyms.entry(phrase).or_insert(BTreeSet::new());
 
         paths.insert(SynonymEntry {
             name: name.to_owned(),
-            path: path.to_string(),
+            id: topic_id.to_owned(),
         });
 
         Ok(())
@@ -233,11 +233,11 @@ impl SynonymIndex {
         Ok(self.index.full_matches(phrase))
     }
 
-    pub fn remove(&mut self, path: &RepoPath, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn remove(&mut self, id: &RepoId, phrase: Phrase, name: &str) -> Result<()> {
         if let Some(paths) = self.index.synonyms.get_mut(&phrase) {
             paths.remove(&SynonymEntry {
                 name: name.to_owned(),
-                path: path.to_string(),
+                id: id.to_owned(),
             });
             if paths.is_empty() {
                 self.index.synonyms.remove(&phrase);
@@ -254,21 +254,15 @@ impl SynonymIndex {
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SearchEntry {
     pub kind: Kind,
-    pub path: String,
+    pub id: RepoId,
 }
 
 impl From<&TopicChild> for SearchEntry {
     fn from(child: &TopicChild) -> Self {
         Self {
             kind: child.kind.to_owned(),
-            path: child.path.to_owned(),
+            id: child.id.to_owned(),
         }
-    }
-}
-
-impl SearchEntry {
-    pub fn path(&self) -> Result<RepoPath> {
-        RepoPath::try_from(&self.path)
     }
 }
 
@@ -398,23 +392,21 @@ impl TryInto<SynonymIndexMap> for git2::Blob<'_> {
 
 #[derive(Clone, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ChangeReference {
-    pub path: String,
+    pub id: RepoId,
     pub date: Timestamp,
 }
 
 impl std::fmt::Display for ChangeReference {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.path)
+        write!(f, "{}", self.id)
     }
 }
 
 impl ChangeReference {
-    pub fn new(prefix: &RepoName, change: &activity::Change) -> Self {
-        let id = change.id();
-
+    pub fn new(change: &activity::Change) -> Self {
         Self {
             date: change.date(),
-            path: format!("{}{}", prefix, id.0),
+            id: change.id(),
         }
     }
 }
@@ -422,7 +414,7 @@ impl ChangeReference {
 impl std::cmp::Ord for ChangeReference {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // Sort descending by date
-        (&other.date, &self.path).cmp(&(&self.date, &other.path))
+        (&other.date, &self.id).cmp(&(&self.date, &other.id))
     }
 }
 
@@ -589,7 +581,7 @@ pub trait SaveChangesForPrefix {
 }
 
 pub struct Indexer {
-    path_activity: HashMap<RepoPath, ActivityIndex>,
+    path_activity: HashMap<(RepoName, RepoId), ActivityIndex>,
     pub mode: IndexMode,
     repo_changes: HashMap<RepoName, BTreeSet<activity::Change>>,
     search_tokens: HashMap<IndexKey, SearchTokenIndex>,
@@ -611,38 +603,35 @@ impl Indexer {
 
     pub fn add_change(
         &mut self,
+        repo: &RepoName,
         client: &Client,
         change: &activity::Change,
-    ) -> Result<HashSet<RepoName>> {
-        let mut repos = HashSet::new();
-
-        for path in change.paths()? {
-            let activity = self.path_activity(client, &path)?;
-            let reference = ChangeReference::new(&path.repo, change);
-            activity.add(reference);
-            repos.insert(path.repo.to_owned());
+    ) -> Result<()> {
+        for id in change.ids() {
+            let activity = self.id_activity(client, repo, id)?;
+            activity.add(change.to_reference());
         }
 
-        for repo in &repos {
-            let set = self
-                .repo_changes
-                .entry(repo.to_owned())
-                .or_insert(BTreeSet::new());
-            set.insert(change.to_owned());
-        }
+        let set = self
+            .repo_changes
+            .entry(repo.to_owned())
+            .or_insert(BTreeSet::new());
+        set.insert(change.to_owned());
 
-        Ok(repos)
+        Ok(())
     }
 
-    pub fn path_activity(&mut self, client: &Client, path: &RepoPath) -> Result<&mut ActivityIndex> {
+    pub fn id_activity(
+        &mut self,
+        client: &Client,
+        repo: &RepoName,
+        id: &RepoId,
+    ) -> Result<&mut ActivityIndex> {
+        let key = (repo.to_owned(), id.to_owned());
         let index = self
             .path_activity
-            .entry(path.to_owned())
-            .or_insert_with(|| {
-                client
-                    .fetch_activity_log(path, self.mode)
-                    .unwrap_or_else(|_| panic!("no index: {:?}", path))
-            });
+            .entry(key)
+            .or_insert_with(|| client.fetch_activity_log(repo, id, self.mode).unwrap());
         Ok(index)
     }
 
@@ -726,16 +715,16 @@ impl Indexer {
     pub fn remove_searches<'s, S>(
         &mut self,
         client: &Client,
+        repo: &RepoName,
         entry: &SearchEntry,
         searches: S,
     ) -> Result<()>
     where
         S: Iterator<Item = &'s Search>,
     {
-        let path = entry.path()?;
         for search in searches {
             for token in &search.tokens {
-                let key = path.repo.index_key(token)?;
+                let key = repo.index_key(token)?;
                 self.search_token_index(client, &key)?
                     .remove(entry, token.to_owned())?;
             }
@@ -744,13 +733,19 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn remove_synonyms(&mut self, client: &Client, path: &RepoPath, topic: &Topic) -> Result<()> {
+    pub fn remove_synonyms(
+        &mut self,
+        client: &Client,
+        repo: &RepoName,
+        id: &RepoId,
+        topic: &Topic,
+    ) -> Result<()> {
         self.synonym_indexes(
             client,
-            &path.repo,
+            repo,
             topic.metadata.synonyms().iter(),
             |index, token, name| {
-                index.remove(path, token.to_owned(), name)?;
+                index.remove(id, token.to_owned(), name)?;
                 Ok(())
             },
         )?;
@@ -773,9 +768,9 @@ impl Indexer {
             files.push((&key.repo, index.filename().to_owned(), index.serialize()?));
         }
 
-        for (path, activity_log) in &self.path_activity {
+        for ((repo, _id), activity_log) in &self.path_activity {
             files.push((
-                &path.repo,
+                repo,
                 activity_log.filename().to_owned(),
                 activity_log.serialize()?,
             ));
@@ -783,11 +778,10 @@ impl Indexer {
 
         for (repo, changes) in &self.repo_changes {
             for change in changes {
-                let reference = ChangeReference::new(repo, change);
-                let path = RepoPath::try_from(&reference.path)?;
+                let reference = change.to_reference();
                 files.push((
                     repo,
-                    path.change_filename()?,
+                    reference.id.change_filename()?,
                     serde_yaml::to_string(&change)?,
                 ));
             }
@@ -822,15 +816,15 @@ impl Indexer {
     pub fn update(
         &mut self,
         client: &Client,
+        repo: &RepoName,
         entry: &SearchEntry,
         before: &BTreeSet<Search>,
         after: &BTreeSet<Search>,
     ) -> Result<()> {
         let removed = before.difference(after);
-        let path = entry.path()?;
         for search in removed {
             for token in &search.tokens {
-                let key = path.repo.index_key(token)?;
+                let key = repo.index_key(token)?;
                 self.search_token_index(client, &key)?
                     .remove(entry, token.to_owned())?;
             }
@@ -845,7 +839,7 @@ impl Indexer {
         let added = after.difference(before);
         for search in added {
             for token in &search.tokens {
-                let key = path.repo.index_key(token)?;
+                let key = repo.index_key(token)?;
                 self.search_token_index(client, &key)?
                     .add(entry, token.to_owned())?;
             }
@@ -857,10 +851,11 @@ impl Indexer {
     pub fn update_synonyms(
         &mut self,
         client: &Client,
+        repo: &RepoName,
         before: &Option<Topic>,
         after: &Topic,
     ) -> Result<()> {
-        let path = after.path()?;
+        let topic_id = after.id();
 
         let before = match before {
             Some(before) => before
@@ -879,20 +874,20 @@ impl Indexer {
 
         self.synonym_indexes(
             client,
-            &path.repo,
+            repo,
             after.difference(&before),
             |index, token, name| {
-                index.add(&path, token.to_owned(), name)?;
+                index.add(topic_id, token.to_owned(), name)?;
                 Ok(())
             },
         )?;
 
         self.synonym_indexes(
             client,
-            &path.repo,
+            repo,
             before.difference(&after),
             |index, token, name| {
-                index.remove(&path, token.to_owned(), name)?;
+                index.remove(topic_id, token.to_owned(), name)?;
                 Ok(())
             },
         )?;

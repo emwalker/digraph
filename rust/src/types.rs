@@ -10,7 +10,7 @@ use strum_macros::EnumString;
 
 use crate::{
     errors::Error,
-    prelude::{DEFAULT_ROOT_TOPIC_ID, WIKI_REPO_PREFIX, WIKI_ROOT_TOPIC_PATH},
+    prelude::{ROOT_TOPIC_ID, WIKI_REPO_PREFIX},
 };
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -131,8 +131,10 @@ impl RepoName {
         self.inner.trim_start_matches('/').trim_end_matches('/')
     }
 
-    pub fn default_topic_path(&self) -> Result<RepoPath> {
-        self.path(&DEFAULT_ROOT_TOPIC_ID.try_into()?)
+    pub fn root_topic_id(&self) -> RepoId {
+        ROOT_TOPIC_ID
+            .try_into()
+            .expect("failed to convert root topic id")
     }
 
     pub fn path(&self, id: &RepoId) -> Result<RepoPath> {
@@ -141,10 +143,6 @@ impl RepoName {
 
     pub fn relative_path(&self) -> &str {
         self.inner.trim_start_matches('/')
-    }
-
-    pub fn test(&self, path: &RepoPath) -> bool {
-        path.starts_with(&self.inner)
     }
 }
 
@@ -208,7 +206,7 @@ impl RepoNames {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct RepoId(String);
 
 impl std::fmt::Display for RepoId {
@@ -221,16 +219,79 @@ impl TryFrom<&str> for RepoId {
     type Error = Error;
 
     fn try_from(id: &str) -> Result<Self> {
-        if id.len() < 4 {
-            return Err(Error::Path(format!("bad id: {}", id)))
+        Self::try_from(id.to_owned())
+    }
+}
+
+impl TryFrom<&String> for RepoId {
+    type Error = Error;
+
+    fn try_from(id: &String) -> Result<Self> {
+        Self::try_from(id.to_owned())
+    }
+}
+
+impl TryFrom<String> for RepoId {
+    type Error = Error;
+
+    fn try_from(id: String) -> Result<Self> {
+        if id.len() < 5 {
+            return Err(Error::Path(format!("bad id: {}", id)));
         }
-        Ok(Self(id.to_owned()))
+
+        for c in id.chars() {
+            if c.is_alphanumeric() {
+                continue;
+            }
+
+            if c == '-' || c == '_' {
+                continue;
+            }
+
+            return Err(Error::Path(format!("bad id: {}", id)));
+        }
+
+        Ok(Self(id))
     }
 }
 
 impl RepoId {
+    pub fn make() -> Self {
+        let s: String = random_id();
+        Self::try_from(&s).unwrap()
+    }
+
+    pub fn root_topic() -> Self {
+        Self::try_from(ROOT_TOPIC_ID).unwrap()
+    }
+
     pub fn as_str(&self) -> &str {
         self.0.as_str()
+    }
+
+    pub fn is_root(&self) -> bool {
+        self.0 == ROOT_TOPIC_ID
+    }
+
+    pub fn parts(&self) -> Result<(&str, &str, &str)> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^([\w_-]{2})([\w_-]{2})([\w_-]+)$").unwrap();
+        }
+
+        let cap = RE
+            .captures(self.0.as_str())
+            .ok_or_else(|| Error::Path(format!("bad id: {}", self)))?;
+
+        if cap.len() != 4 {
+            return Err(Error::Path(format!("bad id: {}", self)));
+        }
+
+        match (cap.get(1), cap.get(2), cap.get(3)) {
+            (Some(part1), Some(part2), Some(part3)) => {
+                Ok((part1.as_str(), part2.as_str(), part3.as_str()))
+            }
+            _ => Err(Error::Path(format!("bad id: {}", self))),
+        }
     }
 }
 
@@ -318,36 +379,6 @@ pub fn random_id() -> String {
 }
 
 impl RepoPath {
-    pub fn make(prefix: &String) -> Result<Self> {
-        let s: String = random_id();
-        Self::try_from(&format!("{}{}", prefix, s))
-    }
-
-    pub fn is_root(&self) -> bool {
-        self.inner == WIKI_ROOT_TOPIC_PATH
-    }
-
-    pub fn parts(&self) -> Result<(&str, &str, &str)> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^([\w_-]{2})([\w_-]{2})([\w_-]+)$").unwrap();
-        }
-
-        let cap = RE
-            .captures(self.id.as_str())
-            .ok_or_else(|| Error::Path(format!("bad id: {}", self)))?;
-
-        if cap.len() != 4 {
-            return Err(Error::Path(format!("bad id: {}", self)));
-        }
-
-        match (cap.get(1), cap.get(2), cap.get(3)) {
-            (Some(part1), Some(part2), Some(part3)) => {
-                Ok((part1.as_str(), part2.as_str(), part3.as_str()))
-            }
-            _ => Err(Error::Path(format!("bad id: {}", self))),
-        }
-    }
-
     pub fn starts_with(&self, prefix: &str) -> bool {
         self.inner.starts_with(prefix)
     }
@@ -365,13 +396,14 @@ pub struct Timespec;
 #[derive(Debug)]
 pub struct ReadPath {
     pub commit: git2::Oid,
-    pub spec: RepoPath,
+    pub id: RepoId,
+    pub repo: RepoName,
 }
 
 pub trait Downset {
-    fn intersection(&self, topic_ids: &[ReadPath]) -> Result<HashSet<String>>;
+    fn intersection(&self, topic_ids: &[ReadPath]) -> Result<HashSet<RepoId>>;
 
-    fn downset(&self, repo: &RepoName, key: &ReadPath) -> HashSet<String>;
+    fn downset(&self, path: &ReadPath) -> HashSet<RepoId>;
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -507,9 +539,9 @@ impl Viewer {
         }
     }
 
-    pub fn ensure_can_read(&self, path: &RepoPath) -> Result<()> {
-        if !self.can_read(&path.repo) {
-            return Err(Error::Repo("not allowed".into()));
+    pub fn ensure_can_read(&self, repo: &RepoName) -> Result<()> {
+        if !self.can_read(repo) {
+            return Err(Error::NotFound("not found".into()));
         }
 
         Ok(())
@@ -638,16 +670,6 @@ mod tests {
             assert_eq!(RepoName::wiki(), path.repo);
             assert_eq!("wiki", path.org_login);
             assert_eq!("00001", path.id.as_str());
-        }
-
-        #[test]
-        fn parts() {
-            let path =
-                RepoPath::try_from("/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
-            assert_eq!(
-                path.parts().unwrap(),
-                ("q-", "ZZ", "meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
-            );
         }
     }
 

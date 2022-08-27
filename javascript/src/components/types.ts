@@ -23,8 +23,6 @@ export function liftNodes<T>(connection: Connection<T> | undefined) {
 }
 
 type LocationState = {
-  orgLogin: string,
-  repoName: string | null,
   itemTitle: string,
 }
 

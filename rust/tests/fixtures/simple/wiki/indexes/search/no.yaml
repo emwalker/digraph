@@ -4,4 +4,4 @@ kind: SearchTokenIndexMap
 tokens:
   non:
     - kind: Topic
-      path: /wiki/00002
+      id: "00002"

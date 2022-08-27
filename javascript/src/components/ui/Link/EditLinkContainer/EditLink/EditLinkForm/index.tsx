@@ -18,7 +18,6 @@ type SelectedTopicType = NodeTypeOf<SelectedTopicsType>
 type Props = {
   isOpen: boolean,
   link: LinkType,
-  orgLogin: string,
   relay: RelayRefetchProp,
   toggleForm: () => void,
 }
@@ -38,12 +37,11 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   onSave = () => {
-    const { prefix } = this.props.link.repository
-
     const input: UpsertInput = {
       // Keep the existing parent topics
-      addParentTopicPath: null,
-      repoPrefix: prefix,
+      addParentTopicId: null,
+      // FIXME
+      repoId: '/wiki/',
       title: this.state.title,
       url: this.state.url,
     }
@@ -53,21 +51,23 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   onDelete = () => {
-    const input: DeleteInput = { linkPath: this.props.link.path }
+    // FIXME: use selected repo
+    const repoId = '/wiki/'
+    const input: DeleteInput = { linkId: this.props.link.id, repoId }
     deleteLinkMutation(
       this.props.relay.environment,
       input,
       {
         configs: [{
           type: 'NODE_DELETE',
-          deletedIDFieldName: 'deletedLinkPath',
+          deletedIDFieldName: 'deletedLinkId',
         }],
       },
     )
   }
 
-  get linkPath(): string {
-    return this.props.link.path
+  get linkId(): string {
+    return this.props.link.id
   }
 
   get selectedTopics(): readonly SelectedTopicType[] {
@@ -83,10 +83,12 @@ class EditLinkForm extends Component<Props, State> {
     this.setState({ title: event.currentTarget.value })
   }
 
-  updateTopics = (parentTopicPaths: string[]) => {
+  updateTopics = (parentTopicIds: string[]) => {
     const input: UpdateParentTopicsInput = {
-      linkPath: this.linkPath,
-      parentTopicPaths,
+      linkId: this.linkId,
+      parentTopicIds,
+      // FIXME
+      repoId: '/wiki/',
     }
     updateLinkParentTopicsMutation(this.props.relay.environment, input)
   }
@@ -96,7 +98,6 @@ class EditLinkForm extends Component<Props, State> {
 
     return new Promise((resolve) => {
       const variables = {
-        orgLogin: this.props.orgLogin,
         count: 40,
         searchString,
       }
@@ -122,14 +123,14 @@ class EditLinkForm extends Component<Props, State> {
         <div>
           <Input
             className="col-12"
-            id={`edit-link-title-${this.linkPath}`}
+            id={`edit-link-title-${this.linkId}`}
             label="Page title"
             onChange={this.updateTitle}
             value={this.state.title}
           />
           <Input
             className="col-12"
-            id={`edit-link-url-${this.linkPath}`}
+            id={`edit-link-url-${this.linkId}`}
             label="Url"
             onChange={this.updateUrl}
             value={this.state.url}
@@ -164,18 +165,13 @@ export default createRefetchContainer(EditLinkForm, {
       count: {type: "Int!", defaultValue: 10}
     ) {
       id
-      path
       title
       url
-
-      repository {
-        prefix
-      }
 
       selectedTopics: parentTopics(first: 1000) {
         edges {
           node {
-            value: path
+            value: id
             label: displayName
           }
         }
@@ -183,7 +179,7 @@ export default createRefetchContainer(EditLinkForm, {
 
       availableTopics: availableParentTopics(searchString: $searchString) {
         synonymMatches {
-          value: path
+          value: id
           label: displayName
         }
       }
@@ -193,20 +189,16 @@ export default createRefetchContainer(EditLinkForm, {
 graphql`
   query EditLinkFormRefetchQuery(
     $viewerId: ID!,
-    $orgLogin: String!,
-    $repoName: String,
     $repoIds: [ID!],
-    $linkPath: String!,
+    $linkId: String!,
     $count: Int!,
     $searchString: String,
   ) {
     view(
       viewerId: $viewerId,
-      currentOrganizationLogin: $orgLogin,
-      currentRepositoryName: $repoName,
       repositoryIds: $repoIds,
     ) {
-      link(path: $linkPath) {
+      link(id: $linkId) {
         ...EditLinkForm_link @arguments(count: $count, searchString: $searchString)
       }
     }

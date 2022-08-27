@@ -33,17 +33,17 @@ pub enum PathSpecOperation {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct SearchPathSpec {
     pub op: PathSpecOperation,
-    pub path: RepoPath,
+    pub id: RepoId,
 }
 
-const PATH_PATTERN: &str = r#"^in:/\w+/[\w-]+$"#;
+const ID_PATTERN: &str = r#"^in:[\w-]+$"#;
 
 impl SearchPathSpec {
     fn valid_path_spec(input: &str) -> bool {
         lazy_static! {
-            static ref IS_PATH_SPEC: Regex = Regex::new(PATH_PATTERN).unwrap();
+            static ref IS_ID_SPEC: Regex = Regex::new(ID_PATTERN).unwrap();
         }
-        IS_PATH_SPEC.is_match(input)
+        IS_ID_SPEC.is_match(input)
     }
 
     fn parse(input: &str) -> Result<Self> {
@@ -57,7 +57,7 @@ impl SearchPathSpec {
         let op = PathSpecOperation::from_str(&parts[0])?;
         Ok(Self {
             op,
-            path: RepoPath::try_from(&parts[1])?,
+            id: RepoId::try_from(&parts[1])?,
         })
     }
 }
@@ -134,7 +134,7 @@ impl Search {
 
 pub struct FetchTopicLiveSearch {
     pub limit: usize,
-    pub prefixes: Vec<RepoName>,
+    pub repos: Vec<RepoName>,
     pub search: Search,
     pub viewer: Viewer,
 }
@@ -162,7 +162,7 @@ impl FetchTopicLiveSearch {
 
     fn fetch(&self, client: &Client) -> BTreeSet<SynonymEntry> {
         let mut matches = BTreeSet::new();
-        for prefix in &self.prefixes {
+        for prefix in &self.repos {
             self.fetch_prefix(client, prefix, &mut matches);
         }
         matches
@@ -219,21 +219,21 @@ impl std::cmp::PartialEq for SearchMatch {
 impl std::cmp::Eq for SearchMatch {}
 
 struct UrlMatches {
-    paths: HashSet<String>,
+    ids: HashSet<RepoId>,
     impossible_result: bool,
 }
 
 impl UrlMatches {
     fn impossible_result() -> Self {
         Self {
-            paths: HashSet::new(),
+            ids: HashSet::new(),
             impossible_result: true,
         }
     }
 
     fn allow_everything() -> Self {
         Self {
-            paths: HashSet::new(),
+            ids: HashSet::new(),
             impossible_result: false,
         }
     }
@@ -243,12 +243,12 @@ impl UrlMatches {
             return false;
         }
 
-        if self.paths.is_empty() {
+        if self.ids.is_empty() {
             return true;
         }
 
         if let Object::Link(link) = object {
-            if self.paths.contains(&link.metadata.path) {
+            if self.ids.contains(link.id()) {
                 return true;
             }
         }
@@ -258,7 +258,7 @@ impl UrlMatches {
 }
 
 struct Filter {
-    paths: HashSet<String>,
+    paths: HashSet<RepoId>,
     urls: UrlMatches,
 }
 
@@ -273,8 +273,8 @@ impl Filter {
         }
 
         match object {
-            Object::Topic(topic) => self.paths.contains(&topic.metadata.path),
-            Object::Link(link) => self.paths.contains(&link.metadata.path),
+            Object::Topic(topic) => self.paths.contains(topic.id()),
+            Object::Link(link) => self.paths.contains(link.id()),
         }
     }
 }
@@ -285,12 +285,12 @@ pub struct RedisFetchDownSet {
 }
 
 impl Downset for RedisFetchDownSet {
-    fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<String>> {
+    fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<RepoId>> {
         self.redis.intersection(self, topic_paths)
     }
 
-    fn downset(&self, repo: &RepoName, path: &ReadPath) -> HashSet<String> {
-        self.client.downset(repo, path).collect::<HashSet<String>>()
+    fn downset(&self, path: &ReadPath) -> HashSet<RepoId> {
+        self.client.downset(path).collect::<HashSet<RepoId>>()
     }
 }
 
@@ -301,7 +301,7 @@ pub struct FindMatches {
     pub recursive: bool,
     pub search: Search,
     pub timespec: Timespec,
-    pub topic_path: RepoPath,
+    pub topic_id: RepoId,
     pub viewer: Viewer,
 }
 
@@ -321,7 +321,7 @@ impl FindMatches {
             });
         }
 
-        log::info!("searching within topic {}", self.topic_path);
+        log::info!("searching within topic {}", self.topic_id);
         let now = Instant::now();
 
         let matches = if self.search.topics_only() {
@@ -350,45 +350,44 @@ impl FindMatches {
 
         let mut entries = BTreeSet::new();
 
-        for path in &filter.urls.paths {
+        for path in &filter.urls.ids {
             let entry = SearchEntry {
-                path: path.to_owned(),
+                id: path.to_owned(),
                 kind: Kind::Link,
             };
             entries.insert(entry);
         }
 
-        for prefix in self.repos.iter() {
+        let mut matches = BTreeSet::new();
+        let mut count: usize = 0;
+
+        for repo in self.repos.iter() {
             let mut iter = self.search.tokens.iter();
 
             if let Some(token) = iter.next() {
-                let mut prefix_matches = client.search_token_prefix_matches(prefix, token)?;
+                let mut prefix_matches = client.search_token_prefix_matches(repo, token)?;
 
                 for token in iter {
-                    let other = client.search_token_prefix_matches(prefix, token)?;
+                    let other = client.search_token_prefix_matches(repo, token)?;
                     prefix_matches.retain(|e| other.contains(e));
                 }
 
                 entries.extend(prefix_matches);
             }
-        }
 
-        let mut matches = BTreeSet::new();
-        let mut count: usize = 0;
+            for entry in entries.iter() {
+                if let Some(object) = client.fetch(repo, &entry.id) {
+                    if !filter.test(&object) {
+                        continue;
+                    }
 
-        for entry in entries.iter() {
-            let id = RepoPath::try_from(&entry.path)?;
-            if let Some(object) = client.fetch(&id.repo, &id) {
-                if !filter.test(&object) {
-                    continue;
-                }
+                    let object = object.to_search_match(self.locale, &self.search);
+                    matches.insert(object);
+                    count += 1;
 
-                let object = object.to_search_match(self.locale, &self.search);
-                matches.insert(object);
-                count += 1;
-
-                if count >= self.limit {
-                    break;
+                    if count >= self.limit {
+                        break;
+                    }
                 }
             }
         }
@@ -400,20 +399,21 @@ impl FindMatches {
     where
         F: Downset,
     {
-        let paths = self.intersection(client, fetch)?;
-        log::info!("fetching topic downset ({} paths)", paths.len());
+        let topic_ids = self.intersection(client, fetch)?;
+        log::info!("fetching topic downset ({} paths)", topic_ids.len());
 
         let mut matches = BTreeSet::new();
         let mut count: usize = 0;
 
-        for path in paths.iter().take(self.limit) {
-            let id = RepoPath::try_from(path)?;
-            if let Some(object) = client.fetch(&id.repo, &id) {
-                matches.insert(object.to_search_match(Locale::EN, &self.search));
-                count += 1;
+        for repo in self.repos.iter() {
+            for topic_id in topic_ids.iter().take(self.limit) {
+                if let Some(object) = client.fetch(repo, topic_id) {
+                    matches.insert(object.to_search_match(Locale::EN, &self.search));
+                    count += 1;
 
-                if count >= self.limit {
-                    break;
+                    if count >= self.limit {
+                        break;
+                    }
                 }
             }
         }
@@ -421,25 +421,32 @@ impl FindMatches {
         Ok(matches)
     }
 
-    fn intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<String>>
+    fn intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<RepoId>>
     where
         F: Downset,
     {
-        let mut topic_paths = vec![];
+        let mut result = HashSet::new();
 
-        // The (wiki) root topic is mostly not needed for now; let's exclude it until we know how to
-        // make the downset and related implementation details fast.
-        if !self.topic_path.is_root() {
-            let path = client.read_path(&self.topic_path)?;
-            topic_paths.push(path);
+        for repo in self.repos.iter() {
+            let mut topic_paths = vec![];
+
+            // The (wiki) root topic is mostly not needed for now; let's exclude it until we know how to
+            // make the downset and related implementation details fast.
+            if !self.topic_id.is_root() {
+                let path = client.read_path(repo, &self.topic_id)?;
+                topic_paths.push(path);
+            }
+
+            for spec in &self.search.path_specs {
+                let path = client.read_path(repo, &spec.id)?;
+                topic_paths.push(path);
+            }
+
+            let set = fetch.intersection(&topic_paths)?;
+            result.extend(set);
         }
 
-        for spec in &self.search.path_specs {
-            let path = client.read_path(&spec.path)?;
-            topic_paths.push(path);
-        }
-
-        fetch.intersection(&topic_paths)
+        Ok(result)
     }
 
     fn url_paths(&self) -> Result<UrlMatches> {
@@ -458,7 +465,7 @@ impl FindMatches {
 
         match urls.iter().next() {
             Some(url) => {
-                let mut paths = HashSet::new();
+                let mut ids = HashSet::new();
                 let url = match RepoUrl::parse(url) {
                     Ok(url) => url,
                     Err(err) => {
@@ -467,17 +474,11 @@ impl FindMatches {
                     }
                 };
 
-                for prefix in self.repos.iter() {
-                    let path = url.path(prefix)?;
-                    paths.insert(path.inner.to_owned());
-                }
-
-                if paths.is_empty() {
-                    return Ok(UrlMatches::impossible_result());
-                }
+                let id = url.id()?;
+                ids.insert(id);
 
                 Ok(UrlMatches {
-                    paths,
+                    ids,
                     impossible_result: false,
                 })
             }
@@ -500,14 +501,7 @@ mod tests {
     #[test]
     fn valid_path_specs() {
         assert!(SearchPathSpec::valid_path_spec(
-            "in:/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851"
-        ));
-        assert!(SearchPathSpec::valid_path_spec(
-            "in:/emwalker/e76a690f-2eb2-45a0-9cbc-5e7d76f92851"
-        ));
-        // Well-formed UUIDs are not required
-        assert!(SearchPathSpec::valid_path_spec(
-            "in:/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f9285"
+            "in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851"
         ));
     }
 
@@ -526,11 +520,11 @@ mod tests {
 
     #[test]
     fn path_spec_parsing() {
-        let s = SearchPathSpec::parse("in:/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap();
+        let s = SearchPathSpec::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap();
         assert_eq!(s.op, PathSpecOperation::IN);
         assert_eq!(
-            s.path,
-            RepoPath::try_from("/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap(),
+            s.id,
+            RepoId::try_from("e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap(),
         );
     }
 
@@ -607,10 +601,10 @@ mod tests {
 
     #[test]
     fn topic_search() {
-        let s = Search::parse("in:/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap();
+        let s = Search::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap();
         assert_eq!(
             s.normalized,
-            Phrase::parse("in:/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851"),
+            Phrase::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851"),
         );
         assert_eq!(s.tokens.len(), 0);
         assert_eq!(s.path_specs.len(), 1);
@@ -618,16 +612,16 @@ mod tests {
 
     #[test]
     fn combined_query() {
-        let s = Search::parse("in:/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851 a b").unwrap();
+        let s = Search::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851 a b").unwrap();
         assert_eq!(
             s.normalized,
-            Phrase::parse("in:/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851 a b"),
+            Phrase::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851 a b"),
         );
         assert_eq!(s.tokens.len(), 0);
         assert_eq!(s.path_specs.len(), 1);
         assert_eq!(
             *s.path_specs.iter().next().unwrap(),
-            SearchPathSpec::parse("in:/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap()
+            SearchPathSpec::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap()
         );
     }
 }

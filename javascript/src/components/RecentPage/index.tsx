@@ -40,18 +40,14 @@ export default ({ view }: Props) => {
 export const query = graphql`
 query RecentPage_recent_Query(
   $viewerId: ID!,
-  $orgLogin: String!,
-  $repoName: String,
   $repoIds: [ID!],
-  $topicPath: String,
+  $topicId: String,
 ) {
   view(
     viewerId: $viewerId,
-    currentOrganizationLogin: $orgLogin,
-    currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
-    activity(topicPath: $topicPath, first: 50) {
+    activity(topicId: $topicId, first: 50) {
       ...LineItems_activity
     }
   }

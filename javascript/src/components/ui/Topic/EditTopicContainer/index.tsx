@@ -5,43 +5,37 @@ import makeEditTopic from './EditTopic'
 
 type Props = {
   isOpen: boolean,
-  orgLogin: string,
   relay: RelayProp,
   toggleForm: () => void,
-  topicPath: string,
+  topicId: string,
 }
 
-const EditTopicContainer = ({ isOpen, orgLogin, topicPath, relay, toggleForm }: Props) => (
+const EditTopicContainer = ({ isOpen, topicId, relay, toggleForm }: Props) => (
   <QueryRenderer
     environment={relay.environment}
     query={graphql`
       query EditTopicContainerQuery(
         $viewerId: ID!,
-        $orgLogin: String!,
-        $repoName: String,
         $repoIds: [ID!],
-        $topicPath: String!,
+        $topicId: String!,
       ) {
         view(
           viewerId: $viewerId,
-          currentOrganizationLogin: $orgLogin,
-          currentRepositoryName: $repoName,
           repositoryIds: $repoIds,
         ) {
-          topic(path: $topicPath) {
+          topic(id: $topicId) {
             ...EditTopicForm_topic
           }
         }
       }
     `}
     variables={{
-      orgLogin,
       repoName: null,
       repoIds: [],
-      topicPath,
+      topicId,
       viewerId: '',
     }}
-    render={makeEditTopic({ isOpen, orgLogin, toggleForm })}
+    render={makeEditTopic({ isOpen, toggleForm })}
   />
 )
 

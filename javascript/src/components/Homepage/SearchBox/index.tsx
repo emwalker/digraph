@@ -1,7 +1,8 @@
 import React, { Component, KeyboardEvent } from 'react'
 import classNames from 'classnames'
 
-import { everythingTopicPath } from 'components/constants'
+import { topicPath } from 'components/helpers'
+import { everythingTopicId } from 'components/constants'
 
 type Props = {
   className?: string | undefined,
@@ -24,11 +25,11 @@ class SearchBox extends Component<Props> {
 
   onSearch = (query: string) => {
     if (query === '') {
-      this.props.router.push({ pathname: everythingTopicPath })
+      this.props.router.push({ pathname: topicPath(everythingTopicId) })
       return
     }
 
-    this.props.router.push({ pathname: everythingTopicPath, query: { q: query } })
+    this.props.router.push({ pathname: topicPath(everythingTopicId), query: { q: query } })
   }
 
   render = () => (

@@ -27,7 +27,7 @@ class Review extends Component<Props, State> {
   onChange = () => {
     this.setState(
       ({ reviewed }) => {
-        const input: Input = { linkPath: this.props.link.path, reviewed: !reviewed }
+        const input: Input = { linkId: this.props.link.id, reviewed: !reviewed }
         reviewLinkMutation(this.props.relay.environment, input)
 
         return {
@@ -82,7 +82,6 @@ export default createFragmentContainer(Review, {
   link: graphql`
     fragment Review_link on Link {
       id
-      path
       title
       url
 

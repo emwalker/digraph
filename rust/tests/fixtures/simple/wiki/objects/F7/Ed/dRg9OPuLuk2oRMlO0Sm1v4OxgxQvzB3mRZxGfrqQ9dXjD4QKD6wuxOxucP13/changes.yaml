@@ -2,11 +2,11 @@
 kind: ActivityIndexMap
 apiVersion: objects/v1
 changes:
-  - path: /wiki/9N8icbEaSvbGjdNb9kqZWz2guo8UpXX0ay8bcYPJfSmzU9CCy74UAdQbsNpAtxNj
+  - id: 9N8icbEaSvbGjdNb9kqZWz2guo8UpXX0ay8bcYPJfSmzU9CCy74UAdQbsNpAtxNj
     date: "2022-07-16T21:46:09.181327027Z"
-  - path: /wiki/Z0qLqmx2mtBhIUNqVTCEpAGnN0Mi67jZWW0dvTWKwVZ9Q3n5OuAbZvcVFXZ38gNc
+  - id: Z0qLqmx2mtBhIUNqVTCEpAGnN0Mi67jZWW0dvTWKwVZ9Q3n5OuAbZvcVFXZ38gNc
     date: "2022-07-16T21:46:09.168039557Z"
-  - path: /wiki/MbfHnCNFTSfOQb7X86vT3p4OEZrw6aXIZCAFqYj94erzVI5EJ5eL9bzFVQLG4GjN
+  - id: MbfHnCNFTSfOQb7X86vT3p4OEZrw6aXIZCAFqYj94erzVI5EJ5eL9bzFVQLG4GjN
     date: "2022-07-16T21:46:09.158683359Z"
-  - path: /wiki/aKnZZLWLSntEPXjz24ThiAA3hpaBh4sAXMFvmY5G5ejBwI9zjzrw6tCkAOpnhN4z
+  - id: aKnZZLWLSntEPXjz24ThiAA3hpaBh4sAXMFvmY5G5ejBwI9zjzrw6tCkAOpnhN4z
     date: "2022-07-16T21:46:09.135939204Z"

@@ -64,7 +64,7 @@ export default (environment: Environment, input: Input, config?: Config) => {
 
   const optimisticUpdater = (store: RecordSourceSelectorProxy) => {
     tmpId += 1
-    const parentTopicPath = input.addParentTopicPath || null
+    const parentTopicId = input.addParentTopicId || null
     const nodeId = `client:link:${tmpId}`
     const node = store.create(nodeId, 'Link')
 
@@ -73,8 +73,8 @@ export default (environment: Environment, input: Input, config?: Config) => {
     node.setValue(input.url, 'url')
     node.setValue(true, 'loading')
 
-    if (parentTopicPath) {
-      const topicProxy = store.get(parentTopicPath)
+    if (parentTopicId) {
+      const topicProxy = store.get(parentTopicId)
       if (!topicProxy) return
 
       const conn = ConnectionHandler.getConnection(topicProxy, 'Topic_children')
@@ -96,10 +96,10 @@ export default (environment: Environment, input: Input, config?: Config) => {
     if (!edge) return
     if (!linkId) return
 
-    const parentTopicPath = input.addParentTopicPath || null
+    const parentTopicId = input.addParentTopicId || null
 
-    if (parentTopicPath) {
-      const topicProxy = store.get(parentTopicPath)
+    if (parentTopicId) {
+      const topicProxy = store.get(parentTopicId)
       if (topicProxy) {
         const conn = ConnectionHandler.getConnection(topicProxy, 'Topic_children')
         if (conn)

@@ -14,7 +14,6 @@ import TopicTimerange from './TopicTimerange'
 
 type Props = {
   isOpen: boolean,
-  orgLogin: string,
   relay: RelayRefetchProp,
   toggleForm: () => void,
   topic: TopicType,
@@ -35,21 +34,24 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   onDelete = () => {
-    const input: DeleteInput = { topicPath: this.props.topic.path }
+    // FIXME: use selected repo
+    const repoId = '/wiki/'
+
+    const input: DeleteInput = { repoId, topicId: this.props.topic.id }
     deleteTopicMutation(
       this.props.relay.environment,
       input,
       {
         configs: [{
           type: 'NODE_DELETE',
-          deletedIDFieldName: 'deletedTopicPath',
+          deletedIDFieldName: 'deletedTopicId',
         }],
       },
     )
   }
 
-  get topicPath(): string {
-    return this.props.topic.path
+  get topicId(): string {
+    return this.props.topic.id
   }
 
   get selectedTopics(): TopicOption[] | null {
@@ -58,10 +60,12 @@ class EditTopicForm extends Component<Props, State> {
     return selectedTopics ? makeOptions(array) : null
   }
 
-  updateParentTopics = (parentTopicPaths: string[]) => {
+  updateParentTopics = (parentTopicIds: string[]) => {
     const input: UpdateTopicsInput = {
-      topicPath: this.props.topic.path,
-      parentTopicPaths,
+      // FIXME: use id instead of prefix
+      repoId: '/wiki/',
+      topicId: this.props.topic.id,
+      parentTopicIds,
     }
     updateTopicTopicsMutation(this.props.relay.environment, input)
   }
@@ -71,7 +75,6 @@ class EditTopicForm extends Component<Props, State> {
 
     return new Promise((resolve) => {
       const variables = {
-        orgLogin: this.props.orgLogin,
         count: 60,
         searchString,
       }
@@ -128,12 +131,11 @@ export default createRefetchContainer(EditTopicForm, {
       description
       id
       displayName: name
-      path
 
       selectedTopics: parentTopics(first: 1000) {
         edges {
           node {
-            value: path
+            value: id
             label: name
           }
         }
@@ -141,7 +143,7 @@ export default createRefetchContainer(EditTopicForm, {
 
       availableTopics: availableParentTopics(searchString: $searchString) {
         synonymMatches {
-          value: path
+          value: id
           label: displayName
         }
       }
@@ -154,20 +156,16 @@ export default createRefetchContainer(EditTopicForm, {
 graphql`
   query EditTopicFormRefetchQuery(
     $viewerId: ID!,
-    $orgLogin: String!,
-    $repoName: String,
     $repoIds: [ID!],
-    $topicPath: String!,
+    $topicId: String!,
     $count: Int!,
     $searchString: String,
   ) {
     view(
       viewerId: $viewerId,
-      currentOrganizationLogin: $orgLogin,
-      currentRepositoryName: $repoName,
       repositoryIds: $repoIds,
     ) {
-      topic(path: $topicPath) {
+      topic(id: $topicId) {
         ...EditTopicForm_topic @arguments(count: $count, searchString: $searchString)
       }
     }

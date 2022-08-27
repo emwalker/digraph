@@ -2,7 +2,7 @@ import { Component, ReactNode } from 'react';
 import { LocationType } from 'components/types';
 declare type Topic = {
     displayName: string;
-    path: string;
+    id: string;
 } | null;
 declare type Props = {
     canEdit: boolean;
@@ -14,8 +14,6 @@ declare type Props = {
     newlyAdded: boolean;
     showEditButton: boolean | null;
     showLink?: boolean;
-    orgLogin: string;
-    repoName: string | null;
     title: string;
     toggleForm: () => void;
     topics: Topic[];

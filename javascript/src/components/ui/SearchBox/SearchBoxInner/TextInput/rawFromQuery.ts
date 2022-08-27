@@ -22,7 +22,7 @@ const rawFromQuery = (queryInfo: QueryInfo, genKey: Function): RawDraftContentSt
   topics.forEach((edge) => {
     const node = edge?.node
     if (node != null) {
-      const { name, path } = node
+      const { name, id } = node
       entityRanges.push({
         key: entityIndex,
         length: name.length,
@@ -35,7 +35,7 @@ const rawFromQuery = (queryInfo: QueryInfo, genKey: Function): RawDraftContentSt
         data: {
           mention: {
             name,
-            link: path,
+            link: id,
           },
         },
       }

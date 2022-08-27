@@ -69,7 +69,7 @@ pub struct LinkDetails {
 #[serde(rename_all = "camelCase")]
 pub struct LinkMetadata {
     pub added: Timestamp,
-    pub path: String,
+    pub id: RepoId,
     pub details: Option<LinkDetails>,
 }
 
@@ -101,7 +101,7 @@ pub struct Link {
 
 impl std::cmp::PartialEq for Link {
     fn eq(&self, other: &Self) -> bool {
-        self.metadata.path == other.metadata.path
+        self.metadata.id == other.metadata.id
     }
 }
 
@@ -109,8 +109,8 @@ impl std::cmp::Eq for Link {}
 
 impl std::cmp::Ord for Link {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (&self.metadata.details, &self.metadata.path)
-            .cmp(&(&other.metadata.details, &other.metadata.path))
+        (&self.metadata.details, &self.metadata.id)
+            .cmp(&(&other.metadata.details, &other.metadata.id))
     }
 }
 
@@ -125,12 +125,12 @@ impl Link {
         self.metadata.added
     }
 
-    pub fn is_reference(&self) -> bool {
-        self.metadata.details.is_none()
+    pub fn id(&self) -> &RepoId {
+        &self.metadata.id
     }
 
-    pub fn path(&self) -> Result<RepoPath> {
-        RepoPath::try_from(&self.metadata.path)
+    pub fn is_reference(&self) -> bool {
+        self.metadata.details.is_none()
     }
 
     pub fn title(&self) -> &str {
@@ -139,7 +139,7 @@ impl Link {
 
     pub fn to_search_entry(&self) -> SearchEntry {
         SearchEntry {
-            path: self.metadata.path.to_owned(),
+            id: self.metadata.id.to_owned(),
             kind: Kind::Link,
         }
     }
@@ -148,7 +148,7 @@ impl Link {
         TopicChild {
             added,
             kind: Kind::Link,
-            path: self.metadata.path.to_owned(),
+            id: self.metadata.id.to_owned(),
         }
     }
 
@@ -159,13 +159,12 @@ impl Link {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ParentTopic {
-    // RepoPath is hard to serialize and deserialize, so let's keep this a string
-    pub path: String,
+    pub id: RepoId,
 }
 
 impl std::cmp::Ord for ParentTopic {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.path.cmp(&other.path)
+        self.id.cmp(&other.id)
     }
 }
 
@@ -176,9 +175,8 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, mutation: &Mutation) -> Result<Option<Topic>> {
-        let topic_id = RepoPath::try_from(&self.path)?;
-        Ok(mutation.fetch_topic(&topic_id.repo, &topic_id))
+    pub fn fetch(&self, repo: &RepoName, mutation: &Mutation) -> Result<Option<Topic>> {
+        Ok(mutation.fetch_topic(repo, &self.id))
     }
 }
 
@@ -187,12 +185,12 @@ impl ParentTopic {
 pub struct TopicChild {
     pub added: Timestamp,
     pub kind: Kind,
-    pub path: String,
+    pub id: RepoId,
 }
 
 impl std::cmp::PartialEq for TopicChild {
     fn eq(&self, other: &Self) -> bool {
-        self.path == other.path
+        self.id == other.id
     }
 }
 
@@ -206,14 +204,14 @@ impl std::cmp::PartialOrd for TopicChild {
 
 impl std::cmp::Ord for TopicChild {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (&self.kind, &self.path).cmp(&(&other.kind, &other.path))
+        (&self.kind, &self.id).cmp(&(&other.kind, &other.id))
     }
 }
 
 impl std::hash::Hash for TopicChild {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.kind.hash(state);
-        self.path.hash(state);
+        self.id.hash(state);
     }
 }
 
@@ -263,7 +261,7 @@ pub struct TopicDetails {
 #[serde(rename_all = "camelCase")]
 pub struct TopicMetadata {
     pub added: Timestamp,
-    pub path: String,
+    pub id: RepoId,
     pub details: Option<TopicDetails>,
 }
 
@@ -303,7 +301,7 @@ pub struct Topic {
 
 impl std::cmp::PartialEq for Topic {
     fn eq(&self, other: &Self) -> bool {
-        self.metadata.path == other.metadata.path
+        self.metadata.id == other.metadata.id
     }
 }
 
@@ -311,7 +309,7 @@ impl std::cmp::Eq for Topic {}
 
 impl std::cmp::Ord for Topic {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.metadata.path.cmp(&other.metadata.path)
+        self.metadata.id.cmp(&other.metadata.id)
     }
 }
 
@@ -323,7 +321,7 @@ impl std::cmp::PartialOrd for Topic {
 
 impl std::hash::Hash for Topic {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.metadata.path.hash(state);
+        self.metadata.id.hash(state);
     }
 }
 
@@ -332,16 +330,16 @@ impl Topic {
         self.metadata.added
     }
 
-    pub fn has_child(&self, path: &RepoPath) -> bool {
-        self.children.iter().any(|child| child.path == path.inner)
+    pub fn has_child(&self, id: &RepoId) -> bool {
+        self.children.iter().any(|child| &child.id == id)
+    }
+
+    pub fn id(&self) -> &RepoId {
+        &self.metadata.id
     }
 
     pub fn name(&self, locale: Locale) -> String {
         self.prefix().format(&self.metadata.name(locale))
-    }
-
-    pub fn path(&self) -> Result<RepoPath> {
-        RepoPath::try_from(&self.metadata.path)
     }
 
     fn prefix(&self) -> types::TimerangePrefix {
@@ -380,19 +378,23 @@ impl Topic {
         self.metadata.synonyms()
     }
 
+    pub fn relative_url(&self) -> String {
+        format!("/topics/{}", self.id())
+    }
+
     pub fn timerange(&self) -> &Option<Timerange> {
         self.metadata.timerange()
     }
 
     pub fn to_parent_topic(&self) -> ParentTopic {
         ParentTopic {
-            path: self.metadata.path.to_owned(),
+            id: self.metadata.id.to_owned(),
         }
     }
 
     pub fn to_search_entry(&self) -> SearchEntry {
         SearchEntry {
-            path: self.metadata.path.to_owned(),
+            id: self.metadata.id.to_owned(),
             kind: Kind::Topic,
         }
     }
@@ -401,7 +403,7 @@ impl Topic {
         TopicChild {
             added,
             kind: Kind::Topic,
-            path: self.metadata.path.to_owned(),
+            id: self.metadata.id.to_owned(),
         }
     }
 }
@@ -466,8 +468,8 @@ impl Object {
                 object: self,
             },
             Self::Topic(topic) => {
-                let path = &topic.metadata.path;
-                let explicit_in_search = search.path_specs.iter().any(|s| &s.path.inner == path);
+                let topic_id = topic.id();
+                let explicit_in_search = search.path_specs.iter().any(|s| &s.id == topic_id);
                 SearchMatch {
                     sort_key: SortKey(
                         Kind::Topic,
@@ -505,6 +507,7 @@ pub trait Visitor {
 #[derive(Debug)]
 pub struct TopicDownsetIter {
     client: Client,
+    repo: RepoName,
     seen: HashSet<TopicChild>,
     stack: Vec<TopicChild>,
 }
@@ -519,27 +522,21 @@ impl Iterator for TopicDownsetIter {
             match self.stack.pop() {
                 Some(topic_child) => {
                     if self.seen.contains(&topic_child) {
-                        log::debug!("topic already seen, skipping: {}", topic_child.path);
+                        log::debug!("topic already seen, skipping: {}", topic_child.id);
                         continue;
                     }
                     self.seen.insert(topic_child.clone());
 
-                    let topic_id = match RepoPath::try_from(&topic_child.path) {
-                        Ok(path) => path,
-                        Err(err) => {
-                            log::debug!("error parsing path, skipping topic: {}", err);
-                            continue;
-                        }
-                    };
+                    let topic_id = &topic_child.id;
 
-                    if let Some(topic) = self.client.fetch_topic(&topic_id.repo, &topic_id) {
+                    if let Some(topic) = self.client.fetch_topic(&self.repo, topic_id) {
                         for child in &topic.children {
                             if child.kind != Kind::Topic {
                                 break;
                             }
                             self.stack.push(child.clone());
                         }
-                        log::debug!("yielding topic {}", topic_child.path);
+                        log::debug!("yielding topic {}", topic_child.id);
                         return Some(topic);
                     };
                 }
@@ -555,7 +552,7 @@ impl Iterator for TopicDownsetIter {
 }
 
 impl TopicDownsetIter {
-    fn new(client: Client, topic: Option<Topic>) -> Self {
+    fn new(client: Client, repo: RepoName, topic: Option<Topic>) -> Self {
         let mut stack = vec![];
         if let Some(topic) = &topic {
             stack.push(topic.to_topic_child(chrono::Utc::now()));
@@ -564,6 +561,7 @@ impl TopicDownsetIter {
         Self {
             client,
             seen: HashSet::new(),
+            repo,
             stack,
         }
     }
@@ -572,11 +570,11 @@ impl TopicDownsetIter {
 #[derive(Debug)]
 pub struct DownsetIter {
     iter: TopicDownsetIter,
-    links: Vec<String>,
+    links: Vec<RepoId>,
 }
 
 impl Iterator for DownsetIter {
-    type Item = String;
+    type Item = RepoId;
 
     fn next(&mut self) -> Option<Self::Item> {
         if !self.links.is_empty() {
@@ -586,11 +584,11 @@ impl Iterator for DownsetIter {
         if let Some(topic) = self.iter.next() {
             for child in &topic.children {
                 if child.kind == Kind::Link {
-                    self.links.push(child.path.to_owned());
+                    self.links.push(child.id.to_owned());
                 }
             }
 
-            return Some(topic.metadata.path);
+            return Some(topic.id().to_owned());
         }
 
         None
@@ -598,10 +596,10 @@ impl Iterator for DownsetIter {
 }
 
 impl DownsetIter {
-    fn new(client: Client, topic: Option<Topic>) -> Self {
+    fn new(client: Client, repo: RepoName, topic: Option<Topic>) -> Self {
         Self {
             links: vec![],
-            iter: TopicDownsetIter::new(client, topic),
+            iter: TopicDownsetIter::new(client, repo, topic),
         }
     }
 }
@@ -637,19 +635,19 @@ mod tests {
     fn topic_child_equality_ignores_timestamps() {
         let child1 = TopicChild {
             added: chrono::Utc::now(),
-            path: "/wiki/00001".to_owned(),
+            id: "00001".try_into().unwrap(),
             kind: Kind::Link,
         };
 
         let child2 = TopicChild {
             added: chrono::Utc::now(),
-            path: "/wiki/00001".to_owned(),
+            id: "00001".try_into().unwrap(),
             kind: Kind::Link,
         };
 
         let child3 = TopicChild {
             added: chrono::Utc::now(),
-            path: "/wiki/00002".to_owned(),
+            id: "00002".try_into().unwrap(),
             kind: Kind::Link,
         };
 
@@ -664,7 +662,7 @@ mod tests {
 
         let a = TopicChild {
             added: chrono::Utc::now(),
-            path: "/wiki/00001".to_owned(),
+            id: "00001".try_into().unwrap(),
             kind: Kind::Link,
         };
         assert!(set.insert(&a));
@@ -672,7 +670,7 @@ mod tests {
 
         let b = TopicChild {
             added: chrono::Utc::now(),
-            path: "/wiki/00001".to_owned(),
+            id: "00001".try_into().unwrap(),
             kind: Kind::Link,
         };
         assert!(set.contains(&b));

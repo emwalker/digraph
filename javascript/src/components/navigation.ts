@@ -1,12 +1,11 @@
 /* eslint import/prefer-default-export: 0 */
 
-import { everythingTopicPath } from './constants'
+import { everythingTopicId } from './constants'
+import { topicPath } from './helpers'
 
 export const toEverything = {
-  pathname: everythingTopicPath,
+  pathname: topicPath(everythingTopicId),
   state: {
-    orgLogin: 'wiki',
-    repoName: 'General collection',
     itemTitle: 'Everything',
   },
 }

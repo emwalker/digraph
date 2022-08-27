@@ -4,10 +4,9 @@ use digraph::git::{
     FetchTopicLiveSearch, FetchTopicLiveSearchResult, FindMatches, FindMatchesResult, Kind, Object,
     Search, SearchMatch, SortKey,
 };
-use digraph::prelude::WIKI_ROOT_TOPIC_PATH;
 use digraph::prelude::*;
 
-use super::{actor, Fixtures};
+use super::{actor, parse_id, Fixtures};
 
 #[cfg(test)]
 mod fetch_topic_live_search {
@@ -23,7 +22,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![RepoName::wiki()],
+            repos: vec![RepoName::wiki()],
             search: Search::parse("existing non-root topic").unwrap(),
             viewer: actor(),
         }
@@ -34,7 +33,7 @@ mod fetch_topic_live_search {
             matches.iter().next().unwrap(),
             &SynonymEntry {
                 name: "Existing non-root topic".to_owned(),
-                path: "/wiki/00002".to_owned(),
+                id: parse_id("00002"),
             }
         );
     }
@@ -43,7 +42,7 @@ mod fetch_topic_live_search {
     fn indexing_works() {
         let f = Fixtures::copy("simple");
         let repo = RepoName::wiki();
-        let parent = RepoPath::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let parent = RepoId::root_topic();
         let search = Search::parse("clim chan soc").unwrap();
 
         let FetchTopicLiveSearchResult {
@@ -51,7 +50,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![repo.to_owned()],
+            repos: vec![repo.to_owned()],
             search: search.clone(),
             viewer: actor(),
         }
@@ -61,7 +60,7 @@ mod fetch_topic_live_search {
         assert!(matches.is_empty());
 
         f.upsert_topic(
-            &parent.repo,
+            &repo,
             "Climate change and society",
             &parent,
             OnMatchingSynonym::Ask,
@@ -73,7 +72,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![repo],
+            repos: vec![repo],
             search,
             viewer: actor(),
         }
@@ -102,7 +101,7 @@ mod fetch_matches {
     struct FetchDownset(Client);
 
     impl Downset for FetchDownset {
-        fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<String>> {
+        fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<RepoId>> {
             if topic_paths.is_empty() {
                 return Ok(HashSet::new());
             }
@@ -110,9 +109,9 @@ mod fetch_matches {
             let (head, tail) = topic_paths.split_at(1);
             match head.get(0) {
                 Some(path) => {
-                    let mut set = self.downset(&path.spec.repo, path);
+                    let mut set = self.downset(path);
                     for other_path in tail {
-                        let other = self.downset(&other_path.spec.repo, other_path);
+                        let other = self.downset(other_path);
                         set.retain(|path| other.contains(path));
                     }
                     Ok(set)
@@ -122,13 +121,9 @@ mod fetch_matches {
             }
         }
 
-        fn downset(&self, repo: &RepoName, id: &ReadPath) -> HashSet<String> {
-            self.0.downset(repo, id).collect::<HashSet<String>>()
+        fn downset(&self, path: &ReadPath) -> HashSet<RepoId> {
+            self.0.downset(path).collect::<HashSet<RepoId>>()
         }
-    }
-
-    fn root() -> RepoPath {
-        RepoPath::try_from(WIKI_ROOT_TOPIC_PATH).unwrap()
     }
 
     fn count(kind: Kind, matches: &BTreeSet<SearchMatch>) -> usize {
@@ -143,7 +138,7 @@ mod fetch_matches {
 
     fn search(
         f: &Fixtures,
-        topic_path: &RepoPath,
+        topic_id: &RepoId,
         input: &str,
         recursive: bool,
     ) -> BTreeSet<SearchMatch> {
@@ -158,7 +153,7 @@ mod fetch_matches {
             recursive,
             search,
             timespec: Timespec,
-            topic_path: topic_path.to_owned(),
+            topic_id: topic_id.to_owned(),
             viewer,
         }
         .call(&f.git, &fetcher)
@@ -171,7 +166,7 @@ mod fetch_matches {
     fn matching_topics() {
         let f = Fixtures::copy("simple");
 
-        let matches = search(&f, &root(), "exist non root topic", true);
+        let matches = search(&f, &RepoId::root_topic(), "exist non root topic", true);
         assert!(!matches.is_empty());
         let row = matches.iter().next().unwrap();
 
@@ -206,8 +201,8 @@ mod fetch_matches {
     fn topic_search() {
         let f = Fixtures::copy("simple");
 
-        let root = root();
-        let climate_change = f.topic_path("Climate change").unwrap().unwrap();
+        let root = RepoId::root_topic();
+        let climate_change = f.topic_id("Climate change").unwrap();
         let query = format!("in:{}", climate_change);
 
         let matches = search(&f, &root, &query, true);
@@ -219,8 +214,8 @@ mod fetch_matches {
     fn combined_search() {
         let f = Fixtures::copy("simple");
 
-        let root = root();
-        let climate_change = f.topic_path("Climate change").unwrap().unwrap();
+        let root = RepoId::root_topic();
+        let climate_change = f.topic_id("Climate change").unwrap();
         let query = format!("in:{} frequency", climate_change);
 
         // A link should be returned, since it matches the token search and is a child of the topic
@@ -236,8 +231,9 @@ mod fetch_matches {
         let f = Fixtures::copy("simple");
 
         let fetcher = FetchDownset(f.git.clone());
-        let root = root();
-        let climate_change = f.topic_path("Climate change and weather").unwrap().unwrap();
+        let repo = RepoName::wiki();
+        let root = RepoId::root_topic();
+        let climate_change = f.topic_id("Climate change and weather").unwrap();
         let query = format!("in:{}", climate_change);
         let search = Search::parse(&query).unwrap();
 
@@ -247,10 +243,10 @@ mod fetch_matches {
             limit: 3,
             locale: Locale::EN,
             recursive: true,
-            repos: RepoNames::from(&vec![root.repo.to_owned()]),
+            repos: RepoNames::from(&vec![repo]),
             search,
             timespec: Timespec,
-            topic_path: root,
+            topic_id: root,
             viewer: actor(),
         }
         .call(&f.git, &fetcher)
@@ -264,8 +260,8 @@ mod fetch_matches {
     fn topic_used_in_search_appears_at_top() {
         let f = Fixtures::copy("simple");
 
-        let root = root();
-        let weather = f.topic_path("Weather").unwrap().unwrap();
+        let root = RepoId::root_topic();
+        let weather = f.topic_id("Weather").unwrap();
         let query = format!("in:{}", weather);
         let matches = search(&f, &root, &query, true);
 
@@ -278,7 +274,7 @@ mod fetch_matches {
     #[test]
     fn url_search() {
         let f = Fixtures::copy("simple");
-        let root = root();
+        let root = RepoId::root_topic();
 
         let matches = search(
             &f,
@@ -294,11 +290,11 @@ mod fetch_matches {
     fn search_works_across_prefixes() {
         let f = Fixtures::copy("simple");
         let repo = RepoName::try_from("/other/").unwrap();
+        let root = RepoId::root_topic();
 
-        let result = f.upsert_link(&repo, &valid_url(), Some("Other repo".to_owned()), None);
-        assert_eq!(result.link.unwrap().path().unwrap().repo, repo);
+        let _ = f.upsert_link(&repo, &valid_url(), Some("Other repo".to_owned()), None);
 
-        let matches = search(&f, &root(), "other repo", true);
+        let matches = search(&f, &root, "other repo", true);
         assert!(!matches.is_empty());
         let row = matches.iter().next().unwrap();
 

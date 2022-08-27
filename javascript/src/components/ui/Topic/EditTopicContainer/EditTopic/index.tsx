@@ -9,7 +9,6 @@ type ContainerViewType = Response['view']
 
 type CallerProps = {
   isOpen: boolean,
-  orgLogin: string,
   toggleForm: () => void,
 }
 
@@ -22,7 +21,7 @@ type RenderProps = {
   view: ContainerViewType
 }
 
-export default ({ isOpen, orgLogin, toggleForm }: CallerProps) => (
+export default ({ isOpen, toggleForm }: CallerProps) => (
   { error, props: renderProps }: RenderArgs,
 ) => {
   if (error) return <div>{error.message}</div>
@@ -34,7 +33,6 @@ export default ({ isOpen, orgLogin, toggleForm }: CallerProps) => (
         isOpen={isOpen}
         toggleForm={toggleForm}
         topic={view.topic}
-        orgLogin={orgLogin}
       />
     )
   )

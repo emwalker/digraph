@@ -3,7 +3,7 @@ kind: Topic
 apiVersion: objects/v1
 metadata:
   added: "2021-03-18T00:09:59.350933Z"
-  path: /wiki/lBwR6Cvz4btdI23oscsp7THRytHohlol4o2IkqxcFN8
+  id: lBwR6Cvz4btdI23oscsp7THRytHohlol4o2IkqxcFN8
   details:
     root: true
     synonyms:
@@ -15,13 +15,13 @@ parentTopics: []
 children:
   - added: "2021-03-18T00:09:59.350933Z"
     kind: Topic
-    path: /wiki/00001
+    id: "00001"
   - added: "2021-03-18T00:09:59.350933Z"
     kind: Topic
-    path: /wiki/00002
+    id: "00002"
   - added: "2022-07-04T15:51:59.087029883Z"
     kind: Topic
-    path: /wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
+    id: dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi
   - added: "2022-07-04T15:51:59.096649827Z"
     kind: Topic
-    path: /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj
+    id: wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj

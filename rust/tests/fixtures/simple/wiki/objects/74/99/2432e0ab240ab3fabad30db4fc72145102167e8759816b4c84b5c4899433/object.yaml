@@ -3,9 +3,9 @@ kind: Link
 apiVersion: objects/v1
 metadata:
   added: "2022-07-04T15:51:59.100302830Z"
-  path: /wiki/74992432e0ab240ab3fabad30db4fc72145102167e8759816b4c84b5c4899433
+  id: 74992432e0ab240ab3fabad30db4fc72145102167e8759816b4c84b5c4899433
   details:
     title: Weather
     url: "https://en.wikipedia.org/wiki/Weather"
 parentTopics:
-  - path: /wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj
+  - id: wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj

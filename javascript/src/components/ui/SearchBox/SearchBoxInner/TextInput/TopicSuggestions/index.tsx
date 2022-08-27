@@ -20,11 +20,11 @@ const query = graphql`
   query TopicSuggestionsQuery (
     $searchString: String,
   ) {
-    view(currentOrganizationLogin: "wiki", viewerId: "") {
+    view(viewerId: "") {
       topicLiveSearch(searchString: $searchString) {
         synonymMatches {
           name: displayName
-          link: path
+          link: id
         }
       }
     }

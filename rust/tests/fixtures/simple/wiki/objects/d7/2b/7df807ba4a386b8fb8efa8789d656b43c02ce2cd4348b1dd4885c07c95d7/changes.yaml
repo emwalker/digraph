@@ -2,5 +2,5 @@
 kind: ActivityIndexMap
 apiVersion: objects/v1
 changes:
-  - path: /wiki/Z0qLqmx2mtBhIUNqVTCEpAGnN0Mi67jZWW0dvTWKwVZ9Q3n5OuAbZvcVFXZ38gNc
+  - id: Z0qLqmx2mtBhIUNqVTCEpAGnN0Mi67jZWW0dvTWKwVZ9Q3n5OuAbZvcVFXZ38gNc
     date: "2022-07-16T21:46:09.168039557Z"

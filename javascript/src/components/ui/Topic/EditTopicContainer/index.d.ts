@@ -2,10 +2,9 @@
 import { RelayProp } from 'react-relay';
 declare type Props = {
     isOpen: boolean;
-    orgLogin: string;
     relay: RelayProp;
     toggleForm: () => void;
-    topicPath: string;
+    topicId: string;
 };
-declare const EditTopicContainer: ({ isOpen, orgLogin, topicPath, relay, toggleForm }: Props) => JSX.Element;
+declare const EditTopicContainer: ({ isOpen, topicId, relay, toggleForm }: Props) => JSX.Element;
 export default EditTopicContainer;

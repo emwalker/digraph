@@ -17,18 +17,16 @@ impl TryFrom<&git::Link> for Link {
     type Error = Error;
 
     fn try_from(link: &git::Link) -> Result<Self> {
-        let meta = &link.metadata;
-        let parent_topic_paths = link
+        let parent_topic_ids = link
             .parent_topics
             .iter()
-            .map(|topic| RepoPath::try_from(&topic.path))
-            .collect::<Result<Vec<RepoPath>>>()?;
+            .map(|topic| topic.id.to_string())
+            .collect::<Vec<String>>();
 
         Ok(Self {
-            path: RepoPath::try_from(&meta.path)?,
+            id: link.id().to_string(),
             newly_added: false,
-            parent_topic_paths,
-            repository_id: WIKI_REPOSITORY_ID.into(),
+            parent_topic_ids,
             viewer_review: None,
             title: link.title().to_owned(),
             url: link.url().to_owned(),
@@ -40,17 +38,17 @@ impl TryFrom<&git::Topic> for Topic {
     type Error = Error;
 
     fn try_from(topic: &git::Topic) -> Result<Self> {
-        let parent_topic_paths = topic
+        let parent_topic_ids = topic
             .parent_topics
             .iter()
-            .map(|parent| RepoPath::try_from(&parent.path))
-            .collect::<Result<Vec<RepoPath>>>()?;
+            .map(|parent| parent.id.to_string())
+            .collect::<Vec<String>>();
 
-        let child_paths = topic
+        let child_ids = topic
             .children
             .iter()
-            .map(|p| RepoPath::try_from(&p.path))
-            .collect::<Result<Vec<RepoPath>>>()?;
+            .map(|child| child.id.clone())
+            .collect::<Vec<RepoId>>();
         let synonyms = Synonyms::from(topic.synonyms());
 
         let timerange = topic.timerange().as_ref();
@@ -60,9 +58,9 @@ impl TryFrom<&git::Topic> for Topic {
         };
 
         Ok(Self {
-            child_paths,
-            path: topic.path()?,
-            parent_topic_paths,
+            child_ids,
+            id: topic.id().to_string(),
+            parent_topic_ids,
             name: topic.name(Locale::EN),
             root: topic.root(),
             synonyms,
@@ -84,18 +82,20 @@ impl LinkLoader {
 }
 
 #[async_trait::async_trait]
-impl Loader<String> for LinkLoader {
+impl Loader<(RepoName, RepoId)> for LinkLoader {
     type Value = git::Link;
     type Error = Error;
 
-    async fn load(&self, paths: &[String]) -> Result<HashMap<String, Self::Value>> {
+    async fn load(
+        &self,
+        paths: &[(RepoName, RepoId)],
+    ) -> Result<HashMap<(RepoName, RepoId), Self::Value>> {
         log::debug!("batch links: {:?}", paths);
         let mut map: HashMap<_, _> = HashMap::new();
 
-        for path in paths {
-            let link_id = RepoPath::try_from(path)?;
-            if let Some(link) = &self.git.fetch_link(&link_id.repo, &link_id) {
-                map.insert(path.to_owned(), link.to_owned());
+        for (repo, link_id) in paths {
+            if let Some(link) = &self.git.fetch_link(repo, link_id) {
+                map.insert((repo.to_owned(), link_id.to_owned()), link.to_owned());
             }
         }
 
@@ -115,18 +115,20 @@ impl ObjectLoader {
 }
 
 #[async_trait::async_trait]
-impl Loader<String> for ObjectLoader {
+impl Loader<(RepoName, RepoId)> for ObjectLoader {
     type Value = git::Object;
     type Error = Error;
 
-    async fn load(&self, paths: &[String]) -> Result<HashMap<String, Self::Value>> {
+    async fn load(
+        &self,
+        paths: &[(RepoName, RepoId)],
+    ) -> Result<HashMap<(RepoName, RepoId), Self::Value>> {
         log::debug!("batch load topics: {:?}", paths);
         let mut map: HashMap<_, _> = HashMap::new();
 
-        for string in paths {
-            let id = RepoPath::try_from(string)?;
-            if let Some(object) = &self.client.fetch(&id.repo, &id) {
-                map.insert(string.to_owned(), object.clone());
+        for (repo, id) in paths {
+            if let Some(object) = &self.client.fetch(repo, id) {
+                map.insert((repo.to_owned(), id.to_owned()), object.clone());
             }
         }
 
@@ -147,10 +149,10 @@ impl TryFrom<&git::Object> for TopicChild {
 }
 
 impl From<&git::SynonymEntry> for SynonymMatch {
-    fn from(git::SynonymEntry { name, path }: &git::SynonymEntry) -> Self {
+    fn from(git::SynonymEntry { name, id }: &git::SynonymEntry) -> Self {
         Self {
             display_name: name.to_owned(),
-            path: path.to_owned(),
+            id: id.to_string(),
         }
     }
 }

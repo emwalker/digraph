@@ -2,14 +2,6 @@
 
 exports[`<TopicPage /> renders 1`] = `
 <Page>
-  <Relay(Breadcrumbs)
-    repository={
-      Object {
-        "displayName": "Private collection",
-        "isPrivate": true,
-      }
-    }
-  />
   <Subhead
     heading="Frotz"
     renderHeadingDetail={[Function]}
@@ -19,7 +11,6 @@ exports[`<TopicPage /> renders 1`] = `
       <_default
         items={Array []}
         placeholder="There are no parent topics for this topic."
-        repoName="Private collection"
         title="Parent topics"
       />
       <div
@@ -42,13 +33,11 @@ exports[`<TopicPage /> renders 1`] = `
               className="Box-row-link"
               to={
                 Object {
-                  "pathname": "undefined/recent",
+                  "pathname": "/topics/undefined/recent",
                   "query": Object {},
                   "search": "",
                   "state": Object {
                     "itemTitle": "Frotz",
-                    "orgLogin": undefined,
-                    "repoName": "Private collection",
                   },
                 }
               }
@@ -63,13 +52,11 @@ exports[`<TopicPage /> renders 1`] = `
               className="Box-row-link"
               to={
                 Object {
-                  "pathname": "undefined/review",
+                  "pathname": "/topics/undefined/review",
                   "query": Object {},
                   "search": "",
                   "state": Object {
                     "itemTitle": "Frotz",
-                    "orgLogin": undefined,
-                    "repoName": "Private collection",
                   },
                 }
               }

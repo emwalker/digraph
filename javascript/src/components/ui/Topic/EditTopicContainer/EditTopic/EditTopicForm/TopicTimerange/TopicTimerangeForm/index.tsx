@@ -15,7 +15,7 @@ type Props = {
   topic: TopicType,
 }
 
-const TopicTimerangeForm = ({ relay, topic: { path: topicPath, timerange } }: Props) => {
+const TopicTimerangeForm = ({ relay, topic: { id: topicId, timerange } }: Props) => {
   const [mutationInFlight, setMutationInFlight] = useState(false)
   const [startsAt, setStartsAt] = useState(moment(timerange?.startsAt as string))
   const prefixFormat = timerange?.prefixFormat
@@ -24,10 +24,15 @@ const TopicTimerangeForm = ({ relay, topic: { path: topicPath, timerange } }: Pr
     (dt: Moment) => {
       if (dt.isValid() && prefixFormat) {
         setMutationInFlight(true)
+
+        // FIXME: get repo from selected repo
+        const repoId = '/wiki/'
+
         const input: Input = {
           prefixFormat,
+          repoId,
           startsAt: dt.toISOString(),
-          topicPath,
+          topicId,
         }
         upsertTopicTimerangeMutation(relay.environment, input)
       } else {
@@ -44,10 +49,15 @@ const TopicTimerangeForm = ({ relay, topic: { path: topicPath, timerange } }: Pr
     async (event: FormEvent<HTMLSelectElement>) => {
       setMutationInFlight(true)
       const newPrefix = event.currentTarget.value as PrefixFormat
+
+      // FIXME: get repo from selected repo
+      const repoId = '/wiki/'
+
       const input: Input = {
         prefixFormat: newPrefix,
+        repoId,
         startsAt,
-        topicPath,
+        topicId,
       }
       await upsertTopicTimerangeMutation(relay.environment, input)
       setMutationInFlight(false)
@@ -103,7 +113,7 @@ const TopicTimerangeForm = ({ relay, topic: { path: topicPath, timerange } }: Pr
 export default createFragmentContainer(TopicTimerangeForm, {
   topic: graphql`
     fragment TopicTimerangeForm_topic on Topic {
-      path
+      id
 
       timerange {
         startsAt

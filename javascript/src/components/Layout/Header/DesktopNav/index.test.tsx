@@ -8,7 +8,7 @@ const props = {
     name: 'Frotz',
     defaultRepository: {
       rootTopic: {
-        path: '/some-repo/topics/123',
+        id: '123',
       },
     },
   },

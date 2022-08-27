@@ -18,12 +18,10 @@ declare class TopicPage extends Component<Props, State> {
     get children(): ({
         readonly __typename: "Topic";
         readonly id: string;
-        readonly path: string;
         readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Topic_topic">;
     } | {
         readonly __typename: "Link";
         readonly id: string;
-        readonly path: string;
         readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Link_link">;
     } | {
         readonly __typename: "%other";
@@ -32,7 +30,6 @@ declare class TopicPage extends Component<Props, State> {
         readonly name: string;
     }[];
     get isGuest(): boolean;
-    get repoName(): string;
     get recentActivityLocation(): LocationType;
     get linksToReviewLocation(): LocationType;
     renderTopicChild: (child: TopicChildType | null) => JSX.Element | null;

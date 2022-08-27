@@ -41,7 +41,7 @@ pub struct Key(String);
 
 impl Key {
     fn downset(path: &ReadPath) -> Self {
-        Self(format!("topic:{}:{}:down", path.spec, path.commit))
+        Self(format!("topic:{}:{}:down", path.id, path.commit))
     }
 }
 
@@ -102,7 +102,7 @@ impl Redis {
         Ok(Redis { url })
     }
 
-    pub fn intersection<F>(&self, fetch: &F, paths: &[ReadPath]) -> Result<HashSet<String>>
+    pub fn intersection<F>(&self, fetch: &F, paths: &[ReadPath]) -> Result<HashSet<RepoId>>
     where
         F: Downset,
     {
@@ -122,7 +122,7 @@ impl Redis {
 
                 if !con.exists(&key)? {
                     log::info!("redis: {:?} not found in redis, saving", key);
-                    self.save_downset(&mut con, &key, &fetch.downset(&path.spec.repo, path))?;
+                    self.save_downset(&mut con, &key, &fetch.downset(path))?;
                 }
 
                 for other_path in tail {
@@ -131,15 +131,15 @@ impl Redis {
 
                     if !con.exists(&key)? {
                         log::info!("redis: {:?} not found in redis, saving", key);
-                        self.save_downset(
-                            &mut con,
-                            &key,
-                            &fetch.downset(&other_path.spec.repo, other_path),
-                        )?;
+                        self.save_downset(&mut con, &key, &fetch.downset(other_path))?;
                     }
                 }
 
-                Ok(con.sinter(&keys)?)
+                let set: HashSet<String> = con.sinter(&keys)?;
+                Ok(set
+                    .iter()
+                    .map(RepoId::try_from)
+                    .collect::<Result<HashSet<RepoId>>>()?)
             }
 
             None => Ok(HashSet::new()),
@@ -157,9 +157,13 @@ impl Redis {
         &self,
         con: &mut redis_rs::Connection,
         key: &Key,
-        set: &HashSet<String>,
+        set: &HashSet<RepoId>,
     ) -> Result<()> {
         redis_rs::transaction(con, &[key], |con, pipe| {
+            let set = set
+                .iter()
+                .map(RepoId::to_string)
+                .collect::<HashSet<String>>();
             pipe.sadd(key, set).ignore().query(con)
         })?;
 

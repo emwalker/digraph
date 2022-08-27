@@ -1,6 +1,7 @@
+use scraper::{Html, Selector};
+
 use super::repo_url::RepoUrl;
 use crate::prelude::*;
-use scraper::{Html, Selector};
 
 const USER_AGENT: &str = "digraph/0.1.0";
 
@@ -42,15 +43,10 @@ impl Page {
         }
 
         log::info!("fetching page: {}", self.0);
-        let client = reqwest::blocking::Client::builder()
-            .user_agent(USER_AGENT)
-            // We're just interested in the link title for now, so this is hopefully not an unsafe
-            // operation in our context.  The user's browser can take over when the user attempts
-            // to follow the link.
-            .danger_accept_invalid_certs(true)
-            .build()?;
-
-        let text = client.get(self.0.normalized.clone()).send()?.text()?;
+        let text = ureq::get(&self.0.normalized)
+            .set("User-Agent", USER_AGENT)
+            .call()?
+            .into_string()?;
         let body = Html::parse_fragment(text.as_ref());
 
         log::info!("page fetched: {}", self.0);

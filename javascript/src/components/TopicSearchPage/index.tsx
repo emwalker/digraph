@@ -11,7 +11,6 @@ import RightColumn from 'components/ui/RightColumn'
 import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
-import Breadcrumbs from 'components/ui/Breadcrumbs'
 import { liftNodes, NodeTypeOf } from 'components/types'
 import {
   TopicSearchPage_query_QueryResponse as Response,
@@ -37,8 +36,6 @@ class TopicSearchPage extends Component<Props> {
         <Link
           key={item.id}
           link={item}
-          orgLogin={this.props.orgLogin}
-          view={this.props.view}
           viewer={this.props.view.viewer}
         />
       )
@@ -47,15 +44,13 @@ class TopicSearchPage extends Component<Props> {
     return (
       <Topic
         key={item.id}
-        orgLogin={this.props.orgLogin}
         topic={item}
-        view={this.props.view}
       />
     )
   }
 
   render = () => {
-    const { orgLogin, topic, view } = this.props
+    const { topic } = this.props
     if (topic == null) return <div>Error parsing route</div>
 
     const {
@@ -64,15 +59,10 @@ class TopicSearchPage extends Component<Props> {
       parentTopics,
     } = topic
     const rows = liftNodes<SearchItemType>(searchResults)
-    const { currentRepository: repo } = view
 
     return (
       <Page>
         <div className="px-3 px-md-6 px-lg-0">
-          <Breadcrumbs
-            orgLogin={orgLogin}
-            repository={repo}
-          />
           <Subhead
             heading={name}
           />
@@ -80,9 +70,7 @@ class TopicSearchPage extends Component<Props> {
             <RightColumn>
               <SidebarList
                 items={liftNodes<ParentTopicType>(parentTopics)}
-                orgLogin={this.props.orgLogin}
                 placeholder="There are no parent topics for this topic."
-                repoName={repo ? repo.displayName : 'No repo'}
                 title="Parent topics"
               />
             </RightColumn>
@@ -104,31 +92,19 @@ class TopicSearchPage extends Component<Props> {
 export const query = graphql`
 query TopicSearchPage_query_Query(
   $viewerId: ID!,
-  $orgLogin: String!
-  $repoName: String,
   $repoIds: [ID!],
-  $topicPath: String!,
+  $topicId: String!,
   $searchString: String!,
 ) {
   view(
     viewerId: $viewerId,
-    currentOrganizationLogin: $orgLogin,
-    currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
     viewer {
       ...Link_viewer
     }
 
-    currentRepository {
-      displayName
-      ...Breadcrumbs_repository
-    }
-
-    ...Link_view
-    ...Topic_view
-
-    topic(path: $topicPath) {
+    topic(id: $topicId) {
       ...TopicSearchPage_topic @arguments(searchString: $searchString)
     }
   }
@@ -141,14 +117,12 @@ export default createFragmentContainer(TopicSearchPage, {
     ) {
       id
       name
-      path
 
       parentTopics(first: 100) {
         edges {
           node {
             display: name
             id
-            path
           }
         }
       }

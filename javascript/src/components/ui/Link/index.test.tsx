@@ -12,11 +12,7 @@ const props = {
   },
   orgLogin: 'gnusto',
   relay: {},
-  view: {
-    currentRepository: {
-      name: 'General collection',
-    },
-  },
+  view: {},
   viewer: {},
 }
 

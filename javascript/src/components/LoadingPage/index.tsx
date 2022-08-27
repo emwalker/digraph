@@ -1,5 +1,4 @@
 import React from 'react'
-import { GoRepo } from 'react-icons/go'
 import { Router } from 'found'
 
 import { LocationType } from 'components/types'
@@ -17,25 +16,10 @@ type Props = {
 
 const LoadingPage = ({ location, router }: Props) => {
   const state = location.state || {}
-  const { orgLogin, repoName, itemTitle } = state
+  const { itemTitle } = state
 
   return (
     <Page>
-      <nav aria-label="Breadcrumb" className="mb-1">
-        <ol>
-          <li className="breadcrumb-item">
-            <GoRepo className="mr-1" />
-            {' '}
-            <a href="#">{orgLogin}</a>
-          </li>
-          <li
-            className="breadcrumb-item breadcrumb-item-selected text-gray"
-            aria-current="page"
-          >
-            { repoName }
-          </li>
-        </ol>
-      </nav>
       <div className="Subhead clearfix gutter">
         <div className="Subhead-heading col-lg-8 col-12">
           { itemTitle }
@@ -52,9 +36,7 @@ const LoadingPage = ({ location, router }: Props) => {
           <RightColumn>
             <SidebarList
               title="Parent topics"
-              orgLogin={orgLogin}
               placeholder="There are no parent topics for this topic."
-              repoName={repoName || 'unknown'}
               items={[]}
             />
           </RightColumn>

@@ -66,12 +66,15 @@ class AddTopic extends Component<Props, State> {
       return
     }
 
+    // FIXME: get the selected repo .id (not .prefix)
+    const repoId = '/wiki/'
+
     upsertTopicMutation(
       this.props.relay.environment,
       {
         name: this.state.name,
-        repoPrefix: repo.prefix,
-        parentTopicPath: this.props.topic.path,
+        repoId,
+        parentTopicId: this.props.topic.id,
       },
       {
         configs: this.relayConfigs,
@@ -115,7 +118,6 @@ export default createFragmentContainer(AddTopic, {
   `,
   topic: graphql`
     fragment AddTopic_topic on Topic {
-      path
       id
     }
   `,

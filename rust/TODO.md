@@ -1,12 +1,16 @@
 Before switchover:
-* Drop the notion of a "path" and a "repo prefix"
-* Don't save private links and topics to /wiki/.
-* Update export to keep paths from different repos separate
+* Bug: when a topic is deleted, the child topics are not added to the children of the parent topics
+* Replace repo names with repo ids
+* Repo selection UX: showing items
+* Repo selection UX: updating items
+* Remove hard-coded references to /wiki/
+* Don't save private links and topics to /wiki/
 * Merge the contents of items with the same id and different repo prefixes
 * Decide whether to support link reviews or remove the feature
-* Fix the JS client to show new links and topics in the right place when they're added
+* Bug: the JS client doesn't show new links and topics in the right place when they're added
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
+* Git: provide UX to download personal repo
 * Cutover: Figure out how to get an RWX pvc working on Linode (use Ceph?)
 * Cutover: Take snapshot of database
 * Cutover: Export people's repos

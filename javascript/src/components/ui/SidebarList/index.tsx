@@ -2,6 +2,7 @@ import React from 'react'
 import { isEmpty } from 'ramda'
 import { Link } from 'found'
 
+import { topicPath } from 'components/helpers'
 import BlankslateUI from '../Blankslate'
 
 const Blankslate = ({ placeholder }: { placeholder: string }) => (
@@ -12,32 +13,28 @@ const Blankslate = ({ placeholder }: { placeholder: string }) => (
 
 type ItemType = {
   display: string,
-  path: string,
+  id: string,
 } | null
 
 type ItemListProps = {
   items: ItemType[],
-  orgLogin: string,
-  repoName: string,
 }
 
-const renderItem = (orgLogin: string, repoName: string) => (item: ItemType) => {
+const renderItem = () => (item: ItemType) => {
   if (!item) return null
-  const { path, display } = item
+  const { id, display } = item
 
   const to = {
-    pathname: path,
+    pathname: topicPath(id),
     state: {
       itemTitle: display,
-      orgLogin,
-      repoName,
     },
   }
 
   return (
     <li
       className="Box-row"
-      key={path}
+      key={id}
     >
       <Link to={to} className="Box-row-link">
         { display }
@@ -46,8 +43,8 @@ const renderItem = (orgLogin: string, repoName: string) => (item: ItemType) => {
   )
 }
 
-const ItemList = ({ items, orgLogin, repoName }: ItemListProps) => {
-  const render = renderItem(orgLogin, repoName)
+const ItemList = ({ items }: ItemListProps) => {
+  const render = renderItem()
   return (
     <ul>
       { items.map(render) }
@@ -57,19 +54,17 @@ const ItemList = ({ items, orgLogin, repoName }: ItemListProps) => {
 
 type Props = {
   items: ItemType[],
-  orgLogin: string,
   placeholder: string,
-  repoName: string,
   title: string,
 }
 
-export default ({ items, orgLogin, placeholder, repoName, title }: Props) => (
+export default ({ items, placeholder, title }: Props) => (
   <div className="Box Box--condensed mb-3">
     <div className="Box-header">
       <span className="Box-title">{title}</span>
     </div>
     { isEmpty(items)
       ? <Blankslate placeholder={placeholder} />
-      : <ItemList items={items} orgLogin={orgLogin} repoName={repoName} />}
+      : <ItemList items={items} />}
   </div>
 )

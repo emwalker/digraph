@@ -6,7 +6,6 @@ import { Link as FoundLink } from 'found'
 
 import Page from 'components/ui/Page'
 import Subhead from 'components/ui/Subhead'
-import Breadcrumbs from 'components/ui/Breadcrumbs'
 import SidebarList from 'components/ui/SidebarList'
 import Columns from 'components/ui/Columns'
 import LeftColumn from 'components/ui/LeftColumn'
@@ -14,6 +13,7 @@ import RightColumn from 'components/ui/RightColumn'
 import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
+import { topicPath } from 'components/helpers'
 import { LocationType, NodeTypeOf, liftNodes } from 'components/types'
 import { TopicPage_query_QueryResponse as Response } from '__generated__/TopicPage_query_Query.graphql'
 import { TopicPage_topic as TopicType } from '__generated__/TopicPage_topic.graphql'
@@ -61,19 +61,12 @@ class TopicPage extends Component<Props, State> {
     return this.props.view.viewer.isGuest
   }
 
-  get repoName(): string {
-    const { currentRepository } = this.props.view
-    return currentRepository ? currentRepository.displayName : 'No name'
-  }
-
   get recentActivityLocation(): LocationType {
     return {
-      pathname: `${this.props.topic.path}/recent`,
+      pathname: `${topicPath(this.props.topic.id)}/recent`,
       query: {},
       search: '',
       state: {
-        orgLogin: this.props.orgLogin,
-        repoName: this.repoName,
         itemTitle: this.props.topic.displayName,
       },
     }
@@ -81,12 +74,10 @@ class TopicPage extends Component<Props, State> {
 
   get linksToReviewLocation(): LocationType {
     return {
-      pathname: `${this.props.topic.path}/review`,
+      pathname: `${topicPath(this.props.topic.id)}/review`,
       query: {},
       search: '',
       state: {
-        orgLogin: this.props.orgLogin,
-        repoName: this.repoName,
         itemTitle: this.props.topic.displayName,
       },
     }
@@ -99,9 +90,7 @@ class TopicPage extends Component<Props, State> {
       return (
         <Topic
           key={child.id}
-          orgLogin={this.props.orgLogin}
           topic={child}
-          view={this.props.view}
         />
       )
     }
@@ -111,8 +100,6 @@ class TopicPage extends Component<Props, State> {
           <Link
           key={child.id}
           link={child}
-          orgLogin={this.props.orgLogin}
-          view={this.props.view}
           viewer={this.props.view.viewer}
         />
       )
@@ -176,7 +163,7 @@ class TopicPage extends Component<Props, State> {
   )
 
   render = () => {
-    const { location, topic, view } = this.props
+    const { location, topic } = this.props
 
     if (!topic) {
       return (
@@ -188,15 +175,10 @@ class TopicPage extends Component<Props, State> {
     }
 
     const { displayName, parentTopics } = topic
-    const { children, repoName } = this
-    const { currentRepository } = view
+    const { children } = this
 
     return (
       <Page>
-        <Breadcrumbs
-          orgLogin={this.props.orgLogin}
-          repository={currentRepository}
-        />
         <Subhead
           heading={displayName}
           renderHeadingDetail={this.renderHeadingDetail}
@@ -205,9 +187,7 @@ class TopicPage extends Component<Props, State> {
           <RightColumn>
             <SidebarList
               items={liftNodes<ParentTopicType>(parentTopics)}
-              orgLogin={this.props.orgLogin}
               placeholder="There are no parent topics for this topic."
-              repoName={repoName}
               title="Parent topics"
             />
             {this.renderTopicViews()}
@@ -234,10 +214,8 @@ export const UnwrappedTopicPage = TopicPage
 export const query = graphql`
 query TopicPage_query_Query(
   $viewerId: ID!,
-  $orgLogin: String!,
-  $repoName: String,
   $repoIds: [ID!],
-  $topicPath: String!,
+  $topicId: String!,
   $searchString: String,
 ) {
   alerts {
@@ -248,8 +226,6 @@ query TopicPage_query_Query(
 
   view(
     viewerId: $viewerId,
-    currentOrganizationLogin: $orgLogin,
-    currentRepositoryName: $repoName,
     repositoryIds: $repoIds,
   ) {
     viewer {
@@ -259,15 +235,7 @@ query TopicPage_query_Query(
       ...Link_viewer
     }
 
-    currentRepository {
-      displayName
-      ...Breadcrumbs_repository
-    }
-
-    ...Link_view
-    ...Topic_view
-
-    topic(path: $topicPath) {
+    topic(id: $topicId) {
       ...TopicPage_topic @arguments(searchString: $searchString)
     }
   }
@@ -280,7 +248,6 @@ export default createFragmentContainer(TopicPage, {
     ) {
       displayName: name
       id
-      path
 
       synonyms {
         name
@@ -291,7 +258,6 @@ export default createFragmentContainer(TopicPage, {
           node {
             display: name
             id
-            path
           }
         }
       }
@@ -303,13 +269,11 @@ export default createFragmentContainer(TopicPage, {
 
             ... on Topic {
               id
-              path
               ...Topic_topic
             }
 
             ... on Link {
               id
-              path
               ...Link_link
             }
           }

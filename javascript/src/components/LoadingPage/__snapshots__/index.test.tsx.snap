@@ -2,32 +2,6 @@
 
 exports[`<LoadingPage /> renders 1`] = `
 <Page>
-  <nav
-    aria-label="Breadcrumb"
-    className="mb-1"
-  >
-    <ol>
-      <li
-        className="breadcrumb-item"
-      >
-        <GoRepo
-          className="mr-1"
-        />
-         
-        <a
-          href="#"
-        >
-          Gnusto
-        </a>
-      </li>
-      <li
-        aria-current="page"
-        className="breadcrumb-item breadcrumb-item-selected text-gray"
-      >
-        General collection
-      </li>
-    </ol>
-  </nav>
   <div
     className="Subhead clearfix gutter"
   >
@@ -56,9 +30,7 @@ exports[`<LoadingPage /> renders 1`] = `
       <RightColumn>
         <_default
           items={Array []}
-          orgLogin="Gnusto"
           placeholder="There are no parent topics for this topic."
-          repoName="General collection"
           title="Parent topics"
         />
       </RightColumn>

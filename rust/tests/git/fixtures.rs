@@ -12,7 +12,7 @@ use std::env;
 use std::path::PathBuf;
 use tempfile::{self, TempDir};
 
-use super::{actor, path};
+use super::{actor, parse_id};
 
 struct Fetcher(String);
 
@@ -74,25 +74,27 @@ impl Fixtures {
         Ok(self.leaked_data()?.is_empty())
     }
 
-    pub fn fetch_link<F>(&self, topic_id: &RepoPath, block: F)
+    pub fn fetch_link<F>(&self, repo: &RepoName, topic_id: &RepoId, block: F)
     where
         F: Fn(Link),
     {
         let link = self
             .git
-            .fetch_link(&topic_id.repo, topic_id)
+            .fetch_link(repo, topic_id)
             .unwrap_or_else(|| panic!("expected a link: {:?}", topic_id));
+
         block(link);
     }
 
-    pub fn fetch_topic<F>(&self, topic_id: &RepoPath, block: F)
+    pub fn fetch_topic<F>(&self, repo: &RepoName, topic_id: &RepoId, block: F)
     where
         F: Fn(Topic),
     {
         let topic = self
             .git
-            .fetch_topic(&topic_id.repo, topic_id)
+            .fetch_topic(repo, topic_id)
             .unwrap_or_else(|| panic!("expected a topic: {:?}", topic_id));
+
         block(topic);
     }
 
@@ -100,18 +102,18 @@ impl Fixtures {
         self.git.leaked_data()
     }
 
-    pub fn topic(&self, path: &str) -> Topic {
-        let topic_id = RepoPath::try_from(path).unwrap();
-        self.git.fetch_topic(&topic_id.repo, &topic_id).unwrap()
+    pub fn topic(&self, repo: &RepoName, topic_id: &str) -> Topic {
+        let topic_id = RepoId::try_from(topic_id).unwrap();
+        self.git.fetch_topic(repo, &topic_id).unwrap()
     }
 
-    pub fn topic_path(&self, name: &str) -> Result<Option<RepoPath>> {
+    pub fn topic_id(&self, name: &str) -> Option<RepoId> {
         let FetchTopicLiveSearchResult {
             synonym_matches: matches,
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            prefixes: vec![RepoName::wiki()],
+            repos: vec![RepoName::wiki()],
             search: Search::parse(name).unwrap(),
             viewer: actor(),
         }
@@ -120,7 +122,7 @@ impl Fixtures {
 
         let row = matches.iter().find(|row| row.name == name);
 
-        Ok(row.map(|m| RepoPath::try_from(&m.path).unwrap()))
+        row.map(|m| m.id.to_owned())
     }
 
     fn write(&self) {
@@ -138,22 +140,16 @@ impl Fixtures {
         repo: &RepoName,
         url: &RepoUrl,
         title: Option<String>,
-        parent_topic: Option<String>,
+        add_parent_topic_id: Option<RepoId>,
     ) -> UpsertLinkResult {
         let html = match &title {
             Some(title) => format!("<title>{}</title>", title),
             None => "<title>Some title</title>".into(),
         };
 
-        let add_parent_topic_path = if let Some(path) = &parent_topic {
-            Some(RepoPath::try_from(path).unwrap())
-        } else {
-            None
-        };
-
         let request = UpsertLink {
             actor: actor(),
-            add_parent_topic_path,
+            add_parent_topic_id,
             fetcher: Box::new(Fetcher(html)),
             repo: repo.to_owned(),
             url: url.normalized.to_owned(),
@@ -169,7 +165,7 @@ impl Fixtures {
         &self,
         repo: &RepoName,
         name: &str,
-        parent_topic: &RepoPath,
+        parent_topic: &RepoId,
         on_matching_synonym: OnMatchingSynonym,
     ) -> Result<UpsertTopicResult> {
         UpsertTopic {
@@ -194,32 +190,34 @@ mod tests {
     #[allow(dead_code)]
     fn update_simple_fixtures() {
         let f = Fixtures::copy("simple");
-        let root = RepoPath::try_from(WIKI_ROOT_TOPIC_PATH).unwrap();
+        let root = RepoId::root_topic();
+        let repo = RepoName::wiki();
 
         let topic_path =
-            path("/wiki/dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
+            parse_id("dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change".to_owned(),
-            repo: RepoName::wiki(),
+            repo: repo.to_owned(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_path),
             parent_topic: root.clone(),
         }
         .call(f.update(), &redis::Noop)
         .unwrap();
-        let climate_change = topic.unwrap().path().unwrap();
+        let climate_change = topic.unwrap();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Climate_change").unwrap();
         let result = f.upsert_link(
-            &RepoName::wiki(),
+            &repo,
             &url,
             Some("Climate change".into()),
-            Some(climate_change.inner.to_owned()),
+            Some(climate_change.id().to_owned()),
         );
         println!("result: {:?}", result.link);
 
-        let path = path("/wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj");
+        let path =
+            parse_id("/wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj");
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
@@ -230,36 +228,37 @@ mod tests {
         }
         .call(f.update(), &redis::Noop)
         .unwrap();
-        let weather = topic.unwrap().path().unwrap();
+        let weather = topic.unwrap();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Weather").unwrap();
         f.upsert_link(
-            &RepoName::wiki(),
+            &repo,
             &url,
             Some("Weather".into()),
-            Some(weather.inner.to_owned()),
+            Some(weather.id().to_owned()),
         );
 
-        let path = RepoPath::try_from(
-            "/wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13",
-        )
-        .unwrap();
+        let topic_id = parse_id("F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13");
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change and weather".to_owned(),
-            repo: RepoName::wiki(),
-            on_matching_synonym: OnMatchingSynonym::Update(path),
-            parent_topic: climate_change.clone(),
+            repo: repo.to_owned(),
+            on_matching_synonym: OnMatchingSynonym::Update(topic_id),
+            parent_topic: climate_change.id().to_owned(),
         }
         .call(f.update(), &redis::Noop)
         .unwrap();
-        let climate_change_weather = topic.unwrap().path().unwrap();
+        let climate_change_weather = topic.unwrap();
 
         UpdateTopicParentTopics {
             actor: actor(),
-            parent_topic_ids: BTreeSet::from([climate_change, weather]),
-            topic_id: climate_change_weather.clone(),
+            repo: repo.to_owned(),
+            parent_topic_ids: BTreeSet::from([
+                climate_change.id().to_owned(),
+                weather.id().to_owned(),
+            ]),
+            topic_id: climate_change_weather.id().to_owned(),
         }
         .call(f.update(), &redis::Noop)
         .unwrap();
@@ -268,20 +267,20 @@ mod tests {
             RepoUrl::parse("https://royalsociety.org/topics-policy/projects/climate-change-evidence-causes/question-13/")
                 .unwrap();
         f.upsert_link(
-            &RepoName::wiki(),
+            &repo,
             &url,
             Some("13. How does climate change affect the strength and frequency of floods, droughts, hurricanes, and tornadoes?".into()),
-            Some(climate_change_weather.inner.to_owned()),
+            Some(climate_change_weather.id().to_owned()),
         );
 
         let url =
             RepoUrl::parse("https://climate.nasa.gov/resources/global-warming-vs-climate-change/")
                 .unwrap();
         f.upsert_link(
-            &RepoName::wiki(),
+            &repo,
             &url,
             Some("Overview: Weather, Global Warming, and Climate Change".into()),
-            Some(climate_change_weather.inner),
+            Some(climate_change_weather.id().to_owned()),
         );
 
         f.write();

@@ -3,7 +3,7 @@ use async_graphql::{Context, Object, SimpleObject, Union};
 use itertools::Itertools;
 
 use super::timerange;
-use super::{relay::conn, ActivityLineItem, Link, LinkConnection, Repository, Synonym, Synonyms};
+use super::{relay::conn, ActivityLineItem, Link, LinkConnection, Synonym, Synonyms};
 use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::store::Store;
 use crate::{git, prelude::*};
@@ -11,7 +11,7 @@ use crate::{git, prelude::*};
 #[derive(Debug, SimpleObject)]
 pub struct SynonymMatch {
     pub display_name: String,
-    pub path: String,
+    pub id: String,
 }
 
 #[derive(Debug, SimpleObject)]
@@ -28,10 +28,10 @@ pub enum TopicChild {
 pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
-    pub child_paths: Vec<RepoPath>,
-    pub path: RepoPath,
+    pub child_ids: Vec<RepoId>,
+    pub id: String,
     pub name: String,
-    pub parent_topic_paths: Vec<RepoPath>,
+    pub parent_topic_ids: Vec<String>,
     pub root: bool,
     pub synonyms: Synonyms,
     pub timerange: Option<timerange::Timerange>,
@@ -50,21 +50,23 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        let repo = ctx.data_unchecked::<Store>();
-        let activity = repo
-            .activity(Some(self.path.inner.clone()), first.unwrap_or(3))
+        let topic_id: Option<RepoId> = Some((&self.id).try_into()?);
+        let store = ctx.data_unchecked::<Store>();
+
+        let activity = store
+            .activity(&RepoName::wiki(), &topic_id, first.unwrap_or(3))
             .await?;
 
         let mut results = vec![];
         for change in activity {
-            let actor = repo.user_loader.load_one(change.actor_id()).await?;
+            let actor = store.user_loader.load_one(change.actor_id()).await?;
             let actor_name = actor
                 .map(|user| user.name)
                 .unwrap_or_else(|| "[missing user]".to_owned());
 
             results.push(ActivityLineItem {
                 created_at: change.date(),
-                description: change.markdown(Locale::EN, &actor_name, Some(&self.path)),
+                description: change.markdown(Locale::EN, &actor_name, topic_id.as_ref()),
             });
         }
 
@@ -97,9 +99,10 @@ impl Topic {
         last: Option<i32>,
         search_string: Option<String>,
     ) -> Result<TopicChildConnection> {
+        let topic_id: RepoId = (&self.id).try_into()?;
         let iter = ctx
             .data_unchecked::<Store>()
-            .topic_children(&self.path)
+            .topic_children(&RepoName::wiki(), &topic_id)
             .await?;
 
         let mut results = vec![];
@@ -115,11 +118,8 @@ impl Topic {
     }
 
     async fn display_color(&self) -> &str {
-        if self.path.starts_with(WIKI_REPO_PREFIX) {
-            ""
-        } else {
-            DEFAULT_PRIVATE_COLOR
-        }
+        // FIXME
+        ""
     }
 
     async fn display_name(&self) -> &str {
@@ -139,6 +139,10 @@ impl Topic {
         reviewed: Option<bool>,
         descendants: Option<bool>,
     ) -> Result<LinkConnection> {
+        // FIXME
+        let repo = RepoName::wiki();
+        let topic_id: RepoId = (&self.id).try_into()?;
+
         query(
             after,
             before,
@@ -147,7 +151,7 @@ impl Topic {
             |_after, _before, _first, _last| async move {
                 let results = ctx
                     .data::<Store>()?
-                    .child_links_for_topic(&self.path, reviewed)
+                    .child_links_for_topic(&repo, &topic_id, reviewed)
                     .await?;
                 let mut connection = Connection::with_additional_fields(
                     false,
@@ -174,8 +178,8 @@ impl Topic {
         false
     }
 
-    async fn id(&self) -> String {
-        self.path.to_string()
+    async fn id(&self) -> &str {
+        &self.id
     }
 
     async fn name(&self) -> &str {
@@ -194,29 +198,19 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<TopicConnection> {
+        // FIXME
+        let repo = RepoName::wiki();
+        let topic_id: RepoId = (&self.id).try_into()?;
+
         conn(
             after,
             before,
             first,
             last,
             ctx.data_unchecked::<Store>()
-                .parent_topics_for_topic(&self.path)
+                .parent_topics_for_topic(&repo, &topic_id)
                 .await?,
         )
-    }
-
-    async fn path(&self) -> String {
-        self.path.to_string()
-    }
-
-    async fn repository(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
-        ctx.data_unchecked::<Store>()
-            .repository_by_prefix(self.path.org_login.clone())
-            .await
-    }
-
-    async fn resource_path(&self) -> &str {
-        self.path.inner.as_str()
     }
 
     async fn search(
@@ -260,7 +254,7 @@ impl Topic {
             return Ok(false);
         }
 
-        // TODO: Narrow down write permissions to a specific topics and their subtopics
-        Ok(store.viewer.write_repos.include(&self.path.repo))
+        // FIXME
+        Ok(true)
     }
 }

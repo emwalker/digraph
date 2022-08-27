@@ -3,7 +3,7 @@ apiVersion: objects/v1
 kind: Topic
 metadata:
   added: "2021-03-18T00:09:59.350933Z"
-  path: /wiki/00002
+  id: "00002"
   details:
     root: false
     synonyms:
@@ -13,5 +13,5 @@ metadata:
     timerange: ~
 parentTopics:
   - added: "2021-03-18T00:09:59.350933Z"
-    path: /wiki/lBwR6Cvz4btdI23oscsp7THRytHohlol4o2IkqxcFN8
+    id: lBwR6Cvz4btdI23oscsp7THRytHohlol4o2IkqxcFN8
 children: []

@@ -15,7 +15,7 @@ export default createFragmentContainer(SearchBox, {
           edges {
             node {
               name
-              path
+              id
             }
           }
         }

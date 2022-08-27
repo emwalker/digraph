@@ -3,7 +3,7 @@ import { Router } from 'found'
 import classNames from 'classnames'
 import { EditorState, DraftHandleValue } from 'draft-js'
 
-import { everythingTopicPath } from 'components/constants'
+import { everythingTopicId } from 'components/constants'
 import { LocationType } from 'components/types'
 import { SearchBox_view as ViewType } from '__generated__/SearchBox_view.graphql'
 import TextInput from './TextInput'
@@ -20,8 +20,8 @@ type Props = {
 const atHomepage = (pathname: string) => pathname === '/'
 
 const pathnameFor = (pathname: string, selectedScope: string) => {
-  if (atHomepage(pathname)) return everythingTopicPath
-  return selectedScope === 'Everything' ? everythingTopicPath : pathname
+  if (atHomepage(pathname)) return everythingTopicId
+  return selectedScope === 'Everything' ? everythingTopicId : pathname
 }
 
 const onFormSubmit = (event: FormEvent<HTMLFormElement>) => {

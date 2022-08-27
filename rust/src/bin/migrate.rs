@@ -87,7 +87,7 @@ async fn add_root_topic_path_column_to_repos(pool: &PgPool) -> Result<()> {
         .fetch_all(pool)
         .await?;
         for (repository_id, prefix, _topic_id) in &rows {
-            let path = format!("{}{}", prefix, DEFAULT_ROOT_TOPIC_ID);
+            let path = format!("{}{}", prefix, ROOT_TOPIC_ID);
 
             sqlx::query("update repositories set root_topic_path = $1 where id = $2")
                 .bind(&path)

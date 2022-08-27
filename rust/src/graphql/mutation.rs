@@ -43,13 +43,14 @@ pub struct DeleteAccountPayload {
 #[derive(Debug, InputObject)]
 pub struct DeleteLinkInput {
     client_mutation_id: Option<String>,
-    link_path: String,
+    link_id: String,
+    repo_id: String,
 }
 
 #[derive(Debug, SimpleObject)]
 pub struct DeleteLinkPayload {
     client_mutation_id: Option<String>,
-    deleted_link_path: Option<String>,
+    deleted_link_id: Option<String>,
 }
 
 #[derive(Debug, InputObject)]
@@ -68,19 +69,21 @@ pub struct DeleteSessionPayload {
 #[derive(Debug, InputObject)]
 pub struct DeleteTopicInput {
     client_mutation_id: Option<String>,
-    topic_path: String,
+    repo_id: String,
+    topic_id: String,
 }
 
 #[derive(Debug, SimpleObject)]
 pub struct DeleteTopicPayload {
     client_mutation_id: Option<String>,
-    deleted_topic_path: String,
+    deleted_topic_id: String,
 }
 
 #[derive(Debug, InputObject)]
 pub struct RemoveTopicTimerangeInput {
     client_mutation_id: Option<String>,
-    topic_path: String,
+    repo_id: String,
+    topic_id: String,
 }
 
 #[derive(Debug, SimpleObject)]
@@ -92,7 +95,8 @@ pub struct RemoveTopicTimerangePayload {
 #[derive(Debug, InputObject)]
 pub struct ReviewLinkInput {
     client_mutation_id: Option<String>,
-    link_path: String,
+    link_id: String,
+    repo_id: String,
     reviewed: bool,
 }
 
@@ -116,8 +120,9 @@ pub struct SelectRepositoryPayload {
 #[derive(Debug, InputObject)]
 pub struct UpdateLinkParentTopicsInput {
     pub client_mutation_id: Option<String>,
-    pub link_path: String,
-    pub parent_topic_paths: Vec<String>,
+    pub link_id: String,
+    pub parent_topic_ids: Vec<String>,
+    pub repo_id: String,
 }
 
 #[derive(Debug, SimpleObject)]
@@ -147,8 +152,9 @@ impl SynonymInput {
 #[derive(Debug, InputObject)]
 pub struct UpdateTopicSynonymsInput {
     pub client_mutation_id: Option<String>,
+    pub repo_id: String,
     pub synonyms: Vec<SynonymInput>,
-    pub topic_path: String,
+    pub topic_id: String,
 }
 
 #[derive(SimpleObject)]
@@ -161,8 +167,9 @@ pub struct UpdateTopicSynonymsPayload {
 #[derive(Debug, InputObject)]
 pub struct UpdateTopicParentTopicsInput {
     client_mutation_id: Option<String>,
-    topic_path: String,
-    parent_topic_paths: Vec<String>,
+    parent_topic_ids: Vec<String>,
+    repo_id: String,
+    topic_id: String,
 }
 
 #[derive(SimpleObject)]
@@ -173,9 +180,9 @@ pub struct UpdateTopicParentTopicsPayload {
 
 #[derive(Debug, InputObject)]
 pub struct UpsertLinkInput {
-    pub add_parent_topic_path: Option<String>,
+    pub add_parent_topic_id: Option<String>,
     pub client_mutation_id: Option<String>,
-    pub repo_prefix: String,
+    pub repo_id: String,
     pub title: Option<String>,
     pub url: String,
 }
@@ -191,8 +198,8 @@ pub struct UpsertTopicInput {
     pub client_mutation_id: Option<String>,
     pub description: Option<String>,
     pub name: String,
-    pub repo_prefix: String,
-    pub parent_topic_path: String,
+    pub parent_topic_id: String,
+    pub repo_id: String,
 }
 
 #[derive(SimpleObject)]
@@ -204,10 +211,11 @@ pub struct UpsertTopicPayload {
 #[derive(Debug, InputObject)]
 pub struct UpsertTopicTimerangeInput {
     pub client_mutation_id: Option<String>,
-    pub topic_path: String,
-    pub starts_at: DateTime,
     pub ends_at: Option<DateTime>,
     pub prefix_format: timerange::TimerangePrefixFormat,
+    pub repo_id: String,
+    pub starts_at: DateTime,
+    pub topic_id: String,
 }
 
 #[derive(SimpleObject)]
@@ -287,19 +295,21 @@ impl MutationRoot {
     ) -> Result<DeleteLinkPayload> {
         let DeleteLinkInput {
             client_mutation_id,
-            link_path,
+            link_id,
+            repo_id,
         } = input;
-        let link_path = RepoPath::try_from(&link_path)?;
+        let link_id = RepoId::try_from(&link_id)?;
+
         let git::DeleteLinkResult {
-            deleted_link_path, ..
+            deleted_link_id, ..
         } = ctx
             .data_unchecked::<Store>()
-            .delete_link(&link_path)
+            .delete_link(&repo_id.try_into()?, &link_id)
             .await?;
 
         Ok(DeleteLinkPayload {
             client_mutation_id,
-            deleted_link_path: Some(deleted_link_path.inner),
+            deleted_link_id: Some(deleted_link_id.to_string()),
         })
     }
 
@@ -330,15 +340,18 @@ impl MutationRoot {
     ) -> Result<DeleteTopicPayload> {
         let DeleteTopicInput {
             client_mutation_id,
-            topic_path,
+            repo_id,
+            topic_id,
         } = input;
+        let topic_id = RepoId::try_from(&topic_id)?;
+
         ctx.data_unchecked::<Store>()
-            .delete_topic(&RepoPath::try_from(&topic_path)?)
+            .delete_topic(&repo_id.try_into()?, &topic_id)
             .await?;
 
         Ok(DeleteTopicPayload {
             client_mutation_id,
-            deleted_topic_path: topic_path,
+            deleted_topic_id: topic_id.to_string(),
         })
     }
 
@@ -349,17 +362,17 @@ impl MutationRoot {
     ) -> Result<RemoveTopicTimerangePayload> {
         let RemoveTopicTimerangeInput {
             client_mutation_id,
-            topic_path,
-        } = input;
+            repo_id,
+            topic_id,
+        } = &input;
 
-        let topic_path = RepoPath::try_from(&topic_path)?;
         let git::RemoveTopicTimerangeResult { topic, .. } = ctx
             .data_unchecked::<Store>()
-            .remove_topic_timerange(&topic_path)
+            .remove_topic_timerange(&repo_id.try_into()?, &topic_id.try_into()?)
             .await?;
 
         Ok(RemoveTopicTimerangePayload {
-            client_mutation_id,
+            client_mutation_id: client_mutation_id.to_owned(),
             topic: Topic::try_from(&topic)?,
         })
     }
@@ -370,14 +383,15 @@ impl MutationRoot {
         input: ReviewLinkInput,
     ) -> Result<ReviewLinkPayload> {
         let ReviewLinkInput {
-            link_path,
+            link_id,
+            repo_id,
             reviewed,
             ..
-        } = input;
+        } = &input;
 
         let psql::ReviewLinkResult { link, .. } = ctx
             .data_unchecked::<Store>()
-            .review_link(&RepoPath::try_from(&link_path)?, reviewed)
+            .review_link(&repo_id.try_into()?, &link_id.try_into()?, *reviewed)
             .await?;
 
         Ok(ReviewLinkPayload {
@@ -409,6 +423,7 @@ impl MutationRoot {
             .data_unchecked::<Store>()
             .update_link_parent_topics(input)
             .await?;
+
         Ok(UpdateLinkParentTopicsPayload {
             link: Link::try_from(&link)?,
         })
@@ -420,18 +435,21 @@ impl MutationRoot {
         input: UpdateTopicParentTopicsInput,
     ) -> Result<UpdateTopicParentTopicsPayload> {
         let UpdateTopicParentTopicsInput {
-            topic_path,
-            parent_topic_paths,
+            topic_id,
+            parent_topic_ids,
+            repo_id,
             ..
-        } = input;
+        } = &input;
+
         let git::UpdateTopicParentTopicsResult { alerts, topic } = ctx
             .data_unchecked::<Store>()
             .update_topic_parent_topics(
-                &RepoPath::try_from(&topic_path)?,
-                parent_topic_paths
+                &repo_id.try_into()?,
+                &topic_id.try_into()?,
+                parent_topic_ids
                     .iter()
-                    .map(RepoPath::try_from)
-                    .collect::<Result<Vec<RepoPath>>>()?,
+                    .map(RepoId::try_from)
+                    .collect::<Result<Vec<RepoId>>>()?,
             )
             .await?;
 

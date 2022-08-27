@@ -125,8 +125,8 @@ mod ensure_personal_repo {
         let repo = "/other/".try_into().unwrap();
         ensure(&f, &repo, &actor, &actor.user_id).unwrap();
 
-        let path = repo.default_topic_path().unwrap();
-        let topic = f.topic(&path.inner);
+        let root = RepoId::root_topic();
+        let topic = f.git.fetch_topic(&repo, &root).unwrap();
         assert_eq!(topic.name(Locale::EN), "Everything");
     }
 

@@ -6,8 +6,6 @@ exports[`<Link /> renders 1`] = `
   className="Box-row--link"
   description={null}
   formIsOpen={false}
-  orgLogin="gnusto"
-  repoName="General collection"
   showEditButton={true}
   showLink={true}
   title="title"
@@ -24,7 +22,6 @@ exports[`<Link /> renders 1`] = `
         "viewerCanUpdate": true,
       }
     }
-    orgLogin="gnusto"
     relay={Object {}}
     toggleForm={[Function]}
   />

@@ -4,4 +4,4 @@ kind: SearchTokenIndexMap
 tokens:
   affect:
     - kind: Link
-      path: /wiki/d72b7df807ba4a386b8fb8efa8789d656b43c02ce2cd4348b1dd4885c07c95d7
+      id: d72b7df807ba4a386b8fb8efa8789d656b43c02ce2cd4348b1dd4885c07c95d7

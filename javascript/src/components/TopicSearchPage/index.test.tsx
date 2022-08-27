@@ -6,7 +6,7 @@ import TopicPage from './index'
 jest.mock('react-relay', () => ({
   createFragmentContainer: (component: any) => component,
   createRefetchContainer: (Component: any) => (props: any) => (
-    <Component {...props} relay={{ refetch: () => {} }} />
+    <Component {...props} relay={{ refetch: () => { } }} />
   ),
   QueryRenderer: () => null,
 }))
@@ -17,10 +17,6 @@ describe('<TopicPage />', () => {
   }
 
   const view = {
-    currentRepository: {
-      displayName: 'Private collection',
-      isPrivate: true,
-    },
   }
 
   // @ts-expect-error

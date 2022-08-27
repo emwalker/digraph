@@ -2,7 +2,7 @@
 kind: UpsertLink
 addParentTopic:
   deleted: false
-  path: /wiki/F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
+  id: F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13
   synonyms:
     en: Climate change and weather
 actorId: "2"
@@ -10,6 +10,6 @@ id: Z0qLqmx2mtBhIUNqVTCEpAGnN0Mi67jZWW0dvTWKwVZ9Q3n5OuAbZvcVFXZ38gNc
 date: "2022-07-16T21:46:09.168039557Z"
 upsertedLink:
   deleted: false
-  path: /wiki/d72b7df807ba4a386b8fb8efa8789d656b43c02ce2cd4348b1dd4885c07c95d7
+  id: d72b7df807ba4a386b8fb8efa8789d656b43c02ce2cd4348b1dd4885c07c95d7
   title: "13. How does climate change affect the strength and frequency of floods, droughts, hurricanes, and tornadoes?"
   url: "https://royalsociety.org/topics-policy/projects/climate-change-evidence-causes/question-13/"

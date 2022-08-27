@@ -12,6 +12,7 @@ struct Opts {
 struct ConsoleOutput<'r> {
     git: &'r mut Client,
     buf: String,
+    repo: RepoName,
 }
 
 impl<'r> Visitor for &mut ConsoleOutput<'r> {
@@ -21,7 +22,7 @@ impl<'r> Visitor for &mut ConsoleOutput<'r> {
 Topic: [{}]({})
 Parent topics:
 "#,
-        meta.name(Locale::EN), meta.path};
+        meta.name(Locale::EN), meta.id};
         self.buf.push_str(&s);
 
         for topic in &topic.parent_topics {
@@ -60,12 +61,10 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        let topic_id = RepoPath::try_from(&topic.path)?;
-
-        match &self.git.fetch(&topic_id.repo, &topic_id) {
+        match &self.git.fetch(&self.repo, &topic.id) {
             Some(Object::Topic(topic)) => {
                 let meta = &topic.metadata;
-                let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.path);
+                let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.id);
                 self.buf.push_str(&s);
             }
             other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
@@ -75,7 +74,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_topic(&mut self, topic: &Topic) -> Result<()> {
-        let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path()?);
+        let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.id());
         self.buf.push_str(&line);
 
         for topic in &topic.parent_topics {
@@ -97,10 +96,9 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        let topic_id = RepoPath::try_from(&topic.path)?;
-        match &self.git.fetch(&topic_id.repo, &topic_id) {
+        match &self.git.fetch(&self.repo, &topic.id) {
             Some(Object::Topic(topic)) => {
-                let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.path()?);
+                let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.id());
                 self.buf.push_str(&line);
             }
             other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
@@ -109,8 +107,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
-        let id = RepoPath::try_from(&child.path)?;
-        match &self.git.fetch(&id.repo, &id) {
+        match &self.git.fetch(&self.repo, &child.id) {
             Some(Object::Topic(topic)) => {
                 self.visit_child_topic(topic)?;
             }
@@ -136,8 +133,9 @@ fn parse_args() -> Opts {
 async fn main() -> Result<()> {
     let opts = parse_args();
     let (root_directory, path) = parse_path(&opts.filename)?;
+
     let mut git = Client::new(&Viewer::service_account(), &root_directory, Timespec);
-    let object = git.fetch(&path.repo, &path);
+    let object = git.fetch(&path.repo, &path.id);
     if object.is_none() {
         return Err(Error::NotFound(format!(
             "{} does not contain {}",
@@ -147,9 +145,11 @@ async fn main() -> Result<()> {
     let object = object.unwrap();
 
     let mut output = ConsoleOutput {
-        git: &mut git,
         buf: String::new(),
+        git: &mut git,
+        repo: path.repo,
     };
+
     object.accept(&mut output)?;
     io::stdout().write_all(output.as_bytes())?;
 

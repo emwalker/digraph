@@ -9,12 +9,13 @@ use crate::prelude::*;
 
 pub struct DeleteTopic {
     pub actor: Viewer,
-    pub topic_id: RepoPath,
+    pub repo: RepoName,
+    pub topic_id: RepoId,
 }
 
 pub struct DeleteTopicResult {
     pub alerts: Vec<Alert>,
-    pub deleted_topic_path: RepoPath,
+    pub deleted_topic_id: RepoId,
 }
 
 impl DeleteTopic {
@@ -25,7 +26,7 @@ impl DeleteTopic {
         let topic_id = &self.topic_id;
         let date = chrono::Utc::now();
 
-        let topic = mutation.fetch_topic(&topic_id.repo, topic_id);
+        let topic = mutation.fetch_topic(&self.repo, topic_id);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", topic_id)));
         }
@@ -35,13 +36,13 @@ impl DeleteTopic {
             return Err(Error::Repo("cannot delete root topic".to_owned()));
         }
 
-        mutation.mark_deleted(topic_id)?;
+        mutation.mark_deleted(&self.repo, topic_id)?;
 
         let parent_topics = topic
             .parent_topics
             .iter()
             .map(|parent| ParentTopic {
-                path: parent.path.to_owned(),
+                id: parent.id.to_owned(),
             })
             .collect::<BTreeSet<ParentTopic>>();
 
@@ -49,15 +50,14 @@ impl DeleteTopic {
 
         // Remove the topic from the children of the parent topics
         for parent in &topic.parent_topics {
-            let parent_id = RepoPath::try_from(&parent.path)?;
-            if let Some(mut topic) = mutation.fetch_topic(&parent_id.repo, &parent_id) {
+            if let Some(mut topic) = mutation.fetch_topic(&self.repo, &parent.id) {
                 topic.children.remove(&TopicChild {
                     // The 'added' field is ignored
                     added: chrono::Utc::now(),
                     kind: Kind::Topic,
-                    path: topic_id.inner.to_owned(),
+                    id: topic_id.to_owned(),
                 });
-                mutation.save_topic(&parent_id.repo, &parent_id, &topic)?;
+                mutation.save_topic(&self.repo, &parent.id, &topic)?;
                 topics.push(topic.clone());
             }
         }
@@ -67,14 +67,13 @@ impl DeleteTopic {
 
         // Remove the topic from its children, moving them onto the parent topics
         for child in &topic.children {
-            let link_id = RepoPath::try_from(&child.path)?;
-            match mutation.fetch(&link_id.repo, &link_id) {
+            match mutation.fetch(&self.repo, &child.id) {
                 Some(Object::Link(child_link)) => {
                     let mut link = child_link.to_owned();
                     link.parent_topics.remove(&topic.to_parent_topic());
                     link.parent_topics.append(&mut parent_topics.clone());
                     child_links.push(link.clone());
-                    mutation.save_link(&link_id.repo, &link_id, &link)?;
+                    mutation.save_link(&self.repo, &child.id, &link)?;
                 }
 
                 Some(Object::Topic(child_topic)) => {
@@ -82,7 +81,7 @@ impl DeleteTopic {
                     child_topic.parent_topics.remove(&topic.to_parent_topic());
                     child_topic.parent_topics.append(&mut parent_topics.clone());
                     child_topics.push(child_topic.clone());
-                    mutation.save_topic(&link_id.repo, &link_id, &child_topic)?;
+                    mutation.save_topic(&self.repo, &child.id, &child_topic)?;
                 }
 
                 None => {}
@@ -91,13 +90,13 @@ impl DeleteTopic {
 
         let change = self.change(&topic, &topics, &child_links, &child_topics, date);
 
-        mutation.remove_topic(&self.topic_id, &topic)?;
-        mutation.add_change(&change)?;
+        mutation.remove_topic(&self.repo, &self.topic_id, &topic)?;
+        mutation.add_change(&self.repo, &change)?;
         mutation.write(store)?;
 
         Ok(DeleteTopicResult {
             alerts: vec![],
-            deleted_topic_path: self.topic_id.clone(),
+            deleted_topic_id: self.topic_id.to_owned(),
         })
     }
 
@@ -126,7 +125,8 @@ impl DeleteTopic {
 
 pub struct RemoveTopicTimerange {
     pub actor: Viewer,
-    pub topic_id: RepoPath,
+    pub repo: RepoName,
+    pub topic_id: RepoId,
 }
 
 pub struct RemoveTopicTimerangeResult {
@@ -139,7 +139,7 @@ impl RemoveTopicTimerange {
     where
         S: SaveChangesForPrefix,
     {
-        let topic = mutation.fetch_topic(&self.topic_id.repo, &self.topic_id);
+        let topic = mutation.fetch_topic(&self.repo, &self.topic_id);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -155,8 +155,8 @@ impl RemoveTopicTimerange {
             None => {}
         }
 
-        mutation.save_topic(&self.topic_id.repo, &self.topic_id, &topic)?;
-        mutation.add_change(&self.change(&topic, previous_timerange))?;
+        mutation.save_topic(&self.repo, &self.topic_id, &topic)?;
+        mutation.add_change(&self.repo, &self.change(&topic, previous_timerange))?;
         mutation.write(store)?;
 
         Ok(RemoveTopicTimerangeResult {
@@ -168,7 +168,7 @@ impl RemoveTopicTimerange {
     pub fn change(&self, topic: &Topic, previous_timerange: Option<Timerange>) -> activity::Change {
         let mut parent_topics = BTreeSet::new();
         for parent in &topic.parent_topics {
-            parent_topics.insert(parent.path.to_owned());
+            parent_topics.insert(parent.id.to_owned());
         }
 
         activity::Change::RemoveTopicTimerange(activity::RemoveTopicTimerange {
@@ -184,8 +184,9 @@ impl RemoveTopicTimerange {
 
 pub struct UpdateTopicParentTopics {
     pub actor: Viewer,
-    pub parent_topic_ids: BTreeSet<RepoPath>,
-    pub topic_id: RepoPath,
+    pub parent_topic_ids: BTreeSet<RepoId>,
+    pub repo: RepoName,
+    pub topic_id: RepoId,
 }
 
 pub struct UpdateTopicParentTopicsResult {
@@ -205,7 +206,7 @@ impl UpdateTopicParentTopics {
         self.validate(&mutation)?;
 
         let date = chrono::Utc::now();
-        let child = mutation.fetch_topic(&self.topic_id.repo, &self.topic_id);
+        let child = mutation.fetch_topic(&self.repo, &self.topic_id);
         if child.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -216,9 +217,7 @@ impl UpdateTopicParentTopics {
         let parent_topics = self
             .parent_topic_ids
             .iter()
-            .map(|path| ParentTopic {
-                path: path.to_string(),
-            })
+            .map(|id| ParentTopic { id: id.to_owned() })
             .collect::<BTreeSet<ParentTopic>>();
 
         let added = parent_topics
@@ -228,7 +227,7 @@ impl UpdateTopicParentTopics {
         let mut added_topics = vec![];
 
         for parent in added {
-            if let Some(mut topic) = parent.fetch(&mutation)? {
+            if let Some(mut topic) = parent.fetch(&self.repo, &mutation)? {
                 topic.children.insert(child.to_topic_child(date));
                 child.parent_topics.insert(parent.to_owned());
                 added_topics.push(topic.clone());
@@ -244,7 +243,7 @@ impl UpdateTopicParentTopics {
         let mut removed_topics = vec![];
 
         for parent in removed {
-            if let Some(mut topic) = parent.fetch(&mutation)? {
+            if let Some(mut topic) = parent.fetch(&self.repo, &mutation)? {
                 topic.children.remove(&child.to_topic_child(date));
                 child.parent_topics.remove(&parent);
                 removed_topics.push(topic.clone());
@@ -256,10 +255,9 @@ impl UpdateTopicParentTopics {
 
         updates.push(child.clone());
         for topic in updates {
-            let topic_id = &topic.path()?;
-            mutation.save_topic(&topic_id.repo, &topic_id, &topic)?;
+            mutation.save_topic(&self.repo, topic.id(), &topic)?;
         }
-        mutation.add_change(&change)?;
+        mutation.add_change(&self.repo, &change)?;
         mutation.write(store)?;
 
         Ok(UpdateTopicParentTopicsResult {
@@ -281,16 +279,16 @@ impl UpdateTopicParentTopics {
             added_parent_topics: activity::TopicInfoList::from(added),
             date,
             id: activity::Change::new_id(),
-            parent_topic_paths: parent_topics
+            parent_topic_ids: parent_topics
                 .iter()
-                .map(|parent| parent.path.to_owned())
-                .collect::<BTreeSet<String>>(),
+                .map(|parent| parent.id.to_owned())
+                .collect::<BTreeSet<RepoId>>(),
             removed_parent_topics: activity::TopicInfoList::from(removed),
             updated_topic: activity::TopicInfo::from(topic),
         })
     }
 
-    fn validate(&self, builder: &Mutation) -> Result<()> {
+    fn validate(&self, mutation: &Mutation) -> Result<()> {
         if self.parent_topic_ids.is_empty() {
             return Err(Error::Repo(
                 "at least one parent topic must be provided".into(),
@@ -298,7 +296,7 @@ impl UpdateTopicParentTopics {
         }
 
         for parent in &self.parent_topic_ids {
-            if builder.cycle_exists(&self.topic_id.repo, &self.topic_id, parent)? {
+            if mutation.cycle_exists(&self.repo, &self.topic_id, parent)? {
                 return Err(Error::Repo(format!(
                     "{} is a parent topic of {}",
                     self.topic_id, parent
@@ -312,8 +310,9 @@ impl UpdateTopicParentTopics {
 
 pub struct UpdateTopicSynonyms {
     pub actor: Viewer,
+    pub repo_id: RepoName,
     pub synonyms: Vec<Synonym>,
-    pub topic_id: RepoPath,
+    pub topic_id: RepoId,
 }
 
 pub struct UpdateTopicSynonymsResult {
@@ -326,7 +325,7 @@ impl UpdateTopicSynonyms {
     where
         S: SaveChangesForPrefix,
     {
-        let topic = mutation.fetch_topic(&self.topic_id.repo, &self.topic_id);
+        let topic = mutation.fetch_topic(&self.repo_id, &self.topic_id);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -388,8 +387,8 @@ impl UpdateTopicSynonyms {
             None => {}
         }
 
-        mutation.save_topic(&self.topic_id.repo, &self.topic_id, &topic)?;
-        mutation.add_change(&self.change(&topic, &added, &removed))?;
+        mutation.save_topic(&self.repo_id, &self.topic_id, &topic)?;
+        mutation.add_change(&self.repo_id, &self.change(&topic, &added, &removed))?;
         mutation.write(store)?;
 
         Ok(UpdateTopicSynonymsResult {
@@ -412,8 +411,8 @@ impl UpdateTopicSynonyms {
             parent_topics: topic
                 .parent_topics
                 .iter()
-                .map(|parent| parent.path.to_owned())
-                .collect::<BTreeSet<String>>(),
+                .map(|parent| parent.id.to_owned())
+                .collect::<BTreeSet<RepoId>>(),
             reordered: added.is_empty() && removed.is_empty(),
             removed_synonyms: activity::SynonymList::from(removed),
             updated_topic: activity::TopicInfo::from(topic),
@@ -424,7 +423,7 @@ impl UpdateTopicSynonyms {
 pub enum OnMatchingSynonym {
     Ask,
     CreateDistinct,
-    Update(RepoPath),
+    Update(RepoId),
 }
 
 pub struct UpsertTopic {
@@ -432,7 +431,7 @@ pub struct UpsertTopic {
     pub locale: Locale,
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
-    pub parent_topic: RepoPath,
+    pub parent_topic: RepoId,
     pub repo: RepoName,
 }
 
@@ -457,7 +456,7 @@ impl UpsertTopic {
         let mut matches = mutation.synonym_phrase_matches(&[&self.repo], &self.name)?;
         let date = chrono::Utc::now();
 
-        let (path, child, parent_topics) = if matches.is_empty() {
+        let (child_id, child, parent_topics) = if matches.is_empty() {
             self.make_topic(&parent)?
         } else {
             match &self.on_matching_synonym {
@@ -469,12 +468,12 @@ impl UpsertTopic {
                         self.name
                     ));
 
-                    let parent_path = &parent.path()?;
+                    let parent_id = &parent.id();
                     let mut matching_synonyms: BTreeSet<SynonymMatch> = BTreeSet::new();
 
                     for synonym_match in matches {
-                        let topic_id = &synonym_match.topic.path()?;
-                        if mutation.cycle_exists(&topic_id.repo, topic_id, parent_path)? {
+                        let topic_id = &synonym_match.topic.id();
+                        if mutation.cycle_exists(&self.repo, topic_id, parent_id)? {
                             matching_synonyms.insert(synonym_match.with_cycle(true));
                         } else {
                             matching_synonyms.insert(synonym_match);
@@ -498,8 +497,8 @@ impl UpsertTopic {
                 }
 
                 OnMatchingSynonym::Update(topic_id) => {
-                    if mutation.cycle_exists(&topic_id.repo, topic_id, &parent.path()?)? {
-                        let ancestor = mutation.fetch_topic(&topic_id.repo, topic_id);
+                    if mutation.cycle_exists(&self.repo, topic_id, parent.id())? {
+                        let ancestor = mutation.fetch_topic(&self.repo, topic_id);
                         if ancestor.is_none() {
                             return Err(Error::NotFound(format!("not found: {}", topic_id)));
                         }
@@ -516,7 +515,7 @@ impl UpsertTopic {
                             cycle: true,
                             entry: SynonymEntry {
                                 name: self.name.to_owned(),
-                                path: topic_id.inner.to_owned(),
+                                id: topic_id.to_owned(),
                             },
                             name: self.name.to_owned(),
                             topic: ancestor,
@@ -531,7 +530,7 @@ impl UpsertTopic {
                     }
 
                     log::info!("updating existing topic {:?}", topic_id);
-                    let topic = mutation.fetch_topic(&topic_id.repo, topic_id);
+                    let topic = mutation.fetch_topic(&self.repo, topic_id);
                     if topic.is_none() {
                         return Err(Error::NotFound(format!("not found: {}", topic_id)));
                     }
@@ -560,10 +559,9 @@ impl UpsertTopic {
         parent.children.insert(child.to_topic_child(date));
 
         let change = self.change(&child, &parent_topics, &parent, date);
-        mutation.save_topic(&path.repo, &path, &child)?;
-        let parent_id = parent.path()?;
-        mutation.save_topic(&parent_id.repo, &parent_id, &parent)?;
-        mutation.add_change(&change)?;
+        mutation.save_topic(&self.repo, &child_id, &child)?;
+        mutation.save_topic(&self.repo, parent.id(), &parent)?;
+        mutation.add_change(&self.repo, &change)?;
         mutation.write(store)?;
 
         Ok(UpsertTopicResult {
@@ -586,24 +584,24 @@ impl UpsertTopic {
             id: activity::Change::new_id(),
             date,
             parent_topic: activity::TopicInfo::from(parent),
-            parent_topic_paths: parent_topics
+            parent_topic_ids: parent_topics
                 .iter()
-                .map(|parent| parent.path.to_owned())
-                .collect::<BTreeSet<String>>(),
+                .map(|parent| parent.id.to_owned())
+                .collect::<BTreeSet<RepoId>>(),
             upserted_topic: activity::TopicInfo::from(topic),
         })
     }
 
-    fn make_topic(&self, parent: &Topic) -> Result<(RepoPath, Topic, BTreeSet<ParentTopic>)> {
+    fn make_topic(&self, parent: &Topic) -> Result<(RepoId, Topic, BTreeSet<ParentTopic>)> {
         let added = chrono::Utc::now();
-        let path = RepoPath::make(&self.repo.to_string())?;
+        let id = RepoId::make();
         let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
 
         let topic = Topic {
             api_version: API_VERSION.into(),
             metadata: TopicMetadata {
                 added,
-                path: path.to_string(),
+                id: id.to_owned(),
                 details: Some(TopicDetails {
                     root: false,
                     synonyms: vec![Synonym {
@@ -618,18 +616,19 @@ impl UpsertTopic {
             children: BTreeSet::new(),
         };
 
-        Ok((path, topic, parent_topics))
+        Ok((id, topic, parent_topics))
     }
 
     fn fetch_parent(&self, mutation: &Mutation) -> Option<Topic> {
-        mutation.fetch_topic(&self.parent_topic.repo, &self.parent_topic)
+        mutation.fetch_topic(&self.repo, &self.parent_topic)
     }
 }
 
 pub struct UpsertTopicTimerange {
     pub actor: Viewer,
+    pub repo_id: RepoName,
     pub timerange: Timerange,
-    pub topic_id: RepoPath,
+    pub topic_id: RepoId,
 }
 
 pub struct UpsertTopicTimerangeResult {
@@ -643,7 +642,7 @@ impl UpsertTopicTimerange {
     where
         S: SaveChangesForPrefix,
     {
-        let topic = mutation.fetch_topic(&self.topic_id.repo, &self.topic_id);
+        let topic = mutation.fetch_topic(&self.repo_id, &self.topic_id);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -659,8 +658,8 @@ impl UpsertTopicTimerange {
             None => {}
         }
 
-        mutation.save_topic(&self.topic_id.repo, &self.topic_id, &topic)?;
-        mutation.add_change(&self.change(&topic, previous_timerange))?;
+        mutation.save_topic(&self.repo_id, &self.topic_id, &topic)?;
+        mutation.add_change(&self.repo_id, &self.change(&topic, previous_timerange))?;
         mutation.write(store)?;
 
         Ok(UpsertTopicTimerangeResult {
@@ -673,7 +672,7 @@ impl UpsertTopicTimerange {
     fn change(&self, topic: &Topic, previous_timerange: Option<Timerange>) -> activity::Change {
         let mut parent_topics = BTreeSet::new();
         for parent in &topic.parent_topics {
-            parent_topics.insert(parent.path.to_owned());
+            parent_topics.insert(parent.id.to_owned());
         }
 
         activity::Change::UpsertTopicTimerange(activity::UpsertTopicTimerange {

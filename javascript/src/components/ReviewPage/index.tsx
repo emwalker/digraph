@@ -71,7 +71,7 @@ class ReviewPage extends Component<Props> {
 const Wrapper = createFragmentContainer(ReviewPage, {
   view: graphql`
     fragment ReviewPage_view on View {
-      topic(path: $topicPath) {
+      topic(id: $topicId) {
         displayName
 
         links(first: 100, reviewed: false, descendants: true) {

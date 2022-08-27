@@ -22,14 +22,18 @@ const updateOrDelete = (
 ) => async () => {
   setMutationInFlight(true)
 
+  // FIXME: get from selected repo
+  let repoId = '/wiki/'
+
   if (topic.timerange) {
-    const input: DeleteInput = { topicPath: topic.path }
+    const input: DeleteInput = { repoId, topicId: topic.id }
     await removeTopicTimerangeMutation(relay.environment, input)
   } else {
     const input: UpdateInput = {
-      topicPath: topic.path,
-      startsAt: (new Date()).toISOString(),
       prefixFormat: 'START_YEAR_MONTH',
+      repoId,
+      startsAt: (new Date()).toISOString(),
+      topicId: topic.id,
     }
     await upsertTopicTimerangeMutation(relay.environment, input)
   }
@@ -66,7 +70,6 @@ export default createFragmentContainer(TopicTimeRange, {
   topic: graphql`
     fragment TopicTimerange_topic on Topic {
       id
-      path
 
       timerange {
         startsAt

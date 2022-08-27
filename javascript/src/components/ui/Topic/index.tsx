@@ -1,19 +1,17 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
 
+import { topicPath } from 'components/helpers'
 import { NodeTypeOf, liftNodes } from 'components/types'
 import { Topic_topic as TopicType } from '__generated__/Topic_topic.graphql'
-import { Topic_view as ViewType } from '__generated__/Topic_view.graphql'
 import Item from '../Item'
 import EditTopic from './EditTopicContainer'
 
 type ParentTopicType = NodeTypeOf<TopicType['parentTopics']>
 
 type Props = {
-  orgLogin: string,
   relay: RelayProp,
   topic: TopicType,
-  view: ViewType,
 }
 
 type State = {
@@ -28,17 +26,8 @@ class Topic extends Component<Props, State> {
     }
   }
 
-  get repo() {
-    return this.props.topic.repository
-  }
-
-  get currentRepo() {
-    return this.props.view.currentRepository
-  }
-
   get topicBelongsToCurrentRepo(): boolean {
-    if (!this.repo) return true
-    return this.repo.id === this.currentRepo?.id
+    return true
   }
 
   get parentTopics() {
@@ -64,21 +53,18 @@ class Topic extends Component<Props, State> {
         displayColor={this.props.topic.displayColor as string}
         formIsOpen={this.state.formIsOpen}
         newlyAdded={this.props.topic.newlyAdded}
-        orgLogin={this.props.orgLogin}
-        repoName={topic.repository && topic.repository.name}
         showEditButton={this.showEditButton}
         showLink={false}
         title={topic.displayName}
         toggleForm={this.toggleForm}
         topics={this.parentTopics}
-        url={topic.path}
+        url={topicPath(topic.id)}
       >
         <EditTopic
           isOpen={this.state.formIsOpen}
-          orgLogin={this.props.orgLogin}
           relay={this.props.relay}
           toggleForm={this.toggleForm}
-          topicPath={topic.path}
+          topicId={topic.id}
         />
       </Item>
     )
@@ -86,13 +72,6 @@ class Topic extends Component<Props, State> {
 }
 
 export default createFragmentContainer(Topic, {
-  view: graphql`
-    fragment Topic_view on View {
-      currentRepository {
-        id
-      }
-    }
-  `,
   topic: graphql`
     fragment Topic_topic on Topic {
       description
@@ -100,21 +79,14 @@ export default createFragmentContainer(Topic, {
       id
       loading
       newlyAdded
-      path
       viewerCanUpdate
       displayColor
-
-      repository {
-        name
-        id
-      }
 
       parentTopics(first: 100) {
         edges {
           node {
             id
             displayName: name
-            path
           }
         }
       }

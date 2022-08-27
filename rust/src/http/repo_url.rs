@@ -75,12 +75,12 @@ impl RepoUrl {
         self.path.ends_with(suffix)
     }
 
-    pub fn is_pdf(&self) -> bool {
-        self.ends_with(".pdf")
+    pub fn id(&self) -> Result<RepoId> {
+        RepoId::try_from(&self.sha256)
     }
 
-    pub fn path(&self, prefix: &RepoName) -> Result<RepoPath> {
-        RepoPath::try_from(&format!("{}{}", prefix, self.sha256))
+    pub fn is_pdf(&self) -> bool {
+        self.ends_with(".pdf")
     }
 }
 

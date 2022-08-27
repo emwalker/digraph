@@ -46,13 +46,14 @@ class AddLink extends Component<Props, State> {
   }
 
   upsertLink() {
-    const repoPrefix = this.selectedRepo?.prefix
+    // FIXME: use .id instead of .prefix, and get it from the selected repo
+    const repoId = '/wiki/'
 
-    if (!repoPrefix) return
+    if (!repoId) return
 
     const input: Input = {
-      addParentTopicPath: this.props.topic.path,
-      repoPrefix,
+      addParentTopicId: this.props.topic.id,
+      repoId,
       url: this.state.url,
     }
 
@@ -98,7 +99,6 @@ export default createFragmentContainer(AddLink, {
   topic: graphql`
     fragment AddLink_topic on Topic {
       id
-      path
     }
   `,
 })

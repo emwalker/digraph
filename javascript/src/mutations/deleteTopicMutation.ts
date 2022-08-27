@@ -11,7 +11,7 @@ export default defaultMutation(graphql`
   ) {
     deleteTopic(input: $input) {
       clientMutationId
-      deletedTopicPath
+      deletedTopicId
     }
   }
 `)

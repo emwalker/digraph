@@ -138,16 +138,12 @@ impl Repository {
     }
 
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
-        let path = match self {
-            Self::Default => RepoPath::try_from(WIKI_ROOT_TOPIC_PATH).unwrap(),
-            Self::Fetched {
-                root_topic_path, ..
-            } => *root_topic_path.to_owned(),
-        };
+        let topic_id = RepoId::root_topic();
 
         ctx.data_unchecked::<Store>()
-            .topic(&path)
+            // FIXME
+            .topic(&RepoName::wiki(), &topic_id)
             .await?
-            .ok_or_else(|| Error::NotFound(format!("root topic id: {}", path)))
+            .ok_or_else(|| Error::NotFound(format!("root topic id: {}", topic_id)))
     }
 }

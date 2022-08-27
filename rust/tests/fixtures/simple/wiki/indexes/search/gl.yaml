@@ -4,4 +4,4 @@ kind: SearchTokenIndexMap
 tokens:
   global:
     - kind: Link
-      path: /wiki/3c2b7c32b8354560c6a88a8e94aef9644ae958d403f1a259981db7a12b758789
+      id: 3c2b7c32b8354560c6a88a8e94aef9644ae958d403f1a259981db7a12b758789

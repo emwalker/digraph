@@ -10,10 +10,6 @@ describe('<TopicPage />', () => {
   }
 
   const view = {
-    currentRepository: {
-      displayName: 'Private collection',
-      isPrivate: true,
-    },
     viewer: {
       isGuest: false,
     },

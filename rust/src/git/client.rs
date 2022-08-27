@@ -6,8 +6,8 @@ use std::path::PathBuf;
 
 use super::checks::LeakedData;
 use super::index::{
-    ActivityIndex, ChangeReference, GitIndexKey, IndexMode, IndexType, Indexer, Phrase,
-    SaveChangesForPrefix, SearchEntry, SynonymEntry, SynonymMatch,
+    ActivityIndex, GitIndexKey, IndexMode, IndexType, Indexer, Phrase, SaveChangesForPrefix,
+    SearchEntry, SynonymEntry, SynonymMatch,
 };
 use super::{
     activity, core, DownsetIter, Link, Object, RepoStats, Search, SearchTokenIndex, SynonymIndex,
@@ -70,12 +70,12 @@ impl DataRoot {
 }
 
 pub trait GitPaths {
-    fn change_filename(&self) -> Result<PathBuf> {
-        Ok(self.relative_path("changes")?.join("change.yaml"))
-    }
-
     fn activity_log_filename(&self) -> Result<PathBuf> {
         Ok(self.relative_path("objects")?.join("changes.yaml"))
+    }
+
+    fn change_filename(&self) -> Result<PathBuf> {
+        Ok(self.relative_path("changes")?.join("change.yaml"))
     }
 
     fn relative_path(&self, subdirectory: &str) -> Result<PathBuf> {
@@ -91,7 +91,7 @@ pub trait GitPaths {
     fn parts(&self) -> Result<(&str, &str, &str)>;
 }
 
-impl GitPaths for RepoPath {
+impl GitPaths for RepoId {
     fn parts(&self) -> Result<(&str, &str, &str)> {
         self.parts()
     }
@@ -113,10 +113,14 @@ impl Client {
         }
     }
 
-    pub fn appears_in(&self, search: &Search, entry: &SearchEntry) -> Result<bool> {
-        let path = entry.path()?;
+    pub fn appears_in(
+        &self,
+        repo: &RepoName,
+        search: &Search,
+        entry: &SearchEntry,
+    ) -> Result<bool> {
         for token in &search.tokens {
-            let key = path.repo.index_key(token)?;
+            let key = repo.index_key(token)?;
             if !key
                 .token_index(self, IndexMode::Update)?
                 .indexed_on(entry, token)?
@@ -130,15 +134,16 @@ impl Client {
 
     pub fn fetch_activity_log(
         &self,
-        path: &RepoPath,
+        repo: &RepoName,
+        id: &RepoId,
         index_mode: IndexMode,
     ) -> Result<ActivityIndex> {
-        let filename = path.activity_log_filename()?;
-        let repo = self.view(&path.repo)?;
+        let filename = id.activity_log_filename()?;
+        let view = self.view(repo)?;
         match index_mode {
             IndexMode::Replace => Ok(ActivityIndex::new(&filename)),
-            IndexMode::ReadOnly => ActivityIndex::load(&filename, &repo),
-            IndexMode::Update => ActivityIndex::load(&filename, &repo),
+            IndexMode::ReadOnly => ActivityIndex::load(&filename, &view),
+            IndexMode::Update => ActivityIndex::load(&filename, &view),
         }
     }
 
@@ -146,16 +151,16 @@ impl Client {
     fn cycle_exists(
         &self,
         repo: &RepoName,
-        descendant_id: &RepoPath,
-        ancestor_id: &RepoPath,
+        descendant_id: &RepoId,
+        ancestor_id: &RepoId,
     ) -> Result<bool> {
         let mut i = 0;
 
-        let descendant_path = self.read_path(descendant_id)?;
+        let descendant_path = self.read_path(repo, descendant_id)?;
 
-        for topic in self.topic_downset(repo, &descendant_path) {
+        for topic in self.topic_downset(&descendant_path) {
             i += 1;
-            if topic.metadata.path == ancestor_id.inner {
+            if topic.id() == ancestor_id {
                 log::info!("cycle found after {} iterations", i);
                 return Ok(true);
             }
@@ -165,7 +170,7 @@ impl Client {
         Ok(false)
     }
 
-    pub fn exists(&self, repo: &RepoName, id: &RepoPath) -> Result<bool> {
+    pub fn exists(&self, repo: &RepoName, id: &RepoId) -> Result<bool> {
         if !self.viewer.can_read(repo) {
             return Ok(false);
         }
@@ -173,7 +178,7 @@ impl Client {
         repo.object_exists(id)
     }
 
-    pub fn fetch(&self, repo: &RepoName, id: &RepoPath) -> Option<Object> {
+    pub fn fetch(&self, repo: &RepoName, id: &RepoId) -> Option<Object> {
         if !self.viewer.can_read(repo) {
             log::warn!("viewer cannot read path: {}", id);
             return None;
@@ -226,15 +231,18 @@ impl Client {
         }
     }
 
-    pub fn fetch_activity(&self, id: &RepoPath, first: usize) -> Result<Vec<activity::Change>> {
+    pub fn fetch_activity(
+        &self,
+        repo: &RepoName,
+        id: &RepoId,
+        first: usize,
+    ) -> Result<Vec<activity::Change>> {
         log::info!("fetching first {} change logs from Git for {}", first, id);
-        let index = self.fetch_activity_log(id, IndexMode::ReadOnly)?;
+        let index = self.fetch_activity_log(repo, id, IndexMode::ReadOnly)?;
         let mut changes = vec![];
 
         for reference in index.references().iter().take(first) {
-            let id = RepoPath::try_from(&reference.path)?;
-            let repo = self.view(&id.repo)?;
-            let result = repo.change(&id);
+            let result = self.view(repo)?.change(&reference.id);
             match result {
                 Ok(change) => changes.push(change),
                 Err(err) => log::warn!("failed to load change: {}", err),
@@ -244,14 +252,14 @@ impl Client {
         Ok(changes)
     }
 
-    pub fn fetch_topic(&self, repo: &RepoName, topic_id: &RepoPath) -> Option<Topic> {
+    pub fn fetch_topic(&self, repo: &RepoName, topic_id: &RepoId) -> Option<Topic> {
         match &self.fetch(repo, topic_id)? {
             Object::Topic(topic) => Some(topic.to_owned()),
             _ => None,
         }
     }
 
-    pub fn fetch_link(&self, repo: &RepoName, link_id: &RepoPath) -> Option<Link> {
+    pub fn fetch_link(&self, repo: &RepoName, link_id: &RepoId) -> Option<Link> {
         match &self.fetch(repo, link_id)? {
             Object::Link(link) => Some(link.to_owned()),
             other => {
@@ -261,8 +269,12 @@ impl Client {
         }
     }
 
-    pub fn downset(&self, repo: &RepoName, topic_id: &ReadPath) -> DownsetIter {
-        DownsetIter::new(self.clone(), self.fetch_topic(repo, &topic_id.spec))
+    pub fn downset(&self, topic_path: &ReadPath) -> DownsetIter {
+        DownsetIter::new(
+            self.clone(),
+            topic_path.repo.to_owned(),
+            self.fetch_topic(&topic_path.repo, &topic_path.id),
+        )
     }
 
     pub fn leaked_data(&self) -> Result<Vec<(RepoName, String)>> {
@@ -287,11 +299,12 @@ impl Client {
         Ok(searches)
     }
 
-    pub fn read_path(&self, id: &RepoPath) -> Result<ReadPath> {
-        let commit = self.repo(&id.repo)?.commit_oid(&self.timespec)?;
+    pub fn read_path(&self, repo: &RepoName, id: &RepoId) -> Result<ReadPath> {
+        let commit = self.repo(repo)?.commit_oid(&self.timespec)?;
         Ok(ReadPath {
-            spec: id.to_owned(),
             commit,
+            id: id.to_owned(),
+            repo: repo.to_owned(),
         })
     }
 
@@ -329,12 +342,11 @@ impl Client {
                 .synonym_index(self, IndexType::SynonymPhrase, IndexMode::Update)?
                 .full_matches(&phrase)?
             {
-                let topic_id = RepoPath::try_from(&entry.path)?;
                 if !self.viewer.can_read(repo) {
                     continue;
                 }
 
-                if let Some(topic) = self.fetch_topic(repo, &topic_id) {
+                if let Some(topic) = self.fetch_topic(repo, &entry.id) {
                     matches.insert(SynonymMatch {
                         cycle: false,
                         entry: (*entry).clone(),
@@ -372,18 +384,21 @@ impl Client {
         }
     }
 
-    pub fn topic_downset(&self, repo: &RepoName, topic_path: &ReadPath) -> TopicDownsetIter {
-        TopicDownsetIter::new(self.clone(), self.fetch_topic(repo, &topic_path.spec))
+    pub fn topic_downset(&self, topic_path: &ReadPath) -> TopicDownsetIter {
+        TopicDownsetIter::new(
+            self.clone(),
+            topic_path.repo.to_owned(),
+            self.fetch_topic(&topic_path.repo, &topic_path.id),
+        )
     }
 
-    fn topic_searches(&self, topic: Option<Topic>) -> Result<BTreeSet<Search>> {
+    fn topic_searches(&self, repo: &RepoName, topic: Option<Topic>) -> Result<BTreeSet<Search>> {
+        if !self.viewer.can_read(repo) {
+            return Err(Error::NotFound(format!("not found: {:?}", topic)));
+        }
+
         let searches = match topic {
             Some(topic) => {
-                let path = topic.path()?;
-                if !self.viewer.can_read(&path.repo) {
-                    return Err(Error::NotFound(format!("not found: {}", path)));
-                }
-
                 let mut searches = BTreeSet::new();
 
                 for synonym in topic.synonyms() {
@@ -433,20 +448,19 @@ impl std::fmt::Debug for Mutation {
 }
 
 impl Mutation {
-    pub fn activity_log(&self, path: &RepoPath, index_mode: IndexMode) -> Result<ActivityIndex> {
-        self.client.fetch_activity_log(path, index_mode)
+    pub fn activity_log(
+        &self,
+        repo: &RepoName,
+        id: &RepoId,
+        index_mode: IndexMode,
+    ) -> Result<ActivityIndex> {
+        self.client.fetch_activity_log(repo, id, index_mode)
     }
 
-    pub fn add_change(&mut self, change: &activity::Change) -> Result<()> {
-        let repos = self.indexer.add_change(&self.client, change)?;
+    pub fn add_change(&mut self, repo: &RepoName, change: &activity::Change) -> Result<()> {
+        self.indexer.add_change(repo, &self.client, change)?;
         self.changes.push(change.to_owned());
-
-        for repo in repos {
-            // Write the individual change to a /prefix/changes/ directory
-            let reference = ChangeReference::new(&repo, change);
-            self.save_change(&reference, change)?;
-        }
-
+        self.save_change(repo, change)?;
         Ok(())
     }
 
@@ -464,8 +478,8 @@ impl Mutation {
     pub fn cycle_exists(
         &self,
         repo: &RepoName,
-        descendant_id: &RepoPath,
-        ancestor_id: &RepoPath,
+        descendant_id: &RepoId,
+        ancestor_id: &RepoId,
     ) -> Result<bool> {
         self.client.cycle_exists(repo, descendant_id, ancestor_id)
     }
@@ -474,65 +488,64 @@ impl Mutation {
         core::Repo::delete(&self.client.root, repo)
     }
 
-    pub fn exists(&self, repo: &RepoName, id: &RepoPath) -> Result<bool> {
+    pub fn exists(&self, repo: &RepoName, id: &RepoId) -> Result<bool> {
         self.client.exists(repo, id)
     }
 
-    pub fn fetch(&self, repo: &RepoName, id: &RepoPath) -> Option<Object> {
+    pub fn fetch(&self, repo: &RepoName, id: &RepoId) -> Option<Object> {
         self.client.fetch(repo, id)
     }
 
-    pub fn fetch_link(&self, repo: &RepoName, link_id: &RepoPath) -> Option<Link> {
+    pub fn fetch_link(&self, repo: &RepoName, link_id: &RepoId) -> Option<Link> {
         self.client.fetch_link(repo, link_id)
     }
 
-    pub fn fetch_topic(&self, repo: &RepoName, topic_id: &RepoPath) -> Option<Topic> {
+    pub fn fetch_topic(&self, repo: &RepoName, topic_id: &RepoId) -> Option<Topic> {
         self.client.fetch_topic(repo, topic_id)
     }
 
-    pub fn mark_deleted(&mut self, path: &RepoPath) -> Result<()> {
-        self.check_can_update(&path.repo)?;
+    pub fn mark_deleted(&mut self, repo: &RepoName, id: &RepoId) -> Result<()> {
+        self.check_can_update(repo)?;
 
-        let activity = self.client.fetch_activity(path, usize::MAX)?;
+        let activity = self.client.fetch_activity(repo, id, usize::MAX)?;
 
         for mut change in activity {
-            let paths = change.paths()?;
-            let repos = paths
-                .iter()
-                .map(|path| path.repo.to_owned())
-                .collect::<HashSet<RepoName>>();
-
-            change.mark_deleted(path);
-
-            for repo in repos {
-                let reference = ChangeReference::new(&repo, &change);
-                self.save_change(&reference, &change)?;
-            }
+            change.mark_deleted(id);
+            self.save_change(repo, &change)?;
         }
 
         Ok(())
     }
 
-    pub fn remove(&mut self, path: &RepoPath) -> Result<()> {
-        let filename = path.object_filename()?;
-        self.files.insert((path.repo.to_owned(), filename), None);
+    pub fn remove(&mut self, repo: &RepoName, id: &RepoId) -> Result<()> {
+        let filename = id.object_filename()?;
+        self.files.insert((repo.to_owned(), filename), None);
         Ok(())
     }
 
-    pub fn remove_link(&mut self, link_id: &RepoPath, link: &Link) -> Result<()> {
-        self.check_can_update(&link_id.repo)?;
+    pub fn remove_link(&mut self, repo: &RepoName, link_id: &RepoId, link: &Link) -> Result<()> {
+        self.check_can_update(repo)?;
 
         let searches = self.client.link_searches(Some(link.to_owned()))?;
-        self.indexer
-            .remove_searches(&self.client, &link.to_search_entry(), searches.iter())?;
-        self.remove(link_id)
+        self.indexer.remove_searches(
+            &self.client,
+            repo,
+            &link.to_search_entry(),
+            searches.iter(),
+        )?;
+        self.remove(repo, link_id)
     }
 
-    pub fn remove_topic(&mut self, topic_id: &RepoPath, topic: &Topic) -> Result<()> {
-        self.check_can_update(&topic_id.repo)?;
+    pub fn remove_topic(
+        &mut self,
+        repo: &RepoName,
+        topic_id: &RepoId,
+        topic: &Topic,
+    ) -> Result<()> {
+        self.check_can_update(repo)?;
 
         self.indexer
-            .remove_synonyms(&self.client, topic_id, topic)?;
+            .remove_synonyms(&self.client, repo, topic_id, topic)?;
 
         let meta = &topic.metadata;
         let mut searches = vec![];
@@ -546,8 +559,8 @@ impl Mutation {
 
         let entry = topic.to_search_entry();
         self.indexer
-            .remove_searches(&self.client, &entry, searches.iter())?;
-        self.remove(topic_id)?;
+            .remove_searches(&self.client, repo, &entry, searches.iter())?;
+        self.remove(repo, topic_id)?;
 
         Ok(())
     }
@@ -582,67 +595,62 @@ impl Mutation {
         update.write(&self.client.root, &sig, &self.commit_message())
     }
 
-    pub fn save_change(
-        &mut self,
-        reference: &ChangeReference,
-        change: &activity::Change,
-    ) -> Result<()> {
-        self.indexer.add_change(&self.client, change)?;
+    pub fn save_change(&mut self, repo: &RepoName, change: &activity::Change) -> Result<()> {
+        self.indexer.add_change(repo, &self.client, change)?;
 
-        let path = RepoPath::try_from(&reference.path)?;
         let s = serde_yaml::to_string(&change)?;
-        let oid = self.repo(&path.repo)?.add_blob(s.as_bytes())?;
-        self.files
-            .insert((path.repo.to_owned(), path.change_filename()?), Some(oid));
+        let oid = self.repo(repo)?.add_blob(s.as_bytes())?;
+        let reference = change.to_reference();
+        self.files.insert(
+            (repo.to_owned(), reference.id.change_filename()?),
+            Some(oid),
+        );
 
         Ok(())
     }
 
-    pub fn save_link(&mut self, repo_name: &RepoName, path: &RepoPath, link: &Link) -> Result<()> {
-        self.check_can_update(&path.repo)?;
+    pub fn save_link(&mut self, repo: &RepoName, id: &RepoId, link: &Link) -> Result<()> {
+        self.check_can_update(repo)?;
 
-        let repo = self.client.repo(repo_name)?;
-        let view = self.client.view(repo_name)?;
-
-        let before = view.link(path)?;
+        let view = self.client.view(repo)?;
+        let before = view.link(id)?;
         let before = self.client.link_searches(before)?;
         let after = self.client.link_searches(Some(link.to_owned()))?;
         self.indexer
-            .update(&self.client, &link.to_search_entry(), &before, &after)?;
+            .update(&self.client, repo, &link.to_search_entry(), &before, &after)?;
         let s = serde_yaml::to_string(&link)?;
-        let oid = repo.add_blob(s.as_bytes())?;
+        let oid = self.client.repo(repo)?.add_blob(s.as_bytes())?;
 
-        self.save_object(repo_name, path, oid)
+        self.save_object(repo, id, oid)
     }
 
-    fn save_object(&mut self, repo: &RepoName, path: &RepoPath, oid: git2::Oid) -> Result<()> {
-        let filename = path.object_filename()?;
+    fn save_object(&mut self, repo: &RepoName, id: &RepoId, oid: git2::Oid) -> Result<()> {
+        let filename = id.object_filename()?;
         self.files.insert((repo.to_owned(), filename), Some(oid));
         Ok(())
     }
 
-    pub fn save_topic(
-        &mut self,
-        repo_name: &RepoName,
-        topic_id: &RepoPath,
-        topic: &Topic,
-    ) -> Result<()> {
-        self.check_can_update(repo_name)?;
+    pub fn save_topic(&mut self, repo: &RepoName, topic_id: &RepoId, topic: &Topic) -> Result<()> {
+        self.check_can_update(repo)?;
 
-        let view = self.client.view(repo_name)?;
-        let repo = self.client.repo(repo_name)?;
-
+        let view = self.client.view(repo)?;
         let before = view.topic(topic_id)?;
-        self.indexer.update_synonyms(&self.client, &before, topic)?;
-
-        let before = self.client.topic_searches(before)?;
-        let after = self.client.topic_searches(Some(topic.to_owned()))?;
         self.indexer
-            .update(&self.client, &topic.to_search_entry(), &before, &after)?;
-        let s = serde_yaml::to_string(&topic)?;
-        let oid = repo.add_blob(s.as_bytes())?;
+            .update_synonyms(&self.client, repo, &before, topic)?;
 
-        self.save_object(repo_name, topic_id, oid)
+        let before = self.client.topic_searches(repo, before)?;
+        let after = self.client.topic_searches(repo, Some(topic.to_owned()))?;
+        self.indexer.update(
+            &self.client,
+            repo,
+            &topic.to_search_entry(),
+            &before,
+            &after,
+        )?;
+        let s = serde_yaml::to_string(&topic)?;
+        let oid = self.client.repo(repo)?.add_blob(s.as_bytes())?;
+
+        self.save_object(repo, topic_id, oid)
     }
 
     pub fn synonym_phrase_matches(
@@ -664,19 +672,20 @@ mod tests {
         #[test]
         fn object_filename() {
             assert_eq!(
-                RepoPath::try_from("/wiki/123456")
+                RepoId::try_from("123456")
                     .unwrap()
                     .object_filename()
                     .unwrap(),
                 PathBuf::from("objects/12/34/56/object.yaml")
             );
+        }
 
+        #[test]
+        fn parts() {
+            let id = RepoId::try_from("q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
             assert_eq!(
-                RepoPath::try_from("/with-dash/123456")
-                    .unwrap()
-                    .object_filename()
-                    .unwrap(),
-                PathBuf::from("objects/12/34/56/object.yaml")
+                id.parts().unwrap(),
+                ("q-", "ZZ", "meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")
             );
         }
     }

@@ -9,8 +9,6 @@ export type ViewType = Response['view']
 export default graphql`
   query userSettingsQuery_query_Query(
     $viewerId: ID!,
-    $orgLogin: String!,
-    $repoName: String,
     $repoIds: [ID!],
   ) {
     alerts {
@@ -21,8 +19,6 @@ export default graphql`
 
     view(
       viewerId: $viewerId,
-      currentOrganizationLogin: $orgLogin,
-      currentRepositoryName: $repoName,
       repositoryIds: $repoIds,
     ) {
       ...UserSettings_view

@@ -10,7 +10,7 @@ describe('rawFromQuery', () => {
           {
             node: {
               name: 'BP',
-              path: '/wiki/321ccdae-d5bc-47c6-ab73-7f4d8a264270',
+              id: '321ccdae-d5bc-47c6-ab73-7f4d8a264270',
             },
           },
         ],
@@ -43,7 +43,7 @@ describe('rawFromQuery', () => {
           data: {
             mention: {
               name: 'BP',
-              link: '/wiki/321ccdae-d5bc-47c6-ab73-7f4d8a264270',
+              link: '321ccdae-d5bc-47c6-ab73-7f4d8a264270',
             },
           },
         },

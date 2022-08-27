@@ -95,18 +95,15 @@ impl Store {
 impl Store {
     pub async fn activity(
         &self,
-        topic_path: Option<String>,
+        repo_id: &RepoName,
+        topic_id: &Option<RepoId>,
         first: i32,
     ) -> Result<Vec<git::activity::Change>> {
-        let topic_path = if let Some(path) = topic_path {
-            Some(RepoPath::try_from(&path)?)
-        } else {
-            None
-        };
-
         let result = git::activity::FetchActivity {
             actor: self.viewer.clone(),
-            topic_path,
+            path: topic_id
+                .as_ref()
+                .map(|id| (repo_id.to_owned(), id.to_owned())),
             first: first.try_into().unwrap_or(3),
         }
         .call(&self.git, &self.redis);
@@ -120,7 +117,7 @@ impl Store {
         }
     }
 
-    fn update(&self) -> Result<git::Mutation> {
+    fn mutation(&self) -> Result<git::Mutation> {
         self.git.mutation(git::IndexMode::Update)
     }
 
@@ -134,17 +131,22 @@ impl Store {
         git.mutation(git::IndexMode::Update)
     }
 
-    async fn flat_topics(&self, paths: &[RepoPath]) -> Result<Vec<graphql::Topic>> {
-        let result = self.topics(paths).await?;
+    async fn flat_topics(
+        &self,
+        repo_id: &RepoName,
+        topic_ids: &[String],
+    ) -> Result<Vec<graphql::Topic>> {
+        let result = self.topics(repo_id, topic_ids).await?;
         Ok(result.iter().flatten().cloned().collect())
     }
 
     pub async fn child_links_for_topic(
         &self,
-        parent_topic: &RepoPath,
+        repo: &RepoName,
+        parent_topic: &RepoId,
         _reviewed: Option<bool>,
     ) -> Result<Vec<graphql::Link>> {
-        let children = self.topic_children(parent_topic).await?;
+        let children = self.topic_children(repo, parent_topic).await?;
         let mut links = vec![];
 
         for child in children.iter().take(50) {
@@ -159,23 +161,26 @@ impl Store {
 
     pub async fn topic_children(
         &self,
-        parent_topic: &RepoPath,
+        repo_id: &RepoName,
+        parent_topic: &RepoId,
     ) -> Result<BTreeSet<git::SearchMatch>> {
         let topic = self
-            .topic(parent_topic)
+            .topic(repo_id, parent_topic)
             .await?
             .ok_or_else(|| Error::NotFound(format!("no topic: {}", parent_topic)))?;
-        let child_paths = topic
-            .child_paths
+
+        let child_ids = topic
+            .child_ids
             .iter()
-            .map(RepoPath::to_string)
-            .collect_vec();
-        let map = self.object_loader.load_many(child_paths.clone()).await?;
+            .map(|id| (repo_id.to_owned(), id.to_owned()))
+            .collect::<Vec<(RepoName, RepoId)>>();
+
+        let map = self.object_loader.load_many(child_ids.clone()).await?;
 
         let empty = git::Search::empty();
         let mut children = BTreeSet::new();
 
-        for child_path in child_paths.iter().take(50) {
+        for child_path in child_ids.iter().take(50) {
             let child = map.get(child_path);
             if child.is_none() {
                 // Probably not visible to the current user
@@ -208,7 +213,7 @@ impl Store {
             user_id: user_id.to_owned(),
             personal_repos,
         }
-        .call(&self.update()?)?;
+        .call(&self.mutation()?)?;
 
         log::info!("account deletion: postgres data for {}", user_id);
         psql::DeleteAccount::new(self.viewer.clone(), user_id)
@@ -216,12 +221,17 @@ impl Store {
             .await
     }
 
-    pub async fn delete_link(&self, link_path: &RepoPath) -> Result<git::DeleteLinkResult> {
+    pub async fn delete_link(
+        &self,
+        repo_id: &RepoName,
+        link_id: &RepoId,
+    ) -> Result<git::DeleteLinkResult> {
         git::DeleteLink {
             actor: self.viewer.clone(),
-            link_id: link_path.clone(),
+            repo: repo_id.to_owned(),
+            link_id: link_id.to_owned(),
         }
-        .call(self.update()?, &self.redis)
+        .call(self.mutation()?, &self.redis)
     }
 
     pub async fn delete_session(&self, session_id: String) -> Result<psql::DeleteSessionResult> {
@@ -230,35 +240,42 @@ impl Store {
             .await
     }
 
-    pub async fn delete_topic(&self, path: &RepoPath) -> Result<git::DeleteTopicResult> {
+    pub async fn delete_topic(
+        &self,
+        repo_id: &RepoName,
+        topic_id: &RepoId,
+    ) -> Result<git::DeleteTopicResult> {
         git::DeleteTopic {
             actor: self.viewer.clone(),
-            topic_id: path.clone(),
+            repo: repo_id.to_owned(),
+            topic_id: topic_id.to_owned(),
         }
-        .call(self.update()?, &self.redis)
+        .call(self.mutation()?, &self.redis)
     }
 
     pub async fn remove_topic_timerange(
         &self,
-        topic_path: &RepoPath,
+        repo_id: &RepoName,
+        topic_id: &RepoId,
     ) -> Result<git::RemoveTopicTimerangeResult> {
         git::RemoveTopicTimerange {
             actor: self.viewer.clone(),
-            topic_id: topic_path.clone(),
+            repo: repo_id.to_owned(),
+            topic_id: topic_id.clone(),
         }
-        .call(self.update()?, &self.redis)
+        .call(self.mutation()?, &self.redis)
     }
 
-    pub async fn link(&self, path: &RepoPath) -> Result<Option<graphql::Link>> {
+    pub async fn link(&self, repo: &RepoName, link_id: &RepoId) -> Result<Option<graphql::Link>> {
         let result = self
             .object_loader
-            .load_one(path.to_string())
+            .load_one((repo.to_owned(), link_id.to_owned()))
             .await?
-            .ok_or_else(|| Error::NotFound(format!("no link: {}", path)))?;
+            .ok_or_else(|| Error::NotFound(format!("no link: {}", link_id)))?;
 
         match result {
             git::Object::Link(link) => Ok(Some(graphql::Link::try_from(&link)?)),
-            _ => Err(Error::NotFound(format!("no link: {}", path))),
+            _ => Err(Error::NotFound(format!("no link: {}", link_id))),
         }
     }
 
@@ -273,20 +290,30 @@ impl Store {
         self.organization_by_login_loader.load_one(login).await
     }
 
-    pub async fn parent_topics_for_topic(&self, path: &RepoPath) -> Result<Vec<graphql::Topic>> {
+    pub async fn parent_topics_for_topic(
+        &self,
+        repo_id: &RepoName,
+        topic_id: &RepoId,
+    ) -> Result<Vec<graphql::Topic>> {
         let topic = self
-            .topic(path)
+            .topic(repo_id, topic_id)
             .await?
-            .ok_or_else(|| Error::NotFound(format!("no topic for id: {}", path)))?;
-        self.flat_topics(&topic.parent_topic_paths).await
+            .ok_or_else(|| Error::NotFound(format!("no topic for id: {}", topic_id)))?;
+
+        self.flat_topics(repo_id, &topic.parent_topic_ids).await
     }
 
-    pub async fn parent_topics_for_link(&self, path: &RepoPath) -> Result<Vec<graphql::Topic>> {
+    pub async fn parent_topics_for_link(
+        &self,
+        repo_id: &RepoName,
+        link_id: &RepoId,
+    ) -> Result<Vec<graphql::Topic>> {
         let link = self
-            .link(path)
+            .link(repo_id, link_id)
             .await?
-            .ok_or_else(|| Error::NotFound(format!("no link for id: {}", path)))?;
-        self.flat_topics(&link.parent_topic_paths).await
+            .ok_or_else(|| Error::NotFound(format!("no link for id: {}", link_id)))?;
+
+        self.flat_topics(repo_id, &link.parent_topic_ids).await
     }
 
     pub async fn repositories_for_user(&self, user_id: String) -> Result<Vec<graphql::Repository>> {
@@ -312,24 +339,30 @@ impl Store {
 
     pub async fn review_link(
         &self,
-        link_path: &RepoPath,
+        repo_id: &RepoName,
+        link_id: &RepoId,
         reviewed: bool,
     ) -> Result<psql::ReviewLinkResult> {
         let object = self
             .object_loader
-            .load_one(link_path.inner.to_owned())
+            .load_one((repo_id.to_owned(), link_id.to_owned()))
             .await?;
 
         match object {
             Some(git::Object::Link(link)) => {
-                psql::ReviewLink::new(self.viewer.clone(), link.clone(), reviewed)
-                    .call(&self.db)
-                    .await
+                psql::ReviewLink {
+                    actor: self.viewer.clone(),
+                    repo: repo_id.to_owned(),
+                    link: link.clone(),
+                    reviewed,
+                }
+                .call(&self.db)
+                .await
             }
 
             Some(other) => Err(Error::Repo(format!("expected a link: {:?}", other))),
 
-            None => Err(Error::Repo(format!("no link found: {}", link_path))),
+            None => Err(Error::Repo(format!("no link found: {}", link_id))),
         }
     }
 
@@ -352,7 +385,7 @@ impl Store {
             repos: viewer.read_repos.to_owned(),
             search: git::Search::parse(&search_string)?,
             timespec: Timespec,
-            topic_path: parent_topic.path,
+            topic_id: (&parent_topic.id).try_into()?,
             viewer: viewer.to_owned(),
         }
         .call(&self.git, &fetcher)?;
@@ -373,7 +406,7 @@ impl Store {
         git::FetchTopicLiveSearch {
             limit: 10,
             viewer: self.viewer.to_owned(),
-            prefixes: vec![RepoName::wiki()],
+            repos: vec![RepoName::wiki()],
             search,
         }
         .call(&self.git)
@@ -388,27 +421,42 @@ impl Store {
             .await
     }
 
-    pub async fn topic(&self, path: &RepoPath) -> Result<Option<graphql::Topic>> {
+    pub async fn topic(
+        &self,
+        repo_id: &RepoName,
+        topic_id: &RepoId,
+    ) -> Result<Option<graphql::Topic>> {
         let result = self
             .object_loader
-            .load_one(path.to_string())
+            .load_one((repo_id.to_owned(), topic_id.to_owned()))
             .await?
-            .ok_or_else(|| Error::NotFound(format!("no topic: {}", path)))?;
+            .ok_or_else(|| Error::NotFound(format!("no topic: {}", topic_id)))?;
 
         match result {
             git::Object::Topic(topic) => Ok(Some(graphql::Topic::try_from(&topic)?)),
-            _ => Err(Error::NotFound(format!("no topic: {}", path))),
+            _ => Err(Error::NotFound(format!("no topic: {}", topic_id))),
         }
     }
 
-    pub async fn topics(&self, paths: &[RepoPath]) -> Result<Vec<Option<graphql::Topic>>> {
-        let paths = paths.iter().map(|p| p.to_string()).collect::<Vec<String>>();
+    pub async fn topics(
+        &self,
+        repo_id: &RepoName,
+        topic_ids: &[String],
+    ) -> Result<Vec<Option<graphql::Topic>>> {
+        let mut paths = vec![];
+
+        for topic_id in topic_ids {
+            let path = (repo_id.to_owned(), RepoId::try_from(topic_id)?);
+            paths.push(path);
+        }
+
         let map = self.object_loader.load_many(paths.clone()).await?;
         let mut topics: Vec<Option<graphql::Topic>> = Vec::new();
+
         for path in paths.iter().take(50) {
             let topic = map
                 .get(path)
-                .ok_or_else(|| Error::NotFound(format!("no topic: {}", path)))?;
+                .ok_or_else(|| Error::NotFound(format!("no topic: {:?}", path)))?;
 
             let topic = match &topic {
                 git::Object::Topic(topic) => Some(graphql::Topic::try_from(topic)?),
@@ -424,65 +472,72 @@ impl Store {
         &self,
         input: graphql::UpdateLinkParentTopicsInput,
     ) -> Result<git::UpdateLinkParentTopicsResult> {
+        let link_id = RepoId::try_from(&input.link_id)?;
+
         git::UpdateLinkParentTopics {
             actor: self.viewer.clone(),
-            link_id: RepoPath::try_from(&input.link_path)?,
+            link_id,
             parent_topic_ids: input
-                .parent_topic_paths
+                .parent_topic_ids
                 .iter()
-                .map(RepoPath::try_from)
-                .collect::<Result<BTreeSet<RepoPath>>>()?,
+                .map(RepoId::try_from)
+                .collect::<Result<BTreeSet<RepoId>>>()?,
+            repo_id: input.repo_id.try_into()?,
         }
-        .call(self.update()?, &self.redis)
+        .call(self.mutation()?, &self.redis)
+    }
+
+    pub async fn update_topic_parent_topics(
+        &self,
+        // FIXME: Use id instead of name
+        repo_id: &RepoName,
+        topic_id: &RepoId,
+        parent_topics: Vec<RepoId>,
+    ) -> Result<git::UpdateTopicParentTopicsResult> {
+        git::UpdateTopicParentTopics {
+            actor: self.viewer.clone(),
+            repo: repo_id.to_owned(),
+            topic_id: topic_id.to_owned(),
+            parent_topic_ids: parent_topics.iter().cloned().collect::<BTreeSet<RepoId>>(),
+        }
+        .call(self.mutation()?, &self.redis)
     }
 
     pub async fn update_topic_synonyms(
         &self,
         input: graphql::UpdateTopicSynonymsInput,
     ) -> Result<git::UpdateTopicSynonymsResult> {
+        let topic_id = RepoId::try_from(&input.topic_id)?;
+
         git::UpdateTopicSynonyms {
             actor: self.viewer.clone(),
+            repo_id: input.repo_id.try_into()?,
             synonyms: input.synonyms.iter().map(git::Synonym::from).collect_vec(),
-            topic_id: RepoPath::try_from(&input.topic_path)?,
+            topic_id,
         }
-        .call(self.update()?, &self.redis)
+        .call(self.mutation()?, &self.redis)
     }
 
     pub async fn upsert_link(
         &self,
         input: graphql::UpsertLinkInput,
     ) -> Result<git::UpsertLinkResult> {
-        let add_parent_topic_path = if let Some(path) = input.add_parent_topic_path {
-            Some(RepoPath::try_from(&path)?)
+        let add_parent_topic_id = if let Some(id) = &input.add_parent_topic_id {
+            Some(RepoId::try_from(id)?)
         } else {
             None
         };
 
         git::UpsertLink {
-            add_parent_topic_path,
-            actor: self.viewer.clone(),
-            repo: input.repo_prefix.try_into()?,
+            add_parent_topic_id,
+            actor: self.viewer.to_owned(),
+            // FIXME: use id instead of prefix
+            repo: input.repo_id.try_into()?,
             title: input.title,
             url: input.url,
             fetcher: Box::new(http::Fetcher),
         }
-        .call(self.update()?, &self.redis)
-    }
-
-    pub async fn update_topic_parent_topics(
-        &self,
-        topic_path: &RepoPath,
-        parent_topics: Vec<RepoPath>,
-    ) -> Result<git::UpdateTopicParentTopicsResult> {
-        git::UpdateTopicParentTopics {
-            actor: self.viewer.clone(),
-            topic_id: topic_path.clone(),
-            parent_topic_ids: parent_topics
-                .iter()
-                .map(|p| p.to_owned())
-                .collect::<BTreeSet<RepoPath>>(),
-        }
-        .call(self.update()?, &self.redis)
+        .call(self.mutation()?, &self.redis)
     }
 
     pub async fn upsert_session(
@@ -507,21 +562,25 @@ impl Store {
         &self,
         input: graphql::UpsertTopicInput,
     ) -> Result<git::UpsertTopicResult> {
+        let parent_topic = RepoId::try_from(&input.parent_topic_id)?;
+
         git::UpsertTopic {
             actor: self.viewer.clone(),
             locale: Locale::EN,
             name: input.name.to_owned(),
             on_matching_synonym: git::OnMatchingSynonym::Ask,
-            repo: input.repo_prefix.try_into()?,
-            parent_topic: RepoPath::try_from(&input.parent_topic_path)?,
+            // FIXME: use repo id instead of prefix
+            repo: input.repo_id.try_into()?,
+            parent_topic,
         }
-        .call(self.update()?, &self.redis)
+        .call(self.mutation()?, &self.redis)
     }
 
     pub async fn upsert_topic_timerange(
         &self,
         input: graphql::UpsertTopicTimerangeInput,
     ) -> Result<git::UpsertTopicTimerangeResult> {
+        // FIXME
         let starts = Geotime::from(&input.starts_at.0);
 
         git::UpsertTopicTimerange {
@@ -530,9 +589,10 @@ impl Store {
                 starts: geotime::LexicalGeohash::from(starts),
                 prefix_format: TimerangePrefixFormat::from(&input.prefix_format),
             },
-            topic_id: RepoPath::try_from(&input.topic_path)?,
+            repo_id: input.repo_id.try_into()?,
+            topic_id: input.topic_id.try_into()?,
         }
-        .call(self.update()?, &self.redis)
+        .call(self.mutation()?, &self.redis)
     }
 
     pub async fn user(&self, id: String) -> Result<Option<graphql::User>> {

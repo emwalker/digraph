@@ -12,8 +12,6 @@ export declare type NodeTypeOf<C extends Connection<any>> = NonNullable<EdgeType
 export declare function liftEdges<T>(connection: Connection<T>): readonly Edge<T>[];
 export declare function liftNodes<T>(connection: Connection<T> | undefined): (T | null)[];
 declare type LocationState = {
-    orgLogin: string;
-    repoName: string | null;
     itemTitle: string;
 };
 export declare type LocationType = Pick<Location<LocationState>, 'pathname' | 'query' | 'search' | 'state'>;

@@ -17,12 +17,12 @@ pub fn topic(name: &str) -> Topic {
     let added = chrono::Utc::now();
     // Some unique path
     let id = sha256_base64(name);
-    let path = format!("/wiki/{}", id);
+    let path = RepoPath::try_from(&format!("/wiki/{}", id)).expect("failed to parse path");
     Topic {
         api_version: API_VERSION.to_owned(),
         metadata: TopicMetadata {
             added,
-            path: path.to_owned(),
+            id: path.id.to_owned(),
             details: Some(TopicDetails {
                 root: false,
                 timerange: None,
@@ -33,7 +33,7 @@ pub fn topic(name: &str) -> Topic {
                 }]),
             }),
         },
-        parent_topics: BTreeSet::from([ParentTopic { path }]),
+        parent_topics: BTreeSet::from([ParentTopic { id: path.id }]),
         children: BTreeSet::new(),
     }
 }
@@ -43,7 +43,7 @@ pub fn link(title: &str, url: &str) -> Link {
     Link {
         api_version: API_VERSION.to_owned(),
         metadata: LinkMetadata {
-            path: "/wiki/00002".to_owned(),
+            id: "00002".try_into().unwrap(),
             added,
             details: Some(LinkDetails {
                 title: title.to_owned(),
@@ -51,7 +51,7 @@ pub fn link(title: &str, url: &str) -> Link {
             }),
         },
         parent_topics: BTreeSet::from([ParentTopic {
-            path: "/wiki/0001".to_owned(),
+            id: "00001".try_into().expect("failed to parse id"),
         }]),
     }
 }

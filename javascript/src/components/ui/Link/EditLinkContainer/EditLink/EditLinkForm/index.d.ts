@@ -3,7 +3,6 @@ import { EditLinkForm_link as LinkType } from '__generated__/EditLinkForm_link.g
 declare type Props = {
     isOpen: boolean;
     link: LinkType;
-    orgLogin: string;
     relay: RelayRefetchProp;
     toggleForm: () => void;
 };
