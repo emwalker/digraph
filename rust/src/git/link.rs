@@ -43,7 +43,7 @@ impl DeleteLink {
         for ParentTopic { id: parent_id, .. } in &link.parent_topics {
             if let Some(mut parent) = mutation.fetch_topic(&self.repo, parent_id) {
                 parent.children.remove(&child);
-                mutation.save_topic(&self.repo, parent_id, &parent)?;
+                mutation.save_topic(&self.repo, &parent)?;
                 parent_topics.push(parent);
             }
         }
@@ -133,17 +133,14 @@ impl UpdateLinkParentTopics {
         let change = self.change(&link, &added, &removed, date);
 
         for topic in &added {
-            let topic_id = &topic.id();
-            mutation.save_topic(&self.repo_id, topic_id, topic)?;
+            mutation.save_topic(&self.repo_id, topic)?;
         }
 
         for topic in &removed {
-            let topic_id = &topic.id();
-            mutation.save_topic(&self.repo_id, topic_id, topic)?;
+            mutation.save_topic(&self.repo_id, topic)?;
         }
 
-        let link_id = link.id();
-        mutation.save_link(&self.repo_id, link_id, &link)?;
+        mutation.save_link(&self.repo_id, &link)?;
         mutation.add_change(&self.repo_id, &change)?;
         mutation.write(store)?;
 
@@ -235,16 +232,16 @@ impl UpsertLink {
             .collect::<BTreeSet<ParentTopic>>();
 
         let link_id = link.id();
-        for (parent_id, topic) in &mut parent_topics {
+        for topic in parent_topics.values_mut() {
             topic.children.insert(TopicChild {
                 added: date,
                 kind: Kind::Link,
                 id: link_id.to_owned(),
             });
-            mutation.save_topic(&self.repo, parent_id, topic)?;
+            mutation.save_topic(&self.repo, topic)?;
         }
 
-        mutation.save_link(&self.repo, link.id(), &link)?;
+        mutation.save_link(&self.repo, &link)?;
         mutation.add_change(&self.repo, &change)?;
         mutation.write(store)?;
 

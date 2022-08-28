@@ -251,8 +251,7 @@ fn persist_topic(
         parent_topics: activity::TopicInfoList::from(&parents),
     });
 
-    let topic_id = topic.id();
-    mutation.save_topic(&repo, topic_id, topic)?;
+    mutation.save_topic(&repo, topic)?;
     mutation.add_change(&repo, &change)
 }
 
@@ -468,7 +467,7 @@ fn persist_link(
         parent_topics: activity::TopicInfoList::from(&topics),
     });
 
-    mutation.save_link(repo, link.id(), link).unwrap();
+    mutation.save_link(repo, link).unwrap();
     mutation.add_change(repo, &change).unwrap();
 
     Ok(())

@@ -68,7 +68,7 @@ impl EnsurePersonalRepo {
                 api_version: API_VERSION.into(),
                 metadata: TopicMetadata {
                     added,
-                    id: topic_id.to_owned(),
+                    id: topic_id,
                     details: Some(TopicDetails {
                         root: false,
                         synonyms: vec![Synonym {
@@ -83,7 +83,7 @@ impl EnsurePersonalRepo {
                 children: BTreeSet::new(),
             };
 
-            mutation.save_topic(&self.personal_repo, &topic_id, &root)?;
+            mutation.save_topic(&self.personal_repo, &root)?;
             mutation.write(&redis::Noop)?;
         }
 

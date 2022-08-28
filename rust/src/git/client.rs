@@ -609,11 +609,12 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn save_link(&mut self, repo: &RepoName, id: &RepoId, link: &Link) -> Result<()> {
+    pub fn save_link(&mut self, repo: &RepoName, link: &Link) -> Result<()> {
         self.check_can_update(repo)?;
 
         let view = self.client.view(repo)?;
-        let before = view.link(id)?;
+        let link_id = link.id();
+        let before = view.link(link_id)?;
         let before = self.client.link_searches(before)?;
         let after = self.client.link_searches(Some(link.to_owned()))?;
         self.indexer
@@ -621,7 +622,7 @@ impl Mutation {
         let s = serde_yaml::to_string(&link)?;
         let oid = self.client.repo(repo)?.add_blob(s.as_bytes())?;
 
-        self.save_object(repo, id, oid)
+        self.save_object(repo, link_id, oid)
     }
 
     fn save_object(&mut self, repo: &RepoName, id: &RepoId, oid: git2::Oid) -> Result<()> {
@@ -630,9 +631,10 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn save_topic(&mut self, repo: &RepoName, topic_id: &RepoId, topic: &Topic) -> Result<()> {
+    pub fn save_topic(&mut self, repo: &RepoName, topic: &Topic) -> Result<()> {
         self.check_can_update(repo)?;
 
+        let topic_id = topic.id();
         let view = self.client.view(repo)?;
         let before = view.topic(topic_id)?;
         self.indexer

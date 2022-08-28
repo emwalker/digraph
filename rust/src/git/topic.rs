@@ -55,11 +55,11 @@ impl DeleteTopic {
         for child in &topic.children {
             match mutation.fetch(&self.repo, &child.id) {
                 Some(Object::Link(child_link)) => {
-                    let mut link = child_link.to_owned();
-                    link.parent_topics.remove(&topic.to_parent_topic());
-                    link.parent_topics.append(&mut parent_topics.clone());
-                    child_links.push(link.clone());
-                    mutation.save_link(&self.repo, &child.id, &link)?;
+                    let mut child_link = child_link.to_owned();
+                    child_link.parent_topics.remove(&topic.to_parent_topic());
+                    child_link.parent_topics.append(&mut parent_topics.clone());
+                    child_links.push(child_link.clone());
+                    mutation.save_link(&self.repo, &child_link)?;
                 }
 
                 Some(Object::Topic(child_topic)) => {
@@ -67,7 +67,7 @@ impl DeleteTopic {
                     child_topic.parent_topics.remove(&topic.to_parent_topic());
                     child_topic.parent_topics.append(&mut parent_topics.clone());
                     child_topics.push(child_topic.clone());
-                    mutation.save_topic(&self.repo, &child.id, &child_topic)?;
+                    mutation.save_topic(&self.repo, &child_topic)?;
                 }
 
                 None => {}
@@ -94,7 +94,7 @@ impl DeleteTopic {
                     parent.children.insert(child.to_topic_child(added));
                 }
 
-                mutation.save_topic(&self.repo, parent.id(), &parent)?;
+                mutation.save_topic(&self.repo, &parent)?;
                 topics.push(parent.clone());
             }
         }
@@ -166,7 +166,7 @@ impl RemoveTopicTimerange {
             None => {}
         }
 
-        mutation.save_topic(&self.repo, &self.topic_id, &topic)?;
+        mutation.save_topic(&self.repo, &topic)?;
         mutation.add_change(&self.repo, &self.change(&topic, previous_timerange))?;
         mutation.write(store)?;
 
@@ -266,7 +266,7 @@ impl UpdateTopicParentTopics {
 
         updates.push(child.clone());
         for topic in updates {
-            mutation.save_topic(&self.repo, topic.id(), &topic)?;
+            mutation.save_topic(&self.repo, &topic)?;
         }
         mutation.add_change(&self.repo, &change)?;
         mutation.write(store)?;
@@ -398,7 +398,7 @@ impl UpdateTopicSynonyms {
             None => {}
         }
 
-        mutation.save_topic(&self.repo_id, &self.topic_id, &topic)?;
+        mutation.save_topic(&self.repo_id, &topic)?;
         mutation.add_change(&self.repo_id, &self.change(&topic, &added, &removed))?;
         mutation.write(store)?;
 
@@ -467,7 +467,7 @@ impl UpsertTopic {
         let mut matches = mutation.synonym_phrase_matches(&[&self.repo], &self.name)?;
         let date = chrono::Utc::now();
 
-        let (child_id, child, parent_topics) = if matches.is_empty() {
+        let (child, parent_topics) = if matches.is_empty() {
             self.make_topic(&parent)?
         } else {
             match &self.on_matching_synonym {
@@ -562,7 +562,7 @@ impl UpsertTopic {
                         None => {}
                     }
 
-                    (topic_id.clone(), topic, parent_topics)
+                    (topic, parent_topics)
                 }
             }
         };
@@ -570,8 +570,8 @@ impl UpsertTopic {
         parent.children.insert(child.to_topic_child(date));
 
         let change = self.change(&child, &parent_topics, &parent, date);
-        mutation.save_topic(&self.repo, &child_id, &child)?;
-        mutation.save_topic(&self.repo, parent.id(), &parent)?;
+        mutation.save_topic(&self.repo, &child)?;
+        mutation.save_topic(&self.repo, &parent)?;
         mutation.add_change(&self.repo, &change)?;
         mutation.write(store)?;
 
@@ -603,7 +603,7 @@ impl UpsertTopic {
         })
     }
 
-    fn make_topic(&self, parent: &Topic) -> Result<(RepoId, Topic, BTreeSet<ParentTopic>)> {
+    fn make_topic(&self, parent: &Topic) -> Result<(Topic, BTreeSet<ParentTopic>)> {
         let added = chrono::Utc::now();
         let id = RepoId::make();
         let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
@@ -612,7 +612,7 @@ impl UpsertTopic {
             api_version: API_VERSION.into(),
             metadata: TopicMetadata {
                 added,
-                id: id.to_owned(),
+                id,
                 details: Some(TopicDetails {
                     root: false,
                     synonyms: vec![Synonym {
@@ -627,7 +627,7 @@ impl UpsertTopic {
             children: BTreeSet::new(),
         };
 
-        Ok((id, topic, parent_topics))
+        Ok((topic, parent_topics))
     }
 
     fn fetch_parent(&self, mutation: &Mutation) -> Option<Topic> {
@@ -669,7 +669,7 @@ impl UpsertTopicTimerange {
             None => {}
         }
 
-        mutation.save_topic(&self.repo_id, &self.topic_id, &topic)?;
+        mutation.save_topic(&self.repo_id, &topic)?;
         mutation.add_change(&self.repo_id, &self.change(&topic, previous_timerange))?;
         mutation.write(store)?;
 
