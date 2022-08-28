@@ -59,7 +59,7 @@ mod delete_topic {
             repo: repo.to_owned(),
             topic_id: topic_id.to_owned(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic_id, deleted_topic_id);
@@ -80,11 +80,37 @@ mod delete_topic {
             repo: repo.to_owned(),
             topic_id: path.clone(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let parent = f.git.fetch_topic(&repo, &root).unwrap();
         assert!(!parent.has_child(&path));
+    }
+
+    #[test]
+    fn children_added_to_parents() {
+        let f = Fixtures::copy("simple");
+        let repo = RepoName::wiki();
+
+        let root = f.git.fetch_topic(&repo, &RepoId::root_topic()).unwrap();
+        let topic_id = f.find_topic("Climate change").unwrap();
+        let child_id = f.find_topic("Climate change and weather").unwrap();
+
+        assert!(root.has_child(&topic_id));
+        assert!(!root.has_child(&child_id));
+
+        DeleteTopic {
+            actor: actor(),
+            repo: repo.to_owned(),
+            topic_id: topic_id.clone(),
+        }
+        .call(f.mutation(), &redis::Noop)
+        .unwrap();
+
+        let root = f.git.fetch_topic(&repo, &RepoId::root_topic()).unwrap();
+
+        assert!(!root.has_child(&topic_id));
+        assert!(root.has_child(&child_id));
     }
 
     #[test]
@@ -100,7 +126,7 @@ mod delete_topic {
             repo: repo.to_owned(),
             topic_id: topic.id().to_owned(),
         }
-        .call(f.update(), &redis::Noop);
+        .call(f.mutation(), &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
         let topic = f.git.fetch_topic(&repo, &root).unwrap();
@@ -118,7 +144,7 @@ mod delete_topic {
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
             parent_topic: parent.to_owned(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         topic.unwrap()
@@ -139,7 +165,7 @@ mod delete_topic {
             repo: repo.to_owned(),
             topic_id: climate_change.id().to_owned(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let activity = f
@@ -185,7 +211,7 @@ mod delete_topic_timerange {
             },
             topic_id: topic_id.to_owned(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
@@ -196,7 +222,7 @@ mod delete_topic_timerange {
             repo: repo.to_owned(),
             topic_id: topic_id.to_owned(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
@@ -225,7 +251,7 @@ mod update_topic_parent_topics {
             topic_id: child.id().to_owned(),
             parent_topic_ids: BTreeSet::from([parent.id().to_owned()]),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert_eq!(result.topic, child);
@@ -251,7 +277,7 @@ mod update_topic_parent_topics {
             topic_id: child.id().to_owned(),
             parent_topic_ids: BTreeSet::from([parent.id().to_owned()]),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert_eq!(result.topic, child);
@@ -273,7 +299,7 @@ mod update_topic_parent_topics {
             topic_id: child.id().to_owned(),
             parent_topic_ids: BTreeSet::new(),
         }
-        .call(f.update(), &redis::Noop);
+        .call(f.mutation(), &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
     }
@@ -292,7 +318,7 @@ mod update_topic_parent_topics {
             topic_id: parent.id().to_owned(),
             parent_topic_ids: BTreeSet::from([child.id().to_owned()]),
         }
-        .call(f.update(), &redis::Noop);
+        .call(f.mutation(), &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
     }
@@ -340,7 +366,7 @@ mod update_topic_synonyms {
             topic_id,
             synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.synonyms().len(), 3);
@@ -368,7 +394,7 @@ mod update_topic_synonyms {
             topic_id,
             synonyms: vec![synonym("A topic"), synonym("A topic")],
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.synonyms().len(), 1);
@@ -388,7 +414,7 @@ mod update_topic_synonyms {
             topic_id: topic_id.clone(),
             synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.synonyms().len(), 3);
@@ -402,7 +428,7 @@ mod update_topic_synonyms {
             topic_id,
             synonyms: vec![synonym("C topic")],
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic.synonyms().len(), 1);
@@ -427,7 +453,7 @@ mod update_topic_synonyms {
             topic_id: topic_id.clone(),
             synonyms: vec![synonym(&syn.name)],
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
@@ -453,7 +479,7 @@ mod update_topic_synonyms {
             topic_id: topic_id.clone(),
             synonyms: vec![synonym("topicA")],
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert!(f.git.appears_in(&repo, &search, &entry).unwrap());
@@ -464,7 +490,7 @@ mod update_topic_synonyms {
             topic_id,
             synonyms: vec![synonym("topicB")],
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert!(!f.git.appears_in(&repo, &search, &entry).unwrap());
@@ -703,7 +729,7 @@ mod upsert_topic_timerange {
             },
             topic_id: topic_id.clone(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
@@ -732,7 +758,7 @@ mod upsert_topic_timerange {
             },
             topic_id: path,
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert_eq!(count(&f, "1970 A topic"), 1);

@@ -31,7 +31,7 @@ mod delete_link {
             repo: repo.to_owned(),
             link_id: link_id.clone(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert!(!f.git.exists(&repo, link_id).unwrap());
@@ -54,7 +54,7 @@ mod delete_link {
             repo: repo.to_owned(),
             link_id: link_id.clone(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let activity = f.git.fetch_activity(&repo, link_id, 100).unwrap();
@@ -102,7 +102,7 @@ mod update_link_parent_topics {
             link_id: link.id().to_owned(),
             parent_topic_ids: BTreeSet::from([parent1, parent2]),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let link_id = link.id();

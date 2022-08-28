@@ -1,5 +1,4 @@
 Before switchover:
-* Bug: when a topic is deleted, the child topics are not added to the children of the parent topics
 * Replace repo names with repo ids
 * Repo selection UX: showing items
 * Repo selection UX: updating items

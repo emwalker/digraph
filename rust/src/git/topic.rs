@@ -24,7 +24,7 @@ impl DeleteTopic {
         S: SaveChangesForPrefix,
     {
         let topic_id = &self.topic_id;
-        let date = chrono::Utc::now();
+        let added = chrono::Utc::now();
 
         let topic = mutation.fetch_topic(&self.repo, topic_id);
         if topic.is_none() {
@@ -48,24 +48,10 @@ impl DeleteTopic {
 
         let mut topics = vec![];
 
-        // Remove the topic from the children of the parent topics
-        for parent in &topic.parent_topics {
-            if let Some(mut topic) = mutation.fetch_topic(&self.repo, &parent.id) {
-                topic.children.remove(&TopicChild {
-                    // The 'added' field is ignored
-                    added: chrono::Utc::now(),
-                    kind: Kind::Topic,
-                    id: topic_id.to_owned(),
-                });
-                mutation.save_topic(&self.repo, &parent.id, &topic)?;
-                topics.push(topic.clone());
-            }
-        }
-
         let mut child_links = vec![];
         let mut child_topics = vec![];
 
-        // Remove the topic from its children, moving them onto the parent topics
+        // Remove the topic from its children
         for child in &topic.children {
             match mutation.fetch(&self.repo, &child.id) {
                 Some(Object::Link(child_link)) => {
@@ -88,7 +74,32 @@ impl DeleteTopic {
             }
         }
 
-        let change = self.change(&topic, &topics, &child_links, &child_topics, date);
+        for parent in &topic.parent_topics {
+            if let Some(mut parent) = mutation.fetch_topic(&self.repo, &parent.id) {
+                // Remove the topic from the children of the parent topics
+                parent.children.remove(&TopicChild {
+                    // The 'added' field is ignored
+                    added,
+                    kind: Kind::Topic,
+                    id: topic_id.to_owned(),
+                });
+
+                // Move the child topics to the parent topics
+                for child in &child_topics {
+                    parent.children.insert(child.to_topic_child(added));
+                }
+
+                // Move the child links to the parent topics
+                for child in &child_links {
+                    parent.children.insert(child.to_topic_child(added));
+                }
+
+                mutation.save_topic(&self.repo, parent.id(), &parent)?;
+                topics.push(parent.clone());
+            }
+        }
+
+        let change = self.change(&topic, &topics, &child_links, &child_topics, added);
 
         mutation.remove_topic(&self.repo, &self.topic_id, &topic)?;
         mutation.add_change(&self.repo, &change)?;

@@ -52,7 +52,7 @@ impl Fixtures {
         }
     }
 
-    pub fn update(&self) -> Mutation {
+    pub fn mutation(&self) -> Mutation {
         self.git.mutation(IndexMode::Update).unwrap()
     }
 
@@ -107,7 +107,7 @@ impl Fixtures {
         self.git.fetch_topic(repo, &topic_id).unwrap()
     }
 
-    pub fn topic_id(&self, name: &str) -> Option<RepoId> {
+    pub fn find_topic(&self, name: &str) -> Option<RepoId> {
         let FetchTopicLiveSearchResult {
             synonym_matches: matches,
             ..
@@ -157,7 +157,7 @@ impl Fixtures {
         };
 
         request
-            .call(self.update(), &redis::Noop)
+            .call(self.mutation(), &redis::Noop)
             .expect("expected a link")
     }
 
@@ -176,7 +176,7 @@ impl Fixtures {
             on_matching_synonym,
             repo: repo.to_owned(),
         }
-        .call(self.update(), &redis::Noop)
+        .call(self.mutation(), &redis::Noop)
     }
 }
 
@@ -203,7 +203,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(topic_path),
             parent_topic: root.clone(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
         let climate_change = topic.unwrap();
 
@@ -226,7 +226,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root,
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
         let weather = topic.unwrap();
 
@@ -247,7 +247,7 @@ mod tests {
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
             parent_topic: climate_change.id().to_owned(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
         let climate_change_weather = topic.unwrap();
 
@@ -260,7 +260,7 @@ mod tests {
             ]),
             topic_id: climate_change_weather.id().to_owned(),
         }
-        .call(f.update(), &redis::Noop)
+        .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let url =

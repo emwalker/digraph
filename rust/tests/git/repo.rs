@@ -33,7 +33,7 @@ mod delete_account {
             user_id: user_id.to_owned(),
             personal_repos: RepoNames::try_from(&vec![repo.to_owned()]).unwrap(),
         }
-        .call(&f.update())
+        .call(&f.mutation())
     }
 
     #[test]
@@ -114,7 +114,7 @@ mod ensure_personal_repo {
             user_id: user_id.to_owned(),
             personal_repo: repo.to_owned(),
         }
-        .call(f.update())
+        .call(f.mutation())
     }
 
     #[test]

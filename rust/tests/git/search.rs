@@ -202,7 +202,7 @@ mod fetch_matches {
         let f = Fixtures::copy("simple");
 
         let root = RepoId::root_topic();
-        let climate_change = f.topic_id("Climate change").unwrap();
+        let climate_change = f.find_topic("Climate change").unwrap();
         let query = format!("in:{}", climate_change);
 
         let matches = search(&f, &root, &query, true);
@@ -215,7 +215,7 @@ mod fetch_matches {
         let f = Fixtures::copy("simple");
 
         let root = RepoId::root_topic();
-        let climate_change = f.topic_id("Climate change").unwrap();
+        let climate_change = f.find_topic("Climate change").unwrap();
         let query = format!("in:{} frequency", climate_change);
 
         // A link should be returned, since it matches the token search and is a child of the topic
@@ -233,7 +233,7 @@ mod fetch_matches {
         let fetcher = FetchDownset(f.git.clone());
         let repo = RepoName::wiki();
         let root = RepoId::root_topic();
-        let climate_change = f.topic_id("Climate change and weather").unwrap();
+        let climate_change = f.find_topic("Climate change and weather").unwrap();
         let query = format!("in:{}", climate_change);
         let search = Search::parse(&query).unwrap();
 
@@ -261,7 +261,7 @@ mod fetch_matches {
         let f = Fixtures::copy("simple");
 
         let root = RepoId::root_topic();
-        let weather = f.topic_id("Weather").unwrap();
+        let weather = f.find_topic("Weather").unwrap();
         let query = format!("in:{}", weather);
         let matches = search(&f, &root, &query, true);
 
