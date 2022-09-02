@@ -1,9 +1,16 @@
 Before switchover:
 * Replace repo names with repo ids
-* Repo selection UX: showing items
-* Repo selection UX: updating items
+* Clean up database: drop repo prefix
+* Clean up database: rework write_prefixes, read_prefixes and private_prefixes
+* Clean up database: odds and ends
+* Get repo selection working again
+* Show links in private repo in blue again
 * Remove hard-coded references to /wiki/
 * Don't save private links and topics to /wiki/
+* Move details into own section of GraphQL type (?)
+* Add repo back to topic and link types
+* Add repo to topic child edges
+* Add repo to parent topic edges
 * Merge the contents of items with the same id and different repo prefixes
 * Decide whether to support link reviews or remove the feature
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
@@ -19,6 +26,8 @@ Before switchover:
 
 
 Later:
+* Repo selection UX: showing items
+* Repo selection UX: updating items
 * Provide a guess as to what the stats are while they're being computed instead of return 0 topics and 0 links
 * Use a queue for rebasing commits before mering, instead of retrying
 * Look into using iterators for the search code instead of copying large buffers around
