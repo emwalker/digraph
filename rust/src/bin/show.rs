@@ -12,7 +12,7 @@ struct Opts {
 struct ConsoleOutput<'r> {
     git: &'r mut Client,
     buf: String,
-    repo: RepoName,
+    repo_id: RepoId,
 }
 
 impl<'r> Visitor for &mut ConsoleOutput<'r> {
@@ -61,7 +61,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&self.repo, &topic.id) {
+        match &self.git.fetch(&self.repo_id, &topic.id) {
             Some(Object::Topic(topic)) => {
                 let meta = &topic.metadata;
                 let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.id);
@@ -96,7 +96,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&self.repo, &topic.id) {
+        match &self.git.fetch(&self.repo_id, &topic.id) {
             Some(Object::Topic(topic)) => {
                 let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.id());
                 self.buf.push_str(&line);
@@ -107,7 +107,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
-        match &self.git.fetch(&self.repo, &child.id) {
+        match &self.git.fetch(&self.repo_id, &child.id) {
             Some(Object::Topic(topic)) => {
                 self.visit_child_topic(topic)?;
             }
@@ -132,14 +132,14 @@ fn parse_args() -> Opts {
 #[actix_web::main]
 async fn main() -> Result<()> {
     let opts = parse_args();
-    let (root_directory, path) = parse_path(&opts.filename)?;
+    let (root_directory, repo_id, oid) = parse_path(&opts.filename)?;
 
     let mut git = Client::new(&Viewer::service_account(), &root_directory, Timespec);
-    let object = git.fetch(&path.repo, &path.id);
+    let object = git.fetch(&repo_id, &oid);
     if object.is_none() {
         return Err(Error::NotFound(format!(
-            "{} does not contain {}",
-            root_directory, path
+            "{} does not contain {}/{}",
+            root_directory, repo_id, oid
         )));
     }
     let object = object.unwrap();
@@ -147,7 +147,7 @@ async fn main() -> Result<()> {
     let mut output = ConsoleOutput {
         buf: String::new(),
         git: &mut git,
-        repo: path.repo,
+        repo_id,
     };
 
     object.accept(&mut output)?;

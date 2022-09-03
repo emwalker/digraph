@@ -87,6 +87,10 @@ quick_error! {
             from()
         }
 
+        Uuid(err: uuid::Error) {
+            from()
+        }
+
         YAML(err: String) {
             from(err: serde_yaml::Error) -> (format!("{}", err))
         }

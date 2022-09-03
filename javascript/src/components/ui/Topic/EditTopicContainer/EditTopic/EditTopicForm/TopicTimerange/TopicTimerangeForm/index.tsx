@@ -7,6 +7,7 @@ import upsertTopicTimerangeMutation, { Input } from 'mutations/upsertTopicTimera
 import {
   TopicTimerangeForm_topic as TopicType,
 } from '__generated__/TopicTimerangeForm_topic.graphql'
+import { wikiRepoId } from 'components/constants'
 
 type PrefixFormat = NonNullable<TopicType['timerange']>['prefixFormat']
 
@@ -25,12 +26,10 @@ const TopicTimerangeForm = ({ relay, topic: { id: topicId, timerange } }: Props)
       if (dt.isValid() && prefixFormat) {
         setMutationInFlight(true)
 
-        // FIXME: get repo from selected repo
-        const repoId = '/wiki/'
-
         const input: Input = {
           prefixFormat,
-          repoId,
+          // FIXME
+          repoId: wikiRepoId,
           startsAt: dt.toISOString(),
           topicId,
         }
@@ -50,12 +49,10 @@ const TopicTimerangeForm = ({ relay, topic: { id: topicId, timerange } }: Props)
       setMutationInFlight(true)
       const newPrefix = event.currentTarget.value as PrefixFormat
 
-      // FIXME: get repo from selected repo
-      const repoId = '/wiki/'
-
       const input: Input = {
         prefixFormat: newPrefix,
-        repoId,
+        // FIXME
+        repoId: wikiRepoId,
         startsAt,
         topicId,
       }

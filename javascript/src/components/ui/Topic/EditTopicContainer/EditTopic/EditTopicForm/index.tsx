@@ -11,6 +11,7 @@ import DeleteButton from 'components/ui/DeleteButton'
 import { EditTopicForm_topic as TopicType } from '__generated__/EditTopicForm_topic.graphql'
 import Synonyms from './Synonyms'
 import TopicTimerange from './TopicTimerange'
+import { wikiRepoId } from 'components/constants'
 
 type Props = {
   isOpen: boolean,
@@ -35,9 +36,7 @@ class EditTopicForm extends Component<Props, State> {
 
   onDelete = () => {
     // FIXME: use selected repo
-    const repoId = '/wiki/'
-
-    const input: DeleteInput = { repoId, topicId: this.props.topic.id }
+    const input: DeleteInput = { repoId: wikiRepoId, topicId: this.props.topic.id }
     deleteTopicMutation(
       this.props.relay.environment,
       input,
@@ -63,7 +62,7 @@ class EditTopicForm extends Component<Props, State> {
   updateParentTopics = (parentTopicIds: string[]) => {
     const input: UpdateTopicsInput = {
       // FIXME: use id instead of prefix
-      repoId: '/wiki/',
+      repoId: wikiRepoId,
       topicId: this.props.topic.id,
       parentTopicIds,
     }

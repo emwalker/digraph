@@ -74,7 +74,7 @@ impl Fixtures {
         Ok(self.leaked_data()?.is_empty())
     }
 
-    pub fn fetch_link<F>(&self, repo: &RepoName, topic_id: &RepoId, block: F)
+    pub fn fetch_link<F>(&self, repo: &RepoId, topic_id: &Oid, block: F)
     where
         F: Fn(Link),
     {
@@ -86,7 +86,7 @@ impl Fixtures {
         block(link);
     }
 
-    pub fn fetch_topic<F>(&self, repo: &RepoName, topic_id: &RepoId, block: F)
+    pub fn fetch_topic<F>(&self, repo: &RepoId, topic_id: &Oid, block: F)
     where
         F: Fn(Topic),
     {
@@ -98,22 +98,22 @@ impl Fixtures {
         block(topic);
     }
 
-    pub fn leaked_data(&self) -> Result<Vec<(RepoName, String)>> {
+    pub fn leaked_data(&self) -> Result<Vec<(RepoId, String)>> {
         self.git.leaked_data()
     }
 
-    pub fn topic(&self, repo: &RepoName, topic_id: &str) -> Topic {
-        let topic_id = RepoId::try_from(topic_id).unwrap();
+    pub fn topic(&self, repo: &RepoId, topic_id: &str) -> Topic {
+        let topic_id = Oid::try_from(topic_id).unwrap();
         self.git.fetch_topic(repo, &topic_id).unwrap()
     }
 
-    pub fn find_topic(&self, name: &str) -> Option<RepoId> {
+    pub fn find_topic(&self, name: &str) -> Option<Oid> {
         let FetchTopicLiveSearchResult {
             synonym_matches: matches,
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            repos: vec![RepoName::wiki()],
+            repos: vec![RepoId::wiki()],
             search: Search::parse(name).unwrap(),
             viewer: actor(),
         }
@@ -137,10 +137,10 @@ impl Fixtures {
 
     pub fn upsert_link(
         &self,
-        repo: &RepoName,
+        repo_id: &RepoId,
         url: &RepoUrl,
         title: Option<String>,
-        add_parent_topic_id: Option<RepoId>,
+        add_parent_topic_id: Option<Oid>,
     ) -> UpsertLinkResult {
         let html = match &title {
             Some(title) => format!("<title>{}</title>", title),
@@ -151,7 +151,7 @@ impl Fixtures {
             actor: actor(),
             add_parent_topic_id,
             fetcher: Box::new(Fetcher(html)),
-            repo: repo.to_owned(),
+            repo_id: repo_id.to_owned(),
             url: url.normalized.to_owned(),
             title,
         };
@@ -163,9 +163,9 @@ impl Fixtures {
 
     pub fn upsert_topic(
         &self,
-        repo: &RepoName,
+        repo: &RepoId,
         name: &str,
-        parent_topic: &RepoId,
+        parent_topic: &Oid,
         on_matching_synonym: OnMatchingSynonym,
     ) -> Result<UpsertTopicResult> {
         UpsertTopic {
@@ -190,8 +190,8 @@ mod tests {
     #[allow(dead_code)]
     fn update_simple_fixtures() {
         let f = Fixtures::copy("simple");
-        let root = RepoId::root_topic();
-        let repo = RepoName::wiki();
+        let root = Oid::root_topic();
+        let repo = RepoId::wiki();
 
         let topic_path =
             parse_id("dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
@@ -216,13 +216,12 @@ mod tests {
         );
         println!("result: {:?}", result.link);
 
-        let path =
-            parse_id("/wiki/wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj");
+        let path = parse_id("wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj");
         let UpsertTopicResult { topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Weather".to_owned(),
-            repo: RepoName::wiki(),
+            repo: RepoId::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(path),
             parent_topic: root,
         }

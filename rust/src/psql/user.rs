@@ -13,7 +13,7 @@ pub const USER_FIELDS: &str = r#"
     u.name,
     u.avatar_url,
     u.selected_repository_id,
-    u.write_prefixes
+    array_agg(ur.repository_id) write_repository_ids
 "#;
 
 #[derive(sqlx::FromRow, Clone, Debug)]
@@ -23,20 +23,18 @@ pub struct Row {
     pub login: Option<String>,
     pub name: String,
     pub selected_repository_id: Option<Uuid>,
-    pub write_prefixes: Vec<String>,
+    pub write_repository_ids: Vec<Uuid>,
 }
 
-pub async fn fetch_user(
-    _read_prefixes: &RepoNames,
-    user_id: &String,
-    pool: &PgPool,
-) -> Result<Row> {
+pub async fn fetch_user(_read_prefixes: &RepoIds, user_id: &String, pool: &PgPool) -> Result<Row> {
     // TODO: Filter on query_ids
     let query = format!(
-        r#"select
+        "select
             {USER_FIELDS}
-        from users u
-        where u.id = $1::uuid"#,
+         from users u
+         left join users_repositories ur on u.id = ur.user_id
+         where u.id = $1::uuid
+         group by u.id"
     );
     let row = sqlx::query_as::<_, Row>(&query)
         .bind(&user_id)
@@ -66,10 +64,12 @@ impl Loader<String> for UserLoader {
         log::debug!("batch load users: {:?}", ids);
 
         let query = format!(
-            r#"select
+            "select
                 {USER_FIELDS}
-            from users u
-            where u.id = any($1::uuid[])"#,
+             from users u
+             left join users_repositories ur on u.id = ur.user_id
+             where u.id = any($1::uuid[])
+             group by u.id",
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&ids)
@@ -104,8 +104,10 @@ impl UpsertRegisteredUser {
             r#"select
                 {USER_FIELDS}
             from users u
+            left join users_repositories ur on u.id = ur.user_id
             join github_accounts ga on u.id = ga.user_id
-            where ga.username = $1"#
+            where ga.username = $1
+            group by u.id"#
         );
         let result = sqlx::query_as::<_, Row>(&query)
             .bind(username)
@@ -177,7 +179,7 @@ pub struct FetchAccountInfo {
 }
 
 pub struct FetchAccountInfoResult {
-    pub personal_repos: RepoNames,
+    pub personal_repos: RepoIds,
 }
 
 impl FetchAccountInfo {
@@ -221,7 +223,7 @@ impl DeleteAccount {
         }
 
         log::warn!("deleting account {}", self.user_id);
-        let row = fetch_user(&self.actor.write_repos, &self.user_id, pool).await?;
+        let row = fetch_user(&self.actor.write_repo_ids, &self.user_id, pool).await?;
 
         let mut tx = pool.begin().await?;
 

@@ -36,7 +36,7 @@ impl std::fmt::Debug for Repo {
 }
 
 impl Repo {
-    pub fn ensure(root: &DataRoot, prefix: &RepoName) -> Result<Self> {
+    pub fn ensure(root: &DataRoot, prefix: &RepoId) -> Result<Self> {
         let path = root.repo_path(prefix);
         Self::open(path)
     }
@@ -51,7 +51,7 @@ impl Repo {
         }
     }
 
-    pub fn delete(root: &DataRoot, prefix: &RepoName) -> Result<()> {
+    pub fn delete(root: &DataRoot, prefix: &RepoId) -> Result<()> {
         let path = root.repo_path(prefix);
         log::warn!("deleting repo {} at {:?}", prefix, path);
 
@@ -166,7 +166,7 @@ pub struct View {
 }
 
 impl View {
-    pub fn ensure(root: &DataRoot, prefix: &RepoName, timespec: &Timespec) -> Result<Self> {
+    pub fn ensure(root: &DataRoot, prefix: &RepoId, timespec: &Timespec) -> Result<Self> {
         let repo = Repo::ensure(root, prefix)?;
         let commit = repo.commit_oid(timespec)?;
         Ok(Self { repo, commit })
@@ -177,7 +177,7 @@ impl View {
         Ok(blob.is_some())
     }
 
-    pub fn change(&self, id: &RepoId) -> Result<activity::Change> {
+    pub fn change(&self, id: &Oid) -> Result<activity::Change> {
         let result = self.find_blob_by_filename(&id.change_filename()?)?;
         match result {
             Some(blob) => Ok(blob.try_into()?),
@@ -204,11 +204,11 @@ impl View {
         Ok(None)
     }
 
-    fn find_blob(&self, id: &RepoId) -> Result<Option<git2::Blob>> {
+    fn find_blob(&self, id: &Oid) -> Result<Option<git2::Blob>> {
         self.find_blob_by_filename(&id.object_filename()?)
     }
 
-    pub fn link(&self, id: &RepoId) -> Result<Option<Link>> {
+    pub fn link(&self, id: &Oid) -> Result<Option<Link>> {
         let link = match self.find_blob(id)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,
@@ -216,7 +216,7 @@ impl View {
         Ok(link)
     }
 
-    pub fn object(&self, path: &RepoId) -> Result<Option<Object>> {
+    pub fn object(&self, path: &Oid) -> Result<Option<Object>> {
         let object = match self.find_blob(path)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,
@@ -224,7 +224,7 @@ impl View {
         Ok(object)
     }
 
-    pub fn object_exists(&self, id: &RepoId) -> Result<bool> {
+    pub fn object_exists(&self, id: &Oid) -> Result<bool> {
         let filename = id.object_filename()?;
         self.blob_exists(&filename)
     }
@@ -276,7 +276,7 @@ impl View {
         })
     }
 
-    pub fn topic(&self, id: &RepoId) -> Result<Option<Topic>> {
+    pub fn topic(&self, id: &Oid) -> Result<Option<Topic>> {
         let topic = match self.find_blob(id)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,
@@ -342,14 +342,14 @@ impl Tree {
 }
 
 #[derive(Debug, Default)]
-pub struct Update(HashMap<RepoName, Tree>);
+pub struct Update(HashMap<RepoId, Tree>);
 
 impl Update {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn add(&mut self, repo: &RepoName, filename: &Path, oid: &Option<git2::Oid>) -> Result<()> {
+    pub fn add(&mut self, repo: &RepoId, filename: &Path, oid: &Option<git2::Oid>) -> Result<()> {
         let mut deque = deque_from_path(filename);
         let tree = self.0.entry(repo.to_owned()).or_insert_with(Tree::new);
         tree.add_blob(&mut deque, oid);

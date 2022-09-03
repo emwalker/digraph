@@ -1,8 +1,6 @@
-use async_graphql::{Context, Object, ID};
+use async_graphql::{Object, ID};
 
-use super::Repository;
 use crate::prelude::*;
-use crate::store::Store;
 
 #[derive(Clone)]
 pub enum Organization {
@@ -12,7 +10,6 @@ pub enum Organization {
         id: ID,
         login: String,
         name: String,
-        repo_prefix: RepoName,
     },
 }
 
@@ -24,17 +21,6 @@ impl Default for Organization {
 
 #[Object]
 impl Organization {
-    pub async fn default_repository(&self, ctx: &Context<'_>) -> Result<Repository> {
-        match self {
-            Self::Wiki => Ok(Repository::Default),
-            Self::Selected { repo_prefix, .. } => ctx
-                .data_unchecked::<Store>()
-                .repository_by_prefix(repo_prefix.to_string())
-                .await?
-                .ok_or_else(|| Error::NotFound(format!("repo {}", repo_prefix))),
-        }
-    }
-
     async fn login(&self) -> &str {
         match self {
             Self::Wiki => "wiki",

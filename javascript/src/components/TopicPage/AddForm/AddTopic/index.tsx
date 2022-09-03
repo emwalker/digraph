@@ -66,8 +66,11 @@ class AddTopic extends Component<Props, State> {
       return
     }
 
-    // FIXME: get the selected repo .id (not .prefix)
-    const repoId = '/wiki/'
+    const repoId = repo.id
+    if (!repoId) {
+      console.log('expected a repo id', repo)
+      return
+    }
 
     upsertTopicMutation(
       this.props.relay.environment,
@@ -112,7 +115,7 @@ export default createFragmentContainer(AddTopic, {
   viewer: graphql`
     fragment AddTopic_viewer on User {
       selectedRepository {
-        prefix
+        id
       }
     }
   `,

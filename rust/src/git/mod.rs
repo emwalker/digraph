@@ -69,7 +69,7 @@ pub struct LinkDetails {
 #[serde(rename_all = "camelCase")]
 pub struct LinkMetadata {
     pub added: Timestamp,
-    pub id: RepoId,
+    pub id: Oid,
     pub details: Option<LinkDetails>,
 }
 
@@ -125,7 +125,7 @@ impl Link {
         self.metadata.added
     }
 
-    pub fn id(&self) -> &RepoId {
+    pub fn id(&self) -> &Oid {
         &self.metadata.id
     }
 
@@ -159,7 +159,7 @@ impl Link {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ParentTopic {
-    pub id: RepoId,
+    pub id: Oid,
 }
 
 impl std::cmp::Ord for ParentTopic {
@@ -175,7 +175,7 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, repo: &RepoName, mutation: &Mutation) -> Result<Option<Topic>> {
+    pub fn fetch(&self, repo: &RepoId, mutation: &Mutation) -> Result<Option<Topic>> {
         Ok(mutation.fetch_topic(repo, &self.id))
     }
 }
@@ -185,7 +185,7 @@ impl ParentTopic {
 pub struct TopicChild {
     pub added: Timestamp,
     pub kind: Kind,
-    pub id: RepoId,
+    pub id: Oid,
 }
 
 impl std::cmp::PartialEq for TopicChild {
@@ -261,7 +261,7 @@ pub struct TopicDetails {
 #[serde(rename_all = "camelCase")]
 pub struct TopicMetadata {
     pub added: Timestamp,
-    pub id: RepoId,
+    pub id: Oid,
     pub details: Option<TopicDetails>,
 }
 
@@ -330,11 +330,11 @@ impl Topic {
         self.metadata.added
     }
 
-    pub fn has_child(&self, id: &RepoId) -> bool {
+    pub fn has_child(&self, id: &Oid) -> bool {
         self.children.iter().any(|child| &child.id == id)
     }
 
-    pub fn id(&self) -> &RepoId {
+    pub fn id(&self) -> &Oid {
         &self.metadata.id
     }
 
@@ -507,7 +507,7 @@ pub trait Visitor {
 #[derive(Debug)]
 pub struct TopicDownsetIter {
     client: Client,
-    repo: RepoName,
+    repo: RepoId,
     seen: HashSet<TopicChild>,
     stack: Vec<TopicChild>,
 }
@@ -552,7 +552,7 @@ impl Iterator for TopicDownsetIter {
 }
 
 impl TopicDownsetIter {
-    fn new(client: Client, repo: RepoName, topic: Option<Topic>) -> Self {
+    fn new(client: Client, repo: RepoId, topic: Option<Topic>) -> Self {
         let mut stack = vec![];
         if let Some(topic) = &topic {
             stack.push(topic.to_topic_child(chrono::Utc::now()));
@@ -570,11 +570,11 @@ impl TopicDownsetIter {
 #[derive(Debug)]
 pub struct DownsetIter {
     iter: TopicDownsetIter,
-    links: Vec<RepoId>,
+    links: Vec<Oid>,
 }
 
 impl Iterator for DownsetIter {
-    type Item = RepoId;
+    type Item = Oid;
 
     fn next(&mut self) -> Option<Self::Item> {
         if !self.links.is_empty() {
@@ -596,7 +596,7 @@ impl Iterator for DownsetIter {
 }
 
 impl DownsetIter {
-    fn new(client: Client, repo: RepoName, topic: Option<Topic>) -> Self {
+    fn new(client: Client, repo: RepoId, topic: Option<Topic>) -> Self {
         Self {
             links: vec![],
             iter: TopicDownsetIter::new(client, repo, topic),
@@ -613,21 +613,31 @@ mod tests {
 
     #[test]
     fn parse_path_works() {
-        let result = parse_path("../../wiki/12/34/5678/object.yaml");
+        let result = parse_path("../../12345/12/34/5678/object.yaml");
         assert!(matches!(result, Err(Error::Repo(_))));
 
-        let (root, path) = parse_path("../../wiki/objects/12/34/5678/object.yaml").unwrap();
+        let (root, repo_id, oid) =
+            parse_path("../../32212616-fc1b-11e8-8eda-b70af6d8d09f/objects/12/34/5678/object.yaml")
+                .unwrap();
         assert_eq!(root.path, PathBuf::from("../.."));
-        assert_eq!(path.inner, "/wiki/12345678".to_owned());
+        assert_eq!(
+            repo_id.to_string(),
+            "32212616-fc1b-11e8-8eda-b70af6d8d09f".to_owned()
+        );
+        assert_eq!(oid.to_string(), "12345678".to_owned());
 
-        let (root, path) = parse_path(
-            "../../wiki/objects/q-/ZZ/meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ/object.yaml",
+        let (root, repo_id, oid) = parse_path(
+            "../../32212616-fc1b-11e8-8eda-b70af6d8d09f/objects/q-/ZZ/meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ/object.yaml",
         )
         .unwrap();
         assert_eq!(root.path, PathBuf::from("../.."));
         assert_eq!(
-            path.inner,
-            "/wiki/q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ".to_owned(),
+            repo_id.to_string(),
+            "32212616-fc1b-11e8-8eda-b70af6d8d09f".to_owned()
+        );
+        assert_eq!(
+            oid.to_string(),
+            "q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ".to_owned(),
         );
     }
 

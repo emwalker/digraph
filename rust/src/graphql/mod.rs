@@ -82,11 +82,14 @@ impl State {
     pub async fn authenticate(&self, user_info: Option<(String, String)>) -> Viewer {
         match user_info {
             Some((user_id, session_id)) => {
-                let result = sqlx::query_as::<_, (Vec<String>,)>(
-                    r#"select u.write_prefixes
+                let result = sqlx::query_as::<_, (Vec<sqlx::types::Uuid>,)>(
+                    "select array_agg(ur.repository_id)
                     from sessions s
                     join users u on s.user_id = u.id
-                    where s.user_id = $1::uuid and s.session_id = decode($2, 'hex')"#,
+                    join users_repositories ur on u.id = ur.user_id
+                    where s.user_id = $1::uuid and s.session_id = decode($2, 'hex')
+                        and ur.can_write
+                    group by u.id",
                 )
                 .bind(&user_id)
                 .bind(&session_id)
@@ -95,12 +98,12 @@ impl State {
 
                 match result {
                     Ok(row) => match &row {
-                        Some((prefixes,)) => {
+                        Some((repo_ids,)) => {
                             log::info!("found user and session in database: {}", user_id);
-                            match RepoNames::try_from(prefixes) {
-                                Ok(prefixes) => Viewer {
-                                    write_repos: prefixes.clone(),
-                                    read_repos: prefixes,
+                            match RepoIds::try_from(repo_ids) {
+                                Ok(repo_ids) => Viewer {
+                                    write_repo_ids: repo_ids.clone(),
+                                    read_repo_ids: repo_ids,
                                     session_id: Some(session_id),
                                     super_user: false,
                                     user_id,

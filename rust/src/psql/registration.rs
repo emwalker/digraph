@@ -20,8 +20,8 @@ impl CompleteRegistration {
         log::info!("creating default org {} for {}", self.login, name);
         let (organization_id,) = sqlx::query_as::<_, (Uuid,)>(
             "insert into organizations
-                (login, name, public, repo_prefix, owner_id)
-                values ($1, $2, false, concat('/', $1, '/'), $3)
+                (login, name, public, owner_id)
+                values ($1, $2, false, $3)
                 returning id",
         )
         .bind(&self.login)
@@ -30,34 +30,55 @@ impl CompleteRegistration {
         .fetch_one(&mut tx)
         .await?;
 
-        let repository_name = format!("{}/{}", self.login, DEFAULT_REPOSITORY_NAME);
-        let root_topic_path = format!("/{}/{}", self.login, ROOT_TOPIC_ID);
-
-        log::info!("creating default repo {} for {}", repository_name, name);
-        sqlx::query(
+        log::info!(
+            "creating default repo {} for {}",
+            DEFAULT_REPOSITORY_NAME,
+            name
+        );
+        let (repository_id,) = sqlx::query_as::<_, (Uuid,)>(
             "insert into repositories
                 (
                     organization_id,
                     name,
                     owner_id,
-                    private,
-                    prefix,
-                    root_topic_path
+                    private
                 )
                 values (
                     $1::uuid,
                     $2,
                     $3,
                     't',
-                    concat('/', $4, '/'),
-                    $5
-                )",
+                )
+                returning id",
         )
         .bind(&organization_id)
-        .bind(&repository_name)
+        .bind(DEFAULT_REPOSITORY_NAME)
         .bind(&user_id)
-        .bind(&self.login)
-        .bind(&root_topic_path)
+        .fetch_one(&mut tx)
+        .await?;
+
+        // Add permissions for personal repo
+        sqlx::query(
+            "insert into users_repositories (user_id, repository_id, can_read, can_write)
+                values ($1::uuid, $2, 't', 't')
+                on conflict do nothing",
+        )
+        .bind(&organization_id)
+        .bind(&repository_id)
+        .execute(&mut tx)
+        .await?;
+
+        // Add permissions for wiki repo
+        sqlx::query(
+            "insert into users_repositories (user_id, repository_id, can_read, can_write)
+                select u.id, r.id, 't', 't'
+                from users u
+                cross join repositories r
+                join organizations o on r.organization_id = o.id
+                where o.login = 'wiki' and u.id = $1
+                on conflict do nothing",
+        )
+        .bind(&user_id)
         .execute(&mut tx)
         .await?;
 
@@ -66,9 +87,7 @@ impl CompleteRegistration {
             "update users
                 set
                     registered_at = now(),
-                    login = $1,
-                    write_prefixes = array['/wiki/', concat('/', $1, '/')],
-                    personal_prefixes = array[concat('/', $1, '/')]
+                    login = $1
                 where id = $2",
         )
         .bind(&self.login)

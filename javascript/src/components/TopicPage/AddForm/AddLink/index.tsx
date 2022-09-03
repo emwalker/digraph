@@ -46,8 +46,7 @@ class AddLink extends Component<Props, State> {
   }
 
   upsertLink() {
-    // FIXME: use .id instead of .prefix, and get it from the selected repo
-    const repoId = '/wiki/'
+    const repoId = this.props.viewer.selectedRepository?.id
 
     if (!repoId) return
 
@@ -92,7 +91,6 @@ export default createFragmentContainer(AddLink, {
     fragment AddLink_viewer on User {
       selectedRepository {
         id
-        prefix
       }
     }
   `,

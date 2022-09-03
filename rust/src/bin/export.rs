@@ -5,6 +5,7 @@ use sqlx::{FromRow, PgPool};
 use std::collections::{BTreeSet, HashMap};
 use std::env;
 use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 use digraph::config::Config;
 use digraph::db;
@@ -20,9 +21,9 @@ struct Opts {
     root: PathBuf,
 }
 
-fn sha256_id(id: &str) -> RepoId {
+fn sha256_id(id: &str) -> Oid {
     let id = sha256_base64(id);
-    RepoId::try_from(&id).unwrap()
+    Oid::try_from(&id).unwrap()
 }
 
 fn parse_args() -> Opts {
@@ -74,8 +75,8 @@ impl From<&SynonymRow> for Synonym {
 struct TopicMetadataRow {
     added: Timestamp,
     id: String,
-    login: String,
     name: String,
+    repository_id: Uuid,
     root: bool,
     synonyms: serde_json::Value,
     timerange_prefix_format: Option<String>,
@@ -85,7 +86,7 @@ struct TopicMetadataRow {
 #[derive(Clone, FromRow)]
 struct ParentTopicRow {
     id: String,
-    login: String,
+    repository_id: Uuid,
     name: String,
 }
 
@@ -101,7 +102,7 @@ impl TryFrom<&ParentTopicRow> for ParentTopic {
 #[derive(Clone, FromRow)]
 struct LinkMetadataRow {
     added: Timestamp,
-    login: String,
+    repository_id: Uuid,
     link_id: String,
     title: String,
     url: String,
@@ -129,7 +130,7 @@ struct TopicChildRow {
     added: Timestamp,
     id: String,
     kind: String,
-    login: String,
+    repository_id: Uuid,
     name: String,
     url: String,
 }
@@ -155,17 +156,17 @@ impl TryFrom<&TopicChildRow> for TopicChild {
 #[derive(Debug)]
 struct Topics {
     topic: Topic,
-    topics: HashMap<RepoName, Topic>,
+    topics: HashMap<RepoId, Topic>,
 }
 
 impl Topics {
-    fn new(repo: RepoName, topic: Topic) -> Self {
-        let mut topics: HashMap<RepoName, Topic> = HashMap::new();
+    fn new(repo: RepoId, topic: Topic) -> Self {
+        let mut topics: HashMap<RepoId, Topic> = HashMap::new();
         topics.insert(repo, topic.clone());
         Self { topic, topics }
     }
 
-    fn get_mut(&mut self, repo: &RepoName) -> &mut Topic {
+    fn get_mut(&mut self, repo: &RepoId) -> &mut Topic {
         let topics = &mut self.topics;
 
         topics.entry(repo.to_owned()).or_insert_with(|| {
@@ -187,7 +188,7 @@ impl Topics {
 
 fn persist_topic(
     mutation: &mut Mutation,
-    repo: RepoName,
+    repo_id: &RepoId,
     topic: &mut Topic,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,
@@ -199,13 +200,14 @@ fn persist_topic(
         let TopicChildRow {
             kind,
             id,
-            login,
+            repository_id,
             name,
             url,
             ..
         } = child;
+        let child_repo_id = RepoId::try_from(repository_id).unwrap();
 
-        if repo.org_login() != login {
+        if repo_id != &child_repo_id {
             continue;
         }
 
@@ -229,7 +231,8 @@ fn persist_topic(
 
     let mut parents = vec![];
     for topic in parent_topics {
-        if topic.login != repo.org_login() {
+        let topic_repo_id = RepoId::try_from(&topic.repository_id).unwrap();
+        if &topic_repo_id != repo_id {
             continue;
         }
 
@@ -251,15 +254,15 @@ fn persist_topic(
         parent_topics: activity::TopicInfoList::from(&parents),
     });
 
-    mutation.save_topic(&repo, topic)?;
-    mutation.add_change(&repo, &change)
+    mutation.save_topic(repo_id, topic)?;
+    mutation.add_change(repo_id, &change)
 }
 
 // 1. Don't place paths for items in private repos under /wiki/
 fn persist_topics(
     mutation: &mut Mutation,
-    repo: &RepoName,
-    topic_id: &RepoId,
+    repo: &RepoId,
+    topic_id: &Oid,
     meta: &TopicMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,
@@ -302,22 +305,22 @@ fn persist_topics(
     let mut topics = Topics::new(repo.to_owned(), topic);
 
     for parent in parent_topics {
-        let repo = RepoName::from_login(&parent.login)?;
-        let topic = topics.get_mut(&repo);
+        let repo_id = RepoId::try_from(&parent.repository_id).unwrap();
+        let topic = topics.get_mut(&repo_id);
         topic.parent_topics.insert(parent.try_into()?);
     }
 
     for child in children {
-        let parent_repo = RepoName::from_login(&child.login)?;
-        let topic = topics.get_mut(&parent_repo);
+        let parent_repo_id = RepoId::try_from(&child.repository_id).unwrap();
+        let topic = topics.get_mut(&parent_repo_id);
         topic.children.insert(child.try_into()?);
     }
 
-    let repos = topics.topics.keys().cloned().collect::<Vec<RepoName>>();
+    let repo_ids = topics.topics.keys().cloned().collect::<Vec<RepoId>>();
 
-    for repo in repos {
-        let topic = topics.get_mut(&repo);
-        persist_topic(mutation, repo, topic, parent_topics, children)?;
+    for repo_id in repo_ids {
+        let topic = topics.get_mut(&repo_id);
+        persist_topic(mutation, &repo_id, topic, parent_topics, children)?;
     }
 
     Ok(())
@@ -329,55 +332,54 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
     let rows = sqlx::query_as::<_, TopicMetadataRow>(
         r#"select
             t.name,
-            o.login,
             t.id::varchar,
             t.synonyms,
             t.root,
             t.created_at added,
+            t.repository_id,
             tr.starts_at timerange_starts,
             tr.prefix_format timerange_prefix_format
 
         from topics t
-        join organizations o on o.id = t.organization_id
         left join timeranges tr on tr.id = t.timerange_id"#,
     )
     .fetch_all(pool)
-    .await?;
+    .await
+    .unwrap();
 
     for meta in &rows {
-        let repo = RepoName::from_login(&meta.login).expect("failed to parse repo name");
+        let repo_id = RepoId::try_from(&meta.repository_id.to_string()).unwrap();
         let topic_id = sha256_id(&meta.id);
 
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
-                o.login,
+                t.repository_id,
                 tt.parent_id::varchar id,
                 t.name
 
             from topic_topics tt
             join topics t on t.id = tt.parent_id
-            join organizations o on o.id = t.organization_id
             left join timeranges tr on tr.id = t.timerange_id
             where tt.child_id = $1::uuid
             order by t.name"#,
         )
         .bind(&meta.id)
         .fetch_all(pool)
-        .await?;
+        .await
+        .unwrap();
 
         let children = sqlx::query_as::<_, TopicChildRow>(
             r#"(
                 select
                     t.created_at added,
                     'Topic' kind,
-                    o.login,
+                    t.repository_id,
                     t.id::varchar,
                     t.name,
                     'url' as url
 
                 from topic_topics tt
                 join topics t on t.id = tt.child_id
-                join organizations o on o.id = t.organization_id
                 where tt.parent_id = $1::uuid
                 order by t.name
             )
@@ -388,23 +390,31 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
                 select
                     l.created_at added,
                     'Link' kind,
-                    o.login,
+                    l.repository_id,
                     l.id::varchar,
                     l.title as name,
                     l.url
 
                 from link_topics tt
                 join links l on l.id = tt.child_id
-                join organizations o on o.id = l.organization_id
                 where tt.parent_id = $1::uuid
                 order by l.created_at desc
             )"#,
         )
         .bind(&meta.id)
         .fetch_all(pool)
-        .await?;
+        .await
+        .unwrap();
 
-        persist_topics(builder, &repo, &topic_id, meta, &parent_topics, &children)?;
+        persist_topics(
+            builder,
+            &repo_id,
+            &topic_id,
+            meta,
+            &parent_topics,
+            &children,
+        )
+        .unwrap();
     }
 
     Ok(())
@@ -413,17 +423,17 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
 #[derive(Debug)]
 struct Links {
     link: Link,
-    links: HashMap<RepoName, Link>,
+    links: HashMap<RepoId, Link>,
 }
 
 impl Links {
-    fn new(repo: RepoName, link: Link) -> Self {
-        let mut links: HashMap<RepoName, Link> = HashMap::new();
+    fn new(repo: RepoId, link: Link) -> Self {
+        let mut links: HashMap<RepoId, Link> = HashMap::new();
         links.insert(repo, link.clone());
         Self { link, links }
     }
 
-    fn get_mut(&mut self, repo: &RepoName) -> &mut Link {
+    fn get_mut(&mut self, repo: &RepoId) -> &mut Link {
         let links = &mut self.links;
 
         links.entry(repo.to_owned()).or_insert_with(|| Link {
@@ -440,14 +450,15 @@ impl Links {
 
 fn persist_link(
     mutation: &mut Mutation,
-    repo: &RepoName,
+    repo: &RepoId,
     link: &mut Link,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
     let mut topics = BTreeSet::new();
 
     for parent in parent_topics {
-        if repo.org_login() != parent.login {
+        let parent_repo_id = RepoId::try_from(&parent.repository_id).unwrap();
+        if repo != &parent_repo_id {
             continue;
         }
 
@@ -475,7 +486,7 @@ fn persist_link(
 
 fn persist_links(
     mutation: &mut Mutation,
-    repo: &RepoName,
+    repo: &RepoId,
     meta: &LinkMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
@@ -488,12 +499,12 @@ fn persist_links(
     let mut links = Links::new(repo.to_owned(), link);
 
     for parent in parent_topics {
-        let repo = RepoName::from_login(&parent.login).unwrap();
+        let repo = RepoId::try_from(&parent.repository_id).unwrap();
         let link = links.get_mut(&repo);
         link.parent_topics.insert(parent.try_into().unwrap());
     }
 
-    let repos = links.links.keys().cloned().collect::<Vec<RepoName>>();
+    let repos = links.links.keys().cloned().collect::<Vec<RepoId>>();
 
     for repo in repos {
         let link = links.get_mut(&repo);
@@ -509,30 +520,28 @@ async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
     let rows = sqlx::query_as::<_, LinkMetadataRow>(
         r#"select
             l.created_at added,
-            o.login,
+            l.repository_id,
             l.id::varchar link_id,
             l.title,
             l.url
 
-        from links l
-        join organizations o on o.id = l.organization_id"#,
+        from links l"#,
     )
     .fetch_all(pool)
     .await?;
 
     for meta in rows {
-        let repo = RepoName::from_login(&meta.login).expect("failed to parse repo");
+        let repo = RepoId::try_from(&meta.repository_id).expect("failed to parse repo");
         let link_id = meta.link_id.clone();
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
-                o.login,
+                t.repository_id,
                 t.id::varchar,
                 t.name,
                 t.root
 
             from link_topics lt
             join topics t on t.id = lt.parent_id
-            join organizations o on o.id = t.organization_id
             where lt.child_id = $1::uuid"#,
         )
         .bind(&link_id)

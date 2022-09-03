@@ -4,18 +4,20 @@ use super::{actor, viewer, Fixtures};
 use digraph::git;
 
 mod topic_references {
+    use digraph::prelude::{OTHER_REPOSITORY_ID, WIKI_REPOSITORY_ID};
+
     use super::*;
 
     #[test]
     fn no_leaks() {
         let f = Fixtures::copy("simple");
-        let other = f.git.root.path.join("other");
+        let other = f.git.root.path.join(OTHER_REPOSITORY_ID);
         fs::create_dir_all(&other).expect("unable create other repo");
 
         assert!(f.no_leaks().unwrap());
 
         let filename = other.join("file.txt");
-        fs::write(&filename, "path: /wiki/some-path").expect("unable to write file");
+        fs::write(&filename, WIKI_REPOSITORY_ID).expect("unable to write file");
 
         assert!(!f.no_leaks().unwrap());
     }
@@ -23,15 +25,15 @@ mod topic_references {
 
 mod delete_account {
     use digraph::prelude::*;
-    use digraph::types::{RepoName, RepoNames};
+    use digraph::types::{RepoId, RepoIds};
 
     use super::*;
 
-    fn delete(f: &Fixtures, repo: &RepoName, actor: &Viewer, user_id: &str) -> Result<()> {
+    fn delete(f: &Fixtures, repo: &RepoId, actor: &Viewer, user_id: &str) -> Result<()> {
         git::DeleteAccount {
             actor: actor.to_owned(),
             user_id: user_id.to_owned(),
-            personal_repos: RepoNames::try_from(&vec![repo.to_owned()]).unwrap(),
+            personal_repos: RepoIds::try_from(&vec![repo.to_owned()]).unwrap(),
         }
         .call(&f.mutation())
     }
@@ -41,7 +43,7 @@ mod delete_account {
         let f = Fixtures::copy("simple");
         let actor = actor();
 
-        let repo = "/other/".try_into().unwrap();
+        let repo = RepoId::other();
         git::core::Repo::ensure(&f.git.root, &repo).unwrap();
         let path = f.git.root.repo_path(&repo);
 
@@ -55,7 +57,7 @@ mod delete_account {
         let f = Fixtures::copy("simple");
         let actor = actor();
 
-        let repo = "/other/".try_into().unwrap();
+        let repo = RepoId::other();
         git::core::Repo::ensure(&f.git.root, &repo).unwrap();
         let path = f.git.root.repo_path(&repo);
 
@@ -72,7 +74,7 @@ mod delete_account {
         let f = Fixtures::copy("simple");
         let actor = actor();
 
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         let path = f.git.root.repo_path(&repo);
 
         assert!(path.exists());
@@ -87,7 +89,7 @@ mod delete_account {
         let f = Fixtures::copy("simple");
         let actor = actor();
 
-        let repo = "/other/".try_into().unwrap();
+        let repo = RepoId::other();
         git::core::Repo::ensure(&f.git.root, &repo).unwrap();
         let path = f.git.root.repo_path(&repo);
         assert!(path.exists());
@@ -104,15 +106,20 @@ mod delete_account {
 mod ensure_personal_repo {
     use digraph::prelude::*;
     use digraph::redis;
-    use digraph::types::RepoName;
+    use digraph::types::RepoId;
 
     use super::*;
 
-    fn ensure(f: &Fixtures, repo: &RepoName, actor: &Viewer, user_id: &str) -> Result<()> {
+    fn ensure(
+        f: &Fixtures,
+        repo_ids: &Vec<RepoId>,
+        actor: &Viewer,
+        user_id: &str,
+    ) -> Result<git::EnsurePersonalRepoResult> {
         git::EnsurePersonalRepo {
             actor: actor.to_owned(),
             user_id: user_id.to_owned(),
-            personal_repo: repo.to_owned(),
+            personal_repo_ids: repo_ids.to_owned(),
         }
         .call(f.mutation())
     }
@@ -122,18 +129,18 @@ mod ensure_personal_repo {
         let f = Fixtures::copy("simple");
         let actor = Viewer::service_account();
 
-        let repo = "/other/".try_into().unwrap();
-        ensure(&f, &repo, &actor, &actor.user_id).unwrap();
+        let result = ensure(&f, &vec![], &actor, &actor.user_id).unwrap();
 
-        let root = RepoId::root_topic();
-        let topic = f.git.fetch_topic(&repo, &root).unwrap();
+        let root = Oid::root_topic();
+        let repo_id = result.created_repo_id.unwrap();
+        let topic = f.git.fetch_topic(&repo_id, &root).unwrap();
         assert_eq!(topic.name(Locale::EN), "Everything");
     }
 
     #[test]
     fn view_stats() {
         let f = Fixtures::copy("simple");
-        let stats = f.git.view_stats(&RepoName::wiki()).unwrap();
+        let stats = f.git.view_stats(&RepoId::wiki()).unwrap();
         assert_eq!(stats.topic_count, Some(9));
         assert_eq!(stats.link_count, Some(4));
     }
@@ -141,7 +148,7 @@ mod ensure_personal_repo {
     #[actix_web::test]
     async fn fetch_stats() {
         let f = Fixtures::copy("simple");
-        let repos = RepoNames::try_from(&vec!["/wiki/".to_owned(), "/other/".to_owned()]).unwrap();
+        let repos = RepoIds::try_from(&vec![RepoId::wiki(), RepoId::other()]).unwrap();
         let viewer = viewer(&repos);
 
         let git::FetchStatsResult { stats } = git::FetchStats { viewer }

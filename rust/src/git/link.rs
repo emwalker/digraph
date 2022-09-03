@@ -13,13 +13,13 @@ use super::{LinkDetails, Mutation};
 
 pub struct DeleteLink {
     pub actor: Viewer,
-    pub repo: RepoName,
-    pub link_id: RepoId,
+    pub repo: RepoId,
+    pub link_id: Oid,
 }
 
 pub struct DeleteLinkResult {
     pub alerts: Vec<Alert>,
-    pub deleted_link_id: RepoId,
+    pub deleted_link_id: Oid,
 }
 
 impl DeleteLink {
@@ -76,9 +76,9 @@ impl DeleteLink {
 
 pub struct UpdateLinkParentTopics {
     pub actor: Viewer,
-    pub repo_id: RepoName,
-    pub link_id: RepoId,
-    pub parent_topic_ids: BTreeSet<RepoId>,
+    pub repo_id: RepoId,
+    pub link_id: Oid,
+    pub parent_topic_ids: BTreeSet<Oid>,
 }
 
 pub struct UpdateLinkParentTopicsResult {
@@ -183,10 +183,10 @@ impl UpdateLinkParentTopics {
 #[derivative(Debug)]
 pub struct UpsertLink {
     pub actor: Viewer,
-    pub add_parent_topic_id: Option<RepoId>,
+    pub add_parent_topic_id: Option<Oid>,
     #[derivative(Debug = "ignore")]
     pub fetcher: Box<dyn http::Fetch + Send + Sync>,
-    pub repo: RepoName,
+    pub repo_id: RepoId,
     pub title: Option<String>,
     pub url: String,
 }
@@ -238,11 +238,11 @@ impl UpsertLink {
                 kind: Kind::Link,
                 id: link_id.to_owned(),
             });
-            mutation.save_topic(&self.repo, topic)?;
+            mutation.save_topic(&self.repo_id, topic)?;
         }
 
-        mutation.save_link(&self.repo, &link)?;
-        mutation.add_change(&self.repo, &change)?;
+        mutation.save_link(&self.repo_id, &link)?;
+        mutation.add_change(&self.repo_id, &change)?;
         mutation.write(store)?;
 
         Ok(UpsertLinkResult {
@@ -255,17 +255,17 @@ impl UpsertLink {
         &self,
         mutation: &mut Mutation,
         link: &Link,
-    ) -> Result<(Option<Topic>, HashMap<RepoId, Topic>)> {
+    ) -> Result<(Option<Topic>, HashMap<Oid, Topic>)> {
         let mut parent_topics = HashMap::new();
 
         for parent in &link.parent_topics {
-            if let Some(topic) = mutation.fetch_topic(&self.repo, &parent.id) {
+            if let Some(topic) = mutation.fetch_topic(&self.repo_id, &parent.id) {
                 parent_topics.insert(parent.id.to_owned(), topic);
             }
         }
 
         let topic = if let Some(topic_id) = &self.add_parent_topic_id {
-            let topic = mutation.fetch_topic(&self.repo, topic_id);
+            let topic = mutation.fetch_topic(&self.repo_id, topic_id);
             if let Some(topic) = &topic {
                 parent_topics.insert(topic_id.to_owned(), topic.to_owned());
             }
@@ -277,7 +277,7 @@ impl UpsertLink {
         if parent_topics.is_empty() {
             // There's a client error if we get to this point.
             log::warn!("no topic found, placing under root topic");
-            if let Some(topic) = mutation.fetch_topic(&self.repo, &RepoId::root_topic()) {
+            if let Some(topic) = mutation.fetch_topic(&self.repo_id, &Oid::root_topic()) {
                 parent_topics.insert(topic.id().to_owned(), topic);
             }
         }
@@ -305,7 +305,7 @@ impl UpsertLink {
                 .parent_topics
                 .iter()
                 .map(|parent| parent.id.to_owned())
-                .collect::<BTreeSet<RepoId>>(),
+                .collect::<BTreeSet<Oid>>(),
             previous_title: previous_title.to_owned(),
             upserted_link: activity::LinkInfo::from(link),
         })
@@ -314,11 +314,11 @@ impl UpsertLink {
     fn make_link(
         &self,
         mutation: &Mutation,
-        link_id: &RepoId,
+        link_id: &Oid,
         url: &RepoUrl,
     ) -> Result<(Link, Option<String>)> {
-        if mutation.exists(&self.repo, link_id)? {
-            if let Some(link) = mutation.fetch_link(&self.repo, link_id) {
+        if mutation.exists(&self.repo_id, link_id)? {
+            if let Some(link) = mutation.fetch_link(&self.repo_id, link_id) {
                 let title = link.metadata.title().to_owned();
                 return Ok((link, Some(title)));
             }

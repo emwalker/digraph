@@ -266,7 +266,6 @@ type Repository {
   name: String!
   organization: Organization!
   owner: User!
-  prefix: String!
   rootTopic: Topic!
 }
 

@@ -339,8 +339,7 @@ CREATE TABLE public.organizations (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     login character varying(256) NOT NULL,
     public boolean DEFAULT false NOT NULL,
-    owner_id uuid NOT NULL,
-    repo_prefix text NOT NULL
+    owner_id uuid NOT NULL
 );
 
 
@@ -407,9 +406,7 @@ CREATE TABLE public.users (
     selected_repository_id uuid,
     system boolean DEFAULT false NOT NULL,
     avatar_url character varying(256) NOT NULL,
-    registered_at timestamp with time zone,
-    write_prefixes text[] DEFAULT '{}'::text[] NOT NULL,
-    personal_prefixes text[] DEFAULT '{}'::text[] NOT NULL
+    registered_at timestamp with time zone
 );
 
 

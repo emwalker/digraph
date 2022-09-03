@@ -6,6 +6,7 @@ import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphq
 import { SynonymType } from 'components/types'
 import SynonymList from './SynonymList'
 import copySynonyms from './copySynonyms'
+import { wikiRepoId } from 'components/constants'
 
 type Props = {
   relay: RelayProp,
@@ -82,7 +83,8 @@ class Synonyms extends Component<Props, State> {
   }
 
   updateTopicSynonyms = (synonyms: SynonymType[]) => {
-    const input: Input = { repoId: '/wiki/', topicId: this.props.topic.id, synonyms }
+    // FIXME
+    const input: Input = { repoId: wikiRepoId, topicId: this.props.topic.id, synonyms }
 
     this.setState({ inputName: '' }, () => {
       updateTopicSynonymsMutation(

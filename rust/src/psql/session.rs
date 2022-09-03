@@ -14,6 +14,7 @@ pub struct CreateSessionResult {
     pub alerts: Vec<Alert>,
     pub user: user::Row,
     pub session_id: String,
+    pub personal_repo_ids: Vec<RepoId>,
 }
 
 pub struct CreateGithubSession {
@@ -42,6 +43,18 @@ impl CreateGithubSession {
         .fetch_one(pool)
         .await?;
 
+        let personal_repo_ids = sqlx::query_as::<_, (Uuid,)>(
+            "select repository_id
+             from users_repositories
+             where user_id = $1 and is_personal_repo",
+        )
+        .bind(&user.id)
+        .fetch_all(pool)
+        .await?
+        .iter()
+        .map(|(id,)| id.try_into())
+        .collect::<Result<Vec<RepoId>>>()?;
+
         log::debug!(
             "session id for user {:?}: {:?}",
             user.name,
@@ -52,6 +65,7 @@ impl CreateGithubSession {
             alerts: vec![],
             user,
             session_id: result.session_id,
+            personal_repo_ids,
         })
     }
 }

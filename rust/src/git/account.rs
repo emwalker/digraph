@@ -8,7 +8,7 @@ use crate::redis;
 pub struct DeleteAccount {
     pub actor: Viewer,
     pub user_id: String,
-    pub personal_repos: RepoNames,
+    pub personal_repos: RepoIds,
 }
 
 impl DeleteAccount {
@@ -19,7 +19,7 @@ impl DeleteAccount {
 
         log::warn!("deleting repos for {}", self.user_id);
 
-        let wiki = RepoName::wiki();
+        let wiki = RepoId::wiki();
         for repo in self.personal_repos.iter() {
             if repo == &wiki {
                 return Err(Error::Repo(format!("not allowed to delete {}", wiki)));
@@ -38,29 +38,44 @@ impl DeleteAccount {
 pub struct EnsurePersonalRepo {
     pub actor: Viewer,
     pub user_id: String,
-    pub personal_repo: RepoName,
+    pub personal_repo_ids: Vec<RepoId>,
+}
+
+pub struct EnsurePersonalRepoResult {
+    pub created_repo_id: Option<RepoId>,
 }
 
 impl EnsurePersonalRepo {
-    pub fn call(&self, mut mutation: Mutation) -> Result<()> {
+    pub fn call(&self, mut mutation: Mutation) -> Result<EnsurePersonalRepoResult> {
+        if !self.personal_repo_ids.is_empty() {
+            log::info!(
+                "user {} already has one or more personal repos",
+                self.user_id
+            );
+            return Ok(EnsurePersonalRepoResult {
+                created_repo_id: None,
+            });
+        }
+
         if !self.actor.super_user {
             return Err(Error::Repo("not allowed to do that".into()));
         }
 
         log::info!("ensuring personal repo for {}", self.user_id);
 
-        let wiki = RepoName::wiki();
-        if self.personal_repo == wiki {
-            return Err(Error::Repo(format!(
-                "not allowed to associate {} with {}",
-                wiki, self.user_id
-            )));
-        }
+        // let wiki = RepoId::wiki();
+        // if self.personal_repo_id == wiki {
+        //     return Err(Error::Repo(format!(
+        //         "not allowed to associate {} with {}",
+        //         wiki, self.user_id
+        //     )));
+        // }
+        let repo_id = RepoId::make();
 
-        mutation.repo(&self.personal_repo)?;
-        let topic_id = self.personal_repo.root_topic_id();
+        mutation.repo(&repo_id)?;
+        let topic_id = repo_id.root_topic_id();
 
-        if !mutation.exists(&self.personal_repo, &topic_id)? {
+        if !mutation.exists(&repo_id, &topic_id)? {
             log::info!("creating root topic: {}", topic_id);
             let added = chrono::Utc::now();
 
@@ -83,12 +98,14 @@ impl EnsurePersonalRepo {
                 children: BTreeSet::new(),
             };
 
-            mutation.save_topic(&self.personal_repo, &root)?;
+            mutation.save_topic(&repo_id, &root)?;
             mutation.write(&redis::Noop)?;
         }
 
-        log::info!("personal repo of {} exists", self.user_id);
+        log::info!("personal repo {} created for {}", repo_id, self.user_id);
 
-        Ok(())
+        Ok(EnsurePersonalRepoResult {
+            created_repo_id: Some(repo_id),
+        })
     }
 }

@@ -48,7 +48,7 @@ impl TryFrom<&git::Topic> for Topic {
             .children
             .iter()
             .map(|child| child.id.clone())
-            .collect::<Vec<RepoId>>();
+            .collect::<Vec<Oid>>();
         let synonyms = Synonyms::from(topic.synonyms());
 
         let timerange = topic.timerange().as_ref();
@@ -82,14 +82,11 @@ impl LinkLoader {
 }
 
 #[async_trait::async_trait]
-impl Loader<(RepoName, RepoId)> for LinkLoader {
+impl Loader<(RepoId, Oid)> for LinkLoader {
     type Value = git::Link;
     type Error = Error;
 
-    async fn load(
-        &self,
-        paths: &[(RepoName, RepoId)],
-    ) -> Result<HashMap<(RepoName, RepoId), Self::Value>> {
+    async fn load(&self, paths: &[(RepoId, Oid)]) -> Result<HashMap<(RepoId, Oid), Self::Value>> {
         log::debug!("batch links: {:?}", paths);
         let mut map: HashMap<_, _> = HashMap::new();
 
@@ -115,14 +112,11 @@ impl ObjectLoader {
 }
 
 #[async_trait::async_trait]
-impl Loader<(RepoName, RepoId)> for ObjectLoader {
+impl Loader<(RepoId, Oid)> for ObjectLoader {
     type Value = git::Object;
     type Error = Error;
 
-    async fn load(
-        &self,
-        paths: &[(RepoName, RepoId)],
-    ) -> Result<HashMap<(RepoName, RepoId), Self::Value>> {
+    async fn load(&self, paths: &[(RepoId, Oid)]) -> Result<HashMap<(RepoId, Oid), Self::Value>> {
         log::debug!("batch load topics: {:?}", paths);
         let mut map: HashMap<_, _> = HashMap::new();
 

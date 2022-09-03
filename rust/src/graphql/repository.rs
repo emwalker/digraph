@@ -15,9 +15,7 @@ pub enum Repository {
         name: String,
         organization_id: String,
         owner_id: String,
-        prefix: String,
         private: bool,
-        root_topic_path: Box<RepoPath>,
     },
 }
 
@@ -130,19 +128,12 @@ impl Repository {
         }
     }
 
-    async fn prefix(&self) -> &str {
-        match self {
-            Self::Default => WIKI_REPO_PREFIX,
-            Self::Fetched { prefix, .. } => prefix,
-        }
-    }
-
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
-        let topic_id = RepoId::root_topic();
+        let topic_id = Oid::root_topic();
 
         ctx.data_unchecked::<Store>()
             // FIXME
-            .topic(&RepoName::wiki(), &topic_id)
+            .topic(&RepoId::wiki(), &topic_id)
             .await?
             .ok_or_else(|| Error::NotFound(format!("root topic id: {}", topic_id)))
     }

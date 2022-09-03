@@ -7,18 +7,18 @@ mod repo;
 mod search;
 mod topic;
 
-fn viewer(repos: &RepoNames) -> Viewer {
+fn viewer(repo_ids: &RepoIds) -> Viewer {
     Viewer {
         user_id: "2".into(),
-        read_repos: repos.to_owned(),
-        write_repos: repos.to_owned(),
+        read_repo_ids: repo_ids.to_owned(),
+        write_repo_ids: repo_ids.to_owned(),
         super_user: false,
         session_id: Some("2".into()),
     }
 }
 
 fn actor() -> Viewer {
-    let repos = RepoNames::try_from(&vec!["/wiki/".to_owned(), "/other/".to_owned()]).unwrap();
+    let repos = RepoIds::try_from(&vec![RepoId::wiki(), RepoId::other()]).unwrap();
     viewer(&repos)
 }
 
@@ -26,6 +26,6 @@ fn valid_url() -> RepoUrl {
     RepoUrl::parse("https://www.google.com").unwrap()
 }
 
-fn parse_id(id: &str) -> RepoId {
-    RepoId::try_from(id).unwrap()
+fn parse_id(id: &str) -> Oid {
+    Oid::try_from(id).unwrap()
 }

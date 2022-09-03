@@ -5,7 +5,7 @@ use crate::prelude::*;
 
 pub struct ReviewLink {
     pub actor: Viewer,
-    pub repo: RepoName,
+    pub repo: RepoId,
     pub link: git::Link,
     pub reviewed: bool,
 }

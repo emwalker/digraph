@@ -43,9 +43,9 @@ impl Stats {
 }
 
 pub trait CacheStats {
-    fn fetch(&self, repo: &RepoName, oid: &str) -> Result<Option<RepoStats>>;
+    fn fetch(&self, repo: &RepoId, oid: &str) -> Result<Option<RepoStats>>;
 
-    fn save(&self, repo: &RepoName, oid: &str, stats: &RepoStats, ttl: Option<u32>) -> Result<()>;
+    fn save(&self, repo: &RepoId, oid: &str, stats: &RepoStats, ttl: Option<u32>) -> Result<()>;
 }
 
 pub struct FetchStats {
@@ -63,7 +63,7 @@ impl FetchStats {
     {
         let mut stats = vec![];
 
-        for prefix in self.viewer.read_repos.iter() {
+        for prefix in self.viewer.read_repo_ids.iter() {
             let view = git.view(prefix)?;
 
             let commit = view.commit.to_string();

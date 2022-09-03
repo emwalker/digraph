@@ -67,11 +67,11 @@ impl Link {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<TopicConnection> {
-        let link_id: RepoId = (&self.id).try_into()?;
+        let link_id: Oid = (&self.id).try_into()?;
         let topics = ctx
             .data_unchecked::<Store>()
             // FIXME
-            .parent_topics_for_link(&RepoName::wiki(), &link_id)
+            .parent_topics_for_link(&RepoId::wiki(), &link_id)
             .await?;
         conn(after, before, first, last, topics)
     }

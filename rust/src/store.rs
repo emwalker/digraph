@@ -16,14 +16,13 @@ pub struct Store {
     db: PgPool,
     git: git::Client,
     object_loader: DataLoader<graphql::ObjectLoader, HashMapCache>,
-    organization_by_login_loader: DataLoader<psql::OrganizationByLoginLoader, HashMapCache>,
     organization_loader: DataLoader<psql::OrganizationLoader, HashMapCache>,
     pub server_secret: String,
     pub user_loader: DataLoader<psql::UserLoader, HashMapCache>,
     pub viewer: Viewer,
     redis: redis::Redis,
     repository_by_name_loader: DataLoader<psql::RepositoryByNameLoader, HashMapCache>,
-    repository_by_prefix_loader: DataLoader<psql::RepositoryByPrefixLoader, HashMapCache>,
+    repository_by_prefix_loader: DataLoader<psql::RepositoryByIdLoader, HashMapCache>,
     repository_loader: DataLoader<psql::RepositoryLoader, HashMapCache>,
 }
 
@@ -36,13 +35,11 @@ impl Store {
         redis: redis::Redis,
     ) -> Self {
         let organization_loader = psql::OrganizationLoader::new(viewer.clone(), db.clone());
-        let organization_by_login_loader =
-            psql::OrganizationByLoginLoader::new(viewer.clone(), db.clone());
         let repository_loader = psql::RepositoryLoader::new(viewer.clone(), db.clone());
         let repository_by_name_loader =
             psql::RepositoryByNameLoader::new(viewer.clone(), db.clone());
         let repository_by_prefix_loader =
-            psql::RepositoryByPrefixLoader::new(viewer.clone(), db.clone());
+            psql::RepositoryByIdLoader::new(viewer.clone(), db.clone());
         let object_loader = graphql::ObjectLoader::new(git.clone());
         let user_loader = psql::UserLoader::new(viewer.clone(), db.clone());
 
@@ -55,11 +52,6 @@ impl Store {
 
             organization_loader: DataLoader::with_cache(
                 organization_loader,
-                actix_web::rt::spawn,
-                HashMapCache::default(),
-            ),
-            organization_by_login_loader: DataLoader::with_cache(
-                organization_by_login_loader,
                 actix_web::rt::spawn,
                 HashMapCache::default(),
             ),
@@ -95,8 +87,8 @@ impl Store {
 impl Store {
     pub async fn activity(
         &self,
-        repo_id: &RepoName,
-        topic_id: &Option<RepoId>,
+        repo_id: &RepoId,
+        topic_id: &Option<Oid>,
         first: i32,
     ) -> Result<Vec<git::activity::Change>> {
         let result = git::activity::FetchActivity {
@@ -133,7 +125,7 @@ impl Store {
 
     async fn flat_topics(
         &self,
-        repo_id: &RepoName,
+        repo_id: &RepoId,
         topic_ids: &[String],
     ) -> Result<Vec<graphql::Topic>> {
         let result = self.topics(repo_id, topic_ids).await?;
@@ -142,8 +134,8 @@ impl Store {
 
     pub async fn child_links_for_topic(
         &self,
-        repo: &RepoName,
-        parent_topic: &RepoId,
+        repo: &RepoId,
+        parent_topic: &Oid,
         _reviewed: Option<bool>,
     ) -> Result<Vec<graphql::Link>> {
         let children = self.topic_children(repo, parent_topic).await?;
@@ -161,8 +153,8 @@ impl Store {
 
     pub async fn topic_children(
         &self,
-        repo_id: &RepoName,
-        parent_topic: &RepoId,
+        repo_id: &RepoId,
+        parent_topic: &Oid,
     ) -> Result<BTreeSet<git::SearchMatch>> {
         let topic = self
             .topic(repo_id, parent_topic)
@@ -173,7 +165,7 @@ impl Store {
             .child_ids
             .iter()
             .map(|id| (repo_id.to_owned(), id.to_owned()))
-            .collect::<Vec<(RepoName, RepoId)>>();
+            .collect::<Vec<(RepoId, Oid)>>();
 
         let map = self.object_loader.load_many(child_ids.clone()).await?;
 
@@ -223,8 +215,8 @@ impl Store {
 
     pub async fn delete_link(
         &self,
-        repo_id: &RepoName,
-        link_id: &RepoId,
+        repo_id: &RepoId,
+        link_id: &Oid,
     ) -> Result<git::DeleteLinkResult> {
         git::DeleteLink {
             actor: self.viewer.clone(),
@@ -242,8 +234,8 @@ impl Store {
 
     pub async fn delete_topic(
         &self,
-        repo_id: &RepoName,
-        topic_id: &RepoId,
+        repo_id: &RepoId,
+        topic_id: &Oid,
     ) -> Result<git::DeleteTopicResult> {
         git::DeleteTopic {
             actor: self.viewer.clone(),
@@ -255,8 +247,8 @@ impl Store {
 
     pub async fn remove_topic_timerange(
         &self,
-        repo_id: &RepoName,
-        topic_id: &RepoId,
+        repo_id: &RepoId,
+        topic_id: &Oid,
     ) -> Result<git::RemoveTopicTimerangeResult> {
         git::RemoveTopicTimerange {
             actor: self.viewer.clone(),
@@ -266,7 +258,7 @@ impl Store {
         .call(self.mutation()?, &self.redis)
     }
 
-    pub async fn link(&self, repo: &RepoName, link_id: &RepoId) -> Result<Option<graphql::Link>> {
+    pub async fn link(&self, repo: &RepoId, link_id: &Oid) -> Result<Option<graphql::Link>> {
         let result = self
             .object_loader
             .load_one((repo.to_owned(), link_id.to_owned()))
@@ -283,17 +275,10 @@ impl Store {
         self.organization_loader.load_one(id).await
     }
 
-    pub async fn organization_by_login(
-        &self,
-        login: String,
-    ) -> Result<Option<graphql::Organization>> {
-        self.organization_by_login_loader.load_one(login).await
-    }
-
     pub async fn parent_topics_for_topic(
         &self,
-        repo_id: &RepoName,
-        topic_id: &RepoId,
+        repo_id: &RepoId,
+        topic_id: &Oid,
     ) -> Result<Vec<graphql::Topic>> {
         let topic = self
             .topic(repo_id, topic_id)
@@ -305,8 +290,8 @@ impl Store {
 
     pub async fn parent_topics_for_link(
         &self,
-        repo_id: &RepoName,
-        link_id: &RepoId,
+        repo_id: &RepoId,
+        link_id: &Oid,
     ) -> Result<Vec<graphql::Topic>> {
         let link = self
             .link(repo_id, link_id)
@@ -326,10 +311,7 @@ impl Store {
         self.repository_loader.load_one(id).await
     }
 
-    pub async fn repository_by_prefix(
-        &self,
-        prefix: String,
-    ) -> Result<Option<graphql::Repository>> {
+    pub async fn repository_by_id(&self, prefix: String) -> Result<Option<graphql::Repository>> {
         self.repository_by_prefix_loader.load_one(prefix).await
     }
 
@@ -339,8 +321,8 @@ impl Store {
 
     pub async fn review_link(
         &self,
-        repo_id: &RepoName,
-        link_id: &RepoId,
+        repo_id: &RepoId,
+        link_id: &Oid,
         reviewed: bool,
     ) -> Result<psql::ReviewLinkResult> {
         let object = self
@@ -382,7 +364,7 @@ impl Store {
             limit: 100,
             locale: Locale::EN,
             recursive: true,
-            repos: viewer.read_repos.to_owned(),
+            repos: viewer.read_repo_ids.to_owned(),
             search: git::Search::parse(&search_string)?,
             timespec: Timespec,
             topic_id: (&parent_topic.id).try_into()?,
@@ -406,7 +388,7 @@ impl Store {
         git::FetchTopicLiveSearch {
             limit: 10,
             viewer: self.viewer.to_owned(),
-            repos: vec![RepoName::wiki()],
+            repos: vec![RepoId::wiki()],
             search,
         }
         .call(&self.git)
@@ -421,11 +403,7 @@ impl Store {
             .await
     }
 
-    pub async fn topic(
-        &self,
-        repo_id: &RepoName,
-        topic_id: &RepoId,
-    ) -> Result<Option<graphql::Topic>> {
+    pub async fn topic(&self, repo_id: &RepoId, topic_id: &Oid) -> Result<Option<graphql::Topic>> {
         let result = self
             .object_loader
             .load_one((repo_id.to_owned(), topic_id.to_owned()))
@@ -440,13 +418,13 @@ impl Store {
 
     pub async fn topics(
         &self,
-        repo_id: &RepoName,
+        repo_id: &RepoId,
         topic_ids: &[String],
     ) -> Result<Vec<Option<graphql::Topic>>> {
         let mut paths = vec![];
 
         for topic_id in topic_ids {
-            let path = (repo_id.to_owned(), RepoId::try_from(topic_id)?);
+            let path = (repo_id.to_owned(), Oid::try_from(topic_id)?);
             paths.push(path);
         }
 
@@ -472,7 +450,7 @@ impl Store {
         &self,
         input: graphql::UpdateLinkParentTopicsInput,
     ) -> Result<git::UpdateLinkParentTopicsResult> {
-        let link_id = RepoId::try_from(&input.link_id)?;
+        let link_id = Oid::try_from(&input.link_id)?;
 
         git::UpdateLinkParentTopics {
             actor: self.viewer.clone(),
@@ -480,8 +458,8 @@ impl Store {
             parent_topic_ids: input
                 .parent_topic_ids
                 .iter()
-                .map(RepoId::try_from)
-                .collect::<Result<BTreeSet<RepoId>>>()?,
+                .map(Oid::try_from)
+                .collect::<Result<BTreeSet<Oid>>>()?,
             repo_id: input.repo_id.try_into()?,
         }
         .call(self.mutation()?, &self.redis)
@@ -490,15 +468,15 @@ impl Store {
     pub async fn update_topic_parent_topics(
         &self,
         // FIXME: Use id instead of name
-        repo_id: &RepoName,
-        topic_id: &RepoId,
-        parent_topics: Vec<RepoId>,
+        repo_id: &RepoId,
+        topic_id: &Oid,
+        parent_topics: Vec<Oid>,
     ) -> Result<git::UpdateTopicParentTopicsResult> {
         git::UpdateTopicParentTopics {
             actor: self.viewer.clone(),
             repo: repo_id.to_owned(),
             topic_id: topic_id.to_owned(),
-            parent_topic_ids: parent_topics.iter().cloned().collect::<BTreeSet<RepoId>>(),
+            parent_topic_ids: parent_topics.iter().cloned().collect::<BTreeSet<Oid>>(),
         }
         .call(self.mutation()?, &self.redis)
     }
@@ -507,7 +485,7 @@ impl Store {
         &self,
         input: graphql::UpdateTopicSynonymsInput,
     ) -> Result<git::UpdateTopicSynonymsResult> {
-        let topic_id = RepoId::try_from(&input.topic_id)?;
+        let topic_id = Oid::try_from(&input.topic_id)?;
 
         git::UpdateTopicSynonyms {
             actor: self.viewer.clone(),
@@ -523,7 +501,7 @@ impl Store {
         input: graphql::UpsertLinkInput,
     ) -> Result<git::UpsertLinkResult> {
         let add_parent_topic_id = if let Some(id) = &input.add_parent_topic_id {
-            Some(RepoId::try_from(id)?)
+            Some(Oid::try_from(id)?)
         } else {
             None
         };
@@ -532,7 +510,7 @@ impl Store {
             add_parent_topic_id,
             actor: self.viewer.to_owned(),
             // FIXME: use id instead of prefix
-            repo: input.repo_id.try_into()?,
+            repo_id: input.repo_id.try_into()?,
             title: input.title,
             url: input.url,
             fetcher: Box::new(http::Fetcher),
@@ -544,14 +522,14 @@ impl Store {
         &self,
         input: graphql::CreateGithubSessionInput,
     ) -> Result<psql::CreateSessionResult> {
-        let login = input.github_username.to_owned();
         let result = psql::CreateGithubSession::new(input).call(&self.db).await?;
 
         let actor = Viewer::service_account();
+
         git::EnsurePersonalRepo {
             actor: actor.to_owned(),
             user_id: result.user.id.to_string(),
-            personal_repo: RepoName::from_login(&login)?,
+            personal_repo_ids: result.personal_repo_ids.to_owned(),
         }
         .call(self.update_by(&actor)?)?;
 
@@ -562,7 +540,7 @@ impl Store {
         &self,
         input: graphql::UpsertTopicInput,
     ) -> Result<git::UpsertTopicResult> {
-        let parent_topic = RepoId::try_from(&input.parent_topic_id)?;
+        let parent_topic = Oid::try_from(&input.parent_topic_id)?;
 
         git::UpsertTopic {
             actor: self.viewer.clone(),

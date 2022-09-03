@@ -5,12 +5,12 @@ use std::process::Command;
 
 use super::Client;
 use crate::prelude::*;
-use crate::types::RepoName;
+use crate::types::RepoId;
 
 pub struct LeakedData;
 
 impl LeakedData {
-    pub fn call(&self, client: &Client) -> Result<Vec<(RepoName, String)>> {
+    pub fn call(&self, client: &Client) -> Result<Vec<(RepoId, String)>> {
         let root = client.root.path.to_owned();
         let repos = self.repos(&root)?;
         env::set_current_dir(&root)?;
@@ -35,7 +35,7 @@ impl LeakedData {
         Ok(leaks)
     }
 
-    fn repos(&self, root: &PathBuf) -> Result<Vec<RepoName>> {
+    fn repos(&self, root: &PathBuf) -> Result<Vec<RepoId>> {
         let paths = fs::read_dir(&root)?;
 
         let mut repos = vec![];
@@ -56,8 +56,8 @@ impl LeakedData {
                 }
             };
 
-            let repo = filename.to_string();
-            repos.push(RepoName::from_login(&repo)?);
+            let id = filename.to_string();
+            repos.push(RepoId::try_from(&id)?);
         }
 
         Ok(repos)

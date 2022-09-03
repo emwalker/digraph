@@ -298,7 +298,7 @@ impl MutationRoot {
             link_id,
             repo_id,
         } = input;
-        let link_id = RepoId::try_from(&link_id)?;
+        let link_id = Oid::try_from(&link_id)?;
 
         let git::DeleteLinkResult {
             deleted_link_id, ..
@@ -343,7 +343,7 @@ impl MutationRoot {
             repo_id,
             topic_id,
         } = input;
-        let topic_id = RepoId::try_from(&topic_id)?;
+        let topic_id = Oid::try_from(&topic_id)?;
 
         ctx.data_unchecked::<Store>()
             .delete_topic(&repo_id.try_into()?, &topic_id)
@@ -448,8 +448,8 @@ impl MutationRoot {
                 &topic_id.try_into()?,
                 parent_topic_ids
                     .iter()
-                    .map(RepoId::try_from)
-                    .collect::<Result<Vec<RepoId>>>()?,
+                    .map(Oid::try_from)
+                    .collect::<Result<Vec<Oid>>>()?,
             )
             .await?;
 

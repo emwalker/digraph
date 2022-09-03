@@ -12,7 +12,7 @@ mod delete_link {
         let topic_id = parse_id(parent_topic);
 
         let UpsertLinkResult { link, .. } =
-            f.upsert_link(&RepoName::wiki(), &url, Some(title.into()), Some(topic_id));
+            f.upsert_link(&RepoId::wiki(), &url, Some(title.into()), Some(topic_id));
 
         link.unwrap()
     }
@@ -23,7 +23,7 @@ mod delete_link {
 
         let link = link(&f, "Page title", "00001");
         let link_id = link.id();
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         assert!(f.git.exists(&repo, link_id).unwrap());
 
         DeleteLink {
@@ -41,7 +41,7 @@ mod delete_link {
     fn activity_log_updated() {
         let f = Fixtures::copy("simple");
 
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         let link = link(&f, "Page title", "00001");
         let link_id = link.id();
 
@@ -82,8 +82,8 @@ mod update_link_parent_topics {
     #[test]
     fn topics_updated() {
         let f = Fixtures::copy("simple");
-        let repo = RepoName::wiki();
-        let parent1 = RepoId::root_topic();
+        let repo = RepoId::wiki();
+        let parent1 = Oid::root_topic();
         let parent2 = parse_id("00001");
         let url = valid_url();
 
@@ -119,7 +119,7 @@ mod upsert_link {
     fn link_added() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         let link_id = url.id().unwrap();
         let parent_topic = parse_id("00001");
         let search = Search::parse("page title https://www.google.com/").unwrap();
@@ -141,7 +141,7 @@ mod upsert_link {
     fn no_orphans() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         let link_id = url.id().unwrap();
         assert!(!f.git.exists(&repo, &link_id).unwrap());
 
@@ -150,7 +150,7 @@ mod upsert_link {
         f.fetch_link(&repo, &link_id, |link| {
             assert_eq!(link.parent_topics.len(), 1);
             let topic = link.parent_topics.iter().next().unwrap();
-            assert_eq!(topic.id, RepoId::root_topic());
+            assert_eq!(topic.id, Oid::root_topic());
         });
     }
 
@@ -158,7 +158,7 @@ mod upsert_link {
     fn updates_are_idempotent() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         let link_id = url.id().unwrap();
         let parent_topic = parse_id("00001");
         assert!(!f.git.exists(&repo, &link_id).unwrap());
@@ -173,7 +173,7 @@ mod upsert_link {
     fn details_updated() {
         let f = Fixtures::copy("simple");
         let url = RepoUrl::parse("https://www.google.com").unwrap();
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         let path = url.id().unwrap();
 
         assert!(!f.git.exists(&repo, &path).unwrap());
@@ -211,7 +211,7 @@ mod upsert_link {
     fn parent_topic_updated() {
         let f = Fixtures::copy("simple");
         let url = RepoUrl::parse("https://www.google.com").unwrap();
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         let path = url.id().unwrap();
         let topic = parse_id("00001");
         assert!(!f.git.exists(&repo, &path).unwrap());
@@ -237,7 +237,7 @@ mod upsert_link {
     fn lookup_indexes_updated() {
         let f = Fixtures::copy("simple");
         let url = RepoUrl::parse("https://www.google.com").unwrap();
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         let topic = parse_id("00001");
         let search = Search::parse("a link").unwrap();
 
@@ -264,13 +264,14 @@ mod upsert_link {
     fn link_added_to_correct_repo() {
         let f = Fixtures::copy("simple");
         let url = valid_url();
-        let repo = RepoName::wiki();
-        let other_repo = RepoName::try_from("/other/").unwrap();
+        let repo = RepoId::wiki();
+        let other_repo = RepoId::other();
         let link_id = url.id().unwrap();
         let parent_id = parse_id("00001");
 
         assert!(!f.git.exists(&other_repo, &link_id).unwrap());
 
+        // Update description:
         // We're specifying /wiki/00001 as the parent topic, which is under /wiki/. But what will
         // happen is that the link will be added with the path "/other/00001", which makes the
         // topic a reference to /wiki/00001 under the /other/ repo.  No path with /other/ should

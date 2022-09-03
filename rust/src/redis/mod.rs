@@ -12,8 +12,8 @@ pub struct Noop;
 impl git::SaveChangesForPrefix for Noop {
     fn save(
         &self,
-        _prefix: &RepoName,
-        _changes: &HashMap<RepoName, BTreeSet<git::activity::Change>>,
+        _prefix: &RepoId,
+        _changes: &HashMap<RepoId, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         // Do nothing
         Ok(())
@@ -21,13 +21,13 @@ impl git::SaveChangesForPrefix for Noop {
 }
 
 impl git::CacheStats for Noop {
-    fn fetch(&self, _repo: &RepoName, _commit: &str) -> Result<Option<git::RepoStats>> {
+    fn fetch(&self, _repo: &RepoId, _commit: &str) -> Result<Option<git::RepoStats>> {
         Ok(None)
     }
 
     fn save(
         &self,
-        _repo: &RepoName,
+        _repo: &RepoId,
         _commit: &str,
         _stats: &git::RepoStats,
         _expires: Option<u32>,
@@ -60,7 +60,7 @@ pub struct Redis {
 }
 
 impl git::CacheStats for Redis {
-    fn fetch(&self, repo: &RepoName, commit: &str) -> Result<Option<git::RepoStats>> {
+    fn fetch(&self, repo: &RepoId, commit: &str) -> Result<Option<git::RepoStats>> {
         let key = self.stats_key(repo, commit);
         let mut con = self.connection().unwrap();
         let s: Option<String> = redis::cmd("GET").arg(key).query(&mut con)?;
@@ -77,7 +77,7 @@ impl git::CacheStats for Redis {
 
     fn save(
         &self,
-        repo: &RepoName,
+        repo: &RepoId,
         commit: &str,
         stats: &git::RepoStats,
         ttl: Option<u32>,
@@ -102,7 +102,7 @@ impl Redis {
         Ok(Redis { url })
     }
 
-    pub fn intersection<F>(&self, fetch: &F, paths: &[ReadPath]) -> Result<HashSet<RepoId>>
+    pub fn intersection<F>(&self, fetch: &F, paths: &[ReadPath]) -> Result<HashSet<Oid>>
     where
         F: Downset,
     {
@@ -138,8 +138,8 @@ impl Redis {
                 let set: HashSet<String> = con.sinter(&keys)?;
                 Ok(set
                     .iter()
-                    .map(RepoId::try_from)
-                    .collect::<Result<HashSet<RepoId>>>()?)
+                    .map(Oid::try_from)
+                    .collect::<Result<HashSet<Oid>>>()?)
             }
 
             None => Ok(HashSet::new()),
@@ -157,20 +157,17 @@ impl Redis {
         &self,
         con: &mut redis_rs::Connection,
         key: &Key,
-        set: &HashSet<RepoId>,
+        set: &HashSet<Oid>,
     ) -> Result<()> {
         redis_rs::transaction(con, &[key], |con, pipe| {
-            let set = set
-                .iter()
-                .map(RepoId::to_string)
-                .collect::<HashSet<String>>();
+            let set = set.iter().map(Oid::to_string).collect::<HashSet<String>>();
             pipe.sadd(key, set).ignore().query(con)
         })?;
 
         Ok(())
     }
 
-    fn stats_key(&self, repo: &RepoName, commit: &str) -> String {
+    fn stats_key(&self, repo: &RepoId, commit: &str) -> String {
         format!("stats:{}:{}", repo, commit)
     }
 }
@@ -178,8 +175,8 @@ impl Redis {
 impl git::SaveChangesForPrefix for Redis {
     fn save(
         &self,
-        prefix: &RepoName,
-        prefix_changes: &HashMap<RepoName, BTreeSet<git::activity::Change>>,
+        prefix: &RepoId,
+        prefix_changes: &HashMap<RepoId, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         let mut con = self.connection()?;
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
@@ -200,11 +197,7 @@ impl git::SaveChangesForPrefix for Redis {
 }
 
 impl git::activity::ActivityForPrefix for Redis {
-    fn fetch_activity(
-        &self,
-        prefix: &RepoName,
-        first: usize,
-    ) -> Result<Vec<git::activity::Change>> {
+    fn fetch_activity(&self, prefix: &RepoId, first: usize) -> Result<Vec<git::activity::Change>> {
         let key = Key(format!("activity:{}", prefix));
         log::info!("fetching activity for prefix {:?} from Redis", key);
         let mut con = self.connection()?;

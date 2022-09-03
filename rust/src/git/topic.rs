@@ -9,13 +9,13 @@ use crate::prelude::*;
 
 pub struct DeleteTopic {
     pub actor: Viewer,
-    pub repo: RepoName,
-    pub topic_id: RepoId,
+    pub repo: RepoId,
+    pub topic_id: Oid,
 }
 
 pub struct DeleteTopicResult {
     pub alerts: Vec<Alert>,
-    pub deleted_topic_id: RepoId,
+    pub deleted_topic_id: Oid,
 }
 
 impl DeleteTopic {
@@ -136,8 +136,8 @@ impl DeleteTopic {
 
 pub struct RemoveTopicTimerange {
     pub actor: Viewer,
-    pub repo: RepoName,
-    pub topic_id: RepoId,
+    pub repo: RepoId,
+    pub topic_id: Oid,
 }
 
 pub struct RemoveTopicTimerangeResult {
@@ -195,9 +195,9 @@ impl RemoveTopicTimerange {
 
 pub struct UpdateTopicParentTopics {
     pub actor: Viewer,
-    pub parent_topic_ids: BTreeSet<RepoId>,
-    pub repo: RepoName,
-    pub topic_id: RepoId,
+    pub parent_topic_ids: BTreeSet<Oid>,
+    pub repo: RepoId,
+    pub topic_id: Oid,
 }
 
 pub struct UpdateTopicParentTopicsResult {
@@ -293,7 +293,7 @@ impl UpdateTopicParentTopics {
             parent_topic_ids: parent_topics
                 .iter()
                 .map(|parent| parent.id.to_owned())
-                .collect::<BTreeSet<RepoId>>(),
+                .collect::<BTreeSet<Oid>>(),
             removed_parent_topics: activity::TopicInfoList::from(removed),
             updated_topic: activity::TopicInfo::from(topic),
         })
@@ -321,9 +321,9 @@ impl UpdateTopicParentTopics {
 
 pub struct UpdateTopicSynonyms {
     pub actor: Viewer,
-    pub repo_id: RepoName,
+    pub repo_id: RepoId,
     pub synonyms: Vec<Synonym>,
-    pub topic_id: RepoId,
+    pub topic_id: Oid,
 }
 
 pub struct UpdateTopicSynonymsResult {
@@ -423,7 +423,7 @@ impl UpdateTopicSynonyms {
                 .parent_topics
                 .iter()
                 .map(|parent| parent.id.to_owned())
-                .collect::<BTreeSet<RepoId>>(),
+                .collect::<BTreeSet<Oid>>(),
             reordered: added.is_empty() && removed.is_empty(),
             removed_synonyms: activity::SynonymList::from(removed),
             updated_topic: activity::TopicInfo::from(topic),
@@ -434,7 +434,7 @@ impl UpdateTopicSynonyms {
 pub enum OnMatchingSynonym {
     Ask,
     CreateDistinct,
-    Update(RepoId),
+    Update(Oid),
 }
 
 pub struct UpsertTopic {
@@ -442,8 +442,8 @@ pub struct UpsertTopic {
     pub locale: Locale,
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
-    pub parent_topic: RepoId,
-    pub repo: RepoName,
+    pub parent_topic: Oid,
+    pub repo: RepoId,
 }
 
 pub struct UpsertTopicResult {
@@ -598,14 +598,14 @@ impl UpsertTopic {
             parent_topic_ids: parent_topics
                 .iter()
                 .map(|parent| parent.id.to_owned())
-                .collect::<BTreeSet<RepoId>>(),
+                .collect::<BTreeSet<Oid>>(),
             upserted_topic: activity::TopicInfo::from(topic),
         })
     }
 
     fn make_topic(&self, parent: &Topic) -> Result<(Topic, BTreeSet<ParentTopic>)> {
         let added = chrono::Utc::now();
-        let id = RepoId::make();
+        let id = Oid::make();
         let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
 
         let topic = Topic {
@@ -637,9 +637,9 @@ impl UpsertTopic {
 
 pub struct UpsertTopicTimerange {
     pub actor: Viewer,
-    pub repo_id: RepoName,
+    pub repo_id: RepoId,
     pub timerange: Timerange,
-    pub topic_id: RepoId,
+    pub topic_id: Oid,
 }
 
 pub struct UpsertTopicTimerangeResult {

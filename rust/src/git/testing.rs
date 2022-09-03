@@ -16,13 +16,12 @@ pub fn timerange_epoch() -> Geotime {
 pub fn topic(name: &str) -> Topic {
     let added = chrono::Utc::now();
     // Some unique path
-    let id = sha256_base64(name);
-    let path = RepoPath::try_from(&format!("/wiki/{}", id)).expect("failed to parse path");
+    let id: Oid = sha256_base64(name).try_into().unwrap();
     Topic {
         api_version: API_VERSION.to_owned(),
         metadata: TopicMetadata {
             added,
-            id: path.id.to_owned(),
+            id: id.to_owned(),
             details: Some(TopicDetails {
                 root: false,
                 timerange: None,
@@ -33,7 +32,7 @@ pub fn topic(name: &str) -> Topic {
                 }]),
             }),
         },
-        parent_topics: BTreeSet::from([ParentTopic { id: path.id }]),
+        parent_topics: BTreeSet::from([ParentTopic { id }]),
         children: BTreeSet::new(),
     }
 }

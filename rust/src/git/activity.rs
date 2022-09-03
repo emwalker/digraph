@@ -102,7 +102,7 @@ impl SynonymList {
 #[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
 pub struct TopicInfo {
     pub deleted: bool,
-    pub id: RepoId,
+    pub id: Oid,
     pub synonyms: SynonymList,
 }
 
@@ -131,7 +131,7 @@ impl TopicInfo {
         "[missing topic]".to_owned()
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         if &self.id == id {
             self.deleted = true;
         }
@@ -157,8 +157,8 @@ impl From<&Topic> for TopicInfo {
     }
 }
 
-impl From<(Locale, String, RepoId)> for TopicInfo {
-    fn from(info: (Locale, String, RepoId)) -> Self {
+impl From<(Locale, String, Oid)> for TopicInfo {
+    fn from(info: (Locale, String, Oid)) -> Self {
         let (locale, name, id) = info;
         let synonyms = SynonymList(BTreeMap::from([(locale, name)]));
         Self {
@@ -221,7 +221,7 @@ impl From<&BTreeSet<TopicInfo>> for TopicInfoList {
 }
 
 impl TopicInfoList {
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         let mut updated = BTreeSet::new();
         for topic in &self.0 {
             let mut topic = topic.to_owned();
@@ -235,7 +235,7 @@ impl TopicInfoList {
 #[derive(Clone, Deserialize, Serialize, Eq, PartialEq)]
 pub struct LinkInfo {
     pub deleted: bool,
-    pub id: RepoId,
+    pub id: Oid,
     pub title: String,
     pub url: String,
 }
@@ -264,7 +264,7 @@ impl From<&Link> for LinkInfo {
 }
 
 impl LinkInfo {
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         if &self.id == id {
             self.deleted = true;
         }
@@ -301,7 +301,7 @@ impl From<&Vec<LinkInfo>> for LinkInfoList {
 }
 
 impl LinkInfoList {
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         let mut updated = BTreeSet::new();
         for link in &self.0 {
             let mut link = link.to_owned();
@@ -342,8 +342,8 @@ impl std::cmp::PartialOrd for Change {
 }
 
 impl Change {
-    pub fn new_id() -> RepoId {
-        RepoId::make()
+    pub fn new_id() -> Oid {
+        Oid::make()
     }
 
     pub fn actor_id(&self) -> String {
@@ -378,7 +378,7 @@ impl Change {
         }
     }
 
-    pub fn id(&self) -> RepoId {
+    pub fn id(&self) -> Oid {
         match self {
             Self::DeleteLink(inner) => inner.id.to_owned(),
             Self::DeleteTopic(inner) => inner.id.to_owned(),
@@ -394,7 +394,7 @@ impl Change {
         }
     }
 
-    pub fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&RepoId>) -> String {
+    pub fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&Oid>) -> String {
         use crate::git::activity::markdown::Markdown;
         match self {
             Self::DeleteLink(inner) => inner.markdown(locale, actor_name, context),
@@ -411,7 +411,7 @@ impl Change {
         }
     }
 
-    pub fn ids(&self) -> HashSet<&RepoId> {
+    pub fn ids(&self) -> HashSet<&Oid> {
         match self {
             Self::DeleteLink(inner) => inner.ids(),
             Self::DeleteTopic(inner) => inner.ids(),
@@ -427,7 +427,7 @@ impl Change {
         }
     }
 
-    pub fn mark_deleted(&mut self, id: &RepoId) {
+    pub fn mark_deleted(&mut self, id: &Oid) {
         match self {
             Self::DeleteLink(inner) => inner.mark_deleted(id),
             Self::DeleteTopic(inner) => inner.mark_deleted(id),
@@ -452,14 +452,14 @@ impl Change {
 #[serde(rename_all = "camelCase")]
 pub struct DeleteLink {
     pub actor_id: String,
-    pub id: RepoId,
+    pub id: Oid,
     pub date: Timestamp,
     pub deleted_link: LinkInfo,
     pub parent_topics: TopicInfoList,
 }
 
 impl DeleteLink {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         let mut ids = HashSet::from([&self.deleted_link.id]);
         for topic in &self.parent_topics.0 {
             ids.insert(&topic.id);
@@ -467,7 +467,7 @@ impl DeleteLink {
         ids
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         self.parent_topics.mark_deleted(id);
         self.deleted_link.mark_deleted(id);
     }
@@ -477,7 +477,7 @@ impl DeleteLink {
 #[serde(rename_all = "camelCase")]
 pub struct DeleteTopic {
     pub actor_id: String,
-    pub id: RepoId,
+    pub id: Oid,
     pub child_links: LinkInfoList,
     pub child_topics: TopicInfoList,
     pub date: Timestamp,
@@ -486,7 +486,7 @@ pub struct DeleteTopic {
 }
 
 impl DeleteTopic {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         let mut paths = HashSet::from([&self.deleted_topic.id]);
 
         for link in &self.child_links.0 {
@@ -504,7 +504,7 @@ impl DeleteTopic {
         paths
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         self.deleted_topic.mark_deleted(id);
         self.child_links.mark_deleted(id);
         self.parent_topics.mark_deleted(id);
@@ -515,14 +515,14 @@ impl DeleteTopic {
 #[serde(rename_all = "camelCase")]
 pub struct ImportLink {
     pub actor_id: String,
-    pub id: RepoId,
+    pub id: Oid,
     pub date: Timestamp,
     pub imported_link: LinkInfo,
     pub parent_topics: TopicInfoList,
 }
 
 impl ImportLink {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         let mut ids = HashSet::from([&self.imported_link.id]);
         for topic in &self.parent_topics.0 {
             ids.insert(&topic.id);
@@ -530,7 +530,7 @@ impl ImportLink {
         ids
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         self.imported_link.mark_deleted(id);
         self.parent_topics.mark_deleted(id);
     }
@@ -540,7 +540,7 @@ impl ImportLink {
 #[serde(rename_all = "camelCase")]
 pub struct ImportTopic {
     pub actor_id: String,
-    pub id: RepoId,
+    pub id: Oid,
     pub child_links: LinkInfoList,
     pub child_topics: TopicInfoList,
     pub date: Timestamp,
@@ -549,7 +549,7 @@ pub struct ImportTopic {
 }
 
 impl ImportTopic {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         let mut ids = HashSet::from([&self.imported_topic.id]);
 
         for link in &self.child_links.0 {
@@ -567,7 +567,7 @@ impl ImportTopic {
         ids
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         self.imported_topic.mark_deleted(id);
         self.parent_topics.mark_deleted(id);
         self.child_topics.mark_deleted(id);
@@ -580,19 +580,19 @@ impl ImportTopic {
 pub struct RemoveTopicTimerange {
     pub actor_id: String,
     pub date: Timestamp,
-    pub id: RepoId,
-    pub parent_topics: BTreeSet<RepoId>,
+    pub id: Oid,
+    pub parent_topics: BTreeSet<Oid>,
     // The RemoveTopicTimerange is idempotent, so the timerange might already have been removed.
     pub previous_timerange: Option<Timerange>,
     pub updated_topic: TopicInfo,
 }
 
 impl RemoveTopicTimerange {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         HashSet::from([&self.updated_topic.id])
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         self.parent_topics.remove(id);
         self.updated_topic.mark_deleted(id);
     }
@@ -604,13 +604,13 @@ pub struct UpdateLinkParentTopics {
     pub actor_id: String,
     pub added_parent_topics: TopicInfoList,
     pub date: Timestamp,
-    pub id: RepoId,
+    pub id: Oid,
     pub removed_parent_topics: TopicInfoList,
     pub updated_link: LinkInfo,
 }
 
 impl UpdateLinkParentTopics {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         let mut ids = HashSet::from([&self.updated_link.id]);
 
         for topic in &self.added_parent_topics.0 {
@@ -624,7 +624,7 @@ impl UpdateLinkParentTopics {
         ids
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         self.added_parent_topics.mark_deleted(id);
         self.removed_parent_topics.mark_deleted(id);
     }
@@ -635,15 +635,15 @@ impl UpdateLinkParentTopics {
 pub struct UpdateTopicParentTopics {
     pub actor_id: String,
     pub added_parent_topics: TopicInfoList,
-    pub id: RepoId,
+    pub id: Oid,
     pub date: Timestamp,
-    pub parent_topic_ids: BTreeSet<RepoId>,
+    pub parent_topic_ids: BTreeSet<Oid>,
     pub removed_parent_topics: TopicInfoList,
     pub updated_topic: TopicInfo,
 }
 
 impl UpdateTopicParentTopics {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         let mut ids = HashSet::from([&self.updated_topic.id]);
 
         for topic in &self.added_parent_topics.0 {
@@ -661,7 +661,7 @@ impl UpdateTopicParentTopics {
         ids
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         self.added_parent_topics.mark_deleted(id);
         self.removed_parent_topics.mark_deleted(id);
         self.updated_topic.mark_deleted(id);
@@ -674,15 +674,15 @@ pub struct UpdateTopicSynonyms {
     pub actor_id: String,
     pub added_synonyms: SynonymList,
     pub date: Timestamp,
-    pub id: RepoId,
-    pub parent_topics: BTreeSet<RepoId>,
+    pub id: Oid,
+    pub parent_topics: BTreeSet<Oid>,
     pub removed_synonyms: SynonymList,
     pub reordered: bool,
     pub updated_topic: TopicInfo,
 }
 
 impl UpdateTopicSynonyms {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         let mut ids = HashSet::from([&self.updated_topic.id]);
         for parent_id in &self.parent_topics {
             ids.insert(parent_id);
@@ -690,7 +690,7 @@ impl UpdateTopicSynonyms {
         ids
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         self.updated_topic.mark_deleted(id);
     }
 }
@@ -701,14 +701,14 @@ pub struct UpsertLink {
     pub actor_id: String,
     pub add_parent_topic: Option<TopicInfo>,
     pub date: Timestamp,
-    pub id: RepoId,
-    pub parent_topics: BTreeSet<RepoId>,
+    pub id: Oid,
+    pub parent_topics: BTreeSet<Oid>,
     pub previous_title: Option<String>,
     pub upserted_link: LinkInfo,
 }
 
 impl UpsertLink {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         let mut ids = HashSet::from([&self.upserted_link.id]);
 
         if let Some(topic) = &self.add_parent_topic {
@@ -722,7 +722,7 @@ impl UpsertLink {
         ids
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         if let Some(topic) = &mut self.add_parent_topic {
             topic.mark_deleted(id);
         }
@@ -735,15 +735,15 @@ impl UpsertLink {
 #[serde(rename_all = "camelCase")]
 pub struct UpsertTopic {
     pub actor_id: String,
-    pub id: RepoId,
+    pub id: Oid,
     pub date: Timestamp,
     pub parent_topic: TopicInfo,
-    pub parent_topic_ids: BTreeSet<RepoId>,
+    pub parent_topic_ids: BTreeSet<Oid>,
     pub upserted_topic: TopicInfo,
 }
 
 impl UpsertTopic {
-    fn ids(&self) -> HashSet<&RepoId> {
+    fn ids(&self) -> HashSet<&Oid> {
         let mut ids = HashSet::from([&self.upserted_topic.id, &self.parent_topic.id]);
         for parent_id in &self.parent_topic_ids {
             ids.insert(parent_id);
@@ -751,7 +751,7 @@ impl UpsertTopic {
         ids
     }
 
-    fn mark_deleted(&mut self, path: &RepoId) {
+    fn mark_deleted(&mut self, path: &Oid) {
         self.parent_topic.mark_deleted(path);
         self.upserted_topic.mark_deleted(path);
     }
@@ -761,17 +761,17 @@ impl UpsertTopic {
 #[serde(rename_all = "camelCase")]
 pub struct UpsertTopicTimerange {
     pub actor_id: String,
-    pub id: RepoId,
+    pub id: Oid,
     pub date: Timestamp,
     pub previous_timerange: Option<Timerange>,
     // Show change logs under parent topics as well
-    pub parent_topics: BTreeSet<RepoId>,
+    pub parent_topics: BTreeSet<Oid>,
     pub updated_timerange: Timerange,
     pub updated_topic: TopicInfo,
 }
 
 impl UpsertTopicTimerange {
-    fn paths(&self) -> HashSet<&RepoId> {
+    fn paths(&self) -> HashSet<&Oid> {
         let mut ids = HashSet::from([&self.updated_topic.id]);
         for parent_id in &self.parent_topics {
             ids.insert(parent_id);
@@ -779,7 +779,7 @@ impl UpsertTopicTimerange {
         ids
     }
 
-    fn mark_deleted(&mut self, id: &RepoId) {
+    fn mark_deleted(&mut self, id: &Oid) {
         let parents = &mut self.parent_topics;
         parents.remove(id);
         self.updated_topic.mark_deleted(id);
@@ -790,7 +790,7 @@ mod markdown {
     use super::*;
 
     pub trait Markdown {
-        fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&RepoId>) -> String;
+        fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&Oid>) -> String;
     }
 
     impl LinkInfo {
@@ -862,7 +862,7 @@ mod markdown {
     }
 
     impl Markdown for DeleteLink {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             if self.parent_topics.is_empty() {
                 format!("{} deleted {}", actor_name, self.deleted_link.markdown())
             } else {
@@ -877,7 +877,7 @@ mod markdown {
     }
 
     impl Markdown for DeleteTopic {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             let mut markdown = format!(
                 "{} deleted {}",
                 actor_name,
@@ -924,7 +924,7 @@ mod markdown {
     }
 
     impl Markdown for ImportLink {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             format!(
                 "{} added {} to {}",
                 actor_name,
@@ -935,7 +935,7 @@ mod markdown {
     }
 
     impl Markdown for ImportTopic {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             let mut children = vec![];
 
             if !self.child_topics.is_empty() {
@@ -984,7 +984,7 @@ mod markdown {
     }
 
     impl Markdown for RemoveTopicTimerange {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             let topic = self.updated_topic.markdown(locale);
 
             match &self.previous_timerange {
@@ -1016,7 +1016,7 @@ mod markdown {
     }
 
     impl Markdown for UpdateLinkParentTopics {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             if self.added_parent_topics.is_empty() && self.removed_parent_topics.is_empty() {
                 return format!(
                     "{} updated {}, but information about the change has been lost",
@@ -1053,7 +1053,7 @@ mod markdown {
     }
 
     impl Markdown for UpdateTopicParentTopics {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             let mut actions = vec![];
             let updated_topic = self.updated_topic.markdown(locale);
 
@@ -1082,7 +1082,7 @@ mod markdown {
     }
 
     impl Markdown for UpdateTopicSynonyms {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             let mut actions = vec![];
 
             if !self.added_synonyms.is_empty() {
@@ -1113,7 +1113,7 @@ mod markdown {
     }
 
     impl Markdown for UpsertLink {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             match &self.add_parent_topic {
                 Some(topic) => format!(
                     "{} added {} to {}",
@@ -1136,7 +1136,7 @@ mod markdown {
     }
 
     impl Markdown for UpsertTopic {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             format!(
                 "{} added {} to {}",
                 actor_name,
@@ -1147,7 +1147,7 @@ mod markdown {
     }
 
     impl Markdown for UpsertTopicTimerange {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&RepoId>) -> String {
+        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&Oid>) -> String {
             let topic = self.updated_topic.markdown(locale);
             let prefix = TimerangePrefix::from(&self.updated_timerange);
 
@@ -1172,7 +1172,7 @@ mod markdown {
 pub struct FetchActivity {
     pub actor: Viewer,
     pub first: usize,
-    pub path: Option<(RepoName, RepoId)>,
+    pub path: Option<(RepoId, Oid)>,
 }
 
 pub struct FetchActivityResult {
@@ -1180,7 +1180,7 @@ pub struct FetchActivityResult {
 }
 
 pub trait ActivityForPrefix {
-    fn fetch_activity(&self, prefix: &RepoName, first: usize) -> Result<Vec<Change>>;
+    fn fetch_activity(&self, prefix: &RepoId, first: usize) -> Result<Vec<Change>>;
 }
 
 impl FetchActivity {
@@ -1194,7 +1194,7 @@ impl FetchActivity {
             // Fetch the top-level activity feed from Redis rather than Git so as to avoid
             // write contention on a single file for every update.  This could show up in the form
             // of merge conflicts when commits are being saved to Git.
-            None => fetch.fetch_activity(&RepoName::wiki(), self.first)?,
+            None => fetch.fetch_activity(&RepoId::wiki(), self.first)?,
         };
 
         Ok(FetchActivityResult { changes })
@@ -1236,7 +1236,7 @@ mod tests {
             topic2.relative_url()
         );
 
-        let context = RepoId::try_from("00001").unwrap();
+        let context = Oid::try_from("00001").unwrap();
         assert_eq!(
             change.markdown(Locale::EN, "Gnusto", Some(&context)),
             markdown

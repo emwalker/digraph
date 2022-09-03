@@ -11,6 +11,7 @@ import SaveOrCancel from 'components/ui/SaveOrCancel'
 import DeleteButton from 'components/ui/DeleteButton'
 import { TopicOption } from 'components/types'
 import { EditLinkForm_link as LinkType } from '__generated__/EditLinkForm_link.graphql'
+import { wikiRepoId } from 'components/constants'
 
 type SelectedTopicsType = LinkType['selectedTopics']
 type SelectedTopicType = NodeTypeOf<SelectedTopicsType>
@@ -41,7 +42,7 @@ class EditLinkForm extends Component<Props, State> {
       // Keep the existing parent topics
       addParentTopicId: null,
       // FIXME
-      repoId: '/wiki/',
+      repoId: wikiRepoId,
       title: this.state.title,
       url: this.state.url,
     }
@@ -52,8 +53,7 @@ class EditLinkForm extends Component<Props, State> {
 
   onDelete = () => {
     // FIXME: use selected repo
-    const repoId = '/wiki/'
-    const input: DeleteInput = { linkId: this.props.link.id, repoId }
+    const input: DeleteInput = { linkId: this.props.link.id, repoId: wikiRepoId }
     deleteLinkMutation(
       this.props.relay.environment,
       input,
@@ -88,7 +88,7 @@ class EditLinkForm extends Component<Props, State> {
       linkId: this.linkId,
       parentTopicIds,
       // FIXME
-      repoId: '/wiki/',
+      repoId: wikiRepoId,
     }
     updateLinkParentTopicsMutation(this.props.relay.environment, input)
   }

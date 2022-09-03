@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 
+import { wikiRepoId } from 'components/constants'
 import upsertTopicTimerangeMutation, {
   Input as UpdateInput,
 } from 'mutations/upsertTopicTimerangeMutation'
@@ -22,16 +23,14 @@ const updateOrDelete = (
 ) => async () => {
   setMutationInFlight(true)
 
-  // FIXME: get from selected repo
-  let repoId = '/wiki/'
-
   if (topic.timerange) {
-    const input: DeleteInput = { repoId, topicId: topic.id }
+    const input: DeleteInput = { repoId: wikiRepoId, topicId: topic.id }
     await removeTopicTimerangeMutation(relay.environment, input)
   } else {
     const input: UpdateInput = {
       prefixFormat: 'START_YEAR_MONTH',
-      repoId,
+      // FIXME
+      repoId: wikiRepoId,
       startsAt: (new Date()).toISOString(),
       topicId: topic.id,
     }

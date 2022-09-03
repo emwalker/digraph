@@ -12,9 +12,7 @@ const REPOSITORY_FIELDS: &str = r#"
     r.name,
     r.organization_id,
     r.owner_id,
-    r.prefix,
-    r.private,
-    r.root_topic_path
+    r.private
 "#;
 
 const REPOSITORY_JOINS: &str = r#"
@@ -31,9 +29,7 @@ pub struct Row {
     name: String,
     organization_id: Uuid,
     owner_id: Uuid,
-    prefix: String,
     private: bool,
-    root_topic_path: String,
 }
 
 impl Row {
@@ -44,8 +40,6 @@ impl Row {
             organization_id: self.organization_id.to_string(),
             owner_id: self.owner_id.to_string(),
             private: self.private,
-            prefix: self.prefix.to_owned(),
-            root_topic_path: Box::new(RepoPath::try_from(&self.root_topic_path).unwrap()),
         }
     }
 }
@@ -68,15 +62,16 @@ impl FetchWriteableRepositoriesForUser {
             select
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
-                join users u on r.prefix = any(u.write_prefixes)
-                where u.id = $1::uuid
-                    and r.prefix = any($2::text[])
-                group by r.id, u.id
+                join users_repositories ur on r.id = ur.repository_id
+                where ur.user_id = $1::uuid
+                    and r.id = any($2::uuid[])
+                    and ur.can_write
+                group by r.id, ur.user_id
             "#,
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&self.user_id)
-            .bind(&self.viewer.write_repos.to_vec())
+            .bind(&self.viewer.write_repo_ids.to_vec())
             .fetch_all(pool)
             .await?;
 
@@ -109,13 +104,13 @@ impl Loader<String> for RepositoryLoader {
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
                 where r.id = any($1::uuid[])
-                    and r.prefix = any($2::text[])
+                    and r.id = any($2::uuid[])
                 {REPOSITORY_GROUP_BY}
             "#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&ids)
-            .bind(&self.viewer.read_repos.to_vec())
+            .bind(&self.viewer.read_repo_ids.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
@@ -151,12 +146,12 @@ impl Loader<String> for RepositoryByNameLoader {
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
                 where r.name = any($1)
-                    and r.prefix = any($2::text[])
+                    and r.id = any($2::uuid[])
                 {REPOSITORY_GROUP_BY}"#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&names)
-            .bind(&self.viewer.read_repos.to_vec())
+            .bind(&self.viewer.read_repo_ids.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
@@ -167,47 +162,47 @@ impl Loader<String> for RepositoryByNameLoader {
     }
 }
 
-pub struct RepositoryByPrefixLoader {
+pub struct RepositoryByIdLoader {
     pool: PgPool,
     viewer: Viewer,
 }
 
-impl RepositoryByPrefixLoader {
+impl RepositoryByIdLoader {
     pub fn new(viewer: Viewer, pool: PgPool) -> Self {
         Self { viewer, pool }
     }
 }
 
 #[async_trait::async_trait]
-impl Loader<String> for RepositoryByPrefixLoader {
+impl Loader<String> for RepositoryByIdLoader {
     type Value = Repository;
     type Error = Error;
 
-    async fn load(&self, prefixes: &[String]) -> Result<HashMap<String, Self::Value>> {
+    async fn load(&self, repo_ids: &[String]) -> Result<HashMap<String, Self::Value>> {
         log::debug!(
-            "batch load repos by id prefixes {:?} for users {:?}",
-            prefixes,
-            self.viewer.read_repos
+            "batch load repos {:?} by id for users {:?}",
+            repo_ids,
+            self.viewer.read_repo_ids
         );
 
         let query = format!(
             r#"select
                 {REPOSITORY_FIELDS}
                 {REPOSITORY_JOINS}
-                where r.prefix = any($1::text[])
-                    and r.prefix = any($2::text[])
+                where r.id = any($1::uuid[])
+                    and r.id = any($2::uuid[])
                 {REPOSITORY_GROUP_BY}
            "#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(&prefixes)
-            .bind(&self.viewer.read_repos.to_vec())
+            .bind(&repo_ids)
+            .bind(&self.viewer.read_repo_ids.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
         Ok(rows
             .iter()
-            .map(|r| (r.prefix.to_string(), r.to_repository()))
+            .map(|r| (r.id.to_string(), r.to_repository()))
             .collect::<HashMap<_, _>>())
     }
 }
@@ -251,20 +246,20 @@ impl SelectRepository {
                     {REPOSITORY_FIELDS}
                     {REPOSITORY_JOINS}
                     where r.id = $1::uuid
-                        and r.prefix = any($2::text[])
+                        and r.id = any($2::uuid[])
                     {REPOSITORY_GROUP_BY}
                 "#
             );
 
             let row = sqlx::query_as::<_, repository::Row>(&query)
                 .bind(repository_id)
-                .bind(&self.actor.write_repos.to_vec())
+                .bind(&self.actor.write_repo_ids.to_vec())
                 .fetch_one(pool)
                 .await?;
 
             Some(row.to_repository())
         } else {
-            sqlx::query("update users set selected_repository_id = null where id = $::uuid")
+            sqlx::query("update users set selected_repository_id = null where id = $1::uuid")
                 .bind(&self.actor.user_id)
                 .execute(pool)
                 .await?;
@@ -272,7 +267,7 @@ impl SelectRepository {
             None
         };
 
-        let row = fetch_user(&self.actor.write_repos, &self.actor.user_id, pool).await?;
+        let row = fetch_user(&self.actor.write_repo_ids, &self.actor.user_id, pool).await?;
 
         Ok(SelectRepositoryResult {
             actor: row,

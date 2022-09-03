@@ -32,8 +32,8 @@ impl View {
         topic_id: Option<String>,
     ) -> Result<ActivityLineItemConnection> {
         let store = ctx.data_unchecked::<Store>();
-        let repo = RepoName::wiki();
-        let topic_id: Option<RepoId> = match topic_id {
+        let repo = RepoId::wiki();
+        let topic_id: Option<Oid> = match topic_id {
             Some(topic_id) => Some(topic_id.try_into()?),
             None => None,
         };
@@ -59,7 +59,7 @@ impl View {
 
     async fn link(&self, ctx: &Context<'_>, id: String) -> Result<Option<Link>> {
         // FIXME
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         ctx.data_unchecked::<Store>()
             .link(&repo, &id.try_into()?)
             .await
@@ -73,7 +73,7 @@ impl View {
 
     async fn topic(&self, ctx: &Context<'_>, id: String) -> Result<Option<Topic>> {
         // FIXME
-        let repo = RepoName::wiki();
+        let repo = RepoId::wiki();
         ctx.data_unchecked::<Store>()
             .topic(&repo, &id.try_into()?)
             .await

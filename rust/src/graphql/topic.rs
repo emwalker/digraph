@@ -28,7 +28,7 @@ pub enum TopicChild {
 pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Topic {
-    pub child_ids: Vec<RepoId>,
+    pub child_ids: Vec<Oid>,
     pub id: String,
     pub name: String,
     pub parent_topic_ids: Vec<String>,
@@ -50,11 +50,11 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        let topic_id: Option<RepoId> = Some((&self.id).try_into()?);
+        let topic_id: Option<Oid> = Some((&self.id).try_into()?);
         let store = ctx.data_unchecked::<Store>();
 
         let activity = store
-            .activity(&RepoName::wiki(), &topic_id, first.unwrap_or(3))
+            .activity(&RepoId::wiki(), &topic_id, first.unwrap_or(3))
             .await?;
 
         let mut results = vec![];
@@ -99,10 +99,10 @@ impl Topic {
         last: Option<i32>,
         search_string: Option<String>,
     ) -> Result<TopicChildConnection> {
-        let topic_id: RepoId = (&self.id).try_into()?;
+        let topic_id: Oid = (&self.id).try_into()?;
         let iter = ctx
             .data_unchecked::<Store>()
-            .topic_children(&RepoName::wiki(), &topic_id)
+            .topic_children(&RepoId::wiki(), &topic_id)
             .await?;
 
         let mut results = vec![];
@@ -140,8 +140,8 @@ impl Topic {
         descendants: Option<bool>,
     ) -> Result<LinkConnection> {
         // FIXME
-        let repo = RepoName::wiki();
-        let topic_id: RepoId = (&self.id).try_into()?;
+        let repo = RepoId::wiki();
+        let topic_id: Oid = (&self.id).try_into()?;
 
         query(
             after,
@@ -199,8 +199,8 @@ impl Topic {
         last: Option<i32>,
     ) -> Result<TopicConnection> {
         // FIXME
-        let repo = RepoName::wiki();
-        let topic_id: RepoId = (&self.id).try_into()?;
+        let repo = RepoId::wiki();
+        let topic_id: Oid = (&self.id).try_into()?;
 
         conn(
             after,

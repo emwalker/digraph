@@ -22,7 +22,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            repos: vec![RepoName::wiki()],
+            repos: vec![RepoId::wiki()],
             search: Search::parse("existing non-root topic").unwrap(),
             viewer: actor(),
         }
@@ -41,8 +41,8 @@ mod fetch_topic_live_search {
     #[test]
     fn indexing_works() {
         let f = Fixtures::copy("simple");
-        let repo = RepoName::wiki();
-        let parent = RepoId::root_topic();
+        let repo = RepoId::wiki();
+        let parent = Oid::root_topic();
         let search = Search::parse("clim chan soc").unwrap();
 
         let FetchTopicLiveSearchResult {
@@ -101,7 +101,7 @@ mod fetch_matches {
     struct FetchDownset(Client);
 
     impl Downset for FetchDownset {
-        fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<RepoId>> {
+        fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<Oid>> {
             if topic_paths.is_empty() {
                 return Ok(HashSet::new());
             }
@@ -121,8 +121,8 @@ mod fetch_matches {
             }
         }
 
-        fn downset(&self, path: &ReadPath) -> HashSet<RepoId> {
-            self.0.downset(path).collect::<HashSet<RepoId>>()
+        fn downset(&self, path: &ReadPath) -> HashSet<Oid> {
+            self.0.downset(path).collect::<HashSet<Oid>>()
         }
     }
 
@@ -136,12 +136,7 @@ mod fetch_matches {
             .count()
     }
 
-    fn search(
-        f: &Fixtures,
-        topic_id: &RepoId,
-        input: &str,
-        recursive: bool,
-    ) -> BTreeSet<SearchMatch> {
+    fn search(f: &Fixtures, topic_id: &Oid, input: &str, recursive: bool) -> BTreeSet<SearchMatch> {
         let fetcher = FetchDownset(f.git.clone());
         let search = Search::parse(input).unwrap();
         let viewer = actor();
@@ -149,7 +144,7 @@ mod fetch_matches {
         let FindMatchesResult { matches } = FindMatches {
             limit: 100,
             locale: Locale::EN,
-            repos: viewer.read_repos.to_owned(),
+            repos: viewer.read_repo_ids.to_owned(),
             recursive,
             search,
             timespec: Timespec,
@@ -166,7 +161,7 @@ mod fetch_matches {
     fn matching_topics() {
         let f = Fixtures::copy("simple");
 
-        let matches = search(&f, &RepoId::root_topic(), "exist non root topic", true);
+        let matches = search(&f, &Oid::root_topic(), "exist non root topic", true);
         assert!(!matches.is_empty());
         let row = matches.iter().next().unwrap();
 
@@ -201,7 +196,7 @@ mod fetch_matches {
     fn topic_search() {
         let f = Fixtures::copy("simple");
 
-        let root = RepoId::root_topic();
+        let root = Oid::root_topic();
         let climate_change = f.find_topic("Climate change").unwrap();
         let query = format!("in:{}", climate_change);
 
@@ -214,7 +209,7 @@ mod fetch_matches {
     fn combined_search() {
         let f = Fixtures::copy("simple");
 
-        let root = RepoId::root_topic();
+        let root = Oid::root_topic();
         let climate_change = f.find_topic("Climate change").unwrap();
         let query = format!("in:{} frequency", climate_change);
 
@@ -231,8 +226,8 @@ mod fetch_matches {
         let f = Fixtures::copy("simple");
 
         let fetcher = FetchDownset(f.git.clone());
-        let repo = RepoName::wiki();
-        let root = RepoId::root_topic();
+        let repo = RepoId::wiki();
+        let root = Oid::root_topic();
         let climate_change = f.find_topic("Climate change and weather").unwrap();
         let query = format!("in:{}", climate_change);
         let search = Search::parse(&query).unwrap();
@@ -243,7 +238,7 @@ mod fetch_matches {
             limit: 3,
             locale: Locale::EN,
             recursive: true,
-            repos: RepoNames::from(&vec![repo]),
+            repos: RepoIds::from(&vec![repo]),
             search,
             timespec: Timespec,
             topic_id: root,
@@ -260,7 +255,7 @@ mod fetch_matches {
     fn topic_used_in_search_appears_at_top() {
         let f = Fixtures::copy("simple");
 
-        let root = RepoId::root_topic();
+        let root = Oid::root_topic();
         let weather = f.find_topic("Weather").unwrap();
         let query = format!("in:{}", weather);
         let matches = search(&f, &root, &query, true);
@@ -274,7 +269,7 @@ mod fetch_matches {
     #[test]
     fn url_search() {
         let f = Fixtures::copy("simple");
-        let root = RepoId::root_topic();
+        let root = Oid::root_topic();
 
         let matches = search(
             &f,
@@ -289,10 +284,10 @@ mod fetch_matches {
     #[test]
     fn search_works_across_prefixes() {
         let f = Fixtures::copy("simple");
-        let repo = RepoName::try_from("/other/").unwrap();
-        let root = RepoId::root_topic();
+        let repo_id = RepoId::other();
+        let root = Oid::root_topic();
 
-        let _ = f.upsert_link(&repo, &valid_url(), Some("Other repo".to_owned()), None);
+        let _ = f.upsert_link(&repo_id, &valid_url(), Some("Other repo".to_owned()), None);
 
         let matches = search(&f, &root, "other repo", true);
         assert!(!matches.is_empty());
