@@ -1,17 +1,18 @@
 Before switchover:
-* Get repo selection working again
+* Add a banner when the repo is private
+* Change "Delete" to "Remove"
+* Merge the contents of items with the same id and different repo prefixes
+* Add repo back to topic and link types
+* Add repo to topic child edges (?)
+* Add repo to parent topic edges (?)
+* Move details into own section of GraphQL type (?)
 * Replace hardcoded references to wikiRepoId with repo from resource (depends on whether user can edit)
 * Show links in private repo in blue again
 * Clean up database: odds and ends
 * Don't save private links and topics to /wiki/
-* Move details into own section of GraphQL type (?)
-* Add repo back to topic and link types
-* Add repo to topic child edges
-* Add repo to parent topic edges
 * Ensure that account creation still works
 * Ensure that account deletion still works
 * Put a note up on the info page that says that I may work against production data from time to time
-* Merge the contents of items with the same id and different repo prefixes
 * Decide whether to support link reviews or remove the feature
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
 * Git: Start work on git rebases and commits
