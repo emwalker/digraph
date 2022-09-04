@@ -26,7 +26,7 @@ pub enum TopicChild {
 }
 
 pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Debug)]
 pub struct Topic {
     pub child_ids: Vec<Oid>,
     pub id: String,
@@ -228,7 +228,7 @@ impl Topic {
             first,
             last,
             ctx.data_unchecked::<Store>()
-                .search(self.clone(), search_string)
+                .search(&self, search_string)
                 .await?,
         )
     }

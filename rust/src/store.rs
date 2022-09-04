@@ -123,15 +123,6 @@ impl Store {
         git.mutation(git::IndexMode::Update)
     }
 
-    async fn flat_topics(
-        &self,
-        repo_id: &RepoId,
-        topic_ids: &[String],
-    ) -> Result<Vec<graphql::Topic>> {
-        let result = self.topics(repo_id, topic_ids).await?;
-        Ok(result.iter().flatten().cloned().collect())
-    }
-
     pub async fn child_links_for_topic(
         &self,
         repo: &RepoId,
@@ -285,7 +276,7 @@ impl Store {
             .await?
             .ok_or_else(|| Error::NotFound(format!("no topic for id: {}", topic_id)))?;
 
-        self.flat_topics(repo_id, &topic.parent_topic_ids).await
+        self.fetch_topics(repo_id, &topic.parent_topic_ids, 50).await
     }
 
     pub async fn parent_topics_for_link(
@@ -298,7 +289,7 @@ impl Store {
             .await?
             .ok_or_else(|| Error::NotFound(format!("no link for id: {}", link_id)))?;
 
-        self.flat_topics(repo_id, &link.parent_topic_ids).await
+        self.fetch_topics(repo_id, &link.parent_topic_ids, 50).await
     }
 
     pub async fn repositories_for_user(&self, user_id: String) -> Result<Vec<graphql::Repository>> {
@@ -350,7 +341,7 @@ impl Store {
 
     pub async fn search(
         &self,
-        parent_topic: graphql::Topic,
+        parent_topic: &graphql::Topic,
         search_string: String,
     ) -> Result<Vec<graphql::TopicChild>> {
         log::info!("search: search string {}", search_string);
@@ -417,11 +408,12 @@ impl Store {
         }
     }
 
-    pub async fn topics(
+    async fn fetch_topics(
         &self,
         repo_id: &RepoId,
         topic_ids: &[String],
-    ) -> Result<Vec<Option<graphql::Topic>>> {
+        take: usize,
+    ) -> Result<Vec<graphql::Topic>> {
         let mut paths = vec![];
 
         for topic_id in topic_ids {
@@ -430,20 +422,19 @@ impl Store {
         }
 
         let map = self.object_loader.load_many(paths.clone()).await?;
-        let mut topics: Vec<Option<graphql::Topic>> = Vec::new();
+        let mut topics: Vec<graphql::Topic> = Vec::new();
 
-        for path in paths.iter().take(50) {
+        for path in paths.iter().take(take) {
             let topic = map
                 .get(path)
                 .ok_or_else(|| Error::NotFound(format!("no topic: {:?}", path)))?;
 
-            let topic = match &topic {
-                git::Object::Topic(topic) => Some(graphql::Topic::try_from(topic)?),
-                _ => None,
+            match &topic {
+                git::Object::Topic(topic) => topics.push(topic.try_into()?),
+                _ => {}
             };
-
-            topics.push(topic);
         }
+
         Ok(topics)
     }
 

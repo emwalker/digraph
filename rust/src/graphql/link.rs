@@ -6,7 +6,7 @@ use crate::git;
 use crate::prelude::*;
 use crate::store::Store;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Debug)]
 pub struct Link {
     pub id: String,
     pub newly_added: bool,
