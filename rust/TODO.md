@@ -1,5 +1,7 @@
 Before switchover:
+* Return collection of detail views / edit forms instead of edit form
 * Merge the contents of items with the same id and different repo prefixes
+* Update repo names and give new repos a better name
 * Add repo back to topic and link types
 * Add repo to topic child edges (?)
 * Add repo to parent topic edges (?)
@@ -13,6 +15,7 @@ Before switchover:
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
+* Bug: some history entries are not displaying properly
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo
