@@ -182,6 +182,7 @@ pub struct UpdateTopicParentTopicsPayload {
 pub struct UpsertLinkInput {
     pub add_parent_topic_id: Option<String>,
     pub client_mutation_id: Option<String>,
+    pub link_id: Option<String>,
     pub repo_id: String,
     pub title: Option<String>,
     pub url: String,

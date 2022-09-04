@@ -175,7 +175,7 @@ class TopicPage extends Component<Props, State> {
     }
 
     const { displayName, parentTopics } = topic
-    const { children } = this
+    const children = this.children.filter(Boolean)
 
     return (
       <Page>

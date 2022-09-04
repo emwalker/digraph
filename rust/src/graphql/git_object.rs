@@ -1,8 +1,10 @@
 use async_graphql::dataloader::*;
 use std::collections::HashMap;
 
-use super::{timerange, ViewStats};
-use super::{Link, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChild};
+use super::{
+    timerange, Link, LinkDetail, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChild,
+    ViewStats,
+};
 use crate::git;
 use crate::prelude::*;
 
@@ -23,13 +25,32 @@ impl TryFrom<&git::Link> for Link {
             .map(|topic| topic.id.to_string())
             .collect::<Vec<String>>();
 
-        Ok(Self {
-            id: link.id().to_string(),
-            newly_added: false,
-            parent_topic_ids,
-            viewer_review: None,
+        let detail = LinkDetail {
+            color: "".to_owned(),
+            link_id: link.id().to_owned(),
+            parent_topic_ids: parent_topic_ids.to_owned(),
+            // FIXME
+            repo_id: RepoId::wiki(),
             title: link.title().to_owned(),
             url: link.url().to_owned(),
+        };
+
+        let display_detail = LinkDetail {
+            color: "".to_owned(),
+            link_id: link.id().to_owned(),
+            parent_topic_ids,
+            // FIXME
+            repo_id: RepoId::wiki(),
+            title: link.title().to_owned(),
+            url: link.url().to_owned(),
+        };
+
+        Ok(Self {
+            details: vec![detail],
+            display_detail,
+            id: link.id().to_string(),
+            newly_added: false,
+            viewer_review: None,
         })
     }
 }

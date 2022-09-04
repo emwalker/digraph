@@ -46,18 +46,18 @@ class Review extends Component<Props, State> {
   }
 
   render = () => {
-    const { link: { title, url } } = this.props
+    const { link: { displayTitle, displayUrl } } = this.props
 
     return (
       <li className={this.className}>
         <div className="overflow-hidden flex-auto pr-3">
           <div>
-            <a className="Link--primary" href={url}>
-              { title }
+            <a className="Link--primary" href={displayUrl}>
+              { displayTitle }
             </a>
           </div>
           <div className="mt-2 link-url branch-name css-truncate css-truncate-target">
-            { url }
+            { displayUrl }
           </div>
         </div>
         <form className="review-checkbox">
@@ -81,9 +81,9 @@ class Review extends Component<Props, State> {
 export default createFragmentContainer(Review, {
   link: graphql`
     fragment Review_link on Link {
+      displayTitle
+      displayUrl
       id
-      title
-      url
 
       viewerReview {
         reviewedAt

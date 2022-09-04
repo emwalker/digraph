@@ -8,10 +8,8 @@ exports[`<Link /> renders 1`] = `
   formIsOpen={false}
   showEditButton={true}
   showLink={true}
-  title="title"
   toggleForm={[Function]}
   topics={Array []}
-  url="url"
 >
   <EditLinkContainer
     isOpen={false}

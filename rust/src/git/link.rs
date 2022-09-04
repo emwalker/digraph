@@ -92,6 +92,7 @@ impl UpdateLinkParentTopics {
         S: SaveChangesForPrefix,
     {
         self.validate()?;
+        log::info!("updating parent topics for {}", self.link_id);
 
         let date = chrono::Utc::now();
         let link = mutation.fetch_link(&self.repo_id, &self.link_id);

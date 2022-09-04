@@ -228,7 +228,7 @@ impl Topic {
             first,
             last,
             ctx.data_unchecked::<Store>()
-                .search(&self, search_string)
+                .search(self, search_string)
                 .await?,
         )
     }

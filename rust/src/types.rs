@@ -112,6 +112,13 @@ impl RepoId {
         Self::try_from(OTHER_REPOSITORY_ID).unwrap()
     }
 
+    pub fn is_wiki(&self) -> bool {
+        lazy_static! {
+            static ref WIKI: Uuid = WIKI_REPOSITORY_ID.try_into().unwrap();
+        }
+        self.0 == *WIKI
+    }
+
     pub fn relative_path(&self) -> String {
         format!("{}/", self.0)
     }

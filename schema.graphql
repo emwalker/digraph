@@ -111,29 +111,43 @@ type RemoveTopicTimerangePayload {
   topic: Topic!
 }
 
-type Link implements Namespaceable {
+type LinkDetails {
   availableParentTopics(
     searchString: String,
   ): LiveSearchTopicsPayload!
   createdAt: DateTime!
-  displayColor: Color!
-  id: String!
-  loading: Boolean!
-  newlyAdded: Boolean!
-  organization: Organization!
+  color: Color!
+  linkId: String!
   parentTopics(
     first: Int,
     after: String,
     last: Int,
     before: String
   ): TopicConnection!
-  # repository: Repository!
-  sha1: String!
+  repository: Repository!
   title: String!
   updatedAt: DateTime!
   url: String!
   viewerCanUpdate: Boolean!
+}
+
+type Link {
+  details: [LinkDetails!]!
+  displayColor: Color!
+  displayParentTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection!
+  displayTitle: String!
+  displayUrl: String!
+  id: String!
+  loading: Boolean!
+  newlyAdded: Boolean!
+  sha1: String!
   viewerReview: LinkReview
+  viewerCanUpdate: Boolean!
 }
 
 type LinkEdge {
@@ -202,10 +216,6 @@ type Mutation {
   upsertLink(input: UpsertLinkInput!): UpsertLinkPayload
   upsertTopic(input: UpsertTopicInput!): UpsertTopicPayload
   upsertTopicTimerange(input: UpsertTopicTimerangeInput!): UpsertTopicTimerangePayload
-}
-
-interface Namespaceable {
-  organization: Organization!
 }
 
 type Organization {
@@ -316,7 +326,7 @@ type Synonym {
   name: String!
 }
 
-type Topic implements Namespaceable {
+type Topic {
   activity(
     first: Int,
     after: String,
@@ -476,6 +486,7 @@ input UpsertLinkInput {
   # UpdateLink mutation, which has a required link id field and doesn't modify the parent topics.
   addParentTopicId: String
   clientMutationId: String
+  linkId: String
   repoId: String!
   title: String
   url: String!

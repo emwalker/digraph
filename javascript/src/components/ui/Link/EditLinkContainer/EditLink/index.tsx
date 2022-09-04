@@ -27,13 +27,16 @@ export default ({ isOpen, toggleForm }: CallerProps) => (
   if (error) return <div>{error.message}</div>
   if (!renderProps) return null
   const { view } = renderProps as RenderProps
+
+  // FIXME
+  const details = view?.link?.details || []
+  if (details.length < 1) return null
+
   return (
-    view?.link && (
-      <EditLinkForm
-        isOpen={isOpen}
-        toggleForm={toggleForm}
-        link={view.link}
-      />
-    )
+    <EditLinkForm
+      isOpen={isOpen}
+      toggleForm={toggleForm}
+      linkDetails={details[0]}
+    />
   )
 }

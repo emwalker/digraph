@@ -276,7 +276,8 @@ impl Store {
             .await?
             .ok_or_else(|| Error::NotFound(format!("no topic for id: {}", topic_id)))?;
 
-        self.fetch_topics(repo_id, &topic.parent_topic_ids, 50).await
+        self.fetch_topics(repo_id, &topic.parent_topic_ids, 50)
+            .await
     }
 
     pub async fn parent_topics_for_link(
@@ -289,7 +290,8 @@ impl Store {
             .await?
             .ok_or_else(|| Error::NotFound(format!("no link for id: {}", link_id)))?;
 
-        self.fetch_topics(repo_id, &link.parent_topic_ids, 50).await
+        self.fetch_topics(repo_id, &link.display_detail.parent_topic_ids, 50)
+            .await
     }
 
     pub async fn repositories_for_user(&self, user_id: String) -> Result<Vec<graphql::Repository>> {
@@ -429,10 +431,9 @@ impl Store {
                 .get(path)
                 .ok_or_else(|| Error::NotFound(format!("no topic: {:?}", path)))?;
 
-            match &topic {
-                git::Object::Topic(topic) => topics.push(topic.try_into()?),
-                _ => {}
-            };
+            if let git::Object::Topic(topic) = &topic {
+                topics.push(topic.try_into()?);
+            }
         }
 
         Ok(topics)

@@ -28,7 +28,9 @@ const EditLinkContainer = ({ isOpen, link, relay, toggleForm }: Props) => (
           repositoryIds: $repoIds,
         ) {
           link(id: $linkId) {
-            ...EditLinkForm_link
+            details {
+              ...EditLinkForm_linkDetails
+            }
           }
         }
       }

@@ -65,12 +65,12 @@ export default (environment: Environment, input: Input, config?: Config) => {
   const optimisticUpdater = (store: RecordSourceSelectorProxy) => {
     tmpId += 1
     const parentTopicId = input.addParentTopicId || null
-    const nodeId = `client:link:${tmpId}`
-    const node = store.create(nodeId, 'Link')
 
+    const nodeId = input.linkId || `client:link:${tmpId}`
+    let node = store.get(nodeId) || store.create(nodeId, 'Link')
     node.setValue(nodeId, 'id')
-    node.setValue(input.title || 'Adding link to repo ...', 'title')
-    node.setValue(input.url, 'url')
+    node.setValue(input.title || 'Adding link to repo ...', 'displayTitle')
+    node.setValue(input.url, 'displayUrl')
     node.setValue(true, 'loading')
 
     if (parentTopicId) {

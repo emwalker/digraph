@@ -7,7 +7,7 @@ import { Link_viewer as ViewerType } from '__generated__/Link_viewer.graphql'
 import Item from '../Item'
 import EditLink from './EditLinkContainer'
 
-type ParentTopicType = NodeTypeOf<LinkType['parentTopics']>
+type ParentTopicType = NodeTypeOf<LinkType['displayParentTopics']>
 
 type Props = {
   link: LinkType,
@@ -32,7 +32,7 @@ class Link extends Component<Props, State> {
   }
 
   get parentTopics() {
-    return liftNodes<ParentTopicType>(this.props.link.parentTopics)
+    return liftNodes<ParentTopicType>(this.props.link.displayParentTopics)
   }
 
   get showEditButton(): boolean {
@@ -52,10 +52,10 @@ class Link extends Component<Props, State> {
       newlyAdded={this.props.link.newlyAdded}
       showEditButton={this.showEditButton}
       showLink
-      title={this.props.link.title}
+      title={this.props.link.displayTitle}
       toggleForm={this.toggleForm}
       topics={this.parentTopics}
-      url={this.props.link.url}
+      url={this.props.link.displayUrl}
     >
       <EditLink
         isOpen={this.state.formIsOpen}
@@ -77,15 +77,15 @@ export default createFragmentContainer(Link, {
   `,
   link: graphql`
     fragment Link_link on Link {
+      displayColor
+      displayTitle
+      displayUrl
       id
       loading
       newlyAdded
-      title
-      url
       viewerCanUpdate
-      displayColor
 
-      parentTopics(first: 100) {
+      displayParentTopics(first: 100) {
         edges {
           node {
             displayName: name

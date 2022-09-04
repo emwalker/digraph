@@ -7,25 +7,17 @@ use crate::prelude::*;
 use crate::store::Store;
 
 #[derive(Debug)]
-pub struct Link {
-    pub id: String,
-    pub newly_added: bool,
+pub struct LinkDetail {
+    pub color: String,
+    pub link_id: Oid,
     pub parent_topic_ids: Vec<String>,
-    pub viewer_review: Option<LinkReview>,
+    pub repo_id: RepoId,
     pub title: String,
     pub url: String,
 }
 
-#[derive(SimpleObject)]
-pub struct LinkConnectionFields {
-    pub total_count: i64,
-}
-
-pub type LinkEdge = Edge<String, Link, EmptyFields>;
-pub type LinkConnection = Connection<String, Link, LinkConnectionFields, EmptyFields>;
-
 #[Object]
-impl Link {
+impl LinkDetail {
     async fn available_parent_topics(
         &self,
         ctx: &Context<'_>,
@@ -43,23 +35,69 @@ impl Link {
     }
 
     async fn display_color(&self) -> &str {
-        // FIXME
-        ""
+        if self.repo_id.is_wiki() {
+            ""
+        } else {
+            DEFAULT_PRIVATE_COLOR
+        }
     }
 
-    async fn loading(&self) -> bool {
-        false
+    async fn link_id(&self) -> &str {
+        self.link_id.as_str()
     }
 
-    async fn id(&self) -> String {
-        self.id.to_string()
+    async fn title(&self) -> &str {
+        &self.title
     }
 
-    async fn newly_added(&self) -> bool {
-        self.newly_added
+    async fn url(&self) -> &str {
+        &self.url
+    }
+
+    async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {
+        ctx.data_unchecked::<Store>()
+            .viewer
+            .write_repo_ids
+            .include(&self.repo_id)
     }
 
     async fn parent_topics(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> Result<TopicConnection> {
+        let topics = ctx
+            .data_unchecked::<Store>()
+            // FIXME
+            .parent_topics_for_link(&self.repo_id, &self.link_id)
+            .await?;
+        conn(after, before, first, last, topics)
+    }
+}
+
+#[derive(Debug)]
+pub struct Link {
+    pub details: Vec<LinkDetail>,
+    pub display_detail: LinkDetail,
+    pub id: String,
+    pub newly_added: bool,
+    pub viewer_review: Option<LinkReview>,
+}
+
+#[derive(SimpleObject)]
+pub struct LinkConnectionFields {
+    pub total_count: i64,
+}
+
+pub type LinkEdge = Edge<String, Link, EmptyFields>;
+pub type LinkConnection = Connection<String, Link, LinkConnectionFields, EmptyFields>;
+
+#[Object]
+impl Link {
+    async fn display_parent_topics(
         &self,
         ctx: &Context<'_>,
         after: Option<String>,
@@ -76,30 +114,45 @@ impl Link {
         conn(after, before, first, last, topics)
     }
 
-    async fn path(&self) -> String {
+    async fn display_color(&self) -> &str {
+        &self.display_detail.color
+    }
+
+    async fn display_title(&self) -> &str {
+        &self.display_detail.title
+    }
+
+    async fn display_url(&self) -> &str {
+        &self.display_detail.url
+    }
+
+    async fn details(&self) -> &Vec<LinkDetail> {
+        &self.details
+    }
+
+    async fn loading(&self) -> bool {
+        false
+    }
+
+    async fn id(&self) -> String {
         self.id.to_string()
     }
 
-    async fn title(&self) -> String {
-        self.title.to_owned()
-    }
-
-    async fn url(&self) -> String {
-        self.url.to_owned()
+    async fn newly_added(&self) -> bool {
+        self.newly_added
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
-        let store = ctx.data_unchecked::<Store>();
-        if store.viewer.is_guest() {
-            return Ok(false);
+        for details in &self.details {
+            if details.viewer_can_update(ctx).await? {
+                return Ok(true);
+            }
         }
-
-        // FIXME
-        Ok(true)
+        Ok(false)
     }
 
-    async fn viewer_review(&self) -> Option<LinkReview> {
-        self.viewer_review.clone()
+    async fn viewer_review(&self) -> &Option<LinkReview> {
+        &self.viewer_review
     }
 }
 
