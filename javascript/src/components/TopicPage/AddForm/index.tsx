@@ -22,7 +22,6 @@ class AddForm extends Component<Props> {
       'px-md-2',
       'px-3',
       'mt-3',
-      { 'private-repo': this.isPrivateRepo },
     )
   }
 
@@ -51,12 +50,19 @@ class AddForm extends Component<Props> {
     </>
   )
 
+  get selectRepositoryStyle(): Object {
+    const backgroundColor = this.isPrivateRepo ?
+      this.props.viewer.selectedRepository?.displayColor :
+      'transparent'
+    return { backgroundColor }
+  }
+
   render = () => (
-    <form className={this.className}>
+    <form className={this.className} style={this.selectRepositoryStyle}>
       <SelectRepository
         viewer={this.props.viewer}
       />
-      { this.repoSelected && this.renderInputFields() }
+      {this.repoSelected && this.renderInputFields()}
     </form>
   )
 }
@@ -66,11 +72,13 @@ export default createFragmentContainer(AddForm, {
     fragment AddForm_viewer on User {
       selectedRepository {
         isPrivate
+        displayColor
       }
 
       ...AddLink_viewer
       ...AddTopic_viewer
       ...SelectRepository_viewer
+      ...SelectedRepo_viewer
     }
   `,
   topic: graphql`

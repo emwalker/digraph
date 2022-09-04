@@ -3,6 +3,11 @@
 exports[`<AddForm /> renders 1`] = `
 <form
   className="border rounded-1 px-md-2 px-3 mt-3"
+  style={
+    Object {
+      "backgroundColor": "transparent",
+    }
+  }
 >
   <SelectRepository
     viewer={

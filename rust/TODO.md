@@ -1,5 +1,4 @@
 Before switchover:
-* Add a banner when the repo is private
 * Change "Delete" to "Remove"
 * Merge the contents of items with the same id and different repo prefixes
 * Add repo back to topic and link types

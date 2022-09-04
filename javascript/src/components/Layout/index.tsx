@@ -6,6 +6,7 @@ import { LayoutQueryResponse } from '__generated__/LayoutQuery.graphql'
 import FlashMessages from '../FlashMessages'
 import Header from './Header'
 import Footer from './Footer'
+import SelectedRepo from './SelectedRepo'
 
 type AlertsType = LayoutQueryResponse['alerts']
 type ViewType = LayoutQueryResponse['view']
@@ -38,6 +39,7 @@ query LayoutQuery(
     viewer {
       ...DesktopNav_viewer
       ...MobileNav_viewer
+      ...SelectedRepo_viewer
     }
 
     ...SearchBox_view
@@ -53,6 +55,7 @@ const Layout = ({ alerts, children, view, match, router }: Props) => (
       viewer={view.viewer}
     />
     <div className="clearfix">
+      <SelectedRepo viewer={view.viewer} />
       <FlashMessages initialAlerts={alerts} />
       { children }
     </div>
