@@ -23,7 +23,7 @@ class DeleteButton extends Component<Props> {
 
   render = () => (
     <button onClick={this.confirmAndDelete} className={this.className} type="submit">
-      Delete
+      Remove
     </button>
   )
 }
