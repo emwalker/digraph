@@ -12,7 +12,6 @@ Before switchover:
 * Ensure that account deletion still works
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
-* Bug: topic search doesn't work
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying

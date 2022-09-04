@@ -161,7 +161,12 @@ impl Redis {
     ) -> Result<()> {
         redis_rs::transaction(con, &[key], |con, pipe| {
             let set = set.iter().map(Oid::to_string).collect::<HashSet<String>>();
-            pipe.sadd(key, set).ignore().query(con)
+            if set.is_empty() {
+                pipe.ignore()
+            } else {
+                pipe.sadd(key, set).ignore()
+            }
+            .query(con)
         })?;
 
         Ok(())

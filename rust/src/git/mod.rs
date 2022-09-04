@@ -469,7 +469,7 @@ impl Object {
             },
             Self::Topic(topic) => {
                 let topic_id = topic.id();
-                let explicit_in_search = search.path_specs.iter().any(|s| &s.id == topic_id);
+                let explicit_in_search = search.topic_specs.iter().any(|s| &s.id == topic_id);
                 SearchMatch {
                     sort_key: SortKey(
                         Kind::Topic,

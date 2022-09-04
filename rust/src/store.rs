@@ -353,6 +353,7 @@ impl Store {
         parent_topic: graphql::Topic,
         search_string: String,
     ) -> Result<Vec<graphql::TopicChild>> {
+        log::info!("search: search string {}", search_string);
         let viewer = &self.viewer;
 
         let fetcher = git::RedisFetchDownSet {

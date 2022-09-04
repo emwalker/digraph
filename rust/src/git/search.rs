@@ -26,19 +26,19 @@ use crate::types::{Downset, ReadPath, Timespec};
 )]
 #[serde(rename_all = "lowercase")]
 #[strum(ascii_case_insensitive)]
-pub enum PathSpecOperation {
+pub enum TopicSpecOperation {
     IN,
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SearchPathSpec {
-    pub op: PathSpecOperation,
+pub struct SearchTopicSpec {
+    pub op: TopicSpecOperation,
     pub id: Oid,
 }
 
 const ID_PATTERN: &str = r#"^in:[\w-]+$"#;
 
-impl SearchPathSpec {
+impl SearchTopicSpec {
     fn valid_path_spec(input: &str) -> bool {
         lazy_static! {
             static ref IS_ID_SPEC: Regex = Regex::new(ID_PATTERN).unwrap();
@@ -49,12 +49,12 @@ impl SearchPathSpec {
     fn parse(input: &str) -> Result<Self> {
         use std::str::FromStr;
 
-        let parts: Vec<String> = input.split(':').map(str::to_string).collect();
+        let parts: Vec<String> = input.trim().split(':').map(str::to_string).collect();
         if !parts.len() == 2 {
             return Err(Error::Parse(format!("invalid topic spec: {}", input)));
         }
 
-        let op = PathSpecOperation::from_str(&parts[0])?;
+        let op = TopicSpecOperation::from_str(&parts[0])?;
         Ok(Self {
             op,
             id: Oid::try_from(&parts[1])?,
@@ -67,7 +67,7 @@ pub struct Search {
     pub normalized: Phrase,
     pub urls: BTreeSet<RepoUrl>,
     pub tokens: BTreeSet<Phrase>,
-    pub path_specs: BTreeSet<SearchPathSpec>,
+    pub topic_specs: BTreeSet<SearchTopicSpec>,
 }
 
 impl std::cmp::Ord for Search {
@@ -88,18 +88,18 @@ impl Search {
             normalized: Phrase::parse(""),
             urls: BTreeSet::new(),
             tokens: BTreeSet::new(),
-            path_specs: BTreeSet::new(),
+            topic_specs: BTreeSet::new(),
         }
     }
 
     pub fn parse(input: &str) -> Result<Self> {
         let mut tokens = BTreeSet::new();
         let mut urls = BTreeSet::new();
-        let mut path_specs = BTreeSet::new();
+        let mut topic_specs = BTreeSet::new();
 
         for part in input.split_whitespace() {
-            if SearchPathSpec::valid_path_spec(part) {
-                path_specs.insert(SearchPathSpec::parse(part)?);
+            if SearchTopicSpec::valid_path_spec(part) {
+                topic_specs.insert(SearchTopicSpec::parse(part)?);
                 continue;
             }
 
@@ -117,18 +117,18 @@ impl Search {
 
         Ok(Self {
             normalized: Phrase::parse(input),
-            path_specs,
+            topic_specs,
             tokens,
             urls,
         })
     }
 
     pub fn is_empty(&self) -> bool {
-        self.urls.is_empty() && self.tokens.is_empty() && self.path_specs.is_empty()
+        self.urls.is_empty() && self.tokens.is_empty() && self.topic_specs.is_empty()
     }
 
     pub fn topics_only(&self) -> bool {
-        self.urls.is_empty() && self.tokens.is_empty() && !self.path_specs.is_empty()
+        self.urls.is_empty() && self.tokens.is_empty() && !self.topic_specs.is_empty()
     }
 }
 
@@ -432,7 +432,7 @@ impl FindMatches {
                 topic_paths.push(path);
             }
 
-            for spec in &self.search.path_specs {
+            for spec in &self.search.topic_specs {
                 let path = client.read_path(repo, &spec.id)?;
                 topic_paths.push(path);
             }
@@ -495,31 +495,31 @@ mod tests {
 
     #[test]
     fn valid_path_specs() {
-        assert!(SearchPathSpec::valid_path_spec(
+        assert!(SearchTopicSpec::valid_path_spec(
             "in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851"
         ));
     }
 
     #[test]
     fn invalid_path_specs() {
-        assert!(!SearchPathSpec::valid_path_spec(
+        assert!(!SearchTopicSpec::valid_path_spec(
             "e76a690f-2eb2-45a0-9cbc-5e7d76f92851"
         ));
-        assert!(!SearchPathSpec::valid_path_spec(
+        assert!(!SearchTopicSpec::valid_path_spec(
             "In:/wiki/e76a690f-2eb2-45a0-9cbc-5e7d76f92851"
         ));
-        assert!(!SearchPathSpec::valid_path_spec(
+        assert!(!SearchTopicSpec::valid_path_spec(
             "In:e76a690f-2eb2-45a0-9cbc-5e7d76f92851"
         ));
-        assert!(!SearchPathSpec::valid_path_spec(
+        assert!(!SearchTopicSpec::valid_path_spec(
             "up:e76a690f-2eb2-45a0-9cbc-5e7d76f92851"
         ));
     }
 
     #[test]
     fn path_spec_parsing() {
-        let s = SearchPathSpec::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap();
-        assert_eq!(s.op, PathSpecOperation::IN);
+        let s = SearchTopicSpec::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap();
+        assert_eq!(s.op, TopicSpecOperation::IN);
         assert_eq!(
             s.id,
             Oid::try_from("e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap(),
@@ -531,7 +531,7 @@ mod tests {
         let s = Search::parse("").unwrap();
         assert_eq!(s.normalized, Phrase::parse(""));
         assert_eq!(s.tokens.len(), 0);
-        assert_eq!(s.path_specs.len(), 0);
+        assert_eq!(s.topic_specs.len(), 0);
     }
 
     #[test]
@@ -539,7 +539,7 @@ mod tests {
         let s = Search::parse("a b aa bb").unwrap();
         assert_eq!(s.normalized, Phrase::parse("a b aa bb"));
         assert_eq!(s.tokens, phrases(&["aa", "bb"]));
-        assert_eq!(s.path_specs.len(), 0);
+        assert_eq!(s.topic_specs.len(), 0);
     }
 
     #[test]
@@ -605,7 +605,7 @@ mod tests {
             Phrase::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851"),
         );
         assert_eq!(s.tokens.len(), 0);
-        assert_eq!(s.path_specs.len(), 1);
+        assert_eq!(s.topic_specs.len(), 1);
     }
 
     #[test]
@@ -616,10 +616,10 @@ mod tests {
             Phrase::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851 a b"),
         );
         assert_eq!(s.tokens.len(), 0);
-        assert_eq!(s.path_specs.len(), 1);
+        assert_eq!(s.topic_specs.len(), 1);
         assert_eq!(
-            *s.path_specs.iter().next().unwrap(),
-            SearchPathSpec::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap()
+            *s.topic_specs.iter().next().unwrap(),
+            SearchTopicSpec::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap()
         );
     }
 }
