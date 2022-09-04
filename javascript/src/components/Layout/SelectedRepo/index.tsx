@@ -11,7 +11,6 @@ const SelectedRepo = ({ viewer }: Props) => {
   let { selectedRepository: repo } = viewer
 
   if (!repo || !repo.isPrivate) return null
-  console.log('repo', repo)
   const backgroundColor = repo.displayColor as string
 
   return (

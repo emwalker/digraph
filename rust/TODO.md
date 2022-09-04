@@ -12,6 +12,7 @@ Before switchover:
 * Ensure that account deletion still works
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
+* Bug: topic search doesn't work
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
@@ -34,6 +35,7 @@ Later:
 * Look into using iterators for the search code instead of copying large buffers around
 * Keep tabs on whether the ordering of changes is stable
 * Get the topic upsert working when the topic already exists
+* Replace multi-select with something that will work with relevance/contexts
 * Show search input in input box when loaded from a url
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
 * Figure out how to display the same change in different contexts -- e.g., a topic is deleted, and its contents merged into the parent topics.  What does the change look like in each change history?
