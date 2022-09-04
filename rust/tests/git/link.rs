@@ -5,9 +5,9 @@ use super::{actor, parse_id, valid_url, Fixtures};
 
 mod delete_link {
     use super::*;
-    use digraph::git::{activity, DeleteLink, Link, UpsertLinkResult};
+    use digraph::git::{activity, DeleteLink, RepoLink, UpsertLinkResult};
 
-    fn link(f: &Fixtures, title: &str, parent_topic: &str) -> Link {
+    fn link(f: &Fixtures, title: &str, parent_topic: &str) -> RepoLink {
         let url = valid_url();
         let topic_id = parse_id(parent_topic);
 

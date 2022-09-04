@@ -1,5 +1,5 @@
 use async_graphql::dataloader::*;
-use std::collections::HashMap;
+use std::collections::{HashMap};
 
 use super::{
     timerange, Link, LinkDetail, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChild,
@@ -15,10 +15,10 @@ impl From<&[git::Synonym]> for Synonyms {
     }
 }
 
-impl TryFrom<&git::Link> for Link {
+impl TryFrom<&git::RepoLink> for Link {
     type Error = Error;
 
-    fn try_from(link: &git::Link) -> Result<Self> {
+    fn try_from(link: &git::RepoLink) -> Result<Self> {
         let parent_topic_ids = link
             .parent_topics
             .iter()
@@ -55,10 +55,10 @@ impl TryFrom<&git::Link> for Link {
     }
 }
 
-impl TryFrom<&git::Topic> for Topic {
+impl TryFrom<&git::RepoTopic> for Topic {
     type Error = Error;
 
-    fn try_from(topic: &git::Topic) -> Result<Self> {
+    fn try_from(topic: &git::RepoTopic) -> Result<Self> {
         let parent_topic_ids = topic
             .parent_topics
             .iter()
@@ -96,31 +96,6 @@ pub struct LinkLoader {
     git: git::Client,
 }
 
-impl LinkLoader {
-    pub fn new(viewer: Viewer, git: git::Client) -> Self {
-        Self { viewer, git }
-    }
-}
-
-#[async_trait::async_trait]
-impl Loader<(RepoId, Oid)> for LinkLoader {
-    type Value = git::Link;
-    type Error = Error;
-
-    async fn load(&self, paths: &[(RepoId, Oid)]) -> Result<HashMap<(RepoId, Oid), Self::Value>> {
-        log::debug!("batch links: {:?}", paths);
-        let mut map: HashMap<_, _> = HashMap::new();
-
-        for (repo, link_id) in paths {
-            if let Some(link) = &self.git.fetch_link(repo, link_id) {
-                map.insert((repo.to_owned(), link_id.to_owned()), link.to_owned());
-            }
-        }
-
-        Ok(map)
-    }
-}
-
 #[allow(dead_code)]
 pub struct ObjectLoader {
     client: git::Client,
@@ -134,7 +109,7 @@ impl ObjectLoader {
 
 #[async_trait::async_trait]
 impl Loader<(RepoId, Oid)> for ObjectLoader {
-    type Value = git::Object;
+    type Value = git::RepoObject;
     type Error = Error;
 
     async fn load(&self, paths: &[(RepoId, Oid)]) -> Result<HashMap<(RepoId, Oid), Self::Value>> {
@@ -151,13 +126,13 @@ impl Loader<(RepoId, Oid)> for ObjectLoader {
     }
 }
 
-impl TryFrom<&git::Object> for TopicChild {
+impl TryFrom<&git::RepoObject> for TopicChild {
     type Error = Error;
 
-    fn try_from(object: &git::Object) -> Result<Self> {
+    fn try_from(object: &git::RepoObject) -> Result<Self> {
         let object = match object {
-            git::Object::Link(link) => TopicChild::Link(Link::try_from(link)?),
-            git::Object::Topic(topic) => TopicChild::Topic(Topic::try_from(topic)?),
+            git::RepoObject::Link(link) => TopicChild::Link(Link::try_from(link)?),
+            git::RepoObject::Topic(topic) => TopicChild::Topic(Topic::try_from(topic)?),
         };
         Ok(object)
     }
@@ -205,8 +180,8 @@ impl TryFrom<&git::SearchMatch> for TopicChild {
     fn try_from(item: &git::SearchMatch) -> Result<Self> {
         let git::SearchMatch { object, .. } = item;
         let object = match object {
-            git::Object::Topic(topic) => TopicChild::Topic(Topic::try_from(topic)?),
-            git::Object::Link(link) => TopicChild::Link(Link::try_from(link)?),
+            git::RepoObject::Topic(topic) => TopicChild::Topic(Topic::try_from(topic)?),
+            git::RepoObject::Link(link) => TopicChild::Link(Link::try_from(link)?),
         };
         Ok(object)
     }

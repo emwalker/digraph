@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use super::{ChangeReference, Client, Link, Locale, Synonym, Topic};
+use super::{ChangeReference, Client, RepoLink, Locale, Synonym, RepoTopic};
 use crate::prelude::*;
 use crate::types::TimerangePrefix;
 
@@ -138,8 +138,8 @@ impl TopicInfo {
     }
 }
 
-impl From<&Topic> for TopicInfo {
-    fn from(topic: &Topic) -> Self {
+impl From<&RepoTopic> for TopicInfo {
+    fn from(topic: &RepoTopic) -> Self {
         let mut synonyms = BTreeMap::new();
 
         for synonym in topic.metadata.synonyms() {
@@ -188,8 +188,8 @@ impl TopicInfoList {
     }
 }
 
-impl From<&Vec<Topic>> for TopicInfoList {
-    fn from(topics: &Vec<Topic>) -> Self {
+impl From<&Vec<RepoTopic>> for TopicInfoList {
+    fn from(topics: &Vec<RepoTopic>) -> Self {
         let mut set = BTreeSet::new();
         for topic in topics {
             set.insert(TopicInfo::from(topic));
@@ -208,8 +208,8 @@ impl From<&Vec<TopicInfo>> for TopicInfoList {
     }
 }
 
-impl From<&Topic> for TopicInfoList {
-    fn from(topic: &Topic) -> Self {
+impl From<&RepoTopic> for TopicInfoList {
+    fn from(topic: &RepoTopic) -> Self {
         Self(BTreeSet::from([TopicInfo::from(topic)]))
     }
 }
@@ -252,8 +252,8 @@ impl std::cmp::PartialOrd for LinkInfo {
     }
 }
 
-impl From<&Link> for LinkInfo {
-    fn from(link: &Link) -> Self {
+impl From<&RepoLink> for LinkInfo {
+    fn from(link: &RepoLink) -> Self {
         Self {
             deleted: false,
             id: link.id().to_owned(),
@@ -280,8 +280,8 @@ impl LinkInfoList {
     }
 }
 
-impl From<&Vec<Link>> for LinkInfoList {
-    fn from(links: &Vec<Link>) -> Self {
+impl From<&Vec<RepoLink>> for LinkInfoList {
+    fn from(links: &Vec<RepoLink>) -> Self {
         let mut set = BTreeSet::new();
         for link in links {
             set.insert(LinkInfo::from(link));
@@ -1208,7 +1208,7 @@ mod tests {
 
     use super::super::testing::*;
     use super::*;
-    use crate::git::{Locale, Topic};
+    use crate::git::{Locale, RepoTopic};
 
     #[test]
     fn update_link_parent_topics() {
@@ -1471,7 +1471,7 @@ mod tests {
             Geotime::from(&ts)
         }
 
-        fn change(topic: &Topic, previous: Option<Timerange>) -> Change {
+        fn change(topic: &RepoTopic, previous: Option<Timerange>) -> Change {
             let mut parent_topics = BTreeSet::new();
             for parent in &topic.parent_topics {
                 parent_topics.insert(parent.id.to_owned());
@@ -1650,7 +1650,7 @@ mod tests {
 
         use super::*;
 
-        fn change(topic: &Topic, format: TimerangePrefixFormat) -> Change {
+        fn change(topic: &RepoTopic, format: TimerangePrefixFormat) -> Change {
             let dt = chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444);
             let ts = Geotime::from(&dt);
 

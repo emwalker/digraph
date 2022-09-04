@@ -60,20 +60,20 @@ impl std::cmp::PartialOrd for Kind {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct LinkDetails {
+pub struct RepoLinkDetails {
     pub title: String,
     pub url: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LinkMetadata {
+pub struct RepoLinkMetadata {
     pub added: Timestamp,
     pub id: Oid,
-    pub details: Option<LinkDetails>,
+    pub details: Option<RepoLinkDetails>,
 }
 
-impl LinkMetadata {
+impl RepoLinkMetadata {
     fn title(&self) -> &str {
         if let Some(details) = &self.details {
             &details.title
@@ -93,34 +93,40 @@ impl LinkMetadata {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", tag = "kind")]
-pub struct Link {
+pub struct RepoLink {
     pub api_version: String,
-    pub metadata: LinkMetadata,
+    pub metadata: RepoLinkMetadata,
     pub parent_topics: BTreeSet<ParentTopic>,
 }
 
-impl std::cmp::PartialEq for Link {
+impl std::cmp::PartialEq for RepoLink {
     fn eq(&self, other: &Self) -> bool {
         self.metadata.id == other.metadata.id
     }
 }
 
-impl std::cmp::Eq for Link {}
+impl std::cmp::Eq for RepoLink {}
 
-impl std::cmp::Ord for Link {
+impl std::cmp::Ord for RepoLink {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         (&self.metadata.details, &self.metadata.id)
             .cmp(&(&other.metadata.details, &other.metadata.id))
     }
 }
 
-impl std::cmp::PartialOrd for Link {
+impl std::cmp::PartialOrd for RepoLink {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Link {
+impl std::hash::Hash for RepoLink {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.metadata.id.hash(state);
+    }
+}
+
+impl RepoLink {
     pub fn added(&self) -> Timestamp {
         self.metadata.added
     }
@@ -175,7 +181,7 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, repo: &RepoId, mutation: &Mutation) -> Result<Option<Topic>> {
+    pub fn fetch(&self, repo: &RepoId, mutation: &Mutation) -> Result<Option<RepoTopic>> {
         Ok(mutation.fetch_topic(repo, &self.id))
     }
 }
@@ -251,7 +257,7 @@ impl std::cmp::PartialOrd for Synonym {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct TopicDetails {
+pub struct RepoTopicDetails {
     pub root: bool,
     pub synonyms: Vec<Synonym>,
     pub timerange: Option<Timerange>,
@@ -259,13 +265,13 @@ pub struct TopicDetails {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TopicMetadata {
+pub struct RepoTopicMetadata {
     pub added: Timestamp,
     pub id: Oid,
-    pub details: Option<TopicDetails>,
+    pub details: Option<RepoTopicDetails>,
 }
 
-impl TopicMetadata {
+impl RepoTopicMetadata {
     pub fn name(&self, locale: Locale) -> String {
         for synonym in self.synonyms() {
             if synonym.locale == locale {
@@ -292,40 +298,40 @@ impl TopicMetadata {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", tag = "kind")]
-pub struct Topic {
+pub struct RepoTopic {
     pub api_version: String,
-    pub metadata: TopicMetadata,
+    pub metadata: RepoTopicMetadata,
     pub parent_topics: BTreeSet<ParentTopic>,
     pub children: BTreeSet<TopicChild>,
 }
 
-impl std::cmp::PartialEq for Topic {
+impl std::cmp::PartialEq for RepoTopic {
     fn eq(&self, other: &Self) -> bool {
         self.metadata.id == other.metadata.id
     }
 }
 
-impl std::cmp::Eq for Topic {}
+impl std::cmp::Eq for RepoTopic {}
 
-impl std::cmp::Ord for Topic {
+impl std::cmp::Ord for RepoTopic {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.metadata.id.cmp(&other.metadata.id)
     }
 }
 
-impl std::cmp::PartialOrd for Topic {
+impl std::cmp::PartialOrd for RepoTopic {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl std::hash::Hash for Topic {
+impl std::hash::Hash for RepoTopic {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.metadata.id.hash(state);
     }
 }
 
-impl Topic {
+impl RepoTopic {
     pub fn added(&self) -> Timestamp {
         self.metadata.added
     }
@@ -410,12 +416,12 @@ impl Topic {
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(untagged)]
-pub enum Object {
-    Topic(Topic),
-    Link(Link),
+pub enum RepoObject {
+    Topic(RepoTopic),
+    Link(RepoLink),
 }
 
-impl Object {
+impl RepoObject {
     pub fn accept<V>(&self, mut visitor: V) -> Result<()>
     where
         V: Visitor,
@@ -441,15 +447,15 @@ impl Object {
 
     pub fn kind(&self) -> Kind {
         match self {
-            Object::Topic(_) => Kind::Topic,
-            Object::Link(_) => Kind::Link,
+            RepoObject::Topic(_) => Kind::Topic,
+            RepoObject::Link(_) => Kind::Link,
         }
     }
 
     pub fn parent_topics(&self) -> &BTreeSet<ParentTopic> {
         match self {
-            Object::Topic(topic) => &topic.parent_topics,
-            Object::Link(link) => &link.parent_topics,
+            RepoObject::Topic(topic) => &topic.parent_topics,
+            RepoObject::Link(link) => &link.parent_topics,
         }
     }
 
@@ -500,8 +506,8 @@ pub struct TopicReference {
 }
 
 pub trait Visitor {
-    fn visit_topic(&mut self, topic: &Topic) -> Result<()>;
-    fn visit_link(&mut self, link: &Link) -> Result<()>;
+    fn visit_topic(&mut self, topic: &RepoTopic) -> Result<()>;
+    fn visit_link(&mut self, link: &RepoLink) -> Result<()>;
 }
 
 #[derive(Debug)]
@@ -513,7 +519,7 @@ pub struct TopicDownsetIter {
 }
 
 impl Iterator for TopicDownsetIter {
-    type Item = Topic;
+    type Item = RepoTopic;
 
     fn next(&mut self) -> Option<Self::Item> {
         log::debug!("next() with {} stack elements", self.stack.len());
@@ -552,7 +558,7 @@ impl Iterator for TopicDownsetIter {
 }
 
 impl TopicDownsetIter {
-    fn new(client: Client, repo: RepoId, topic: Option<Topic>) -> Self {
+    fn new(client: Client, repo: RepoId, topic: Option<RepoTopic>) -> Self {
         let mut stack = vec![];
         if let Some(topic) = &topic {
             stack.push(topic.to_topic_child(chrono::Utc::now()));
@@ -596,7 +602,7 @@ impl Iterator for DownsetIter {
 }
 
 impl DownsetIter {
-    fn new(client: Client, repo: RepoId, topic: Option<Topic>) -> Self {
+    fn new(client: Client, repo: RepoId, topic: Option<RepoTopic>) -> Self {
         Self {
             links: vec![],
             iter: TopicDownsetIter::new(client, repo, topic),

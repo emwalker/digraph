@@ -1,6 +1,6 @@
 use digraph::git::{
-    Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode, Link, Mutation,
-    OnMatchingSynonym, Search, Topic, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
+    Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode, RepoLink, Mutation,
+    OnMatchingSynonym, Search, RepoTopic, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
 };
 use digraph::http::{Fetch, Response};
 use digraph::prelude::*;
@@ -76,7 +76,7 @@ impl Fixtures {
 
     pub fn fetch_link<F>(&self, repo: &RepoId, topic_id: &Oid, block: F)
     where
-        F: Fn(Link),
+        F: Fn(RepoLink),
     {
         let link = self
             .git
@@ -88,7 +88,7 @@ impl Fixtures {
 
     pub fn fetch_topic<F>(&self, repo: &RepoId, topic_id: &Oid, block: F)
     where
-        F: Fn(Topic),
+        F: Fn(RepoTopic),
     {
         let topic = self
             .git
@@ -102,7 +102,7 @@ impl Fixtures {
         self.git.leaked_data()
     }
 
-    pub fn topic(&self, repo: &RepoId, topic_id: &str) -> Topic {
+    pub fn topic(&self, repo: &RepoId, topic_id: &str) -> RepoTopic {
         let topic_id = Oid::try_from(topic_id).unwrap();
         self.git.fetch_topic(repo, &topic_id).unwrap()
     }

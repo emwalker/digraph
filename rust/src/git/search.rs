@@ -5,7 +5,7 @@ use std::collections::{BTreeSet, HashSet};
 use std::time::Instant;
 use strum_macros::EnumString;
 
-use super::{Client, Kind, Locale, Object, Phrase, SynonymEntry};
+use super::{Client, Kind, Locale, RepoObject, Phrase, SynonymEntry};
 use crate::git::SearchEntry;
 use crate::prelude::*;
 use crate::redis;
@@ -190,7 +190,7 @@ pub struct SortKey(pub Kind, pub bool, pub String);
 #[derive(Clone, Debug)]
 pub struct SearchMatch {
     pub sort_key: SortKey,
-    pub object: Object,
+    pub object: RepoObject,
 }
 
 impl std::cmp::Ord for SearchMatch {
@@ -233,7 +233,7 @@ impl UrlMatches {
         }
     }
 
-    fn test(&self, object: &Object) -> bool {
+    fn test(&self, object: &RepoObject) -> bool {
         if self.impossible_result {
             return false;
         }
@@ -242,7 +242,7 @@ impl UrlMatches {
             return true;
         }
 
-        if let Object::Link(link) = object {
+        if let RepoObject::Link(link) = object {
             if self.ids.contains(link.id()) {
                 return true;
             }
@@ -258,7 +258,7 @@ struct Filter {
 }
 
 impl Filter {
-    fn test(&self, object: &Object) -> bool {
+    fn test(&self, object: &RepoObject) -> bool {
         if !self.urls.test(object) {
             return false;
         }
@@ -268,8 +268,8 @@ impl Filter {
         }
 
         match object {
-            Object::Topic(topic) => self.paths.contains(topic.id()),
-            Object::Link(link) => self.paths.contains(link.id()),
+            RepoObject::Topic(topic) => self.paths.contains(topic.id()),
+            RepoObject::Link(link) => self.paths.contains(link.id()),
         }
     }
 }

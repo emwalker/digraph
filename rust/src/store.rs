@@ -134,7 +134,7 @@ impl Store {
 
         for child in children.iter().take(50) {
             let git::SearchMatch { object, .. } = &child;
-            if let git::Object::Link(link) = object {
+            if let git::RepoObject::Link(link) = object {
                 links.push(graphql::Link::try_from(link)?);
             }
         }
@@ -257,7 +257,7 @@ impl Store {
             .ok_or_else(|| Error::NotFound(format!("no link: {}", link_id)))?;
 
         match result {
-            git::Object::Link(link) => Ok(Some(graphql::Link::try_from(&link)?)),
+            git::RepoObject::Link(link) => Ok(Some(graphql::Link::try_from(&link)?)),
             _ => Err(Error::NotFound(format!("no link: {}", link_id))),
         }
     }
@@ -324,7 +324,7 @@ impl Store {
             .await?;
 
         match object {
-            Some(git::Object::Link(link)) => {
+            Some(git::RepoObject::Link(link)) => {
                 psql::ReviewLink {
                     actor: self.viewer.clone(),
                     repo: repo_id.to_owned(),
@@ -405,7 +405,7 @@ impl Store {
             .ok_or_else(|| Error::NotFound(format!("no topic: {}", topic_id)))?;
 
         match result {
-            git::Object::Topic(topic) => Ok(Some(graphql::Topic::try_from(&topic)?)),
+            git::RepoObject::Topic(topic) => Ok(Some(graphql::Topic::try_from(&topic)?)),
             _ => Err(Error::NotFound(format!("no topic: {}", topic_id))),
         }
     }
@@ -431,7 +431,7 @@ impl Store {
                 .get(path)
                 .ok_or_else(|| Error::NotFound(format!("no topic: {:?}", path)))?;
 
-            if let git::Object::Topic(topic) = &topic {
+            if let git::RepoObject::Topic(topic) = &topic {
                 topics.push(topic.try_into()?);
             }
         }

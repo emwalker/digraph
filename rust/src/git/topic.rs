@@ -1,8 +1,8 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
-    activity, Kind, Link, Mutation, Object, ParentTopic, SaveChangesForPrefix, Synonym,
-    SynonymEntry, SynonymMatch, Timerange, Topic, TopicChild, TopicDetails, TopicMetadata,
+    activity, Kind, RepoLink, Mutation, RepoObject, ParentTopic, SaveChangesForPrefix, Synonym,
+    SynonymEntry, SynonymMatch, Timerange, RepoTopic, TopicChild, RepoTopicDetails, RepoTopicMetadata,
     API_VERSION,
 };
 use crate::prelude::*;
@@ -54,7 +54,7 @@ impl DeleteTopic {
         // Remove the topic from its children
         for child in &topic.children {
             match mutation.fetch(&self.repo, &child.id) {
-                Some(Object::Link(child_link)) => {
+                Some(RepoObject::Link(child_link)) => {
                     let mut child_link = child_link.to_owned();
                     child_link.parent_topics.remove(&topic.to_parent_topic());
                     child_link.parent_topics.append(&mut parent_topics.clone());
@@ -62,7 +62,7 @@ impl DeleteTopic {
                     mutation.save_link(&self.repo, &child_link)?;
                 }
 
-                Some(Object::Topic(child_topic)) => {
+                Some(RepoObject::Topic(child_topic)) => {
                     let mut child_topic = child_topic.to_owned();
                     child_topic.parent_topics.remove(&topic.to_parent_topic());
                     child_topic.parent_topics.append(&mut parent_topics.clone());
@@ -113,10 +113,10 @@ impl DeleteTopic {
 
     fn change(
         &self,
-        topic: &Topic,
-        parent_topics: &Vec<Topic>,
-        child_links: &Vec<Link>,
-        child_topics: &Vec<Topic>,
+        topic: &RepoTopic,
+        parent_topics: &Vec<RepoTopic>,
+        child_links: &Vec<RepoLink>,
+        child_topics: &Vec<RepoTopic>,
         date: Timestamp,
     ) -> activity::Change {
         let mut deleted_topic = activity::TopicInfo::from(topic);
@@ -142,7 +142,7 @@ pub struct RemoveTopicTimerange {
 
 pub struct RemoveTopicTimerangeResult {
     pub alerts: Vec<Alert>,
-    pub topic: Topic,
+    pub topic: RepoTopic,
 }
 
 impl RemoveTopicTimerange {
@@ -176,7 +176,7 @@ impl RemoveTopicTimerange {
         })
     }
 
-    pub fn change(&self, topic: &Topic, previous_timerange: Option<Timerange>) -> activity::Change {
+    pub fn change(&self, topic: &RepoTopic, previous_timerange: Option<Timerange>) -> activity::Change {
         let mut parent_topics = BTreeSet::new();
         for parent in &topic.parent_topics {
             parent_topics.insert(parent.id.to_owned());
@@ -202,7 +202,7 @@ pub struct UpdateTopicParentTopics {
 
 pub struct UpdateTopicParentTopicsResult {
     pub alerts: Vec<Alert>,
-    pub topic: Topic,
+    pub topic: RepoTopic,
 }
 
 impl UpdateTopicParentTopics {
@@ -223,7 +223,7 @@ impl UpdateTopicParentTopics {
         }
         let mut child = child.unwrap();
 
-        let mut updates: Vec<Topic> = vec![];
+        let mut updates: Vec<RepoTopic> = vec![];
 
         let parent_topics = self
             .parent_topic_ids
@@ -279,10 +279,10 @@ impl UpdateTopicParentTopics {
 
     fn change(
         &self,
-        topic: &Topic,
+        topic: &RepoTopic,
         parent_topics: &BTreeSet<ParentTopic>,
-        added: &Vec<Topic>,
-        removed: &Vec<Topic>,
+        added: &Vec<RepoTopic>,
+        removed: &Vec<RepoTopic>,
         date: Timestamp,
     ) -> activity::Change {
         activity::Change::UpdateTopicParentTopics(activity::UpdateTopicParentTopics {
@@ -328,7 +328,7 @@ pub struct UpdateTopicSynonyms {
 
 pub struct UpdateTopicSynonymsResult {
     pub alerts: Vec<Alert>,
-    pub topic: Topic,
+    pub topic: RepoTopic,
 }
 
 impl UpdateTopicSynonyms {
@@ -410,7 +410,7 @@ impl UpdateTopicSynonyms {
 
     fn change(
         &self,
-        topic: &Topic,
+        topic: &RepoTopic,
         added: &HashSet<(String, Locale)>,
         removed: &HashSet<(String, Locale)>,
     ) -> activity::Change {
@@ -450,7 +450,7 @@ pub struct UpsertTopicResult {
     pub alerts: Vec<Alert>,
     pub matching_synonyms: BTreeSet<SynonymMatch>,
     pub saved: bool,
-    pub topic: Option<Topic>,
+    pub topic: Option<RepoTopic>,
 }
 
 impl UpsertTopic {
@@ -585,9 +585,9 @@ impl UpsertTopic {
 
     fn change(
         &self,
-        topic: &Topic,
+        topic: &RepoTopic,
         parent_topics: &BTreeSet<ParentTopic>,
-        parent: &Topic,
+        parent: &RepoTopic,
         date: Timestamp,
     ) -> activity::Change {
         activity::Change::UpsertTopic(activity::UpsertTopic {
@@ -603,17 +603,17 @@ impl UpsertTopic {
         })
     }
 
-    fn make_topic(&self, parent: &Topic) -> Result<(Topic, BTreeSet<ParentTopic>)> {
+    fn make_topic(&self, parent: &RepoTopic) -> Result<(RepoTopic, BTreeSet<ParentTopic>)> {
         let added = chrono::Utc::now();
         let id = Oid::make();
         let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
 
-        let topic = Topic {
+        let topic = RepoTopic {
             api_version: API_VERSION.into(),
-            metadata: TopicMetadata {
+            metadata: RepoTopicMetadata {
                 added,
                 id,
-                details: Some(TopicDetails {
+                details: Some(RepoTopicDetails {
                     root: false,
                     synonyms: vec![Synonym {
                         added,
@@ -630,7 +630,7 @@ impl UpsertTopic {
         Ok((topic, parent_topics))
     }
 
-    fn fetch_parent(&self, mutation: &Mutation) -> Option<Topic> {
+    fn fetch_parent(&self, mutation: &Mutation) -> Option<RepoTopic> {
         mutation.fetch_topic(&self.repo, &self.parent_topic)
     }
 }
@@ -645,7 +645,7 @@ pub struct UpsertTopicTimerange {
 pub struct UpsertTopicTimerangeResult {
     pub alerts: Vec<Alert>,
     pub timerange: Timerange,
-    pub topic: Topic,
+    pub topic: RepoTopic,
 }
 
 impl UpsertTopicTimerange {
@@ -680,7 +680,7 @@ impl UpsertTopicTimerange {
         })
     }
 
-    fn change(&self, topic: &Topic, previous_timerange: Option<Timerange>) -> activity::Change {
+    fn change(&self, topic: &RepoTopic, previous_timerange: Option<Timerange>) -> activity::Change {
         let mut parent_topics = BTreeSet::new();
         for parent in &topic.parent_topics {
             parent_topics.insert(parent.id.to_owned());

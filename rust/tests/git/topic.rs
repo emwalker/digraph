@@ -41,7 +41,7 @@ mod visibility {
 mod delete_topic {
     use super::*;
     use digraph::git::{
-        activity, DeleteTopic, DeleteTopicResult, OnMatchingSynonym, Topic, UpsertTopic,
+        activity, DeleteTopic, DeleteTopicResult, OnMatchingSynonym, RepoTopic, UpsertTopic,
         UpsertTopicResult,
     };
 
@@ -133,7 +133,7 @@ mod delete_topic {
         assert!(topic.root());
     }
 
-    fn make_topic(f: &Fixtures, parent: &Oid, name: &str) -> Topic {
+    fn make_topic(f: &Fixtures, parent: &Oid, name: &str) -> RepoTopic {
         let topic_id = parse_id("dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
 
         let UpsertTopicResult { topic, .. } = UpsertTopic {

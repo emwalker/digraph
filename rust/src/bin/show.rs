@@ -16,7 +16,7 @@ struct ConsoleOutput<'r> {
 }
 
 impl<'r> Visitor for &mut ConsoleOutput<'r> {
-    fn visit_topic(&mut self, topic: &Topic) -> Result<()> {
+    fn visit_topic(&mut self, topic: &RepoTopic) -> Result<()> {
         let meta = &topic.metadata;
         let s = format! {r#"
 Topic: [{}]({})
@@ -38,7 +38,7 @@ Parent topics:
         Ok(())
     }
 
-    fn visit_link(&mut self, link: &Link) -> Result<()> {
+    fn visit_link(&mut self, link: &RepoLink) -> Result<()> {
         let s = format! {r#"
 Link: [{}]({})
 Parent topics:
@@ -62,7 +62,7 @@ impl<'r> ConsoleOutput<'r> {
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
         match &self.git.fetch(&self.repo_id, &topic.id) {
-            Some(Object::Topic(topic)) => {
+            Some(RepoObject::Topic(topic)) => {
                 let meta = &topic.metadata;
                 let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.id);
                 self.buf.push_str(&s);
@@ -73,7 +73,7 @@ impl<'r> ConsoleOutput<'r> {
         Ok(())
     }
 
-    fn visit_child_topic(&mut self, topic: &Topic) -> Result<()> {
+    fn visit_child_topic(&mut self, topic: &RepoTopic) -> Result<()> {
         let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.id());
         self.buf.push_str(&line);
 
@@ -84,7 +84,7 @@ impl<'r> ConsoleOutput<'r> {
         Ok(())
     }
 
-    fn visit_child_link(&mut self, link: &Link) -> Result<()> {
+    fn visit_child_link(&mut self, link: &RepoLink) -> Result<()> {
         let line = format!("- [{}]({})\n", link.title(), link.url());
         self.buf.push_str(&line);
 
@@ -97,7 +97,7 @@ impl<'r> ConsoleOutput<'r> {
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
         match &self.git.fetch(&self.repo_id, &topic.id) {
-            Some(Object::Topic(topic)) => {
+            Some(RepoObject::Topic(topic)) => {
                 let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.id());
                 self.buf.push_str(&line);
             }
@@ -108,11 +108,11 @@ impl<'r> ConsoleOutput<'r> {
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
         match &self.git.fetch(&self.repo_id, &child.id) {
-            Some(Object::Topic(topic)) => {
+            Some(RepoObject::Topic(topic)) => {
                 self.visit_child_topic(topic)?;
             }
 
-            Some(Object::Link(link)) => {
+            Some(RepoObject::Link(link)) => {
                 self.visit_child_link(link)?;
             }
 

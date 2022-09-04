@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use digraph::git::{
-    FetchTopicLiveSearch, FetchTopicLiveSearchResult, FindMatches, FindMatchesResult, Kind, Object,
+    FetchTopicLiveSearch, FetchTopicLiveSearchResult, FindMatches, FindMatchesResult, Kind, RepoObject,
     Search, SearchMatch, SortKey,
 };
 use digraph::prelude::*;
@@ -130,8 +130,8 @@ mod fetch_matches {
         matches
             .iter()
             .filter(|m| match kind {
-                Kind::Link => matches!(m.object, Object::Link(_)),
-                Kind::Topic => matches!(m.object, Object::Topic(_)),
+                Kind::Link => matches!(m.object, RepoObject::Link(_)),
+                Kind::Topic => matches!(m.object, RepoObject::Topic(_)),
             })
             .count()
     }
@@ -172,7 +172,7 @@ mod fetch_matches {
             &SortKey(Kind::Topic, true, "Existing non-root topic".to_owned())
         );
 
-        if let Object::Topic(topic) = &object {
+        if let RepoObject::Topic(topic) = &object {
             assert_eq!(topic.name(Locale::EN), "Existing non-root topic");
         }
     }
@@ -261,8 +261,8 @@ mod fetch_matches {
         let matches = search(&f, &root, &query, true);
 
         match &matches.iter().next().unwrap().object {
-            Object::Topic(topic) => assert_eq!(topic.name(Locale::EN), "Weather"),
-            Object::Link(_) => unreachable!(),
+            RepoObject::Topic(topic) => assert_eq!(topic.name(Locale::EN), "Weather"),
+            RepoObject::Link(_) => unreachable!(),
         }
     }
 
@@ -300,7 +300,7 @@ mod fetch_matches {
             &SortKey(Kind::Link, false, "Other repo".to_owned())
         );
 
-        if let Object::Link(link) = &object {
+        if let RepoObject::Link(link) = &object {
             assert_eq!(link.title(), "Other repo");
         }
     }

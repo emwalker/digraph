@@ -1,15 +1,51 @@
 use chrono::Utc;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::git::{
-    activity, Kind, Link, LinkMetadata, ParentTopic, SaveChangesForPrefix, Topic, TopicChild,
+    activity, Kind, RepoLinkMetadata, ParentTopic, RepoLink, SaveChangesForPrefix, RepoTopic, TopicChild,
     API_VERSION,
 };
 use crate::http::{self, RepoUrl};
 use crate::prelude::*;
 
 use super::activity::TopicInfoList;
-use super::{LinkDetails, Mutation};
+use super::{RepoLinkDetails, Mutation};
+
+#[derive(Clone)]
+pub struct Link(HashSet<(RepoId, Option<RepoLink>)>);
+
+impl From<HashSet<(&RepoId, Option<RepoLink>)>> for Link {
+    fn from(source: HashSet<(&RepoId, Option<RepoLink>)>) -> Self {
+        let mut dest = HashSet::new();
+
+        for (repo_id, repo_link) in source {
+            dest.insert((repo_id.to_owned(), repo_link.to_owned()));
+        }
+
+        Self(dest)
+    }
+}
+
+#[derive(Clone)]
+pub struct Links(pub(crate) HashMap<Oid, Link>);
+
+impl From<HashMap<&Oid, HashSet<(&RepoId, Option<RepoLink>)>>> for Links {
+    fn from(source: HashMap<&Oid, HashSet<(&RepoId, Option<RepoLink>)>>) -> Self {
+        let mut dest = HashMap::new();
+
+        for (link_id, set) in source {
+            dest.insert(link_id.to_owned(), Link::from(set));
+        }
+
+        Self(dest)
+    }
+}
+
+impl Links {
+    pub fn to_hash(self) -> HashMap<Oid, Link> {
+        self.0
+    }
+}
 
 pub struct DeleteLink {
     pub actor: Viewer,
@@ -60,7 +96,12 @@ impl DeleteLink {
         })
     }
 
-    fn change(&self, link: &Link, parent_topics: &Vec<Topic>, date: Timestamp) -> activity::Change {
+    fn change(
+        &self,
+        link: &RepoLink,
+        parent_topics: &Vec<RepoTopic>,
+        date: Timestamp,
+    ) -> activity::Change {
         let mut deleted_link = activity::LinkInfo::from(link);
         deleted_link.deleted = true;
 
@@ -83,7 +124,7 @@ pub struct UpdateLinkParentTopics {
 
 pub struct UpdateLinkParentTopicsResult {
     pub alerts: Vec<Alert>,
-    pub link: Link,
+    pub link: RepoLink,
 }
 
 impl UpdateLinkParentTopics {
@@ -162,9 +203,9 @@ impl UpdateLinkParentTopics {
 
     fn change(
         &self,
-        link: &Link,
-        added: &Vec<Topic>,
-        removed: &Vec<Topic>,
+        link: &RepoLink,
+        added: &Vec<RepoTopic>,
+        removed: &Vec<RepoTopic>,
         date: Timestamp,
     ) -> activity::Change {
         activity::Change::UpdateLinkParentTopics(activity::UpdateLinkParentTopics {
@@ -194,7 +235,7 @@ pub struct UpsertLink {
 
 pub struct UpsertLinkResult {
     pub alerts: Vec<Alert>,
-    pub link: Option<Link>,
+    pub link: Option<RepoLink>,
 }
 
 impl UpsertLink {
@@ -255,8 +296,8 @@ impl UpsertLink {
     fn maybe_topic(
         &self,
         mutation: &mut Mutation,
-        link: &Link,
-    ) -> Result<(Option<Topic>, HashMap<Oid, Topic>)> {
+        link: &RepoLink,
+    ) -> Result<(Option<RepoTopic>, HashMap<Oid, RepoTopic>)> {
         let mut parent_topics = HashMap::new();
 
         for parent in &link.parent_topics {
@@ -288,8 +329,8 @@ impl UpsertLink {
 
     fn change(
         &self,
-        link: &Link,
-        parent_topic: &Option<Topic>,
+        link: &RepoLink,
+        parent_topic: &Option<RepoTopic>,
         previous_title: &Option<String>,
         date: Timestamp,
     ) -> activity::Change {
@@ -317,7 +358,7 @@ impl UpsertLink {
         mutation: &Mutation,
         link_id: &Oid,
         url: &RepoUrl,
-    ) -> Result<(Link, Option<String>)> {
+    ) -> Result<(RepoLink, Option<String>)> {
         if mutation.exists(&self.repo_id, link_id)? {
             if let Some(link) = mutation.fetch_link(&self.repo_id, link_id) {
                 let title = link.metadata.title().to_owned();
@@ -337,13 +378,13 @@ impl UpsertLink {
             parent_topics.insert(ParentTopic { id: id.to_owned() });
         }
 
-        let link = Link {
+        let link = RepoLink {
             api_version: API_VERSION.into(),
             parent_topics,
-            metadata: LinkMetadata {
+            metadata: RepoLinkMetadata {
                 added: chrono::Utc::now(),
                 id: link_id.to_owned(),
-                details: Some(LinkDetails {
+                details: Some(RepoLinkDetails {
                     title,
                     url: url.normalized.to_owned(),
                 }),

@@ -3,7 +3,7 @@ use geotime::Geotime;
 use std::collections::BTreeSet;
 
 use super::{
-    Link, LinkDetails, LinkMetadata, ParentTopic, Synonym, Topic, TopicDetails, TopicMetadata,
+    RepoLink, RepoLinkDetails, RepoLinkMetadata, ParentTopic, Synonym, RepoTopic, RepoTopicDetails, RepoTopicMetadata,
 };
 use crate::{prelude::*, types::sha256_base64};
 
@@ -13,16 +13,16 @@ pub fn timerange_epoch() -> Geotime {
     Geotime::from(&dt)
 }
 
-pub fn topic(name: &str) -> Topic {
+pub fn topic(name: &str) -> RepoTopic {
     let added = chrono::Utc::now();
     // Some unique path
     let id: Oid = sha256_base64(name).try_into().unwrap();
-    Topic {
+    RepoTopic {
         api_version: API_VERSION.to_owned(),
-        metadata: TopicMetadata {
+        metadata: RepoTopicMetadata {
             added,
             id: id.to_owned(),
-            details: Some(TopicDetails {
+            details: Some(RepoTopicDetails {
                 root: false,
                 timerange: None,
                 synonyms: Vec::from([Synonym {
@@ -37,14 +37,14 @@ pub fn topic(name: &str) -> Topic {
     }
 }
 
-pub fn link(title: &str, url: &str) -> Link {
+pub fn link(title: &str, url: &str) -> RepoLink {
     let added = chrono::Utc::now();
-    Link {
+    RepoLink {
         api_version: API_VERSION.to_owned(),
-        metadata: LinkMetadata {
+        metadata: RepoLinkMetadata {
             id: "00002".try_into().unwrap(),
             added,
-            details: Some(LinkDetails {
+            details: Some(RepoLinkDetails {
                 title: title.to_owned(),
                 url: url.to_owned(),
             }),

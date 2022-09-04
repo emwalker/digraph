@@ -10,8 +10,8 @@ use uuid::Uuid;
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    activity, Client, DataRoot, IndexMode, Kind, Link, LinkDetails, LinkMetadata, Mutation,
-    ParentTopic, Synonym, Topic, TopicChild, TopicDetails, TopicMetadata,
+    activity, Client, DataRoot, IndexMode, Kind, RepoLink, RepoLinkDetails, RepoLinkMetadata, Mutation,
+    ParentTopic, Synonym, RepoTopic, TopicChild, RepoTopicDetails, RepoTopicMetadata,
 };
 use digraph::prelude::*;
 use digraph::redis;
@@ -108,7 +108,7 @@ struct LinkMetadataRow {
     url: String,
 }
 
-impl TryFrom<&LinkMetadataRow> for LinkMetadata {
+impl TryFrom<&LinkMetadataRow> for RepoLinkMetadata {
     type Error = Error;
 
     fn try_from(row: &LinkMetadataRow) -> Result<Self> {
@@ -116,7 +116,7 @@ impl TryFrom<&LinkMetadataRow> for LinkMetadata {
         Ok(Self {
             added: row.added,
             id,
-            details: Some(LinkDetails {
+            details: Some(RepoLinkDetails {
                 title: row.title.clone(),
                 url: row.url.clone(),
             }),
@@ -155,26 +155,26 @@ impl TryFrom<&TopicChildRow> for TopicChild {
 
 #[derive(Debug)]
 struct Topics {
-    topic: Topic,
-    topics: HashMap<RepoId, Topic>,
+    topic: RepoTopic,
+    topics: HashMap<RepoId, RepoTopic>,
 }
 
 impl Topics {
-    fn new(repo: RepoId, topic: Topic) -> Self {
-        let mut topics: HashMap<RepoId, Topic> = HashMap::new();
+    fn new(repo: RepoId, topic: RepoTopic) -> Self {
+        let mut topics: HashMap<RepoId, RepoTopic> = HashMap::new();
         topics.insert(repo, topic.clone());
         Self { topic, topics }
     }
 
-    fn get_mut(&mut self, repo: &RepoId) -> &mut Topic {
+    fn get_mut(&mut self, repo: &RepoId) -> &mut RepoTopic {
         let topics = &mut self.topics;
 
         topics.entry(repo.to_owned()).or_insert_with(|| {
             let id = self.topic.id().to_owned();
 
-            Topic {
+            RepoTopic {
                 api_version: API_VERSION.to_string(),
-                metadata: TopicMetadata {
+                metadata: RepoTopicMetadata {
                     added: self.topic.added(),
                     id,
                     details: None,
@@ -189,7 +189,7 @@ impl Topics {
 fn persist_topic(
     mutation: &mut Mutation,
     repo_id: &RepoId,
-    topic: &mut Topic,
+    topic: &mut RepoTopic,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,
 ) -> Result<()> {
@@ -287,12 +287,12 @@ fn persist_topics(
         _ => None,
     };
 
-    let topic = Topic {
+    let topic = RepoTopic {
         api_version: API_VERSION.to_string(),
-        metadata: TopicMetadata {
+        metadata: RepoTopicMetadata {
             added: meta.added,
             id: topic_id.to_owned(),
-            details: Some(TopicDetails {
+            details: Some(RepoTopicDetails {
                 root: meta.root,
                 synonyms: synonyms.iter().map(Synonym::from).collect(),
                 timerange,
@@ -422,23 +422,23 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
 
 #[derive(Debug)]
 struct Links {
-    link: Link,
-    links: HashMap<RepoId, Link>,
+    link: RepoLink,
+    links: HashMap<RepoId, RepoLink>,
 }
 
 impl Links {
-    fn new(repo: RepoId, link: Link) -> Self {
-        let mut links: HashMap<RepoId, Link> = HashMap::new();
+    fn new(repo: RepoId, link: RepoLink) -> Self {
+        let mut links: HashMap<RepoId, RepoLink> = HashMap::new();
         links.insert(repo, link.clone());
         Self { link, links }
     }
 
-    fn get_mut(&mut self, repo: &RepoId) -> &mut Link {
+    fn get_mut(&mut self, repo: &RepoId) -> &mut RepoLink {
         let links = &mut self.links;
 
-        links.entry(repo.to_owned()).or_insert_with(|| Link {
+        links.entry(repo.to_owned()).or_insert_with(|| RepoLink {
             api_version: API_VERSION.to_string(),
-            metadata: LinkMetadata {
+            metadata: RepoLinkMetadata {
                 added: self.link.added(),
                 id: self.link.id().to_owned(),
                 details: None,
@@ -451,7 +451,7 @@ impl Links {
 fn persist_link(
     mutation: &mut Mutation,
     repo: &RepoId,
-    link: &mut Link,
+    link: &mut RepoLink,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
     let mut topics = BTreeSet::new();
@@ -490,9 +490,9 @@ fn persist_links(
     meta: &LinkMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
-    let link = Link {
+    let link = RepoLink {
         api_version: API_VERSION.to_string(),
-        metadata: LinkMetadata::try_from(meta).unwrap(),
+        metadata: RepoLinkMetadata::try_from(meta).unwrap(),
         parent_topics: BTreeSet::new(),
     };
 

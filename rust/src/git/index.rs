@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use unidecode::unidecode;
 
 use super::{
-    activity, core, Client, GitPaths, Kind, Search, Synonym, Topic, TopicChild, API_VERSION,
+    activity, core, Client, GitPaths, Kind, Search, Synonym, RepoTopic, TopicChild, API_VERSION,
 };
 use crate::prelude::*;
 
@@ -117,7 +117,7 @@ pub struct SynonymMatch {
     pub cycle: bool,
     pub entry: SynonymEntry,
     pub name: String,
-    pub topic: Topic,
+    pub topic: RepoTopic,
 }
 
 impl std::cmp::Ord for SynonymMatch {
@@ -738,7 +738,7 @@ impl Indexer {
         client: &Client,
         repo: &RepoId,
         id: &Oid,
-        topic: &Topic,
+        topic: &RepoTopic,
     ) -> Result<()> {
         self.synonym_indexes(
             client,
@@ -852,8 +852,8 @@ impl Indexer {
         &mut self,
         client: &Client,
         repo: &RepoId,
-        before: &Option<Topic>,
-        after: &Topic,
+        before: &Option<RepoTopic>,
+        after: &RepoTopic,
     ) -> Result<()> {
         let topic_id = after.id();
 

@@ -1,7 +1,7 @@
 use git2;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::PathBuf;
 
 use super::checks::LeakedData;
@@ -10,8 +10,8 @@ use super::index::{
     SearchEntry, SynonymEntry, SynonymMatch,
 };
 use super::{
-    activity, core, DownsetIter, Link, Object, RepoStats, Search, SearchTokenIndex, SynonymIndex,
-    Topic, TopicDownsetIter,
+    activity, core, DownsetIter, RepoLink, Links, RepoObject, RepoStats, Search, SearchTokenIndex,
+    SynonymIndex, RepoTopic, TopicDownsetIter,
 };
 use crate::prelude::*;
 use crate::types::{ReadPath, Timespec};
@@ -127,21 +127,6 @@ impl Client {
         Ok(true)
     }
 
-    pub fn fetch_activity_log(
-        &self,
-        repo: &RepoId,
-        id: &Oid,
-        index_mode: IndexMode,
-    ) -> Result<ActivityIndex> {
-        let filename = id.activity_log_filename()?;
-        let view = self.view(repo)?;
-        match index_mode {
-            IndexMode::Replace => Ok(ActivityIndex::new(&filename)),
-            IndexMode::ReadOnly => ActivityIndex::load(&filename, &view),
-            IndexMode::Update => ActivityIndex::load(&filename, &view),
-        }
-    }
-
     // How to handle path visibility?
     fn cycle_exists(&self, repo: &RepoId, descendant_id: &Oid, ancestor_id: &Oid) -> Result<bool> {
         let mut i = 0;
@@ -160,6 +145,14 @@ impl Client {
         Ok(false)
     }
 
+    pub fn downset(&self, topic_path: &ReadPath) -> DownsetIter {
+        DownsetIter::new(
+            self.clone(),
+            topic_path.repo.to_owned(),
+            self.fetch_topic(&topic_path.repo, &topic_path.id),
+        )
+    }
+
     pub fn exists(&self, repo: &RepoId, id: &Oid) -> Result<bool> {
         if !self.viewer.can_read(repo) {
             return Ok(false);
@@ -168,7 +161,7 @@ impl Client {
         repo.object_exists(id)
     }
 
-    pub fn fetch(&self, repo: &RepoId, id: &Oid) -> Option<Object> {
+    pub fn fetch(&self, repo: &RepoId, id: &Oid) -> Option<RepoObject> {
         if !self.viewer.can_read(repo) {
             log::warn!("viewer cannot read path: {}", id);
             return None;
@@ -187,6 +180,66 @@ impl Client {
                 None
             }
         }
+    }
+
+    pub fn fetch_activity(
+        &self,
+        repo: &RepoId,
+        id: &Oid,
+        first: usize,
+    ) -> Result<Vec<activity::Change>> {
+        log::info!("fetching first {} change logs from Git for {}", first, id);
+        let index = self.fetch_activity_log(repo, id, IndexMode::ReadOnly)?;
+        let mut changes = vec![];
+
+        for reference in index.references().iter().take(first) {
+            let result = self.view(repo)?.change(&reference.id);
+            match result {
+                Ok(change) => changes.push(change),
+                Err(err) => log::warn!("failed to load change: {}", err),
+            }
+        }
+
+        Ok(changes)
+    }
+
+    pub fn fetch_activity_log(
+        &self,
+        repo: &RepoId,
+        id: &Oid,
+        index_mode: IndexMode,
+    ) -> Result<ActivityIndex> {
+        let filename = id.activity_log_filename()?;
+        let view = self.view(repo)?;
+        match index_mode {
+            IndexMode::Replace => Ok(ActivityIndex::new(&filename)),
+            IndexMode::ReadOnly => ActivityIndex::load(&filename, &view),
+            IndexMode::Update => ActivityIndex::load(&filename, &view),
+        }
+    }
+
+    pub fn fetch_link(&self, repo_id: &RepoId, link_id: &Oid) -> Option<RepoLink> {
+        match &self.fetch(repo_id, link_id)? {
+            RepoObject::Link(link) => Some(link.to_owned()),
+            other => {
+                println!("expected a link, found: {:?}", other);
+                None
+            }
+        }
+    }
+
+    pub fn fetch_links(&self, link_ids: &[Oid]) -> Links {
+        let mut map = HashMap::new();
+
+        for repo_id in self.viewer.read_repo_ids.iter() {
+            for link_id in link_ids {
+                let link = self.fetch_link(repo_id, link_id);
+                let set = map.entry(link_id).or_insert_with(|| HashSet::new());
+                set.insert((repo_id, link));
+            }
+        }
+
+        Links::from(map)
     }
 
     pub fn fetch_synonym_index(&self, prefix: &RepoId, filename: &PathBuf) -> Result<SynonymIndex> {
@@ -217,57 +270,18 @@ impl Client {
         }
     }
 
-    pub fn fetch_activity(
-        &self,
-        repo: &RepoId,
-        id: &Oid,
-        first: usize,
-    ) -> Result<Vec<activity::Change>> {
-        log::info!("fetching first {} change logs from Git for {}", first, id);
-        let index = self.fetch_activity_log(repo, id, IndexMode::ReadOnly)?;
-        let mut changes = vec![];
-
-        for reference in index.references().iter().take(first) {
-            let result = self.view(repo)?.change(&reference.id);
-            match result {
-                Ok(change) => changes.push(change),
-                Err(err) => log::warn!("failed to load change: {}", err),
-            }
-        }
-
-        Ok(changes)
-    }
-
-    pub fn fetch_topic(&self, repo: &RepoId, topic_id: &Oid) -> Option<Topic> {
+    pub fn fetch_topic(&self, repo: &RepoId, topic_id: &Oid) -> Option<RepoTopic> {
         match &self.fetch(repo, topic_id)? {
-            Object::Topic(topic) => Some(topic.to_owned()),
+            RepoObject::Topic(topic) => Some(topic.to_owned()),
             _ => None,
         }
-    }
-
-    pub fn fetch_link(&self, repo: &RepoId, link_id: &Oid) -> Option<Link> {
-        match &self.fetch(repo, link_id)? {
-            Object::Link(link) => Some(link.to_owned()),
-            other => {
-                println!("expected a link, found: {:?}", other);
-                None
-            }
-        }
-    }
-
-    pub fn downset(&self, topic_path: &ReadPath) -> DownsetIter {
-        DownsetIter::new(
-            self.clone(),
-            topic_path.repo.to_owned(),
-            self.fetch_topic(&topic_path.repo, &topic_path.id),
-        )
     }
 
     pub fn leaked_data(&self) -> Result<Vec<(RepoId, String)>> {
         LeakedData.call(self)
     }
 
-    fn link_searches(&self, link: Option<Link>) -> Result<BTreeSet<Search>> {
+    fn link_searches(&self, link: Option<RepoLink>) -> Result<BTreeSet<Search>> {
         let searches = match link {
             Some(link) => {
                 if link.is_reference() {
@@ -378,7 +392,7 @@ impl Client {
         )
     }
 
-    fn topic_searches(&self, repo: &RepoId, topic: Option<Topic>) -> Result<BTreeSet<Search>> {
+    fn topic_searches(&self, repo: &RepoId, topic: Option<RepoTopic>) -> Result<BTreeSet<Search>> {
         if !self.viewer.can_read(repo) {
             return Err(Error::NotFound(format!("not found: {:?}", topic)));
         }
@@ -478,15 +492,15 @@ impl Mutation {
         self.client.exists(repo, id)
     }
 
-    pub fn fetch(&self, repo: &RepoId, id: &Oid) -> Option<Object> {
+    pub fn fetch(&self, repo: &RepoId, id: &Oid) -> Option<RepoObject> {
         self.client.fetch(repo, id)
     }
 
-    pub fn fetch_link(&self, repo: &RepoId, link_id: &Oid) -> Option<Link> {
+    pub fn fetch_link(&self, repo: &RepoId, link_id: &Oid) -> Option<RepoLink> {
         self.client.fetch_link(repo, link_id)
     }
 
-    pub fn fetch_topic(&self, repo: &RepoId, topic_id: &Oid) -> Option<Topic> {
+    pub fn fetch_topic(&self, repo: &RepoId, topic_id: &Oid) -> Option<RepoTopic> {
         self.client.fetch_topic(repo, topic_id)
     }
 
@@ -509,7 +523,7 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn remove_link(&mut self, repo: &RepoId, link_id: &Oid, link: &Link) -> Result<()> {
+    pub fn remove_link(&mut self, repo: &RepoId, link_id: &Oid, link: &RepoLink) -> Result<()> {
         self.check_can_update(repo)?;
 
         let searches = self.client.link_searches(Some(link.to_owned()))?;
@@ -522,7 +536,7 @@ impl Mutation {
         self.remove(repo, link_id)
     }
 
-    pub fn remove_topic(&mut self, repo: &RepoId, topic_id: &Oid, topic: &Topic) -> Result<()> {
+    pub fn remove_topic(&mut self, repo: &RepoId, topic_id: &Oid, topic: &RepoTopic) -> Result<()> {
         self.check_can_update(repo)?;
 
         self.indexer
@@ -590,7 +604,7 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn save_link(&mut self, repo: &RepoId, link: &Link) -> Result<()> {
+    pub fn save_link(&mut self, repo: &RepoId, link: &RepoLink) -> Result<()> {
         self.check_can_update(repo)?;
 
         let view = self.client.view(repo)?;
@@ -612,7 +626,7 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn save_topic(&mut self, repo: &RepoId, topic: &Topic) -> Result<()> {
+    pub fn save_topic(&mut self, repo: &RepoId, topic: &RepoTopic) -> Result<()> {
         self.check_can_update(repo)?;
 
         let topic_id = topic.id();

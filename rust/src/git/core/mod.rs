@@ -9,7 +9,7 @@ use crate::types::Timespec;
 
 use super::{
     activity::{self},
-    DataRoot, GitPaths, Link, Object, RepoStats, Topic,
+    DataRoot, GitPaths, RepoLink, RepoObject, RepoStats, RepoTopic,
 };
 
 pub fn deque_from_path(path: &Path) -> VecDeque<String> {
@@ -129,32 +129,32 @@ impl Repo {
     }
 }
 
-impl<'repo> TryInto<Link> for git2::Blob<'repo> {
+impl<'repo> TryInto<RepoLink> for git2::Blob<'repo> {
     type Error = Error;
 
-    fn try_into(self) -> Result<Link> {
+    fn try_into(self) -> Result<RepoLink> {
         let bytes = self.content();
-        let link: Link = serde_yaml::from_slice(bytes)?;
+        let link: RepoLink = serde_yaml::from_slice(bytes)?;
         Ok(link)
     }
 }
 
-impl<'repo> TryInto<Object> for git2::Blob<'repo> {
+impl<'repo> TryInto<RepoObject> for git2::Blob<'repo> {
     type Error = Error;
 
-    fn try_into(self) -> Result<Object> {
+    fn try_into(self) -> Result<RepoObject> {
         let bytes = self.content();
-        let object: Object = serde_yaml::from_slice(bytes)?;
+        let object: RepoObject = serde_yaml::from_slice(bytes)?;
         Ok(object)
     }
 }
 
-impl<'repo> TryInto<Topic> for git2::Blob<'repo> {
+impl<'repo> TryInto<RepoTopic> for git2::Blob<'repo> {
     type Error = Error;
 
-    fn try_into(self) -> Result<Topic> {
+    fn try_into(self) -> Result<RepoTopic> {
         let bytes = self.content();
-        let topic: Topic = serde_yaml::from_slice(bytes)?;
+        let topic: RepoTopic = serde_yaml::from_slice(bytes)?;
         Ok(topic)
     }
 }
@@ -208,7 +208,7 @@ impl View {
         self.find_blob_by_filename(&id.object_filename()?)
     }
 
-    pub fn link(&self, id: &Oid) -> Result<Option<Link>> {
+    pub fn link(&self, id: &Oid) -> Result<Option<RepoLink>> {
         let link = match self.find_blob(id)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,
@@ -216,7 +216,7 @@ impl View {
         Ok(link)
     }
 
-    pub fn object(&self, path: &Oid) -> Result<Option<Object>> {
+    pub fn object(&self, path: &Oid) -> Result<Option<RepoObject>> {
         let object = match self.find_blob(path)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,
@@ -276,7 +276,7 @@ impl View {
         })
     }
 
-    pub fn topic(&self, id: &Oid) -> Result<Option<Topic>> {
+    pub fn topic(&self, id: &Oid) -> Result<Option<RepoTopic>> {
         let topic = match self.find_blob(id)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,

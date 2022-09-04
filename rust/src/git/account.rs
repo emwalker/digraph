@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
-use super::{Mutation, Synonym, Topic, TopicMetadata};
-use crate::git::TopicDetails;
+use super::{Mutation, Synonym, RepoTopic, RepoTopicMetadata};
+use crate::git::RepoTopicDetails;
 use crate::prelude::*;
 use crate::redis;
 
@@ -79,12 +79,12 @@ impl EnsurePersonalRepo {
             log::info!("creating root topic: {}", topic_id);
             let added = chrono::Utc::now();
 
-            let root = Topic {
+            let root = RepoTopic {
                 api_version: API_VERSION.into(),
-                metadata: TopicMetadata {
+                metadata: RepoTopicMetadata {
                     added,
                     id: topic_id,
-                    details: Some(TopicDetails {
+                    details: Some(RepoTopicDetails {
                         root: false,
                         synonyms: vec![Synonym {
                             added,

@@ -6,12 +6,12 @@ use crate::prelude::*;
 pub struct ReviewLink {
     pub actor: Viewer,
     pub repo: RepoId,
-    pub link: git::Link,
+    pub link: git::RepoLink,
     pub reviewed: bool,
 }
 
 pub struct ReviewLinkResult {
-    pub link: git::Link,
+    pub link: git::RepoLink,
 }
 
 impl ReviewLink {
