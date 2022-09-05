@@ -13,16 +13,16 @@ import SaveOrCancel from 'components/ui/SaveOrCancel'
 import DeleteButton from 'components/ui/DeleteButton'
 import { TopicOption } from 'components/types'
 import {
-  EditLinkForm_linkDetails as LinkDetailsType,
-} from '__generated__/EditLinkForm_linkDetails.graphql'
+  EditLinkForm_linkDetail as LinkDetailType,
+} from '__generated__/EditLinkForm_linkDetail.graphql'
 import { wikiRepoId } from 'components/constants'
 
-type SelectedTopicsType = LinkDetailsType['selectedTopics']
+type SelectedTopicsType = LinkDetailType['selectedTopics']
 type SelectedTopicType = NodeTypeOf<SelectedTopicsType>
 
 type Props = {
   isOpen: boolean,
-  linkDetails: LinkDetailsType,
+  linkDetail: LinkDetailType,
   relay: RelayRefetchProp,
   toggleForm: () => void,
 }
@@ -36,8 +36,8 @@ class EditLinkForm extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      title: props.linkDetails.title,
-      url: props.linkDetails.url,
+      title: props.linkDetail.title,
+      url: props.linkDetail.url,
     }
   }
 
@@ -47,7 +47,7 @@ class EditLinkForm extends Component<Props, State> {
       addParentTopicId: null,
       // FIXME
       repoId: wikiRepoId,
-      linkId: this.props.linkDetails.linkId,
+      linkId: this.props.linkDetail.linkId,
       title: this.state.title,
       url: this.state.url,
     }
@@ -58,7 +58,7 @@ class EditLinkForm extends Component<Props, State> {
 
   onDelete = () => {
     // FIXME: use selected repo
-    const input: DeleteInput = { linkId: this.props.linkDetails.linkId, repoId: wikiRepoId }
+    const input: DeleteInput = { linkId: this.props.linkDetail.linkId, repoId: wikiRepoId }
     deleteLinkMutation(
       this.props.relay.environment,
       input,
@@ -72,11 +72,11 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   get linkId(): string {
-    return this.props.linkDetails.linkId
+    return this.props.linkDetail.linkId
   }
 
   get selectedTopics(): readonly SelectedTopicType[] {
-    const { linkDetails: link } = this.props
+    const { linkDetail: link } = this.props
     if (link.selectedTopics) {
       const array = liftNodes(link.selectedTopics) || []
       return makeOptions(array)
@@ -108,7 +108,7 @@ class EditLinkForm extends Component<Props, State> {
       }
 
       this.props.relay.refetch(variables, null, () => {
-        const { availableTopics } = this.props.linkDetails
+        const { availableTopics } = this.props.linkDetail
         const options = availableTopics ? makeOptions(availableTopics.synonymMatches) : []
         resolve(options)
       })
@@ -164,8 +164,8 @@ class EditLinkForm extends Component<Props, State> {
 }
 
 export default createRefetchContainer(EditLinkForm, {
-  linkDetails: graphql`
-    fragment EditLinkForm_linkDetails on LinkDetails @argumentDefinitions(
+  linkDetail: graphql`
+    fragment EditLinkForm_linkDetail on LinkDetail @argumentDefinitions(
       searchString: {type: "String", defaultValue: null},
       count: {type: "Int!", defaultValue: 10}
     ) {
@@ -205,7 +205,7 @@ graphql`
     ) {
       link(id: $linkId) {
         details {
-          ...EditLinkForm_linkDetails @arguments(count: $count, searchString: $searchString)
+          ...EditLinkForm_linkDetail @arguments(count: $count, searchString: $searchString)
         }
       }
     }

@@ -1,6 +1,7 @@
 use digraph::git::{
-    Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode, RepoLink, Mutation,
-    OnMatchingSynonym, Search, RepoTopic, UpsertLink, UpsertLinkResult, UpsertTopic, UpsertTopicResult,
+    Client, DataRoot, FetchTopicLiveSearch, FetchTopicLiveSearchResult, IndexMode, Mutation,
+    OnMatchingSynonym, RepoLink, RepoTopic, Search, UpsertLink, UpsertLinkResult, UpsertTopic,
+    UpsertTopicResult,
 };
 use digraph::http::{Fetch, Response};
 use digraph::prelude::*;
@@ -195,7 +196,7 @@ mod tests {
 
         let topic_path =
             parse_id("dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
-        let UpsertTopicResult { topic, .. } = UpsertTopic {
+        let UpsertTopicResult { repo_topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change".to_owned(),
@@ -205,7 +206,7 @@ mod tests {
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
-        let climate_change = topic.unwrap();
+        let climate_change = repo_topic.unwrap();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Climate_change").unwrap();
         let result = f.upsert_link(
@@ -216,18 +217,18 @@ mod tests {
         );
         println!("result: {:?}", result.link);
 
-        let path = parse_id("wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj");
-        let UpsertTopicResult { topic, .. } = UpsertTopic {
+        let topic_id = parse_id("wxy3RN6zm8BJKr6kawH3ekvYwwYT5EEgIhm5nrRD69qm7audRylxmZSNY39Aa1Gj");
+        let UpsertTopicResult { repo_topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Weather".to_owned(),
             repo: RepoId::wiki(),
-            on_matching_synonym: OnMatchingSynonym::Update(path),
+            on_matching_synonym: OnMatchingSynonym::Update(topic_id),
             parent_topic: root,
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
-        let weather = topic.unwrap();
+        let weather = repo_topic.unwrap();
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Weather").unwrap();
         f.upsert_link(
@@ -238,7 +239,7 @@ mod tests {
         );
 
         let topic_id = parse_id("F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13");
-        let UpsertTopicResult { topic, .. } = UpsertTopic {
+        let UpsertTopicResult { repo_topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change and weather".to_owned(),
@@ -248,11 +249,11 @@ mod tests {
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
-        let climate_change_weather = topic.unwrap();
+        let climate_change_weather = repo_topic.unwrap();
 
         UpdateTopicParentTopics {
             actor: actor(),
-            repo: repo.to_owned(),
+            repo_id: repo.to_owned(),
             parent_topic_ids: BTreeSet::from([
                 climate_change.id().to_owned(),
                 weather.id().to_owned(),

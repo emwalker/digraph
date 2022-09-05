@@ -8,7 +8,9 @@ import updateTopicTopicsMutation, {
 } from 'mutations/updateTopicParentTopicsMutation'
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
-import { EditTopicForm_topic as TopicType } from '__generated__/EditTopicForm_topic.graphql'
+import {
+  EditTopicForm_topicDetail as TopicDetailType,
+} from '__generated__/EditTopicForm_topicDetail.graphql'
 import Synonyms from './Synonyms'
 import TopicTimerange from './TopicTimerange'
 import { wikiRepoId } from 'components/constants'
@@ -17,11 +19,10 @@ type Props = {
   isOpen: boolean,
   relay: RelayRefetchProp,
   toggleForm: () => void,
-  topic: TopicType,
+  topicDetail: TopicDetailType,
 }
 
 type State = {
-  description: string | null,
   displayName: string,
 }
 
@@ -29,14 +30,13 @@ class EditTopicForm extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      displayName: props.topic.displayName,
-      description: props.topic.description,
+      displayName: props.topicDetail.name,
     }
   }
 
   onDelete = () => {
     // FIXME: use selected repo
-    const input: DeleteInput = { repoId: wikiRepoId, topicId: this.props.topic.id }
+    const input: DeleteInput = { repoId: wikiRepoId, topicId: this.topicId }
     deleteTopicMutation(
       this.props.relay.environment,
       input,
@@ -50,11 +50,11 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   get topicId(): string {
-    return this.props.topic.id
+    return this.props.topicDetail.topicId
   }
 
   get selectedTopics(): TopicOption[] | null {
-    const { selectedTopics } = this.props.topic
+    const { selectedTopics } = this.props.topicDetail
     const array = liftNodes(selectedTopics)
     return selectedTopics ? makeOptions(array) : null
   }
@@ -63,7 +63,7 @@ class EditTopicForm extends Component<Props, State> {
     const input: UpdateTopicsInput = {
       // FIXME: use id instead of prefix
       repoId: wikiRepoId,
-      topicId: this.props.topic.id,
+      topicId: this.topicId,
       parentTopicIds,
     }
     updateTopicTopicsMutation(this.props.relay.environment, input)
@@ -79,7 +79,7 @@ class EditTopicForm extends Component<Props, State> {
       }
 
       this.props.relay.refetch(variables, null, () => {
-        const { availableTopics } = this.props.topic
+        const { availableTopics } = this.props.topicDetail
         const options = availableTopics ? makeOptions(availableTopics.synonymMatches) : []
         resolve(options as TopicOption[])
       })
@@ -94,8 +94,8 @@ class EditTopicForm extends Component<Props, State> {
     return (
       selectedTopics ? (
         <div className="my-4">
-          <Synonyms topic={this.props.topic} />
-          <TopicTimerange topic={this.props.topic} />
+          <Synonyms topicDetail={this.props.topicDetail} />
+          <TopicTimerange topicDetail={this.props.topicDetail} />
 
           <EditTopicList
             loadOptions={this.loadOptions}
@@ -122,14 +122,13 @@ class EditTopicForm extends Component<Props, State> {
 }
 
 export default createRefetchContainer(EditTopicForm, {
-  topic: graphql`
-    fragment EditTopicForm_topic on Topic @argumentDefinitions(
+  topicDetail: graphql`
+    fragment EditTopicForm_topicDetail on TopicDetail @argumentDefinitions(
       searchString: {type: "String", defaultValue: null},
       count: {type: "Int!", defaultValue: 10}
     ) {
-      description
-      id
-      displayName: name
+      topicId
+      name
 
       selectedTopics: parentTopics(first: 1000) {
         edges {
@@ -147,8 +146,8 @@ export default createRefetchContainer(EditTopicForm, {
         }
       }
 
-      ...Synonyms_topic
-      ...TopicTimerange_topic
+      ...Synonyms_topicDetail
+      ...TopicTimerange_topicDetail
     }
   `,
 },
@@ -165,7 +164,9 @@ graphql`
       repositoryIds: $repoIds,
     ) {
       topic(id: $topicId) {
-        ...EditTopicForm_topic @arguments(count: $count, searchString: $searchString)
+        details {
+          ...EditTopicForm_topicDetail @arguments(count: $count, searchString: $searchString)
+        }
       }
     }
   }

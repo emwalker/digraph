@@ -6,11 +6,22 @@ use crate::git;
 use crate::prelude::*;
 use crate::store::Store;
 
-#[derive(Debug)]
+impl TryFrom<Option<Link>> for Link {
+    type Error = Error;
+
+    fn try_from(value: Option<Link>) -> Result<Self> {
+        match value {
+            Some(link) => Ok(link),
+            None => Err(Error::NotFound("link not found".into())),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct LinkDetail {
     pub color: String,
     pub link_id: Oid,
-    pub parent_topic_ids: Vec<String>,
+    pub parent_topic_ids: Vec<Oid>,
     pub repo_id: RepoId,
     pub title: String,
     pub url: String,
@@ -71,8 +82,7 @@ impl LinkDetail {
     ) -> Result<TopicConnection> {
         let topics = ctx
             .data_unchecked::<Store>()
-            // FIXME
-            .parent_topics_for_link(&self.repo_id, &self.link_id)
+            .fetch_topics(&self.parent_topic_ids, 50)
             .await?;
         conn(after, before, first, last, topics)
     }
@@ -82,7 +92,7 @@ impl LinkDetail {
 pub struct Link {
     pub details: Vec<LinkDetail>,
     pub display_detail: LinkDetail,
-    pub id: String,
+    pub id: Oid,
     pub newly_added: bool,
     pub viewer_review: Option<LinkReview>,
 }
@@ -105,13 +115,10 @@ impl Link {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<TopicConnection> {
-        let link_id: Oid = (&self.id).try_into()?;
-        let topics = ctx
-            .data_unchecked::<Store>()
-            // FIXME
-            .parent_topics_for_link(&RepoId::wiki(), &link_id)
-            .await?;
-        conn(after, before, first, last, topics)
+        // FIXME
+        self.display_detail
+            .parent_topics(ctx, after, before, first, last)
+            .await
     }
 
     async fn display_color(&self) -> &str {

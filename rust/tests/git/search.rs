@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
 use digraph::git::{
-    FetchTopicLiveSearch, FetchTopicLiveSearchResult, FindMatches, FindMatchesResult, Kind, RepoObject,
-    Search, SearchMatch, SortKey,
+    FetchTopicLiveSearch, FetchTopicLiveSearchResult, FindMatches, FindMatchesResult, Kind, Search,
+    SearchMatch, SortKey,
 };
 use digraph::prelude::*;
 
@@ -127,13 +127,7 @@ mod fetch_matches {
     }
 
     fn count(kind: Kind, matches: &BTreeSet<SearchMatch>) -> usize {
-        matches
-            .iter()
-            .filter(|m| match kind {
-                Kind::Link => matches!(m.object, RepoObject::Link(_)),
-                Kind::Topic => matches!(m.object, RepoObject::Topic(_)),
-            })
-            .count()
+        matches.iter().filter(|m| m.kind == kind).count()
     }
 
     fn search(f: &Fixtures, topic_id: &Oid, input: &str, recursive: bool) -> BTreeSet<SearchMatch> {
@@ -144,7 +138,6 @@ mod fetch_matches {
         let FindMatchesResult { matches } = FindMatches {
             limit: 100,
             locale: Locale::EN,
-            repos: viewer.read_repo_ids.to_owned(),
             recursive,
             search,
             timespec: Timespec,
@@ -165,16 +158,16 @@ mod fetch_matches {
         assert!(!matches.is_empty());
         let row = matches.iter().next().unwrap();
 
-        let SearchMatch { sort_key, object } = row;
+        let SearchMatch {
+            sort_key, object, ..
+        } = row;
 
         assert_eq!(
             sort_key,
             &SortKey(Kind::Topic, true, "Existing non-root topic".to_owned())
         );
 
-        if let RepoObject::Topic(topic) = &object {
-            assert_eq!(topic.name(Locale::EN), "Existing non-root topic");
-        }
+        assert_eq!(object.display_string(Locale::EN), "Existing non-root topic");
     }
 
     // Relevant structure of /wiki repo in the simple fixture:
@@ -226,7 +219,6 @@ mod fetch_matches {
         let f = Fixtures::copy("simple");
 
         let fetcher = FetchDownset(f.git.clone());
-        let repo = RepoId::wiki();
         let root = Oid::root_topic();
         let climate_change = f.find_topic("Climate change and weather").unwrap();
         let query = format!("in:{}", climate_change);
@@ -238,7 +230,6 @@ mod fetch_matches {
             limit: 3,
             locale: Locale::EN,
             recursive: true,
-            repos: RepoIds::from(&vec![repo]),
             search,
             timespec: Timespec,
             topic_id: root,
@@ -260,10 +251,8 @@ mod fetch_matches {
         let query = format!("in:{}", weather);
         let matches = search(&f, &root, &query, true);
 
-        match &matches.iter().next().unwrap().object {
-            RepoObject::Topic(topic) => assert_eq!(topic.name(Locale::EN), "Weather"),
-            RepoObject::Link(_) => unreachable!(),
-        }
+        let object = &matches.iter().next().unwrap().object;
+        assert_eq!(object.display_string(Locale::EN), "Weather");
     }
 
     #[test]
@@ -285,23 +274,23 @@ mod fetch_matches {
     fn search_works_across_prefixes() {
         let f = Fixtures::copy("simple");
         let repo_id = RepoId::other();
-        let root = Oid::root_topic();
+        let root_id = Oid::root_topic();
 
         let _ = f.upsert_link(&repo_id, &valid_url(), Some("Other repo".to_owned()), None);
 
-        let matches = search(&f, &root, "other repo", true);
+        let matches = search(&f, &root_id, "other repo", true);
         assert!(!matches.is_empty());
         let row = matches.iter().next().unwrap();
 
-        let SearchMatch { sort_key, object } = row;
+        let SearchMatch {
+            sort_key, object, ..
+        } = row;
 
         assert_eq!(
             sort_key,
             &SortKey(Kind::Link, false, "Other repo".to_owned())
         );
 
-        if let RepoObject::Link(link) = &object {
-            assert_eq!(link.title(), "Other repo");
-        }
+        assert_eq!(object.display_string(Locale::EN), "Other repo");
     }
 }

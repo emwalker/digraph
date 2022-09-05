@@ -1,7 +1,6 @@
 use async_graphql::EmptySubscription;
 use sqlx::postgres::PgPool;
 
-use crate::git;
 use crate::prelude::*;
 use crate::redis;
 use crate::store::Store;
@@ -11,8 +10,8 @@ mod activity;
 pub use activity::*;
 pub mod alert;
 pub use alert::*;
-mod git_object;
-pub use git_object::*;
+mod git;
+pub use git::*;
 mod relay;
 pub use relay::*;
 mod link;

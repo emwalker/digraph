@@ -1,10 +1,10 @@
 import { Component, FormEvent, ChangeEvent } from 'react';
 import { RelayProp } from 'react-relay';
-import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphql';
+import { Synonyms_topicDetail as TopicDetailType } from '__generated__/Synonyms_topicDetail.graphql';
 import { SynonymType } from 'components/types';
 declare type Props = {
     relay: RelayProp;
-    topic: TopicType;
+    topicDetail: TopicDetailType;
 };
 declare type State = {
     inputLocale: string;
@@ -18,7 +18,7 @@ declare class Synonyms extends Component<Props, State> {
     onDelete: (position: number) => void;
     get synonyms(): readonly {
         readonly name: string;
-        readonly locale: import("__generated__/Synonyms_topic.graphql").LocaleIdentifier;
+        readonly locale: import("__generated__/Synonyms_topicDetail.graphql").LocaleIdentifier;
         readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Synonym_synonym">;
     }[];
     optimisticResponse: (synonyms: SynonymType[]) => {
@@ -28,10 +28,10 @@ declare class Synonyms extends Component<Props, State> {
             topic: {
                 displayName: string;
                 synonyms: SynonymType[];
-                id: string;
+                topicId: string;
                 viewerCanDeleteSynonyms: boolean;
                 viewerCanUpdate: boolean;
-                " $refType": "Synonyms_topic";
+                " $refType": "Synonyms_topicDetail";
             };
         };
     };

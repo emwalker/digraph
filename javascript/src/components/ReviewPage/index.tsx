@@ -9,7 +9,7 @@ import Review from './Review'
 import reviewPageQuery, { ViewType as QueryViewType } from './reviewPageQuery'
 
 type RootTopicType = NonNullable<ViewType['topic']>
-type LinkType = NodeTypeOf<RootTopicType['links']>
+type LinkType = NodeTypeOf<RootTopicType['childLinks']>
 
 type Props = {
   view: ViewType,
@@ -32,14 +32,14 @@ class ReviewPage extends Component<Props> {
   }
 
   get links() {
-    return liftNodes<LinkType>(this.topic?.links)
+    return liftNodes<LinkType>(this.topic?.childLinks)
   }
 
   get totalCount(): number {
     const { topic } = this
     if (!topic) return 0
 
-    const { links: { totalCount } } = topic
+    const { childLinks: { totalCount } } = topic
     return totalCount
   }
 
@@ -74,7 +74,7 @@ const Wrapper = createFragmentContainer(ReviewPage, {
       topic(id: $topicId) {
         displayName
 
-        links(first: 100, reviewed: false, descendants: true) {
+        childLinks(first: 100, reviewed: false, descendants: true) {
           totalCount
 
           edges {

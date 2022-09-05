@@ -5,7 +5,7 @@ use std::collections::{BTreeSet, HashSet};
 use std::time::Instant;
 use strum_macros::EnumString;
 
-use super::{Client, Kind, Locale, RepoObject, Phrase, SynonymEntry};
+use super::{Client, Kind, Locale, Object, Objects, Phrase, RepoObject, SynonymEntry};
 use crate::git::SearchEntry;
 use crate::prelude::*;
 use crate::redis;
@@ -190,7 +190,8 @@ pub struct SortKey(pub Kind, pub bool, pub String);
 #[derive(Clone, Debug)]
 pub struct SearchMatch {
     pub sort_key: SortKey,
-    pub object: RepoObject,
+    pub kind: Kind,
+    pub object: Object,
 }
 
 impl std::cmp::Ord for SearchMatch {
@@ -292,7 +293,6 @@ impl Downset for RedisFetchDownSet {
 pub struct FindMatches {
     pub limit: usize,
     pub locale: Locale,
-    pub repos: RepoIds,
     pub recursive: bool,
     pub search: Search,
     pub timespec: Timespec,
@@ -353,17 +353,17 @@ impl FindMatches {
             entries.insert(entry);
         }
 
-        let mut matches = BTreeSet::new();
+        let mut objects = Objects::new();
         let mut count: usize = 0;
 
-        for repo in self.repos.iter() {
+        for repo_id in self.viewer.read_repo_ids.iter() {
             let mut iter = self.search.tokens.iter();
 
             if let Some(token) = iter.next() {
-                let mut prefix_matches = client.search_token_prefix_matches(repo, token)?;
+                let mut prefix_matches = client.search_token_prefix_matches(repo_id, token)?;
 
                 for token in iter {
-                    let other = client.search_token_prefix_matches(repo, token)?;
+                    let other = client.search_token_prefix_matches(repo_id, token)?;
                     prefix_matches.retain(|e| other.contains(e));
                 }
 
@@ -371,13 +371,12 @@ impl FindMatches {
             }
 
             for entry in entries.iter() {
-                if let Some(object) = client.fetch(repo, &entry.id) {
+                if let Some(object) = client.fetch(repo_id, &entry.id) {
                     if !filter.test(&object) {
                         continue;
                     }
 
-                    let object = object.to_search_match(self.locale, &self.search);
-                    matches.insert(object);
+                    objects.add(entry.id.to_owned(), repo_id.to_owned(), Some(object));
                     count += 1;
 
                     if count >= self.limit {
@@ -387,7 +386,7 @@ impl FindMatches {
             }
         }
 
-        Ok(matches)
+        objects.to_matches(&self.search, self.locale)
     }
 
     fn fetch_downset<F>(&self, client: &Client, fetch: &F) -> Result<BTreeSet<SearchMatch>>
@@ -397,13 +396,13 @@ impl FindMatches {
         let topic_ids = self.intersection(client, fetch)?;
         log::info!("fetching topic downset ({} paths)", topic_ids.len());
 
-        let mut matches = BTreeSet::new();
+        let mut objects = Objects::new();
         let mut count: usize = 0;
 
-        for repo in self.repos.iter() {
+        for repo_id in self.viewer.read_repo_ids.iter() {
             for topic_id in topic_ids.iter().take(self.limit) {
-                if let Some(object) = client.fetch(repo, topic_id) {
-                    matches.insert(object.to_search_match(Locale::EN, &self.search));
+                if let Some(object) = client.fetch(repo_id, topic_id) {
+                    objects.add(topic_id.to_owned(), repo_id.to_owned(), Some(object));
                     count += 1;
 
                     if count >= self.limit {
@@ -413,7 +412,7 @@ impl FindMatches {
             }
         }
 
-        Ok(matches)
+        objects.to_matches(&self.search, self.locale)
     }
 
     fn intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<Oid>>
@@ -422,18 +421,18 @@ impl FindMatches {
     {
         let mut result = HashSet::new();
 
-        for repo in self.repos.iter() {
+        for repo_id in self.viewer.read_repo_ids.iter() {
             let mut topic_paths = vec![];
 
             // The (wiki) root topic is mostly not needed for now; let's exclude it until we know how to
             // make the downset and related implementation details fast.
             if !self.topic_id.is_root() {
-                let path = client.read_path(repo, &self.topic_id)?;
+                let path = client.read_path(repo_id, &self.topic_id)?;
                 topic_paths.push(path);
             }
 
             for spec in &self.search.topic_specs {
-                let path = client.read_path(repo, &spec.id)?;
+                let path = client.read_path(repo_id, &spec.id)?;
                 topic_paths.push(path);
             }
 

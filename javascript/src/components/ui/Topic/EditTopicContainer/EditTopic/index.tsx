@@ -28,12 +28,12 @@ export default ({ isOpen, toggleForm }: CallerProps) => (
   if (!renderProps) return null
   const { view } = renderProps as RenderProps
   return (
-    view?.topic && (
+    (view?.topic?.details || []).map((detail) => (
       <EditTopicForm
         isOpen={isOpen}
         toggleForm={toggleForm}
-        topic={view.topic}
+        topicDetail={detail}
       />
-    )
+    ))
   )
 }

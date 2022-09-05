@@ -2,14 +2,14 @@ use chrono::Utc;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::git::{
-    activity, Kind, RepoLinkMetadata, ParentTopic, RepoLink, SaveChangesForPrefix, RepoTopic, TopicChild,
-    API_VERSION,
+    activity, Kind, ParentTopic, RepoLink, RepoLinkMetadata, RepoTopic, SaveChangesForPrefix,
+    TopicChild, API_VERSION,
 };
 use crate::http::{self, RepoUrl};
 use crate::prelude::*;
 
 use super::activity::TopicInfoList;
-use super::{RepoLinkDetails, Mutation};
+use super::{Mutation, RepoLinkDetails};
 
 #[derive(Clone)]
 pub struct Link(HashSet<(RepoId, Option<RepoLink>)>);

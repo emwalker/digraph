@@ -136,7 +136,7 @@ mod delete_topic {
     fn make_topic(f: &Fixtures, parent: &Oid, name: &str) -> RepoTopic {
         let topic_id = parse_id("dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
 
-        let UpsertTopicResult { topic, .. } = UpsertTopic {
+        let UpsertTopicResult { repo_topic, .. } = UpsertTopic {
             actor: actor(),
             locale: Locale::EN,
             name: name.to_owned(),
@@ -147,7 +147,7 @@ mod delete_topic {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        topic.unwrap()
+        repo_topic.unwrap()
     }
 
     #[test]
@@ -247,14 +247,14 @@ mod update_topic_parent_topics {
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            repo: repo.to_owned(),
+            repo_id: repo.to_owned(),
             topic_id: child.id().to_owned(),
             parent_topic_ids: BTreeSet::from([parent.id().to_owned()]),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(result.topic, child);
+        assert_eq!(result.repo_topic, child);
 
         let parent = f.topic(&repo, "00001");
         let child = f.topic(&repo, "00002");
@@ -273,14 +273,14 @@ mod update_topic_parent_topics {
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            repo: repo.to_owned(),
+            repo_id: repo.to_owned(),
             topic_id: child.id().to_owned(),
             parent_topic_ids: BTreeSet::from([parent.id().to_owned()]),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(result.topic, child);
+        assert_eq!(result.repo_topic, child);
 
         let parent = f.topic(&repo, "00001");
         let child = f.topic(&repo, "00002");
@@ -295,7 +295,7 @@ mod update_topic_parent_topics {
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            repo,
+            repo_id: repo,
             topic_id: child.id().to_owned(),
             parent_topic_ids: BTreeSet::new(),
         }
@@ -314,7 +314,7 @@ mod update_topic_parent_topics {
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            repo,
+            repo_id: repo,
             topic_id: parent.id().to_owned(),
             parent_topic_ids: BTreeSet::from([child.id().to_owned()]),
         }
@@ -360,7 +360,7 @@ mod update_topic_synonyms {
         assert_eq!(count(&f, "B topic"), 0);
         assert_eq!(count(&f, "C topic"), 0);
 
-        let UpdateTopicSynonymsResult { topic, .. } = UpdateTopicSynonyms {
+        let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
             actor: actor(),
             repo_id: repo,
             topic_id,
@@ -369,7 +369,7 @@ mod update_topic_synonyms {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(topic.synonyms().len(), 3);
+        assert_eq!(repo_topic.synonyms().len(), 3);
 
         assert_eq!(count(&f, "A topic"), 1);
         assert_eq!(count(&f, "B topic"), 1);
@@ -388,7 +388,7 @@ mod update_topic_synonyms {
 
         assert_eq!(count(&f, "A topic"), 1);
 
-        let UpdateTopicSynonymsResult { topic, .. } = UpdateTopicSynonyms {
+        let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
             actor: actor(),
             repo_id: repo,
             topic_id,
@@ -397,7 +397,7 @@ mod update_topic_synonyms {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(topic.synonyms().len(), 1);
+        assert_eq!(repo_topic.synonyms().len(), 1);
 
         assert_eq!(count(&f, "A topic"), 1);
     }
@@ -408,7 +408,7 @@ mod update_topic_synonyms {
         let repo = RepoId::wiki();
         let topic_id = parse_id("00001");
 
-        let UpdateTopicSynonymsResult { topic, .. } = UpdateTopicSynonyms {
+        let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
             actor: actor(),
             repo_id: repo.to_owned(),
             topic_id: topic_id.clone(),
@@ -417,12 +417,12 @@ mod update_topic_synonyms {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(topic.synonyms().len(), 3);
+        assert_eq!(repo_topic.synonyms().len(), 3);
         assert_eq!(count(&f, "A topic"), 1);
         assert_eq!(count(&f, "B topic"), 1);
         assert_eq!(count(&f, "C topic"), 1);
 
-        let UpdateTopicSynonymsResult { topic, .. } = UpdateTopicSynonyms {
+        let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
             actor: actor(),
             repo_id: repo,
             topic_id,
@@ -431,7 +431,7 @@ mod update_topic_synonyms {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        assert_eq!(topic.synonyms().len(), 1);
+        assert_eq!(repo_topic.synonyms().len(), 1);
         assert_eq!(count(&f, "A topic"), 0);
         assert_eq!(count(&f, "B topic"), 0);
         assert_eq!(count(&f, "C topic"), 1);
@@ -516,7 +516,7 @@ mod upsert_topic {
         assert!(result.saved);
         assert_eq!(result.matching_synonyms, BTreeSet::new());
 
-        let topic = &result.topic;
+        let topic = &result.repo_topic;
         assert!(topic.is_some());
 
         let topic = (*topic).clone().unwrap();
@@ -541,7 +541,7 @@ mod upsert_topic {
             .upsert_topic(&repo, "Topic Name", &path, OnMatchingSynonym::Ask)
             .unwrap();
 
-        assert!(result.topic.is_none());
+        assert!(result.repo_topic.is_none());
         assert!(!result.saved);
         assert_ne!(result.matching_synonyms, BTreeSet::new());
     }
@@ -556,7 +556,7 @@ mod upsert_topic {
             .upsert_topic(&repo, "Topic name", &topic_id, OnMatchingSynonym::Ask)
             .unwrap();
         assert!(result.saved);
-        let parent_topic = result.topic.unwrap();
+        let parent_topic = result.repo_topic.unwrap();
         let parent_id = parent_topic.id();
 
         let topic_path = parse_id("00002");
@@ -569,11 +569,11 @@ mod upsert_topic {
             )
             .unwrap();
 
-        assert!(result.topic.is_some());
+        assert!(result.repo_topic.is_some());
         assert!(result.saved);
 
         let parent_topics = result
-            .topic
+            .repo_topic
             .unwrap()
             .parent_topics
             .iter()
@@ -593,7 +593,7 @@ mod upsert_topic {
             .upsert_topic(&repo, "Topic name", &topic_id, OnMatchingSynonym::Ask)
             .unwrap();
         assert!(result.saved);
-        let path1 = &result.topic.unwrap().metadata.id;
+        let path1 = &result.repo_topic.unwrap().metadata.id;
 
         let topic_path = parse_id("00002");
         let result = f
@@ -605,9 +605,9 @@ mod upsert_topic {
             )
             .unwrap();
 
-        assert!(result.topic.is_some());
+        assert!(result.repo_topic.is_some());
         assert!(result.saved);
-        let path2 = &result.topic.unwrap().metadata.id;
+        let path2 = &result.repo_topic.unwrap().metadata.id;
 
         assert_ne!(path1, path2);
 
@@ -635,7 +635,7 @@ mod upsert_topic {
             .upsert_topic(&repo, "Topic name", &path, OnMatchingSynonym::Ask)
             .unwrap();
         assert!(result.saved);
-        let child = result.topic.unwrap();
+        let child = result.repo_topic.unwrap();
         let child_id = &child.id();
 
         let parent = f.topic(&repo, "00001");
@@ -690,7 +690,7 @@ mod upsert_topic {
                 OnMatchingSynonym::Ask,
             )
             .unwrap();
-        let topic = result.topic.unwrap();
+        let topic = result.repo_topic.unwrap();
         let topic_id = topic.id();
 
         assert!(f.git.exists(&other_repo, topic_id).unwrap());

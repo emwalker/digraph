@@ -24,7 +24,9 @@ const EditTopicContainer = ({ isOpen, topicId, relay, toggleForm }: Props) => (
           repositoryIds: $repoIds,
         ) {
           topic(id: $topicId) {
-            ...EditTopicForm_topic
+            details {
+              ...EditTopicForm_topicDetail
+            }
           }
         }
       }

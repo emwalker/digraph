@@ -14,7 +14,10 @@ export default defaultMutation(graphql`
 
       topic {
         ...Topic_topic
-        ...TopicTimerange_topic
+
+        details {
+          ...TopicTimerange_topicDetail
+        }
       }
     }
   }

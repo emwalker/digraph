@@ -2,7 +2,9 @@ import React, { Component, FormEvent, ChangeEvent } from 'react'
 import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 
 import updateTopicSynonymsMutation, { Input } from 'mutations/updateTopicSynonymsMutation'
-import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphql'
+import {
+  Synonyms_topicDetail as TopicDetailType,
+} from '__generated__/Synonyms_topicDetail.graphql'
 import { SynonymType } from 'components/types'
 import SynonymList from './SynonymList'
 import copySynonyms from './copySynonyms'
@@ -10,7 +12,7 @@ import { wikiRepoId } from 'components/constants'
 
 type Props = {
   relay: RelayProp,
-  topic: TopicType,
+  topicDetail: TopicDetailType,
 }
 
 type State = {
@@ -65,7 +67,7 @@ class Synonyms extends Component<Props, State> {
   }
 
   get synonyms() {
-    return this.props.topic.synonyms
+    return this.props.topicDetail.synonyms
   }
 
   optimisticResponse = (synonyms: SynonymType[]) => {
@@ -74,7 +76,7 @@ class Synonyms extends Component<Props, State> {
         alerts: [],
         clientMutationId: null,
         topic: {
-          ...this.props.topic,
+          ...this.props.topicDetail,
           displayName: displayName(synonyms),
           synonyms,
         },
@@ -84,7 +86,7 @@ class Synonyms extends Component<Props, State> {
 
   updateTopicSynonyms = (synonyms: SynonymType[]) => {
     // FIXME
-    const input: Input = { repoId: wikiRepoId, topicId: this.props.topic.id, synonyms }
+    const input: Input = { repoId: wikiRepoId, topicId: this.props.topicDetail.topicId, synonyms }
 
     this.setState({ inputName: '' }, () => {
       updateTopicSynonymsMutation(
@@ -97,7 +99,7 @@ class Synonyms extends Component<Props, State> {
 
   renderSynonyms = () => (
     <SynonymList
-      canUpdate={this.props.topic.viewerCanUpdate}
+      canUpdate={this.props.topicDetail.viewerCanUpdate}
       onDelete={this.onDelete}
       onUpdate={this.updateTopicSynonyms}
       synonyms={this.synonyms}
@@ -156,7 +158,7 @@ class Synonyms extends Component<Props, State> {
       <ul className="Box list-style-none mt-1 mb-2">
         {this.renderSynonyms()}
       </ul>
-      {this.props.topic.viewerCanUpdate && this.renderAddForm()}
+      {this.props.topicDetail.viewerCanUpdate && this.renderAddForm()}
     </dl>
   )
 }
@@ -164,9 +166,9 @@ class Synonyms extends Component<Props, State> {
 export const UnwrappedSynonyms = Synonyms
 
 export default createFragmentContainer(Synonyms, {
-  topic: graphql`
-    fragment Synonyms_topic on Topic {
-      id
+  topicDetail: graphql`
+    fragment Synonyms_topicDetail on TopicDetail {
+      topicId
       displayName: name
       viewerCanDeleteSynonyms
       viewerCanUpdate

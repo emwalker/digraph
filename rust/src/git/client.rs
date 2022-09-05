@@ -1,7 +1,7 @@
 use git2;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::PathBuf;
 
 use super::checks::LeakedData;
@@ -10,8 +10,8 @@ use super::index::{
     SearchEntry, SynonymEntry, SynonymMatch,
 };
 use super::{
-    activity, core, DownsetIter, RepoLink, Links, RepoObject, RepoStats, Search, SearchTokenIndex,
-    SynonymIndex, RepoTopic, TopicDownsetIter,
+    activity, core, DownsetIter, Objects, RepoLink, RepoObject, RepoStats, RepoTopic, Search,
+    SearchTokenIndex, SynonymIndex, TopicDownsetIter,
 };
 use crate::prelude::*;
 use crate::types::{ReadPath, Timespec};
@@ -228,18 +228,17 @@ impl Client {
         }
     }
 
-    pub fn fetch_links(&self, link_ids: &[Oid]) -> Links {
-        let mut map = HashMap::new();
+    pub fn fetch_all(&self, oids: &[Oid]) -> Objects {
+        let mut objects = Objects::new();
 
         for repo_id in self.viewer.read_repo_ids.iter() {
-            for link_id in link_ids {
-                let link = self.fetch_link(repo_id, link_id);
-                let set = map.entry(link_id).or_insert_with(|| HashSet::new());
-                set.insert((repo_id, link));
+            for id in oids {
+                let object = self.fetch(repo_id, id);
+                objects.add(id.to_owned(), repo_id.to_owned(), object);
             }
         }
 
-        Links::from(map)
+        objects
     }
 
     pub fn fetch_synonym_index(&self, prefix: &RepoId, filename: &PathBuf) -> Result<SynonymIndex> {

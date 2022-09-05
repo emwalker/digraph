@@ -21,7 +21,9 @@ const updateTopicSynonymsMutation = defaultMutation(graphql`
 
       topic {
         displayName: name
-        ...Synonyms_topic
+        details {
+          ...Synonyms_topicDetail
+        }
       }
     }
   }

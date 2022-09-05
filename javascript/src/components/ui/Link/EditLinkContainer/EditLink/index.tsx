@@ -36,7 +36,7 @@ export default ({ isOpen, toggleForm }: CallerProps) => (
     <EditLinkForm
       isOpen={isOpen}
       toggleForm={toggleForm}
-      linkDetails={details[0]}
+      linkDetail={details[0]}
     />
   )
 }

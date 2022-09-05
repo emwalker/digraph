@@ -111,7 +111,7 @@ type RemoveTopicTimerangePayload {
   topic: Topic!
 }
 
-type LinkDetails {
+type LinkDetail {
   availableParentTopics(
     searchString: String,
   ): LiveSearchTopicsPayload!
@@ -132,7 +132,7 @@ type LinkDetails {
 }
 
 type Link {
-  details: [LinkDetails!]!
+  details: [LinkDetail!]!
   displayColor: Color!
   displayParentTopics(
     first: Int,
@@ -326,6 +326,27 @@ type Synonym {
   name: String!
 }
 
+type TopicDetail {
+  availableParentTopics(
+    searchString: String,
+  ): LiveSearchTopicsPayload!
+  color: Color!
+  createdAt: DateTime!
+  name: String!
+  parentTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection!
+  synonyms: [Synonym!]!
+  timerange: Timerange
+  topicId: String!
+  updatedAt: DateTime!
+  viewerCanDeleteSynonyms: Boolean!
+  viewerCanUpdate: Boolean!
+}
+
 type Topic {
   activity(
     first: Int,
@@ -333,24 +354,7 @@ type Topic {
     last: Int,
     before: String
   ): ActivityLineItemConnection!
-  availableParentTopics(
-    searchString: String,
-  ): LiveSearchTopicsPayload!
-  children(
-    searchString: String,
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicChildConnection!
-  createdAt: DateTime!
-  description: String
-  displayColor: Color!
-  displayName(
-    timerange: Boolean,
-  ): String!
-  id: String!
-  links(
+  childLinks(
     first: Int,
     after: String,
     last: Int,
@@ -359,16 +363,29 @@ type Topic {
     reviewed: Boolean,
     descendants: Boolean,
   ): LinkConnection!
-  loading: Boolean!
-  name: String!
-  newlyAdded: Boolean!
-  organization: Organization!
-  parentTopics(
+  children(
+    searchString: String,
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicChildConnection!
+  details: [TopicDetail!]!
+  description: String
+  displayColor: Color!
+  displayName: String!
+  displayParentTopics(
     first: Int,
     after: String,
     last: Int,
     before: String
   ): TopicConnection!
+  displaySynonyms: [Synonym!]!
+  displayTimerange: Timerange
+  id: String!
+  loading: Boolean!
+  name: String!
+  newlyAdded: Boolean!
   search(
     searchString: String!,
     first: Int,
@@ -376,10 +393,6 @@ type Topic {
     last: Int,
     before: String
   ): TopicChildConnection!
-  synonyms: [Synonym!]!
-  timerange: Timerange
-  updatedAt: DateTime!
-  viewerCanDeleteSynonyms: Boolean!
   viewerCanUpdate: Boolean!
 }
 

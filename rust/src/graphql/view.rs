@@ -58,10 +58,8 @@ impl View {
     }
 
     async fn link(&self, ctx: &Context<'_>, id: String) -> Result<Option<Link>> {
-        // FIXME
-        let repo = RepoId::wiki();
         ctx.data_unchecked::<Store>()
-            .link(&repo, &id.try_into()?)
+            .fetch_link(&id.try_into()?)
             .await
     }
 
@@ -71,11 +69,9 @@ impl View {
         }
     }
 
-    async fn topic(&self, ctx: &Context<'_>, id: String) -> Result<Option<Topic>> {
-        // FIXME
-        let repo = RepoId::wiki();
+    async fn topic(&self, ctx: &Context<'_>, id: String) -> Result<Topic> {
         ctx.data_unchecked::<Store>()
-            .topic(&repo, &id.try_into()?)
+            .fetch_topic(&id.try_into()?)
             .await
     }
 

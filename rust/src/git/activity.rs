@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use super::{ChangeReference, Client, RepoLink, Locale, Synonym, RepoTopic};
+use super::{ChangeReference, Client, Locale, RepoLink, RepoTopic, Synonym};
 use crate::prelude::*;
 use crate::types::TimerangePrefix;
 

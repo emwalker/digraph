@@ -5,6 +5,7 @@ mod account;
 pub mod activity;
 mod checks;
 mod client;
+mod collections;
 pub mod core;
 mod index;
 mod link;
@@ -18,6 +19,7 @@ use crate::prelude::*;
 use crate::types;
 pub use account::*;
 pub use client::*;
+pub use collections::*;
 pub use index::*;
 pub use link::*;
 pub use repository::*;
@@ -438,13 +440,6 @@ impl RepoObject {
         Ok(())
     }
 
-    fn display_string(&self, locale: Locale) -> String {
-        match self {
-            Self::Link(link) => link.metadata.title().to_owned(),
-            Self::Topic(topic) => topic.name(locale),
-        }
-    }
-
     pub fn kind(&self) -> Kind {
         match self {
             RepoObject::Topic(_) => Kind::Topic,
@@ -458,49 +453,20 @@ impl RepoObject {
             RepoObject::Link(link) => &link.parent_topics,
         }
     }
-
-    fn search_string(&self, locale: Locale) -> Phrase {
-        Phrase::parse(&self.display_string(locale))
-    }
-
-    pub fn to_search_match(self, locale: Locale, search: &Search) -> SearchMatch {
-        let normalized = &search.normalized;
-        let display_string = self.display_string(locale);
-        let search_string = self.search_string(locale);
-
-        match &self {
-            Self::Link(_) => SearchMatch {
-                sort_key: SortKey(Kind::Link, &search_string != normalized, display_string),
-                object: self,
-            },
-            Self::Topic(topic) => {
-                let topic_id = topic.id();
-                let explicit_in_search = search.topic_specs.iter().any(|s| &s.id == topic_id);
-                SearchMatch {
-                    sort_key: SortKey(
-                        Kind::Topic,
-                        !explicit_in_search && &search_string != normalized,
-                        display_string,
-                    ),
-                    object: self,
-                }
-            }
-        }
-    }
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TopicReferenceMetadata {
+pub struct RepoTopicReferenceMetadata {
     pub path: String,
     pub path_tracked: String,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TopicReference {
+pub struct RepoTopicReference {
     api_version: String,
-    pub metadata: TopicReferenceMetadata,
+    pub metadata: RepoTopicReferenceMetadata,
     // pub parent_topics: BTreeSet<ParentTopic>,
     pub children: BTreeSet<TopicChild>,
 }

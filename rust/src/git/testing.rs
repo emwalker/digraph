@@ -3,7 +3,8 @@ use geotime::Geotime;
 use std::collections::BTreeSet;
 
 use super::{
-    RepoLink, RepoLinkDetails, RepoLinkMetadata, ParentTopic, Synonym, RepoTopic, RepoTopicDetails, RepoTopicMetadata,
+    ParentTopic, RepoLink, RepoLinkDetails, RepoLinkMetadata, RepoTopic, RepoTopicDetails,
+    RepoTopicMetadata, Synonym,
 };
 use crate::{prelude::*, types::sha256_base64};
 

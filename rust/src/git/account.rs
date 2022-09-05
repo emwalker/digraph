@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use super::{Mutation, Synonym, RepoTopic, RepoTopicMetadata};
+use super::{Mutation, RepoTopic, RepoTopicMetadata, Synonym};
 use crate::git::RepoTopicDetails;
 use crate::prelude::*;
 use crate::redis;

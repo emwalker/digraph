@@ -10,15 +10,16 @@ const synonymEdge = {
   },
 }
 
-const topic = {
+const topicDetail = {
   viewerCanDeleteSynonyms: true,
+  viewerCanUpdate: true,
   synonyms: {
     edges: [synonymEdge],
   },
 }
 
 const props = {
-  topic,
+  topicDetail,
 }
 
 describe('<Synonyms />', () => {

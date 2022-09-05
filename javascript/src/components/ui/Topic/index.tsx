@@ -7,7 +7,7 @@ import { Topic_topic as TopicType } from '__generated__/Topic_topic.graphql'
 import Item from '../Item'
 import EditTopic from './EditTopicContainer'
 
-type ParentTopicType = NodeTypeOf<TopicType['parentTopics']>
+type ParentTopicType = NodeTypeOf<TopicType['displayParentTopics']>
 
 type Props = {
   relay: RelayProp,
@@ -30,8 +30,8 @@ class Topic extends Component<Props, State> {
     return true
   }
 
-  get parentTopics() {
-    return liftNodes<ParentTopicType>(this.props.topic.parentTopics)
+  get displayParentTopics() {
+    return liftNodes<ParentTopicType>(this.props.topic.displayParentTopics)
   }
 
   get showEditButton(): boolean {
@@ -57,7 +57,7 @@ class Topic extends Component<Props, State> {
         showLink={false}
         title={topic.displayName}
         toggleForm={this.toggleForm}
-        topics={this.parentTopics}
+        topics={this.displayParentTopics}
         url={topicPath(topic.id)}
       >
         <EditTopic
@@ -82,7 +82,7 @@ export default createFragmentContainer(Topic, {
       viewerCanUpdate
       displayColor
 
-      parentTopics(first: 100) {
+      displayParentTopics(first: 100) {
         edges {
           node {
             id

@@ -1,13 +1,10 @@
 Before switchover:
+* Show merged topic children instead of topic children from one repo topic
 * Return collection of detail views / edit forms instead of edit form
-* See if it's possible to remove Clone, Eq, PartialEq, etc., from graphql::Topic (and graphql::TopicDetails)
 * Make the display color repo-specific, and make the display color for Wiki to be transparent
-* Merge the contents of items with the same id and different repo prefixes
+* Try to save graphql::{Topic,Link} in the object loader instead of git::{Topic,Link}
 * Update repo names and give new repos a better name
 * Add repo back to topic and link types
-* Add repo to topic child edges (?)
-* Add repo to parent topic edges (?)
-* Move details into own section of GraphQL type (?)
 * Replace hardcoded references to wikiRepoId with repo from resource (depends on whether user can edit)
 * Show links in private repo in blue again
 * Clean up database: odds and ends

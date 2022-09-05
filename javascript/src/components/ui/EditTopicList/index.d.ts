@@ -1,8 +1,8 @@
 import { Component } from 'react';
 import { ActionMeta } from 'react-select';
-import { EditTopicForm_topic } from '__generated__/EditTopicForm_topic.graphql';
+import { EditTopicForm_topicDetail as TopicDetailType } from '__generated__/EditTopicForm_topicDetail.graphql';
 import { TopicOption } from 'components/types';
-declare type SynonymMatches = EditTopicForm_topic['availableTopics']['synonymMatches'];
+declare type SynonymMatches = TopicDetailType['availableTopics']['synonymMatches'];
 declare type SelectedTopics = ({
     label: string;
     value: string;

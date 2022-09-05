@@ -12,7 +12,7 @@ export default defaultMutation(graphql`
     updateLinkParentTopics(input: $input) {
       link {
         details {
-          ...EditLinkForm_linkDetails
+          ...EditLinkForm_linkDetail
         }
         ...Link_link
       }

@@ -10,8 +10,8 @@ use uuid::Uuid;
 use digraph::config::Config;
 use digraph::db;
 use digraph::git::{
-    activity, Client, DataRoot, IndexMode, Kind, RepoLink, RepoLinkDetails, RepoLinkMetadata, Mutation,
-    ParentTopic, Synonym, RepoTopic, TopicChild, RepoTopicDetails, RepoTopicMetadata,
+    activity, Client, DataRoot, IndexMode, Kind, Mutation, ParentTopic, RepoLink, RepoLinkDetails,
+    RepoLinkMetadata, RepoTopic, RepoTopicDetails, RepoTopicMetadata, Synonym, TopicChild,
 };
 use digraph::prelude::*;
 use digraph::redis;

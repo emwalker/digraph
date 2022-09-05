@@ -4,13 +4,15 @@ import { ActionMeta } from 'react-select'
 import AsyncSelect from 'react-select/async'
 import debounce from 'es6-promise-debounce'
 
-import { EditTopicForm_topic } from '__generated__/EditTopicForm_topic.graphql'
+import {
+  EditTopicForm_topicDetail as TopicDetailType,
+} from '__generated__/EditTopicForm_topicDetail.graphql'
 import { TopicOption } from 'components/types'
 import colourStyles from './colourStyles'
 
 /* eslint react/no-unused-state: 0 */
 
-type SynonymMatches = EditTopicForm_topic['availableTopics']['synonymMatches']
+type SynonymMatches = TopicDetailType['availableTopics']['synonymMatches']
 type SelectedTopics = ({ label: string, value: string } | null)[]
 
 const color = '#0366d6'

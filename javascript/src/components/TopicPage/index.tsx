@@ -21,7 +21,7 @@ import AddForm from './AddForm'
 
 type ViewType = Response['view']
 type TopicChildType = NodeTypeOf<TopicType['children']>
-type ParentTopicType = NodeTypeOf<TopicType['parentTopics']>
+type ParentTopicType = NodeTypeOf<TopicType['displayParentTopics']>
 
 type Props = {
   // eslint-disable-next-line react/no-unused-prop-types
@@ -53,8 +53,8 @@ class TopicPage extends Component<Props, State> {
     return liftNodes<TopicChildType>(this.props.topic.children)
   }
 
-  get synonyms() {
-    return this.props.topic.synonyms
+  get displaySynonyms() {
+    return this.props.topic.displaySynonyms
   }
 
   get isGuest(): boolean {
@@ -116,14 +116,14 @@ class TopicPage extends Component<Props, State> {
   )
 
   renderHeadingDetail = () => {
-    const { synonyms } = this
-    const { length } = synonyms
+    const { displaySynonyms } = this
+    const { length } = displaySynonyms
 
     if (length < 2) return null
 
     return (
-      <div className={classNames('synonyms', 'h6')}>
-        {synonyms.slice(1, length).map(({ name }) => (
+      <div className={classNames('displaySynonyms', 'h6')}>
+        {displaySynonyms.slice(1, length).map(({ name }) => (
           <span key={name} className="synonym">{name}</span>
         ))}
       </div>
@@ -174,7 +174,7 @@ class TopicPage extends Component<Props, State> {
       )
     }
 
-    const { displayName, parentTopics } = topic
+    const { displayName, displayParentTopics } = topic
     const children = this.children.filter(Boolean)
 
     return (
@@ -186,7 +186,7 @@ class TopicPage extends Component<Props, State> {
         <Columns>
           <RightColumn>
             <SidebarList
-              items={liftNodes<ParentTopicType>(parentTopics)}
+              items={liftNodes<ParentTopicType>(displayParentTopics)}
               placeholder="There are no parent topics for this topic."
               title="Parent topics"
             />
@@ -249,11 +249,11 @@ export default createFragmentContainer(TopicPage, {
       displayName: name
       id
 
-      synonyms {
+      displaySynonyms {
         name
       }
 
-      parentTopics(first: 100) {
+      displayParentTopics(first: 100) {
         edges {
           node {
             display: name

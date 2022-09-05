@@ -18,7 +18,7 @@ import {
 import { TopicSearchPage_topic as TopicType } from '__generated__/TopicSearchPage_topic.graphql'
 
 type ViewType = Response['view']
-type ParentTopicType = NodeTypeOf<TopicType['parentTopics']>
+type ParentTopicType = NodeTypeOf<TopicType['displayParentTopics']>
 type SearchItemType = NodeTypeOf<TopicType['search']>
 
 /* eslint no-underscore-dangle: 0 */
@@ -56,7 +56,7 @@ class TopicSearchPage extends Component<Props> {
     const {
       search: searchResults,
       name,
-      parentTopics,
+      displayParentTopics,
     } = topic
     const rows = liftNodes<SearchItemType>(searchResults)
 
@@ -69,7 +69,7 @@ class TopicSearchPage extends Component<Props> {
           <Columns>
             <RightColumn>
               <SidebarList
-                items={liftNodes<ParentTopicType>(parentTopics)}
+                items={liftNodes<ParentTopicType>(displayParentTopics)}
                 placeholder="There are no parent topics for this topic."
                 title="Parent topics"
               />
@@ -118,7 +118,7 @@ export default createFragmentContainer(TopicSearchPage, {
       id
       name
 
-      parentTopics(first: 100) {
+      displayParentTopics(first: 100) {
         edges {
           node {
             display: name

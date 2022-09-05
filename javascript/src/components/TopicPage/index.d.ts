@@ -26,7 +26,7 @@ declare class TopicPage extends Component<Props, State> {
     } | {
         readonly __typename: "%other";
     } | null)[];
-    get synonyms(): readonly {
+    get displaySynonyms(): readonly {
         readonly name: string;
     }[];
     get isGuest(): boolean;

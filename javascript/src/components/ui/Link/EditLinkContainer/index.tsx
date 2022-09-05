@@ -29,7 +29,7 @@ const EditLinkContainer = ({ isOpen, link, relay, toggleForm }: Props) => (
         ) {
           link(id: $linkId) {
             details {
-              ...EditLinkForm_linkDetails
+              ...EditLinkForm_linkDetail
             }
           }
         }

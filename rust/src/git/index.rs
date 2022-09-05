@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use unidecode::unidecode;
 
 use super::{
-    activity, core, Client, GitPaths, Kind, Search, Synonym, RepoTopic, TopicChild, API_VERSION,
+    activity, core, Client, GitPaths, Kind, RepoTopic, Search, Synonym, TopicChild, API_VERSION,
 };
 use crate::prelude::*;
 

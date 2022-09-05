@@ -1,9 +1,9 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
-    activity, Kind, RepoLink, Mutation, RepoObject, ParentTopic, SaveChangesForPrefix, Synonym,
-    SynonymEntry, SynonymMatch, Timerange, RepoTopic, TopicChild, RepoTopicDetails, RepoTopicMetadata,
-    API_VERSION,
+    activity, Kind, Mutation, ParentTopic, RepoLink, RepoObject, RepoTopic, RepoTopicDetails,
+    RepoTopicMetadata, SaveChangesForPrefix, Synonym, SynonymEntry, SynonymMatch, Timerange,
+    TopicChild, API_VERSION,
 };
 use crate::prelude::*;
 
@@ -142,7 +142,6 @@ pub struct RemoveTopicTimerange {
 
 pub struct RemoveTopicTimerangeResult {
     pub alerts: Vec<Alert>,
-    pub topic: RepoTopic,
 }
 
 impl RemoveTopicTimerange {
@@ -170,13 +169,14 @@ impl RemoveTopicTimerange {
         mutation.add_change(&self.repo, &self.change(&topic, previous_timerange))?;
         mutation.write(store)?;
 
-        Ok(RemoveTopicTimerangeResult {
-            alerts: vec![],
-            topic,
-        })
+        Ok(RemoveTopicTimerangeResult { alerts: vec![] })
     }
 
-    pub fn change(&self, topic: &RepoTopic, previous_timerange: Option<Timerange>) -> activity::Change {
+    pub fn change(
+        &self,
+        topic: &RepoTopic,
+        previous_timerange: Option<Timerange>,
+    ) -> activity::Change {
         let mut parent_topics = BTreeSet::new();
         for parent in &topic.parent_topics {
             parent_topics.insert(parent.id.to_owned());
@@ -196,13 +196,13 @@ impl RemoveTopicTimerange {
 pub struct UpdateTopicParentTopics {
     pub actor: Viewer,
     pub parent_topic_ids: BTreeSet<Oid>,
-    pub repo: RepoId,
+    pub repo_id: RepoId,
     pub topic_id: Oid,
 }
 
 pub struct UpdateTopicParentTopicsResult {
     pub alerts: Vec<Alert>,
-    pub topic: RepoTopic,
+    pub repo_topic: RepoTopic,
 }
 
 impl UpdateTopicParentTopics {
@@ -217,7 +217,7 @@ impl UpdateTopicParentTopics {
         self.validate(&mutation)?;
 
         let date = chrono::Utc::now();
-        let child = mutation.fetch_topic(&self.repo, &self.topic_id);
+        let child = mutation.fetch_topic(&self.repo_id, &self.topic_id);
         if child.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -238,7 +238,7 @@ impl UpdateTopicParentTopics {
         let mut added_topics = vec![];
 
         for parent in added {
-            if let Some(mut topic) = parent.fetch(&self.repo, &mutation)? {
+            if let Some(mut topic) = parent.fetch(&self.repo_id, &mutation)? {
                 topic.children.insert(child.to_topic_child(date));
                 child.parent_topics.insert(parent.to_owned());
                 added_topics.push(topic.clone());
@@ -254,7 +254,7 @@ impl UpdateTopicParentTopics {
         let mut removed_topics = vec![];
 
         for parent in removed {
-            if let Some(mut topic) = parent.fetch(&self.repo, &mutation)? {
+            if let Some(mut topic) = parent.fetch(&self.repo_id, &mutation)? {
                 topic.children.remove(&child.to_topic_child(date));
                 child.parent_topics.remove(&parent);
                 removed_topics.push(topic.clone());
@@ -266,14 +266,14 @@ impl UpdateTopicParentTopics {
 
         updates.push(child.clone());
         for topic in updates {
-            mutation.save_topic(&self.repo, &topic)?;
+            mutation.save_topic(&self.repo_id, &topic)?;
         }
-        mutation.add_change(&self.repo, &change)?;
+        mutation.add_change(&self.repo_id, &change)?;
         mutation.write(store)?;
 
         Ok(UpdateTopicParentTopicsResult {
             alerts: vec![],
-            topic: child,
+            repo_topic: child,
         })
     }
 
@@ -307,7 +307,7 @@ impl UpdateTopicParentTopics {
         }
 
         for parent in &self.parent_topic_ids {
-            if mutation.cycle_exists(&self.repo, &self.topic_id, parent)? {
+            if mutation.cycle_exists(&self.repo_id, &self.topic_id, parent)? {
                 return Err(Error::Repo(format!(
                     "{} is a parent topic of {}",
                     self.topic_id, parent
@@ -328,7 +328,7 @@ pub struct UpdateTopicSynonyms {
 
 pub struct UpdateTopicSynonymsResult {
     pub alerts: Vec<Alert>,
-    pub topic: RepoTopic,
+    pub repo_topic: RepoTopic,
 }
 
 impl UpdateTopicSynonyms {
@@ -404,7 +404,7 @@ impl UpdateTopicSynonyms {
 
         Ok(UpdateTopicSynonymsResult {
             alerts: vec![],
-            topic,
+            repo_topic: topic,
         })
     }
 
@@ -449,8 +449,8 @@ pub struct UpsertTopic {
 pub struct UpsertTopicResult {
     pub alerts: Vec<Alert>,
     pub matching_synonyms: BTreeSet<SynonymMatch>,
+    pub repo_topic: Option<RepoTopic>,
     pub saved: bool,
-    pub topic: Option<RepoTopic>,
 }
 
 impl UpsertTopic {
@@ -494,8 +494,8 @@ impl UpsertTopic {
                     return Ok(UpsertTopicResult {
                         alerts: vec![alert],
                         matching_synonyms,
+                        repo_topic: None,
                         saved: false,
-                        topic: None,
                     });
                 }
 
@@ -535,8 +535,8 @@ impl UpsertTopic {
                         return Ok(UpsertTopicResult {
                             alerts,
                             matching_synonyms: matches,
+                            repo_topic: None,
                             saved: false,
-                            topic: None,
                         });
                     }
 
@@ -578,8 +578,8 @@ impl UpsertTopic {
         Ok(UpsertTopicResult {
             alerts: vec![],
             matching_synonyms: BTreeSet::new(),
+            repo_topic: Some(child),
             saved: true,
-            topic: Some(child),
         })
     }
 
@@ -645,7 +645,6 @@ pub struct UpsertTopicTimerange {
 pub struct UpsertTopicTimerangeResult {
     pub alerts: Vec<Alert>,
     pub timerange: Timerange,
-    pub topic: RepoTopic,
 }
 
 impl UpsertTopicTimerange {
@@ -675,7 +674,6 @@ impl UpsertTopicTimerange {
 
         Ok(UpsertTopicTimerangeResult {
             alerts: vec![],
-            topic,
             timerange: self.timerange.clone(),
         })
     }

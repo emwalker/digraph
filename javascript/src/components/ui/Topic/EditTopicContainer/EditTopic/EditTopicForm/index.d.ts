@@ -1,10 +1,10 @@
 import { RelayRefetchProp } from 'react-relay';
-import { EditTopicForm_topic as TopicType } from '__generated__/EditTopicForm_topic.graphql';
+import { EditTopicForm_topicDetail as TopicDetailType } from '__generated__/EditTopicForm_topicDetail.graphql';
 declare type Props = {
     isOpen: boolean;
     relay: RelayRefetchProp;
     toggleForm: () => void;
-    topic: TopicType;
+    topicDetail: TopicDetailType;
 };
 declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

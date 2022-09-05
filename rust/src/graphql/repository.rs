@@ -129,12 +129,8 @@ impl Repository {
     }
 
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
-        let topic_id = Oid::root_topic();
-
         ctx.data_unchecked::<Store>()
-            // FIXME
-            .topic(&RepoId::wiki(), &topic_id)
-            .await?
-            .ok_or_else(|| Error::NotFound(format!("root topic id: {}", topic_id)))
+            .fetch_topic(&Oid::root_topic())
+            .await
     }
 }
