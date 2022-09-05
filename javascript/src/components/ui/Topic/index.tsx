@@ -49,7 +49,6 @@ class Topic extends Component<Props, State> {
       <Item
         canEdit={this.props.topic.viewerCanUpdate}
         className="topicTopicRow Box-row--topic"
-        description={this.props.topic.description}
         displayColor={this.props.topic.displayColor as string}
         formIsOpen={this.state.formIsOpen}
         newlyAdded={this.props.topic.newlyAdded}
@@ -74,8 +73,7 @@ class Topic extends Component<Props, State> {
 export default createFragmentContainer(Topic, {
   topic: graphql`
     fragment Topic_topic on Topic {
-      description
-      displayName: name
+      displayName
       id
       loading
       newlyAdded
@@ -86,7 +84,7 @@ export default createFragmentContainer(Topic, {
         edges {
           node {
             id
-            displayName: name
+            displayName
           }
         }
       }

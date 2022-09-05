@@ -9,11 +9,12 @@ mod topic;
 
 fn viewer(repo_ids: &RepoIds) -> Viewer {
     Viewer {
-        user_id: "2".into(),
+        context_repo_id: RepoId::wiki(),
         read_repo_ids: repo_ids.to_owned(),
-        write_repo_ids: repo_ids.to_owned(),
-        super_user: false,
         session_id: Some("2".into()),
+        super_user: false,
+        user_id: "2".into(),
+        write_repo_ids: repo_ids.to_owned(),
     }
 }
 

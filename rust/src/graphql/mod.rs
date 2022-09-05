@@ -27,10 +27,7 @@ mod repository;
 pub use repository::*;
 mod session;
 pub use session::*;
-mod synonym;
-pub use synonym::*;
-mod timerange;
-pub use timerange::*;
+mod time;
 mod topic;
 pub use topic::*;
 mod user;
@@ -41,6 +38,52 @@ pub use view::*;
 pub struct QueryRoot;
 
 pub type Schema = async_graphql::Schema<QueryRoot, MutationRoot, EmptySubscription>;
+
+#[derive(sqlx::FromRow)]
+struct SessionRow {
+    selected_repository_id: Option<sqlx::types::Uuid>,
+    session_id: String,
+    user_id: sqlx::types::Uuid,
+    write_repo_ids: Vec<sqlx::types::Uuid>,
+}
+
+impl From<SessionRow> for Viewer {
+    fn from(row: SessionRow) -> Self {
+        let repo_ids: Vec<RepoId> = row.write_repo_ids.into_iter().map(RepoId::from).collect();
+        let selected_repo_id: RepoId = match row.selected_repository_id {
+            Some(uuid) => uuid.into(),
+            None => RepoId::wiki(),
+        };
+
+        Viewer {
+            write_repo_ids: repo_ids.to_owned().into(),
+            read_repo_ids: repo_ids.into(),
+            session_id: Some(row.session_id),
+            context_repo_id: selected_repo_id,
+            super_user: false,
+            user_id: row.user_id.to_string(),
+        }
+    }
+}
+
+impl From<(String, Option<SessionRow>)> for Viewer {
+    fn from((user_id, row): (String, Option<SessionRow>)) -> Self {
+        match row {
+            Some(row) => {
+                log::info!("found user and session in database: {}", user_id);
+                row.into()
+            }
+
+            None => {
+                log::warn!(
+                    "no user session found in database, proceeding as guest: {}",
+                    user_id,
+                );
+                Viewer::guest()
+            }
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct State {
@@ -81,8 +124,13 @@ impl State {
     pub async fn authenticate(&self, user_info: Option<(String, String)>) -> Viewer {
         match user_info {
             Some((user_id, session_id)) => {
-                let result = sqlx::query_as::<_, (Vec<sqlx::types::Uuid>,)>(
-                    "select array_agg(ur.repository_id)
+                let result = sqlx::query_as::<_, SessionRow>(
+                    "select
+                        u.id user_id,
+                        u.selected_repository_id,
+                        $2 session_id,
+                        array_agg(ur.repository_id) write_repo_ids
+
                     from sessions s
                     join users u on s.user_id = u.id
                     join users_repositories ur on u.id = ur.user_id
@@ -96,34 +144,7 @@ impl State {
                 .await;
 
                 match result {
-                    Ok(row) => match &row {
-                        Some((repo_ids,)) => {
-                            log::info!("found user and session in database: {}", user_id);
-                            match RepoIds::try_from(repo_ids) {
-                                Ok(repo_ids) => Viewer {
-                                    write_repo_ids: repo_ids.clone(),
-                                    read_repo_ids: repo_ids,
-                                    session_id: Some(session_id),
-                                    super_user: false,
-                                    user_id,
-                                },
-
-                                Err(err) => {
-                                    log::error!("problem decoding write prefixes: {}", err);
-                                    Viewer::guest()
-                                }
-                            }
-                        }
-
-                        None => {
-                            log::warn!(
-                                "no user session found in database, proceeding as guest: {}, {}",
-                                user_id,
-                                session_id
-                            );
-                            Viewer::guest()
-                        }
-                    },
+                    Ok(row) => (user_id, row).into(),
 
                     Err(err) => {
                         log::warn!("failed to fetch session info, proceeding as guest: {}", err);

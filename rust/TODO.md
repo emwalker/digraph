@@ -1,5 +1,7 @@
 Before switchover:
+* Fix synonym update bugs
 * Show merged topic children instead of topic children from one repo topic
+* Experiment with using borrows in some resolvers instead of copying
 * Return collection of detail views / edit forms instead of edit form
 * Make the display color repo-specific, and make the display color for Wiki to be transparent
 * Try to save graphql::{Topic,Link} in the object loader instead of git::{Topic,Link}
@@ -9,8 +11,10 @@ Before switchover:
 * Show links in private repo in blue again
 * Clean up database: odds and ends
 * Don't save private links and topics to /wiki/
+* Order links by reverse chronological date
 * Ensure that account creation still works
 * Ensure that account deletion still works
+* Go through git:: namespace and hide structs and functions that aren't needed outside of the module
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
@@ -27,6 +31,7 @@ Before switchover:
 
 
 Later:
+* Investigate consolidating SearchMatch and TopicChild (TopicChildConnection)
 * Drop need for Github login permission
 * Drop need for Github email permission
 * Repo selection UX: showing items

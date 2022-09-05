@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use async_graphql::connection::*;
 use async_graphql::{connection::EmptyFields, scalar, Enum, SimpleObject};
 use geotime::Geotime;
@@ -76,6 +78,14 @@ impl TryFrom<&types::Timerange> for Timerange {
             starts_at: Some(starts_at),
             prefix_format: TimerangePrefixFormat::from(&timerange.prefix_format),
         })
+    }
+}
+
+impl TryFrom<types::Timerange> for Timerange {
+    type Error = Error;
+
+    fn try_from(timerange: types::Timerange) -> Result<Self> {
+        (&timerange).try_into()
     }
 }
 

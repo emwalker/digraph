@@ -30,7 +30,7 @@ class EditTopicForm extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      displayName: props.topicDetail.name,
+      displayName: props.topicDetail.displayName,
     }
   }
 
@@ -128,13 +128,13 @@ export default createRefetchContainer(EditTopicForm, {
       count: {type: "Int!", defaultValue: 10}
     ) {
       topicId
-      name
+      displayName
 
       selectedTopics: parentTopics(first: 1000) {
         edges {
           node {
             value: id
-            label: name
+            label: displayName
           }
         }
       }

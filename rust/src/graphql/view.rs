@@ -1,11 +1,13 @@
+use std::convert::TryInto;
+
 use async_graphql::{Context, Object, SimpleObject, ID};
 
 use super::{
-    relay::conn, ActivityLineItem, ActivityLineItemConnection, Link, LiveSearchTopicsPayload,
-    QueryInfo, SynonymMatch, Topic, User,
+    relay, ActivityLineItem, ActivityLineItemConnection, Link, LiveSearchTopicsPayload, QueryInfo,
+    Topic, User,
 };
+use crate::prelude::*;
 use crate::store::Store;
-use crate::{git, prelude::*};
 
 #[derive(SimpleObject)]
 pub struct ViewStats {
@@ -54,13 +56,15 @@ impl View {
             });
         }
 
-        conn(after, before, first, last, results)
+        relay::connection(after, before, first, last, results)
     }
 
     async fn link(&self, ctx: &Context<'_>, id: String) -> Result<Option<Link>> {
-        ctx.data_unchecked::<Store>()
-            .fetch_link(&id.try_into()?)
-            .await
+        Ok(ctx
+            .data_unchecked::<Store>()
+            .fetch_link(id.try_into()?)
+            .await?
+            .map(Link::from))
     }
 
     async fn query_info(&self) -> QueryInfo {
@@ -69,10 +73,12 @@ impl View {
         }
     }
 
-    async fn topic(&self, ctx: &Context<'_>, id: String) -> Result<Topic> {
-        ctx.data_unchecked::<Store>()
-            .fetch_topic(&id.try_into()?)
-            .await
+    async fn topic(&self, ctx: &Context<'_>, id: String) -> Result<Option<Topic>> {
+        Ok(ctx
+            .data_unchecked::<Store>()
+            .fetch_topic(id.try_into()?)
+            .await?
+            .map(Topic::from))
     }
 
     async fn topic_live_search(
@@ -80,16 +86,16 @@ impl View {
         ctx: &Context<'_>,
         search_string: Option<String>,
     ) -> Result<LiveSearchTopicsPayload> {
-        let git::FetchTopicLiveSearchResult { synonym_matches } = ctx
+        let result = ctx
             .data_unchecked::<Store>()
             .search_topics(search_string)
             .await?;
-        let synonym_matches = synonym_matches.iter().map(SynonymMatch::from).collect();
-        Ok(LiveSearchTopicsPayload { synonym_matches })
+
+        Ok(LiveSearchTopicsPayload(result))
     }
 
     async fn stats(&self, ctx: &Context<'_>) -> Result<ViewStats> {
-        ctx.data_unchecked::<Store>().view_stats().await
+        ctx.data_unchecked::<Store>().view_stats().await?.try_into()
     }
 
     async fn viewer(&self, ctx: &Context<'_>) -> Result<User> {

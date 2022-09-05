@@ -1,93 +1,76 @@
 use async_graphql::dataloader::*;
 use itertools::Itertools;
 use std::collections::HashMap;
+use std::convert::TryInto;
+use std::str::FromStr;
 
 use super::{
-    timerange, Link, LinkDetail, Synonym, SynonymInput, SynonymMatch, Synonyms, Topic, TopicChild,
-    TopicDetail, ViewStats,
+    Link, LinkDetail, Synonym, SynonymInput, SynonymMatch, Topic, TopicChild, TopicDetail,
+    ViewStats,
 };
 use crate::git;
 use crate::prelude::*;
 
 pub use git::{Client, DataRoot};
 
-impl From<&[git::Synonym]> for Synonyms {
-    fn from(slice: &[git::Synonym]) -> Self {
-        let vec = slice.iter().map(Synonym::from).collect::<Vec<Synonym>>();
-        Self(vec)
+pub struct ObjectLoader {
+    viewer: Viewer,
+    client: git::Client,
+}
+
+impl ObjectLoader {
+    pub fn new(viewer: Viewer, client: git::Client) -> Self {
+        Self { viewer, client }
     }
 }
 
-impl TryFrom<&git::RepoLink> for Link {
+#[async_trait::async_trait]
+impl Loader<Oid> for ObjectLoader {
+    type Value = git::Object;
     type Error = Error;
 
-    fn try_from(link: &git::RepoLink) -> Result<Self> {
-        let parent_topic_ids = link
-            .parent_topics
-            .iter()
-            .map(|topic| topic.id.to_owned())
-            .collect::<Vec<Oid>>();
-
-        let detail = LinkDetail {
-            color: "".to_owned(),
-            link_id: link.id().to_owned(),
-            parent_topic_ids: parent_topic_ids.to_owned(),
-            // FIXME
-            repo_id: RepoId::wiki(),
-            title: link.title().to_owned(),
-            url: link.url().to_owned(),
-        };
-
-        Ok(Self {
-            display_detail: detail.to_owned(),
-            details: vec![detail],
-            id: link.id().to_owned(),
-            newly_added: false,
-            viewer_review: None,
-        })
+    async fn load(&self, oids: &[Oid]) -> Result<HashMap<Oid, Self::Value>> {
+        log::debug!("batch load topics: {:?}", oids);
+        let context = &self.viewer.context_repo_id;
+        Ok(self.client.fetch_all(oids).finalize(context)?.to_hash())
     }
 }
 
-impl From<&git::SynonymEntry> for SynonymMatch {
-    fn from(git::SynonymEntry { name, id }: &git::SynonymEntry) -> Self {
-        Self {
-            display_name: name.to_owned(),
-            id: id.to_string(),
+impl From<git::Object> for TopicChild {
+    fn from(value: git::Object) -> Self {
+        match value {
+            git::Object::Link(link) => TopicChild::Link(Link(link)),
+            git::Object::Topic(topic) => TopicChild::Topic(Topic(topic)),
         }
     }
 }
 
-impl From<&git::Synonym> for Synonym {
-    fn from(synonym: &git::Synonym) -> Self {
-        Self {
-            name: synonym.name.clone(),
-            locale: synonym.locale.to_string().to_lowercase(),
-        }
-    }
-}
-
-impl From<&Vec<git::Synonym>> for Synonyms {
-    fn from(synonyms: &Vec<git::Synonym>) -> Self {
-        Self(synonyms.iter().map(Synonym::from).collect())
-    }
-}
-
-impl From<&SynonymInput> for git::Synonym {
-    fn from(synonym: &SynonymInput) -> Self {
-        use std::str::FromStr;
-
-        Self {
-            added: chrono::Utc::now(),
-            name: synonym.name.clone(),
-            locale: Locale::from_str(&synonym.locale).unwrap_or(Locale::EN),
-        }
-    }
-}
-
-impl TryFrom<&git::SearchMatch> for TopicChild {
+impl TryFrom<git::Object> for Link {
     type Error = Error;
 
-    fn try_from(item: &git::SearchMatch) -> Result<Self> {
+    fn try_from(value: git::Object) -> Result<Self> {
+        match value {
+            git::Object::Link(link) => Ok(link.into()),
+            _ => Err(Error::Repo("not an object".into())),
+        }
+    }
+}
+
+impl TryFrom<git::Object> for Topic {
+    type Error = Error;
+
+    fn try_from(value: git::Object) -> Result<Self> {
+        match value {
+            git::Object::Topic(topic) => Ok(topic.into()),
+            _ => Err(Error::Repo("not an object".into())),
+        }
+    }
+}
+
+impl TryFrom<git::SearchMatch> for TopicChild {
+    type Error = Error;
+
+    fn try_from(item: git::SearchMatch) -> Result<Self> {
         let git::SearchMatch { object, kind, .. } = item;
         let child = match kind {
             git::Kind::Topic => TopicChild::Topic(object.try_into()?),
@@ -97,8 +80,112 @@ impl TryFrom<&git::SearchMatch> for TopicChild {
     }
 }
 
-impl From<git::Stats> for ViewStats {
-    fn from(stats: git::Stats) -> Self {
+impl<'a> From<&'a git::SynonymEntry> for SynonymMatch<'a> {
+    fn from(value: &'a git::SynonymEntry) -> Self {
+        Self(value)
+    }
+}
+
+impl TryFrom<&SynonymInput> for git::Synonym {
+    type Error = Error;
+
+    fn try_from(value: &SynonymInput) -> Result<Self> {
+        Ok(Self {
+            added: chrono::Utc::now(),
+            name: value.name.to_owned(),
+            locale: Locale::from_str(&value.locale)?,
+        })
+    }
+}
+
+impl From<&git::Synonyms> for Vec<Synonym> {
+    fn from(value: &git::Synonyms) -> Self {
+        value.iter().map(Synonym::from).collect_vec()
+    }
+}
+
+impl From<git::Synonym> for Synonym {
+    fn from(synonym: git::Synonym) -> Self {
+        Self(synonym)
+    }
+}
+
+impl From<&git::Synonym> for Synonym {
+    fn from(synonym: &git::Synonym) -> Self {
+        synonym.to_owned().into()
+    }
+}
+
+impl From<git::Topic> for Topic {
+    fn from(value: git::Topic) -> Self {
+        Self(value)
+    }
+}
+
+impl TryFrom<Option<git::Topic>> for Topic {
+    type Error = Error;
+
+    fn try_from(value: Option<git::Topic>) -> Result<Self> {
+        match value {
+            Some(value) => Ok(value.into()),
+            None => Err(Error::NotFound("no topic".into())),
+        }
+    }
+}
+
+impl From<&git::Topic> for Topic {
+    fn from(value: &git::Topic) -> Self {
+        value.to_owned().into()
+    }
+}
+
+impl From<git::TopicDetail> for TopicDetail {
+    fn from(value: git::TopicDetail) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&git::TopicDetail> for TopicDetail {
+    fn from(value: &git::TopicDetail) -> Self {
+        value.to_owned().into()
+    }
+}
+
+impl From<git::LinkDetail> for LinkDetail {
+    fn from(value: git::LinkDetail) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&git::LinkDetail> for LinkDetail {
+    fn from(value: &git::LinkDetail) -> Self {
+        value.to_owned().into()
+    }
+}
+
+impl From<git::Link> for Link {
+    fn from(value: git::Link) -> Self {
+        Self(value)
+    }
+}
+
+impl TryFrom<Option<git::Link>> for Link {
+    type Error = Error;
+
+    fn try_from(value: Option<git::Link>) -> Result<Self> {
+        match value {
+            Some(value) => Ok(value.into()),
+            None => Err(Error::NotFound("no link".into())),
+        }
+    }
+}
+
+impl TryFrom<git::FetchStatsResult> for ViewStats {
+    type Error = Error;
+
+    fn try_from(value: git::FetchStatsResult) -> Result<Self> {
+        let stats = &value.stats;
+
         let link_count = match stats.link_count().try_into() {
             Ok(count) => count,
 
@@ -117,209 +204,9 @@ impl From<git::Stats> for ViewStats {
             }
         };
 
-        Self {
+        Ok(Self {
             link_count: Some(link_count),
             topic_count: Some(topic_count),
-        }
-    }
-}
-
-impl TryFrom<(&RepoId, &Option<git::RepoObject>)> for LinkDetail {
-    type Error = Error;
-
-    fn try_from((repo_id, object): (&RepoId, &Option<git::RepoObject>)) -> Result<Self> {
-        match object {
-            Some(git::RepoObject::Link(link)) => {
-                let parent_topic_ids = link
-                    .parent_topics
-                    .iter()
-                    .map(|parent| parent.id.to_owned())
-                    .collect_vec();
-
-                Ok(Self {
-                    color: "".to_owned(),
-                    link_id: link.id().to_owned(),
-                    parent_topic_ids,
-                    repo_id: repo_id.to_owned(),
-                    title: link.title().to_owned(),
-                    url: link.url().to_owned(),
-                })
-            }
-
-            _ => Err(Error::NotFound(format!("expected a link: {:?}", object))),
-        }
-    }
-}
-
-impl TryFrom<&git::Object> for Link {
-    type Error = Error;
-
-    fn try_from(value: &git::Object) -> Result<Self> {
-        let mut details: Vec<LinkDetail> = vec![];
-
-        for (repo_id, repo_obj) in value.iter() {
-            if repo_obj.is_none() {
-                continue;
-            }
-            details.push((repo_id, repo_obj).try_into()?);
-        }
-
-        if details.is_empty() {
-            return Err(Error::NotFound(format!("no link: {}", value.id())));
-        }
-
-        Ok(Link {
-            display_detail: details.first().unwrap().to_owned(),
-            details,
-            id: value.id().to_owned(),
-            newly_added: false,
-            viewer_review: None,
         })
-    }
-}
-
-impl TryFrom<git::Object> for Link {
-    type Error = Error;
-
-    fn try_from(value: git::Object) -> Result<Self> {
-        (&value).try_into()
-    }
-}
-
-impl TryFrom<Option<git::Object>> for Link {
-    type Error = Error;
-
-    fn try_from(value: Option<git::Object>) -> Result<Self> {
-        value
-            .ok_or_else(|| Error::NotFound("no link".into()))?
-            .try_into()
-    }
-}
-
-impl TryFrom<(&RepoId, &Option<git::RepoObject>)> for TopicDetail {
-    type Error = Error;
-
-    fn try_from((repo_id, object): (&RepoId, &Option<git::RepoObject>)) -> Result<Self> {
-        match object {
-            Some(git::RepoObject::Topic(topic)) => {
-                let parent_topic_ids = topic
-                    .parent_topics
-                    .iter()
-                    .map(|parent| parent.id.to_owned())
-                    .collect_vec();
-
-                let child_ids = topic
-                    .children
-                    .iter()
-                    .map(|child| child.id.to_owned())
-                    .collect_vec();
-
-                let timerange = topic.timerange().as_ref();
-                let timerange = match timerange {
-                    Some(timerange) => Some(timerange::Timerange::try_from(timerange)?),
-                    None => None,
-                };
-
-                Ok(Self {
-                    child_ids,
-                    color: "".to_owned(),         // FIXME
-                    name: topic.name(Locale::EN), // FIXME
-                    parent_topic_ids,
-                    repo_id: repo_id.to_owned(),
-                    synonyms: topic.synonyms().into(),
-                    timerange,
-                    topic_id: topic.id().to_owned(),
-                })
-            }
-
-            _ => Err(Error::NotFound(format!("expected a topic: {:?}", object))),
-        }
-    }
-}
-
-impl TryFrom<Option<git::Object>> for Topic {
-    type Error = Error;
-
-    fn try_from(value: Option<git::Object>) -> Result<Self> {
-        value
-            .ok_or_else(|| Error::NotFound("no topic".into()))?
-            .try_into()
-    }
-}
-
-impl TryFrom<&git::Object> for Topic {
-    type Error = Error;
-
-    fn try_from(value: &git::Object) -> Result<Self> {
-        let mut details: Vec<TopicDetail> = vec![];
-
-        for (repo_id, repo_obj) in value.iter() {
-            if repo_obj.is_none() {
-                continue;
-            }
-            details.push((repo_id, repo_obj).try_into()?);
-        }
-
-        if details.is_empty() {
-            return Err(Error::NotFound(format!("no link: {}", value.id())));
-        }
-
-        Ok(Topic {
-            display_detail: details.first().unwrap().to_owned(),
-            details,
-            id: value.id().to_owned(),
-            newly_added: false,
-            root: value.id().is_root(),
-        })
-    }
-}
-
-impl TryFrom<git::Object> for Topic {
-    type Error = Error;
-
-    fn try_from(value: git::Object) -> Result<Self> {
-        (&value).try_into()
-    }
-}
-
-pub struct ObjectLoader {
-    client: git::Client,
-}
-
-impl ObjectLoader {
-    pub fn new(client: git::Client) -> Self {
-        Self { client }
-    }
-}
-
-#[async_trait::async_trait]
-impl Loader<Oid> for ObjectLoader {
-    type Value = git::Object;
-    type Error = Error;
-
-    async fn load(&self, oids: &[Oid]) -> Result<HashMap<Oid, Self::Value>> {
-        log::debug!("batch load topics: {:?}", oids);
-        Ok(self.client.fetch_all(oids).to_hash())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    mod synonyms {
-        use super::*;
-
-        #[test]
-        fn lowercase_serialization() {
-            let from = git::Synonym {
-                added: chrono::Utc::now(),
-                name: "Name".to_owned(),
-                locale: Locale::EN,
-            };
-
-            let to = Synonym::from(&from);
-            assert_eq!(to.locale, "en");
-        }
     }
 }

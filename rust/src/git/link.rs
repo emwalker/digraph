@@ -1,5 +1,5 @@
 use chrono::Utc;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 
 use crate::git::{
     activity, Kind, ParentTopic, RepoLink, RepoLinkMetadata, RepoTopic, SaveChangesForPrefix,
@@ -10,42 +10,6 @@ use crate::prelude::*;
 
 use super::activity::TopicInfoList;
 use super::{Mutation, RepoLinkDetails};
-
-#[derive(Clone)]
-pub struct Link(HashSet<(RepoId, Option<RepoLink>)>);
-
-impl From<HashSet<(&RepoId, Option<RepoLink>)>> for Link {
-    fn from(source: HashSet<(&RepoId, Option<RepoLink>)>) -> Self {
-        let mut dest = HashSet::new();
-
-        for (repo_id, repo_link) in source {
-            dest.insert((repo_id.to_owned(), repo_link.to_owned()));
-        }
-
-        Self(dest)
-    }
-}
-
-#[derive(Clone)]
-pub struct Links(pub(crate) HashMap<Oid, Link>);
-
-impl From<HashMap<&Oid, HashSet<(&RepoId, Option<RepoLink>)>>> for Links {
-    fn from(source: HashMap<&Oid, HashSet<(&RepoId, Option<RepoLink>)>>) -> Self {
-        let mut dest = HashMap::new();
-
-        for (link_id, set) in source {
-            dest.insert(link_id.to_owned(), Link::from(set));
-        }
-
-        Self(dest)
-    }
-}
-
-impl Links {
-    pub fn to_hash(self) -> HashMap<Oid, Link> {
-        self.0
-    }
-}
 
 pub struct DeleteLink {
     pub actor: Viewer,

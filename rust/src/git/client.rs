@@ -10,8 +10,8 @@ use super::index::{
     SearchEntry, SynonymEntry, SynonymMatch,
 };
 use super::{
-    activity, core, DownsetIter, Objects, RepoLink, RepoObject, RepoStats, RepoTopic, Search,
-    SearchTokenIndex, SynonymIndex, TopicDownsetIter,
+    activity, core, DownsetIter, ObjectBuilders, RepoLink, RepoObject, RepoStats, RepoTopic,
+    Search, SearchTokenIndex, SynonymIndex, TopicDownsetIter,
 };
 use crate::prelude::*;
 use crate::types::{ReadPath, Timespec};
@@ -228,13 +228,16 @@ impl Client {
         }
     }
 
-    pub fn fetch_all(&self, oids: &[Oid]) -> Objects {
-        let mut objects = Objects::new();
+    pub fn fetch_all(&self, oids: &[Oid]) -> ObjectBuilders {
+        let mut objects = ObjectBuilders::new();
 
         for repo_id in self.viewer.read_repo_ids.iter() {
             for id in oids {
                 let object = self.fetch(repo_id, id);
-                objects.add(id.to_owned(), repo_id.to_owned(), object);
+                if object.is_none() {
+                    continue;
+                }
+                objects.add(id.to_owned(), repo_id.to_owned(), object.unwrap());
             }
         }
 

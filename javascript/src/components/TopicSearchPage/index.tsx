@@ -55,7 +55,7 @@ class TopicSearchPage extends Component<Props> {
 
     const {
       search: searchResults,
-      name,
+      displayName,
       displayParentTopics,
     } = topic
     const rows = liftNodes<SearchItemType>(searchResults)
@@ -64,7 +64,7 @@ class TopicSearchPage extends Component<Props> {
       <Page>
         <div className="px-3 px-md-6 px-lg-0">
           <Subhead
-            heading={name}
+            heading={displayName}
           />
           <Columns>
             <RightColumn>
@@ -116,12 +116,12 @@ export default createFragmentContainer(TopicSearchPage, {
       searchString: {type: "String!", defaultValue: ""},
     ) {
       id
-      name
+      displayName
 
       displayParentTopics(first: 100) {
         edges {
           node {
-            display: name
+            displayName
             id
           }
         }

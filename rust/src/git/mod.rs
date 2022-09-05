@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
+use std::convert::TryInto;
 
 mod account;
 pub mod activity;
 mod checks;
 mod client;
-mod collections;
 pub mod core;
 mod index;
 mod link;
@@ -14,18 +14,19 @@ mod search;
 mod stats;
 pub mod testing;
 mod topic;
+mod types;
 
 use crate::prelude::*;
-use crate::types;
+use crate::types as core_types;
 pub use account::*;
 pub use client::*;
-pub use collections::*;
 pub use index::*;
 pub use link::*;
 pub use repository::*;
 pub use search::*;
 pub use stats::*;
 pub use topic::*;
+pub use types::*;
 
 #[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum Kind {
@@ -125,6 +126,17 @@ impl std::cmp::PartialOrd for RepoLink {
 impl std::hash::Hash for RepoLink {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.metadata.id.hash(state);
+    }
+}
+
+impl TryFrom<RepoObject> for RepoLink {
+    type Error = Error;
+
+    fn try_from(value: RepoObject) -> Result<Self> {
+        match value {
+            RepoObject::Link(link) => Ok(link),
+            _ => Err(Error::NotFound("no repo link".into())),
+        }
     }
 }
 
@@ -350,10 +362,10 @@ impl RepoTopic {
         self.prefix().format(&self.metadata.name(locale))
     }
 
-    fn prefix(&self) -> types::TimerangePrefix {
+    fn prefix(&self) -> core_types::TimerangePrefix {
         match &self.metadata.details {
-            Some(details) => types::TimerangePrefix::from(&details.timerange),
-            None => types::TimerangePrefix::from(&None),
+            Some(details) => core_types::TimerangePrefix::from(&details.timerange),
+            None => core_types::TimerangePrefix::from(&None),
         }
     }
 
@@ -421,6 +433,33 @@ impl RepoTopic {
 pub enum RepoObject {
     Topic(RepoTopic),
     Link(RepoLink),
+}
+
+impl TryFrom<RepoObject> for RepoTopic {
+    type Error = Error;
+
+    fn try_from(value: RepoObject) -> Result<Self> {
+        match value {
+            RepoObject::Topic(topic) => Ok(topic),
+            _ => Err(Error::NotFound("no repo topic".into())),
+        }
+    }
+}
+
+impl TryFrom<&RepoObject> for RepoLink {
+    type Error = Error;
+
+    fn try_from(value: &RepoObject) -> Result<Self> {
+        value.to_owned().try_into()
+    }
+}
+
+impl TryFrom<&RepoObject> for RepoTopic {
+    type Error = Error;
+
+    fn try_from(value: &RepoObject) -> Result<Self> {
+        value.to_owned().try_into()
+    }
 }
 
 impl RepoObject {

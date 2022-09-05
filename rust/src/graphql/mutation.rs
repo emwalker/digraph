@@ -1,9 +1,10 @@
+use std::convert::TryInto;
+
 use async_graphql::{Context, InputObject, Object, SimpleObject, ID};
 use itertools::Itertools;
 
 use super::{
-    alert, timerange, DateTime, Link, LinkEdge, Repository, Session, SessionEdge, Synonym,
-    TimerangeEdge, Topic, TopicEdge, User, UserEdge,
+    alert, time, Link, LinkEdge, Repository, Session, SessionEdge, Topic, TopicEdge, User, UserEdge,
 };
 use crate::git;
 use crate::prelude::*;
@@ -140,13 +141,6 @@ impl SynonymInput {
     pub fn is_valid(&self) -> bool {
         !self.name.is_empty() && !RepoUrl::is_valid_url(&self.name)
     }
-
-    pub fn to_synonym(&self) -> Synonym {
-        Synonym {
-            name: self.name.clone(),
-            locale: self.locale.clone(),
-        }
-    }
 }
 
 #[derive(Debug, InputObject)]
@@ -160,6 +154,7 @@ pub struct UpdateTopicSynonymsInput {
 #[derive(SimpleObject)]
 pub struct UpdateTopicSynonymsPayload {
     alerts: Vec<alert::Alert>,
+    topic: Option<Topic>,
     client_mutation_id: Option<String>,
 }
 
@@ -210,17 +205,17 @@ pub struct UpsertTopicPayload {
 #[derive(Debug, InputObject)]
 pub struct UpsertTopicTimerangeInput {
     pub client_mutation_id: Option<String>,
-    pub ends_at: Option<DateTime>,
-    pub prefix_format: timerange::TimerangePrefixFormat,
+    pub ends_at: Option<time::DateTime>,
+    pub prefix_format: time::TimerangePrefixFormat,
     pub repo_id: String,
-    pub starts_at: DateTime,
+    pub starts_at: time::DateTime,
     pub topic_id: String,
 }
 
 #[derive(SimpleObject)]
 pub struct UpsertTopicTimerangePayload {
     alerts: Vec<alert::Alert>,
-    timerange_edge: Option<TimerangeEdge>,
+    timerange_edge: Option<time::TimerangeEdge>,
     topic: Topic,
 }
 
@@ -370,7 +365,7 @@ impl MutationRoot {
         store
             .remove_topic_timerange(&repo_id.try_into()?, &topic_id)
             .await?;
-        let topic = store.fetch_topic(&topic_id).await?;
+        let topic: Topic = store.fetch_topic(topic_id).await?.try_into()?;
 
         Ok(RemoveTopicTimerangePayload {
             client_mutation_id: client_mutation_id.to_owned(),
@@ -396,7 +391,7 @@ impl MutationRoot {
             .review_link(&repo_id.try_into()?, &link_id, *reviewed)
             .await?;
 
-        let link: Link = store.fetch_link(&link_id).await?.try_into()?;
+        let link: Link = store.fetch_link(link_id).await?.try_into()?;
         Ok(ReviewLinkPayload { link })
     }
 
@@ -420,14 +415,11 @@ impl MutationRoot {
         ctx: &Context<'_>,
         input: UpdateLinkParentTopicsInput,
     ) -> Result<UpdateLinkParentTopicsPayload> {
-        let git::UpdateLinkParentTopicsResult { link, .. } = ctx
-            .data_unchecked::<Store>()
-            .update_link_parent_topics(input)
-            .await?;
-
-        Ok(UpdateLinkParentTopicsPayload {
-            link: Link::try_from(&link)?,
-        })
+        let store = ctx.data_unchecked::<Store>();
+        let link_id: Oid = (&input.link_id).try_into()?;
+        store.update_link_parent_topics(input).await?;
+        let link: Link = store.fetch_link(link_id).await?.try_into()?;
+        Ok(UpdateLinkParentTopicsPayload { link })
     }
 
     async fn update_topic_parent_topics(
@@ -464,14 +456,21 @@ impl MutationRoot {
         ctx: &Context<'_>,
         input: UpdateTopicSynonymsInput,
     ) -> Result<UpdateTopicSynonymsPayload> {
+        let store = ctx.data_unchecked::<Store>();
         let client_mutation_id = input.client_mutation_id.clone();
-        let git::UpdateTopicSynonymsResult { alerts, .. } = ctx
-            .data_unchecked::<Store>()
-            .update_topic_synonyms(input)
-            .await?;
+
+        let git::UpdateTopicSynonymsResult {
+            alerts, repo_topic, ..
+        } = store.update_topic_synonyms(input).await?;
+
+        let topic: Topic = store
+            .fetch_topic(repo_topic.id().to_owned())
+            .await?
+            .try_into()?;
 
         Ok(UpdateTopicSynonymsPayload {
             alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
+            topic: Some(topic),
             client_mutation_id,
         })
     }
@@ -481,17 +480,20 @@ impl MutationRoot {
         ctx: &Context<'_>,
         input: UpsertLinkInput,
     ) -> Result<UpsertLinkPayload> {
-        let result = ctx.data_unchecked::<Store>().upsert_link(input).await?;
+        let store = ctx.data_unchecked::<Store>();
+        let result = store.upsert_link(input).await?;
 
-        let edge = if let Some(link) = &result.link {
-            Some(LinkEdge::new(String::from("0"), Link::try_from(link)?))
+        let link_edge = if let Some(link) = &result.link {
+            let link_id = link.id();
+            let link: Link = store.fetch_link(link_id.to_owned()).await?.try_into()?;
+            Some(LinkEdge::new(String::from("0"), link))
         } else {
             None
         };
 
         Ok(UpsertLinkPayload {
             alerts: result.alerts.iter().map(alert::Alert::from).collect_vec(),
-            link_edge: edge,
+            link_edge,
         })
     }
 
@@ -504,9 +506,10 @@ impl MutationRoot {
         let store = ctx.data_unchecked::<Store>();
         let result = store.upsert_topic(input).await?;
 
-        let edge = match &result.repo_topic {
-            Some(repo_topic) => {
-                let topic = store.fetch_topic(repo_topic.id()).await?;
+        let topic_edge = match &result.repo_topic {
+            Some(topic) => {
+                let topic_id = topic.id();
+                let topic: Topic = store.fetch_topic(topic_id.to_owned()).await?.try_into()?;
                 Some(TopicEdge::new(String::from("0"), topic))
             }
 
@@ -515,7 +518,7 @@ impl MutationRoot {
 
         Ok(UpsertTopicPayload {
             alerts: result.alerts.iter().map(alert::Alert::from).collect_vec(),
-            topic_edge: edge,
+            topic_edge,
         })
     }
 
@@ -525,20 +528,21 @@ impl MutationRoot {
         input: UpsertTopicTimerangeInput,
     ) -> Result<UpsertTopicTimerangePayload> {
         let store = ctx.data_unchecked::<Store>();
-        let topic_id = (&input.topic_id).try_into()?;
+        let topic_id: Oid = (&input.topic_id).try_into()?;
 
         let git::UpsertTopicTimerangeResult { alerts, timerange } =
             store.upsert_topic_timerange(input).await?;
+        let topic: Topic = store.fetch_topic(topic_id).await?.try_into()?;
 
-        let topic = store.fetch_topic(&topic_id).await?;
+        let timerange_edge = Some(time::TimerangeEdge::new(
+            String::from("0"),
+            timerange.try_into()?,
+        ));
 
         Ok(UpsertTopicTimerangePayload {
             alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
             topic,
-            timerange_edge: Some(TimerangeEdge::new(
-                String::from("0"),
-                timerange::Timerange::try_from(&timerange)?,
-            )),
+            timerange_edge,
         })
     }
 }

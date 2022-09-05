@@ -1,6 +1,6 @@
 use async_graphql::Object;
 
-use super::{relay::conn, TopicConnection};
+use super::{relay::connection, TopicConnection};
 use crate::prelude::*;
 
 pub struct QueryInfo {
@@ -14,6 +14,6 @@ impl QueryInfo {
     }
 
     async fn topics(&self) -> Result<TopicConnection> {
-        conn(None, None, None, None, vec![])
+        connection(None, None, None, None, vec![])
     }
 }

@@ -88,7 +88,7 @@ export default createFragmentContainer(Link, {
       displayParentTopics(first: 100) {
         edges {
           node {
-            displayName: name
+            displayName
             id
           }
         }

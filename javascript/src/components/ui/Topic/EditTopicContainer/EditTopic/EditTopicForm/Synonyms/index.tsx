@@ -169,7 +169,7 @@ export default createFragmentContainer(Synonyms, {
   topicDetail: graphql`
     fragment Synonyms_topicDetail on TopicDetail {
       topicId
-      displayName: name
+      displayName
       viewerCanDeleteSynonyms
       viewerCanUpdate
 

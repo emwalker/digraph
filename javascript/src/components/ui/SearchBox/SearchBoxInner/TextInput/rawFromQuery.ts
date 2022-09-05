@@ -22,10 +22,10 @@ const rawFromQuery = (queryInfo: QueryInfo, genKey: Function): RawDraftContentSt
   topics.forEach((edge) => {
     const node = edge?.node
     if (node != null) {
-      const { name, id } = node
+      const { displayName, id } = node
       entityRanges.push({
         key: entityIndex,
-        length: name.length,
+        length: displayName.length,
         offset: startLast,
       })
 
@@ -34,14 +34,14 @@ const rawFromQuery = (queryInfo: QueryInfo, genKey: Function): RawDraftContentSt
         mutability: 'SEGMENTED',
         data: {
           mention: {
-            name,
+            displayName,
             link: id,
           },
         },
       }
 
-      tokens.push(name)
-      startLast += name.length + 1
+      tokens.push(displayName)
+      startLast += displayName.length + 1
       entityIndex += 1
     }
   })

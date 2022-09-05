@@ -1,7 +1,8 @@
 use async_graphql::connection::*;
 use async_graphql::{Context, Object, SimpleObject};
+use itertools::Itertools;
 
-use super::{relay::conn, DateTime, LiveSearchTopicsPayload, SynonymMatch, TopicConnection, User};
+use super::{relay, time, LiveSearchTopicsPayload, TopicConnection, User};
 use crate::git;
 use crate::prelude::*;
 use crate::store::Store;
@@ -17,15 +18,7 @@ impl TryFrom<Option<Link>> for Link {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct LinkDetail {
-    pub color: String,
-    pub link_id: Oid,
-    pub parent_topic_ids: Vec<Oid>,
-    pub repo_id: RepoId,
-    pub title: String,
-    pub url: String,
-}
+pub struct LinkDetail(pub(crate) git::LinkDetail);
 
 #[Object]
 impl LinkDetail {
@@ -34,19 +27,15 @@ impl LinkDetail {
         ctx: &Context<'_>,
         search_string: Option<String>,
     ) -> Result<LiveSearchTopicsPayload> {
-        let git::FetchTopicLiveSearchResult { synonym_matches } = ctx
+        let result = ctx
             .data_unchecked::<Store>()
             .search_topics(search_string)
             .await?;
-        let synonym_matches = synonym_matches
-            .iter()
-            .map(SynonymMatch::from)
-            .collect::<Vec<SynonymMatch>>();
-        Ok(LiveSearchTopicsPayload { synonym_matches })
+        Ok(LiveSearchTopicsPayload(result))
     }
 
     async fn display_color(&self) -> &str {
-        if self.repo_id.is_wiki() {
+        if self.0.repo_id.is_wiki() {
             ""
         } else {
             DEFAULT_PRIVATE_COLOR
@@ -54,22 +43,22 @@ impl LinkDetail {
     }
 
     async fn link_id(&self) -> &str {
-        self.link_id.as_str()
+        self.0.link_id().as_str()
     }
 
     async fn title(&self) -> &str {
-        &self.title
+        self.0.title()
     }
 
     async fn url(&self) -> &str {
-        &self.url
+        self.0.url()
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {
         ctx.data_unchecked::<Store>()
             .viewer
             .write_repo_ids
-            .include(&self.repo_id)
+            .include(&self.0.repo_id)
     }
 
     async fn parent_topics(
@@ -82,20 +71,14 @@ impl LinkDetail {
     ) -> Result<TopicConnection> {
         let topics = ctx
             .data_unchecked::<Store>()
-            .fetch_topics(&self.parent_topic_ids, 50)
+            .fetch_topics(self.0.parent_topic_ids(), 50)
             .await?;
-        conn(after, before, first, last, topics)
+        relay::topics(after, before, first, last, topics)
     }
 }
 
 #[derive(Debug)]
-pub struct Link {
-    pub details: Vec<LinkDetail>,
-    pub display_detail: LinkDetail,
-    pub id: Oid,
-    pub newly_added: bool,
-    pub viewer_review: Option<LinkReview>,
-}
+pub struct Link(pub(crate) git::Link);
 
 #[derive(SimpleObject)]
 pub struct LinkConnectionFields {
@@ -115,26 +98,27 @@ impl Link {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<TopicConnection> {
-        // FIXME
-        self.display_detail
-            .parent_topics(ctx, after, before, first, last)
-            .await
+        let topics = ctx
+            .data_unchecked::<Store>()
+            .fetch_topics(self.0.parent_topic_ids(), 50)
+            .await?;
+        relay::topics(after, before, first, last, topics)
     }
 
     async fn display_color(&self) -> &str {
-        &self.display_detail.color
+        self.0.display_color()
     }
 
     async fn display_title(&self) -> &str {
-        &self.display_detail.title
+        self.0.display_title()
     }
 
     async fn display_url(&self) -> &str {
-        &self.display_detail.url
+        self.0.display_url()
     }
 
-    async fn details(&self) -> &Vec<LinkDetail> {
-        &self.details
+    async fn details(&self) -> Vec<LinkDetail> {
+        self.0.details.iter().map(LinkDetail::from).collect_vec()
     }
 
     async fn loading(&self) -> bool {
@@ -142,36 +126,33 @@ impl Link {
     }
 
     async fn id(&self) -> String {
-        self.id.to_string()
+        self.0.id.to_string()
     }
 
+    // Used by the JS client to highlight a link that was just added
     async fn newly_added(&self) -> bool {
-        self.newly_added
+        false
     }
 
-    async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
-        for details in &self.details {
-            if details.viewer_can_update(ctx).await? {
-                return Ok(true);
-            }
-        }
-        Ok(false)
+    async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {
+        let viewer = &ctx.data_unchecked::<Store>().viewer;
+        self.0.can_update(&viewer.write_repo_ids)
     }
 
     async fn viewer_review(&self) -> &Option<LinkReview> {
-        &self.viewer_review
+        &None
     }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LinkReview {
-    pub reviewed_at: Option<DateTime>,
+    pub reviewed_at: Option<time::DateTime>,
     pub user_id: String,
 }
 
 #[Object]
 impl LinkReview {
-    async fn reviewed_at(&self) -> Option<DateTime> {
+    async fn reviewed_at(&self) -> Option<time::DateTime> {
         self.reviewed_at.clone()
     }
 

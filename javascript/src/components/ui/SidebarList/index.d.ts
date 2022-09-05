@@ -1,6 +1,6 @@
 /// <reference types="react" />
 declare type ItemType = {
-    display: string;
+    displayName: string;
     id: string;
 } | null;
 declare type Props = {

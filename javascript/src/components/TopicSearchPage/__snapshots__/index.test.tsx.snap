@@ -6,7 +6,6 @@ exports[`<TopicPage /> renders 1`] = `
     className="px-3 px-md-6 px-lg-0"
   >
     <Subhead
-      heading="Frotz"
       renderHeadingDetail={null}
     />
     <Columns>

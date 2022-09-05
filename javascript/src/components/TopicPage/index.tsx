@@ -246,7 +246,7 @@ export default createFragmentContainer(TopicPage, {
     fragment TopicPage_topic on Topic @argumentDefinitions(
       searchString: {type: "String", defaultValue: ""},
     ) {
-      displayName: name
+      displayName
       id
 
       displaySynonyms {
@@ -256,7 +256,7 @@ export default createFragmentContainer(TopicPage, {
       displayParentTopics(first: 100) {
         edges {
           node {
-            display: name
+            displayName
             id
           }
         }

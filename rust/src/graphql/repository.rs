@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use async_graphql::connection::*;
 use async_graphql::{Context, Object, SimpleObject, ID};
 
@@ -130,7 +132,8 @@ impl Repository {
 
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
         ctx.data_unchecked::<Store>()
-            .fetch_topic(&Oid::root_topic())
-            .await
+            .fetch_topic(Oid::root_topic())
+            .await?
+            .try_into()
     }
 }

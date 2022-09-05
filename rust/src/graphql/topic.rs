@@ -1,22 +1,53 @@
 use async_graphql::connection::*;
-use async_graphql::{Context, Object, SimpleObject, Union};
+use async_graphql::{Context, Object, Union};
 use itertools::Itertools;
+use std::collections::BTreeSet;
 
-use super::timerange;
-use super::{relay::conn, ActivityLineItem, Link, LinkConnection, Synonym, Synonyms};
+use super::{relay, time, ActivityLineItem, Link, LinkConnection};
 use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::store::Store;
 use crate::{git, prelude::*};
 
-#[derive(Debug, SimpleObject)]
-pub struct SynonymMatch {
-    pub display_name: String,
-    pub id: String,
+#[derive(Debug)]
+pub struct Synonym(pub(crate) git::Synonym);
+
+#[Object]
+impl Synonym {
+    async fn name(&self) -> &str {
+        &self.0.name
+    }
+
+    async fn locale(&self) -> String {
+        self.0.locale.to_string()
+    }
 }
 
-#[derive(Debug, SimpleObject)]
-pub struct LiveSearchTopicsPayload {
-    pub synonym_matches: Vec<SynonymMatch>,
+#[derive(Debug)]
+pub struct SynonymMatch<'a>(pub(crate) &'a git::SynonymEntry);
+
+#[Object]
+impl<'a> SynonymMatch<'a> {
+    async fn display_name(&self) -> &str {
+        &self.0.name
+    }
+
+    async fn id(&self) -> &str {
+        self.0.id.as_str()
+    }
+}
+
+#[derive(Debug)]
+pub struct LiveSearchTopicsPayload(pub(crate) git::FetchTopicLiveSearchResult);
+
+#[Object]
+impl LiveSearchTopicsPayload {
+    async fn synonym_matches(&self) -> Vec<SynonymMatch<'_>> {
+        self.0
+            .synonym_matches
+            .iter()
+            .map(SynonymMatch::from)
+            .collect()
+    }
 }
 
 #[derive(Union)]
@@ -28,35 +59,25 @@ pub enum TopicChild {
 pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;
 
 #[derive(Clone, Debug)]
-pub struct TopicDetail {
-    pub child_ids: Vec<Oid>,
-    pub color: String,
-    pub parent_topic_ids: Vec<Oid>,
-    pub name: String,
-    pub repo_id: RepoId,
-    pub synonyms: Synonyms,
-    pub timerange: Option<timerange::Timerange>,
-    pub topic_id: Oid,
-}
+pub struct TopicDetail(pub(crate) git::TopicDetail);
 
 #[Object]
 impl TopicDetail {
+    // FIXME - needs to be scoped somehow, perhaps to the repo id
     async fn available_parent_topics(
         &self,
         ctx: &Context<'_>,
         search_string: Option<String>,
     ) -> Result<LiveSearchTopicsPayload> {
-        let git::FetchTopicLiveSearchResult { synonym_matches } = ctx
+        let result = ctx
             .data_unchecked::<Store>()
             .search_topics(search_string)
             .await?;
+        Ok(LiveSearchTopicsPayload(result))
+    }
 
-        let synonym_matches = synonym_matches
-            .iter()
-            .map(SynonymMatch::from)
-            .collect::<Vec<SynonymMatch>>();
-
-        Ok(LiveSearchTopicsPayload { synonym_matches })
+    async fn display_name(&self) -> String {
+        self.0.display_name(Locale::EN) // FIXME
     }
 
     async fn parent_topics(
@@ -69,21 +90,28 @@ impl TopicDetail {
     ) -> Result<TopicConnection> {
         let topics = ctx
             .data_unchecked::<Store>()
-            .fetch_topics(&self.parent_topic_ids, 50)
+            .fetch_topics(self.0.parent_topic_ids(), 50)
             .await?;
-        conn(after, before, first, last, topics)
+        relay::topics(after, before, first, last, topics)
     }
 
     async fn synonyms(&self) -> Vec<Synonym> {
-        self.synonyms.into_iter().collect_vec()
+        self.0.synonyms().iter().map(Synonym::from).collect_vec()
     }
 
-    async fn timerange(&self) -> Option<timerange::Timerange> {
-        self.timerange.clone()
+    async fn timerange(&self) -> Result<Option<time::Timerange>> {
+        match &self.0.timerange() {
+            Some(timerange) => Ok(Some(timerange.try_into()?)),
+            None => Ok(None),
+        }
+    }
+
+    async fn topic_id(&self) -> &str {
+        self.0.topic_id().as_str()
     }
 
     async fn viewer_can_delete_synonyms(&self, ctx: &Context<'_>) -> Result<bool> {
-        if self.synonyms.len() < 2 {
+        if self.0.synonyms().len() < 2 {
             return Ok(false);
         }
         self.viewer_can_update(ctx).await
@@ -94,18 +122,12 @@ impl TopicDetail {
             .data_unchecked::<Store>()
             .viewer
             .write_repo_ids
-            .include(&self.repo_id))
+            .include(&self.0.repo_id))
     }
 }
 
 #[derive(Debug)]
-pub struct Topic {
-    pub details: Vec<TopicDetail>,
-    pub display_detail: TopicDetail,
-    pub newly_added: bool,
-    pub id: Oid,
-    pub root: bool,
-}
+pub struct Topic(pub(crate) git::Topic);
 
 pub type TopicEdge = Edge<String, Topic, EmptyFields>;
 pub type TopicConnection = Connection<String, Topic, EmptyFields, EmptyFields>;
@@ -120,7 +142,7 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        let topic_id = Some(self.id.to_owned());
+        let topic_id = Some(self.0.id.to_owned());
         let store = ctx.data_unchecked::<Store>();
 
         let activity = store
@@ -140,7 +162,7 @@ impl Topic {
             });
         }
 
-        conn(after, before, first, last, results)
+        relay::connection(after, before, first, last, results)
     }
 
     #[allow(unused_variables)]
@@ -153,19 +175,31 @@ impl Topic {
         last: Option<i32>,
         search_string: Option<String>,
     ) -> Result<TopicChildConnection> {
-        let iter = ctx
-            .data_unchecked::<Store>()
-            .topic_children(&self.id)
-            .await?;
+        let search = git::Search::empty();
 
-        let mut results = vec![];
-        for child in iter {
-            results.push(TopicChild::try_from(&child)?);
+        let objects = ctx
+            .data_unchecked::<Store>()
+            .fetch_objects(self.0.child_ids().to_owned(), 500)
+            .await?
+            .into_iter();
+
+        let mut matches = BTreeSet::new();
+
+        for object in objects {
+            let row = object.to_search_match(Locale::EN, &search)?;
+            matches.insert(row);
         }
 
-        conn(after, before, first, last, results)
+        let mut results = vec![];
+
+        for row in matches.into_iter() {
+            results.push(row.try_into()?);
+        }
+
+        relay::connection(after, before, first, last, results)
     }
 
+    // For link review page
     #[allow(unused_variables, clippy::too_many_arguments)]
     async fn child_links(
         &self,
@@ -178,29 +212,28 @@ impl Topic {
         reviewed: Option<bool>,
         descendants: Option<bool>,
     ) -> Result<LinkConnection> {
+        let result = ctx
+            .data::<Store>()?
+            .fetch_links(&self.0.child_link_ids(), 50, reviewed)
+            .await?;
+
         query(
             after,
             before,
             first,
             last,
             |_after, _before, _first, _last| async move {
-                let results = ctx
-                    .data::<Store>()?
-                    .child_links_for_topic(&self.id, reviewed)
-                    .await?;
                 let mut connection = Connection::with_additional_fields(
                     false,
                     false,
                     LinkConnectionFields {
-                        total_count: results.len() as i64,
+                        total_count: result.len() as i64,
                     },
                 );
 
-                connection.edges.extend(
-                    results
-                        .into_iter()
-                        .map(|n| Edge::with_additional_fields(String::from("0"), n, EmptyFields)),
-                );
+                connection.edges.extend(result.into_iter().map(|n| {
+                    Edge::with_additional_fields(String::from("0"), n.into(), EmptyFields)
+                }));
 
                 Ok::<_, Error>(connection)
             },
@@ -209,16 +242,16 @@ impl Topic {
         .map_err(Error::Resolver)
     }
 
-    async fn description(&self) -> Option<String> {
-        None
+    async fn details(&self) -> Vec<TopicDetail> {
+        self.0.details.iter().map(TopicDetail::from).collect_vec()
     }
 
     async fn display_color(&self) -> &str {
-        &self.display_detail.color
+        self.0.display_color()
     }
 
-    async fn display_name(&self) -> &str {
-        &self.display_detail.name
+    async fn display_name(&self) -> String {
+        self.0.display_name(Locale::EN)
     }
 
     async fn display_parent_topics(
@@ -229,13 +262,20 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<TopicConnection> {
-        self.display_detail
-            .parent_topics(ctx, after, before, first, last)
-            .await
+        let topics = ctx
+            .data_unchecked::<Store>()
+            .fetch_topics(self.0.parent_topic_ids(), 50)
+            .await?;
+        relay::topics(after, before, first, last, topics)
     }
 
-    async fn display_synonyms(&self, ctx: &Context<'_>) -> Result<Vec<Synonym>> {
-        Ok(self.display_detail.synonyms(ctx).await?)
+    async fn display_synonyms(&self) -> Result<Vec<Synonym>> {
+        Ok(self
+            .0
+            .display_synonyms()
+            .iter()
+            .map(Synonym::from)
+            .collect_vec())
     }
 
     async fn loading(&self) -> bool {
@@ -243,17 +283,14 @@ impl Topic {
     }
 
     async fn id(&self) -> &str {
-        self.id.as_str()
-    }
-
-    async fn name(&self) -> &str {
-        &self.display_detail.name
+        self.0.id.as_str()
     }
 
     async fn newly_added(&self) -> bool {
-        self.newly_added
+        false
     }
 
+    #[allow(unused_variables)]
     async fn search(
         &self,
         ctx: &Context<'_>,
@@ -263,23 +300,21 @@ impl Topic {
         before: Option<String>,
         search_string: String,
     ) -> Result<TopicChildConnection> {
-        conn(
-            after,
-            before,
-            first,
-            last,
-            ctx.data_unchecked::<Store>()
-                .search(self, search_string)
-                .await?,
-        )
+        let git::FindMatchesResult { matches, .. } = ctx
+            .data_unchecked::<Store>()
+            .search(&self.0, search_string)
+            .await?;
+
+        let mut results = vec![];
+        for row in matches {
+            results.push(row.try_into()?);
+        }
+
+        relay::connection(after, before, first, last, results)
     }
 
-    async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
-        for details in &self.details {
-            if details.viewer_can_update(ctx).await? {
-                return Ok(true);
-            }
-        }
-        Ok(false)
+    async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {
+        let viewer = &ctx.data_unchecked::<Store>().viewer;
+        self.0.can_update(&viewer.write_repo_ids)
     }
 }

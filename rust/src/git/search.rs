@@ -5,7 +5,7 @@ use std::collections::{BTreeSet, HashSet};
 use std::time::Instant;
 use strum_macros::EnumString;
 
-use super::{Client, Kind, Locale, Object, Objects, Phrase, RepoObject, SynonymEntry};
+use super::{Client, Kind, Locale, Object, ObjectBuilders, Phrase, RepoObject, SynonymEntry};
 use crate::git::SearchEntry;
 use crate::prelude::*;
 use crate::redis;
@@ -139,6 +139,7 @@ pub struct FetchTopicLiveSearch {
     pub viewer: Viewer,
 }
 
+#[derive(Debug)]
 pub struct FetchTopicLiveSearchResult {
     pub synonym_matches: BTreeSet<SynonymEntry>,
 }
@@ -300,6 +301,7 @@ pub struct FindMatches {
     pub viewer: Viewer,
 }
 
+#[derive(Debug)]
 pub struct FindMatchesResult {
     pub matches: BTreeSet<SearchMatch>,
 }
@@ -353,7 +355,7 @@ impl FindMatches {
             entries.insert(entry);
         }
 
-        let mut objects = Objects::new();
+        let mut objects = ObjectBuilders::new();
         let mut count: usize = 0;
 
         for repo_id in self.viewer.read_repo_ids.iter() {
@@ -376,7 +378,7 @@ impl FindMatches {
                         continue;
                     }
 
-                    objects.add(entry.id.to_owned(), repo_id.to_owned(), Some(object));
+                    objects.add(entry.id.to_owned(), repo_id.to_owned(), object);
                     count += 1;
 
                     if count >= self.limit {
@@ -386,7 +388,9 @@ impl FindMatches {
             }
         }
 
-        objects.to_matches(&self.search, self.locale)
+        objects
+            .finalize(&self.viewer.context_repo_id)?
+            .to_matches(&self.search, self.locale)
     }
 
     fn fetch_downset<F>(&self, client: &Client, fetch: &F) -> Result<BTreeSet<SearchMatch>>
@@ -396,13 +400,13 @@ impl FindMatches {
         let topic_ids = self.intersection(client, fetch)?;
         log::info!("fetching topic downset ({} paths)", topic_ids.len());
 
-        let mut objects = Objects::new();
+        let mut objects = ObjectBuilders::new();
         let mut count: usize = 0;
 
         for repo_id in self.viewer.read_repo_ids.iter() {
             for topic_id in topic_ids.iter().take(self.limit) {
                 if let Some(object) = client.fetch(repo_id, topic_id) {
-                    objects.add(topic_id.to_owned(), repo_id.to_owned(), Some(object));
+                    objects.add(topic_id.to_owned(), repo_id.to_owned(), object);
                     count += 1;
 
                     if count >= self.limit {
@@ -412,7 +416,9 @@ impl FindMatches {
             }
         }
 
-        objects.to_matches(&self.search, self.locale)
+        objects
+            .finalize(&self.viewer.context_repo_id)?
+            .to_matches(&self.search, self.locale)
     }
 
     fn intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<Oid>>

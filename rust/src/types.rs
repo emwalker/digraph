@@ -102,6 +102,12 @@ impl std::fmt::Display for RepoId {
     }
 }
 
+impl From<sqlx::types::Uuid> for RepoId {
+    fn from(value: sqlx::types::Uuid) -> Self {
+        Self(value)
+    }
+}
+
 impl RepoId {
     pub fn make() -> Self {
         Self(Uuid::new_v4())
@@ -147,6 +153,12 @@ impl TryFrom<&[String]> for RepoIds {
                 .map(RepoId::try_from)
                 .collect::<Result<Vec<RepoId>>>()?,
         ))
+    }
+}
+
+impl From<Vec<RepoId>> for RepoIds {
+    fn from(ids: Vec<RepoId>) -> Self {
+        Self(ids)
     }
 }
 
@@ -446,12 +458,14 @@ pub struct Viewer {
     pub super_user: bool,
     pub user_id: String,
     pub write_repo_ids: RepoIds,
+    pub context_repo_id: RepoId,
 }
 
 impl Viewer {
     pub fn service_account() -> Self {
         Self {
             read_repo_ids: RepoIds(vec![]),
+            context_repo_id: RepoId::wiki(),
             session_id: None,
             super_user: true,
             user_id: "".to_owned(),
@@ -474,6 +488,7 @@ impl Viewer {
         Viewer {
             read_repo_ids: RepoIds(vec![RepoId::wiki()]),
             session_id: None,
+            context_repo_id: RepoId::wiki(),
             super_user: false,
             user_id,
             write_repo_ids: RepoIds(vec![]),

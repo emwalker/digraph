@@ -332,7 +332,7 @@ type TopicDetail {
   ): LiveSearchTopicsPayload!
   color: Color!
   createdAt: DateTime!
-  name: String!
+  displayName: String!
   parentTopics(
     first: Int,
     after: String,
@@ -354,6 +354,7 @@ type Topic {
     last: Int,
     before: String
   ): ActivityLineItemConnection!
+  # For link review page
   childLinks(
     first: Int,
     after: String,
@@ -371,7 +372,6 @@ type Topic {
     before: String
   ): TopicChildConnection!
   details: [TopicDetail!]!
-  description: String
   displayColor: Color!
   displayName: String!
   displayParentTopics(
@@ -384,7 +384,6 @@ type Topic {
   displayTimerange: Timerange
   id: String!
   loading: Boolean!
-  name: String!
   newlyAdded: Boolean!
   search(
     searchString: String!,

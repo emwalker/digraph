@@ -9,7 +9,7 @@ describe('rawFromQuery', () => {
         edges: [
           {
             node: {
-              name: 'BP',
+              displayName: 'BP',
               id: '321ccdae-d5bc-47c6-ab73-7f4d8a264270',
             },
           },
@@ -42,7 +42,7 @@ describe('rawFromQuery', () => {
           mutability: 'SEGMENTED',
           data: {
             mention: {
-              name: 'BP',
+              displayName: 'BP',
               link: '321ccdae-d5bc-47c6-ab73-7f4d8a264270',
             },
           },

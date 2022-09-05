@@ -13,11 +13,12 @@ mod visibility {
     fn viewer(repo_ids: &Vec<RepoId>) -> Viewer {
         let repo_ids = RepoIds::try_from(repo_ids).unwrap();
         Viewer {
+            context_repo_id: RepoId::wiki(),
             read_repo_ids: repo_ids.to_owned(),
-            write_repo_ids: repo_ids,
             session_id: Some("1".to_owned()),
             super_user: false,
             user_id: "2".to_owned(),
+            write_repo_ids: repo_ids,
         }
     }
 
