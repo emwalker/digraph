@@ -73,12 +73,12 @@ class Topic extends Component<Props, State> {
 export default createFragmentContainer(Topic, {
   topic: graphql`
     fragment Topic_topic on Topic {
+      displayColor
       displayName
       id
       loading
       newlyAdded
       viewerCanUpdate
-      displayColor
 
       displayParentTopics(first: 100) {
         edges {

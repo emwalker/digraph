@@ -1,14 +1,9 @@
 Before switchover:
-* Fix synonym update bugs
+* Details: Only select topic detail if the details field is non-null
 * Show merged topic children instead of topic children from one repo topic
 * Experiment with using borrows in some resolvers instead of copying
-* Return collection of detail views / edit forms instead of edit form
-* Make the display color repo-specific, and make the display color for Wiki to be transparent
-* Try to save graphql::{Topic,Link} in the object loader instead of git::{Topic,Link}
 * Update repo names and give new repos a better name
-* Add repo back to topic and link types
 * Replace hardcoded references to wikiRepoId with repo from resource (depends on whether user can edit)
-* Show links in private repo in blue again
 * Clean up database: odds and ends
 * Don't save private links and topics to /wiki/
 * Order links by reverse chronological date
@@ -19,6 +14,15 @@ Before switchover:
 * Decide whether to support link reviews or remove the feature
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
 * Bug: some history entries are not displaying properly
+* Details: Figure out what the relationship is between TopicDetail (e.g.) and the "detail/s" section of the topic metadata serialization. If they're not really the same thing, find another name for the key (?)
+* Details: Rename "details" to "detail" in topic serialization (?). Blocked.
+* Details: Defer adding UX for updating select fields of an item that isn't in the selected repo
+* Details: Defer adding UX for updating any fields on an item that isn't in the selected repo
+* Details: Show links in private repo in blue again
+* Details: Add repo back to topic and link types
+* Details: Figure out how to represent / what to do with partial details in edit forms (no title, no url, but parent topics)
+* Details: Fix synonym update bugs
+* Details: Return collection of detail views / edit forms instead of edit form
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo
@@ -31,6 +35,8 @@ Before switchover:
 
 
 Later:
+* Add a docs repo and main page with screenshots and sections of how to do various things
+* Make the display color repo-specific, and make the display color for Wiki to be transparent
 * Investigate consolidating SearchMatch and TopicChild (TopicChildConnection)
 * Drop need for Github login permission
 * Drop need for Github email permission
