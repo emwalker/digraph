@@ -9,17 +9,19 @@ import updateTopicTopicsMutation, {
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
 import {
-  EditTopicForm_topicDetail as TopicDetailType,
-} from '__generated__/EditTopicForm_topicDetail.graphql'
+  EditTopicForm_topic as TopicType,
+} from '__generated__/EditTopicForm_topic.graphql'
 import Synonyms from './Synonyms'
 import TopicTimerange from './TopicTimerange'
 import { wikiRepoId } from 'components/constants'
+
+type TopicDetailType = TopicType['details'][0]
 
 type Props = {
   isOpen: boolean,
   relay: RelayRefetchProp,
   toggleForm: () => void,
-  topicDetail: TopicDetailType,
+  topic: TopicType,
 }
 
 type State = {
@@ -30,13 +32,17 @@ class EditTopicForm extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = {
-      displayName: props.topicDetail.displayName,
+      displayName: props.topic.displayName,
     }
   }
 
   onDelete = () => {
+    const topicId = this.topicDetail?.topicId
+
+    if (!topicId) return
+
     // FIXME: use selected repo
-    const input: DeleteInput = { repoId: wikiRepoId, topicId: this.topicId }
+    const input: DeleteInput = { repoId: wikiRepoId, topicId }
     deleteTopicMutation(
       this.props.relay.environment,
       input,
@@ -49,21 +55,27 @@ class EditTopicForm extends Component<Props, State> {
     )
   }
 
-  get topicId(): string {
-    return this.props.topicDetail.topicId
+  // FIXME
+  get topicDetail(): TopicDetailType | null {
+    const details = this.props.topic.details
+    if (details.length < 1) return null
+    return details[0]
   }
 
   get selectedTopics(): TopicOption[] | null {
-    const { selectedTopics } = this.props.topicDetail
+    const selectedTopics = this.topicDetail?.selectedTopics
     const array = liftNodes(selectedTopics)
     return selectedTopics ? makeOptions(array) : null
   }
 
   updateParentTopics = (parentTopicIds: string[]) => {
+    const topicId = this.topicDetail?.topicId
+    if (!topicId) return
+
     const input: UpdateTopicsInput = {
       // FIXME: use id instead of prefix
       repoId: wikiRepoId,
-      topicId: this.topicId,
+      topicId,
       parentTopicIds,
     }
     updateTopicTopicsMutation(this.props.relay.environment, input)
@@ -79,7 +91,7 @@ class EditTopicForm extends Component<Props, State> {
       }
 
       this.props.relay.refetch(variables, null, () => {
-        const { availableTopics } = this.props.topicDetail
+        const availableTopics = this.topicDetail?.availableTopics
         const options = availableTopics ? makeOptions(availableTopics.synonymMatches) : []
         resolve(options as TopicOption[])
       })
@@ -90,12 +102,15 @@ class EditTopicForm extends Component<Props, State> {
     if (!this.props.isOpen) return null
 
     const { selectedTopics } = this
+    const topicDetail = this.topicDetail
+
+    if (!topicDetail) return null
 
     return (
       selectedTopics ? (
         <div className="my-4">
-          <Synonyms topicDetail={this.props.topicDetail} />
-          <TopicTimerange topicDetail={this.props.topicDetail} />
+          <Synonyms topic={this.props.topic} />
+          <TopicTimerange topicDetail={topicDetail} />
 
           <EditTopicList
             loadOptions={this.loadOptions}
@@ -122,32 +137,35 @@ class EditTopicForm extends Component<Props, State> {
 }
 
 export default createRefetchContainer(EditTopicForm, {
-  topicDetail: graphql`
-    fragment EditTopicForm_topicDetail on TopicDetail @argumentDefinitions(
+  topic: graphql`
+    fragment EditTopicForm_topic on Topic @argumentDefinitions(
       searchString: {type: "String", defaultValue: null},
       count: {type: "Int!", defaultValue: 10}
     ) {
-      topicId
       displayName
+      ...Synonyms_topic
 
-      selectedTopics: parentTopics(first: 1000) {
-        edges {
-          node {
+      details {
+        topicId
+
+        selectedTopics: parentTopics(first: 1000) {
+          edges {
+            node {
+              value: id
+              label: displayName
+            }
+          }
+        }
+
+        availableTopics: availableParentTopics(searchString: $searchString) {
+          synonymMatches {
             value: id
             label: displayName
           }
         }
-      }
 
-      availableTopics: availableParentTopics(searchString: $searchString) {
-        synonymMatches {
-          value: id
-          label: displayName
-        }
+        ...TopicTimerange_topicDetail
       }
-
-      ...Synonyms_topicDetail
-      ...TopicTimerange_topicDetail
     }
   `,
 },
@@ -164,9 +182,7 @@ graphql`
       repositoryIds: $repoIds,
     ) {
       topic(id: $topicId) {
-        details {
-          ...EditTopicForm_topicDetail @arguments(count: $count, searchString: $searchString)
-        }
+        ...EditTopicForm_topic @arguments(count: $count, searchString: $searchString)
       }
     }
   }

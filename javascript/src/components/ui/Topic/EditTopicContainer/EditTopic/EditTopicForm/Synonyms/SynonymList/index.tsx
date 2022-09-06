@@ -7,10 +7,11 @@ import {
 import arrayMove from 'array-move'
 import { GoThreeBars } from 'react-icons/go'
 
-import { Synonyms_topicDetail as TopicDetailType } from '__generated__/Synonyms_topicDetail.graphql'
+import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphql'
 import Synonym from '../Synonym'
 import copySynonyms from '../copySynonyms'
 
+type TopicDetailType = TopicType['details'][0]
 type SynonymType = TopicDetailType['synonyms'][number]
 
 type Props = {

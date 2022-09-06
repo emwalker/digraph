@@ -5,13 +5,14 @@ import AsyncSelect from 'react-select/async'
 import debounce from 'es6-promise-debounce'
 
 import {
-  EditTopicForm_topicDetail as TopicDetailType,
-} from '__generated__/EditTopicForm_topicDetail.graphql'
+  EditTopicForm_topic as TopicType,
+} from '__generated__/EditTopicForm_topic.graphql'
 import { TopicOption } from 'components/types'
 import colourStyles from './colourStyles'
 
 /* eslint react/no-unused-state: 0 */
 
+type TopicDetailType = TopicType['details'][0]
 type SynonymMatches = TopicDetailType['availableTopics']['synonymMatches']
 type SelectedTopics = ({ label: string, value: string } | null)[]
 

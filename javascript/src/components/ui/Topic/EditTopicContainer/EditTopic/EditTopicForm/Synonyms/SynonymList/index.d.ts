@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Synonyms_topicDetail as TopicDetailType } from '__generated__/Synonyms_topicDetail.graphql';
+import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphql';
+declare type TopicDetailType = TopicType['details'][0];
 declare type SynonymType = TopicDetailType['synonyms'][number];
 declare type Props = {
     canUpdate: boolean;

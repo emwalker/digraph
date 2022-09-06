@@ -1,10 +1,11 @@
 import { Component, FormEvent, ChangeEvent } from 'react';
 import { RelayProp } from 'react-relay';
-import { Synonyms_topicDetail as TopicDetailType } from '__generated__/Synonyms_topicDetail.graphql';
+import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphql';
 import { SynonymType } from 'components/types';
+declare type TopicDetailType = TopicType['details'][0];
 declare type Props = {
     relay: RelayProp;
-    topicDetail: TopicDetailType;
+    topic: TopicType;
 };
 declare type State = {
     inputLocale: string;
@@ -16,9 +17,10 @@ declare class Synonyms extends Component<Props, State> {
     onNameChange: (event: ChangeEvent<HTMLInputElement>) => void;
     onAdd: () => void;
     onDelete: (position: number) => void;
+    get topicDetail(): TopicDetailType | null;
     get synonyms(): readonly {
         readonly name: string;
-        readonly locale: import("__generated__/Synonyms_topicDetail.graphql").LocaleIdentifier;
+        readonly locale: import("__generated__/Synonyms_topic.graphql").LocaleIdentifier;
         readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Synonym_synonym">;
     }[];
     optimisticResponse: (synonyms: SynonymType[]) => {
@@ -27,16 +29,20 @@ declare class Synonyms extends Component<Props, State> {
             clientMutationId: null;
             topic: {
                 displayName: string;
-                synonyms: SynonymType[];
-                topicId: string;
-                viewerCanDeleteSynonyms: boolean;
+                details: {
+                    synonyms: SynonymType[];
+                    topicId?: string | undefined;
+                    displayName?: string | undefined;
+                    viewerCanDeleteSynonyms?: boolean | undefined;
+                    viewerCanUpdate?: boolean | undefined;
+                }[];
                 viewerCanUpdate: boolean;
-                " $refType": "Synonyms_topicDetail";
+                " $refType": "Synonyms_topic";
             };
         };
     };
-    updateTopicSynonyms: (synonyms: SynonymType[]) => void;
-    renderSynonyms: () => JSX.Element;
+    updateTopicSynonyms: (synonyms: SynonymType[]) => null | undefined;
+    renderSynonyms: () => JSX.Element | null;
     renderAddForm: () => JSX.Element;
     render: () => JSX.Element;
 }
