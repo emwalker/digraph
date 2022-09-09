@@ -665,6 +665,36 @@ impl Mutation {
 mod tests {
     use super::*;
 
+    #[test]
+    fn parse_path_works() {
+        let result = parse_path("../../12345/12/34/5678/object.yaml");
+        assert!(matches!(result, Err(Error::Repo(_))));
+
+        let (root, repo_id, oid) =
+            parse_path("../../32212616-fc1b-11e8-8eda-b70af6d8d09f/objects/12/34/5678/object.yaml")
+                .unwrap();
+        assert_eq!(root.path, PathBuf::from("../.."));
+        assert_eq!(
+            repo_id.to_string(),
+            "32212616-fc1b-11e8-8eda-b70af6d8d09f".to_owned()
+        );
+        assert_eq!(oid.to_string(), "12345678".to_owned());
+
+        let (root, repo_id, oid) = parse_path(
+            "../../32212616-fc1b-11e8-8eda-b70af6d8d09f/objects/q-/ZZ/meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ/object.yaml",
+        )
+        .unwrap();
+        assert_eq!(root.path, PathBuf::from("../.."));
+        assert_eq!(
+            repo_id.to_string(),
+            "32212616-fc1b-11e8-8eda-b70af6d8d09f".to_owned()
+        );
+        assert_eq!(
+            oid.to_string(),
+            "q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ".to_owned(),
+        );
+    }
+
     mod git_paths {
         use super::*;
 

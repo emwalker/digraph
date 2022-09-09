@@ -5,9 +5,7 @@ use std::{
 
 use itertools::Itertools;
 
-use super::{
-    Kind, Phrase, RepoLink, RepoObject, RepoTopic, Search, SearchMatch, SortKey, Synonym, Timerange,
-};
+use super::{Kind, Phrase, RepoLink, RepoObject, RepoTopic, Search, SearchMatch, SortKey, Synonym};
 use crate::prelude::*;
 
 #[derive(Clone, Debug, Default)]
@@ -72,10 +70,6 @@ impl Map {
         Ok((topics, display_topic.unwrap()))
     }
 
-    pub fn values(&self) -> std::collections::hash_map::Values<'_, RepoId, RepoObject> {
-        self.0.values()
-    }
-
     pub fn iter(&self) -> std::collections::hash_map::Iter<'_, RepoId, RepoObject> {
         self.0.iter()
     }
@@ -116,13 +110,6 @@ impl ObjectBuilder {
                     _map: map,
                 }))
             }
-        }
-    }
-
-    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, RepoId, RepoObject> {
-        match self {
-            Self::Link { map, .. } => map.iter(),
-            Self::Topic { map, .. } => map.iter(),
         }
     }
 }
@@ -536,7 +523,7 @@ impl Object {
 pub struct Objects(HashMap<Oid, Object>);
 
 impl Objects {
-    pub fn to_matches(self, search: &Search, locale: Locale) -> Result<BTreeSet<SearchMatch>> {
+    pub fn into_matches(self, search: &Search, locale: Locale) -> Result<BTreeSet<SearchMatch>> {
         let mut matches = BTreeSet::new();
 
         for (_oid, object) in self.0.into_iter() {
@@ -546,7 +533,7 @@ impl Objects {
         Ok(matches)
     }
 
-    pub fn to_hash(self) -> HashMap<Oid, Object> {
+    pub fn into_hash(self) -> HashMap<Oid, Object> {
         self.0
     }
 }

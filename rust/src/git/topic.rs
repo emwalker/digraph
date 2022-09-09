@@ -2,8 +2,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
     activity, Kind, Mutation, ParentTopic, RepoLink, RepoObject, RepoTopic, RepoTopicDetails,
-    RepoTopicMetadata, SaveChangesForPrefix, Synonym, SynonymEntry, SynonymMatch, Timerange,
-    TopicChild, API_VERSION,
+    RepoTopicMetadata, SaveChangesForPrefix, Synonym, SynonymEntry, SynonymMatch, TopicChild,
 };
 use crate::prelude::*;
 

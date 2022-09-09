@@ -3,7 +3,7 @@ use std::collections::{BTreeSet, HashMap};
 
 use crate::git::{
     activity, Kind, ParentTopic, RepoLink, RepoLinkMetadata, RepoTopic, SaveChangesForPrefix,
-    TopicChild, API_VERSION,
+    TopicChild,
 };
 use crate::http::{self, RepoUrl};
 use crate::prelude::*;

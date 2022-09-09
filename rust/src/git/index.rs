@@ -5,9 +5,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::PathBuf;
 use unidecode::unidecode;
 
-use super::{
-    activity, core, Client, GitPaths, Kind, RepoTopic, Search, Synonym, TopicChild, API_VERSION,
-};
+use super::{activity, core, Client, GitPaths, Kind, RepoTopic, Search, Synonym, TopicChild};
 use crate::prelude::*;
 
 // Omit dashes so that we can split on them
@@ -15,10 +13,6 @@ const SPECIAL_CHARS: &[char] = &[
     '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '.', '/', ':', ';', '<', '=', '>',
     '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~',
 ];
-
-pub fn normalize(input: &str) -> String {
-    unidecode(input).to_lowercase().replace(SPECIAL_CHARS, "")
-}
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Phrase(String);

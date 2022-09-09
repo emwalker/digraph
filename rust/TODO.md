@@ -9,7 +9,6 @@ Before switchover:
 * Order links by reverse chronological date
 * Ensure that account creation still works
 * Ensure that account deletion still works
-* Go through git:: namespace and hide structs and functions that aren't needed outside of the module
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
 * Bug: the JS client doesn't show new links and topics in the right place when they're added

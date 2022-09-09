@@ -5,7 +5,7 @@ use std::collections::{BTreeSet, HashSet};
 use std::time::Instant;
 use strum_macros::EnumString;
 
-use super::{Client, Kind, Locale, Object, ObjectBuilders, Phrase, RepoObject, SynonymEntry};
+use super::{Client, Kind, Object, ObjectBuilders, Phrase, RepoObject, SynonymEntry};
 use crate::git::SearchEntry;
 use crate::prelude::*;
 use crate::redis;
@@ -390,7 +390,7 @@ impl FindMatches {
 
         objects
             .finalize(&self.viewer.context_repo_id)?
-            .to_matches(&self.search, self.locale)
+            .into_matches(&self.search, self.locale)
     }
 
     fn fetch_downset<F>(&self, client: &Client, fetch: &F) -> Result<BTreeSet<SearchMatch>>
@@ -418,7 +418,7 @@ impl FindMatches {
 
         objects
             .finalize(&self.viewer.context_repo_id)?
-            .to_matches(&self.search, self.locale)
+            .into_matches(&self.search, self.locale)
     }
 
     fn intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<Oid>>

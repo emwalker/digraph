@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use super::{ChangeReference, Client, Locale, RepoLink, RepoTopic, Synonym};
+use super::{ChangeReference, Client, RepoLink, RepoTopic, Synonym};
 use crate::prelude::*;
 use crate::types::TimerangePrefix;
 
@@ -1208,7 +1208,8 @@ mod tests {
 
     use super::super::testing::*;
     use super::*;
-    use crate::git::{Locale, RepoTopic};
+    use crate::git::RepoTopic;
+    use crate::prelude::Locale;
 
     #[test]
     fn update_link_parent_topics() {

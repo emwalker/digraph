@@ -31,7 +31,7 @@ impl Loader<Oid> for ObjectLoader {
     async fn load(&self, oids: &[Oid]) -> Result<HashMap<Oid, Self::Value>> {
         log::debug!("batch load topics: {:?}", oids);
         let context = &self.viewer.context_repo_id;
-        Ok(self.client.fetch_all(oids).finalize(context)?.to_hash())
+        Ok(self.client.fetch_all(oids).finalize(context)?.into_hash())
     }
 }
 
