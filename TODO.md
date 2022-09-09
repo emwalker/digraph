@@ -9,6 +9,7 @@ Before switchover:
 * Order links by reverse chronological date
 * Ensure that account creation still works
 * Ensure that account deletion still works
+* Bug: the child links under Reading list are in the wiki repo rather than the private repo
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
@@ -33,6 +34,7 @@ Before switchover:
 
 
 Later:
+* Get UX working on mobile devices again
 * Formulas and subscript and superscript in topic titles
 * Add a docs repo and main page with screenshots and sections of how to do various things
 * Make the display color repo-specific, and make the display color for Wiki to be transparent
@@ -48,6 +50,7 @@ Later:
 * Get the topic upsert working when the topic already exists
 * Replace multi-select with something that will work with relevance/contexts
 * Show search input in input box when loaded from a url
+* Find a new favicon / icon
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
 * Figure out how to display the same change in different contexts -- e.g., a topic is deleted, and its contents merged into the parent topics.  What does the change look like in each change history?
 * Figure out how to make history entries outlive the topic and links when they're deleted.  I think this means denormalizing title, url and synonym info in the changes themeslves, mabye with one level of indirection? Or maybe it means putting a marker on the deleted item to indicate that it's deleted rather than actually deleting it.  Maybe change "delete" to "remove" in the UI if this approach ends up being used.  There's also the problem of historical names and titles that change.

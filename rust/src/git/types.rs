@@ -123,6 +123,10 @@ impl RepoLink {
         self.metadata.added
     }
 
+    pub fn has_details(&self) -> bool {
+        self.metadata.details.is_some()
+    }
+
     pub fn id(&self) -> &Oid {
         &self.metadata.id
     }
@@ -264,13 +268,20 @@ pub struct RepoTopicMetadata {
 }
 
 impl RepoTopicMetadata {
-    pub fn name(&self, locale: Locale) -> String {
-        for synonym in self.synonyms() {
+    pub fn name(&self, locale: Locale) -> &str {
+        let synonyms = self.synonyms();
+
+        for synonym in synonyms.iter() {
             if synonym.locale == locale {
-                return synonym.name.clone();
+                return &synonym.name;
             }
         }
-        "Missing name".into()
+
+        if let Some(synonym) = synonyms.first() {
+            return &synonym.name;
+        }
+
+        "[missing name]"
     }
 
     pub fn synonyms(&self) -> &[Synonym] {
@@ -332,12 +343,16 @@ impl RepoTopic {
         self.children.iter().any(|child| &child.id == id)
     }
 
+    pub fn has_details(&self) -> bool {
+        self.metadata.details.is_some()
+    }
+
     pub fn id(&self) -> &Oid {
         &self.metadata.id
     }
 
     pub fn name(&self, locale: Locale) -> String {
-        self.prefix().format(&self.metadata.name(locale))
+        self.prefix().format(self.metadata.name(locale))
     }
 
     fn prefix(&self) -> core_types::TimerangePrefix {
@@ -455,6 +470,13 @@ impl RepoObject {
         }
 
         Ok(())
+    }
+
+    pub fn has_details(&self) -> bool {
+        match self {
+            RepoObject::Topic(topic) => topic.has_details(),
+            RepoObject::Link(link) => link.has_details(),
+        }
     }
 
     pub fn kind(&self) -> Kind {

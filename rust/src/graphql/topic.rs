@@ -76,7 +76,7 @@ impl RepoTopic {
         Ok(LiveSearchTopicsPayload(result))
     }
 
-    async fn display_name(&self) -> String {
+    async fn display_name(&self) -> &str {
         self.0.display_name(Locale::EN) // FIXME
     }
 
@@ -246,7 +246,7 @@ impl Topic {
         self.0.display_color()
     }
 
-    async fn display_name(&self) -> String {
+    async fn display_name(&self) -> &str {
         self.0.display_name(Locale::EN)
     }
 

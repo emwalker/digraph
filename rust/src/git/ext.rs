@@ -24,25 +24,29 @@ impl Map {
         &self,
         context: &RepoId,
     ) -> Result<(Vec<RepoLinkWrapper>, RepoLinkWrapper)> {
-        let mut display_topic: Option<RepoLinkWrapper> = match self.0.get(context) {
-            Some(repo_topic) => Some((context, repo_topic).try_into()?),
+        let mut display_link: Option<RepoLinkWrapper> = match self.0.get(context) {
+            Some(repo_topic) => if repo_topic.has_details() {
+                Some((context, repo_topic).try_into()?)
+            } else {
+                None
+            },
             None => None,
         };
 
         let mut topics = vec![];
 
         for (repo_id, object) in self.iter() {
-            if display_topic.is_none() {
-                display_topic = Some((repo_id, object).try_into()?);
+            if display_link.is_none() && object.has_details() {
+                display_link = Some((repo_id, object).try_into()?);
             }
             topics.push((repo_id, object).try_into()?);
         }
 
-        if display_topic.is_none() {
+        if display_link.is_none() {
             return Err(Error::Repo("no display topic".into()));
         }
 
-        Ok((topics, display_topic.unwrap()))
+        Ok((topics, display_link.unwrap()))
     }
 
     pub fn topic_details(
@@ -50,14 +54,18 @@ impl Map {
         context: &RepoId,
     ) -> Result<(Vec<RepoTopicWrapper>, RepoTopicWrapper)> {
         let mut display_topic: Option<RepoTopicWrapper> = match self.0.get(context) {
-            Some(repo_topic) => Some((context, repo_topic).try_into()?),
+            Some(repo_topic) => if repo_topic.has_details() {
+                Some((context, repo_topic).try_into()?)
+            } else {
+                None
+            },
             None => None,
         };
 
         let mut topics = vec![];
 
         for (repo_id, object) in self.iter() {
-            if display_topic.is_none() {
+            if display_topic.is_none() && object.has_details() {
                 display_topic = Some((repo_id, object).try_into()?);
             }
             topics.push((repo_id, object).try_into()?);
@@ -214,7 +222,7 @@ impl RepoTopicWrapper {
             .collect_vec()
     }
 
-    pub fn display_name(&self, locale: Locale) -> String {
+    pub fn display_name(&self, locale: Locale) -> &str {
         self.topic.metadata.name(locale)
     }
 
@@ -317,7 +325,7 @@ impl Topic {
         }
     }
 
-    pub fn display_name(&self, locale: Locale) -> String {
+    pub fn display_name(&self, locale: Locale) -> &str {
         self.display_topic.display_name(locale)
     }
 
@@ -476,9 +484,9 @@ impl std::cmp::PartialEq for Object {
 impl std::cmp::Eq for Object {}
 
 impl Object {
-    pub fn display_string(&self, locale: Locale) -> String {
+    pub fn display_string(&self, locale: Locale) -> &str {
         match self {
-            Self::Link(link) => link.display_title().to_owned(),
+            Self::Link(link) => link.display_title(),
             Self::Topic(topic) => topic.display_name(locale),
         }
     }
@@ -492,7 +500,7 @@ impl Object {
 
     pub fn to_search_match(self, locale: Locale, search: &Search) -> Result<SearchMatch> {
         let normalized = &search.normalized;
-        let display_string = self.display_string(locale);
+        let display_string = self.display_string(locale).to_owned();
         let search_string = Phrase::parse(&display_string);
 
         match self {
