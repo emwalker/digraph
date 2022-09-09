@@ -35,6 +35,7 @@ Before switchover:
 
 
 Later:
+* Formulas and subscript and superscript in topic titles
 * Add a docs repo and main page with screenshots and sections of how to do various things
 * Make the display color repo-specific, and make the display color for Wiki to be transparent
 * Investigate consolidating SearchMatch and TopicChild (TopicChildConnection)
