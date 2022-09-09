@@ -5,8 +5,8 @@ import { useDebouncedCallback } from 'use-debounce'
 
 import upsertTopicTimerangeMutation, { Input } from 'mutations/upsertTopicTimerangeMutation'
 import {
-  TopicTimerangeForm_topicDetail as TopicTypeDetail,
-} from '__generated__/TopicTimerangeForm_topicDetail.graphql'
+  TopicTimerangeForm_repoTopic as TopicTypeDetail,
+} from '__generated__/TopicTimerangeForm_repoTopic.graphql'
 import { wikiRepoId } from 'components/constants'
 
 type PrefixFormat = NonNullable<TopicTypeDetail['timerange']>['prefixFormat']
@@ -108,8 +108,8 @@ const TopicTimerangeForm = ({ relay, topicDetail: { topicId, timerange } }: Prop
 }
 
 export default createFragmentContainer(TopicTimerangeForm, {
-  topicDetail: graphql`
-    fragment TopicTimerangeForm_topicDetail on TopicDetail {
+  repoTopic: graphql`
+    fragment TopicTimerangeForm_repoTopic on RepoTopic {
       topicId
 
       timerange {

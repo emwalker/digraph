@@ -59,10 +59,10 @@ pub enum TopicChild {
 pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;
 
 #[derive(Clone, Debug)]
-pub struct TopicDetail(pub(crate) git::TopicDetail);
+pub struct RepoTopic(pub(crate) git::RepoTopicWrapper);
 
 #[Object]
-impl TopicDetail {
+impl RepoTopic {
     // FIXME - needs to be scoped somehow, perhaps to the repo id
     async fn available_parent_topics(
         &self,
@@ -242,10 +242,6 @@ impl Topic {
         .map_err(Error::Resolver)
     }
 
-    async fn details(&self) -> Vec<TopicDetail> {
-        self.0.details.iter().map(TopicDetail::from).collect_vec()
-    }
-
     async fn display_color(&self) -> &str {
         self.0.display_color()
     }
@@ -288,6 +284,10 @@ impl Topic {
 
     async fn newly_added(&self) -> bool {
         false
+    }
+
+    async fn repo_topics(&self) -> Vec<RepoTopic> {
+        self.0.repo_topics.iter().map(RepoTopic::from).collect_vec()
     }
 
     #[allow(unused_variables)]

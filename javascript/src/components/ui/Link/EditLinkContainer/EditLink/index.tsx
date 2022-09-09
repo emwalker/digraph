@@ -29,14 +29,14 @@ export default ({ isOpen, toggleForm }: CallerProps) => (
   const { view } = renderProps as RenderProps
 
   // FIXME
-  const details = view?.link?.details || []
-  if (details.length < 1) return null
+  const repoLinks = view?.link?.repoLinks || []
+  if (repoLinks.length < 1) return null
 
   return (
     <EditLinkForm
       isOpen={isOpen}
       toggleForm={toggleForm}
-      linkDetail={details[0]}
+      repoLink={repoLinks[0]}
     />
   )
 }

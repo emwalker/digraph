@@ -111,7 +111,7 @@ type RemoveTopicTimerangePayload {
   topic: Topic!
 }
 
-type LinkDetail {
+type RepoLink {
   availableParentTopics(
     searchString: String,
   ): LiveSearchTopicsPayload!
@@ -132,7 +132,6 @@ type LinkDetail {
 }
 
 type Link {
-  details: [LinkDetail!]!
   displayColor: Color!
   displayParentTopics(
     first: Int,
@@ -145,6 +144,7 @@ type Link {
   id: String!
   loading: Boolean!
   newlyAdded: Boolean!
+  repoLinks: [RepoLink!]!
   sha1: String!
   viewerReview: LinkReview
   viewerCanUpdate: Boolean!
@@ -326,7 +326,7 @@ type Synonym {
   name: String!
 }
 
-type TopicDetail {
+type RepoTopic {
   availableParentTopics(
     searchString: String,
   ): LiveSearchTopicsPayload!
@@ -371,7 +371,7 @@ type Topic {
     last: Int,
     before: String
   ): TopicChildConnection!
-  details: [TopicDetail!]!
+  repoTopics: [RepoTopic!]!
   displayColor: Color!
   displayName: String!
   displayParentTopics(

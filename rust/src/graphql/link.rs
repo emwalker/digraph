@@ -18,10 +18,10 @@ impl TryFrom<Option<Link>> for Link {
     }
 }
 
-pub struct LinkDetail(pub(crate) git::LinkDetail);
+pub struct RepoLink(pub(crate) git::RepoLinkWrapper);
 
 #[Object]
-impl LinkDetail {
+impl RepoLink {
     async fn available_parent_topics(
         &self,
         ctx: &Context<'_>,
@@ -117,10 +117,6 @@ impl Link {
         self.0.display_url()
     }
 
-    async fn details(&self) -> Vec<LinkDetail> {
-        self.0.details.iter().map(LinkDetail::from).collect_vec()
-    }
-
     async fn loading(&self) -> bool {
         false
     }
@@ -132,6 +128,10 @@ impl Link {
     // Used by the JS client to highlight a link that was just added
     async fn newly_added(&self) -> bool {
         false
+    }
+
+    async fn repo_links(&self) -> Vec<RepoLink> {
+        self.0.repo_links.iter().map(RepoLink::from).collect_vec()
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {

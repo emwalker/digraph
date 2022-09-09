@@ -1,5 +1,5 @@
 Before switchover:
-* Details: Only select topic detail if the details field is non-null
+* Repo topics/links: Only select topic repo if the details field is non-null
 * Show merged topic children instead of topic children from one repo topic
 * Experiment with using borrows in some resolvers instead of copying
 * Update repo names and give new repos a better name
@@ -14,15 +14,14 @@ Before switchover:
 * Decide whether to support link reviews or remove the feature
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
 * Bug: some history entries are not displaying properly
-* Details: Figure out what the relationship is between TopicDetail (e.g.) and the "detail/s" section of the topic metadata serialization. If they're not really the same thing, find another name for the key (?)
-* Details: Rename "details" to "detail" in topic serialization (?). Blocked.
-* Details: Defer adding UX for updating select fields of an item that isn't in the selected repo
-* Details: Defer adding UX for updating any fields on an item that isn't in the selected repo
-* Details: Show links in private repo in blue again
-* Details: Add repo back to topic and link types
-* Details: Figure out how to represent / what to do with partial details in edit forms (no title, no url, but parent topics)
-* Details: Fix synonym update bugs
-* Details: Return collection of detail views / edit forms instead of edit form
+* Repo topics/links: Figure out what the relationship is between TopicDetail (e.g.) and the "detail/s" section of the topic metadata serialization. If they're not really the same thing, find another name for the key (?)
+* Repo topics/links: Defer adding UX for updating select fields of an item that isn't in the selected repo
+* Repo topics/links: Defer adding UX for updating any fields on an item that isn't in the selected repo
+* Repo topics/links: Show links in private repo in blue again
+* Repo topics/links: Add repo back to topic and link types
+* Repo topics/links: Figure out how to represent / what to do with partial details in edit forms (no title, no url, but parent topics)
+* Repo topics/links: Fix synonym update bugs
+* Repo topics/links: Return collection of detail views / edit forms instead of edit form
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo

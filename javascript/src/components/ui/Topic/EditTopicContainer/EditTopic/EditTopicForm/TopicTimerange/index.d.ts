@@ -1,7 +1,7 @@
 import { RelayProp } from 'react-relay';
-import { TopicTimerange_topicDetail as TopicDetailType } from '__generated__/TopicTimerange_topicDetail.graphql';
+import { TopicTimerange_repoTopic as RepoTopicType } from '__generated__/TopicTimerange_repoTopic.graphql';
 declare type Props = {
-    topicDetail: TopicDetailType;
+    topicDetail: RepoTopicType;
     relay: RelayProp;
 };
 declare const _default: import("react-relay").Container<Omit<Props, "relay">>;

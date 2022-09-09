@@ -7,6 +7,7 @@ pub mod activity;
 mod checks;
 mod client;
 pub mod core;
+mod external;
 mod index;
 mod link;
 mod repository;
@@ -14,19 +15,18 @@ mod search;
 mod stats;
 pub mod testing;
 mod topic;
-mod types;
 
 use crate::prelude::*;
 use crate::types as core_types;
 pub use account::*;
 pub use client::*;
+pub use external::*;
 pub use index::*;
 pub use link::*;
 pub use repository::*;
 pub use search::*;
 pub use stats::*;
 pub use topic::*;
-pub use types::*;
 
 #[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum Kind {

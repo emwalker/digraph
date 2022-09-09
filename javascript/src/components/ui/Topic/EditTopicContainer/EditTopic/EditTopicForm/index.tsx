@@ -15,7 +15,7 @@ import Synonyms from './Synonyms'
 import TopicTimerange from './TopicTimerange'
 import { wikiRepoId } from 'components/constants'
 
-type TopicDetailType = TopicType['details'][0]
+type RepoTopicType = TopicType['repoTopics'][0]
 
 type Props = {
   isOpen: boolean,
@@ -37,7 +37,7 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   onDelete = () => {
-    const topicId = this.topicDetail?.topicId
+    const topicId = this.repoTopic?.topicId
 
     if (!topicId) return
 
@@ -56,20 +56,20 @@ class EditTopicForm extends Component<Props, State> {
   }
 
   // FIXME
-  get topicDetail(): TopicDetailType | null {
-    const details = this.props.topic.details
-    if (details.length < 1) return null
-    return details[0]
+  get repoTopic(): RepoTopicType | null {
+    const repoTopics = this.props.topic.repoTopics
+    if (repoTopics.length < 1) return null
+    return repoTopics[0]
   }
 
   get selectedTopics(): TopicOption[] | null {
-    const selectedTopics = this.topicDetail?.selectedTopics
+    const selectedTopics = this.repoTopic?.selectedTopics
     const array = liftNodes(selectedTopics)
     return selectedTopics ? makeOptions(array) : null
   }
 
   updateParentTopics = (parentTopicIds: string[]) => {
-    const topicId = this.topicDetail?.topicId
+    const topicId = this.repoTopic?.topicId
     if (!topicId) return
 
     const input: UpdateTopicsInput = {
@@ -91,7 +91,7 @@ class EditTopicForm extends Component<Props, State> {
       }
 
       this.props.relay.refetch(variables, null, () => {
-        const availableTopics = this.topicDetail?.availableTopics
+        const availableTopics = this.repoTopic?.availableTopics
         const options = availableTopics ? makeOptions(availableTopics.synonymMatches) : []
         resolve(options as TopicOption[])
       })
@@ -102,15 +102,15 @@ class EditTopicForm extends Component<Props, State> {
     if (!this.props.isOpen) return null
 
     const { selectedTopics } = this
-    const topicDetail = this.topicDetail
+    const repoTopic = this.repoTopic
 
-    if (!topicDetail) return null
+    if (!repoTopic) return null
 
     return (
       selectedTopics ? (
         <div className="my-4">
           <Synonyms topic={this.props.topic} />
-          <TopicTimerange topicDetail={topicDetail} />
+          <TopicTimerange topicDetail={repoTopic} />
 
           <EditTopicList
             loadOptions={this.loadOptions}
@@ -145,7 +145,7 @@ export default createRefetchContainer(EditTopicForm, {
       displayName
       ...Synonyms_topic
 
-      details {
+      repoTopics {
         topicId
 
         selectedTopics: parentTopics(first: 1000) {
@@ -164,7 +164,7 @@ export default createRefetchContainer(EditTopicForm, {
           }
         }
 
-        ...TopicTimerange_topicDetail
+        ...TopicTimerange_repoTopic
       }
     }
   `,

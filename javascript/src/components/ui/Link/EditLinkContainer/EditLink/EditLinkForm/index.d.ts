@@ -1,8 +1,8 @@
 import { RelayRefetchProp } from 'react-relay';
-import { EditLinkForm_linkDetail as LinkDetailType } from '__generated__/EditLinkForm_linkDetail.graphql';
+import { EditLinkForm_repoLink as RepoLinkType } from '__generated__/EditLinkForm_repoLink.graphql';
 declare type Props = {
     isOpen: boolean;
-    linkDetail: LinkDetailType;
+    repoLink: RepoLinkType;
     relay: RelayRefetchProp;
     toggleForm: () => void;
 };

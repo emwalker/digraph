@@ -5,8 +5,7 @@ use std::convert::TryInto;
 use std::str::FromStr;
 
 use super::{
-    Link, LinkDetail, Synonym, SynonymInput, SynonymMatch, Topic, TopicChild, TopicDetail,
-    ViewStats,
+    Link, RepoLink, RepoTopic, Synonym, SynonymInput, SynonymMatch, Topic, TopicChild, ViewStats,
 };
 use crate::git;
 use crate::prelude::*;
@@ -139,26 +138,26 @@ impl From<&git::Topic> for Topic {
     }
 }
 
-impl From<git::TopicDetail> for TopicDetail {
-    fn from(value: git::TopicDetail) -> Self {
+impl From<git::RepoTopicWrapper> for RepoTopic {
+    fn from(value: git::RepoTopicWrapper) -> Self {
         Self(value)
     }
 }
 
-impl From<&git::TopicDetail> for TopicDetail {
-    fn from(value: &git::TopicDetail) -> Self {
+impl From<&git::RepoTopicWrapper> for RepoTopic {
+    fn from(value: &git::RepoTopicWrapper) -> Self {
         value.to_owned().into()
     }
 }
 
-impl From<git::LinkDetail> for LinkDetail {
-    fn from(value: git::LinkDetail) -> Self {
+impl From<git::RepoLinkWrapper> for RepoLink {
+    fn from(value: git::RepoLinkWrapper) -> Self {
         Self(value)
     }
 }
 
-impl From<&git::LinkDetail> for LinkDetail {
-    fn from(value: &git::LinkDetail) -> Self {
+impl From<&git::RepoLinkWrapper> for RepoLink {
+    fn from(value: &git::RepoLinkWrapper) -> Self {
         value.to_owned().into()
     }
 }

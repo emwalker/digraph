@@ -2,7 +2,7 @@ import { Component, FormEvent, ChangeEvent } from 'react';
 import { RelayProp } from 'react-relay';
 import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphql';
 import { SynonymType } from 'components/types';
-declare type TopicDetailType = TopicType['details'][0];
+declare type RepoTopicType = TopicType['repoTopics'][0];
 declare type Props = {
     relay: RelayProp;
     topic: TopicType;
@@ -17,7 +17,7 @@ declare class Synonyms extends Component<Props, State> {
     onNameChange: (event: ChangeEvent<HTMLInputElement>) => void;
     onAdd: () => void;
     onDelete: (position: number) => void;
-    get topicDetail(): TopicDetailType | null;
+    get topicDetail(): RepoTopicType | null;
     get synonyms(): readonly {
         readonly name: string;
         readonly locale: import("__generated__/Synonyms_topic.graphql").LocaleIdentifier;
@@ -29,7 +29,7 @@ declare class Synonyms extends Component<Props, State> {
             clientMutationId: null;
             topic: {
                 displayName: string;
-                details: {
+                repoTopics: {
                     synonyms: SynonymType[];
                     topicId?: string | undefined;
                     displayName?: string | undefined;

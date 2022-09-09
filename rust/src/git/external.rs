@@ -22,8 +22,11 @@ impl Map {
         self.0.insert(repo_id, repo_obj);
     }
 
-    pub fn link_details(&self, context: &RepoId) -> Result<(Vec<LinkDetail>, LinkDetail)> {
-        let mut display_topic: Option<LinkDetail> = match self.0.get(context) {
+    pub fn link_details(
+        &self,
+        context: &RepoId,
+    ) -> Result<(Vec<RepoLinkWrapper>, RepoLinkWrapper)> {
+        let mut display_topic: Option<RepoLinkWrapper> = match self.0.get(context) {
             Some(repo_topic) => Some((context, repo_topic).try_into()?),
             None => None,
         };
@@ -44,8 +47,11 @@ impl Map {
         Ok((topics, display_topic.unwrap()))
     }
 
-    pub fn topic_details(&self, context: &RepoId) -> Result<(Vec<TopicDetail>, TopicDetail)> {
-        let mut display_topic: Option<TopicDetail> = match self.0.get(context) {
+    pub fn topic_details(
+        &self,
+        context: &RepoId,
+    ) -> Result<(Vec<RepoTopicWrapper>, RepoTopicWrapper)> {
+        let mut display_topic: Option<RepoTopicWrapper> = match self.0.get(context) {
             Some(repo_topic) => Some((context, repo_topic).try_into()?),
             None => None,
         };
@@ -96,7 +102,7 @@ impl ObjectBuilder {
                 Ok(Object::Topic(Topic {
                     id,
                     display_topic,
-                    details,
+                    repo_topics: details,
                     _map: map,
                 }))
             }
@@ -106,7 +112,7 @@ impl ObjectBuilder {
                 Ok(Object::Link(Link {
                     id,
                     display_link,
-                    details,
+                    repo_links: details,
                     _map: map,
                 }))
             }
@@ -176,26 +182,26 @@ impl Synonyms {
 }
 
 #[derive(Clone, Debug)]
-pub struct TopicDetail {
-    repo_topic: RepoTopic,
+pub struct RepoTopicWrapper {
+    topic: RepoTopic,
     pub repo_id: RepoId,
 }
 
-impl TryFrom<(&RepoId, &RepoObject)> for TopicDetail {
+impl TryFrom<(&RepoId, &RepoObject)> for RepoTopicWrapper {
     type Error = Error;
 
     fn try_from((repo_id, object): (&RepoId, &RepoObject)) -> Result<Self> {
         let repo_topic: RepoTopic = object.try_into()?;
-        Ok(TopicDetail {
+        Ok(RepoTopicWrapper {
             repo_id: repo_id.to_owned(),
-            repo_topic,
+            topic: repo_topic,
         })
     }
 }
 
-impl TopicDetail {
+impl RepoTopicWrapper {
     pub fn child_ids(&self) -> Vec<Oid> {
-        self.repo_topic
+        self.topic
             .children
             .iter()
             .map(|child| child.id.to_owned())
@@ -203,7 +209,7 @@ impl TopicDetail {
     }
 
     pub fn child_link_ids(&self) -> Vec<Oid> {
-        self.repo_topic
+        self.topic
             .children
             .iter()
             .flat_map(|child| match child.kind {
@@ -214,7 +220,7 @@ impl TopicDetail {
     }
 
     pub fn parent_topic_ids(&self) -> Vec<Oid> {
-        self.repo_topic
+        self.topic
             .parent_topics
             .iter()
             .map(|parent| parent.id.to_owned())
@@ -222,27 +228,27 @@ impl TopicDetail {
     }
 
     pub fn display_name(&self, locale: Locale) -> String {
-        self.repo_topic.metadata.name(locale)
+        self.topic.metadata.name(locale)
     }
 
     pub fn synonyms(&self) -> &[Synonym] {
-        self.repo_topic.synonyms()
+        self.topic.synonyms()
     }
 
     pub fn timerange(&self) -> &Option<Timerange> {
-        self.repo_topic.timerange()
+        self.topic.timerange()
     }
 
     pub fn topic_id(&self) -> &Oid {
-        self.repo_topic.id()
+        self.topic.id()
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Topic {
     _map: Map,
-    display_topic: TopicDetail,
-    pub details: Vec<TopicDetail>,
+    display_topic: RepoTopicWrapper,
+    pub repo_topics: Vec<RepoTopicWrapper>,
     pub id: Oid,
 }
 
@@ -297,20 +303,20 @@ impl TryFrom<Option<&Object>> for Topic {
 
 impl Topic {
     pub fn can_update(&self, write_repo_ids: &RepoIds) -> bool {
-        self.details
+        self.repo_topics
             .iter()
             .any(|topic| write_repo_ids.include(&topic.repo_id))
     }
 
     pub fn child_link_ids(&self) -> Vec<Oid> {
-        self.details
+        self.repo_topics
             .iter()
             .flat_map(|topic| topic.child_link_ids())
             .collect_vec()
     }
 
     pub fn child_ids(&self) -> Vec<Oid> {
-        self.details
+        self.repo_topics
             .iter()
             .flat_map(|topic| topic.child_ids())
             .collect_vec()
@@ -333,11 +339,11 @@ impl Topic {
     }
 
     pub fn in_repo(&self, repo_id: &RepoId) -> bool {
-        self.details.iter().any(|link| &link.repo_id == repo_id)
+        self.repo_topics.iter().any(|link| &link.repo_id == repo_id)
     }
 
     pub fn parent_topic_ids(&self) -> Vec<Oid> {
-        self.details
+        self.repo_topics
             .iter()
             .flat_map(|parent| parent.parent_topic_ids())
             .collect_vec()
@@ -345,24 +351,24 @@ impl Topic {
 }
 
 #[derive(Clone, Debug)]
-pub struct LinkDetail {
+pub struct RepoLinkWrapper {
     pub repo_id: RepoId,
     repo_link: RepoLink,
 }
 
-impl TryFrom<(&RepoId, &RepoObject)> for LinkDetail {
+impl TryFrom<(&RepoId, &RepoObject)> for RepoLinkWrapper {
     type Error = Error;
 
     fn try_from((repo_id, object): (&RepoId, &RepoObject)) -> Result<Self> {
         let repo_link: RepoLink = object.try_into()?;
-        Ok(LinkDetail {
+        Ok(RepoLinkWrapper {
             repo_id: repo_id.to_owned(),
             repo_link,
         })
     }
 }
 
-impl LinkDetail {
+impl RepoLinkWrapper {
     pub fn link_id(&self) -> &Oid {
         self.repo_link.id()
     }
@@ -387,8 +393,8 @@ impl LinkDetail {
 #[derive(Clone, Debug)]
 pub struct Link {
     _map: Map,
-    display_link: LinkDetail,
-    pub details: Vec<LinkDetail>,
+    display_link: RepoLinkWrapper,
+    pub repo_links: Vec<RepoLinkWrapper>,
     pub id: Oid,
 }
 
@@ -435,7 +441,7 @@ impl TryFrom<Option<Link>> for Link {
 
 impl Link {
     pub fn can_update(&self, write_repo_ids: &RepoIds) -> bool {
-        self.details
+        self.repo_links
             .iter()
             .any(|link| write_repo_ids.include(&link.repo_id))
     }
@@ -457,11 +463,11 @@ impl Link {
     }
 
     pub fn in_repo(&self, repo_id: &RepoId) -> bool {
-        self.details.iter().any(|link| &link.repo_id == repo_id)
+        self.repo_links.iter().any(|link| &link.repo_id == repo_id)
     }
 
     pub fn parent_topic_ids(&self) -> Vec<Oid> {
-        self.details
+        self.repo_links
             .iter()
             .flat_map(|parent| parent.parent_topic_ids())
             .collect_vec()

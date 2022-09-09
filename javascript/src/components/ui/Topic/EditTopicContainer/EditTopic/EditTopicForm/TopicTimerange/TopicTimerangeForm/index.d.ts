@@ -1,5 +1,5 @@
 import { RelayProp } from 'react-relay';
-import { TopicTimerangeForm_topicDetail as TopicTypeDetail } from '__generated__/TopicTimerangeForm_topicDetail.graphql';
+import { TopicTimerangeForm_repoTopic as TopicTypeDetail } from '__generated__/TopicTimerangeForm_repoTopic.graphql';
 declare type Props = {
     relay: RelayProp;
     topicDetail: TopicTypeDetail;

@@ -9,18 +9,18 @@ import removeTopicTimerangeMutation, {
   Input as DeleteInput,
 } from 'mutations/removeTopicTimerangeMutation'
 import {
-  TopicTimerange_topicDetail as TopicDetailType,
-} from '__generated__/TopicTimerange_topicDetail.graphql'
+  TopicTimerange_repoTopic as RepoTopicType,
+} from '__generated__/TopicTimerange_repoTopic.graphql'
 import TopicTimerangeForm from './TopicTimerangeForm'
 
 type Props = {
-  topicDetail: TopicDetailType,
+  topicDetail: RepoTopicType,
   relay: RelayProp,
 }
 
 const updateOrDelete = (
   relay: RelayProp,
-  topicDetail: TopicDetailType,
+  topicDetail: RepoTopicType,
   setMutationInFlight: (inFlight: boolean) => void,
 ) => async () => {
   setMutationInFlight(true)
@@ -68,15 +68,15 @@ const TopicTimeRange = ({ relay, topicDetail }: Props) => {
 }
 
 export default createFragmentContainer(TopicTimeRange, {
-  topicDetail: graphql`
-    fragment TopicTimerange_topicDetail on TopicDetail {
+  repoTopic: graphql`
+    fragment TopicTimerange_repoTopic on RepoTopic {
       topicId
 
       timerange {
         startsAt
       }
 
-      ...TopicTimerangeForm_topicDetail
+      ...TopicTimerangeForm_repoTopic
     }
   `,
 })

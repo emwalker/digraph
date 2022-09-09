@@ -10,7 +10,7 @@ import SynonymList from './SynonymList'
 import copySynonyms from './copySynonyms'
 import { wikiRepoId } from 'components/constants'
 
-type TopicDetailType = TopicType['details'][0]
+type RepoTopicType = TopicType['repoTopics'][0]
 
 type Props = {
   relay: RelayProp,
@@ -68,10 +68,10 @@ class Synonyms extends Component<Props, State> {
     this.updateTopicSynonyms(update)
   }
 
-  get topicDetail(): TopicDetailType | null {
-    const details = this.props.topic.details
-    if (details.length < 1) return null
-    return details[0]
+  get topicDetail(): RepoTopicType | null {
+    const repoTopics = this.props.topic.repoTopics
+    if (repoTopics.length < 1) return null
+    return repoTopics[0]
   }
 
   get synonyms() {
@@ -86,7 +86,7 @@ class Synonyms extends Component<Props, State> {
         topic: {
           ...this.props.topic,
           displayName: displayName(synonyms),
-          details: [
+          repoTopics: [
             {
               ...this.topicDetail,
               synonyms,
@@ -193,7 +193,7 @@ export default createFragmentContainer(Synonyms, {
       displayName
       viewerCanUpdate
 
-      details {
+      repoTopics {
         topicId
         displayName
         viewerCanDeleteSynonyms

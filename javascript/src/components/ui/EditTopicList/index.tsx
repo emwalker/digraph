@@ -12,8 +12,8 @@ import colourStyles from './colourStyles'
 
 /* eslint react/no-unused-state: 0 */
 
-type TopicDetailType = TopicType['details'][0]
-type SynonymMatches = TopicDetailType['availableTopics']['synonymMatches']
+type RepoTopicType = TopicType['repoTopics'][0]
+type SynonymMatches = RepoTopicType['availableTopics']['synonymMatches']
 type SelectedTopics = ({ label: string, value: string } | null)[]
 
 const color = '#0366d6'

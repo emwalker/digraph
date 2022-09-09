@@ -11,7 +11,7 @@ const synonymEdge = {
 }
 
 const topic = {
-  details: [
+  repoTopics: [
     {
       viewerCanDeleteSynonyms: true,
       viewerCanUpdate: true,

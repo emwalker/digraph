@@ -11,8 +11,8 @@ import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphq
 import Synonym from '../Synonym'
 import copySynonyms from '../copySynonyms'
 
-type TopicDetailType = TopicType['details'][0]
-type SynonymType = TopicDetailType['synonyms'][number]
+type RepoTopicType = TopicType['repoTopics'][0]
+type SynonymType = RepoTopicType['synonyms'][number]
 
 type Props = {
   canUpdate: boolean,
