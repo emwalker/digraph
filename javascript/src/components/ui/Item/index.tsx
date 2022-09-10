@@ -6,6 +6,7 @@ import { topicPath } from 'components/helpers'
 import { LocationType } from 'components/types'
 import LinkOrA from './LinkOrA'
 import TopicBadge from '../TopicBadge'
+import RepoOwnership from '../RepoOwnership'
 
 /* eslint no-underscore-dangle: 0 */
 
@@ -154,29 +155,18 @@ class Item extends Component<Props> {
     </div>
   )
 
-  render = () => {
-    const { url } = this.props
-    const repoColors = this.props.repoColors
-    const width = repoColors.length === 0 ? '100%' : `${100 / repoColors.length}%`
+  render = () => (
+    <li className={this.className} key={this.props.url}>
+      {this.props.canEdit
+        ? this.renderEditable()
+        : this.renderWide()}
 
-    return (
-      <li className={this.className} key={url}>
-        {this.props.canEdit
-          ? this.renderEditable()
-          : this.renderWide()}
-
-        {this.props.showRepoOwnership && (
-          <span className="Progress mt-2">
-            {repoColors.map((color) =>
-              <span
-                className="Progress-item"
-                style={{ backgroundColor: color as string, width }} />,
-            )}
-          </span>
-        )}
-      </li>
-    )
-  }
+      <RepoOwnership
+        showRepoOwnership={this.props.showRepoOwnership}
+        repoColors={this.props.repoColors}
+      />
+    </li>
+  )
 }
 
 export default Item

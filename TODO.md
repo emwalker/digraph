@@ -1,5 +1,5 @@
 Before switchover:
-* Show topic ownership under topic title
+* Sort the repo ownership according to the selected repo
 * Experiment with using borrows in some resolvers instead of copying
 * Update repo names and give new repos a better name
 * Replace hardcoded references to wikiRepoId with repo from resource (depends on whether user can edit)

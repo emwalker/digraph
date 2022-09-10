@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { graphql, createFragmentContainer } from 'react-relay'
 import { isEmpty } from 'ramda'
-import classNames from 'classnames'
 import { Link as FoundLink } from 'found'
 
 import Page from 'components/ui/Page'
@@ -13,8 +12,9 @@ import RightColumn from 'components/ui/RightColumn'
 import List from 'components/ui/List'
 import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
+import RepoOwnership from 'components/ui/RepoOwnership'
 import { topicPath } from 'components/helpers'
-import { LocationType, NodeTypeOf, liftNodes } from 'components/types'
+import { Color, LocationType, NodeTypeOf, liftNodes } from 'components/types'
 import { TopicPage_query_Query$data as Response } from '__generated__/TopicPage_query_Query.graphql'
 import { TopicPage_topic$data as TopicType } from '__generated__/TopicPage_topic.graphql'
 import AddForm from './AddForm'
@@ -117,17 +117,31 @@ class TopicPage extends Component<Props, State> {
     />
   )
 
+  get repoColors(): Color[] {
+    return this.props.topic.repoTopics.map((repoTopic) => repoTopic.displayColor as Color)
+  }
+
+  renderRepoOwnership = () => 
+    <RepoOwnership
+      showRepoOwnership={this.props.topic.showRepoOwnership}
+      repoColors={this.repoColors}
+    />
+
   renderHeadingDetail = () => {
     const { displaySynonyms } = this
     const { length } = displaySynonyms
 
-    if (length < 2) return null
+    if (length < 2) return <div>{ this.renderRepoOwnership() }</div>
 
     return (
-      <div className={classNames('displaySynonyms', 'h6')}>
-        {displaySynonyms.slice(1, length).map(({ name }) => (
-          <span key={name} className="synonym">{name}</span>
-        ))}
+      <div>
+        <div className="displaySynonyms h6">
+          {displaySynonyms.map(({ name }) => (
+            <span key={name} className="synonym">{name}</span>
+          ))}
+        </div>
+
+        { this.renderRepoOwnership() }
       </div>
     )
   }
@@ -250,6 +264,11 @@ export default createFragmentContainer(TopicPage, {
     ) {
       displayName
       id
+      showRepoOwnership
+
+      repoTopics {
+        displayColor
+      }
 
       displaySynonyms {
         name
