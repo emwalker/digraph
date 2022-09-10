@@ -1,6 +1,5 @@
 Before switchover:
-* Repo topics/links: Only select topic repo if the details field is non-null
-* Show merged topic children instead of topic children from one repo topic
+* Show topic ownership under topic title
 * Experiment with using borrows in some resolvers instead of copying
 * Update repo names and give new repos a better name
 * Replace hardcoded references to wikiRepoId with repo from resource (depends on whether user can edit)
@@ -10,6 +9,7 @@ Before switchover:
 * Ensure that account creation still works
 * Ensure that account deletion still works
 * Bug: the child links under Reading list are in the wiki repo rather than the private repo
+* Bug: links are showing up in more than one repo, when they should just be private
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
 * Replace <Suspense>loading...</Suspense> with something nice

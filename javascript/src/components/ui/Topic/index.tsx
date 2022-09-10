@@ -2,7 +2,7 @@ import React, { useState, Suspense } from 'react'
 import { graphql, useFragment } from 'react-relay'
 
 import { topicPath } from 'components/helpers'
-import { NodeTypeOf, liftNodes } from 'components/types'
+import { NodeTypeOf, liftNodes, Color } from 'components/types'
 import { Topic_topic$data, Topic_topic$key } from '__generated__/Topic_topic.graphql'
 import Item from '../Item'
 import EditTopic from './EditTopic'
@@ -21,12 +21,17 @@ export default function Topic(props: Props) {
   const topic = useFragment(
     graphql`
       fragment Topic_topic on Topic {
-        displayColor
         displayName
         id
         loading
         newlyAdded
         viewerCanUpdate
+        showRepoOwnership
+
+        repoTopics {
+          inWikiRepo
+          displayColor
+        }
 
         displayParentTopics(first: 100) {
           edges {
@@ -43,16 +48,18 @@ export default function Topic(props: Props) {
 
   const showEditButton = !topic.loading && topic.viewerCanUpdate
   const displayParentTopics = liftNodes<ParentTopicType>(topic.displayParentTopics)
+  const repoColors = topic.repoTopics.map((repoTopic) => repoTopic.displayColor as Color)
 
   return (
     <Item
       canEdit={topic.viewerCanUpdate}
       className="topicTopicRow Box-row--topic"
-      displayColor={topic.displayColor as string}
       formIsOpen={formIsOpen}
       newlyAdded={topic.newlyAdded}
+      repoColors={repoColors}
       showEditButton={showEditButton}
       showLink={false}
+      showRepoOwnership={topic.showRepoOwnership}
       title={topic.displayName}
       toggleForm={toggleForm}
       topics={displayParentTopics}

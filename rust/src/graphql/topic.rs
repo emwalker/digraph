@@ -80,6 +80,14 @@ impl RepoTopic {
         self.0.display_name(Locale::EN) // FIXME
     }
 
+    async fn display_color(&self) -> &str {
+        self.0.display_color()
+    }
+
+    async fn in_wiki_repo(&self) -> bool {
+        self.0.repo_id.is_wiki()
+    }
+
     async fn parent_topics(
         &self,
         ctx: &Context<'_>,
@@ -242,10 +250,6 @@ impl Topic {
         .map_err(Error::Resolver)
     }
 
-    async fn display_color(&self) -> &str {
-        self.0.display_color()
-    }
-
     async fn display_name(&self) -> &str {
         self.0.display_name(Locale::EN)
     }
@@ -311,6 +315,10 @@ impl Topic {
         }
 
         relay::connection(after, before, first, last, results)
+    }
+
+    async fn show_repo_ownership(&self) -> bool {
+        self.0.repo_topics.iter().any(|topic| !topic.in_wiki_repo())
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {

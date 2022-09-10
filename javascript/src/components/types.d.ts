@@ -3,6 +3,7 @@ import { OptionProps } from 'react-select';
 export declare type Edge<T> = {
     node: T | null;
 } | null;
+export declare type Color = string;
 export declare type Connection<T> = {
     edges: readonly Edge<T>[] | null;
 };

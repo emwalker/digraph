@@ -1,98 +1,87 @@
-import React, { Component } from 'react'
-import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
+import React, { useCallback, useState } from 'react'
+import { graphql, useFragment } from 'react-relay'
 
-import { NodeTypeOf, liftNodes } from 'components/types'
-import { Link_link$data as LinkType } from '__generated__/Link_link.graphql'
-import { Link_viewer$data as ViewerType } from '__generated__/Link_viewer.graphql'
+import { NodeTypeOf, liftNodes, Color } from 'components/types'
+import { Link_link$key, Link_link$data as LinkType } from '__generated__/Link_link.graphql'
+import { Link_viewer$key } from '__generated__/Link_viewer.graphql'
 import Item from '../Item'
 import EditLink from './EditLinkContainer'
 
 type ParentTopicType = NodeTypeOf<LinkType['displayParentTopics']>
 
 type Props = {
-  link: LinkType,
-  relay: RelayProp,
-  viewer: ViewerType,
+  link: Link_link$key,
+  viewer: Link_viewer$key,
 }
 
-type State = {
-  formIsOpen: boolean,
-}
+export default function Link(props: Props) {
+  const [formIsOpen, setFormIsOpen] = useState(false)
 
-class Link extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props)
-    this.state = {
-      formIsOpen: false,
-    }
-  }
+  const viewer = useFragment(
+    graphql`
+      fragment Link_viewer on User {
+        isGuest
+      }
+    `,
+    props.viewer,
+  )
 
-  get linkBelongsToCurrentRepo(): boolean {
-    return true
-  }
+  const link = useFragment(
+    graphql`
+      fragment Link_link on Link {
+        displayTitle
+        displayUrl
+        id
+        loading
+        newlyAdded
+        viewerCanUpdate
+        showRepoOwnership
 
-  get parentTopics() {
-    return liftNodes<ParentTopicType>(this.props.link.displayParentTopics)
-  }
+        repoLinks {
+          displayColor
+        }
 
-  get showEditButton(): boolean {
-    return !this.props.link.loading && this.props.link.viewerCanUpdate
-  }
+        displayParentTopics(first: 100) {
+          edges {
+            node {
+              displayName
+              id
+            }
+          }
+        }
+      }
+    `,
+    props.link,
+  )
+  
+  const toggleForm = useCallback(() => {
+    setFormIsOpen(!formIsOpen)
+  }, [setFormIsOpen])
 
-  toggleForm = () => {
-    this.setState(({ formIsOpen }) => ({ formIsOpen: !formIsOpen }))
-  }
+  const parentTopics = liftNodes<ParentTopicType>(link.displayParentTopics)
+  const showEditButton = !link.loading && link.viewerCanUpdate
+  const repoColors = link.repoLinks.map((repoLink) => repoLink.displayColor as Color)
 
-  render = () => (
+  return (
     <Item
-      canEdit={!this.props.viewer.isGuest}
+      canEdit={!viewer.isGuest}
       className="Box-row--link"
-      displayColor={this.props.link.displayColor as string}
-      formIsOpen={this.state.formIsOpen}
-      newlyAdded={this.props.link.newlyAdded}
-      showEditButton={this.showEditButton}
+      formIsOpen={formIsOpen}
+      newlyAdded={link.newlyAdded}
+      repoColors={repoColors}
+      showEditButton={showEditButton}
       showLink
-      title={this.props.link.displayTitle}
-      toggleForm={this.toggleForm}
-      topics={this.parentTopics}
-      url={this.props.link.displayUrl}
+      showRepoOwnership={link.showRepoOwnership}
+      title={link.displayTitle}
+      toggleForm={toggleForm}
+      topics={parentTopics}
+      url={link.displayUrl}
     >
       <EditLink
-        isOpen={this.state.formIsOpen}
-        link={this.props.link}
-        relay={this.props.relay}
-        toggleForm={this.toggleForm}
+        isOpen={formIsOpen}
+        link={link}
+        toggleForm={toggleForm}
       />
     </Item>
   )
 }
-
-export const UnwrappedLink = Link
-
-export default createFragmentContainer(Link, {
-  viewer: graphql`
-    fragment Link_viewer on User {
-      isGuest
-    }
-  `,
-  link: graphql`
-    fragment Link_link on Link {
-      displayColor
-      displayTitle
-      displayUrl
-      id
-      loading
-      newlyAdded
-      viewerCanUpdate
-
-      displayParentTopics(first: 100) {
-        edges {
-          node {
-            displayName
-            id
-          }
-        }
-      }
-    }
-  `,
-})

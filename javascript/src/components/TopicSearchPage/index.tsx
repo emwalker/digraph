@@ -36,7 +36,6 @@ class TopicSearchPage extends Component<Props> {
         <Link
           key={item.id}
           link={item}
-          // @ts-expect-error
           viewer={this.props.view.viewer}
         />
       )

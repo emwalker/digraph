@@ -99,9 +99,7 @@ class TopicPage extends Component<Props, State> {
       return (
         <Link
           key={child.id}
-          // @ts-expect-error
           link={child}
-          // @ts-expect-error
           viewer={this.props.view.viewer}
         />
       )

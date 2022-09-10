@@ -116,7 +116,7 @@ type RepoLink {
     searchString: String,
   ): LiveSearchTopicsPayload!
   createdAt: DateTime!
-  color: Color!
+  displayColor: Color!
   linkId: String!
   parentTopics(
     first: Int,
@@ -132,7 +132,6 @@ type RepoLink {
 }
 
 type Link {
-  displayColor: Color!
   displayParentTopics(
     first: Int,
     after: String,
@@ -146,6 +145,7 @@ type Link {
   newlyAdded: Boolean!
   repoLinks: [RepoLink!]!
   sha1: String!
+  showRepoOwnership: Boolean!
   viewerReview: LinkReview
   viewerCanUpdate: Boolean!
 }
@@ -332,7 +332,9 @@ type RepoTopic {
   ): LiveSearchTopicsPayload!
   color: Color!
   createdAt: DateTime!
+  displayColor: Color!
   displayName: String!
+  inWikiRepo: Boolean!
   parentTopics(
     first: Int,
     after: String,
@@ -372,7 +374,6 @@ type Topic {
     before: String
   ): TopicChildConnection!
   repoTopics: [RepoTopic!]!
-  displayColor: Color!
   displayName: String!
   displayParentTopics(
     first: Int,
@@ -392,6 +393,7 @@ type Topic {
     last: Int,
     before: String
   ): TopicChildConnection!
+  showRepoOwnership: Boolean!
   viewerCanUpdate: Boolean!
 }
 

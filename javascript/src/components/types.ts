@@ -5,6 +5,8 @@ export type Edge<T> = {
   node: T | null
 } | null
 
+export type Color = string
+
 export type Connection<T> = {
   edges: readonly Edge<T>[] | null
 }

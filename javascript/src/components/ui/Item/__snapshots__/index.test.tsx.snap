@@ -4,11 +4,6 @@ exports[`<Item /> renders 1`] = `
 <li
   className="Item-row Box-row"
   key="null"
-  style={
-    Object {
-      "borderLeftColor": undefined,
-    }
-  }
 >
   <div
     className="clearfix d-flex flex-items-center"

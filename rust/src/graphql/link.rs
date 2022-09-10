@@ -134,6 +134,10 @@ impl Link {
         self.0.repo_links.iter().map(RepoLink::from).collect_vec()
     }
 
+    async fn show_repo_ownership(&self) -> bool {
+        self.0.repo_links.iter().any(|link| !link.in_wiki_repo())
+    }
+
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {
         let viewer = &ctx.data_unchecked::<Store>().viewer;
         self.0.can_update(&viewer.write_repo_ids)

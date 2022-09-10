@@ -1,9 +1,9 @@
+use itertools::Itertools;
+use lazy_static::lazy_static;
 use std::{
     collections::{BTreeSet, HashMap},
     convert::{TryFrom, TryInto},
 };
-
-use itertools::Itertools;
 
 use super::{Kind, Phrase, RepoLink, RepoObject, RepoTopic, Search, SearchMatch, SortKey, Synonym};
 use crate::prelude::*;
@@ -226,8 +226,27 @@ impl RepoTopicWrapper {
             .collect_vec()
     }
 
+    pub fn in_repo(&self, repo_id: &RepoId) -> bool {
+        &self.repo_id == repo_id
+    }
+
+    pub fn in_wiki_repo(&self) -> bool {
+        lazy_static! {
+            static ref WIKI: RepoId = RepoId::wiki();
+        }
+        self.repo_id == *WIKI
+    }
+
     pub fn display_name(&self, locale: Locale) -> &str {
         self.topic.metadata.name(locale)
+    }
+
+    pub fn display_color(&self) -> &str {
+        if self.in_wiki_repo() {
+            ""
+        } else {
+            DEFAULT_PRIVATE_COLOR
+        }
     }
 
     pub fn synonyms(&self) -> &[Synonym] {
@@ -322,7 +341,7 @@ impl Topic {
     }
 
     pub fn display_color(&self) -> &str {
-        if self.in_repo(&RepoId::wiki()) {
+        if self.display_topic.in_repo(&RepoId::wiki()) {
             ""
         } else {
             DEFAULT_PRIVATE_COLOR
@@ -335,10 +354,6 @@ impl Topic {
 
     pub fn display_synonyms(&self) -> &[Synonym] {
         self.display_topic.synonyms()
-    }
-
-    pub fn in_repo(&self, repo_id: &RepoId) -> bool {
-        self.repo_topics.iter().any(|link| &link.repo_id == repo_id)
     }
 
     pub fn parent_topic_ids(&self) -> Vec<Oid> {
@@ -368,6 +383,10 @@ impl TryFrom<(&RepoId, &RepoObject)> for RepoLinkWrapper {
 }
 
 impl RepoLinkWrapper {
+    pub fn in_wiki_repo(&self) -> bool {
+        self.repo_id.is_wiki()
+    }
+
     pub fn link_id(&self) -> &Oid {
         self.repo_link.id()
     }

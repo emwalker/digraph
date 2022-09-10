@@ -1,6 +1,7 @@
 import React, { Component, ReactNode } from 'react'
 import classNames from 'classnames'
 
+import { Color } from 'components/types'
 import { topicPath } from 'components/helpers'
 import { LocationType } from 'components/types'
 import LinkOrA from './LinkOrA'
@@ -18,11 +19,12 @@ type Props = {
   children: ReactNode,
   className: string,
   description?: string | null,
-  displayColor: string | null,
   formIsOpen: boolean,
   newlyAdded: boolean,
+  repoColors: Color[],
   showEditButton: boolean | null,
   showLink?: boolean,
+  showRepoOwnership: boolean,
   title: string,
   toggleForm: () => void,
   topics: Topic[],
@@ -48,14 +50,6 @@ class Item extends Component<Props> {
     return !this.props.formIsOpen && this.props.showEditButton === true
   }
 
-  get style() {
-    if (this.props.displayColor === null) return {}
-
-    return {
-      borderLeftColor: this.props.displayColor,
-    }
-  }
-
   get url() {
     if (!this.props.url || !this.props.showLink) return null
 
@@ -63,7 +57,7 @@ class Item extends Component<Props> {
       <div
         className="mt-1 link-url branch-name css-truncate css-truncate-target"
       >
-        { this.props.url }
+        {this.props.url}
       </div>
     )
   }
@@ -84,7 +78,7 @@ class Item extends Component<Props> {
 
     return (
       <LinkOrA to={to} className="Box-row-link">
-        { this.props.title }
+        {this.props.title}
       </LinkOrA>
     )
   }
@@ -117,16 +111,16 @@ class Item extends Component<Props> {
       <div className="clearfix d-flex flex-items-center">
         <div className="col-10">
           <div>
-            { this.titleLink }
-            <div>{ this.props.description }</div>
+            {this.titleLink}
+            <div>{this.props.description}</div>
           </div>
-          { this.url }
+          {this.url}
           <div>
-            { this.props.topics.map(this.renderTopicBadge) }
+            {this.props.topics.map(this.renderTopicBadge)}
           </div>
         </div>
         <div className="col-2 text-center">
-          { this.showEditButton
+          {this.showEditButton
             ? (
               <button
                 className="btn-link"
@@ -140,7 +134,7 @@ class Item extends Component<Props> {
         </div>
       </div>
       <div>
-        { this.props.formIsOpen && this.props.children }
+        {this.props.formIsOpen && this.props.children}
       </div>
     </>
   )
@@ -149,12 +143,12 @@ class Item extends Component<Props> {
     <div className="clearfix d-flex flex-items-center">
       <div className="col-12">
         <div>
-          { this.titleLink }
-          <div>{ this.props.description }</div>
+          {this.titleLink}
+          <div>{this.props.description}</div>
         </div>
-        { this.url }
+        {this.url}
         <div>
-          { this.props.topics.map(this.renderTopicBadge) }
+          {this.props.topics.map(this.renderTopicBadge)}
         </div>
       </div>
     </div>
@@ -162,16 +156,24 @@ class Item extends Component<Props> {
 
   render = () => {
     const { url } = this.props
+    const repoColors = this.props.repoColors
+    const width = repoColors.length === 0 ? '100%' : `${100 / repoColors.length}%`
 
     return (
-      <li
-        className={this.className}
-        style={this.style}
-        key={url}
-      >
-        { this.props.canEdit
+      <li className={this.className} key={url}>
+        {this.props.canEdit
           ? this.renderEditable()
           : this.renderWide()}
+
+        {this.props.showRepoOwnership && (
+          <span className="Progress mt-2">
+            {repoColors.map((color) =>
+              <span
+                className="Progress-item"
+                style={{ backgroundColor: color as string, width }} />,
+            )}
+          </span>
+        )}
       </li>
     )
   }
