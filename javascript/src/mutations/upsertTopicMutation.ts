@@ -42,6 +42,8 @@ export default (environment: Environment, input: Input, config: Config) => {
     node.setValue(input.name, 'name')
     node.setValue('Adding topic to the repo ...', 'description')
     node.setValue(true, 'loading')
+    node.setValue(null, 'repoTopics')
+    node.setValue(false, 'showRepoOwnership')
     updateTopicConnections(store, node, 'TopicChildEdge', input.parentTopicId, 'Topic_children')
   }
 

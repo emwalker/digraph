@@ -175,7 +175,7 @@ impl Fixtures {
             locale: Locale::EN,
             name: name.into(),
             on_matching_synonym,
-            repo: repo.to_owned(),
+            repo_id: repo.to_owned(),
         }
         .call(self.mutation(), &redis::Noop)
     }
@@ -200,7 +200,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change".to_owned(),
-            repo: repo.to_owned(),
+            repo_id: repo.to_owned(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_path),
             parent_topic: root.clone(),
         }
@@ -222,7 +222,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Weather".to_owned(),
-            repo: RepoId::wiki(),
+            repo_id: RepoId::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
             parent_topic: root,
         }
@@ -243,7 +243,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change and weather".to_owned(),
-            repo: repo.to_owned(),
+            repo_id: repo.to_owned(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
             parent_topic: climate_change.id().to_owned(),
         }

@@ -48,7 +48,7 @@ export default function Topic(props: Props) {
 
   const showEditButton = !topic.loading && topic.viewerCanUpdate
   const displayParentTopics = liftNodes<ParentTopicType>(topic.displayParentTopics)
-  const repoColors = topic.repoTopics.map((repoTopic) => repoTopic.displayColor as Color)
+  const repoColors = (topic.repoTopics || []) .map((repoTopic) => repoTopic.displayColor as Color)
 
   return (
     <Item

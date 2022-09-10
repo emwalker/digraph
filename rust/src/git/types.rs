@@ -335,6 +335,19 @@ impl std::hash::Hash for RepoTopic {
 }
 
 impl RepoTopic {
+    pub fn make_reference(id: Oid) -> Self {
+        Self {
+            api_version: API_VERSION.into(),
+            metadata: RepoTopicMetadata {
+                added: chrono::Utc::now(),
+                id,
+                details: None,
+            },
+            parent_topics: BTreeSet::new(),
+            children: BTreeSet::new(),
+        }
+    }
+
     pub fn added(&self) -> Timestamp {
         self.metadata.added
     }

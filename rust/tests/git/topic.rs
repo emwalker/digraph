@@ -141,7 +141,7 @@ mod delete_topic {
             actor: actor(),
             locale: Locale::EN,
             name: name.to_owned(),
-            repo: RepoId::wiki(),
+            repo_id: RepoId::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
             parent_topic: parent.to_owned(),
         }

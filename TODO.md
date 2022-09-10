@@ -1,5 +1,4 @@
 Before switchover:
-* Sort the repo ownership according to the selected repo
 * Experiment with using borrows in some resolvers instead of copying
 * Update repo names and give new repos a better name
 * Replace hardcoded references to wikiRepoId with repo from resource (depends on whether user can edit)
@@ -13,6 +12,8 @@ Before switchover:
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
 * Replace <Suspense>loading...</Suspense> with something nice
+* Bug: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
+* Bug: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
 * Bug: some history entries are not displaying properly
 * Repo topics/links: Figure out what the relationship is between TopicDetail (e.g.) and the "detail/s" section of the topic metadata serialization. If they're not really the same thing, find another name for the key (?)

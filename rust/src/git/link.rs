@@ -274,6 +274,15 @@ impl UpsertLink {
             let topic = mutation.fetch_topic(&self.repo_id, topic_id);
             if let Some(topic) = &topic {
                 parent_topics.insert(topic_id.to_owned(), topic.to_owned());
+            } else {
+                log::info!(
+                    "no parent topic found in selected repo, creating reference: {}",
+                    topic_id
+                );
+                parent_topics.insert(
+                    topic_id.to_owned(),
+                    RepoTopic::make_reference(topic_id.to_owned()),
+                );
             }
             topic
         } else {

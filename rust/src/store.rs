@@ -437,8 +437,7 @@ impl Store {
             locale: Locale::EN,
             name: input.name.to_owned(),
             on_matching_synonym: git::OnMatchingSynonym::Ask,
-            // FIXME: use repo id instead of prefix
-            repo: input.repo_id.try_into()?,
+            repo_id: input.repo_id.try_into()?,
             parent_topic,
         }
         .call(self.mutation()?, &self.redis)

@@ -195,8 +195,13 @@ impl git::SaveChangesForPrefix for Redis {
         }
 
         let key = Key(format!("activity:{}", prefix));
-        log::info!("saving changes to {:?}", key);
-        con.zadd_multiple(key, &args)?;
+        if !args.is_empty() {
+            log::info!("saving changes to {:?}", key);
+            con.zadd_multiple(key, &args)?;
+        } else {
+            log::info!("no changes to save to {:?} key, skipping", key);
+        }
+
         Ok(())
     }
 }

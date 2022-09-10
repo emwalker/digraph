@@ -60,7 +60,7 @@ export default function Link(props: Props) {
 
   const parentTopics = liftNodes<ParentTopicType>(link.displayParentTopics)
   const showEditButton = !link.loading && link.viewerCanUpdate
-  const repoColors = link.repoLinks.map((repoLink) => repoLink.displayColor as Color)
+  const repoColors = (link.repoLinks || []).map((repoLink) => repoLink.displayColor as Color)
 
   return (
     <Item

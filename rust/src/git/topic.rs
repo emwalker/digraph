@@ -442,7 +442,7 @@ pub struct UpsertTopic {
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
     pub parent_topic: Oid,
-    pub repo: RepoId,
+    pub repo_id: RepoId,
 }
 
 pub struct UpsertTopicResult {
@@ -457,13 +457,8 @@ impl UpsertTopic {
     where
         S: SaveChangesForPrefix,
     {
-        let parent = self.fetch_parent(&mutation);
-        if parent.is_none() {
-            return Err(Error::NotFound(format!("not found: {}", self.parent_topic)));
-        }
-        let mut parent = parent.unwrap();
-
-        let mut matches = mutation.synonym_phrase_matches(&[&self.repo], &self.name)?;
+        let mut parent = self.fetch_parent(&mutation);
+        let mut matches = mutation.synonym_phrase_matches(&[&self.repo_id], &self.name)?;
         let date = chrono::Utc::now();
 
         let (child, parent_topics) = if matches.is_empty() {
@@ -483,7 +478,7 @@ impl UpsertTopic {
 
                     for synonym_match in matches {
                         let topic_id = &synonym_match.topic.id();
-                        if mutation.cycle_exists(&self.repo, topic_id, parent_id)? {
+                        if mutation.cycle_exists(&self.repo_id, topic_id, parent_id)? {
                             matching_synonyms.insert(synonym_match.with_cycle(true));
                         } else {
                             matching_synonyms.insert(synonym_match);
@@ -507,8 +502,8 @@ impl UpsertTopic {
                 }
 
                 OnMatchingSynonym::Update(topic_id) => {
-                    if mutation.cycle_exists(&self.repo, topic_id, parent.id())? {
-                        let ancestor = mutation.fetch_topic(&self.repo, topic_id);
+                    if mutation.cycle_exists(&self.repo_id, topic_id, parent.id())? {
+                        let ancestor = mutation.fetch_topic(&self.repo_id, topic_id);
                         if ancestor.is_none() {
                             return Err(Error::NotFound(format!("not found: {}", topic_id)));
                         }
@@ -540,7 +535,7 @@ impl UpsertTopic {
                     }
 
                     log::info!("updating existing topic {:?}", topic_id);
-                    let topic = mutation.fetch_topic(&self.repo, topic_id);
+                    let topic = mutation.fetch_topic(&self.repo_id, topic_id);
                     if topic.is_none() {
                         return Err(Error::NotFound(format!("not found: {}", topic_id)));
                     }
@@ -569,9 +564,9 @@ impl UpsertTopic {
         parent.children.insert(child.to_topic_child(date));
 
         let change = self.change(&child, &parent_topics, &parent, date);
-        mutation.save_topic(&self.repo, &child)?;
-        mutation.save_topic(&self.repo, &parent)?;
-        mutation.add_change(&self.repo, &change)?;
+        mutation.save_topic(&self.repo_id, &child)?;
+        mutation.save_topic(&self.repo_id, &parent)?;
+        mutation.add_change(&self.repo_id, &change)?;
         mutation.write(store)?;
 
         Ok(UpsertTopicResult {
@@ -629,8 +624,20 @@ impl UpsertTopic {
         Ok((topic, parent_topics))
     }
 
-    fn fetch_parent(&self, mutation: &Mutation) -> Option<RepoTopic> {
-        mutation.fetch_topic(&self.repo, &self.parent_topic)
+    fn fetch_parent(&self, mutation: &Mutation) -> RepoTopic {
+        match mutation.fetch_topic(&self.repo_id, &self.parent_topic) {
+            Some(topic) => topic,
+
+            // If the topic is being upserted into another repo, we create a reference to the
+            // parent topic in the current repo
+            None => {
+                log::info!(
+                    "no parent topic found in selected repo, creating reference: {}",
+                    self.parent_topic
+                );
+                RepoTopic::make_reference(self.parent_topic.to_owned())
+            }
+        }
     }
 }
 
