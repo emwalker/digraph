@@ -26,6 +26,7 @@ Before switchover:
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo
+* Finish reading the series on Git internals (https://github.blog/2022-08-29-gits-database-internals-i-packed-object-store/)
 * Cutover: Figure out how to get an RWX pvc working on Linode (use Ceph?)
 * Cutover: Take snapshot of database
 * Cutover: Export people's repos
@@ -35,6 +36,7 @@ Before switchover:
 
 
 Later:
+* Upgrade components to use React/Relay hooks
 * Get UX working on mobile devices again
 * Formulas and subscript and superscript in topic titles
 * Add a docs repo and main page with screenshots and sections of how to do various things
