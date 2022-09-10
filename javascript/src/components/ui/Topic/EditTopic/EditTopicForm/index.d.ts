@@ -1,5 +1,5 @@
 import { RelayRefetchProp } from 'react-relay';
-import { EditTopicForm_topic as TopicType } from '__generated__/EditTopicForm_topic.graphql';
+import { EditTopicForm_topic$data as TopicType } from '__generated__/EditTopicForm_topic.graphql';
 declare type Props = {
     isOpen: boolean;
     relay: RelayRefetchProp;

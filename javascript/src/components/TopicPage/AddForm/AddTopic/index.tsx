@@ -2,8 +2,8 @@ import React, { Component, KeyboardEvent, FormEvent } from 'react'
 import { graphql, createFragmentContainer, RelayProp, DeclarativeMutationConfig } from 'react-relay'
 
 import upsertTopicMutation from 'mutations/upsertTopicMutation'
-import { AddTopic_viewer as Viewer } from '__generated__/AddTopic_viewer.graphql'
-import { AddTopic_topic as Topic } from '__generated__/AddTopic_topic.graphql'
+import { AddTopic_viewer$data as Viewer } from '__generated__/AddTopic_viewer.graphql'
+import { AddTopic_topic$data as Topic } from '__generated__/AddTopic_topic.graphql'
 
 type RepositoryType = Viewer['selectedRepository']
 

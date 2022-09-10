@@ -1,5 +1,5 @@
 import { Match } from 'found';
-import { Account_view as ViewType } from '__generated__/Account_view.graphql';
+import { Account_view$data as ViewType } from '__generated__/Account_view.graphql';
 declare type Props = {
     match: Match;
     view: ViewType | undefined;

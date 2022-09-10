@@ -13,7 +13,7 @@ import SaveOrCancel from 'components/ui/SaveOrCancel'
 import DeleteButton from 'components/ui/DeleteButton'
 import { TopicOption } from 'components/types'
 import {
-  EditLinkForm_repoLink as RepoLinkType,
+  EditLinkForm_repoLink$data as RepoLinkType,
 } from '__generated__/EditLinkForm_repoLink.graphql'
 import { wikiRepoId } from 'components/constants'
 
@@ -167,7 +167,6 @@ export default createRefetchContainer(EditLinkForm, {
   repoLink: graphql`
     fragment EditLinkForm_repoLink on RepoLink @argumentDefinitions(
       searchString: {type: "String", defaultValue: null},
-      count: {type: "Int!", defaultValue: 10}
     ) {
       linkId
       title
@@ -196,7 +195,6 @@ graphql`
     $viewerId: ID!,
     $repoIds: [ID!],
     $linkId: String!,
-    $count: Int!,
     $searchString: String,
   ) {
     view(
@@ -205,7 +203,7 @@ graphql`
     ) {
       link(id: $linkId) {
         repoLinks {
-          ...EditLinkForm_repoLink @arguments(count: $count, searchString: $searchString)
+          ...EditLinkForm_repoLink @arguments(searchString: $searchString)
         }
       }
     }

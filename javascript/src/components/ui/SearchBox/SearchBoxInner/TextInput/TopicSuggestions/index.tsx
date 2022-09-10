@@ -6,7 +6,7 @@ import {
 
 import {
   TopicSuggestionsQuery as Query,
-  TopicSuggestionsQueryResponse as Response,
+  TopicSuggestionsQuery$data as Response,
 } from '__generated__/TopicSuggestionsQuery.graphql'
 
 type Mutable<Type> = {

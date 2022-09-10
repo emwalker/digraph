@@ -4,7 +4,7 @@ import Markdown from 'react-markdown'
 import TimeAgo from 'react-timeago'
 import classNames from 'classnames'
 
-import { LineItem_item as ItemType } from '__generated__/LineItem_item.graphql'
+import { LineItem_item$data as ItemType } from '__generated__/LineItem_item.graphql'
 
 type Props = {
   item: ItemType,

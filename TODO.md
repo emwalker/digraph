@@ -12,6 +12,7 @@ Before switchover:
 * Bug: the child links under Reading list are in the wiki repo rather than the private repo
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
+* Replace <Suspense>loading...</Suspense> with something nice
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
 * Bug: some history entries are not displaying properly
 * Repo topics/links: Figure out what the relationship is between TopicDetail (e.g.) and the "detail/s" section of the topic metadata serialization. If they're not really the same thing, find another name for the key (?)

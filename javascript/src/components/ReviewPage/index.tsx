@@ -3,7 +3,7 @@ import { createFragmentContainer, graphql } from 'react-relay'
 
 import Page from 'components/ui/Page'
 import { NodeTypeOf, liftNodes } from 'components/types'
-import { ReviewPage_view as ViewType } from '__generated__/ReviewPage_view.graphql'
+import { ReviewPage_view$data as ViewType } from '__generated__/ReviewPage_view.graphql'
 import Container from './Container'
 import Review from './Review'
 import reviewPageQuery, { ViewType as QueryViewType } from './reviewPageQuery'
@@ -47,7 +47,11 @@ class ReviewPage extends Component<Props> {
     return this.topic?.displayName
   }
 
-  renderReview = (link: LinkType | null) => link && <Review key={link.id} link={link} />
+  renderReview = (link: LinkType | null) => (
+    link &&
+    // @ts-expect-error
+    <Review key={link.id} link={link} />
+  )
 
   renderNoLinks = () => (
     <div className="blankslate">
@@ -97,7 +101,10 @@ export default ({ view }: RenderProps) => (
   <Page>
     {
       view
-        ? <Wrapper view={view} />
+        ? (
+          // @ts-expect-error
+          <Wrapper view={view} />
+        )
         : <Placeholder />
     }
   </Page>

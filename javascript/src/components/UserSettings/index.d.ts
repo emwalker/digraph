@@ -1,4 +1,3 @@
-/// <reference types="react" />
 import { Match } from 'found';
 import { ViewType as QueryViewType } from './userSettingsQuery';
 export declare const query: import("react-relay").GraphQLTaggedNode;

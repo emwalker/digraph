@@ -2,8 +2,8 @@ import React, { Component } from 'react'
 import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
 
 import { NodeTypeOf, liftNodes } from 'components/types'
-import { Link_link as LinkType } from '__generated__/Link_link.graphql'
-import { Link_viewer as ViewerType } from '__generated__/Link_viewer.graphql'
+import { Link_link$data as LinkType } from '__generated__/Link_link.graphql'
+import { Link_viewer$data as ViewerType } from '__generated__/Link_viewer.graphql'
 import Item from '../Item'
 import EditLink from './EditLinkContainer'
 

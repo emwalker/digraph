@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { LocationType } from 'components/types'
 import DigraphLogo from 'components/ui/icons/DigraphLogo'
 import SearchBox from 'components/ui/SearchBox'
-import { MobileNav_viewer as Viewer } from '__generated__/MobileNav_viewer.graphql'
+import { MobileNav_viewer$data as Viewer } from '__generated__/MobileNav_viewer.graphql'
 import Menu from './Menu'
 import styles from './styles.module.css'
 
@@ -74,7 +74,11 @@ class MobileNav extends Component<Props, State> {
           </button>
         </div>
       </div>
-      { this.state.isOpen && <Menu viewer={this.props.viewer} /> }
+      {
+        this.state.isOpen &&
+        // @ts-expect-error
+        <Menu viewer={this.props.viewer} />
+      }
     </div>
   )
 }

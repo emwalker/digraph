@@ -1,7 +1,7 @@
 import React from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import { LineItems_activity as Activity } from '__generated__/LineItems_activity.graphql'
+import { LineItems_activity$data as Activity } from '__generated__/LineItems_activity.graphql'
 import LineItem from './LineItem'
 import Container from '../Container'
 

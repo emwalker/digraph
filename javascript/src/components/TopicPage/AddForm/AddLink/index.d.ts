@@ -1,6 +1,6 @@
 import { RelayProp } from 'react-relay';
-import { AddLink_viewer as ViewerType } from '__generated__/AddLink_viewer.graphql';
-import { AddLink_topic as TopicType } from '__generated__/AddLink_topic.graphql';
+import { AddLink_viewer$data as ViewerType } from '__generated__/AddLink_viewer.graphql';
+import { AddLink_topic$data as TopicType } from '__generated__/AddLink_topic.graphql';
 declare type Props = {
     disabled?: boolean;
     relay: RelayProp;

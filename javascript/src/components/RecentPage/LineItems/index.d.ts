@@ -1,4 +1,4 @@
-import { LineItems_activity as Activity } from '__generated__/LineItems_activity.graphql';
+import { LineItems_activity$data as Activity } from '__generated__/LineItems_activity.graphql';
 declare type Props = {
     activity: Activity;
 };

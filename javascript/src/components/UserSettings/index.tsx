@@ -4,7 +4,7 @@ import { createFragmentContainer, graphql } from 'react-relay'
 
 import Page from 'components/ui/Page'
 import useDocumentTitle from 'utils/useDocumentTitle'
-import { UserSettings_view as ViewType } from '__generated__/UserSettings_view.graphql'
+import { UserSettings_view$data as ViewType } from '__generated__/UserSettings_view.graphql'
 import userSettingsQuery, { ViewType as QueryViewType } from './userSettingsQuery'
 import Sidenav from './Sidenav'
 import Account from './Account'
@@ -32,7 +32,11 @@ const UserSettings = ({ match, view }: Props) => {
   return (
     <Page>
       <Sidenav match={match} />
-      <Account match={match} view={view} />
+      <Account
+        match={match}
+        // @ts-expect-error
+        view={view}
+      />
       <Support match={match} />
     </Page>
   )
@@ -57,6 +61,7 @@ type RenderProps = {
 
 export default ({ view, match }: RenderProps) => (
   view
+    // @ts-expect-error
     ? <Wrapper view={view} match={match} />
     : null
 )

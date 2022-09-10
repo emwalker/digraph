@@ -1,7 +1,7 @@
 import React from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 
-import { SelectedRepo_viewer as Viewer } from '__generated__/SelectedRepo_viewer.graphql'
+import { SelectedRepo_viewer$data as Viewer } from '__generated__/SelectedRepo_viewer.graphql'
 
 type Props = {
   viewer: Viewer,

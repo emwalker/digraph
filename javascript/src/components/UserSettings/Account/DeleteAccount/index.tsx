@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 
 import deleteAccountMutation, { Input } from 'mutations/deleteAccountMutation'
-import { DeleteAccount_view as ViewType } from '__generated__/DeleteAccount_view.graphql'
+import { DeleteAccount_view$data as ViewType } from '__generated__/DeleteAccount_view.graphql'
 
 declare let confirm: Function
 

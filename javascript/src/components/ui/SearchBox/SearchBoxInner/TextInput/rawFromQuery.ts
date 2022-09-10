@@ -1,6 +1,6 @@
 import { RawDraftContentState } from 'draft-js'
 
-import { SearchBox_view as ViewType } from '__generated__/SearchBox_view.graphql'
+import { SearchBox_view$data as ViewType } from '__generated__/SearchBox_view.graphql'
 
 type QueryInfo = ViewType['queryInfo']
 

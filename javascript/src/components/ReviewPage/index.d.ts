@@ -1,4 +1,3 @@
-/// <reference types="react" />
 import { ViewType as QueryViewType } from './reviewPageQuery';
 export declare const query: import("react-relay").GraphQLTaggedNode;
 export declare type ContainerViewType = QueryViewType;

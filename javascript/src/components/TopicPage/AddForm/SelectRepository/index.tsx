@@ -4,7 +4,7 @@ import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 import { EdgeTypeOf } from 'components/types'
 import selectRepositoryMutation, { Input } from 'mutations/selectRepositoryMutation'
 import {
-  SelectRepository_viewer as ViewerType,
+  SelectRepository_viewer$data as ViewerType,
 } from '__generated__/SelectRepository_viewer.graphql'
 
 type EdgeType = EdgeTypeOf<ViewerType['repositories']>

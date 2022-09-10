@@ -1,5 +1,4 @@
-/// <reference types="react" />
-import { SelectedRepo_viewer as Viewer } from '__generated__/SelectedRepo_viewer.graphql';
+import { SelectedRepo_viewer$data as Viewer } from '__generated__/SelectedRepo_viewer.graphql';
 declare type Props = {
     viewer: Viewer;
 };

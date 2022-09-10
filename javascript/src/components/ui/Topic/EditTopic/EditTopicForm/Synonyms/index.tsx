@@ -3,7 +3,7 @@ import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 
 import updateTopicSynonymsMutation, { Input } from 'mutations/updateTopicSynonymsMutation'
 import {
-  Synonyms_topic as TopicType,
+  Synonyms_topic$data as TopicType,
 } from '__generated__/Synonyms_topic.graphql'
 import { SynonymType } from 'components/types'
 import SynonymList from './SynonymList'

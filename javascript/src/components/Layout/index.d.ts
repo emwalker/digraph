@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
 import { Match, Router } from 'found';
-import { LayoutQueryResponse } from '__generated__/LayoutQuery.graphql';
-declare type AlertsType = LayoutQueryResponse['alerts'];
-declare type ViewType = LayoutQueryResponse['view'];
+import { LayoutQuery$data as Response } from '__generated__/LayoutQuery.graphql';
+declare type AlertsType = Response['alerts'];
+declare type ViewType = Response['view'];
 declare type Props = {
     alerts: AlertsType;
     children?: ReactNode;

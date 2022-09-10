@@ -1,5 +1,5 @@
-import { TopicSearchPage_query_QueryResponse as Response } from '__generated__/TopicSearchPage_query_Query.graphql';
-import { TopicSearchPage_topic as TopicType } from '__generated__/TopicSearchPage_topic.graphql';
+import { TopicSearchPage_query_Query$data as Response } from '__generated__/TopicSearchPage_query_Query.graphql';
+import { TopicSearchPage_topic$data as TopicType } from '__generated__/TopicSearchPage_topic.graphql';
 declare type ViewType = Response['view'];
 declare type Props = {
     orgLogin: string;

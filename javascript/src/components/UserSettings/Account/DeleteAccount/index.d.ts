@@ -1,5 +1,5 @@
 import { RelayProp } from 'react-relay';
-import { DeleteAccount_view as ViewType } from '__generated__/DeleteAccount_view.graphql';
+import { DeleteAccount_view$data as ViewType } from '__generated__/DeleteAccount_view.graphql';
 declare type Props = {
     relay: RelayProp;
     view: ViewType | undefined;

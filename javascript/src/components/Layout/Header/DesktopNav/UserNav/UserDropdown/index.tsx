@@ -2,10 +2,10 @@ import React, { useCallback } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { Link } from 'found'
 
-import { UserDropdown_viewer as Viewer } from '__generated__/UserDropdown_viewer.graphql'
+import { UserDropdown_viewer$data as ViewerType } from '__generated__/UserDropdown_viewer.graphql'
 
 type Props = {
-  viewer: Viewer,
+  viewer: ViewerType,
 }
 
 const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {

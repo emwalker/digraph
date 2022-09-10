@@ -4,7 +4,7 @@ import Editor from '@draft-js-plugins/editor'
 import createSingleLinePlugin from 'draft-js-single-line-plugin'
 import createMentionPlugin from '@draft-js-plugins/mention'
 
-import { SearchBox_view as ViewType } from '__generated__/SearchBox_view.graphql'
+import { SearchBox_view$data as ViewType } from '__generated__/SearchBox_view.graphql'
 import rawFromQuery from './rawFromQuery'
 import TopicSuggestions from './TopicSuggestions'
 

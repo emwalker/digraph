@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { RelayProp } from 'react-relay';
-import { Link_link as LinkType } from '__generated__/Link_link.graphql';
-import { Link_viewer as ViewerType } from '__generated__/Link_viewer.graphql';
+import { Link_link$data as LinkType } from '__generated__/Link_link.graphql';
+import { Link_viewer$data as ViewerType } from '__generated__/Link_viewer.graphql';
 declare type Props = {
     link: LinkType;
     relay: RelayProp;

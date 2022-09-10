@@ -1,6 +1,6 @@
-import { UserDropdown_viewer as Viewer } from '__generated__/UserDropdown_viewer.graphql';
+import { UserDropdown_viewer$data as ViewerType } from '__generated__/UserDropdown_viewer.graphql';
 declare type Props = {
-    viewer: Viewer;
+    viewer: ViewerType;
 };
 declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
 export default _default;

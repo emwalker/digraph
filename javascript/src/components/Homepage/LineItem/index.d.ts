@@ -1,4 +1,4 @@
-import { LineItem_item as ItemType } from '__generated__/LineItem_item.graphql';
+import { LineItem_item$data as ItemType } from '__generated__/LineItem_item.graphql';
 declare type Props = {
     item: ItemType;
 };

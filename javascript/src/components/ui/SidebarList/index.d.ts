@@ -1,4 +1,3 @@
-/// <reference types="react" />
 declare type ItemType = {
     displayName: string;
     id: string;

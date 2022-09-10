@@ -6,7 +6,7 @@ import { EditorState, DraftHandleValue } from 'draft-js'
 import { topicPath } from 'components/helpers'
 import { everythingTopicId } from 'components/constants'
 import { LocationType } from 'components/types'
-import { SearchBox_view as ViewType } from '__generated__/SearchBox_view.graphql'
+import { SearchBox_view$data as ViewType } from '__generated__/SearchBox_view.graphql'
 import TextInput from './TextInput'
 import queryFromState from './queryFromState'
 

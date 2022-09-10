@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { Router } from 'found';
 import { LocationType } from 'components/types';
-import { MobileNav_viewer as Viewer } from '__generated__/MobileNav_viewer.graphql';
+import { MobileNav_viewer$data as Viewer } from '__generated__/MobileNav_viewer.graphql';
 declare type Props = {
     location: LocationType;
     router: Router;

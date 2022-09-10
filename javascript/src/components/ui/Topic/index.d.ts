@@ -1,8 +1,6 @@
-import { RelayProp } from 'react-relay';
-import { Topic_topic as TopicType } from '__generated__/Topic_topic.graphql';
+import { Topic_topic$key } from '__generated__/Topic_topic.graphql';
 declare type Props = {
-    relay: RelayProp;
-    topic: TopicType;
+    topic: Topic_topic$key;
 };
-declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
-export default _default;
+export default function Topic(props: Props): JSX.Element;
+export {};

@@ -61,7 +61,7 @@ exports[`<DesktopNav /> renders 1`] = `
     >
       Everything
     </Link>
-    <Relay(UserNav)
+    <UserNav
       viewer={
         Object {
           "defaultRepository": Object {

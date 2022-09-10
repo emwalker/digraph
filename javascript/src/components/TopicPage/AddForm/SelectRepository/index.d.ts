@@ -1,5 +1,5 @@
 import { RelayProp } from 'react-relay';
-import { SelectRepository_viewer as ViewerType } from '__generated__/SelectRepository_viewer.graphql';
+import { SelectRepository_viewer$data as ViewerType } from '__generated__/SelectRepository_viewer.graphql';
 declare type Props = {
     relay: RelayProp;
     viewer: ViewerType;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
+import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
 
 import { wikiRepoId } from 'components/constants'
 import upsertTopicTimerangeMutation, {
@@ -9,44 +9,56 @@ import removeTopicTimerangeMutation, {
   Input as DeleteInput,
 } from 'mutations/removeTopicTimerangeMutation'
 import {
-  TopicTimerange_repoTopic as RepoTopicType,
+  TopicTimerange_repoTopic$key as RepoTopicKeyType,
+  TopicTimerange_repoTopic$data as RepoTopicType,
 } from '__generated__/TopicTimerange_repoTopic.graphql'
 import TopicTimerangeForm from './TopicTimerangeForm'
 
 type Props = {
-  topicDetail: RepoTopicType,
-  relay: RelayProp,
+  repoTopic: RepoTopicKeyType,
 }
 
 const updateOrDelete = (
-  relay: RelayProp,
-  topicDetail: RepoTopicType,
+  repoTopic: RepoTopicType,
   setMutationInFlight: (inFlight: boolean) => void,
 ) => async () => {
+  const environment = useRelayEnvironment()
   setMutationInFlight(true)
 
-  if (topicDetail.timerange) {
-    const input: DeleteInput = { repoId: wikiRepoId, topicId: topicDetail.topicId }
-    await removeTopicTimerangeMutation(relay.environment, input)
+  if (repoTopic.timerange) {
+    const input: DeleteInput = { repoId: wikiRepoId, topicId: repoTopic.topicId }
+    await removeTopicTimerangeMutation(environment, input)
   } else {
     const input: UpdateInput = {
       prefixFormat: 'START_YEAR_MONTH',
       // FIXME
       repoId: wikiRepoId,
       startsAt: (new Date()).toISOString(),
-      topicId: topicDetail.topicId,
+      topicId: repoTopic.topicId,
     }
-    await upsertTopicTimerangeMutation(relay.environment, input)
+    await upsertTopicTimerangeMutation(environment, input)
   }
 
   setMutationInFlight(false)
 }
 
-const TopicTimeRange = ({ relay, topicDetail }: Props) => {
+const TopicTimeRange = ({ repoTopic }: Props) => {
   const [mutationInFlight, setMutationInFlight] = useState(false)
-  const checked = !!topicDetail.timerange
 
-  const onChange = updateOrDelete(relay, topicDetail, setMutationInFlight)
+  const data = useFragment(graphql`
+    fragment TopicTimerange_repoTopic on RepoTopic {
+      topicId
+
+      timerange {
+        startsAt
+      }
+
+      ...TopicTimerangeForm_repoTopic
+    }
+  `, repoTopic)
+
+  const checked = !!data.timerange
+  const onChange = updateOrDelete(data, setMutationInFlight)
 
   return (
     <div>
@@ -62,21 +74,13 @@ const TopicTimeRange = ({ relay, topicDetail }: Props) => {
           Occurs in time
         </label>
       </div>
-      {checked && <TopicTimerangeForm topicDetail={topicDetail} />}
+      {
+        checked &&
+        // @ts-expect-error
+        <TopicTimerangeForm repoTopic={data} />
+      }
     </div>
   )
 }
 
-export default createFragmentContainer(TopicTimeRange, {
-  repoTopic: graphql`
-    fragment TopicTimerange_repoTopic on RepoTopic {
-      topicId
-
-      timerange {
-        startsAt
-      }
-
-      ...TopicTimerangeForm_repoTopic
-    }
-  `,
-})
+export default TopicTimeRange

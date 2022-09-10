@@ -1,7 +1,7 @@
 import React from 'react'
 
 import {
-  EditLinkContainerQueryResponse as Response,
+  EditLinkContainerQuery$data as Response,
 } from '__generated__/EditLinkContainerQuery.graphql'
 import EditLinkForm from './EditLinkForm'
 
@@ -36,6 +36,7 @@ export default ({ isOpen, toggleForm }: CallerProps) => (
     <EditLinkForm
       isOpen={isOpen}
       toggleForm={toggleForm}
+      // @ts-expect-error
       repoLink={repoLinks[0]}
     />
   )

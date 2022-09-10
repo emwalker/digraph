@@ -5,7 +5,9 @@ import { Router } from 'found'
 import Page from 'components/ui/Page'
 import useDocumentTitle from 'utils/useDocumentTitle'
 import DigraphLogo from 'components/ui/icons/DigraphLogo'
-import { Homepage_homepage_QueryResponse as Response } from '__generated__/Homepage_homepage_Query.graphql'
+import {
+  Homepage_homepage_Query$data as Response,
+} from '__generated__/Homepage_homepage_Query.graphql'
 import LineItem from './LineItem'
 import SearchBox from './SearchBox'
 
@@ -26,7 +28,15 @@ const Homepage = ({ view, router }: Props) => {
   useDocumentTitle('Digraph')
 
   const recents = (view.activity.edges || []).map(
-    (edge) => edge && edge.node && <LineItem key={edge.node.description} item={edge.node} />,
+    (edge) => (
+      edge &&
+      edge.node &&
+      <LineItem
+        key={edge.node.description}
+        // @ts-expect-error
+        item={edge.node}
+      />
+    ),
   )
 
   let stats = view.stats

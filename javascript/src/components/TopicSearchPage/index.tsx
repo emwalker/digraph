@@ -13,9 +13,9 @@ import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
 import { liftNodes, NodeTypeOf } from 'components/types'
 import {
-  TopicSearchPage_query_QueryResponse as Response,
+  TopicSearchPage_query_Query$data as Response,
 } from '__generated__/TopicSearchPage_query_Query.graphql'
-import { TopicSearchPage_topic as TopicType } from '__generated__/TopicSearchPage_topic.graphql'
+import { TopicSearchPage_topic$data as TopicType } from '__generated__/TopicSearchPage_topic.graphql'
 
 type ViewType = Response['view']
 type ParentTopicType = NodeTypeOf<TopicType['displayParentTopics']>
@@ -36,6 +36,7 @@ class TopicSearchPage extends Component<Props> {
         <Link
           key={item.id}
           link={item}
+          // @ts-expect-error
           viewer={this.props.view.viewer}
         />
       )

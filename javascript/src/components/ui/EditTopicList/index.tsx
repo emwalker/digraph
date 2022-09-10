@@ -5,7 +5,7 @@ import AsyncSelect from 'react-select/async'
 import debounce from 'es6-promise-debounce'
 
 import {
-  EditTopicForm_topic as TopicType,
+  EditTopicForm_topic$data as TopicType,
 } from '__generated__/EditTopicForm_topic.graphql'
 import { TopicOption } from 'components/types'
 import colourStyles from './colourStyles'

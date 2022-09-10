@@ -2,8 +2,8 @@ import React, { Component, KeyboardEvent, FormEvent } from 'react'
 import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
 
 import upsertLinkMutation, { Input } from 'mutations/upsertLinkMutation'
-import { AddLink_viewer as ViewerType } from '__generated__/AddLink_viewer.graphql'
-import { AddLink_topic as TopicType } from '__generated__/AddLink_topic.graphql'
+import { AddLink_viewer$data as ViewerType } from '__generated__/AddLink_viewer.graphql'
+import { AddLink_topic$data as TopicType } from '__generated__/AddLink_topic.graphql'
 
 type RepositoryType = ViewerType['selectedRepository']
 

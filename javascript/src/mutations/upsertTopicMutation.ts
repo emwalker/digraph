@@ -1,4 +1,5 @@
-import { Environment, RecordSourceSelectorProxy } from 'relay-runtime'
+import { Environment } from 'react-relay'
+import { RecordSourceSelectorProxy } from 'relay-runtime'
 import { commitMutation, graphql, DeclarativeMutationConfig } from 'react-relay'
 import { v1 as uuidv1 } from 'uuid'
 

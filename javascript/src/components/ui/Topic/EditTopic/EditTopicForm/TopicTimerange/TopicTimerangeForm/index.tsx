@@ -5,7 +5,7 @@ import { useDebouncedCallback } from 'use-debounce'
 
 import upsertTopicTimerangeMutation, { Input } from 'mutations/upsertTopicTimerangeMutation'
 import {
-  TopicTimerangeForm_repoTopic as TopicTypeDetail,
+  TopicTimerangeForm_repoTopic$data as TopicTypeDetail,
 } from '__generated__/TopicTimerangeForm_repoTopic.graphql'
 import { wikiRepoId } from 'components/constants'
 

@@ -1,93 +1,70 @@
-import React, { Component } from 'react'
-import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
+import React, { useState, Suspense } from 'react'
+import { graphql, useFragment } from 'react-relay'
 
 import { topicPath } from 'components/helpers'
 import { NodeTypeOf, liftNodes } from 'components/types'
-import { Topic_topic as TopicType } from '__generated__/Topic_topic.graphql'
+import { Topic_topic$data, Topic_topic$key } from '__generated__/Topic_topic.graphql'
 import Item from '../Item'
-import EditTopic from './EditTopicContainer'
+import EditTopic from './EditTopic'
 
-type ParentTopicType = NodeTypeOf<TopicType['displayParentTopics']>
+type ParentTopicType = NodeTypeOf<Topic_topic$data['displayParentTopics']>
 
 type Props = {
-  relay: RelayProp,
-  topic: TopicType,
+  topic: Topic_topic$key,
 }
 
-type State = {
-  formIsOpen: boolean,
-}
+export default function Topic(props: Props) {
+  const [formIsOpen, setFormIsOpen] = useState(false)
 
-class Topic extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props)
-    this.state = {
-      formIsOpen: false,
-    }
-  }
+  const toggleForm = () => setFormIsOpen(!formIsOpen)
 
-  get topicBelongsToCurrentRepo(): boolean {
-    return true
-  }
+  const topic = useFragment(
+    graphql`
+      fragment Topic_topic on Topic {
+        displayColor
+        displayName
+        id
+        loading
+        newlyAdded
+        viewerCanUpdate
 
-  get displayParentTopics() {
-    return liftNodes<ParentTopicType>(this.props.topic.displayParentTopics)
-  }
-
-  get showEditButton(): boolean {
-    return !this.props.topic.loading && this.props.topic.viewerCanUpdate
-  }
-
-  toggleForm = () => {
-    this.setState(({ formIsOpen }) => ({ formIsOpen: !formIsOpen }))
-  }
-
-  render = () => {
-    const { topic } = this.props
-
-    return (
-      <Item
-        canEdit={this.props.topic.viewerCanUpdate}
-        className="topicTopicRow Box-row--topic"
-        displayColor={this.props.topic.displayColor as string}
-        formIsOpen={this.state.formIsOpen}
-        newlyAdded={this.props.topic.newlyAdded}
-        showEditButton={this.showEditButton}
-        showLink={false}
-        title={topic.displayName}
-        toggleForm={this.toggleForm}
-        topics={this.displayParentTopics}
-        url={topicPath(topic.id)}
-      >
-        <EditTopic
-          isOpen={this.state.formIsOpen}
-          relay={this.props.relay}
-          toggleForm={this.toggleForm}
-          topicId={topic.id}
-        />
-      </Item>
-    )
-  }
-}
-
-export default createFragmentContainer(Topic, {
-  topic: graphql`
-    fragment Topic_topic on Topic {
-      displayColor
-      displayName
-      id
-      loading
-      newlyAdded
-      viewerCanUpdate
-
-      displayParentTopics(first: 100) {
-        edges {
-          node {
-            id
-            displayName
+        displayParentTopics(first: 100) {
+          edges {
+            node {
+              id
+              displayName
+            }
           }
         }
       }
-    }
-  `,
-})
+    `,
+    props.topic,
+  )
+
+  const showEditButton = !topic.loading && topic.viewerCanUpdate
+  const displayParentTopics = liftNodes<ParentTopicType>(topic.displayParentTopics)
+
+  return (
+    <Item
+      canEdit={topic.viewerCanUpdate}
+      className="topicTopicRow Box-row--topic"
+      displayColor={topic.displayColor as string}
+      formIsOpen={formIsOpen}
+      newlyAdded={topic.newlyAdded}
+      showEditButton={showEditButton}
+      showLink={false}
+      title={topic.displayName}
+      toggleForm={toggleForm}
+      topics={displayParentTopics}
+      url={topicPath(topic.id)}
+    >
+      <Suspense fallback={<div>loading ...</div>}>
+        <EditTopic
+          isOpen={formIsOpen}
+          toggleForm={toggleForm}
+          topicId={topic.id}
+        />
+      </Suspense>
+    </Item>
+  )
+}

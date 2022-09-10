@@ -4,11 +4,11 @@ import classNames from 'classnames'
 import { createFragmentContainer, graphql } from 'react-relay'
 
 import { toEverything } from 'components/navigation'
-import { Menu_viewer as Viewer } from '__generated__/Menu_viewer.graphql'
+import { Menu_viewer$data as ViewerType } from '__generated__/Menu_viewer.graphql'
 import styles from './styles.module.css'
 
 type Props = {
-  viewer: Viewer,
+  viewer: ViewerType,
 }
 
 class Menu extends Component<Props> {

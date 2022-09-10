@@ -1,7 +1,7 @@
 import { graphql } from 'react-relay'
 
 import {
-  reviewPageQuery_query_QueryResponse as Response,
+  reviewPageQuery_query_Query$data as Response,
 } from '__generated__/reviewPageQuery_query_Query.graphql'
 
 export type ViewType = Response['view']

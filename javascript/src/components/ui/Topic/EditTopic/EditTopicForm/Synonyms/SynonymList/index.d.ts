@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphql';
+import { Synonyms_topic$data as TopicType } from '__generated__/Synonyms_topic.graphql';
 declare type RepoTopicType = TopicType['repoTopics'][0];
 declare type SynonymType = RepoTopicType['synonyms'][number];
 declare type Props = {

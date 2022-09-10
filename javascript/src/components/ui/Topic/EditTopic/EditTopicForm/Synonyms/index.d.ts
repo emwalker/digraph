@@ -1,6 +1,6 @@
 import { Component, FormEvent, ChangeEvent } from 'react';
 import { RelayProp } from 'react-relay';
-import { Synonyms_topic as TopicType } from '__generated__/Synonyms_topic.graphql';
+import { Synonyms_topic$data as TopicType } from '__generated__/Synonyms_topic.graphql';
 import { SynonymType } from 'components/types';
 declare type RepoTopicType = TopicType['repoTopics'][0];
 declare type Props = {
@@ -19,9 +19,9 @@ declare class Synonyms extends Component<Props, State> {
     onDelete: (position: number) => void;
     get topicDetail(): RepoTopicType | null;
     get synonyms(): readonly {
-        readonly name: string;
         readonly locale: import("__generated__/Synonyms_topic.graphql").LocaleIdentifier;
-        readonly " $fragmentRefs": import("relay-runtime").FragmentRefs<"Synonym_synonym">;
+        readonly name: string;
+        readonly " $fragmentSpreads": import("relay-runtime").FragmentRefs<"Synonym_synonym">;
     }[];
     optimisticResponse: (synonyms: SynonymType[]) => {
         updateTopicSynonyms: {
@@ -31,13 +31,13 @@ declare class Synonyms extends Component<Props, State> {
                 displayName: string;
                 repoTopics: {
                     synonyms: SynonymType[];
-                    topicId?: string | undefined;
                     displayName?: string | undefined;
+                    topicId?: string | undefined;
                     viewerCanDeleteSynonyms?: boolean | undefined;
                     viewerCanUpdate?: boolean | undefined;
                 }[];
                 viewerCanUpdate: boolean;
-                " $refType": "Synonyms_topic";
+                " $fragmentType": "Synonyms_topic";
             };
         };
     };

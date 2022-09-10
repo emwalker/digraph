@@ -25,11 +25,13 @@ impl Map {
         context: &RepoId,
     ) -> Result<(Vec<RepoLinkWrapper>, RepoLinkWrapper)> {
         let mut display_link: Option<RepoLinkWrapper> = match self.0.get(context) {
-            Some(repo_topic) => if repo_topic.has_details() {
-                Some((context, repo_topic).try_into()?)
-            } else {
-                None
-            },
+            Some(repo_topic) => {
+                if repo_topic.has_details() {
+                    Some((context, repo_topic).try_into()?)
+                } else {
+                    None
+                }
+            }
             None => None,
         };
 
@@ -54,11 +56,13 @@ impl Map {
         context: &RepoId,
     ) -> Result<(Vec<RepoTopicWrapper>, RepoTopicWrapper)> {
         let mut display_topic: Option<RepoTopicWrapper> = match self.0.get(context) {
-            Some(repo_topic) => if repo_topic.has_details() {
-                Some((context, repo_topic).try_into()?)
-            } else {
-                None
-            },
+            Some(repo_topic) => {
+                if repo_topic.has_details() {
+                    Some((context, repo_topic).try_into()?)
+                } else {
+                    None
+                }
+            }
             None => None,
         };
 

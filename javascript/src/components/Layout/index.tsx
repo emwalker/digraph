@@ -2,14 +2,14 @@ import React, { ReactNode } from 'react'
 import { graphql } from 'react-relay'
 import { Match, Router } from 'found'
 
-import { LayoutQueryResponse } from '__generated__/LayoutQuery.graphql'
+import { LayoutQuery$data as Response } from '__generated__/LayoutQuery.graphql'
 import FlashMessages from '../FlashMessages'
 import Header from './Header'
 import Footer from './Footer'
 import SelectedRepo from './SelectedRepo'
 
-type AlertsType = LayoutQueryResponse['alerts']
-type ViewType = LayoutQueryResponse['view']
+type AlertsType = Response['alerts']
+type ViewType = Response['view']
 
 type Props = {
   alerts: AlertsType,
@@ -55,7 +55,10 @@ const Layout = ({ alerts, children, view, match, router }: Props) => (
       viewer={view.viewer}
     />
     <div className="clearfix">
-      <SelectedRepo viewer={view.viewer} />
+      <SelectedRepo
+        // @ts-expect-error
+        viewer={view.viewer}
+      />
       <FlashMessages initialAlerts={alerts} />
       { children }
     </div>

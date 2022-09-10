@@ -15,8 +15,8 @@ import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
 import { topicPath } from 'components/helpers'
 import { LocationType, NodeTypeOf, liftNodes } from 'components/types'
-import { TopicPage_query_QueryResponse as Response } from '__generated__/TopicPage_query_Query.graphql'
-import { TopicPage_topic as TopicType } from '__generated__/TopicPage_topic.graphql'
+import { TopicPage_query_Query$data as Response } from '__generated__/TopicPage_query_Query.graphql'
+import { TopicPage_topic$data as TopicType } from '__generated__/TopicPage_topic.graphql'
 import AddForm from './AddForm'
 
 type ViewType = Response['view']
@@ -97,9 +97,11 @@ class TopicPage extends Component<Props, State> {
 
     if (child.__typename == 'Link') {
       return (
-          <Link
+        <Link
           key={child.id}
+          // @ts-expect-error
           link={child}
+          // @ts-expect-error
           viewer={this.props.view.viewer}
         />
       )
@@ -110,7 +112,9 @@ class TopicPage extends Component<Props, State> {
 
   renderAddForm = () => (
     <AddForm
+      // @ts-expect-error
       topic={this.props.topic}
+      // @ts-expect-error
       viewer={this.props.view.viewer}
     />
   )

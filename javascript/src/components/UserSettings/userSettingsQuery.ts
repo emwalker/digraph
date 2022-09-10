@@ -1,7 +1,7 @@
 import { graphql } from 'react-relay'
 
 import {
-  userSettingsQuery_query_QueryResponse as Response,
+  userSettingsQuery_query_Query$data as Response,
 } from '__generated__/userSettingsQuery_query_Query.graphql'
 
 export type ViewType = Response['view']

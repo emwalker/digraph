@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import { ActionMeta } from 'react-select';
-import { EditTopicForm_topic as TopicType } from '__generated__/EditTopicForm_topic.graphql';
+import { EditTopicForm_topic$data as TopicType } from '__generated__/EditTopicForm_topic.graphql';
 import { TopicOption } from 'components/types';
 declare type RepoTopicType = TopicType['repoTopics'][0];
 declare type SynonymMatches = RepoTopicType['availableTopics']['synonymMatches'];

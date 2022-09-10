@@ -1,4 +1,4 @@
-import { Environment } from 'relay-runtime'
+import { Environment } from 'react-relay'
 import { commitMutation, GraphQLTaggedNode, Disposable, DeclarativeMutationConfig } from 'react-relay'
 import { v1 as uuidv1 } from 'uuid'
 

@@ -4,7 +4,7 @@ import { graphql } from 'react-relay'
 import Page from 'components/ui/Page'
 import useDocumentTitle from 'utils/useDocumentTitle'
 import {
-  RecentPage_recent_QueryResponse as Response,
+  RecentPage_recent_Query$data as Response,
 } from '__generated__/RecentPage_recent_Query.graphql'
 import LineItems from './LineItems'
 import Container from './Container'
@@ -30,7 +30,10 @@ export default ({ view }: Props) => {
     <Page>
       {
         view
-          ? <LineItems activity={view.activity} />
+          ? (
+            // @ts-expect-error
+            <LineItems activity={view.activity} />
+          )
           : <Placeholder />
       }
     </Page>

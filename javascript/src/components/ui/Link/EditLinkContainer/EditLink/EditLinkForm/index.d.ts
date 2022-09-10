@@ -1,5 +1,5 @@
 import { RelayRefetchProp } from 'react-relay';
-import { EditLinkForm_repoLink as RepoLinkType } from '__generated__/EditLinkForm_repoLink.graphql';
+import { EditLinkForm_repoLink$data as RepoLinkType } from '__generated__/EditLinkForm_repoLink.graphql';
 declare type Props = {
     isOpen: boolean;
     repoLink: RepoLinkType;

@@ -8,9 +8,7 @@ import updateTopicTopicsMutation, {
 } from 'mutations/updateTopicParentTopicsMutation'
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
-import {
-  EditTopicForm_topic as TopicType,
-} from '__generated__/EditTopicForm_topic.graphql'
+import { EditTopicForm_topic$data as TopicType } from '__generated__/EditTopicForm_topic.graphql'
 import Synonyms from './Synonyms'
 import TopicTimerange from './TopicTimerange'
 import { wikiRepoId } from 'components/constants'
@@ -25,7 +23,7 @@ type Props = {
 }
 
 type State = {
-  displayName: string,
+  displayName: string | undefined,
 }
 
 class EditTopicForm extends Component<Props, State> {
@@ -57,7 +55,7 @@ class EditTopicForm extends Component<Props, State> {
 
   // FIXME
   get repoTopic(): RepoTopicType | null {
-    const repoTopics = this.props.topic.repoTopics
+    const repoTopics = this.props.topic?.repoTopics
     if (repoTopics.length < 1) return null
     return repoTopics[0]
   }
@@ -105,33 +103,35 @@ class EditTopicForm extends Component<Props, State> {
     const repoTopic = this.repoTopic
 
     if (!repoTopic) return null
+    if (!selectedTopics) return null
 
     return (
-      selectedTopics ? (
-        <div className="my-4">
-          <Synonyms topic={this.props.topic} />
-          <TopicTimerange topicDetail={repoTopic} />
+      <div className="my-4">
+        <Synonyms
+          // @ts-expect-error
+          topic={this.props.topic}
+        />
+        <TopicTimerange repoTopic={repoTopic} />
 
-          <EditTopicList
-            loadOptions={this.loadOptions}
-            selectedTopics={selectedTopics}
-            updateTopics={this.updateParentTopics}
+        <EditTopicList
+          loadOptions={this.loadOptions}
+          selectedTopics={selectedTopics}
+          updateTopics={this.updateParentTopics}
+        />
+
+        <dl className="form-group">
+          <DeleteButton
+            onDelete={this.onDelete}
           />
-
-          <dl className="form-group">
-            <DeleteButton
-              onDelete={this.onDelete}
-            />
-            <button
-              className="btn-link float-right"
-              onClick={this.props.toggleForm}
-              type="button"
-            >
-              Close
-            </button>
-          </dl>
-        </div>
-      ) : null
+          <button
+            className="btn-link float-right"
+            onClick={this.props.toggleForm}
+            type="button"
+          >
+            Close
+          </button>
+        </dl>
+      </div>
     )
   }
 }
@@ -140,7 +140,6 @@ export default createRefetchContainer(EditTopicForm, {
   topic: graphql`
     fragment EditTopicForm_topic on Topic @argumentDefinitions(
       searchString: {type: "String", defaultValue: null},
-      count: {type: "Int!", defaultValue: 10}
     ) {
       displayName
       ...Synonyms_topic
@@ -174,7 +173,6 @@ graphql`
     $viewerId: ID!,
     $repoIds: [ID!],
     $topicId: String!,
-    $count: Int!,
     $searchString: String,
   ) {
     view(
@@ -182,7 +180,7 @@ graphql`
       repositoryIds: $repoIds,
     ) {
       topic(id: $topicId) {
-        ...EditTopicForm_topic @arguments(count: $count, searchString: $searchString)
+        ...EditTopicForm_topic @arguments(searchString: $searchString)
       }
     }
   }

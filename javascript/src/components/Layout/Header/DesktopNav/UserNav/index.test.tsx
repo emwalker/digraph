@@ -1,14 +1,13 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 
-import { UnwrappedUserNav as UserNav } from './index'
+import UserNav from './index'
 
 const props = {
   viewer: {},
 }
 
 describe('<UserNav />', () => {
-  // @ts-expect-error
   const wrapper = shallow(<UserNav {...props} />)
 
   it('renders', () => {

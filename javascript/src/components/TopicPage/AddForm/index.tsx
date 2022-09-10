@@ -2,8 +2,8 @@ import React, { Component } from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import classNames from 'classnames'
 
-import { AddForm_topic as Topic } from '__generated__/AddForm_topic.graphql'
-import { AddForm_viewer as Viewer } from '__generated__/AddForm_viewer.graphql'
+import { AddForm_topic$data as Topic } from '__generated__/AddForm_topic.graphql'
+import { AddForm_viewer$data as Viewer } from '__generated__/AddForm_viewer.graphql'
 import AddTopic from './AddTopic'
 import AddLink from './AddLink'
 import SelectRepository from './SelectRepository'
@@ -39,12 +39,16 @@ class AddForm extends Component<Props> {
     <>
       <AddTopic
         disabled={!this.repoSelected}
+        // @ts-expect-error
         topic={this.props.topic}
+        // @ts-expect-error
         viewer={this.props.viewer}
       />
       <AddLink
         disabled={!this.repoSelected}
+        // @ts-expect-error
         topic={this.props.topic}
+        // @ts-expect-error
         viewer={this.props.viewer}
       />
     </>
@@ -60,6 +64,7 @@ class AddForm extends Component<Props> {
   render = () => (
     <form className={this.className} style={this.selectRepositoryStyle}>
       <SelectRepository
+        // @ts-expect-error
         viewer={this.props.viewer}
       />
       {this.repoSelected && this.renderInputFields()}

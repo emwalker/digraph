@@ -6,7 +6,7 @@ import { LocationType } from 'components/types'
 import { toEverything } from 'components/navigation'
 import DigraphLogo from 'components/ui/icons/DigraphLogo'
 import SearchBox from 'components/ui/SearchBox'
-import { DesktopNav_viewer as Viewer } from '__generated__/DesktopNav_viewer.graphql'
+import { DesktopNav_viewer$data as Viewer } from '__generated__/DesktopNav_viewer.graphql'
 import UserNav from './UserNav'
 import SignIn from './SignIn'
 
@@ -32,14 +32,6 @@ class DesktopNav extends Component<Props> {
 
     return viewer ? viewer.isGuest : true
   }
-
-  renderGuestUserNav = () => (
-    <>
-      <SignIn />
-    </>
-  )
-
-  renderUserNav = (viewer: Viewer) => <UserNav viewer={viewer} />
 
   render = () => {
     const { viewer, view, router, location } = this.props
@@ -84,8 +76,8 @@ class DesktopNav extends Component<Props> {
             Everything
           </Link>
           {this.isGuest
-            ? this.renderGuestUserNav()
-            : this.renderUserNav(viewer)}
+            ? <SignIn />
+            : <UserNav viewer={viewer} />}
         </nav>
       </header>
     )
@@ -98,7 +90,7 @@ export default createFragmentContainer(DesktopNav, {
   viewer: graphql`
     fragment DesktopNav_viewer on User {
       isGuest
-      ...UserNav_viewer
+      ...UserDropdown_viewer
     }
   `,
 })

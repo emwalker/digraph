@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { Router } from 'found';
 import { LocationType } from 'components/types';
-import { DesktopNav_viewer as Viewer } from '__generated__/DesktopNav_viewer.graphql';
+import { DesktopNav_viewer$data as Viewer } from '__generated__/DesktopNav_viewer.graphql';
 declare type Props = {
     className?: string | undefined;
     location: LocationType;
@@ -15,8 +15,6 @@ declare class DesktopNav extends Component<Props> {
     };
     get className(): string;
     get isGuest(): boolean;
-    renderGuestUserNav: () => JSX.Element;
-    renderUserNav: (viewer: Viewer) => JSX.Element;
     render: () => JSX.Element;
 }
 export declare const UnwrappedDesktopNav: typeof DesktopNav;

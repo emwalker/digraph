@@ -3,7 +3,7 @@ import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
 import classNames from 'classnames'
 
 import reviewLinkMutation, { Input } from 'mutations/reviewLinkMutation'
-import { Review_link as Link } from '__generated__/Review_link.graphql'
+import { Review_link$data as Link } from '__generated__/Review_link.graphql'
 
 type Props = {
   link: Link,

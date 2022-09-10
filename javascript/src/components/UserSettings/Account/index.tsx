@@ -2,7 +2,7 @@ import React from 'react'
 import { createFragmentContainer, graphql } from 'react-relay'
 import { Match } from 'found'
 
-import { Account_view as ViewType } from '__generated__/Account_view.graphql'
+import { Account_view$data as ViewType } from '__generated__/Account_view.graphql'
 import Content from '../Content'
 import DeleteAccount from './DeleteAccount'
 
@@ -18,7 +18,10 @@ const Account = ({ match, view }: Props) => {
 
   return (
     <Content>
-      <DeleteAccount view={view} />
+      <DeleteAccount
+        // @ts-expect-error
+        view={view}
+      />
     </Content>
   )
 }
