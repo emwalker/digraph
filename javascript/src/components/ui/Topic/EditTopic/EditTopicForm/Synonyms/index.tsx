@@ -162,6 +162,7 @@ export default function Synonyms(props: Props) {
   const repoId = viewer.selectedRepository?.id
   const repoTopic = topic.repoTopics.length < 1 ? null : topic.repoTopics[0]
   const synonyms = repoTopic?.synonyms || []
+  const environment = useRelayEnvironment()
 
   const updateTopicSynonyms = useCallback((update: SynonymType[]) => {
     if (!repoTopic) return null
@@ -172,15 +173,20 @@ export default function Synonyms(props: Props) {
     }
   
     const input: Input = { repoId, topicId: repoTopic.topicId, synonyms: update }
+    const response = optimisticResponse(topic, repoTopic, update)
+    console.log('input:', input)
   
     updateTopicSynonymsMutation(
-      useRelayEnvironment(),
+      environment,
       input,
-      { optimisticResponse: optimisticResponse(topic, repoTopic, update) },
+      { optimisticResponse: response },
     )
     setInputName('')
-  }, [setInputName, updateTopicSynonymsMutation, optimisticResponse, useRelayEnvironment])
-  
+  }, [
+    repoId, repoTopic, environment, setInputName, updateTopicSynonymsMutation, optimisticResponse,
+    useRelayEnvironment,
+  ])
+
   const onNameChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setInputName(event.currentTarget.value)
   }, [setInputName])
@@ -194,7 +200,7 @@ export default function Synonyms(props: Props) {
     const synonym = { name: inputName, locale: inputLocale }
     update.push(synonym)
     updateTopicSynonyms(update)
-  }, [repoTopic, synonyms, copySynonyms, updateTopicSynonyms])
+  }, [inputName, repoTopic, synonyms, copySynonyms, updateTopicSynonyms])
 
   const onDelete = useCallback((position: number) => {
     // eslint-disable-next-line no-alert

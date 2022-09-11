@@ -120,6 +120,7 @@ function renderTopicChild(view: ViewType, child: TopicChildType | null) {
       <Topic
         key={child.id}
         topic={child}
+        viewerId={view.viewer.id}
       />
     )
   }

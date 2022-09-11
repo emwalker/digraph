@@ -180,7 +180,7 @@ export default createRefetchContainer(EditTopicForm, {
       selectedRepository {
         id
       }
-      ...TopicTimerangeForm_viewer
+      ...TopicTimerange_viewer
       ...Synonyms_viewer
     }
   `,

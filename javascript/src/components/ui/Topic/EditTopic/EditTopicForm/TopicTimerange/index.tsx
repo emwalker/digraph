@@ -71,6 +71,7 @@ const TopicTimeRange = (props: Props) => {
         selectedRepository {
           id
         }
+        ...TopicTimerangeForm_viewer
       }
     `,
     props.viewer,

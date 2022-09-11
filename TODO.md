@@ -8,6 +8,8 @@ Before switchover:
 * Order links by reverse chronological date
 * Bug: export: the child links under Reading list are in the wiki repo rather than the private repo
 * Bug: export: links are showing up in more than one repo, when they should just be private
+* Bug: backend doesn't complain about adding an empty synonym
+* Synonym "Add" button should be disabled until there's something in the inputName field
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
 * Bug: client: the JS client doesn't show new links and topics in the right place when they're added
@@ -51,6 +53,7 @@ Later:
 * Replace multi-select with something that will work with relevance/contexts
 * Show search input in input box when loaded from a url
 * Find a new favicon / icon
+* Consider using cypress for frontend integration testing
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
 * Figure out how to display the same change in different contexts -- e.g., a topic is deleted, and its contents merged into the parent topics.  What does the change look like in each change history?
 * Figure out how to make history entries outlive the topic and links when they're deleted.  I think this means denormalizing title, url and synonym info in the changes themeslves, mabye with one level of indirection? Or maybe it means putting a marker on the deleted item to indicate that it's deleted rather than actually deleting it.  Maybe change "delete" to "remove" in the UI if this approach ends up being used.  There's also the problem of historical names and titles that change.

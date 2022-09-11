@@ -13,21 +13,21 @@ import Link from 'components/ui/Link'
 import Topic from 'components/ui/Topic'
 import { liftNodes, NodeTypeOf } from 'components/types'
 import {
-  TopicSearchPage_query_Query$data as Response,
-} from '__generated__/TopicSearchPage_query_Query.graphql'
+  TopicSearchPage_viewer$key,
+  TopicSearchPage_viewer$data as ViewerType,
+} from '__generated__/TopicSearchPage_viewer.graphql'
 import {
   TopicSearchPage_topic$key,
   TopicSearchPage_topic$data as TopicType,
 } from '__generated__/TopicSearchPage_topic.graphql'
 
-type ViewType = Response['view']
 type ParentTopicType = NodeTypeOf<TopicType['displayParentTopics']>
 type SearchItemType = NodeTypeOf<TopicType['search']>
 
 type Props = {
   orgLogin: string,
   topic: TopicSearchPage_topic$key,
-  view: ViewType,
+  viewer: TopicSearchPage_viewer$key,
 }
 
 
@@ -43,7 +43,7 @@ query TopicSearchPage_query_Query(
     repositoryIds: $repoIds,
   ) {
     viewer {
-      ...Link_viewer
+      ...TopicSearchPage_viewer
     }
 
     topic(id: $topicId) {
@@ -52,7 +52,7 @@ query TopicSearchPage_query_Query(
   }
 }`
 
-const fragmentQuery = graphql`
+const topicFragmentQuery = graphql`
   fragment TopicSearchPage_topic on Topic @argumentDefinitions(
     searchString: {type: "String!", defaultValue: ""},
   ) {
@@ -88,13 +88,20 @@ const fragmentQuery = graphql`
   }
 `
 
-const renderSearchResultItem = (view: ViewType, item: any) => {
+const viewerFragmentQuery = graphql`
+  fragment TopicSearchPage_viewer on User {
+    id
+    ...Link_viewer
+  }
+`
+
+const renderSearchResultItem = (viewer: ViewerType, item: any) => {
   if (item.__typename === 'Link') {
     return (
       <Link
         key={item.id}
         link={item}
-        viewer={view.viewer}
+        viewer={viewer}
       />
     )
   }
@@ -103,12 +110,14 @@ const renderSearchResultItem = (view: ViewType, item: any) => {
     <Topic
       key={item.id}
       topic={item}
+      viewerId={viewer.id}
     />
   )
 }
 
 export default function TopicSearchPage(props: Props) {
-  const topic = useFragment(fragmentQuery, props.topic)
+  const topic = useFragment(topicFragmentQuery, props.topic)
+  const viewer = useFragment(viewerFragmentQuery, props.viewer)
 
   if (topic == null) return <div>Error parsing route</div>
 
@@ -138,7 +147,7 @@ export default function TopicSearchPage(props: Props) {
               placeholder="There are no items in this list."
               hasItems={!isEmpty(items)}
             >
-              { items.map((item) => renderSearchResultItem(props.view, item)) }
+              {items.map((item) => renderSearchResultItem(viewer, item))}
             </List>
           </LeftColumn>
         </Columns>

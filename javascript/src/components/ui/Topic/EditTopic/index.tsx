@@ -10,9 +10,10 @@ type Props = {
   isOpen: boolean,
   toggleForm: () => void,
   topicId: string,
+  viewerId: string | null,
 }
 
-export default function EditTopicContainer({ isOpen, topicId, toggleForm }: Props) {
+export default function EditTopicContainer({ isOpen, topicId, toggleForm, viewerId }: Props) {
   const data = useLazyLoadQuery<EditTopicContainerQuery>(
     graphql`
       query EditTopicContainerQuery(
@@ -24,6 +25,10 @@ export default function EditTopicContainer({ isOpen, topicId, toggleForm }: Prop
           viewerId: $viewerId,
           repositoryIds: $repoIds,
         ) {
+          viewer {
+            ...EditTopicForm_viewer
+          }
+
           topic(id: $topicId) {
             ...EditTopicForm_topic
           }
@@ -33,7 +38,7 @@ export default function EditTopicContainer({ isOpen, topicId, toggleForm }: Prop
     {
       repoIds: [],
       topicId,
-      viewerId: '',
+      viewerId: viewerId || '',
     },
   )
 
@@ -44,8 +49,10 @@ export default function EditTopicContainer({ isOpen, topicId, toggleForm }: Prop
     <EditTopicForm
       isOpen={isOpen}
       toggleForm={toggleForm}
-      // @ts-ignore-next-line
+      // @ts-expect-error
       topic={topic}
+      // @ts-expect-error
+      viewer={data.view.viewer}
     />
   )
 }

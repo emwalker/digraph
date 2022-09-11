@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react'
+import React, { useState, Suspense, useCallback } from 'react'
 import { graphql, useFragment } from 'react-relay'
 
 import { topicPath } from 'components/helpers'
@@ -11,41 +11,39 @@ type ParentTopicType = NodeTypeOf<Topic_topic$data['displayParentTopics']>
 
 type Props = {
   topic: Topic_topic$key,
+  viewerId: string | null,
 }
+
+const topicFragmentQuery = graphql`
+  fragment Topic_topic on Topic {
+    displayName
+    id
+    loading
+    newlyAdded
+    viewerCanUpdate
+    showRepoOwnership
+
+    repoTopics {
+      inWikiRepo
+      displayColor
+    }
+
+    displayParentTopics(first: 100) {
+      edges {
+        node {
+          id
+          displayName
+        }
+      }
+    }
+  }
+`
 
 export default function Topic(props: Props) {
   const [formIsOpen, setFormIsOpen] = useState(false)
+  const topic = useFragment(topicFragmentQuery, props.topic)
 
-  const toggleForm = () => setFormIsOpen(!formIsOpen)
-
-  const topic = useFragment(
-    graphql`
-      fragment Topic_topic on Topic {
-        displayName
-        id
-        loading
-        newlyAdded
-        viewerCanUpdate
-        showRepoOwnership
-
-        repoTopics {
-          inWikiRepo
-          displayColor
-        }
-
-        displayParentTopics(first: 100) {
-          edges {
-            node {
-              id
-              displayName
-            }
-          }
-        }
-      }
-    `,
-    props.topic,
-  )
-
+  const toggleForm = useCallback(() => setFormIsOpen(!formIsOpen), [setFormIsOpen, formIsOpen])
   const showEditButton = !topic.loading && topic.viewerCanUpdate
   const displayParentTopics = liftNodes<ParentTopicType>(topic.displayParentTopics)
   const repoColors = (topic.repoTopics || []) .map((repoTopic) => repoTopic.displayColor as Color)
@@ -70,6 +68,7 @@ export default function Topic(props: Props) {
           isOpen={formIsOpen}
           toggleForm={toggleForm}
           topicId={topic.id}
+          viewerId={props.viewerId}
         />
       </Suspense>
     </Item>
