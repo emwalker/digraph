@@ -1,26 +1,22 @@
 Before switchover:
-* Experiment with using borrows in some resolvers instead of copying
+* Repo topics/links: Fix synonym update bugs
+* Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
+* Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
+* Repo topics/links: don't show edit button for items that aren't in the selected repo
 * Update repo names and give new repos a better name
 * Clean up database: odds and ends
 * Order links by reverse chronological date
-* Ensure that account creation still works
-* Ensure that account deletion still works
-* Bug: the child links under Reading list are in the wiki repo rather than the private repo
-* Bug: links are showing up in more than one repo, when they should just be private
+* Bug: export: the child links under Reading list are in the wiki repo rather than the private repo
+* Bug: export: links are showing up in more than one repo, when they should just be private
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
-* Bug: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
-* Bug: upserting a link that is found in a private repo into a wiki-only topic doesnt work
-* Bug: the JS client doesn't show new links and topics in the right place when they're added
-* Bug: some history entries are not displaying properly
-* Repo topics/links: Figure out what the relationship is between TopicDetail (e.g.) and the "detail/s" section of the topic metadata serialization. If they're not really the same thing, find another name for the key (?)
-* Repo topics/links: Defer adding UX for updating select fields of an item that isn't in the selected repo
-* Repo topics/links: Defer adding UX for updating any fields on an item that isn't in the selected repo
-* Repo topics/links: Show links in private repo in blue again
-* Repo topics/links: Add repo back to topic and link types
+* Bug: client: the JS client doesn't show new links and topics in the right place when they're added
+* Bug: client: some history entries are not displaying properly
 * Repo topics/links: Figure out how to represent / what to do with partial details in edit forms (no title, no url, but parent topics)
-* Repo topics/links: Fix synonym update bugs
-* Repo topics/links: Return collection of detail views / edit forms instead of edit form
+* Repo topics/links: Return collection of repo views / edit forms instead of edit form
+* Verify that history entries are working for cross-repo mutations
+* Verify that account creation still works
+* Verify that account deletion still works
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo
@@ -34,6 +30,9 @@ Before switchover:
 
 
 Later:
+* Repo topics/links: Add UX for updating any fields on an item that isn't in the selected repo
+* Repo topics/links: Add UX for updating select fields of an item that isn't in the selected repo
+* Experiment with using borrows in some resolvers instead of copying
 * Replace <Suspense>loading...</Suspense> with something nice
 * Get UX working on mobile devices again
 * Formulas and subscript and superscript in topic titles
