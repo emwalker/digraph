@@ -1,95 +1,63 @@
-import React, { Component } from 'react'
-import { createFragmentContainer, graphql } from 'react-relay'
-import classNames from 'classnames'
+import React from 'react'
+import { graphql, useFragment } from 'react-relay'
 
-import { AddForm_topic$data as Topic } from '__generated__/AddForm_topic.graphql'
-import { AddForm_viewer$data as Viewer } from '__generated__/AddForm_viewer.graphql'
+import { AddForm_topic$key } from '__generated__/AddForm_topic.graphql'
+import { AddForm_viewer$key } from '__generated__/AddForm_viewer.graphql'
 import AddTopic from './AddTopic'
 import AddLink from './AddLink'
 import SelectRepository from './SelectRepository'
 import './index.css'
 
 type Props = {
-  topic: Topic,
-  viewer: Viewer,
+  topic: AddForm_topic$key,
+  viewer: AddForm_viewer$key,
 }
 
-class AddForm extends Component<Props> {
-  get className(): string {
-    return classNames(
-      'border',
-      'rounded-1',
-      'px-md-2',
-      'px-3',
-      'mt-3',
-    )
-  }
+export default function AddForm(props: Props) {
+  const viewer = useFragment(
+    graphql`
+      fragment AddForm_viewer on User {
+        selectedRepository {
+          isPrivate
+          displayColor
+        }
 
-  get isPrivateRepo(): boolean {
-    const repo = this.props.viewer.selectedRepository
-    if (!repo) return false
-    return repo.isPrivate
-  }
-
-  get repoSelected(): boolean {
-    return !!this.props.viewer.selectedRepository
-  }
-
-  renderInputFields = () => (
-    <>
-      <AddTopic
-        disabled={!this.repoSelected}
-        // @ts-expect-error
-        topic={this.props.topic}
-        // @ts-expect-error
-        viewer={this.props.viewer}
-      />
-      <AddLink
-        disabled={!this.repoSelected}
-        // @ts-expect-error
-        topic={this.props.topic}
-        // @ts-expect-error
-        viewer={this.props.viewer}
-      />
-    </>
+        ...AddLink_viewer
+        ...AddTopic_viewer
+        ...SelectRepository_viewer
+        ...SelectedRepo_viewer
+      }
+    `,
+    props.viewer,
   )
 
-  get selectRepositoryStyle(): Object {
-    const backgroundColor = this.isPrivateRepo ?
-      this.props.viewer.selectedRepository?.displayColor :
-      'transparent'
-    return { backgroundColor }
+  const topic = useFragment(
+    graphql`
+      fragment AddForm_topic on Topic {
+        ...AddLink_topic
+        ...AddTopic_topic
+      }
+    `,
+    props.topic,
+  )
+
+  const isPrivateRepo = !!viewer.selectedRepository?.isPrivate
+  const repoSelected = !!viewer.selectedRepository
+  const selectRepositoryStyle = {
+    backgroundColor: isPrivateRepo ?
+      viewer.selectedRepository?.displayColor :
+      'transparent',
   }
 
-  render = () => (
-    <form className={this.className} style={this.selectRepositoryStyle}>
-      <SelectRepository
-        // @ts-expect-error
-        viewer={this.props.viewer}
-      />
-      {this.repoSelected && this.renderInputFields()}
+  return (
+    <form className="border rounded-1 px-md-2 px-3 mt-3" style={selectRepositoryStyle}>
+      <SelectRepository viewer={viewer} />
+      {repoSelected && (
+        <>
+          <AddTopic disabled={!repoSelected} topic={topic} viewer={viewer} />
+          <AddLink disabled={!repoSelected} topic={topic} viewer={viewer} />
+        </>
+      )}
     </form>
   )
 }
-
-export default createFragmentContainer(AddForm, {
-  viewer: graphql`
-    fragment AddForm_viewer on User {
-      selectedRepository {
-        isPrivate
-        displayColor
-      }
-
-      ...AddLink_viewer
-      ...AddTopic_viewer
-      ...SelectRepository_viewer
-      ...SelectedRepo_viewer
-    }
-  `,
-  topic: graphql`
-    fragment AddForm_topic on Topic {
-      ...AddLink_topic
-      ...AddTopic_topic
-    }
-  `,
-})

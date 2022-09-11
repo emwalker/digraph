@@ -1,8 +1,8 @@
 import { Match } from 'found';
-import { Account_view$data as ViewType } from '__generated__/Account_view.graphql';
+import { Account_view$key } from '__generated__/Account_view.graphql';
 declare type Props = {
     match: Match;
-    view: ViewType | undefined;
+    view: Account_view$key;
 };
-declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
-export default _default;
+export default function Account(props: Props): JSX.Element | null;
+export {};

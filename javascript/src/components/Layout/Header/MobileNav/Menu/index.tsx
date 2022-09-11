@@ -1,39 +1,48 @@
-import React, { Component } from 'react'
+import React from 'react'
 import { Link } from 'found'
 import classNames from 'classnames'
-import { createFragmentContainer, graphql } from 'react-relay'
+import { graphql, useFragment } from 'react-relay'
 
 import { toEverything } from 'components/navigation'
-import { Menu_viewer$data as ViewerType } from '__generated__/Menu_viewer.graphql'
+import { Menu_viewer$key  } from '__generated__/Menu_viewer.graphql'
 import styles from './styles.module.css'
 
 type Props = {
-  viewer: ViewerType,
+  viewer: Menu_viewer$key,
 }
 
-class Menu extends Component<Props> {
-  renderSignIn = () => (
-    <Link
-      className="menu-item p-3 Link--primary"
-      to="/login"
-    >
-      Sign in
+const renderSignIn = () => (
+  <Link
+    className="menu-item p-3 Link--primary"
+    to="/login"
+  >
+    Sign in
+  </Link>
+)
+
+const renderUserNav = () => (
+  <>
+    <Link className="menu-item Link--primary p-3" to="/review">
+      Review
     </Link>
+    <Link className="menu-item Link--primary p-3" to="/settings/account">
+      Settings
+    </Link>
+    <a className="menu-item Link--primary p-3" href="/logout">Sign out</a>
+  </>
+)
+
+export default function Menu(props: Props) {
+  const viewer = useFragment(
+    graphql`
+      fragment Menu_viewer on User {
+        isGuest
+      }
+    `,
+    props.viewer,
   )
 
-  renderUserNav = () => (
-    <>
-      <Link className="menu-item Link--primary p-3" to="/review">
-        Review
-      </Link>
-      <Link className="menu-item Link--primary p-3" to="/settings/account">
-        Settings
-      </Link>
-      <a className="menu-item Link--primary p-3" href="/logout">Sign out</a>
-    </>
-  )
-
-  render = () => (
+  return (
     <nav className={classNames(styles.menu, 'menu')} aria-label="Person settings">
       <a
         className="menu-item Link--primary p-3"
@@ -55,17 +64,9 @@ class Menu extends Component<Props> {
         Everything
       </Link>
 
-      { this.props.viewer.isGuest
-        ? this.renderSignIn()
-        : this.renderUserNav()}
+      {viewer.isGuest
+        ? renderSignIn()
+        : renderUserNav()}
     </nav>
   )
 }
-
-export default createFragmentContainer(Menu, {
-  viewer: graphql`
-    fragment Menu_viewer on User {
-      isGuest
-    }
-  `,
-})

@@ -1,11 +1,21 @@
-import React, { Component, KeyboardEvent, FormEvent } from 'react'
-import { graphql, createFragmentContainer, RelayProp, DeclarativeMutationConfig } from 'react-relay'
+import React, {
+  SetStateAction, KeyboardEvent, FormEvent, useCallback, useState, Dispatch,
+} from 'react'
+import {
+  graphql, DeclarativeMutationConfig, useRelayEnvironment, useFragment,
+} from 'react-relay'
 
 import upsertTopicMutation from 'mutations/upsertTopicMutation'
-import { AddTopic_viewer$data as Viewer } from '__generated__/AddTopic_viewer.graphql'
-import { AddTopic_topic$data as Topic } from '__generated__/AddTopic_topic.graphql'
+import {
+  AddTopic_viewer$key,
+  AddTopic_viewer$data as ViewerType,
+} from '__generated__/AddTopic_viewer.graphql'
+import {
+  AddTopic_topic$key,
+  AddTopic_topic$data as TopicType,
+} from '__generated__/AddTopic_topic.graphql'
 
-type RepositoryType = Viewer['selectedRepository']
+type RepositoryType = ViewerType['selectedRepository']
 
 const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
   + 'afterwards if it also belongs under another topic.\n'
@@ -13,80 +23,86 @@ const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
 
 type Props = {
   disabled?: boolean,
-  relay: RelayProp,
-  topic: Topic,
-  viewer: Viewer,
+  topic: AddTopic_topic$key,
+  viewer: AddTopic_viewer$key,
 }
 
-type State = {
-  name: string,
+type SetNameType = Dispatch<SetStateAction<string>>;
+
+function relayConfigs(parentID: string): DeclarativeMutationConfig[] {
+  return [{
+    type: 'RANGE_ADD',
+    parentID,
+    connectionInfo: [{
+      key: 'Topic_children',
+      rangeBehavior: 'prepend',
+    }],
+    edgeName: 'topicEdge',
+  }]
 }
 
-class AddTopic extends Component<Props, State> {
-  static defaultProps = {
-    disabled: true,
+function createTopic(repo: RepositoryType, topic: TopicType, name: string, setName: SetNameType) {
+  if (!repo) {
+    // eslint-disable-next-line no-console
+    console.log('missing repo')
+    return
   }
 
-  constructor(props: Props) {
-    super(props)
-    this.state = {
-      name: '',
-    }
+  const repoId = repo.id
+  if (!repoId) {
+    console.log('expected a repo id', repo)
+    return
   }
 
-  onKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') this.createTopic()
-  }
+  upsertTopicMutation(
+    useRelayEnvironment(),
+    {
+      name,
+      repoId,
+      parentTopicId: topic.id,
+    },
+    {
+      configs: relayConfigs(topic.id),
+    },
+  )
 
-  get selectedRepo(): RepositoryType {
-    return this.props.viewer.selectedRepository
-  }
+  setName('')
+}
 
-  get relayConfigs(): DeclarativeMutationConfig[] {
-    return [{
-      type: 'RANGE_ADD',
-      parentID: this.props.topic.id,
-      connectionInfo: [{
-        key: 'Topic_children',
-        rangeBehavior: 'prepend',
-      }],
-      edgeName: 'topicEdge',
-    }]
-  }
+export default function AddTopic(props: Props) {
+  const viewer = useFragment(
+    graphql`
+      fragment AddTopic_viewer on User {
+        selectedRepository {
+          id
+        }
+      }
+    `,
+    props.viewer,
+  )
 
-  updateName = (event: FormEvent<HTMLInputElement>) => {
-    this.setState({ name: event.currentTarget.value })
-  }
+  const topic = useFragment(
+    graphql`
+      fragment AddTopic_topic on Topic {
+        id
+      }
+    `,
+    props.topic,
+  )
 
-  createTopic() {
-    const repo = this.selectedRepo
-    if (!repo) {
-      // eslint-disable-next-line no-console
-      console.log('missing repo')
-      return
-    }
+  const [name, setName] = useState('')
+  const selectedRepo = viewer.selectedRepository
 
-    const repoId = repo.id
-    if (!repoId) {
-      console.log('expected a repo id', repo)
-      return
-    }
+  const onKeyPress = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return
+    createTopic(selectedRepo, topic, name, setName)
+  }, [createTopic, selectedRepo, topic, name, setName])
 
-    upsertTopicMutation(
-      this.props.relay.environment,
-      {
-        name: this.state.name,
-        repoId,
-        parentTopicId: this.props.topic.id,
-      },
-      {
-        configs: this.relayConfigs,
-      },
-    )
-    this.setState({ name: '' })
-  }
+  const updateName = useCallback((event: FormEvent<HTMLInputElement>) => {
+    setName(event.currentTarget.value)
+  }, [setName])
 
-  render = () => (
+  return (
     <dl className="form-group">
       <dt>
         <span
@@ -99,29 +115,14 @@ class AddTopic extends Component<Props, State> {
       <dd>
         <input
           className="form-control test-topic-name input-sm"
-          disabled={this.props.disabled}
+          disabled={props.disabled}
           id="create-topic-name"
-          onChange={this.updateName}
-          onKeyPress={this.onKeyPress}
+          onChange={updateName}
+          onKeyPress={onKeyPress}
           placeholder="Name or description"
-          value={this.state.name}
+          value={name}
         />
       </dd>
     </dl>
   )
 }
-
-export default createFragmentContainer(AddTopic, {
-  viewer: graphql`
-    fragment AddTopic_viewer on User {
-      selectedRepository {
-        id
-      }
-    }
-  `,
-  topic: graphql`
-    fragment AddTopic_topic on Topic {
-      id
-    }
-  `,
-})

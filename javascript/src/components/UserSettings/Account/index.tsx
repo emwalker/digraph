@@ -1,35 +1,32 @@
 import React from 'react'
-import { createFragmentContainer, graphql } from 'react-relay'
+import { graphql, useFragment } from 'react-relay'
 import { Match } from 'found'
 
-import { Account_view$data as ViewType } from '__generated__/Account_view.graphql'
+import { Account_view$key } from '__generated__/Account_view.graphql'
 import Content from '../Content'
 import DeleteAccount from './DeleteAccount'
 
 type Props = {
   match: Match,
-  view: ViewType | undefined,
+  view: Account_view$key,
 }
 
-const Account = ({ match, view }: Props) => {
-  const { location: { pathname } } = match
+export default function Account(props: Props) {
+  const view = useFragment(
+    graphql`
+      fragment Account_view on View {
+        ...DeleteAccount_view
+      }
+    `,
+    props.view,
+  )
 
+  const pathname = props.match?.location?.pathname
   if (pathname !== '/settings/account') return null
 
   return (
     <Content>
-      <DeleteAccount
-        // @ts-expect-error
-        view={view}
-      />
+      {view && <DeleteAccount view={view} />}
     </Content>
   )
 }
-
-export default createFragmentContainer(Account, {
-  view: graphql`
-    fragment Account_view on View {
-      ...DeleteAccount_view
-    }
-  `,
-})

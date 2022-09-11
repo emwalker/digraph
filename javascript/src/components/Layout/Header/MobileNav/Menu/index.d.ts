@@ -1,6 +1,6 @@
-import { Menu_viewer$data as ViewerType } from '__generated__/Menu_viewer.graphql';
+import { Menu_viewer$key } from '__generated__/Menu_viewer.graphql';
 declare type Props = {
-    viewer: ViewerType;
+    viewer: Menu_viewer$key;
 };
-declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
-export default _default;
+export default function Menu(props: Props): JSX.Element;
+export {};

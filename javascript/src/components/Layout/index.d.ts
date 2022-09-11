@@ -11,5 +11,5 @@ declare type Props = {
     view: ViewType;
 };
 export declare const query: import("react-relay").GraphQLTaggedNode;
-declare const Layout: ({ alerts, children, view, match, router }: Props) => JSX.Element;
-export default Layout;
+export default function Layout({ alerts, children, view, match, router }: Props): JSX.Element;
+export {};

@@ -28,7 +28,7 @@ exports[`<Layout /> renders 1`] = `
   <div
     className="clearfix"
   >
-    <Relay(SelectedRepo)
+    <SelectedRepo
       viewer={Object {}}
     />
     <FlashMessages />

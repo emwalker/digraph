@@ -46,24 +46,21 @@ query LayoutQuery(
   }
 }`
 
-const Layout = ({ alerts, children, view, match, router }: Props) => (
-  <div className="layoutComponent">
-    <Header
-      location={match.location}
-      router={router}
-      view={view}
-      viewer={view.viewer}
-    />
-    <div className="clearfix">
-      <SelectedRepo
-        // @ts-expect-error
+export default function Layout({ alerts, children, view, match, router }: Props) {
+  return (
+    <div className="layoutComponent">
+      <Header
+        location={match.location}
+        router={router}
+        view={view}
         viewer={view.viewer}
       />
-      <FlashMessages initialAlerts={alerts} />
-      { children }
+      <div className="clearfix">
+        <SelectedRepo viewer={view.viewer} />
+        <FlashMessages initialAlerts={alerts} />
+        { children }
+      </div>
+      <Footer />
     </div>
-    <Footer />
-  </div>
-)
-
-export default Layout
+  )
+}

@@ -109,12 +109,7 @@ class TopicPage extends Component<Props, State> {
   }
 
   renderAddForm = () => (
-    <AddForm
-      // @ts-expect-error
-      topic={this.props.topic}
-      // @ts-expect-error
-      viewer={this.props.view.viewer}
-    />
+    <AddForm topic={this.props.topic} viewer={this.props.view.viewer} />
   )
 
   get repoColors(): Color[] {

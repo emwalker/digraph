@@ -1,15 +1,27 @@
 import React from 'react'
-import { createFragmentContainer, graphql } from 'react-relay'
+import { graphql, useFragment } from 'react-relay'
 
-import { SelectedRepo_viewer$data as Viewer } from '__generated__/SelectedRepo_viewer.graphql'
+import { SelectedRepo_viewer$key } from '__generated__/SelectedRepo_viewer.graphql'
 
 type Props = {
-  viewer: Viewer,
+  viewer: SelectedRepo_viewer$key,
 }
 
-const SelectedRepo = ({ viewer }: Props) => {
-  let { selectedRepository: repo } = viewer
+export default function SelectedRepo(props: Props) {
+  const viewer = useFragment(
+    graphql`
+      fragment SelectedRepo_viewer on User {
+        selectedRepository {
+          displayColor
+          fullName
+          isPrivate
+        }
+      }
+    `,
+    props.viewer,
+  )
 
+  const repo = viewer.selectedRepository
   if (!repo || !repo.isPrivate) return null
   const backgroundColor = repo.displayColor as string
 
@@ -19,18 +31,3 @@ const SelectedRepo = ({ viewer }: Props) => {
     </div>
   )
 }
-
-
-export const UnwrappedSelectedRepo = SelectedRepo
-
-export default createFragmentContainer(SelectedRepo, {
-  viewer: graphql`
-    fragment SelectedRepo_viewer on User {
-      selectedRepository {
-        displayColor
-        fullName
-        isPrivate
-      }
-    }
-  `,
-})

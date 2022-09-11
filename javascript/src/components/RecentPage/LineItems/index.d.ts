@@ -1,6 +1,6 @@
-import { LineItems_activity$data as Activity } from '__generated__/LineItems_activity.graphql';
+import { LineItems_activity$key } from '__generated__/LineItems_activity.graphql';
 declare type Props = {
-    activity: Activity;
+    activity: LineItems_activity$key;
 };
-declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
-export default _default;
+export default function LineItems(props: Props): JSX.Element;
+export {};

@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react'
 import { Match } from 'found'
-import { createFragmentContainer, graphql } from 'react-relay'
+import { graphql, useFragment } from 'react-relay'
 
 import Page from 'components/ui/Page'
 import useDocumentTitle from 'utils/useDocumentTitle'
-import { UserSettings_view$data as ViewType } from '__generated__/UserSettings_view.graphql'
-import userSettingsQuery, { ViewType as QueryViewType } from './userSettingsQuery'
+import { UserSettings_view$key } from '__generated__/UserSettings_view.graphql'
+import userSettingsQuery from './userSettingsQuery'
 import Sidenav from './Sidenav'
 import Account from './Account'
 import Support from './Support'
@@ -14,11 +14,23 @@ export const query = userSettingsQuery
 
 type Props = {
   match: Match,
-  view: ViewType,
+  view: UserSettings_view$key,
 }
 
-const UserSettings = ({ match, view }: Props) => {
-  const { viewer } = view
+function UserSettings(props: Props) {
+  const view = useFragment(
+    graphql`
+      fragment UserSettings_view on View {
+        viewer {
+          isGuest
+        }
+
+        ...Account_view
+      }
+    `,
+    props.view,
+  )
+  const viewer = view.viewer
 
   useEffect(() => {
     if (!viewer?.isGuest) return
@@ -31,37 +43,15 @@ const UserSettings = ({ match, view }: Props) => {
 
   return (
     <Page>
-      <Sidenav match={match} />
-      <Account
-        match={match}
-        // @ts-expect-error
-        view={view}
-      />
-      <Support match={match} />
+      <Sidenav match={props.match} />
+      <Account match={props.match} view={view} />
+      <Support match={props.match} />
     </Page>
   )
 }
 
-const Wrapper = createFragmentContainer(UserSettings, {
-  view: graphql`
-    fragment UserSettings_view on View {
-      viewer {
-        isGuest
-      }
-
-      ...Account_view
-    }
-  `,
-})
-
-type RenderProps = {
-  view: QueryViewType,
-  match: Match,
-}
-
-export default ({ view, match }: RenderProps) => (
+export default ({ view, match }: Props) => (
   view
-    // @ts-expect-error
-    ? <Wrapper view={view} match={match} />
+    ? <UserSettings view={view} match={match} />
     : null
 )

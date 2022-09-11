@@ -1,8 +1,11 @@
-import React, { Component, FormEvent, ChangeEvent } from 'react'
-import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
+import React, {
+  MouseEventHandler, ChangeEventHandler, FormEvent, ChangeEvent, useCallback, useState,
+} from 'react'
+import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
 
 import updateTopicSynonymsMutation, { Input } from 'mutations/updateTopicSynonymsMutation'
 import {
+  Synonyms_topic$key,
   Synonyms_topic$data as TopicType,
 } from '__generated__/Synonyms_topic.graphql'
 import { SynonymType } from 'components/types'
@@ -13,16 +16,10 @@ import { wikiRepoId } from 'components/constants'
 type RepoTopicType = TopicType['repoTopics'][0]
 
 type Props = {
-  relay: RelayProp,
-  topic: TopicType,
+  topic: Synonyms_topic$key,
 }
 
-type State = {
-  inputLocale: string,
-  inputName: string,
-}
-
-const displayName = (synonyms: SynonymType[]) => {
+function displayName(synonyms: SynonymType[]) {
   if (synonyms.length > 0) {
     for (const synonym of synonyms) {
       if (synonym.locale != 'en')
@@ -35,142 +32,163 @@ const displayName = (synonyms: SynonymType[]) => {
   return 'Missing name'
 }
 
-class Synonyms extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props)
-    this.state = {
-      inputLocale: 'en',
-      inputName: '',
-    }
+function optimisticResponse(
+  topic: TopicType,
+  repoTopic: RepoTopicType,
+  synonyms: SynonymType[],
+) {
+  return {
+    updateTopicSynonyms: {
+      alerts: [],
+      clientMutationId: null,
+      topic: {
+        ...topic,
+        displayName: displayName(synonyms),
+        repoTopics: [
+          {
+            ...repoTopic,
+            synonyms,
+          },
+        ],
+      },
+    },
   }
+}
 
-  onLocaleChange = (event: FormEvent<HTMLSelectElement>) => {
-    this.setState({ inputLocale: event.currentTarget.value })
-  }
+const renderSynonyms = (
+  repoTopic: RepoTopicType | null,
+  onDelete: Function,
+  updateTopicSynonyms: Function,
+) => {
+  if (!repoTopic) return null
 
-  onNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ inputName: event.currentTarget.value })
-  }
+  return (
+    <SynonymList
+      canUpdate={repoTopic.viewerCanUpdate}
+      onDelete={onDelete}
+      onUpdate={updateTopicSynonyms}
+      synonyms={repoTopic?.synonyms}
+    />
+  )
+}
 
-  onAdd = () => {
-    const update = copySynonyms(this.synonyms)
-    const synonym = { name: this.state.inputName, locale: this.state.inputLocale }
+const renderAddForm = (
+  inputName: string,
+  onNameChange: ChangeEventHandler<HTMLInputElement>,
+  onLocaleChange: ChangeEventHandler<HTMLSelectElement>,
+  onAdd: MouseEventHandler<HTMLButtonElement>,
+) => (
+  <div className="clearfix">
+    <input
+      id="names-and-synonyms"
+      className="form-control col-12 col-lg-10 mr-2"
+      onChange={onNameChange}
+      value={inputName}
+    />
+
+    <div className="col-12 col-lg-3 mt-2 d-inline-block">
+      <select onChange={onLocaleChange} className="form-select mr-2">
+        <option>en</option>
+        <option>ar</option>
+        <option>de</option>
+        <option>el</option>
+        <option>es</option>
+        <option>fa</option>
+        <option>fi</option>
+        <option>fr</option>
+        <option>hi</option>
+        <option>it</option>
+        <option>ja</option>
+        <option>ji</option>
+        <option>ko</option>
+        <option>la</option>
+        <option>nl</option>
+        <option>no</option>
+        <option>pt</option>
+        <option>ru</option>
+        <option>sv</option>
+        <option>tr</option>
+        <option>uk</option>
+        <option>zh</option>
+      </select>
+
+      <button type="button" onClick={onAdd} className="btn">
+        Add
+      </button>
+    </div>
+  </div>
+)
+
+export default function Synonyms(props: Props) {
+  const topic = useFragment(
+    graphql`
+      fragment Synonyms_topic on Topic {
+        displayName
+        viewerCanUpdate
+
+        repoTopics {
+          topicId
+          displayName
+          viewerCanDeleteSynonyms
+          viewerCanUpdate
+
+          synonyms {
+            name
+            locale
+
+            ...Synonym_synonym
+          }
+        }
+      }
+    `,
+    props.topic,
+  )
+
+  const [inputName, setInputName] = useState('')
+  const [inputLocale, setInputLocale] = useState('en')
+
+  const repoTopic = topic.repoTopics.length < 1 ? null : topic.repoTopics[0]
+  const synonyms = repoTopic?.synonyms || []
+
+  const updateTopicSynonyms = useCallback((update: SynonymType[]) => {
+    if (!repoTopic) return null
+  
+    // FIXME
+    const input: Input = { repoId: wikiRepoId, topicId: repoTopic.topicId, synonyms: update }
+  
+    updateTopicSynonymsMutation(
+      useRelayEnvironment(),
+      input,
+      { optimisticResponse: optimisticResponse(topic, repoTopic, update) },
+    )
+    setInputName('')
+  }, [setInputName, updateTopicSynonymsMutation, optimisticResponse, useRelayEnvironment])
+  
+  const onNameChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setInputName(event.currentTarget.value)
+  }, [setInputName])
+
+  const onLocaleChange = useCallback((event: FormEvent<HTMLSelectElement>) => {
+    setInputLocale(event.currentTarget.value)
+  }, [setInputLocale])
+
+  const onAdd = useCallback(() => {
+    const update = copySynonyms(synonyms)
+    const synonym = { name: inputName, locale: inputLocale }
     update.push(synonym)
-    this.updateTopicSynonyms(update)
-  }
+    updateTopicSynonyms(update)
+  }, [repoTopic, synonyms, copySynonyms, updateTopicSynonyms])
 
-  onDelete = (position: number) => {
+  const onDelete = useCallback((position: number) => {
     // eslint-disable-next-line no-alert
     if (!window.confirm('Are you sure you want to delete this synonym?')) return
 
-    const update = copySynonyms(this.synonyms)
+    const update = copySynonyms(synonyms)
     update.splice(position, 1)
-    this.updateTopicSynonyms(update)
-  }
+    updateTopicSynonyms(update)
+  }, [copySynonyms, updateTopicSynonyms])
 
-  get topicDetail(): RepoTopicType | null {
-    const repoTopics = this.props.topic.repoTopics
-    if (repoTopics.length < 1) return null
-    return repoTopics[0]
-  }
-
-  get synonyms() {
-    return this.topicDetail?.synonyms || []
-  }
-
-  optimisticResponse = (synonyms: SynonymType[]) => {
-    return {
-      updateTopicSynonyms: {
-        alerts: [],
-        clientMutationId: null,
-        topic: {
-          ...this.props.topic,
-          displayName: displayName(synonyms),
-          repoTopics: [
-            {
-              ...this.topicDetail,
-              synonyms,
-            },
-          ],
-        },
-      },
-    }
-  }
-
-  updateTopicSynonyms = (synonyms: SynonymType[]) => {
-    const topicDetail = this.topicDetail
-
-    if (!topicDetail) return null
-
-    // FIXME
-    const input: Input = { repoId: wikiRepoId, topicId: topicDetail.topicId, synonyms }
-
-    this.setState({ inputName: '' }, () => {
-      updateTopicSynonymsMutation(
-        this.props.relay.environment,
-        input,
-        { optimisticResponse: this.optimisticResponse(synonyms) },
-      )
-    })
-  }
-
-  renderSynonyms = () => {
-    const topicDetail = this.topicDetail
-    if (!topicDetail) return null
-
-    return (
-      <SynonymList
-        canUpdate={topicDetail.viewerCanUpdate}
-        onDelete={this.onDelete}
-        onUpdate={this.updateTopicSynonyms}
-        synonyms={topicDetail.synonyms}
-      />
-    )
-  }
-
-  renderAddForm = () => (
-    <div className="clearfix">
-      <input
-        id="names-and-synonyms"
-        className="form-control col-12 col-lg-10 mr-2"
-        onChange={this.onNameChange}
-        value={this.state.inputName}
-      />
-
-      <div className="col-12 col-lg-3 mt-2 d-inline-block">
-        <select onChange={this.onLocaleChange} className="form-select mr-2">
-          <option>en</option>
-          <option>ar</option>
-          <option>de</option>
-          <option>el</option>
-          <option>es</option>
-          <option>fa</option>
-          <option>fi</option>
-          <option>fr</option>
-          <option>hi</option>
-          <option>it</option>
-          <option>ja</option>
-          <option>ji</option>
-          <option>ko</option>
-          <option>la</option>
-          <option>nl</option>
-          <option>no</option>
-          <option>pt</option>
-          <option>ru</option>
-          <option>sv</option>
-          <option>tr</option>
-          <option>uk</option>
-          <option>zh</option>
-        </select>
-
-        <button type="button" onClick={this.onAdd} className="btn">
-          Add
-        </button>
-      </div>
-    </div>
-  )
-
-  render = () => (
+  return (
     <dl className="form-group">
       <label
         htmlFor="names-and-synonyms"
@@ -178,34 +196,9 @@ class Synonyms extends Component<Props, State> {
         Names and synonyms
       </label>
       <ul className="Box list-style-none mt-1 mb-2">
-        {this.renderSynonyms()}
+        {renderSynonyms(repoTopic, onDelete, updateTopicSynonyms)}
       </ul>
-      {this.props.topic.viewerCanUpdate && this.renderAddForm()}
+      {topic.viewerCanUpdate && renderAddForm(inputName, onNameChange, onLocaleChange, onAdd)}
     </dl>
   )
 }
-
-export const UnwrappedSynonyms = Synonyms
-
-export default createFragmentContainer(Synonyms, {
-  topic: graphql`
-    fragment Synonyms_topic on Topic {
-      displayName
-      viewerCanUpdate
-
-      repoTopics {
-        topicId
-        displayName
-        viewerCanDeleteSynonyms
-        viewerCanUpdate
-
-        synonyms {
-          name
-          locale
-
-          ...Synonym_synonym
-        }
-      }
-    }
-  `,
-})

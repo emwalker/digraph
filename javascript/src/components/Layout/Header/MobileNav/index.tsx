@@ -1,12 +1,12 @@
-import React, { Component } from 'react'
-import { createFragmentContainer, graphql } from 'react-relay'
+import React, { useState, useCallback } from 'react'
+import { graphql, useFragment } from 'react-relay'
 import { Link, Router } from 'found'
 import classNames from 'classnames'
 
 import { LocationType } from 'components/types'
 import DigraphLogo from 'components/ui/icons/DigraphLogo'
 import SearchBox from 'components/ui/SearchBox'
-import { MobileNav_viewer$data as Viewer } from '__generated__/MobileNav_viewer.graphql'
+import { MobileNav_viewer$key } from '__generated__/MobileNav_viewer.graphql'
 import Menu from './Menu'
 import styles from './styles.module.css'
 
@@ -14,30 +14,27 @@ type Props = {
   location: LocationType,
   router: Router,
   showButton?: boolean,
-  viewer: Viewer,
+  viewer: MobileNav_viewer$key,
 }
 
-type State = {
-  isOpen: boolean,
-}
+export default function MobileNav(props: Props) {
+  const viewer = useFragment(
+    graphql`
+      fragment MobileNav_viewer on User {
+        isGuest
+        ...Menu_viewer
+      }
+    `,
+    props.viewer,
+  )
 
-class MobileNav extends Component<Props, State> {
-  static defaultProps = {
-    showButton: true,
-  }
+  const [isOpen, setIsOpen] = useState(false)
+  
+  const onClick = useCallback(() => {
+    setIsOpen(!isOpen)
+  }, [setIsOpen])
 
-  constructor(props: Props) {
-    super(props)
-    this.state = {
-      isOpen: false,
-    }
-  }
-
-  onClick = () => {
-    this.setState((prevState) => ({ isOpen: !prevState.isOpen }))
-  }
-
-  render = () => (
+  return (
     <div className={classNames(styles.mobileMenu, 'mobile-menu')}>
       <div className={classNames(styles.mobileMenuHeader, 'mobile-menu-header d-flex px-3 py-2')}>
         <div className={styles.logo}>
@@ -58,38 +55,24 @@ class MobileNav extends Component<Props, State> {
 
         <div className={styles.searchBox}>
           <SearchBox
-            location={this.props.location}
-            router={this.props.router}
-            showButton={this.props.showButton}
+            location={props.location}
+            router={props.router}
+            showButton={props.showButton}
           />
         </div>
 
         <div className={styles.rightButton}>
           <button
             className="menu-btn btn btn-outline py-1"
-            onClick={this.onClick}
+            onClick={onClick}
             type="button"
           >
             Menu
           </button>
         </div>
       </div>
-      {
-        this.state.isOpen &&
-        // @ts-expect-error
-        <Menu viewer={this.props.viewer} />
-      }
+
+      {isOpen && <Menu viewer={viewer} />}
     </div>
   )
 }
-
-export const UnwrappedMobileNav = MobileNav
-
-export default createFragmentContainer(MobileNav, {
-  viewer: graphql`
-    fragment MobileNav_viewer on User {
-      isGuest
-      ...Menu_viewer
-    }
-  `,
-})

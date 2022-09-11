@@ -1,93 +1,71 @@
-import React, { Component } from 'react'
-import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
+import React, { useCallback, useState } from 'react'
+import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
 import classNames from 'classnames'
 
 import reviewLinkMutation, { Input } from 'mutations/reviewLinkMutation'
-import { Review_link$data as Link } from '__generated__/Review_link.graphql'
+import { Review_link$key } from '__generated__/Review_link.graphql'
 
 type Props = {
-  link: Link,
-  relay: RelayProp,
+  link: Review_link$key,
 }
 
-type State = {
-  reviewed: boolean,
-}
+export default function Review(props: Props) {
+  const environment = useRelayEnvironment()
 
-class Review extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props)
-    const { link: { viewerReview } } = props
+  const link = useFragment(
+    graphql`
+      fragment Review_link on Link {
+        displayTitle
+        displayUrl
+        id
 
-    this.state = {
-      reviewed: viewerReview != null && viewerReview.reviewedAt != null,
-    }
-  }
-
-  onChange = () => {
-    this.setState(
-      ({ reviewed }) => {
-        const input: Input = { linkId: this.props.link.id, reviewed: !reviewed }
-        reviewLinkMutation(this.props.relay.environment, input)
-
-        return {
-          reviewed: !reviewed,
+        viewerReview {
+          reviewedAt
         }
-      },
-    )
-  }
-
-  get className(): string {
-    return classNames(
-      'Box-row clearfix Review', 'd-flex', 'flex-items-center', {
-        'Review--reviewed': this.state.reviewed,
-      },
-    )
-  }
-
-  render = () => {
-    const { link: { displayTitle, displayUrl } } = this.props
-
-    return (
-      <li className={this.className}>
-        <div className="overflow-hidden flex-auto pr-3">
-          <div>
-            <a className="Link--primary" href={displayUrl}>
-              { displayTitle }
-            </a>
-          </div>
-          <div className="mt-2 link-url branch-name css-truncate css-truncate-target">
-            { displayUrl }
-          </div>
-        </div>
-        <form className="review-checkbox">
-          <div className="form-checkbox">
-            <label>
-              <input
-                checked={this.state.reviewed}
-                className="input-lg"
-                onChange={this.onChange}
-                type="checkbox"
-              />
-              Reviewed
-            </label>
-          </div>
-        </form>
-      </li>
-    )
-  }
-}
-
-export default createFragmentContainer(Review, {
-  link: graphql`
-    fragment Review_link on Link {
-      displayTitle
-      displayUrl
-      id
-
-      viewerReview {
-        reviewedAt
       }
-    }
-  `,
-})
+    `,
+    props.link,
+  )
+
+  const [reviewed, setReviewed] = useState(false)
+
+  const onChange = useCallback(() => {
+    const input: Input = { linkId: link.id, reviewed: !reviewed }
+    reviewLinkMutation(environment, input)
+    setReviewed(!reviewed)
+  }, [setReviewed, reviewLinkMutation, environment])
+
+  const className = classNames(
+    'Box-row clearfix Review', 'd-flex', 'flex-items-center', {
+      'Review--reviewed': reviewed,
+    },
+  )
+
+  return (
+    <li className={className}>
+      <div className="overflow-hidden flex-auto pr-3">
+        <div>
+          <a className="Link--primary" href={link.displayUrl}>
+            { link.displayTitle }
+          </a>
+        </div>
+        <div className="mt-2 link-url branch-name css-truncate css-truncate-target">
+          { link.displayUrl }
+        </div>
+      </div>
+      <form className="review-checkbox">
+        <div className="form-checkbox">
+          <label>
+            <input
+              checked={reviewed}
+              className="input-lg"
+              onChange={onChange}
+              type="checkbox"
+            />
+            Reviewed
+          </label>
+        </div>
+      </form>
+    </li>
+  )
+}

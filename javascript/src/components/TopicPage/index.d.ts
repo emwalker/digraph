@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { LocationType, NodeTypeOf } from 'components/types';
+import { Color, LocationType, NodeTypeOf } from 'components/types';
 import { TopicPage_query_Query$data as Response } from '__generated__/TopicPage_query_Query.graphql';
 import { TopicPage_topic$data as TopicType } from '__generated__/TopicPage_topic.graphql';
 declare type ViewType = Response['view'];
@@ -34,7 +34,9 @@ declare class TopicPage extends Component<Props, State> {
     get linksToReviewLocation(): LocationType;
     renderTopicChild: (child: TopicChildType | null) => JSX.Element | null;
     renderAddForm: () => JSX.Element;
-    renderHeadingDetail: () => JSX.Element | null;
+    get repoColors(): Color[];
+    renderRepoOwnership: () => JSX.Element;
+    renderHeadingDetail: () => JSX.Element;
     renderNotification: () => JSX.Element;
     renderTopicViews: () => JSX.Element;
     render: () => JSX.Element;

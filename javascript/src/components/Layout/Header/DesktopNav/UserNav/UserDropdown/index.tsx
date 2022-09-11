@@ -1,14 +1,24 @@
 import React, { useCallback } from 'react'
-import { createFragmentContainer, graphql } from 'react-relay'
+import { graphql, useFragment } from 'react-relay'
 import { Link } from 'found'
 
-import { UserDropdown_viewer$data as ViewerType } from '__generated__/UserDropdown_viewer.graphql'
+import { UserDropdown_viewer$key } from '__generated__/UserDropdown_viewer.graphql'
 
 type Props = {
-  viewer: ViewerType,
+  viewer: UserDropdown_viewer$key,
 }
 
-const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
+export default function UserDropdown(props: Props) {
+  const viewer = useFragment(
+    graphql`
+      fragment UserDropdown_viewer on User {
+        name
+        avatarUrl
+      }
+    `,
+    props.viewer,
+  )
+
   const signOut = useCallback(() => {
     window.location.href = '/logout'
   }, [])
@@ -19,10 +29,10 @@ const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
         <summary className="btn" aria-haspopup="true">
           <div className="summary">
             <img
-              alt={name}
+              alt={viewer.name}
               className="avatar"
               height="20"
-              src={`${avatarUrl}&s=40`}
+              src={`${viewer.avatarUrl}&s=40`}
               width="20"
             />
             <div className="dropdown-caret" />
@@ -44,12 +54,3 @@ const UserDropdown = ({ viewer: { name, avatarUrl } }: Props) => {
     </div>
   )
 }
-
-export default createFragmentContainer(UserDropdown, {
-  viewer: graphql`
-    fragment UserDropdown_viewer on User {
-      name
-      avatarUrl
-    }
-  `,
-})

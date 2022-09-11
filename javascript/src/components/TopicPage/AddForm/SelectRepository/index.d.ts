@@ -1,8 +1,6 @@
-import { RelayProp } from 'react-relay';
-import { SelectRepository_viewer$data as ViewerType } from '__generated__/SelectRepository_viewer.graphql';
+import { SelectRepository_viewer$key } from '__generated__/SelectRepository_viewer.graphql';
 declare type Props = {
-    relay: RelayProp;
-    viewer: ViewerType;
+    viewer: SelectRepository_viewer$key;
 };
-declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
-export default _default;
+export default function SelectRepository(props: Props): JSX.Element;
+export {};

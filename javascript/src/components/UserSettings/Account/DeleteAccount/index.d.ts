@@ -1,8 +1,6 @@
-import { RelayProp } from 'react-relay';
-import { DeleteAccount_view$data as ViewType } from '__generated__/DeleteAccount_view.graphql';
+import { DeleteAccount_view$key } from '__generated__/DeleteAccount_view.graphql';
 declare type Props = {
-    relay: RelayProp;
-    view: ViewType | undefined;
+    view: DeleteAccount_view$key;
 };
-declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
-export default _default;
+export default function DeleteAccount(props: Props): JSX.Element;
+export {};

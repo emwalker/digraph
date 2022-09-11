@@ -8,7 +8,7 @@ exports[`<UserNav /> renders 1`] = `
   >
     Review
   </Link>
-  <Relay(UserDropdown)
+  <UserDropdown
     viewer={Object {}}
   />
 </Fragment>

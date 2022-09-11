@@ -1,17 +1,27 @@
 import React, { useState, useCallback } from 'react'
-import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
+import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
 
 import deleteAccountMutation, { Input } from 'mutations/deleteAccountMutation'
-import { DeleteAccount_view$data as ViewType } from '__generated__/DeleteAccount_view.graphql'
+import { DeleteAccount_view$key } from '__generated__/DeleteAccount_view.graphql'
 
 declare let confirm: Function
 
 type Props = {
-  relay: RelayProp,
-  view: ViewType | undefined,
+  view: DeleteAccount_view$key,
 }
 
-const DeleteAccount = ({ relay, view }: Props) => {
+export default function DeleteAccount(props: Props) {
+  const view = useFragment(
+    graphql`
+      fragment DeleteAccount_view on View {
+        viewer {
+          id
+        }
+      }
+    `,
+    props.view,
+  )
+
   const [mutationInFlight, setMutationInFlight] = useState(false)
   const viewer = view?.viewer
 
@@ -30,7 +40,7 @@ const DeleteAccount = ({ relay, view }: Props) => {
 
     setMutationInFlight(true)
     const input: Input = { userId }
-    await deleteAccountMutation(relay.environment, input)
+    deleteAccountMutation(useRelayEnvironment(), input)
 
     setTimeout(
       () => {
@@ -38,7 +48,7 @@ const DeleteAccount = ({ relay, view }: Props) => {
       },
       5000,
     )
-  }, [mutationInFlight, relay, viewer])
+  }, [mutationInFlight, viewer])
 
   return (
     <>
@@ -75,13 +85,3 @@ const DeleteAccount = ({ relay, view }: Props) => {
     </>
   )
 }
-
-export default createFragmentContainer(DeleteAccount, {
-  view: graphql`
-    fragment DeleteAccount_view on View {
-      viewer {
-        id
-      }
-    }
-  `,
-})

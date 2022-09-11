@@ -29,13 +29,8 @@ const Homepage = ({ view, router }: Props) => {
 
   const recents = (view.activity.edges || []).map(
     (edge) => (
-      edge &&
-      edge.node &&
-      <LineItem
-        key={edge.node.description}
-        // @ts-expect-error
-        item={edge.node}
-      />
+      edge?.node &&
+      <LineItem key={edge.node.description} item={edge.node} />
     ),
   )
 

@@ -1,66 +1,76 @@
-import React, { Component, KeyboardEvent, FormEvent } from 'react'
-import { graphql, createFragmentContainer, RelayProp } from 'react-relay'
+import React, {
+  Dispatch, SetStateAction, KeyboardEvent, FormEvent, useState, useCallback,
+} from 'react'
+import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
 
 import upsertLinkMutation, { Input } from 'mutations/upsertLinkMutation'
-import { AddLink_viewer$data as ViewerType } from '__generated__/AddLink_viewer.graphql'
-import { AddLink_topic$data as TopicType } from '__generated__/AddLink_topic.graphql'
-
-type RepositoryType = ViewerType['selectedRepository']
+import {
+  AddLink_viewer$key,
+  AddLink_viewer$data as ViewerType,
+} from '__generated__/AddLink_viewer.graphql'
+import {
+  AddLink_topic$key,
+  AddLink_topic$data as TopicType,
+} from '__generated__/AddLink_topic.graphql'
 
 const tooltip = 'Add a link to this topic.\n'
   + 'Press "Return" to submit the new link.'
 
 type Props = {
   disabled?: boolean,
-  relay: RelayProp,
-  topic: TopicType,
-  viewer: ViewerType,
+  topic: AddLink_topic$key,
+  viewer: AddLink_viewer$key,
 }
 
-type State = {
-  url: string,
+type SetUrlType = Dispatch<SetStateAction<string>>
+
+function upsertLink(viewer: ViewerType, setUrl: SetUrlType, url: string, topic: TopicType) {
+  const repoId = viewer.selectedRepository?.id
+
+  if (!repoId) return
+
+  const input: Input = {
+    addParentTopicId: topic.id,
+    repoId,
+    url,
+  }
+
+  upsertLinkMutation(useRelayEnvironment(), input)
+  setUrl('')
 }
 
-class AddLink extends Component<Props, State> {
-  static defaultProps = {
-    disabled: false,
-  }
+export default function AddLink(props: Props) {
+  const viewer = useFragment(
+    graphql`
+      fragment AddLink_viewer on User {
+        selectedRepository {
+          id
+        }
+      }
+    `,
+    props.viewer,
+  )
 
-  constructor(props: Props) {
-    super(props)
-    this.state = {
-      url: '',
-    }
-  }
+  const topic = useFragment(
+    graphql`
+      fragment AddLink_topic on Topic {
+        id
+      }
+    `,
+    props.topic,
+  )
 
-  onKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') this.upsertLink()
-  }
+  const [url, setUrl] = useState('')
 
-  get selectedRepo(): RepositoryType {
-    return this.props.viewer.selectedRepository
-  }
+  const onKeyPress = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') upsertLink(viewer, setUrl, url, topic)
+  }, [upsertLink])
 
-  updateUrl = (event: FormEvent<HTMLInputElement>) => {
-    this.setState({ url: event.currentTarget.value })
-  }
+  const updateUrl = useCallback((event: FormEvent<HTMLInputElement>) => {
+    setUrl(event.currentTarget.value)
+  }, [setUrl])
 
-  upsertLink() {
-    const repoId = this.props.viewer.selectedRepository?.id
-
-    if (!repoId) return
-
-    const input: Input = {
-      addParentTopicId: this.props.topic.id,
-      repoId,
-      url: this.state.url,
-    }
-
-    upsertLinkMutation(this.props.relay.environment, input)
-    this.setState({ url: '' })
-  }
-
-  render = () => (
+  return (
     <dl className="form-group">
       <dt>
         <span
@@ -73,30 +83,15 @@ class AddLink extends Component<Props, State> {
       <dd>
         <input
           className="form-control test-link-url input-sm"
-          disabled={this.props.disabled}
+          disabled={props.disabled}
           id="create-link-url"
-          onChange={this.updateUrl}
-          onKeyPress={this.onKeyPress}
+          onChange={updateUrl}
+          onKeyPress={onKeyPress}
           placeholder="Url"
           type="url"
-          value={this.state.url}
+          value={url}
         />
       </dd>
     </dl>
   )
 }
-
-export default createFragmentContainer(AddLink, {
-  viewer: graphql`
-    fragment AddLink_viewer on User {
-      selectedRepository {
-        id
-      }
-    }
-  `,
-  topic: graphql`
-    fragment AddLink_topic on Topic {
-      id
-    }
-  `,
-})

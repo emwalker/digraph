@@ -1,9 +1,9 @@
-import { AddForm_topic$data as Topic } from '__generated__/AddForm_topic.graphql';
-import { AddForm_viewer$data as Viewer } from '__generated__/AddForm_viewer.graphql';
+import { AddForm_topic$key } from '__generated__/AddForm_topic.graphql';
+import { AddForm_viewer$key } from '__generated__/AddForm_viewer.graphql';
 import './index.css';
 declare type Props = {
-    topic: Topic;
-    viewer: Viewer;
+    topic: AddForm_topic$key;
+    viewer: AddForm_viewer$key;
 };
-declare const _default: import("react-relay").Container<Omit<Props, "relay">>;
-export default _default;
+export default function AddForm(props: Props): JSX.Element;
+export {};

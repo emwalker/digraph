@@ -79,7 +79,7 @@ class SynonymList extends Component<Props> {
 
   renderUpdatableList = () => (
     <SortableList
-      // @ts-ignore
+      // @ts-expect-error
       items={this.props.synonyms}
       lockAxis="y"
       onDelete={this.deleteFn()}

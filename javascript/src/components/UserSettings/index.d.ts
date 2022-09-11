@@ -1,9 +1,9 @@
 import { Match } from 'found';
-import { ViewType as QueryViewType } from './userSettingsQuery';
+import { UserSettings_view$key } from '__generated__/UserSettings_view.graphql';
 export declare const query: import("react-relay").GraphQLTaggedNode;
-declare type RenderProps = {
-    view: QueryViewType;
+declare type Props = {
     match: Match;
+    view: UserSettings_view$key;
 };
-declare const _default: ({ view, match }: RenderProps) => JSX.Element | null;
+declare const _default: ({ view, match }: Props) => JSX.Element | null;
 export default _default;

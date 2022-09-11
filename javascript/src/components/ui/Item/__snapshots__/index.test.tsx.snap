@@ -33,5 +33,9 @@ exports[`<Item /> renders 1`] = `
     </div>
   </div>
   <div />
+  <RepoOwnership
+    repoColors={Array []}
+    showRepoOwnership={false}
+  />
 </li>
 `;

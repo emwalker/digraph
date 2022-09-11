@@ -30,10 +30,7 @@ export default ({ view }: Props) => {
     <Page>
       {
         view
-          ? (
-            // @ts-expect-error
-            <LineItems activity={view.activity} />
-          )
+          ? <LineItems activity={view.activity} />
           : <Placeholder />
       }
     </Page>

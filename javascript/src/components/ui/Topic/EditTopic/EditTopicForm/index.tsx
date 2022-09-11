@@ -107,10 +107,7 @@ class EditTopicForm extends Component<Props, State> {
 
     return (
       <div className="my-4">
-        <Synonyms
-          // @ts-expect-error
-          topic={this.props.topic}
-        />
+        <Synonyms topic={this.props.topic} />
         <TopicTimerange repoTopic={repoTopic} />
 
         <EditTopicList
