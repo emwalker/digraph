@@ -1,9 +1,8 @@
 import React from 'react'
-import { Router } from 'found'
 
 import { LocationType } from 'components/types'
 import Page from 'components/ui/Page'
-import SearchBox from 'components/ui/SearchBox'
+import SearchBoxPlaceholder from 'components/ui/SearchBox/Placeholder'
 import Columns from 'components/ui/Columns'
 import LeftColumn from 'components/ui/LeftColumn'
 import RightColumn from 'components/ui/RightColumn'
@@ -11,10 +10,9 @@ import SidebarList from 'components/ui/SidebarList'
 
 type Props = {
   location: LocationType,
-  router: Router,
 }
 
-const LoadingPage = ({ location, router }: Props) => {
+const LoadingPage = ({ location }: Props) => {
   const state = location.state || {}
   const { itemTitle } = state
 
@@ -24,12 +22,7 @@ const LoadingPage = ({ location, router }: Props) => {
         <div className="Subhead-heading col-lg-8 col-12">
           { itemTitle }
         </div>
-        <SearchBox
-          className="col-lg-4 col-12"
-          location={location}
-          router={router}
-          value=""
-        />
+        <SearchBoxPlaceholder />
       </div>
       <div>
         <Columns>

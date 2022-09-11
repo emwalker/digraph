@@ -10,20 +10,7 @@ exports[`<LoadingPage /> renders 1`] = `
     >
       Some title
     </div>
-    <Relay(SearchBox)
-      className="col-lg-4 col-12"
-      location={
-        Object {
-          "pathname": "/some/path",
-          "state": Object {
-            "itemTitle": "Some title",
-            "orgLogin": "Gnusto",
-            "repoName": "General collection",
-          },
-        }
-      }
-      value=""
-    />
+    <Placeholder />
   </div>
   <div>
     <Columns>

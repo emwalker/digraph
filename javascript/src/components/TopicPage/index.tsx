@@ -1,5 +1,5 @@
-import React, { Component } from 'react'
-import { graphql, createFragmentContainer } from 'react-relay'
+import React, { useCallback } from 'react'
+import { graphql, useFragment } from 'react-relay'
 import { isEmpty } from 'ramda'
 import { Link as FoundLink } from 'found'
 
@@ -16,7 +16,10 @@ import RepoOwnership from 'components/ui/RepoOwnership'
 import { topicPath } from 'components/helpers'
 import { Color, LocationType, NodeTypeOf, liftNodes } from 'components/types'
 import { TopicPage_query_Query$data as Response } from '__generated__/TopicPage_query_Query.graphql'
-import { TopicPage_topic$data as TopicType } from '__generated__/TopicPage_topic.graphql'
+import {
+  TopicPage_topic$key,
+  TopicPage_topic$data as TopicType,
+} from '__generated__/TopicPage_topic.graphql'
 import AddForm from './AddForm'
 
 type ViewType = Response['view']
@@ -28,199 +31,9 @@ type Props = {
   alerts: Object[],
   location: LocationType,
   orgLogin: string,
-  topic: TopicType,
+  topic: TopicPage_topic$key,
   view: ViewType,
 }
-
-type State = {}
-
-class TopicPage extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props)
-    this.state = {}
-  }
-
-  static getDerivedStateFromProps = (nextProps: Props) => {
-    const shouldAppend = window.flashMessages && nextProps.alerts && nextProps.alerts.length > 0
-    if (shouldAppend && window.flashMessages?.addMessage)
-      // eslint-disable-next-line nonblock-statement-body-position
-      nextProps.alerts.forEach(window.flashMessages.addMessage)
-
-    return {}
-  }
-
-  get children() {
-    return liftNodes<TopicChildType>(this.props.topic.children)
-  }
-
-  get displaySynonyms() {
-    return this.props.topic.displaySynonyms
-  }
-
-  get isGuest(): boolean {
-    return this.props.view.viewer.isGuest
-  }
-
-  get recentActivityLocation(): LocationType {
-    return {
-      pathname: `${topicPath(this.props.topic.id)}/recent`,
-      query: {},
-      search: '',
-      state: {
-        itemTitle: this.props.topic.displayName,
-      },
-    }
-  }
-
-  get linksToReviewLocation(): LocationType {
-    return {
-      pathname: `${topicPath(this.props.topic.id)}/review`,
-      query: {},
-      search: '',
-      state: {
-        itemTitle: this.props.topic.displayName,
-      },
-    }
-  }
-
-  renderTopicChild = (child: TopicChildType | null) => {
-    if (!child) return null
-
-    if (child.__typename == 'Topic') {
-      return (
-        <Topic
-          key={child.id}
-          topic={child}
-        />
-      )
-    }
-
-    if (child.__typename == 'Link') {
-      return (
-        <Link
-          key={child.id}
-          link={child}
-          viewer={this.props.view.viewer}
-        />
-      )
-    }
-
-    return null
-  }
-
-  renderAddForm = () => (
-    <AddForm topic={this.props.topic} viewer={this.props.view.viewer} />
-  )
-
-  get repoColors(): Color[] {
-    return this.props.topic.repoTopics.map((repoTopic) => repoTopic.displayColor as Color)
-  }
-
-  renderRepoOwnership = () => 
-    <RepoOwnership
-      showRepoOwnership={this.props.topic.showRepoOwnership}
-      repoColors={this.repoColors}
-    />
-
-  renderHeadingDetail = () => {
-    const { displaySynonyms } = this
-    const { length } = displaySynonyms
-
-    if (length < 2) return <div>{ this.renderRepoOwnership() }</div>
-
-    return (
-      <div>
-        <div className="displaySynonyms h6">
-          {displaySynonyms.map(({ name }) => (
-            <span key={name} className="synonym">{name}</span>
-          ))}
-        </div>
-
-        { this.renderRepoOwnership() }
-      </div>
-    )
-  }
-
-  renderNotification = () => (
-    <div className="Box p-3 mt-3">
-      You must be
-      {' '}
-      <a href="/login">signed in</a>
-      {' '}
-      to add and move topics and links.
-    </div>
-  )
-
-  renderTopicViews = () => (
-    <div className="Box Box--condensed mb-3">
-      <div className="Box-header">
-        <span className="Box-title">This topic</span>
-      </div>
-      <ul>
-        <li className="Box-row">
-          <FoundLink to={this.recentActivityLocation} className="Box-row-link">
-            Recent activity
-          </FoundLink>
-        </li>
-        {!this.isGuest && (
-          <li className="Box-row">
-            <FoundLink to={this.linksToReviewLocation} className="Box-row-link">
-              Links to review
-            </FoundLink>
-          </li>
-        )}
-      </ul>
-    </div>
-  )
-
-  render = () => {
-    const { location, topic } = this.props
-
-    if (!topic) {
-      return (
-        <div>
-          Topic not found:
-          {location.pathname}
-        </div>
-      )
-    }
-
-    const { displayName, displayParentTopics } = topic
-    const children = this.children.filter(Boolean)
-
-    return (
-      <Page>
-        <Subhead
-          heading={displayName}
-          renderHeadingDetail={this.renderHeadingDetail}
-        />
-        <Columns>
-          <RightColumn>
-            <SidebarList
-              items={liftNodes<ParentTopicType>(displayParentTopics)}
-              placeholder="There are no parent topics for this topic."
-              title="Parent topics"
-            />
-            {this.renderTopicViews()}
-            {this.isGuest
-              ? this.renderNotification()
-              : this.renderAddForm()}
-          </RightColumn>
-          <LeftColumn>
-            <List
-              placeholder="There are no items in this list."
-              hasItems={!isEmpty(children)}
-            >
-              {children.map(this.renderTopicChild)}
-            </List>
-          </LeftColumn>
-        </Columns>
-      </Page>
-    )
-  }
-}
-
-export const UnwrappedTopicPage = TopicPage
 
 export const query = graphql`
 query TopicPage_query_Query(
@@ -252,51 +65,203 @@ query TopicPage_query_Query(
   }
 }`
 
-export default createFragmentContainer(TopicPage, {
-  topic: graphql`
-    fragment TopicPage_topic on Topic @argumentDefinitions(
-      searchString: {type: "String", defaultValue: ""},
-    ) {
-      displayName
-      id
-      showRepoOwnership
+const fragmentQuery = graphql`
+  fragment TopicPage_topic on Topic @argumentDefinitions(
+    searchString: {type: "String", defaultValue: ""},
+  ) {
+    displayName
+    id
+    showRepoOwnership
 
-      repoTopics {
-        displayColor
-      }
-
-      displaySynonyms {
-        name
-      }
-
-      displayParentTopics(first: 100) {
-        edges {
-          node {
-            displayName
-            id
-          }
-        }
-      }
-
-      children(first: 1000, searchString: $searchString) @connection(key: "Topic_children") {
-        edges {
-          node {
-            __typename
-
-            ... on Topic {
-              id
-              ...Topic_topic
-            }
-
-            ... on Link {
-              id
-              ...Link_link
-            }
-          }
-        }
-      }
-
-      ...AddForm_topic
+    repoTopics {
+      displayColor
     }
-  `,
-})
+
+    displaySynonyms {
+      name
+    }
+
+    displayParentTopics(first: 100) {
+      edges {
+        node {
+          displayName
+          id
+        }
+      }
+    }
+
+    children(first: 1000, searchString: $searchString) @connection(key: "Topic_children") {
+      edges {
+        node {
+          __typename
+
+          ... on Topic {
+            id
+            ...Topic_topic
+          }
+
+          ... on Link {
+            id
+            ...Link_link
+          }
+        }
+      }
+    }
+
+    ...AddForm_topic
+  }
+`
+
+function renderTopicChild(view: ViewType, child: TopicChildType | null) {
+  if (!child) return null
+
+  if (child.__typename == 'Topic') {
+    return (
+      <Topic
+        key={child.id}
+        topic={child}
+      />
+    )
+  }
+
+  if (child.__typename == 'Link') {
+    return (
+      <Link
+        key={child.id}
+        link={child}
+        viewer={view.viewer}
+      />
+    )
+  }
+
+  return null
+}
+
+function renderRepoOwnership(topic: TopicType) {
+  const repoColors = topic.repoTopics.map((repoTopic) => repoTopic.displayColor as Color)
+
+  return (
+    <RepoOwnership
+      showRepoOwnership={topic.showRepoOwnership}
+      repoColors={repoColors}
+    />
+  )
+}
+
+function headingDetail(topic: TopicType) {
+  const length = topic.displaySynonyms.length
+
+  if (length < 2) return <div>{renderRepoOwnership(topic)}</div>
+
+  return (
+    <div>
+      <div className="displaySynonyms h6">
+        {topic.displaySynonyms.map(({ name }) => (
+          <span key={name} className="synonym">{name}</span>
+        ))}
+      </div>
+
+      {renderRepoOwnership(topic)}
+    </div>
+  )
+}
+
+const renderNotification = () => (
+  <div className="Box p-3 mt-3">
+    You must be
+    {' '}
+    <a href="/login">signed in</a>
+    {' '}
+    to add and move topics and links.
+  </div>
+)
+
+function renderTopicViews(topic: TopicType, isGuest: boolean) {
+  const recentActivityLocation = {
+    pathname: `${topicPath(topic.id)}/recent`,
+    query: {},
+    search: '',
+    state: {
+      itemTitle: topic.displayName,
+    },
+  }
+
+  const linksToReviewLocation = {
+    pathname: `${topicPath(topic.id)}/review`,
+    query: {},
+    search: '',
+    state: {
+      itemTitle: topic.displayName,
+    },
+  }
+
+  return (
+    <div className="Box Box--condensed mb-3">
+      <div className="Box-header">
+        <span className="Box-title">This topic</span>
+      </div>
+      <ul>
+        <li className="Box-row">
+          <FoundLink to={recentActivityLocation} className="Box-row-link">
+            Recent activity
+          </FoundLink>
+        </li>
+        {!isGuest && (
+          <li className="Box-row">
+            <FoundLink to={linksToReviewLocation} className="Box-row-link">
+              Links to review
+            </FoundLink>
+          </li>
+        )}
+      </ul>
+    </div>
+  )
+}
+
+export default function TopicPage(props: Props) {
+  const topic = useFragment(fragmentQuery, props.topic)
+
+  const renderHeadingDetail = useCallback(() => headingDetail(topic), [headingDetail, topic])
+  const children = liftNodes<TopicChildType>(topic.children)
+  const view = props.view
+  const isGuest = view.viewer.isGuest
+
+  if (!topic) {
+    return (
+      <div>
+        Topic not found:
+        {location.pathname}
+      </div>
+    )
+  }
+
+  return (
+    <Page>
+      <Subhead
+        heading={topic.displayName}
+        renderHeadingDetail={renderHeadingDetail}
+      />
+      <Columns>
+        <RightColumn>
+          <SidebarList
+            items={liftNodes<ParentTopicType>(topic.displayParentTopics)}
+            placeholder="There are no parent topics for this topic."
+            title="Parent topics"
+          />
+          {renderTopicViews(topic, isGuest)}
+          {isGuest
+            ? renderNotification()
+            : <AddForm topic={topic} viewer={props.view.viewer} />}
+        </RightColumn>
+        <LeftColumn>
+          <List
+            placeholder="There are no items in this list."
+            hasItems={!isEmpty(children)}
+          >
+            {children.filter(Boolean).map((child) => renderTopicChild(view, child))}
+          </List>
+        </LeftColumn>
+      </Columns>
+    </Page>
+  )
+}

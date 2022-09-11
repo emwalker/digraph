@@ -38,7 +38,6 @@ query LayoutQuery(
   ) {
     viewer {
       ...DesktopNav_viewer
-      ...MobileNav_viewer
       ...SelectedRepo_viewer
     }
 

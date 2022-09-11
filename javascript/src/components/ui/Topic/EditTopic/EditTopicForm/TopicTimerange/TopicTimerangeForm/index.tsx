@@ -1,25 +1,40 @@
 import React, { useState, useCallback, FormEvent } from 'react'
-import { createFragmentContainer, graphql, RelayProp } from 'react-relay'
+import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
 import moment, { Moment } from 'moment/moment'
 import { useDebouncedCallback } from 'use-debounce'
 
 import upsertTopicTimerangeMutation, { Input } from 'mutations/upsertTopicTimerangeMutation'
 import {
-  TopicTimerangeForm_repoTopic$data as TopicTypeDetail,
+  TopicTimerangeForm_repoTopic$key,
+  TopicTimerangeForm_repoTopic$data as RepoTopic,
 } from '__generated__/TopicTimerangeForm_repoTopic.graphql'
 import { wikiRepoId } from 'components/constants'
 
-type PrefixFormat = NonNullable<TopicTypeDetail['timerange']>['prefixFormat']
+type PrefixFormat = NonNullable<RepoTopic['timerange']>['prefixFormat']
 
 type Props = {
-  relay: RelayProp,
-  topicDetail: TopicTypeDetail,
+  repoTopic: TopicTimerangeForm_repoTopic$key,
 }
 
-const TopicTimerangeForm = ({ relay, topicDetail: { topicId, timerange } }: Props) => {
+export default function TopicTimerangeForm(props: Props) {
+  const repoTopic = useFragment(
+    graphql`
+      fragment TopicTimerangeForm_repoTopic on RepoTopic {
+        topicId
+
+        timerange {
+          startsAt
+          prefixFormat
+        }
+      }
+    `,
+    props.repoTopic,
+  )
+
   const [mutationInFlight, setMutationInFlight] = useState(false)
-  const [startsAt, setStartsAt] = useState(moment(timerange?.startsAt as string))
-  const prefixFormat = timerange?.prefixFormat
+  const [startsAt, setStartsAt] = useState(moment(repoTopic.timerange?.startsAt as string))
+  const prefixFormat = repoTopic.timerange?.prefixFormat
+  const environment = useRelayEnvironment()
 
   const updateStartsAt = useDebouncedCallback(
     (dt: Moment) => {
@@ -31,9 +46,9 @@ const TopicTimerangeForm = ({ relay, topicDetail: { topicId, timerange } }: Prop
           // FIXME
           repoId: wikiRepoId,
           startsAt: dt.toISOString(),
-          topicId,
+          topicId: repoTopic.topicId,
         }
-        upsertTopicTimerangeMutation(relay.environment, input)
+        upsertTopicTimerangeMutation(environment, input)
       } else {
         // eslint-disable-next-line no-console
         console.log('invalid date:', dt)
@@ -54,9 +69,9 @@ const TopicTimerangeForm = ({ relay, topicDetail: { topicId, timerange } }: Prop
         // FIXME
         repoId: wikiRepoId,
         startsAt,
-        topicId,
+        topicId: repoTopic.topicId,
       }
-      await upsertTopicTimerangeMutation(relay.environment, input)
+      await upsertTopicTimerangeMutation(environment, input)
       setMutationInFlight(false)
     },
     [setMutationInFlight, startsAt],
@@ -106,16 +121,3 @@ const TopicTimerangeForm = ({ relay, topicDetail: { topicId, timerange } }: Prop
     </div>
   )
 }
-
-export default createFragmentContainer(TopicTimerangeForm, {
-  repoTopic: graphql`
-    fragment TopicTimerangeForm_repoTopic on RepoTopic {
-      topicId
-
-      timerange {
-        startsAt
-        prefixFormat
-      }
-    }
-  `,
-})

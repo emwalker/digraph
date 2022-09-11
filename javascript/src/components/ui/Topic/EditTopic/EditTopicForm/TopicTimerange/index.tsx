@@ -74,11 +74,8 @@ const TopicTimeRange = ({ repoTopic }: Props) => {
           Occurs in time
         </label>
       </div>
-      {
-        checked &&
-        // @ts-expect-error
-        <TopicTimerangeForm repoTopic={data} />
-      }
+
+      {checked && <TopicTimerangeForm repoTopic={data} />}
     </div>
   )
 }
