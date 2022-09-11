@@ -3,7 +3,7 @@ use async_graphql::{Context, Object, Union};
 use itertools::Itertools;
 use std::collections::BTreeSet;
 
-use super::{relay, time, ActivityLineItem, Link, LinkConnection};
+use super::{relay, time, ActivityLineItem, Link, LinkConnection, Repository};
 use super::{ActivityLineItemConnection, LinkConnectionFields};
 use crate::store::Store;
 use crate::{git, prelude::*};
@@ -84,6 +84,10 @@ impl RepoTopic {
         self.0.display_color()
     }
 
+    async fn id(&self) -> String {
+        format!("{}:{}", self.0.topic_id(), self.0.repo_id)
+    }
+
     async fn in_wiki_repo(&self) -> bool {
         self.0.repo_id.is_wiki()
     }
@@ -101,6 +105,20 @@ impl RepoTopic {
             .fetch_topics(self.0.parent_topic_ids(), 50)
             .await?;
         relay::topics(after, before, first, last, topics)
+    }
+
+    async fn repo(&self, ctx: &Context<'_>) -> Result<Repository> {
+        match ctx
+            .data_unchecked::<Store>()
+            .repo(self.0.repo_id.to_string())
+            .await
+        {
+            Ok(Some(repo)) => Ok(repo),
+            _ => Err(Error::NotFound(format!(
+                "repo not found: {}",
+                self.0.repo_id
+            ))),
+        }
     }
 
     async fn synonyms(&self) -> Vec<Synonym> {
@@ -126,11 +144,13 @@ impl RepoTopic {
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> Result<bool> {
-        Ok(ctx
-            .data_unchecked::<Store>()
-            .viewer
-            .write_repo_ids
-            .include(&self.0.repo_id))
+        let viewer = &ctx.data_unchecked::<Store>().viewer;
+
+        if viewer.context_repo_id != self.0.repo_id {
+            return Ok(false);
+        }
+
+        Ok(viewer.write_repo_ids.include(&self.0.repo_id))
     }
 }
 

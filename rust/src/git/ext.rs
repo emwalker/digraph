@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use std::{
-    collections::{BTreeSet, HashMap},
+    collections::{BTreeMap, BTreeSet, HashMap},
     convert::{TryFrom, TryInto},
 };
 
@@ -9,7 +9,7 @@ use super::{Kind, Phrase, RepoLink, RepoObject, RepoTopic, Search, SearchMatch, 
 use crate::prelude::*;
 
 #[derive(Clone, Debug, Default)]
-pub struct Map(HashMap<RepoId, RepoObject>);
+pub struct Map(BTreeMap<RepoId, RepoObject>);
 
 impl Map {
     pub fn new() -> Self {
@@ -82,7 +82,7 @@ impl Map {
         Ok((topics, display_topic.unwrap()))
     }
 
-    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, RepoId, RepoObject> {
+    pub fn iter(&self) -> std::collections::btree_map::Iter<'_, RepoId, RepoObject> {
         self.0.iter()
     }
 }

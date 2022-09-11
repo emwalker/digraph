@@ -16,7 +16,7 @@ async fn add_private_column_to_repos(pool: &PgPool) -> Result<()> {
 
     sqlx::query(
         r#"update repositories
-            set private = (name = 'system:default')"#,
+            set private = (name = 'Personal repo')"#,
     )
     .execute(pool)
     .await?;
@@ -95,6 +95,28 @@ async fn add_user_repositories(pool: &PgPool) -> Result<()> {
     )
     .execute(pool)
     .await?;
+
+    Ok(())
+}
+
+async fn update_repo_and_org_names(pool: &PgPool) -> Result<()> {
+    log::info!("updating repo and org names ...");
+
+    sqlx::query("update repositories set name = 'Personal repo' where name = 'system:default'")
+        .execute(pool)
+        .await?;
+
+    sqlx::query("update repositories set name = 'Wiki' where name = 'General collection'")
+        .execute(pool)
+        .await?;
+
+    sqlx::query("update organizations set name = 'Wiki' where name = 'General'")
+        .execute(pool)
+        .await?;
+
+    sqlx::query("update organizations set name = 'Personal org' where name = 'system:default'")
+        .execute(pool)
+        .await?;
 
     Ok(())
 }
@@ -196,6 +218,7 @@ async fn main() -> async_graphql::Result<()> {
     add_private_column_to_repos(&pool).await.unwrap();
     add_columns_to_organizations(&pool).await.unwrap();
     add_user_repositories(&pool).await.unwrap();
+    update_repo_and_org_names(&pool).await.unwrap();
 
     if opts.destructive_migrations {
         log::info!("running destructive migrations");

@@ -1,11 +1,6 @@
 import { graphql } from 'react-relay'
 
-import { RemoveTopicTimerangeInput } from '__generated__/removeTopicTimerangeMutation.graphql'
-import defaultMutation from './util/defaultMutation'
-
-export type Input = RemoveTopicTimerangeInput
-
-export default defaultMutation(graphql`
+export default graphql`
   mutation removeTopicTimerangeMutation(
     $input: RemoveTopicTimerangeInput!
   ) {
@@ -21,4 +16,4 @@ export default defaultMutation(graphql`
       }
     }
   }
-`)
+`

@@ -250,7 +250,7 @@ impl Store {
             .await
     }
 
-    pub async fn repository(&self, id: String) -> Result<Option<graphql::Repository>> {
+    pub async fn repo(&self, id: String) -> Result<Option<graphql::Repository>> {
         self.repository_loader.load_one(id).await
     }
 

@@ -1,11 +1,11 @@
-import React, { useState, Suspense, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { graphql, useFragment } from 'react-relay'
 
 import { topicPath } from 'components/helpers'
 import { NodeTypeOf, liftNodes, Color } from 'components/types'
 import { Topic_topic$data, Topic_topic$key } from '__generated__/Topic_topic.graphql'
 import Item from '../Item'
-import EditTopic from './EditTopic'
+import EditTopicLoader from './EditTopicLoader'
 
 type ParentTopicType = NodeTypeOf<Topic_topic$data['displayParentTopics']>
 
@@ -63,14 +63,13 @@ export default function Topic(props: Props) {
       topics={displayParentTopics}
       url={topicPath(topic.id)}
     >
-      <Suspense fallback={<div>loading ...</div>}>
-        <EditTopic
-          isOpen={formIsOpen}
+      {formIsOpen && props.viewerId && (
+        <EditTopicLoader
           toggleForm={toggleForm}
           topicId={topic.id}
           viewerId={props.viewerId}
         />
-      </Suspense>
+      )}
     </Item>
   )
 }

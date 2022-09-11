@@ -116,11 +116,7 @@ impl User {
                 selected_repository_id,
                 ..
             } => match selected_repository_id {
-                Some(id) => {
-                    ctx.data_unchecked::<Store>()
-                        .repository(id.to_string())
-                        .await
-                }
+                Some(id) => ctx.data_unchecked::<Store>().repo(id.to_string()).await,
                 None => Ok(None),
             },
         }

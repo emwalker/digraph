@@ -8,7 +8,7 @@ import upsertLinkMutation, { Input as UpsertInput } from 'mutations/upsertLinkMu
 import updateLinkParentTopicsMutation, {
   Input as UpdateParentTopicsInput,
 } from 'mutations/updateLinkParentTopicsMutation'
-import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
+import EditParentTopicList, { makeOptions } from 'components/ui/EditParentTopicList'
 import SaveOrCancel from 'components/ui/SaveOrCancel'
 import DeleteButton from 'components/ui/DeleteButton'
 import { TopicOption } from 'components/types'
@@ -144,43 +144,45 @@ class EditLinkForm extends Component<Props, State> {
   render() {
     const { selectedTopics } = this
     if (!this.props.isOpen) return null
+    if (!selectedTopics) return null
 
     return (
-      selectedTopics ? (
+      <div>
+        <Input
+          className="col-12"
+          id={`edit-link-title-${this.linkId}`}
+          label="Page title"
+          onChange={this.updateTitle}
+          value={this.state.title}
+        />
+
+        <Input
+          className="col-12"
+          id={`edit-link-url-${this.linkId}`}
+          label="Url"
+          onChange={this.updateUrl}
+          value={this.state.url}
+        />
+
         <div>
-          <Input
-            className="col-12"
-            id={`edit-link-title-${this.linkId}`}
-            label="Page title"
-            onChange={this.updateTitle}
-            value={this.state.title}
+          <SaveOrCancel
+            onSave={this.onSave}
+            onCancel={this.props.toggleForm}
           />
-          <Input
-            className="col-12"
-            id={`edit-link-url-${this.linkId}`}
-            label="Url"
-            onChange={this.updateUrl}
-            value={this.state.url}
-          />
-          <div>
-            <SaveOrCancel
-              onSave={this.onSave}
-              onCancel={this.props.toggleForm}
-            />
-            <DeleteButton
-              className="float-right"
-              onDelete={this.onDelete}
-            />
-          </div>
-          <EditTopicList
-            // @ts-ignore
-            loadOptions={this.loadOptions}
-            // @ts-ignore
-            selectedTopics={selectedTopics}
-            updateTopics={this.updateTopics}
+          <DeleteButton
+            className="float-right"
+            onDelete={this.onDelete}
           />
         </div>
-      ) : null
+
+        <EditParentTopicList
+          // @ts-ignore
+          loadOptions={this.loadOptions}
+          // @ts-ignore
+          selectedTopics={selectedTopics}
+          updateTopics={this.updateTopics}
+        />
+      </div>
     )
   }
 }

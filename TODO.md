@@ -1,9 +1,9 @@
 Before switchover:
+* Use <StrictMode></StrictMode> in client/index.tsx
 * Repo topics/links: Fix synonym update bugs
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Repo topics/links: don't show edit button for items that aren't in the selected repo
-* Update repo names and give new repos a better name
 * Clean up database: odds and ends
 * Order links by reverse chronological date
 * Bug: export: the child links under Reading list are in the wiki repo rather than the private repo
@@ -14,11 +14,18 @@ Before switchover:
 * Decide whether to support link reviews or remove the feature
 * Bug: client: the JS client doesn't show new links and topics in the right place when they're added
 * Bug: client: some history entries are not displaying properly
+* Bug: a topic search causes the client to crash
 * Repo topics/links: Figure out how to represent / what to do with partial details in edit forms (no title, no url, but parent topics)
+* Bug: whitespace not removed from page titles
+* Bug: whitespace not removed from synonyms
+* Bug: the repo ownership component is not vertically aligned with the "Close" button
+* Bug: repo ownership is not being shown in the correct order
+* Bug: repo topic forms not updated when a new repo is selected
 * Repo topics/links: Return collection of repo views / edit forms instead of edit form
 * Verify that history entries are working for cross-repo mutations
 * Verify that account creation still works
 * Verify that account deletion still works
+* Verify that references mirroring private topics are not unexpectedly created in the Wiki repo
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo

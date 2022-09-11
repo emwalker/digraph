@@ -15,10 +15,10 @@ clean:
 
 format:
 	yarn eslint
-	yarn tsc
 
 relay:
 	yarn relay
+	yarn tsc
 
 reinstall-javacript: clean
 	yarn install

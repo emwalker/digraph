@@ -1,12 +1,6 @@
 import { graphql } from 'react-relay'
 
-import { UpdateTopicParentTopicsInput } from '__generated__/updateTopicParentTopicsMutation.graphql'
-import defaultMutation from './util/defaultMutation'
-import flashMessageUpdater from './util/flashMessageUpdater'
-
-export type Input = UpdateTopicParentTopicsInput
-
-export default defaultMutation(graphql`
+export default graphql`
   mutation updateTopicParentTopicsMutation(
     $input: UpdateTopicParentTopicsInput!
   ) {
@@ -22,4 +16,4 @@ export default defaultMutation(graphql`
       }
     }
   }
-`, flashMessageUpdater('updateTopicParentTopics'))
+`

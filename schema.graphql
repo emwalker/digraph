@@ -334,6 +334,7 @@ type RepoTopic {
   createdAt: DateTime!
   displayColor: Color!
   displayName: String!
+  id: String!
   inWikiRepo: Boolean!
   parentTopics(
     first: Int,
@@ -341,6 +342,7 @@ type RepoTopic {
     last: Int,
     before: String
   ): TopicConnection!
+  repo: Repository!
   synonyms: [Synonym!]!
   timerange: Timerange
   topicId: String!

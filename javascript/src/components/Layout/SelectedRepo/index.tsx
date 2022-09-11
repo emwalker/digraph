@@ -27,7 +27,7 @@ export default function SelectedRepo(props: Props) {
 
   return (
     <div className="SelectedRepo-banner" style={{ backgroundColor }}>
-      <h2>{repo.fullName || 'Private repo'}</h2>
+      <h2>{repo.fullName || 'Personal repo'}</h2>
     </div>
   )
 }

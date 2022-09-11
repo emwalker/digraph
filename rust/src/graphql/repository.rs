@@ -36,48 +36,18 @@ impl Repository {
         PRIVATE_REPOSITORY_COLOR
     }
 
-    async fn display_name(&self, ctx: &Context<'_>) -> String {
+    async fn display_name(&self) -> String {
         match self {
             Self::Default => DEFAULT_REPOSITORY_NAME,
-            Self::Fetched { name, .. } => {
-                if self.is_private(ctx).await.unwrap_or(true) {
-                    "Private repository"
-                } else {
-                    name
-                }
-            }
+            Self::Fetched { name, .. } => name,
         }
         .to_string()
     }
 
-    pub async fn full_name(&self, ctx: &Context<'_>) -> Result<String> {
+    pub async fn full_name(&self) -> Result<String> {
         match self {
-            Self::Default => Ok("wiki/General collection".to_string()),
-            Self::Fetched {
-                organization_id,
-                name,
-                ..
-            } => {
-                let org = ctx
-                    .data_unchecked::<Store>()
-                    .organization(organization_id.to_string())
-                    .await?
-                    .ok_or_else(|| {
-                        Error::NotFound(format!("no org found: {}", organization_id.as_str()))
-                    })?;
-
-                match org {
-                    Organization::Wiki => Ok("wiki/General collection".to_string()),
-                    Organization::Selected { login, .. } => {
-                        let name = if self.is_private(ctx).await? {
-                            "private"
-                        } else {
-                            name
-                        };
-                        Ok(format!("{}/{}", login, name))
-                    }
-                }
-            }
+            Self::Default => Ok("Wiki".to_string()),
+            Self::Fetched { name, .. } => Ok(name.to_owned()),
         }
     }
 
@@ -97,7 +67,7 @@ impl Repository {
 
     async fn name(&self) -> &str {
         match self {
-            Self::Default => "Default repo",
+            Self::Default => "Wiki",
             Self::Fetched { name, .. } => name.as_str(),
         }
     }

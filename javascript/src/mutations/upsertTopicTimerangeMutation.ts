@@ -1,12 +1,6 @@
 import { graphql } from 'react-relay'
 
-import { UpsertTopicTimerangeInput } from '__generated__/upsertTopicTimerangeMutation.graphql'
-import defaultMutation from './util/defaultMutation'
-import flashMessageUpdater from './util/flashMessageUpdater'
-
-export type Input = UpsertTopicTimerangeInput
-
-export default defaultMutation(graphql`
+export default graphql`
   mutation upsertTopicTimerangeMutation(
     $input: UpsertTopicTimerangeInput!
   ) {
@@ -18,12 +12,9 @@ export default defaultMutation(graphql`
       }
 
       topic {
-        ...Topic_topic
-
-        repoTopics {
-          ...RepoTopicTimerange_repoTopic
-        }
+        id
+        ...EditTopic_topic
       }
     }
   }
-`, flashMessageUpdater('upsertTopicTimerange'))
+`

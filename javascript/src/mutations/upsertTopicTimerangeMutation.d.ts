@@ -1,4 +1,2 @@
-import { UpsertTopicTimerangeInput } from '__generated__/upsertTopicTimerangeMutation.graphql';
-export declare type Input = UpsertTopicTimerangeInput;
-declare const _default: (...args: any) => import("react-relay").Disposable;
+declare const _default: import("react-relay").GraphQLTaggedNode;
 export default _default;

@@ -1,12 +1,6 @@
 import { graphql } from 'react-relay'
 
-import { UpdateTopicSynonymsInput } from '__generated__/updateTopicSynonymsMutation.graphql'
-import defaultMutation from './util/defaultMutation'
-import flashMessageUpdater from './util/flashMessageUpdater'
-
-export type Input = UpdateTopicSynonymsInput
-
-const updateTopicSynonymsMutation = defaultMutation(graphql`
+export default graphql`
   mutation updateTopicSynonymsMutation(
     $input: UpdateTopicSynonymsInput!
   ) {
@@ -20,12 +14,14 @@ const updateTopicSynonymsMutation = defaultMutation(graphql`
       }
 
       topic {
+        id
+        displayName
+
         repoTopics {
-          ...Synonyms_repoTopic
+          id
+          ...RepoTopicSynonyms_repoTopic
         }
       }
     }
   }
-`, flashMessageUpdater('updateTopicSynonyms'))
-
-export default updateTopicSynonymsMutation
+`

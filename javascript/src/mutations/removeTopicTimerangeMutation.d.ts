@@ -1,4 +1,2 @@
-import { RemoveTopicTimerangeInput } from '__generated__/removeTopicTimerangeMutation.graphql';
-export declare type Input = RemoveTopicTimerangeInput;
-declare const _default: (...args: any) => import("react-relay").Disposable;
+declare const _default: import("react-relay").GraphQLTaggedNode;
 export default _default;

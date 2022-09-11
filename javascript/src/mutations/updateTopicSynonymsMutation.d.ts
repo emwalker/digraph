@@ -1,4 +1,2 @@
-import { UpdateTopicSynonymsInput } from '__generated__/updateTopicSynonymsMutation.graphql';
-export declare type Input = UpdateTopicSynonymsInput;
-declare const updateTopicSynonymsMutation: (...args: any) => import("react-relay").Disposable;
-export default updateTopicSynonymsMutation;
+declare const _default: import("react-relay").GraphQLTaggedNode;
+export default _default;

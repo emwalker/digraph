@@ -1,2 +1,4 @@
 declare function topicPath(id: string): string;
-export { topicPath };
+declare function backgroundColor(hexColor: string): string;
+declare function borderColor(hexColor: string): string;
+export { topicPath, backgroundColor, borderColor };
