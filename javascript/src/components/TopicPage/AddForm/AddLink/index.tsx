@@ -1,7 +1,7 @@
 import React, {
   Dispatch, SetStateAction, KeyboardEvent, FormEvent, useState, useCallback,
 } from 'react'
-import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
+import { graphql, useFragment, useRelayEnvironment, Environment } from 'react-relay'
 
 import upsertLinkMutation, { Input } from 'mutations/upsertLinkMutation'
 import {
@@ -24,10 +24,23 @@ type Props = {
 
 type SetUrlType = Dispatch<SetStateAction<string>>
 
-function upsertLink(viewer: ViewerType, setUrl: SetUrlType, url: string, topic: TopicType) {
+function upsertLink(
+  environment: Environment,
+  viewer: ViewerType,
+  setUrl: SetUrlType,
+  url: string,
+  topic: TopicType,
+) {
   const repoId = viewer.selectedRepository?.id
+  if (!repoId) {
+    console.log('no repo selected')
+    return
+  }
 
-  if (!repoId) return
+  if (!url) {
+    console.log('no url')
+    return
+  }
 
   const input: Input = {
     addParentTopicId: topic.id,
@@ -35,7 +48,7 @@ function upsertLink(viewer: ViewerType, setUrl: SetUrlType, url: string, topic: 
     url,
   }
 
-  upsertLinkMutation(useRelayEnvironment(), input)
+  upsertLinkMutation(environment, input)
   setUrl('')
 }
 
@@ -61,12 +74,13 @@ export default function AddLink(props: Props) {
   )
 
   const [url, setUrl] = useState('')
+  const environment = useRelayEnvironment()
 
   const onKeyPress = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') upsertLink(viewer, setUrl, url, topic)
-  }, [upsertLink])
+    if (event.key === 'Enter') upsertLink(environment, viewer, setUrl, url, topic)
+  }, [upsertLink, environment, viewer, setUrl, url, topic])
 
-  const updateUrl = useCallback((event: FormEvent<HTMLInputElement>) => {
+  const onChange = useCallback((event: FormEvent<HTMLInputElement>) => {
     setUrl(event.currentTarget.value)
   }, [setUrl])
 
@@ -85,7 +99,7 @@ export default function AddLink(props: Props) {
           className="form-control test-link-url input-sm"
           disabled={props.disabled}
           id="create-link-url"
-          onChange={updateUrl}
+          onChange={onChange}
           onKeyPress={onKeyPress}
           placeholder="Url"
           type="url"

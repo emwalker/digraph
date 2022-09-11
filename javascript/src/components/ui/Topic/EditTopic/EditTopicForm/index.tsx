@@ -9,9 +9,9 @@ import updateTopicTopicsMutation, {
 import EditTopicList, { makeOptions } from 'components/ui/EditTopicList'
 import DeleteButton from 'components/ui/DeleteButton'
 import { EditTopicForm_topic$data as TopicType } from '__generated__/EditTopicForm_topic.graphql'
+import { EditTopicForm_viewer$data as ViewerType } from '__generated__/EditTopicForm_viewer.graphql'
 import Synonyms from './Synonyms'
 import TopicTimerange from './TopicTimerange'
-import { wikiRepoId } from 'components/constants'
 
 type RepoTopicType = TopicType['repoTopics'][0]
 
@@ -20,6 +20,7 @@ type Props = {
   relay: RelayRefetchProp,
   toggleForm: () => void,
   topic: TopicType,
+  viewer: ViewerType,
 }
 
 type State = {
@@ -36,11 +37,15 @@ class EditTopicForm extends Component<Props, State> {
 
   onDelete = () => {
     const topicId = this.repoTopic?.topicId
-
     if (!topicId) return
 
-    // FIXME: use selected repo
-    const input: DeleteInput = { repoId: wikiRepoId, topicId }
+    const repoId = this.selectedRepoId
+    if (!repoId) {
+      console.log('no repo selected')
+      return
+    }
+
+    const input: DeleteInput = { repoId, topicId }
     deleteTopicMutation(
       this.props.relay.environment,
       input,
@@ -66,13 +71,19 @@ class EditTopicForm extends Component<Props, State> {
     return selectedTopics ? makeOptions(array) : null
   }
 
+  get selectedRepoId(): string | null {
+    return this.props.viewer.selectedRepository?.id || null
+  }
+
   updateParentTopics = (parentTopicIds: string[]) => {
     const topicId = this.repoTopic?.topicId
     if (!topicId) return
 
+    const repoId = this.selectedRepoId
+    if (!repoId) return null
+
     const input: UpdateTopicsInput = {
-      // FIXME: use id instead of prefix
-      repoId: wikiRepoId,
+      repoId,
       topicId,
       parentTopicIds,
     }
@@ -107,8 +118,8 @@ class EditTopicForm extends Component<Props, State> {
 
     return (
       <div className="my-4">
-        <Synonyms topic={this.props.topic} />
-        <TopicTimerange repoTopic={repoTopic} />
+        <Synonyms viewer={this.props.viewer} topic={this.props.topic} />
+        <TopicTimerange viewer={this.props.viewer} repoTopic={repoTopic} />
 
         <EditTopicList
           loadOptions={this.loadOptions}
@@ -164,6 +175,15 @@ export default createRefetchContainer(EditTopicForm, {
       }
     }
   `,
+  viewer: graphql`
+    fragment EditTopicForm_viewer on User {
+      selectedRepository {
+        id
+      }
+      ...TopicTimerangeForm_viewer
+      ...Synonyms_viewer
+    }
+  `,
 },
 graphql`
   query EditTopicFormRefetchQuery(
@@ -176,6 +196,10 @@ graphql`
       viewerId: $viewerId,
       repositoryIds: $repoIds,
     ) {
+      viewer {
+        ...EditTopicForm_viewer
+      }
+
       topic(id: $topicId) {
         ...EditTopicForm_topic @arguments(searchString: $searchString)
       }

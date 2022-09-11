@@ -15,7 +15,9 @@ import { TopicOption } from 'components/types'
 import {
   EditLinkForm_repoLink$data as RepoLinkType,
 } from '__generated__/EditLinkForm_repoLink.graphql'
-import { wikiRepoId } from 'components/constants'
+import {
+  EditLinkForm_viewer$data as ViewerType,
+} from '__generated__/EditLinkForm_viewer.graphql'
 
 type SelectedTopicsType = RepoLinkType['selectedTopics']
 type SelectedTopicType = NodeTypeOf<SelectedTopicsType>
@@ -24,6 +26,7 @@ type Props = {
   isOpen: boolean,
   repoLink: RepoLinkType,
   relay: RelayRefetchProp,
+  viewer: ViewerType,
   toggleForm: () => void,
 }
 
@@ -41,12 +44,21 @@ class EditLinkForm extends Component<Props, State> {
     }
   }
 
+  get selectedRepoId(): string | null {
+    return this.props.viewer.selectedRepository?.id || null
+  }
+
   onSave = () => {
+    const repoId = this.selectedRepoId
+    if (!repoId) {
+      console.log('no repo selected')
+      return
+    }
+
     const input: UpsertInput = {
       // Keep the existing parent topics
       addParentTopicId: null,
-      // FIXME
-      repoId: wikiRepoId,
+      repoId,
       linkId: this.props.repoLink.linkId,
       title: this.state.title,
       url: this.state.url,
@@ -57,8 +69,13 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   onDelete = () => {
-    // FIXME: use selected repo
-    const input: DeleteInput = { linkId: this.props.repoLink.linkId, repoId: wikiRepoId }
+    const repoId = this.selectedRepoId
+    if (!repoId) {
+      console.log('no repo selected')
+      return
+    }
+
+    const input: DeleteInput = { linkId: this.props.repoLink.linkId, repoId }
     deleteLinkMutation(
       this.props.relay.environment,
       input,
@@ -89,11 +106,16 @@ class EditLinkForm extends Component<Props, State> {
   }
 
   updateTopics = (parentTopicIds: string[]) => {
+    const repoId = this.selectedRepoId
+    if (!repoId) {
+      console.log('no repo selected')
+      return
+    }
+
     const input: UpdateParentTopicsInput = {
       linkId: this.linkId,
       parentTopicIds,
-      // FIXME
-      repoId: wikiRepoId,
+      repoId,
     }
     updateLinkParentTopicsMutation(this.props.relay.environment, input)
   }
@@ -189,6 +211,13 @@ export default createRefetchContainer(EditLinkForm, {
       }
     }
   `,
+  viewer: graphql`
+    fragment EditLinkForm_viewer on User {
+      selectedRepository {
+        id
+      }
+    }
+  `,
 },
 graphql`
   query EditLinkFormRefetchQuery(
@@ -201,6 +230,10 @@ graphql`
       viewerId: $viewerId,
       repositoryIds: $repoIds,
     ) {
+      viewer {
+        ...EditLinkForm_viewer
+      }
+
       link(id: $linkId) {
         repoLinks {
           ...EditLinkForm_repoLink @arguments(searchString: $searchString)

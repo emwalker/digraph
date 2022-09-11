@@ -8,15 +8,16 @@ import {
   Synonyms_topic$key,
   Synonyms_topic$data as TopicType,
 } from '__generated__/Synonyms_topic.graphql'
+import { Synonyms_viewer$key } from '__generated__/Synonyms_viewer.graphql'
 import { SynonymType } from 'components/types'
 import SynonymList from './SynonymList'
 import copySynonyms from './copySynonyms'
-import { wikiRepoId } from 'components/constants'
 
 type RepoTopicType = TopicType['repoTopics'][0]
 
 type Props = {
   topic: Synonyms_topic$key,
+  viewer: Synonyms_viewer$key,
 }
 
 function displayName(synonyms: SynonymType[]) {
@@ -144,17 +145,33 @@ export default function Synonyms(props: Props) {
     props.topic,
   )
 
+  const viewer = useFragment(
+    graphql`
+      fragment Synonyms_viewer on User {
+        selectedRepository {
+          id
+        }
+      }
+    `,
+    props.viewer,
+  )
+
   const [inputName, setInputName] = useState('')
   const [inputLocale, setInputLocale] = useState('en')
 
+  const repoId = viewer.selectedRepository?.id
   const repoTopic = topic.repoTopics.length < 1 ? null : topic.repoTopics[0]
   const synonyms = repoTopic?.synonyms || []
 
   const updateTopicSynonyms = useCallback((update: SynonymType[]) => {
     if (!repoTopic) return null
+
+    if (!repoId) {
+      console.log('no repo selected')
+      return
+    }
   
-    // FIXME
-    const input: Input = { repoId: wikiRepoId, topicId: repoTopic.topicId, synonyms: update }
+    const input: Input = { repoId, topicId: repoTopic.topicId, synonyms: update }
   
     updateTopicSynonymsMutation(
       useRelayEnvironment(),

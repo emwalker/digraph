@@ -5,15 +5,18 @@ import { useDebouncedCallback } from 'use-debounce'
 
 import upsertTopicTimerangeMutation, { Input } from 'mutations/upsertTopicTimerangeMutation'
 import {
+  TopicTimerangeForm_viewer$key,
+} from '__generated__/TopicTimerangeForm_viewer.graphql'
+import {
   TopicTimerangeForm_repoTopic$key,
   TopicTimerangeForm_repoTopic$data as RepoTopic,
 } from '__generated__/TopicTimerangeForm_repoTopic.graphql'
-import { wikiRepoId } from 'components/constants'
 
 type PrefixFormat = NonNullable<RepoTopic['timerange']>['prefixFormat']
 
 type Props = {
   repoTopic: TopicTimerangeForm_repoTopic$key,
+  viewer: TopicTimerangeForm_viewer$key
 }
 
 export default function TopicTimerangeForm(props: Props) {
@@ -31,20 +34,36 @@ export default function TopicTimerangeForm(props: Props) {
     props.repoTopic,
   )
 
+  const viewer = useFragment(
+    graphql`
+      fragment TopicTimerangeForm_viewer on User {
+        selectedRepository {
+          id
+        }
+      }
+    `,
+    props.viewer,
+  )
+
   const [mutationInFlight, setMutationInFlight] = useState(false)
   const [startsAt, setStartsAt] = useState(moment(repoTopic.timerange?.startsAt as string))
   const prefixFormat = repoTopic.timerange?.prefixFormat
+  const repoId = viewer.selectedRepository?.id || null
   const environment = useRelayEnvironment()
 
   const updateStartsAt = useDebouncedCallback(
     (dt: Moment) => {
       if (dt.isValid() && prefixFormat) {
+        if (!repoId) {
+          console.log('no repo selected')
+          return
+        }
+
         setMutationInFlight(true)
 
         const input: Input = {
           prefixFormat,
-          // FIXME
-          repoId: wikiRepoId,
+          repoId,
           startsAt: dt.toISOString(),
           topicId: repoTopic.topicId,
         }
@@ -61,13 +80,17 @@ export default function TopicTimerangeForm(props: Props) {
 
   const updateFormat = useCallback(
     async (event: FormEvent<HTMLSelectElement>) => {
+      if (!repoId) {
+        console.log('no repo selected')
+        return
+      }
+
       setMutationInFlight(true)
       const newPrefix = event.currentTarget.value as PrefixFormat
 
       const input: Input = {
         prefixFormat: newPrefix,
-        // FIXME
-        repoId: wikiRepoId,
+        repoId,
         startsAt,
         topicId: repoTopic.topicId,
       }

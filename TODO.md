@@ -1,9 +1,7 @@
 Before switchover:
 * Experiment with using borrows in some resolvers instead of copying
 * Update repo names and give new repos a better name
-* Replace hardcoded references to wikiRepoId with repo from resource (depends on whether user can edit)
 * Clean up database: odds and ends
-* Don't save private links and topics to /wiki/
 * Order links by reverse chronological date
 * Ensure that account creation still works
 * Ensure that account deletion still works
@@ -11,7 +9,6 @@ Before switchover:
 * Bug: links are showing up in more than one repo, when they should just be private
 * Put a note up on the info page that says that I may work against production data from time to time
 * Decide whether to support link reviews or remove the feature
-* Replace <Suspense>loading...</Suspense> with something nice
 * Bug: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Bug: the JS client doesn't show new links and topics in the right place when they're added
@@ -37,7 +34,7 @@ Before switchover:
 
 
 Later:
-* Upgrade components to use React/Relay hooks
+* Replace <Suspense>loading...</Suspense> with something nice
 * Get UX working on mobile devices again
 * Formulas and subscript and superscript in topic titles
 * Add a docs repo and main page with screenshots and sections of how to do various things
