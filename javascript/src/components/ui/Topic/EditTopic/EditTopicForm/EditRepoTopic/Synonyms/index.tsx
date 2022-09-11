@@ -5,18 +5,16 @@ import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
 
 import updateTopicSynonymsMutation, { Input } from 'mutations/updateTopicSynonymsMutation'
 import {
-  Synonyms_topic$key,
-  Synonyms_topic$data as TopicType,
-} from '__generated__/Synonyms_topic.graphql'
+  Synonyms_repoTopic$key,
+  Synonyms_repoTopic$data as RepoTopicType,
+} from '__generated__/Synonyms_repoTopic.graphql'
 import { Synonyms_viewer$key } from '__generated__/Synonyms_viewer.graphql'
 import { SynonymType } from 'components/types'
 import SynonymList from './SynonymList'
 import copySynonyms from './copySynonyms'
 
-type RepoTopicType = TopicType['repoTopics'][0]
-
 type Props = {
-  topic: Synonyms_topic$key,
+  repoTopic: Synonyms_repoTopic$key,
   viewer: Synonyms_viewer$key,
 }
 
@@ -33,25 +31,13 @@ function displayName(synonyms: SynonymType[]) {
   return 'Missing name'
 }
 
-function optimisticResponse(
-  topic: TopicType,
-  repoTopic: RepoTopicType,
-  synonyms: SynonymType[],
-) {
+function optimisticResponse(repoTopic: RepoTopicType, synonyms: SynonymType[]) {
   return {
     updateTopicSynonyms: {
       alerts: [],
       clientMutationId: null,
-      topic: {
-        ...topic,
-        displayName: displayName(synonyms),
-        repoTopics: [
-          {
-            ...repoTopic,
-            synonyms,
-          },
-        ],
-      },
+      ...repoTopic,
+      synonyms,
     },
   }
 }
@@ -121,28 +107,23 @@ const renderAddForm = (
 )
 
 export default function Synonyms(props: Props) {
-  const topic = useFragment(
+  const repoTopic = useFragment(
     graphql`
-      fragment Synonyms_topic on Topic {
+      fragment Synonyms_repoTopic on RepoTopic {
+        topicId
         displayName
+        viewerCanDeleteSynonyms
         viewerCanUpdate
 
-        repoTopics {
-          topicId
-          displayName
-          viewerCanDeleteSynonyms
-          viewerCanUpdate
+        synonyms {
+          name
+          locale
 
-          synonyms {
-            name
-            locale
-
-            ...Synonym_synonym
-          }
+          ...Synonym_synonym
         }
       }
     `,
-    props.topic,
+    props.repoTopic,
   )
 
   const viewer = useFragment(
@@ -160,7 +141,6 @@ export default function Synonyms(props: Props) {
   const [inputLocale, setInputLocale] = useState('en')
 
   const repoId = viewer.selectedRepository?.id
-  const repoTopic = topic.repoTopics.length < 1 ? null : topic.repoTopics[0]
   const synonyms = repoTopic?.synonyms || []
   const environment = useRelayEnvironment()
 
@@ -173,7 +153,7 @@ export default function Synonyms(props: Props) {
     }
   
     const input: Input = { repoId, topicId: repoTopic.topicId, synonyms: update }
-    const response = optimisticResponse(topic, repoTopic, update)
+    const response = optimisticResponse(repoTopic, update)
     console.log('input:', input)
   
     updateTopicSynonymsMutation(
@@ -221,7 +201,8 @@ export default function Synonyms(props: Props) {
       <ul className="Box list-style-none mt-1 mb-2">
         {renderSynonyms(repoTopic, onDelete, updateTopicSynonyms)}
       </ul>
-      {topic.viewerCanUpdate && renderAddForm(inputName, onNameChange, onLocaleChange, onAdd)}
+
+      {repoTopic.viewerCanUpdate && renderAddForm(inputName, onNameChange, onLocaleChange, onAdd)}
     </dl>
   )
 }

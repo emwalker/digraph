@@ -8,10 +8,10 @@ import removeTopicTimerangeMutation, {
   Input as DeleteInput,
 } from 'mutations/removeTopicTimerangeMutation'
 import {
-  TopicTimerange_repoTopic$key as RepoTopicKeyType,
-  TopicTimerange_repoTopic$data as RepoTopicType,
-} from '__generated__/TopicTimerange_repoTopic.graphql'
-import TopicTimerangeForm from './TopicTimerangeForm'
+  RepoTopicTimerange_repoTopic$key as RepoTopicKeyType,
+  RepoTopicTimerange_repoTopic$data as RepoTopicType,
+} from '__generated__/RepoTopicTimerange_repoTopic.graphql'
+import RepoTopicTimerangeForm from './RepoTopicTimerangeForm'
 
 type Props = {
   repoTopic: RepoTopicKeyType,
@@ -47,19 +47,19 @@ function updateOrDelete(
   setMutationInFlight(false)
 }
 
-const TopicTimeRange = (props: Props) => {
+export default function RepoTopicTimeRange(props: Props) {
   const [mutationInFlight, setMutationInFlight] = useState(false)
 
   const repoTopic = useFragment(
     graphql`
-      fragment TopicTimerange_repoTopic on RepoTopic {
+      fragment RepoTopicTimerange_repoTopic on RepoTopic {
         topicId
 
         timerange {
           startsAt
         }
 
-        ...TopicTimerangeForm_repoTopic
+        ...RepoTopicTimerangeForm_repoTopic
       }
     `,
     props.repoTopic,
@@ -67,11 +67,11 @@ const TopicTimeRange = (props: Props) => {
 
   const viewer = useFragment(
     graphql`
-      fragment TopicTimerange_viewer on User {
+      fragment RepoTopicTimerange_viewer on User {
         selectedRepository {
           id
         }
-        ...TopicTimerangeForm_viewer
+        ...RepoTopicTimerangeForm_viewer
       }
     `,
     props.viewer,
@@ -99,9 +99,7 @@ const TopicTimeRange = (props: Props) => {
         </label>
       </div>
 
-      {checked && <TopicTimerangeForm viewer={props.viewer} repoTopic={repoTopic} />}
+      {checked && <RepoTopicTimerangeForm viewer={props.viewer} repoTopic={repoTopic} />}
     </div>
   )
 }
-
-export default TopicTimeRange

@@ -5,24 +5,24 @@ import { useDebouncedCallback } from 'use-debounce'
 
 import upsertTopicTimerangeMutation, { Input } from 'mutations/upsertTopicTimerangeMutation'
 import {
-  TopicTimerangeForm_viewer$key,
-} from '__generated__/TopicTimerangeForm_viewer.graphql'
+  RepoTopicTimerangeForm_viewer$key,
+} from '__generated__/RepoTopicTimerangeForm_viewer.graphql'
 import {
-  TopicTimerangeForm_repoTopic$key,
-  TopicTimerangeForm_repoTopic$data as RepoTopic,
-} from '__generated__/TopicTimerangeForm_repoTopic.graphql'
+  RepoTopicTimerangeForm_repoTopic$key,
+  RepoTopicTimerangeForm_repoTopic$data as RepoTopic,
+} from '__generated__/RepoTopicTimerangeForm_repoTopic.graphql'
 
 type PrefixFormat = NonNullable<RepoTopic['timerange']>['prefixFormat']
 
 type Props = {
-  repoTopic: TopicTimerangeForm_repoTopic$key,
-  viewer: TopicTimerangeForm_viewer$key
+  repoTopic: RepoTopicTimerangeForm_repoTopic$key,
+  viewer: RepoTopicTimerangeForm_viewer$key
 }
 
-export default function TopicTimerangeForm(props: Props) {
+export default function RepoTopicTimerangeForm(props: Props) {
   const repoTopic = useFragment(
     graphql`
-      fragment TopicTimerangeForm_repoTopic on RepoTopic {
+      fragment RepoTopicTimerangeForm_repoTopic on RepoTopic {
         topicId
 
         timerange {
@@ -36,7 +36,7 @@ export default function TopicTimerangeForm(props: Props) {
 
   const viewer = useFragment(
     graphql`
-      fragment TopicTimerangeForm_viewer on User {
+      fragment RepoTopicTimerangeForm_viewer on User {
         selectedRepository {
           id
         }

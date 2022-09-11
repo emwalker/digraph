@@ -16,7 +16,7 @@ export default defaultMutation(graphql`
         ...Topic_topic
 
         repoTopics {
-          ...TopicTimerange_repoTopic
+          ...RepoTopicTimerange_repoTopic
         }
       }
     }
