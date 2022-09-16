@@ -46,7 +46,7 @@
     "express": "~4.18.1",
     "express-session": "^1.17.3",
     "farce": "~0.4.1",
-    "found": "~1.1.1",
+    "found": "~1.1.2",
     "found-relay": "^0.9.1",
     "graphql": "^15.8.0",
     "http": "^0.0.1-security",
