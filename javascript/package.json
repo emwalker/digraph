@@ -147,7 +147,7 @@
     "mini-css-extract-plugin": "^2.6.1",
     "node-polyfill-webpack-plugin": "^1.1.4",
     "normalize.css": "~8.0.1",
-    "postcss-import": "^14.1.0",
+    "postcss-import": "^15.0.0",
     "precss": "~4.0.0",
     "razzle": "^4.2.16",
     "razzle-dev-utils": "^4.2.16",
