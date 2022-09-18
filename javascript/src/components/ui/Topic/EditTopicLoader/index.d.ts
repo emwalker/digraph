@@ -3,5 +3,5 @@ declare type Props = {
     topicId: string;
     viewerId: string;
 };
-export default function EditTopicLoader(props: Props): JSX.Element;
+export default function EditTopicLoader({ toggleForm, topicId, viewerId }: Props): JSX.Element;
 export {};

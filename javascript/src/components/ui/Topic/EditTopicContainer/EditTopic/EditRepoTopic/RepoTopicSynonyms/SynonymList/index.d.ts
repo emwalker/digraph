@@ -5,5 +5,5 @@ declare type Props = {
     onUpdate: (synonyms: SynonymType[]) => void;
     synonyms: readonly SynonymType[];
 };
-export default function SynonymList(props: Props): JSX.Element;
+export default function SynonymList({ canUpdate, onDelete, onUpdate, synonyms }: Props): JSX.Element;
 export {};

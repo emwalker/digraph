@@ -15,8 +15,9 @@ import {
 type PrefixFormat = NonNullable<RepoTopic['timerange']>['prefixFormat']
 
 type Props = {
+  disabled: boolean,
   repoTopic: RepoTopicTimerangeForm_repoTopic$key,
-  viewer: RepoTopicTimerangeForm_viewer$key
+  viewer: RepoTopicTimerangeForm_viewer$key,
 }
 
 const repoTopicFragment = graphql`
@@ -97,6 +98,8 @@ export default function RepoTopicTimerangeForm(props: Props) {
     [upsertTopicTimerangeMutation, startsAt],
   )
 
+  const disabled = props.disabled || upsertTimerangeInFlight
+
   return (
     <div className="topicTimeRangeFormFormElements">
       <dl className="form-group my-0">
@@ -104,7 +107,7 @@ export default function RepoTopicTimerangeForm(props: Props) {
         <dd>
           <select
             className="form-select"
-            disabled={upsertTimerangeInFlight}
+            disabled={disabled}
             id="time-range-prefix-select"
             onChange={updateFormat}
             value={prefixFormat}
@@ -122,6 +125,7 @@ export default function RepoTopicTimerangeForm(props: Props) {
         <dd>
           <input
             className="topicTimeRangeFormStartsAt"
+            disabled={disabled}
             id="time-range-starts-at"
             onChange={(e) => {
               e.persist()

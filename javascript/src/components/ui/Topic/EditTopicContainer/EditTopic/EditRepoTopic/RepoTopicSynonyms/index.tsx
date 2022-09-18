@@ -24,7 +24,7 @@ type Props = {
 function displayName(synonyms: SynonymType[]) {
   if (synonyms.length > 0) {
     for (const synonym of synonyms) {
-      if (synonym.locale != 'en')
+      if (synonym.locale !== 'en') // FIXME
         continue
       return synonym.name
     }
@@ -59,7 +59,6 @@ const renderSynonyms = (
 ) => {
   if (synonyms.length === 0) 
     return <div className="blankslate"><p>There are no synonyms</p></div>
-  
 
   return (
     <SynonymList
@@ -190,10 +189,8 @@ export default function RepoTopicSynonyms(props: Props) {
   }, [inputName, repoTopic, synonyms, copySynonyms, updateTopicSynonyms])
 
   const onDelete = useCallback((position: number) => {
-    // eslint-disable-next-line no-alert
     if (!window.confirm('Are you sure you want to delete this synonym?')) return
 
-    console.log('deleting synonym at ', position)
     const update = copySynonyms(synonyms)
     update.splice(position, 1)
     updateTopicSynonyms(update)

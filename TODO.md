@@ -1,4 +1,5 @@
 Before switchover:
+* Restore parent topics with a suitable query
 * Bug: dates not being added to and removed from display name
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work

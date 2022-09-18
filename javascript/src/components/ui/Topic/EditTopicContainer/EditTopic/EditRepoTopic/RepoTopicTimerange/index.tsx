@@ -1,18 +1,52 @@
 import React, { useCallback } from 'react'
-import { graphql, useFragment, useMutation } from 'react-relay'
+import { Disposable, graphql, useFragment, useMutation, UseMutationConfig } from 'react-relay'
 
 import upsertQuery from 'mutations/upsertTopicTimerangeMutation'
 import removeQuery from 'mutations/removeTopicTimerangeMutation'
 import {
-  RepoTopicTimerange_repoTopic$key as RepoTopicKeyType,
+  RepoTopicTimerange_repoTopic$key,
+  RepoTopicTimerange_repoTopic$data as RepoTopicKeyType,
 } from '__generated__/RepoTopicTimerange_repoTopic.graphql'
 import RepoTopicTimerangeForm from './RepoTopicTimerangeForm'
 import { upsertTopicTimerangeMutation } from '__generated__/upsertTopicTimerangeMutation.graphql'
 import { removeTopicTimerangeMutation } from '__generated__/removeTopicTimerangeMutation.graphql'
 
 type Props = {
-  repoTopic: RepoTopicKeyType,
+  repoTopic: RepoTopicTimerange_repoTopic$key,
   viewer: any,
+}
+
+function makeOnChange({ upsertTopicTimerange, removeTopicTimerange, repoId, repoTopic }: {
+  upsertTopicTimerange: (config: UseMutationConfig<upsertTopicTimerangeMutation>) => Disposable,
+  removeTopicTimerange: (config: UseMutationConfig<removeTopicTimerangeMutation>) => Disposable,
+  repoId: string,
+  repoTopic: RepoTopicKeyType,
+}) {
+  return useCallback(() => {
+    if (!repoId) {
+      console.log('no repo selected')
+      return
+    }
+
+    if (repoTopic.timerange) {
+      removeTopicTimerange({
+        variables: {
+          input: { repoId, topicId: repoTopic.topicId },
+        },
+      })
+    } else {
+      upsertTopicTimerange({
+        variables: {
+          input: {
+            prefixFormat: 'START_YEAR',
+            repoId,
+            startsAt: (new Date()).toISOString(),
+            topicId: repoTopic.topicId,
+          },
+        },
+      })
+    }
+  }, [upsertTopicTimerange, repoId, repoTopic])
 }
 
 const repoTopicFragment = graphql`
@@ -46,33 +80,8 @@ export default function RepoTopicTimeRange(props: Props) {
 
   const checked = !!repoTopic.timerange
   const repoId = viewer.selectedRepository?.id
-
-  const onChange = useCallback(() => {
-    if (!repoId) {
-      console.log('no repo selected')
-      return
-    }
-
-    if (repoTopic.timerange) {
-      removeTopicTimerange({
-        variables: {
-          input: { repoId, topicId: repoTopic.topicId },
-        },
-      })
-    } else {
-      upsertTopicTimerange({
-        variables: {
-          input: {
-            prefixFormat: 'START_YEAR',
-            repoId,
-            startsAt: (new Date()).toISOString(),
-            topicId: repoTopic.topicId,
-          },
-        },
-      })
-    }
-
-  }, [upsertTopicTimerange, repoId, repoTopic])
+  const onChange = makeOnChange({ upsertTopicTimerange, removeTopicTimerange, repoId, repoTopic })
+  const disabled = upsertTimerangeInFlight || removeTimerangeInFlight
 
   return (
     <div>
@@ -80,7 +89,7 @@ export default function RepoTopicTimeRange(props: Props) {
         <label htmlFor="time-range-checkbox">
           <input
             checked={checked}
-            disabled={upsertTimerangeInFlight || removeTimerangeInFlight}
+            disabled={disabled}
             id="time-range-checkbox"
             onChange={onChange}
             type="checkbox"
@@ -89,7 +98,9 @@ export default function RepoTopicTimeRange(props: Props) {
         </label>
       </div>
 
-      {checked && <RepoTopicTimerangeForm viewer={props.viewer} repoTopic={repoTopic} />}
+      {checked && (
+        <RepoTopicTimerangeForm viewer={props.viewer} repoTopic={repoTopic} disabled={disabled} />
+      )}
     </div>
   )
 }

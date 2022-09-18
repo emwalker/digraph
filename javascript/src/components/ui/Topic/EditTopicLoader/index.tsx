@@ -11,24 +11,25 @@ type Props = {
   viewerId: string,
 }
 
-export default function EditTopicLoader(props: Props) {
+export default function EditTopicLoader({ toggleForm, topicId, viewerId }: Props) {
   const environment = useRelayEnvironment()
-  const sentinel = {} as PreloadedQuery<EditTopicQueryType>
-  const [queryRef, setQueryRef] = useState(sentinel)
+  const emptyQueryRef = {} as PreloadedQuery<EditTopicQueryType>
+  const [queryRef, setQueryRef] = useState(emptyQueryRef)
 
   useEffect(() => {
-    const newQueryRef = loadQuery<EditTopicQueryType>(environment, EditTopicQuery, {
-      topicId: props.topicId,
-      viewerId: props.viewerId,
-    }, { fetchPolicy: 'network-only' })
+    const newQueryRef = loadQuery<EditTopicQueryType>(
+      environment,
+      EditTopicQuery,
+      { topicId, viewerId },
+    )
     setQueryRef(newQueryRef)
   }, [setQueryRef])
 
   return (
     <Suspense fallback={<div>Loading form ...</div>}>
-      {queryRef !== sentinel && (
+      {queryRef !== emptyQueryRef && (
         <EditTopicContainer
-          toggleForm={props.toggleForm}
+          toggleForm={toggleForm}
           queryRef={queryRef}
         />
       )}

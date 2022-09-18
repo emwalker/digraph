@@ -1,8 +1,8 @@
-import { SynonymType, SortableType } from 'components/types';
+import { SynonymType } from 'components/types';
 declare type Props = {
-    synonyms: Record<string, SortableType<SynonymType>>;
+    synonyms: readonly SynonymType[];
     onDelete: ((position: number) => void) | null;
     onUpdate: (synonyms: SynonymType[]) => void;
 };
-export default function SortableSynonymList(props: Props): JSX.Element;
+export default function SortableSynonymList({ synonyms, onUpdate, onDelete }: Props): JSX.Element;
 export {};

@@ -1,7 +1,8 @@
 import { SynonymType } from 'components/types';
 declare type Props = {
-    id: string;
+    id: number;
     synonym: SynonymType;
+    onDelete?: ((position: number) => void) | null;
 };
-export default function SortableItem({ id, synonym }: Props): JSX.Element;
+export default function SortableItem({ id, synonym, onDelete }: Props): JSX.Element;
 export {};

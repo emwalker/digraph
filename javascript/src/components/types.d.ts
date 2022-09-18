@@ -29,9 +29,5 @@ export declare type SynonymType = {
     locale: string;
     name: string;
 };
-export declare type SortableType<T> = {
-    id: number;
-    inner: T;
-};
 export declare type AlertType = 'ERROR' | 'WARN' | 'SUCCESS' | '%future added value';
 export {};
