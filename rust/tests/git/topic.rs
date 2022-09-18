@@ -332,7 +332,8 @@ mod update_topic_parent_topics {
 mod update_topic_synonyms {
     use super::*;
     use digraph::git::{
-        Kind, Search, SearchEntry, Synonym, UpdateTopicSynonyms, UpdateTopicSynonymsResult,
+        Kind, RepoTopic, Search, SearchEntry, Synonym, UpdateTopicSynonyms,
+        UpdateTopicSynonymsResult,
     };
 
     fn count(f: &Fixtures, name: &str) -> usize {
@@ -444,23 +445,23 @@ mod update_topic_synonyms {
     #[test]
     fn synonym_added_date() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
 
-        let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(&repo_id, &topic_id).unwrap();
         let syn = topic.synonyms().first().unwrap();
         let added = syn.added;
 
         UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id: repo_id.to_owned(),
             topic_id: topic_id.clone(),
             synonyms: vec![synonym(&syn.name)],
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(&repo_id, &topic_id).unwrap();
         let syn = topic.synonyms().first().unwrap();
         assert_eq!(syn.added, added);
     }
@@ -498,6 +499,34 @@ mod update_topic_synonyms {
         .unwrap();
 
         assert!(!f.git.appears_in(&repo, &search, &entry).unwrap());
+    }
+
+    #[test]
+    fn synonym_added_when_details_are_blank() {
+        let f = Fixtures::copy("simple");
+        let repo_id = RepoId::wiki();
+        let private_repo_id = RepoId::other();
+        let topic_id = parse_id("00001");
+        let reference = RepoTopic::make_reference(topic_id.to_owned());
+        let mut mutation = f.mutation();
+
+        // The topic can be found
+        f.git.fetch_topic(&repo_id, &topic_id).unwrap();
+
+        mutation.save_topic(&private_repo_id, &reference).unwrap();
+        mutation.write(&redis::Noop).unwrap();
+
+        UpdateTopicSynonyms {
+            actor: actor(),
+            repo_id: private_repo_id.to_owned(),
+            topic_id: topic_id.clone(),
+            synonyms: vec![synonym("Other name")],
+        }
+        .call(mutation, &redis::Noop)
+        .unwrap();
+
+        let topic = f.git.fetch_topic(&private_repo_id, &topic_id).unwrap();
+        assert_eq!(topic.synonyms().first().unwrap().name, "Other name");
     }
 }
 

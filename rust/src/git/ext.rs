@@ -523,7 +523,7 @@ impl Object {
 
     pub fn to_search_match(self, locale: Locale, search: &Search) -> Result<SearchMatch> {
         let normalized = &search.normalized;
-        let display_string = self.display_string(locale).to_owned();
+        let display_string = self.display_string(locale);
         let search_string = Phrase::parse(&display_string);
 
         match self {

@@ -628,28 +628,30 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn save_topic(&mut self, repo: &RepoId, topic: &RepoTopic) -> Result<()> {
-        self.check_can_update(repo)?;
+    pub fn save_topic(&mut self, repo_id: &RepoId, topic: &RepoTopic) -> Result<()> {
+        self.check_can_update(repo_id)?;
 
         let topic_id = topic.topic_id();
-        let view = self.client.view(repo)?;
+        let view = self.client.view(repo_id)?;
         let before = view.topic(topic_id)?;
         self.indexer
-            .update_synonyms(&self.client, repo, &before, topic)?;
+            .update_synonyms(&self.client, repo_id, &before, topic)?;
 
-        let before = self.client.topic_searches(repo, before)?;
-        let after = self.client.topic_searches(repo, Some(topic.to_owned()))?;
+        let before = self.client.topic_searches(repo_id, before)?;
+        let after = self
+            .client
+            .topic_searches(repo_id, Some(topic.to_owned()))?;
         self.indexer.update(
             &self.client,
-            repo,
+            repo_id,
             &topic.to_search_entry(),
             &before,
             &after,
         )?;
         let s = serde_yaml::to_string(&topic)?;
-        let oid = self.client.repo(repo)?.add_blob(s.as_bytes())?;
+        let oid = self.client.repo(repo_id)?.add_blob(s.as_bytes())?;
 
-        self.save_object(repo, topic_id, oid)
+        self.save_object(repo_id, topic_id, oid)
     }
 
     pub fn synonym_phrase_matches(

@@ -125,11 +125,11 @@ mod ensure_personal_repo {
     }
 
     #[test]
-    fn default_topic_created() {
+    fn root_topic_created() {
         let f = Fixtures::copy("simple");
-        let actor = Viewer::service_account();
+        let actor = &f.git.viewer;
 
-        let result = ensure(&f, &vec![], &actor, &actor.user_id).unwrap();
+        let result = ensure(&f, &vec![], actor, &actor.user_id).unwrap();
 
         let root = Oid::root_topic();
         let repo_id = result.created_repo_id.unwrap();

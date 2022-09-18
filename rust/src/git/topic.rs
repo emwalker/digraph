@@ -343,6 +343,12 @@ impl UpdateTopicSynonyms {
     where
         S: SaveChangesForPrefix,
     {
+        log::info!(
+            "updating synonyms for {} within {}",
+            self.topic_id,
+            self.repo_id
+        );
+
         let topic = mutation.fetch_topic(&self.repo_id, &self.topic_id);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
@@ -402,7 +408,13 @@ impl UpdateTopicSynonyms {
                 details.synonyms = synonyms;
             }
 
-            None => {}
+            None => {
+                repo_topic.metadata.details = Some(RepoTopicDetails {
+                    root: false,
+                    synonyms,
+                    timerange: None,
+                })
+            }
         }
 
         mutation.save_topic(&self.repo_id, &repo_topic)?;

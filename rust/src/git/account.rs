@@ -62,14 +62,6 @@ impl EnsurePersonalRepo {
         }
 
         log::info!("ensuring personal repo for {}", self.user_id);
-
-        // let wiki = RepoId::wiki();
-        // if self.personal_repo_id == wiki {
-        //     return Err(Error::Repo(format!(
-        //         "not allowed to associate {} with {}",
-        //         wiki, self.user_id
-        //     )));
-        // }
         let repo_id = RepoId::make();
 
         mutation.repo(&repo_id)?;

@@ -21,6 +21,9 @@ Before switchover:
 * Bug: parent topics are not sorted in alphabetical order in upper righthand box
 * Bring link edit form up to date
 * Repo topics/links: Return collection of repo views / edit forms instead of edit form
+* Repo topics/links: show timerange in read-only view
+* Get alerts working again (test case: you add a synonym that already exists)
+* Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 * Verify that history entries are working for cross-repo mutations
 * Verify that account creation still works
 * Verify that account deletion still works

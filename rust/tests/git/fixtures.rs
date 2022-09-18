@@ -43,7 +43,7 @@ impl Fixtures {
         let tempdir = tempfile::tempdir().unwrap();
         let path = PathBuf::from(&tempdir.path());
         let root = DataRoot::new(path.clone());
-        let git = Client::new(&Viewer::service_account(), &root, Timespec);
+        let git = Client::new(&actor(), &root, Timespec);
 
         Fixtures {
             _tempdir: tempdir,
