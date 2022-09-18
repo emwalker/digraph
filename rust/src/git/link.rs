@@ -293,7 +293,7 @@ impl UpsertLink {
             // There's a client error if we get to this point.
             log::warn!("no topic found, placing under root topic");
             if let Some(topic) = mutation.fetch_topic(&self.repo_id, &Oid::root_topic()) {
-                parent_topics.insert(topic.id().to_owned(), topic);
+                parent_topics.insert(topic.topic_id().to_owned(), topic);
             }
         }
 

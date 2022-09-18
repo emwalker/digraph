@@ -27,7 +27,7 @@ mod visibility {
         let f = Fixtures::copy("simple");
         let repo = RepoId::wiki();
         let topic = f.topic(&repo, ROOT_TOPIC_ID);
-        let topic_id = topic.id();
+        let topic_id = topic.topic_id();
 
         let git = Client::new(&viewer(&vec![RepoId::wiki()]), &f.git.root, Timespec);
         assert!(git.fetch(&repo, topic_id).is_some());
@@ -125,7 +125,7 @@ mod delete_topic {
         let result = DeleteTopic {
             actor: actor(),
             repo: repo.to_owned(),
-            topic_id: topic.id().to_owned(),
+            topic_id: topic.topic_id().to_owned(),
         }
         .call(f.mutation(), &redis::Noop);
 
@@ -158,20 +158,23 @@ mod delete_topic {
         let root = Oid::root_topic();
 
         let climate_change = make_topic(&f, &root, "Climate change");
-        let activity = f.git.fetch_activity(&repo, climate_change.id(), 1).unwrap();
+        let activity = f
+            .git
+            .fetch_activity(&repo, climate_change.topic_id(), 1)
+            .unwrap();
         assert!(!activity.is_empty());
 
         DeleteTopic {
             actor: actor(),
             repo: repo.to_owned(),
-            topic_id: climate_change.id().to_owned(),
+            topic_id: climate_change.topic_id().to_owned(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let activity = f
             .git
-            .fetch_activity(&repo, climate_change.id(), 100)
+            .fetch_activity(&repo, climate_change.topic_id(), 100)
             .unwrap();
 
         let mut found = false;
@@ -180,7 +183,7 @@ mod delete_topic {
             if let activity::Change::UpsertTopic(activity::UpsertTopic { upserted_topic, .. }) =
                 change
             {
-                if &upserted_topic.id == climate_change.id() {
+                if &upserted_topic.id == climate_change.topic_id() {
                     assert!(upserted_topic.deleted);
                     found = true;
                 }
@@ -220,7 +223,7 @@ mod delete_topic_timerange {
 
         RemoveTopicTimerange {
             actor: actor(),
-            repo: repo.to_owned(),
+            repo_id: repo.to_owned(),
             topic_id: topic_id.to_owned(),
         }
         .call(f.mutation(), &redis::Noop)
@@ -244,13 +247,13 @@ mod update_topic_parent_topics {
         assert_eq!(parent.children, BTreeSet::new());
 
         let child = f.topic(&repo, "00002");
-        assert!(!parent.has_child(child.id()));
+        assert!(!parent.has_child(child.topic_id()));
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
             repo_id: repo.to_owned(),
-            topic_id: child.id().to_owned(),
-            parent_topic_ids: BTreeSet::from([parent.id().to_owned()]),
+            topic_id: child.topic_id().to_owned(),
+            parent_topic_ids: BTreeSet::from([parent.topic_id().to_owned()]),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
@@ -259,7 +262,7 @@ mod update_topic_parent_topics {
 
         let parent = f.topic(&repo, "00001");
         let child = f.topic(&repo, "00002");
-        assert!(parent.has_child(child.id()));
+        assert!(parent.has_child(child.topic_id()));
     }
 
     #[test]
@@ -270,13 +273,13 @@ mod update_topic_parent_topics {
         assert_eq!(parent.children, BTreeSet::new());
 
         let child = f.topic(&repo, "00002");
-        assert!(!parent.has_child(child.id()));
+        assert!(!parent.has_child(child.topic_id()));
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
             repo_id: repo.to_owned(),
-            topic_id: child.id().to_owned(),
-            parent_topic_ids: BTreeSet::from([parent.id().to_owned()]),
+            topic_id: child.topic_id().to_owned(),
+            parent_topic_ids: BTreeSet::from([parent.topic_id().to_owned()]),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
@@ -285,7 +288,7 @@ mod update_topic_parent_topics {
 
         let parent = f.topic(&repo, "00001");
         let child = f.topic(&repo, "00002");
-        assert!(parent.has_child(child.id()));
+        assert!(parent.has_child(child.topic_id()));
     }
 
     #[test]
@@ -297,7 +300,7 @@ mod update_topic_parent_topics {
         let result = UpdateTopicParentTopics {
             actor: actor(),
             repo_id: repo,
-            topic_id: child.id().to_owned(),
+            topic_id: child.topic_id().to_owned(),
             parent_topic_ids: BTreeSet::new(),
         }
         .call(f.mutation(), &redis::Noop);
@@ -311,13 +314,13 @@ mod update_topic_parent_topics {
         let repo = RepoId::wiki();
         let parent = f.topic(&repo, ROOT_TOPIC_ID);
         let child = f.topic(&repo, "00001");
-        assert!(parent.has_child(child.id()));
+        assert!(parent.has_child(child.topic_id()));
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
             repo_id: repo,
-            topic_id: parent.id().to_owned(),
-            parent_topic_ids: BTreeSet::from([child.id().to_owned()]),
+            topic_id: parent.topic_id().to_owned(),
+            parent_topic_ids: BTreeSet::from([child.topic_id().to_owned()]),
         }
         .call(f.mutation(), &redis::Noop);
 
@@ -558,7 +561,7 @@ mod upsert_topic {
             .unwrap();
         assert!(result.saved);
         let parent_topic = result.repo_topic.unwrap();
-        let parent_id = parent_topic.id();
+        let parent_id = parent_topic.topic_id();
 
         let topic_path = parse_id("00002");
         let result = f
@@ -637,7 +640,7 @@ mod upsert_topic {
             .unwrap();
         assert!(result.saved);
         let child = result.repo_topic.unwrap();
-        let child_id = &child.id();
+        let child_id = &child.topic_id();
 
         let parent = f.topic(&repo, "00001");
         let children = parent
@@ -662,7 +665,7 @@ mod upsert_topic {
             .upsert_topic(
                 &repo,
                 "Everything",
-                child.id(),
+                child.topic_id(),
                 OnMatchingSynonym::Update(parse_id(ROOT_TOPIC_ID)),
             )
             .unwrap();
@@ -692,7 +695,7 @@ mod upsert_topic {
             )
             .unwrap();
         let topic = result.repo_topic.unwrap();
-        let topic_id = topic.id();
+        let topic_id = topic.topic_id();
 
         assert!(f.git.exists(&other_repo, topic_id).unwrap());
     }

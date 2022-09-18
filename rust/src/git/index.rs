@@ -849,7 +849,7 @@ impl Indexer {
         before: &Option<RepoTopic>,
         after: &RepoTopic,
     ) -> Result<()> {
-        let topic_id = after.id();
+        let topic_id = after.topic_id();
 
         let before = match before {
             Some(before) => before

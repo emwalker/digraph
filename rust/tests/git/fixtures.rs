@@ -213,7 +213,7 @@ mod tests {
             &repo,
             &url,
             Some("Climate change".into()),
-            Some(climate_change.id().to_owned()),
+            Some(climate_change.topic_id().to_owned()),
         );
         println!("result: {:?}", result.link);
 
@@ -235,7 +235,7 @@ mod tests {
             &repo,
             &url,
             Some("Weather".into()),
-            Some(weather.id().to_owned()),
+            Some(weather.topic_id().to_owned()),
         );
 
         let topic_id = parse_id("F7EddRg9OPuLuk2oRMlO0Sm1v4OxgxQvzB3mRZxGfrqQ9dXjD4QKD6wuxOxucP13");
@@ -245,7 +245,7 @@ mod tests {
             name: "Climate change and weather".to_owned(),
             repo_id: repo.to_owned(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
-            parent_topic: climate_change.id().to_owned(),
+            parent_topic: climate_change.topic_id().to_owned(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
@@ -255,10 +255,10 @@ mod tests {
             actor: actor(),
             repo_id: repo.to_owned(),
             parent_topic_ids: BTreeSet::from([
-                climate_change.id().to_owned(),
-                weather.id().to_owned(),
+                climate_change.topic_id().to_owned(),
+                weather.topic_id().to_owned(),
             ]),
-            topic_id: climate_change_weather.id().to_owned(),
+            topic_id: climate_change_weather.topic_id().to_owned(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
@@ -270,7 +270,7 @@ mod tests {
             &repo,
             &url,
             Some("13. How does climate change affect the strength and frequency of floods, droughts, hurricanes, and tornadoes?".into()),
-            Some(climate_change_weather.id().to_owned()),
+            Some(climate_change_weather.topic_id().to_owned()),
         );
 
         let url =
@@ -280,7 +280,7 @@ mod tests {
             &repo,
             &url,
             Some("Overview: Weather, Global Warming, and Climate Change".into()),
-            Some(climate_change_weather.id().to_owned()),
+            Some(climate_change_weather.topic_id().to_owned()),
         );
 
         f.write();

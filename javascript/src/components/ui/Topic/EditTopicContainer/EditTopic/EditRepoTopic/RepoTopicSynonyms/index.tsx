@@ -21,6 +21,36 @@ type Props = {
   viewer: RepoTopicSynonyms_viewer$key,
 }
 
+function displayName(synonyms: SynonymType[]) {
+  if (synonyms.length > 0) {
+    for (const synonym of synonyms) {
+      if (synonym.locale != 'en')
+        continue
+      return synonym.name
+    }
+    return synonyms[0].name
+  }
+
+  return 'Missing name'
+}
+
+function optimisticResponse(repoTopic: RepoTopicType, synonymUpdate: SynonymType[]) {
+  return {
+    updateTopicSynonyms: {
+      clientMutationId: null,
+      alerts: [],
+      updatedTopic: {
+        id: repoTopic.topicId,
+        displayName: displayName(synonymUpdate),
+      },
+      updatedRepoTopic: {
+        ...repoTopic,
+        synonyms: synonymUpdate,
+      },
+    },
+  }
+}
+
 const renderSynonyms = (
   repoTopic: RepoTopicType | null,
   onDelete: Function,
@@ -91,7 +121,6 @@ const renderAddForm = (
 
 const repoTopicFragment = graphql`
   fragment RepoTopicSynonyms_repoTopic on RepoTopic {
-    displayName
     id
     topicId
     viewerCanDeleteSynonyms
@@ -142,10 +171,9 @@ export default function RepoTopicSynonyms(props: Props) {
       variables: {
         input: { repoId, topicId: repoTopic.topicId, synonyms: synonymUpdate },
       },
-      onCompleted: () => setInputName(''),
-      // updater,
-      // optimisticUpdater: updater,
+      optimisticResponse: optimisticResponse(repoTopic, synonymUpdate),
     })
+    setInputName('')
   }, [repoId, repoTopic, environment, setInputName, updateSynonyms])
 
   const onNameChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {

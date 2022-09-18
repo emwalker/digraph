@@ -13,14 +13,14 @@ export default graphql`
         type
       }
 
-      topic {
+      updatedTopic {
         id
         displayName
+      }
 
-        repoTopics {
-          id
-          ...RepoTopicSynonyms_repoTopic
-        }
+      updatedRepoTopic {
+        id
+        ...RepoTopicSynonyms_repoTopic
       }
     }
   }

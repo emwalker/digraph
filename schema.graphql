@@ -108,7 +108,8 @@ input RemoveTopicTimerangeInput {
 
 type RemoveTopicTimerangePayload {
   clientMutationId: String
-  topic: Topic!
+  updatedRepoTopic: RepoTopic!
+  updatedTopic: Topic!
 }
 
 type RepoLink {
@@ -467,7 +468,8 @@ input UpdateTopicSynonymsInput {
 type UpdateTopicSynonymsPayload {
   alerts: [Alert!]!
   clientMutationId: String
-  topic: Topic
+  updatedRepoTopic: RepoTopic!
+  updatedTopic: Topic!
 }
 
 input UpdateLinkParentTopicsInput {

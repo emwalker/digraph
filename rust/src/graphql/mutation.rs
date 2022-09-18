@@ -4,7 +4,8 @@ use async_graphql::{Context, InputObject, Object, SimpleObject, ID};
 use itertools::Itertools;
 
 use super::{
-    alert, time, Link, LinkEdge, Repository, Session, SessionEdge, Topic, TopicEdge, User, UserEdge,
+    alert, time, Link, LinkEdge, RepoTopic, Repository, Session, SessionEdge, Topic, TopicEdge,
+    User, UserEdge,
 };
 use crate::git;
 use crate::prelude::*;
@@ -90,7 +91,8 @@ pub struct RemoveTopicTimerangeInput {
 #[derive(Debug, SimpleObject)]
 pub struct RemoveTopicTimerangePayload {
     client_mutation_id: Option<String>,
-    topic: Topic,
+    updated_repo_topic: RepoTopic,
+    updated_topic: Topic,
 }
 
 #[derive(Debug, InputObject)]
@@ -154,8 +156,9 @@ pub struct UpdateTopicSynonymsInput {
 #[derive(SimpleObject)]
 pub struct UpdateTopicSynonymsPayload {
     alerts: Vec<alert::Alert>,
-    topic: Option<Topic>,
     client_mutation_id: Option<String>,
+    updated_repo_topic: RepoTopic,
+    updated_topic: Topic,
 }
 
 #[derive(Debug, InputObject)]
@@ -362,14 +365,15 @@ impl MutationRoot {
 
         let topic_id = topic_id.try_into()?;
         let store = ctx.data_unchecked::<Store>();
-        store
+        let git::RemoveTopicTimerangeResult { repo_topic, .. } = store
             .remove_topic_timerange(&repo_id.try_into()?, &topic_id)
             .await?;
-        let topic: Topic = store.fetch_topic(topic_id).await?.try_into()?;
+        let updated_topic: Topic = store.fetch_topic(topic_id).await?.try_into()?;
 
         Ok(RemoveTopicTimerangePayload {
             client_mutation_id: client_mutation_id.to_owned(),
-            topic,
+            updated_repo_topic: repo_topic.into(),
+            updated_topic,
         })
     }
 
@@ -463,15 +467,16 @@ impl MutationRoot {
             alerts, repo_topic, ..
         } = store.update_topic_synonyms(input).await?;
 
-        let topic: Topic = store
-            .fetch_topic(repo_topic.id().to_owned())
+        let updated_topic: Topic = store
+            .fetch_topic(repo_topic.topic_id().to_owned())
             .await?
             .try_into()?;
 
         Ok(UpdateTopicSynonymsPayload {
             alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
-            topic: Some(topic),
             client_mutation_id,
+            updated_repo_topic: repo_topic.into(),
+            updated_topic,
         })
     }
 
@@ -508,7 +513,7 @@ impl MutationRoot {
 
         let topic_edge = match &result.repo_topic {
             Some(topic) => {
-                let topic_id = topic.id();
+                let topic_id = topic.topic_id();
                 let topic: Topic = store.fetch_topic(topic_id.to_owned()).await?.try_into()?;
                 Some(TopicEdge::new(String::from("0"), topic))
             }

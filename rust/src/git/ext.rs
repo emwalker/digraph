@@ -182,7 +182,7 @@ impl Synonyms {
 
 #[derive(Clone, Debug)]
 pub struct RepoTopicWrapper {
-    topic: RepoTopic,
+    pub repo_topic: RepoTopic,
     pub repo_id: RepoId,
 }
 
@@ -193,14 +193,14 @@ impl TryFrom<(&RepoId, &RepoObject)> for RepoTopicWrapper {
         let repo_topic: RepoTopic = object.try_into()?;
         Ok(RepoTopicWrapper {
             repo_id: repo_id.to_owned(),
-            topic: repo_topic,
+            repo_topic,
         })
     }
 }
 
 impl RepoTopicWrapper {
     pub fn child_ids(&self) -> Vec<Oid> {
-        self.topic
+        self.repo_topic
             .children
             .iter()
             .map(|child| child.id.to_owned())
@@ -208,7 +208,7 @@ impl RepoTopicWrapper {
     }
 
     pub fn child_link_ids(&self) -> Vec<Oid> {
-        self.topic
+        self.repo_topic
             .children
             .iter()
             .flat_map(|child| match child.kind {
@@ -219,7 +219,7 @@ impl RepoTopicWrapper {
     }
 
     pub fn parent_topic_ids(&self) -> Vec<Oid> {
-        self.topic
+        self.repo_topic
             .parent_topics
             .iter()
             .map(|parent| parent.id.to_owned())
@@ -238,7 +238,7 @@ impl RepoTopicWrapper {
     }
 
     pub fn display_name(&self, locale: Locale) -> &str {
-        self.topic.metadata.name(locale)
+        self.repo_topic.metadata.name(locale)
     }
 
     pub fn display_color(&self) -> &str {
@@ -250,15 +250,15 @@ impl RepoTopicWrapper {
     }
 
     pub fn synonyms(&self) -> &[Synonym] {
-        self.topic.synonyms()
+        self.repo_topic.synonyms()
     }
 
     pub fn timerange(&self) -> &Option<Timerange> {
-        self.topic.timerange()
+        self.repo_topic.timerange()
     }
 
     pub fn topic_id(&self) -> &Oid {
-        self.topic.id()
+        self.repo_topic.topic_id()
     }
 }
 

@@ -170,7 +170,7 @@ impl Topics {
         let topics = &mut self.topics;
 
         topics.entry(repo.to_owned()).or_insert_with(|| {
-            let id = self.topic.id().to_owned();
+            let id = self.topic.topic_id().to_owned();
 
             RepoTopic {
                 api_version: API_VERSION.to_string(),

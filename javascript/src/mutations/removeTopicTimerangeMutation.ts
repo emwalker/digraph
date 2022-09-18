@@ -7,11 +7,17 @@ export default graphql`
     removeTopicTimerange(input: $input) {
       clientMutationId
 
-      topic {
-        ...Topic_topic
+      updatedTopic {
+        id
+        displayName
+      }
 
-        repoTopics {
-          ...RepoTopicTimerange_repoTopic
+      updatedRepoTopic {
+        id
+
+        timerange {
+          prefixFormat
+          startsAt
         }
       }
     }

@@ -3,24 +3,23 @@ Before switchover:
 * Repo topics/links: Fix synonym update bugs
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
-* Repo topics/links: don't show edit button for items that aren't in the selected repo
 * Clean up database: odds and ends
 * Order links by reverse chronological date
 * Bug: export: the child links under Reading list are in the wiki repo rather than the private repo
 * Bug: export: links are showing up in more than one repo, when they should just be private
 * Bug: backend doesn't complain about adding an empty synonym
 * Synonym "Add" button should be disabled until there's something in the inputName field
-* Put a note up on the info page that says that I may work against production data from time to time
+* Put a note up on the info page that says that I may work using production data from time to time
 * Decide whether to support link reviews or remove the feature
 * Bug: client: the JS client doesn't show new links and topics in the right place when they're added
 * Bug: client: some history entries are not displaying properly
 * Bug: a topic search causes the client to crash
 * Repo topics/links: Figure out how to represent / what to do with partial details in edit forms (no title, no url, but parent topics)
-* Bug: whitespace not removed from page titles
-* Bug: whitespace not removed from synonyms
+* Bug: backend: whitespace not removed from page titles
+* Bug: backend: whitespace not removed from synonyms
 * Bug: the repo ownership component is not vertically aligned with the "Close" button
-* Bug: repo ownership is not being shown in the correct order
 * Bug: repo topic forms not updated when a new repo is selected
+* Bug: dates not being added to and removed from display name
 * Repo topics/links: Return collection of repo views / edit forms instead of edit form
 * Verify that history entries are working for cross-repo mutations
 * Verify that account creation still works
@@ -60,6 +59,7 @@ Later:
 * Replace multi-select with something that will work with relevance/contexts
 * Show search input in input box when loaded from a url
 * Find a new favicon / icon
+* Replace delete link/topic confirmation popup with GitHub primer version
 * Consider using cypress for frontend integration testing
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
 * Figure out how to display the same change in different contexts -- e.g., a topic is deleted, and its contents merged into the parent topics.  What does the change look like in each change history?

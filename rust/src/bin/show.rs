@@ -74,7 +74,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_topic(&mut self, topic: &RepoTopic) -> Result<()> {
-        let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.id());
+        let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.topic_id());
         self.buf.push_str(&line);
 
         for topic in &topic.parent_topics {
@@ -98,7 +98,7 @@ impl<'r> ConsoleOutput<'r> {
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
         match &self.git.fetch(&self.repo_id, &topic.id) {
             Some(RepoObject::Topic(topic)) => {
-                let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.id());
+                let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.topic_id());
                 self.buf.push_str(&line);
             }
             other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),

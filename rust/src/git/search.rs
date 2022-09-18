@@ -270,7 +270,7 @@ impl Filter {
         }
 
         match object {
-            RepoObject::Topic(topic) => self.paths.contains(topic.id()),
+            RepoObject::Topic(topic) => self.paths.contains(topic.topic_id()),
             RepoObject::Link(link) => self.paths.contains(link.id()),
         }
     }

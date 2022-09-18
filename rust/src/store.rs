@@ -234,7 +234,7 @@ impl Store {
     ) -> Result<git::RemoveTopicTimerangeResult> {
         git::RemoveTopicTimerange {
             actor: self.viewer.clone(),
-            repo: repo_id.to_owned(),
+            repo_id: repo_id.to_owned(),
             topic_id: topic_id.clone(),
         }
         .call(self.mutation()?, &self.redis)

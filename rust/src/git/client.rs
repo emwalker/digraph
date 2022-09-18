@@ -135,7 +135,7 @@ impl Client {
 
         for topic in self.topic_downset(&descendant_path) {
             i += 1;
-            if topic.id() == ancestor_id {
+            if topic.topic_id() == ancestor_id {
                 log::info!("cycle found after {} iterations", i);
                 return Ok(true);
             }
@@ -631,7 +631,7 @@ impl Mutation {
     pub fn save_topic(&mut self, repo: &RepoId, topic: &RepoTopic) -> Result<()> {
         self.check_can_update(repo)?;
 
-        let topic_id = topic.id();
+        let topic_id = topic.topic_id();
         let view = self.client.view(repo)?;
         let before = view.topic(topic_id)?;
         self.indexer

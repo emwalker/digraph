@@ -151,7 +151,7 @@ impl From<&RepoTopic> for TopicInfo {
 
         Self {
             synonyms: SynonymList(synonyms),
-            id: topic.id().to_owned(),
+            id: topic.topic_id().to_owned(),
             deleted: false,
         }
     }
@@ -1318,7 +1318,7 @@ mod tests {
                 added_parent_topics: TopicInfoList::from(&topic2),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topic_ids: BTreeSet::from([topic3.id().to_owned()]),
+                parent_topic_ids: BTreeSet::from([topic3.topic_id().to_owned()]),
                 removed_parent_topics: TopicInfoList::new(),
                 updated_topic: TopicInfo::from(&topic1),
             });
@@ -1344,14 +1344,14 @@ mod tests {
                 added_parent_topics: TopicInfoList::from(&topic2),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topic_ids: BTreeSet::from([topic3.id().to_owned()]),
+                parent_topic_ids: BTreeSet::from([topic3.topic_id().to_owned()]),
                 removed_parent_topics: TopicInfoList::new(),
                 updated_topic: TopicInfo::from(&topic1),
             });
 
             assert_eq!(
                 change.ids(),
-                HashSet::from([topic1.id(), topic2.id(), topic3.id()])
+                HashSet::from([topic1.topic_id(), topic2.topic_id(), topic3.topic_id()])
             );
         }
     }
@@ -1452,13 +1452,16 @@ mod tests {
                 added_synonyms: SynonymList(BTreeMap::new()),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topics: BTreeSet::from([topic2.id().to_owned()]),
+                parent_topics: BTreeSet::from([topic2.topic_id().to_owned()]),
                 updated_topic: TopicInfo::from(&topic1),
                 removed_synonyms: SynonymList::new(),
                 reordered: false,
             });
 
-            assert_eq!(change.ids(), HashSet::from([topic1.id(), topic2.id()]));
+            assert_eq!(
+                change.ids(),
+                HashSet::from([topic1.topic_id(), topic2.topic_id()])
+            );
         }
     }
 
@@ -1540,7 +1543,7 @@ mod tests {
                 actor_id: "2".to_owned(),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topics: BTreeSet::from([topic1.id().to_owned()]),
+                parent_topics: BTreeSet::from([topic1.topic_id().to_owned()]),
                 previous_title: None,
                 upserted_link: LinkInfo::from(&link),
                 add_parent_topic: Some(TopicInfo::from(&topic1)),
@@ -1564,7 +1567,7 @@ mod tests {
                 actor_id: "2".to_owned(),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topics: BTreeSet::from([topic1.id().to_owned()]),
+                parent_topics: BTreeSet::from([topic1.topic_id().to_owned()]),
                 previous_title: Some("Redis".to_owned()),
                 upserted_link: LinkInfo::from(&link),
                 add_parent_topic: None,
@@ -1587,13 +1590,13 @@ mod tests {
                 actor_id: "2".to_owned(),
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
-                parent_topics: BTreeSet::from([topic1.id().to_owned()]),
+                parent_topics: BTreeSet::from([topic1.topic_id().to_owned()]),
                 previous_title: Some("Redis".to_owned()),
                 upserted_link: LinkInfo::from(&link),
                 add_parent_topic: None,
             });
 
-            assert_eq!(change.ids(), HashSet::from([link.id(), topic1.id()]));
+            assert_eq!(change.ids(), HashSet::from([link.id(), topic1.topic_id()]));
         }
     }
 
@@ -1610,7 +1613,7 @@ mod tests {
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
                 parent_topic: TopicInfo::from(&topic2),
-                parent_topic_ids: BTreeSet::from([topic2.id().to_owned()]),
+                parent_topic_ids: BTreeSet::from([topic2.topic_id().to_owned()]),
                 upserted_topic: TopicInfo::from(&topic1),
             });
 
@@ -1635,13 +1638,13 @@ mod tests {
                 date: chrono::Utc::now(),
                 id: Change::new_id(),
                 parent_topic: TopicInfo::from(&topic2),
-                parent_topic_ids: BTreeSet::from([topic3.id().to_owned()]),
+                parent_topic_ids: BTreeSet::from([topic3.topic_id().to_owned()]),
                 upserted_topic: TopicInfo::from(&topic1),
             });
 
             assert_eq!(
                 change.ids(),
-                HashSet::from([topic1.id(), topic2.id(), topic3.id()]),
+                HashSet::from([topic1.topic_id(), topic2.topic_id(), topic3.topic_id()]),
             );
         }
     }

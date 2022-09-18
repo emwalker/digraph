@@ -360,10 +360,6 @@ impl RepoTopic {
         self.metadata.details.is_some()
     }
 
-    pub fn id(&self) -> &Oid {
-        &self.metadata.id
-    }
-
     pub fn name(&self, locale: Locale) -> String {
         self.prefix().format(self.metadata.name(locale))
     }
@@ -405,7 +401,7 @@ impl RepoTopic {
     }
 
     pub fn relative_url(&self) -> String {
-        format!("/topics/{}", self.id())
+        format!("/topics/{}", self.topic_id())
     }
 
     pub fn timerange(&self) -> &Option<Timerange> {
@@ -431,6 +427,10 @@ impl RepoTopic {
             kind: Kind::Topic,
             id: self.metadata.id.to_owned(),
         }
+    }
+
+    pub fn topic_id(&self) -> &Oid {
+        &self.metadata.id
     }
 }
 
@@ -612,7 +612,7 @@ impl Iterator for DownsetIter {
                 }
             }
 
-            return Some(topic.id().to_owned());
+            return Some(topic.topic_id().to_owned());
         }
 
         None

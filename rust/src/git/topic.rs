@@ -2,7 +2,8 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{
     activity, Kind, Mutation, ParentTopic, RepoLink, RepoObject, RepoTopic, RepoTopicDetails,
-    RepoTopicMetadata, SaveChangesForPrefix, Synonym, SynonymEntry, SynonymMatch, TopicChild,
+    RepoTopicMetadata, RepoTopicWrapper, SaveChangesForPrefix, Synonym, SynonymEntry, SynonymMatch,
+    TopicChild,
 };
 use crate::prelude::*;
 
@@ -135,12 +136,13 @@ impl DeleteTopic {
 
 pub struct RemoveTopicTimerange {
     pub actor: Viewer,
-    pub repo: RepoId,
+    pub repo_id: RepoId,
     pub topic_id: Oid,
 }
 
 pub struct RemoveTopicTimerangeResult {
     pub alerts: Vec<Alert>,
+    pub repo_topic: RepoTopicWrapper,
 }
 
 impl RemoveTopicTimerange {
@@ -148,15 +150,15 @@ impl RemoveTopicTimerange {
     where
         S: SaveChangesForPrefix,
     {
-        let topic = mutation.fetch_topic(&self.repo, &self.topic_id);
+        let topic = mutation.fetch_topic(&self.repo_id, &self.topic_id);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
-        let mut topic = topic.unwrap();
+        let mut repo_topic = topic.unwrap();
 
-        let previous_timerange = topic.timerange().to_owned();
+        let previous_timerange = repo_topic.timerange().to_owned();
 
-        match &mut topic.metadata.details {
+        match &mut repo_topic.metadata.details {
             Some(details) => {
                 details.timerange = None;
             }
@@ -164,11 +166,17 @@ impl RemoveTopicTimerange {
             None => {}
         }
 
-        mutation.save_topic(&self.repo, &topic)?;
-        mutation.add_change(&self.repo, &self.change(&topic, previous_timerange))?;
+        mutation.save_topic(&self.repo_id, &repo_topic)?;
+        mutation.add_change(&self.repo_id, &self.change(&repo_topic, previous_timerange))?;
         mutation.write(store)?;
 
-        Ok(RemoveTopicTimerangeResult { alerts: vec![] })
+        Ok(RemoveTopicTimerangeResult {
+            alerts: vec![],
+            repo_topic: RepoTopicWrapper {
+                repo_topic,
+                repo_id: self.repo_id.to_owned(),
+            },
+        })
     }
 
     pub fn change(
@@ -327,7 +335,7 @@ pub struct UpdateTopicSynonyms {
 
 pub struct UpdateTopicSynonymsResult {
     pub alerts: Vec<Alert>,
-    pub repo_topic: RepoTopic,
+    pub repo_topic: RepoTopicWrapper,
 }
 
 impl UpdateTopicSynonyms {
@@ -339,9 +347,9 @@ impl UpdateTopicSynonyms {
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
-        let mut topic = topic.unwrap();
+        let mut repo_topic = topic.unwrap();
 
-        let lookup = topic
+        let lookup = repo_topic
             .synonyms()
             .iter()
             .map(|synonym| {
@@ -389,7 +397,7 @@ impl UpdateTopicSynonyms {
             .cloned()
             .collect::<HashSet<(String, Locale)>>();
 
-        match &mut topic.metadata.details {
+        match &mut repo_topic.metadata.details {
             Some(details) => {
                 details.synonyms = synonyms;
             }
@@ -397,13 +405,16 @@ impl UpdateTopicSynonyms {
             None => {}
         }
 
-        mutation.save_topic(&self.repo_id, &topic)?;
-        mutation.add_change(&self.repo_id, &self.change(&topic, &added, &removed))?;
+        mutation.save_topic(&self.repo_id, &repo_topic)?;
+        mutation.add_change(&self.repo_id, &self.change(&repo_topic, &added, &removed))?;
         mutation.write(store)?;
 
         Ok(UpdateTopicSynonymsResult {
             alerts: vec![],
-            repo_topic: topic,
+            repo_topic: RepoTopicWrapper {
+                repo_topic,
+                repo_id: self.repo_id.to_owned(),
+            },
         })
     }
 
@@ -473,11 +484,11 @@ impl UpsertTopic {
                         self.name
                     ));
 
-                    let parent_id = &parent.id();
+                    let parent_id = &parent.topic_id();
                     let mut matching_synonyms: BTreeSet<SynonymMatch> = BTreeSet::new();
 
                     for synonym_match in matches {
-                        let topic_id = &synonym_match.topic.id();
+                        let topic_id = &synonym_match.topic.topic_id();
                         if mutation.cycle_exists(&self.repo_id, topic_id, parent_id)? {
                             matching_synonyms.insert(synonym_match.with_cycle(true));
                         } else {
@@ -502,7 +513,7 @@ impl UpsertTopic {
                 }
 
                 OnMatchingSynonym::Update(topic_id) => {
-                    if mutation.cycle_exists(&self.repo_id, topic_id, parent.id())? {
+                    if mutation.cycle_exists(&self.repo_id, topic_id, parent.topic_id())? {
                         let ancestor = mutation.fetch_topic(&self.repo_id, topic_id);
                         if ancestor.is_none() {
                             return Err(Error::NotFound(format!("not found: {}", topic_id)));

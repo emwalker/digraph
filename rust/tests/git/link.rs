@@ -220,7 +220,7 @@ mod upsert_link {
         let link = result.link.unwrap();
 
         f.fetch_topic(&repo, &topic, |parent| {
-            assert_eq!(&topic, parent.id());
+            assert_eq!(&topic, parent.topic_id());
 
             let mut found = false;
             for child in parent.children {
