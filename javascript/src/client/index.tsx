@@ -44,13 +44,13 @@ const init = async () => {
 
   if (root) {
     root.render(
-      <RelayEnvironmentProvider environment={resolver.environment}>
-        <StrictMode>
+      <StrictMode>
+        <RelayEnvironmentProvider environment={resolver.environment}>
           <Provider store={store}>
             <Router resolver={resolver} />
           </Provider>
-        </StrictMode>
-      </RelayEnvironmentProvider>,
+        </RelayEnvironmentProvider>
+      </StrictMode>,
     )
   }
 
