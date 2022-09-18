@@ -52,18 +52,18 @@ function optimisticResponse(repoTopic: RepoTopicType, synonymUpdate: SynonymType
 }
 
 const renderSynonyms = (
-  repoTopic: RepoTopicType | null,
-  onDelete: Function,
-  updateTopicSynonyms: Function,
+  synonyms: readonly SynonymType[],
+  viewerCanUpdate: boolean,
+  onDelete: (position: number) => void,
+  updateTopicSynonyms: (synonyms: SynonymType[]) => void,
 ) => {
-  if (!repoTopic) return null
-
-  const synonyms = repoTopic.synonyms
-  if (synonyms.length === 0) return <div className="blankslate"><p>There are no synonyms</p></div>
+  if (synonyms.length === 0) 
+    return <div className="blankslate"><p>There are no synonyms</p></div>
+  
 
   return (
     <SynonymList
-      canUpdate={repoTopic.viewerCanUpdate}
+      canUpdate={viewerCanUpdate}
       onDelete={onDelete}
       onUpdate={updateTopicSynonyms}
       synonyms={synonyms}
@@ -133,8 +133,6 @@ const repoTopicFragment = graphql`
     synonyms {
       name
       locale
-
-      ...Synonym_synonym
     }
   }
 `
@@ -195,6 +193,7 @@ export default function RepoTopicSynonyms(props: Props) {
     // eslint-disable-next-line no-alert
     if (!window.confirm('Are you sure you want to delete this synonym?')) return
 
+    console.log('deleting synonym at ', position)
     const update = copySynonyms(synonyms)
     update.splice(position, 1)
     updateTopicSynonyms(update)
@@ -208,7 +207,7 @@ export default function RepoTopicSynonyms(props: Props) {
         Names and synonyms
       </label>
       <ul className="Box list-style-none mt-1 mb-2">
-        {renderSynonyms(repoTopic, onDelete, updateTopicSynonyms)}
+        {renderSynonyms(synonyms, repoTopic.viewerCanUpdate, onDelete, updateTopicSynonyms)}
       </ul>
 
       {repoTopic.viewerCanUpdate && renderAddForm(inputName, onNameChange, onLocaleChange, onAdd)}

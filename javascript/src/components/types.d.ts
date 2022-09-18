@@ -26,8 +26,12 @@ export interface LinkOption extends OptionProps {
     label: string;
 }
 export declare type SynonymType = {
-    name: string;
     locale: string;
+    name: string;
+};
+export declare type SortableType<T> = {
+    id: number;
+    inner: T;
 };
 export declare type AlertType = 'ERROR' | 'WARN' | 'SUCCESS' | '%future added value';
 export {};

@@ -1,6 +1,6 @@
 import 'core-js'
 import 'regenerator-runtime/runtime'
-import React from 'react'
+import React, { StrictMode } from 'react'
 import { RelayEnvironmentProvider } from 'relay-hooks'
 import { BrowserProtocol } from 'farce'
 import { createInitialFarceRouter } from 'found'
@@ -45,9 +45,11 @@ const init = async () => {
   if (root) {
     root.render(
       <RelayEnvironmentProvider environment={resolver.environment}>
-        <Provider store={store}>
-          <Router resolver={resolver} />
-        </Provider>
+        <StrictMode>
+          <Provider store={store}>
+            <Router resolver={resolver} />
+          </Provider>
+        </StrictMode>
       </RelayEnvironmentProvider>,
     )
   }

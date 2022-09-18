@@ -1,6 +1,5 @@
 Before switchover:
-* Use <StrictMode></StrictMode> in client/index.tsx
-* Repo topics/links: Fix synonym update bugs
+* Bug: dates not being added to and removed from display name
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Clean up database: odds and ends
@@ -19,7 +18,6 @@ Before switchover:
 * Bug: backend: whitespace not removed from synonyms
 * Bug: the repo ownership component is not vertically aligned with the "Close" button
 * Bug: repo topic forms not updated when a new repo is selected
-* Bug: dates not being added to and removed from display name
 * Repo topics/links: Return collection of repo views / edit forms instead of edit form
 * Verify that history entries are working for cross-repo mutations
 * Verify that account creation still works

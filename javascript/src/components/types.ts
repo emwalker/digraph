@@ -42,8 +42,8 @@ export interface LinkOption extends OptionProps {
 }
 
 export type SynonymType = {
-  name: string,
   locale: string,
+  name: string,
 }
 
 export type AlertType = 'ERROR' | 'WARN' | 'SUCCESS' | '%future added value'

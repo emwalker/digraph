@@ -1,22 +1,9 @@
-import React, { Component } from 'react';
-import { RepoTopicSynonyms_repoTopic$data as RepoTopicType } from '__generated__/RepoTopicSynonyms_repoTopic.graphql';
-declare type SynonymType = RepoTopicType['synonyms'][number];
+import { SynonymType } from 'components/types';
 declare type Props = {
     canUpdate: boolean;
-    onDelete: Function;
-    onUpdate: Function;
+    onDelete: (position: number) => void;
+    onUpdate: (synonyms: SynonymType[]) => void;
     synonyms: readonly SynonymType[];
 };
-declare class SynonymList extends Component<Props> {
-    onSortEnd: ({ oldIndex, newIndex }: {
-        oldIndex: number;
-        newIndex: number;
-    }) => void;
-    get canSort(): boolean;
-    deleteFn: () => Function | null;
-    renderReadonlyList: () => JSX.Element[];
-    renderUpdatableList: () => JSX.Element;
-    render: () => JSX.Element | JSX.Element[];
-}
-export declare const UnwrappedSynonymList: React.ComponentClass<import("react-sortable-hoc").SortableContainerProps, any>;
-export default SynonymList;
+export default function SynonymList(props: Props): JSX.Element;
+export {};

@@ -25,9 +25,8 @@ import {
 const publicDir = path.join(__dirname, 'public/static')
 const imagesDir = path.join(__dirname, 'public/images')
 
-// @ts-ignore-start
+// @ts-expect-error
 if (typeof window === 'undefined') global.window = {}
-// @ts-ignore-end
 
 // eslint-disable-next-line import/no-dynamic-require
 const oneMonth = 2629800000
@@ -82,7 +81,6 @@ app.get('*', async (req, res): Promise<void> => {
     const { element, status } = result
 
     const wrapped = (
-      // @ts-ignore
       <Provider store={store}>
         { element }
       </Provider>

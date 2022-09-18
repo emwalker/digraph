@@ -176,9 +176,8 @@ class EditLinkForm extends Component<Props, State> {
         </div>
 
         <EditParentTopicList
-          // @ts-ignore
           loadOptions={this.loadOptions}
-          // @ts-ignore
+          // @ts-expect-error
           selectedTopics={selectedTopics}
           updateTopics={this.updateTopics}
         />

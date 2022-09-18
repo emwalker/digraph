@@ -27,7 +27,7 @@ class FlashMessages extends Component<Props, State> {
     this.state = {
       messages: props.initialAlerts || [],
     }
-    // @ts-ignore
+
     window.flashMessages = this
   }
 
