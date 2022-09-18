@@ -237,8 +237,8 @@ impl RepoTopicWrapper {
         self.repo_id == *WIKI
     }
 
-    pub fn display_name(&self, locale: Locale) -> &str {
-        self.repo_topic.metadata.name(locale)
+    pub fn display_name(&self, locale: Locale) -> String {
+        self.repo_topic.name(locale)
     }
 
     pub fn display_color(&self) -> &str {
@@ -348,7 +348,7 @@ impl Topic {
         }
     }
 
-    pub fn display_name(&self, locale: Locale) -> &str {
+    pub fn display_name(&self, locale: Locale) -> String {
         self.display_topic.display_name(locale)
     }
 
@@ -507,9 +507,9 @@ impl std::cmp::PartialEq for Object {
 impl std::cmp::Eq for Object {}
 
 impl Object {
-    pub fn display_string(&self, locale: Locale) -> &str {
+    pub fn display_string(&self, locale: Locale) -> String {
         match self {
-            Self::Link(link) => link.display_title(),
+            Self::Link(link) => link.display_title().to_owned(),
             Self::Topic(topic) => topic.display_name(locale),
         }
     }

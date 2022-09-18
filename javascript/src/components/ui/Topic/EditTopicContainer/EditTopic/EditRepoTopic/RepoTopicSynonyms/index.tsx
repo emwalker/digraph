@@ -21,7 +21,7 @@ type Props = {
   viewer: RepoTopicSynonyms_viewer$key,
 }
 
-function displayName(synonyms: SynonymType[]) {
+function name(synonyms: readonly SynonymType[]) {
   if (synonyms.length > 0) {
     for (const synonym of synonyms) {
       if (synonym.locale !== 'en') // FIXME
@@ -34,6 +34,11 @@ function displayName(synonyms: SynonymType[]) {
   return 'Missing name'
 }
 
+function displayName(synonyms: readonly SynonymType[], timerangPrefix: string | null) {
+  const suffix = name(synonyms)
+  return timerangPrefix ? `${timerangPrefix} ${suffix}` : suffix
+}
+
 function optimisticResponse(repoTopic: RepoTopicType, synonymUpdate: SynonymType[]) {
   return {
     updateTopicSynonyms: {
@@ -41,7 +46,7 @@ function optimisticResponse(repoTopic: RepoTopicType, synonymUpdate: SynonymType
       alerts: [],
       updatedTopic: {
         id: repoTopic.topicId,
-        displayName: displayName(synonymUpdate),
+        displayName: displayName(repoTopic.synonyms, repoTopic.timerangePrefix),
       },
       updatedRepoTopic: {
         ...repoTopic,
@@ -121,6 +126,7 @@ const renderAddForm = (
 const repoTopicFragment = graphql`
   fragment RepoTopicSynonyms_repoTopic on RepoTopic {
     id
+    timerangePrefix
     topicId
     viewerCanDeleteSynonyms
     viewerCanUpdate

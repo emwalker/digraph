@@ -3,9 +3,12 @@ use async_graphql::{Context, Object, Union};
 use itertools::Itertools;
 use std::collections::BTreeSet;
 
-use super::{relay, time, ActivityLineItem, Link, LinkConnection, Repository};
-use super::{ActivityLineItemConnection, LinkConnectionFields};
+use super::{
+    relay, time, ActivityLineItem, ActivityLineItemConnection, Link, LinkConnection,
+    LinkConnectionFields, Repository,
+};
 use crate::store::Store;
+use crate::types::TimerangePrefix;
 use crate::{git, prelude::*};
 
 #[derive(Debug)]
@@ -76,7 +79,7 @@ impl RepoTopic {
         Ok(LiveSearchTopicsPayload(result))
     }
 
-    async fn display_name(&self) -> &str {
+    async fn display_name(&self) -> String {
         self.0.display_name(Locale::EN) // FIXME
     }
 
@@ -126,10 +129,19 @@ impl RepoTopic {
     }
 
     async fn timerange(&self) -> Result<Option<time::Timerange>> {
-        match &self.0.timerange() {
+        match self.0.timerange() {
             Some(timerange) => Ok(Some(timerange.try_into()?)),
             None => Ok(None),
         }
+    }
+
+    async fn timerange_prefix(&self) -> String {
+        if let Some(timerange) = self.0.timerange() {
+            let prefix: TimerangePrefix = timerange.into();
+            return prefix.prefix().unwrap_or_default();
+        }
+
+        "".into()
     }
 
     async fn topic_id(&self) -> &str {
@@ -270,7 +282,7 @@ impl Topic {
         .map_err(Error::Resolver)
     }
 
-    async fn display_name(&self) -> &str {
+    async fn display_name(&self) -> String {
         self.0.display_name(Locale::EN)
     }
 

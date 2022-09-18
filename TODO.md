@@ -1,6 +1,5 @@
 Before switchover:
 * Restore parent topics with a suitable query
-* Bug: dates not being added to and removed from display name
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Clean up database: odds and ends
@@ -19,6 +18,8 @@ Before switchover:
 * Bug: backend: whitespace not removed from synonyms
 * Bug: the repo ownership component is not vertically aligned with the "Close" button
 * Bug: repo topic forms not updated when a new repo is selected
+* Bug: parent topics are not sorted in alphabetical order in upper righthand box
+* Bring link edit form up to date
 * Repo topics/links: Return collection of repo views / edit forms instead of edit form
 * Verify that history entries are working for cross-repo mutations
 * Verify that account creation still works
@@ -59,6 +60,7 @@ Later:
 * Show search input in input box when loaded from a url
 * Find a new favicon / icon
 * Replace delete link/topic confirmation popup with GitHub primer version
+* Optimistic update for upserting and removing the topic timerange so that the UI updates quickly
 * Consider using cypress for frontend integration testing
 * Look into a timestamp format that is suitable for older dates (e.g., 500 BC) and possibly geological timescales
 * Figure out how to display the same change in different contexts -- e.g., a topic is deleted, and its contents merged into the parent topics.  What does the change look like in each change history?

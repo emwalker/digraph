@@ -346,6 +346,7 @@ type RepoTopic {
   repo: Repository!
   synonyms: [Synonym!]!
   timerange: Timerange
+  timerangePrefix: String!
   topicId: String!
   updatedAt: DateTime!
   viewerCanDeleteSynonyms: Boolean!

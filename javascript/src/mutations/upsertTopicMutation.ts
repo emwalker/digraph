@@ -1,62 +1,67 @@
-import { Environment } from 'react-relay'
-import { RecordSourceSelectorProxy } from 'relay-runtime'
-import { commitMutation, graphql, DeclarativeMutationConfig } from 'react-relay'
-import { v1 as uuidv1 } from 'uuid'
+import { Dispatch, SetStateAction, useCallback, KeyboardEvent  } from 'react'
+import { DeclarativeMutationConfig, graphql, useMutation } from 'react-relay'
+import { upsertTopicMutation } from '__generated__/upsertTopicMutation.graphql'
 
-import { UpsertTopicInput as Input } from '__generated__/upsertTopicMutation.graphql'
-import flashMessageUpdater from './util/flashMessageUpdater'
-import updateTopicConnections from './util/updateTopicConnections'
-
-type Config = {
-  configs: DeclarativeMutationConfig[],
+function relayConfigs(parentID: string) {
+  return [{
+    type: 'RANGE_ADD',
+    parentID,
+    connectionInfo: [{
+      key: 'Topic_children',
+      rangeBehavior: 'prepend',
+    }],
+    edgeName: 'topicEdge',
+  }]
 }
 
-let tmpId = 0
-
-export default (environment: Environment, input: Input, config: Config) => {
-  const mutation = graphql`
+const query = graphql`
   mutation upsertTopicMutation(
-      $input: UpsertTopicInput!
-    ) {
-      upsertTopic(input: $input) {
-        alerts {
-          text
-          type
-          id
-        }
+    $input: UpsertTopicInput!
+  ) {
+    upsertTopic(input: $input) {
+      alerts {
+        text
+        type
+        id
+      }
 
-        topicEdge {
-          node {
-            ...Topic_topic
-          }
+      topicEdge {
+        node {
+          ...Topic_topic
         }
       }
     }
-  `
-
-  const optimisticUpdater = (store: RecordSourceSelectorProxy) => {
-    tmpId += 1
-    const id = `client:topic:${tmpId}`
-    const node = store.create(id, 'Topic')
-    node.setValue(id, 'id')
-    node.setValue(input.name, 'name')
-    node.setValue('Adding topic to the repo ...', 'description')
-    node.setValue(true, 'loading')
-    node.setValue(null, 'repoTopics')
-    node.setValue(false, 'showRepoOwnership')
-    updateTopicConnections(store, node, 'TopicChildEdge', input.parentTopicId, 'Topic_children')
   }
+`
 
-  return commitMutation(
-    environment,
-    {
-      ...config,
-      mutation,
-      optimisticUpdater,
-      updater: flashMessageUpdater('upsertTopic'),
+export function makeUpsertTopic({ selectedRepoId, name, setName, topicId }: {
+  name: string,
+  selectedRepoId: string | null,
+  setName: Dispatch<SetStateAction<string>>,
+  topicId: string,
+}) {
+  const upsertTopic = useMutation<upsertTopicMutation>(query)[0]
+
+  return useCallback((event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return
+
+    if (!selectedRepoId) {
+      // eslint-disable-next-line no-console
+      console.log('repo not selected')
+      return
+    }
+    
+    upsertTopic({
       variables: {
-        input: { clientMutationId: uuidv1(), ...input },
+        input: {
+          name,
+          repoId: selectedRepoId,
+          parentTopicId: topicId,
+        },
       },
-    },
-  )
+      configs: relayConfigs(topicId) as DeclarativeMutationConfig[],
+    })
+  
+    setName('')
+  }, [upsertTopic, selectedRepoId, topicId, name, setName])
 }

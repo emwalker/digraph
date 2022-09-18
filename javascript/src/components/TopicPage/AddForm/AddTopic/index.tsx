@@ -1,21 +1,17 @@
 import React, {
-  SetStateAction, KeyboardEvent, FormEvent, useCallback, useState, Dispatch,
+  FormEvent, useCallback, useState,
 } from 'react'
 import {
-  graphql, DeclarativeMutationConfig, useRelayEnvironment, useFragment,
+  graphql, useFragment,
 } from 'react-relay'
 
-import upsertTopicMutation from 'mutations/upsertTopicMutation'
+import { makeUpsertTopic } from 'mutations/upsertTopicMutation'
 import {
   AddTopic_viewer$key,
-  AddTopic_viewer$data as ViewerType,
 } from '__generated__/AddTopic_viewer.graphql'
 import {
   AddTopic_topic$key,
-  AddTopic_topic$data as TopicType,
 } from '__generated__/AddTopic_topic.graphql'
-
-type RepositoryType = ViewerType['selectedRepository']
 
 const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
   + 'afterwards if it also belongs under another topic.\n'
@@ -27,76 +23,27 @@ type Props = {
   viewer: AddTopic_viewer$key,
 }
 
-type SetNameType = Dispatch<SetStateAction<string>>;
-
-function relayConfigs(parentID: string): DeclarativeMutationConfig[] {
-  return [{
-    type: 'RANGE_ADD',
-    parentID,
-    connectionInfo: [{
-      key: 'Topic_children',
-      rangeBehavior: 'prepend',
-    }],
-    edgeName: 'topicEdge',
-  }]
-}
-
-function createTopic(repo: RepositoryType, topic: TopicType, name: string, setName: SetNameType) {
-  if (!repo) {
-    // eslint-disable-next-line no-console
-    console.log('missing repo')
-    return
+const topicFragment = graphql`
+  fragment AddTopic_topic on Topic {
+    id
   }
+`
 
-  const repoId = repo.id
-  if (!repoId) {
-    console.log('expected a repo id', repo)
-    return
+const viewerFragment = graphql`
+  fragment AddTopic_viewer on User {
+    selectedRepository {
+      id
+    }
   }
-
-  upsertTopicMutation(
-    useRelayEnvironment(),
-    {
-      name,
-      repoId,
-      parentTopicId: topic.id,
-    },
-    {
-      configs: relayConfigs(topic.id),
-    },
-  )
-
-  setName('')
-}
+`
 
 export default function AddTopic(props: Props) {
-  const viewer = useFragment(
-    graphql`
-      fragment AddTopic_viewer on User {
-        selectedRepository {
-          id
-        }
-      }
-    `,
-    props.viewer,
-  )
-
-  const topic = useFragment(
-    graphql`
-      fragment AddTopic_topic on Topic {
-        id
-      }
-    `,
-    props.topic,
-  )
-
+  const viewer = useFragment(viewerFragment, props.viewer)
+  const topic = useFragment(topicFragment, props.topic)
   const [name, setName] = useState('')
-  const selectedRepo = viewer.selectedRepository
 
-  const onKeyPress = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== 'Enter') return
-    createTopic(selectedRepo, topic, name, setName)
-  }, [createTopic, selectedRepo, topic, name, setName])
+  const selectedRepoId = viewer.selectedRepository?.id || null
+  const onKeyPress = makeUpsertTopic({ selectedRepoId, name, setName, topicId: topic.id })
 
   const updateName = useCallback((event: FormEvent<HTMLInputElement>) => {
     setName(event.currentTarget.value)
