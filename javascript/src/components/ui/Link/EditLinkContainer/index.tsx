@@ -13,30 +13,32 @@ type Props = {
   toggleForm: () => void,
 }
 
+const query = graphql`
+  query EditLinkContainerQuery(
+    $linkId: String!,
+    $repoIds: [ID!],
+    $viewerId: ID!,
+  ) {
+    view(
+      repoIds: $repoIds,
+      viewerId: $viewerId,
+    ) {
+      link(id: $linkId) {
+        repoLinks {
+          ...EditLinkForm_repoLink
+        }
+      }
+    }
+  }
+`
+
 export default function EditLinkContainer({ isOpen, link, toggleForm }: Props) {
   const environment = useRelayEnvironment()
 
   return (
     <QueryRenderer
       environment={environment}
-      query={graphql`
-        query EditLinkContainerQuery(
-          $viewerId: ID!,
-          $repoIds: [ID!],
-          $linkId: String!,
-        ) {
-          view(
-            viewerId: $viewerId,
-            repositoryIds: $repoIds,
-          ) {
-            link(id: $linkId) {
-              repoLinks {
-                ...EditLinkForm_repoLink
-              }
-            }
-          }
-        }
-      `}
+      query={query}
       variables={{
         repoName: null,
         linkId: link.id,

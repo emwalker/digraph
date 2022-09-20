@@ -25,32 +25,9 @@ type ParentTopicType = NodeTypeOf<TopicType['displayParentTopics']>
 type SearchItemType = NodeTypeOf<TopicType['search']>
 
 type Props = {
-  orgLogin: string,
   topic: TopicSearchPage_topic$key,
   viewer: TopicSearchPage_viewer$key,
 }
-
-
-export const query = graphql`
-query TopicSearchPage_query_Query(
-  $viewerId: ID!,
-  $repoIds: [ID!],
-  $topicId: String!,
-  $searchString: String!,
-) {
-  view(
-    viewerId: $viewerId,
-    repositoryIds: $repoIds,
-  ) {
-    viewer {
-      ...TopicSearchPage_viewer
-    }
-
-    topic(id: $topicId) {
-      ...TopicSearchPage_topic @arguments(searchString: $searchString)
-    }
-  }
-}`
 
 const topicFragmentQuery = graphql`
   fragment TopicSearchPage_topic on Topic @argumentDefinitions(
@@ -95,7 +72,9 @@ const viewerFragmentQuery = graphql`
   }
 `
 
-const renderSearchResultItem = (viewer: ViewerType, item: any) => {
+const renderSearchResultItem = (viewer: ViewerType, item: SearchItemType | null) => {
+  if (!item) return null
+
   if (item.__typename === 'Link') {
     return (
       <Link
@@ -106,13 +85,17 @@ const renderSearchResultItem = (viewer: ViewerType, item: any) => {
     )
   }
 
-  return (
-    <Topic
-      key={item.id}
-      topic={item}
-      viewerId={viewer.id}
-    />
-  )
+  if (item.__typename === 'Topic') {
+    return (
+      <Topic
+        key={item.id}
+        topic={item}
+        viewerId={viewer.id}
+      />
+    )
+  }
+
+  return null
 }
 
 export default function TopicSearchPage(props: Props) {

@@ -44,8 +44,8 @@ query RecentPage_recent_Query(
   $topicId: String,
 ) {
   view(
+    repoIds: $repoIds,
     viewerId: $viewerId,
-    repositoryIds: $repoIds,
   ) {
     activity(topicId: $topicId, first: 50) {
       ...LineItems_activity

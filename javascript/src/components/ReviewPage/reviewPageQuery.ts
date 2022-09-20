@@ -8,9 +8,9 @@ export type ViewType = Response['view']
 
 export default graphql`
 query reviewPageQuery_query_Query(
-  $viewerId: ID!,
   $repoIds: [ID!],
   $topicId: String!,
+  $viewerId: ID!,
 ) {
   alerts {
     id
@@ -19,8 +19,8 @@ query reviewPageQuery_query_Query(
   }
 
   view(
+    repoIds: $repoIds,
     viewerId: $viewerId,
-    repositoryIds: $repoIds,
   ) {
     ...ReviewPage_view
   }

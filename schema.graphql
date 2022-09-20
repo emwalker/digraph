@@ -252,9 +252,9 @@ type Query {
   alerts: [Alert!]!
   fakeError: String
   view(
-    viewerId: ID!
-    repositoryIds: [ID!],
+    repoIds: [ID!],
     searchString: String,
+    viewerId: ID!
   ): View!
 }
 

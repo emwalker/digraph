@@ -86,28 +86,29 @@ const Homepage = ({ view, router }: Props) => {
 }
 
 export const query = graphql`
-query Homepage_homepage_Query(
-  $viewerId: ID!,
-  $repoIds: [ID!],
-) {
-  view(
-    viewerId: $viewerId,
-    repositoryIds: $repoIds,
+  query Homepage_homepage_Query(
+    $repoIds: [ID!],
+    $viewerId: ID!,
   ) {
-    stats {
-      linkCount
-      topicCount
-    }
+    view(
+      repoIds: $repoIds,
+      viewerId: $viewerId,
+    ) {
+      stats {
+        linkCount
+        topicCount
+      }
 
-    activity(first: 3) {
-      edges {
-        node {
-          description
-          ...LineItem_item
+      activity(first: 3) {
+        edges {
+          node {
+            description
+            ...LineItem_item
+          }
         }
       }
     }
   }
-}`
+`
 
 export default Homepage

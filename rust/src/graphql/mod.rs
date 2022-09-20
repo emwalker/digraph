@@ -170,11 +170,11 @@ impl QueryRoot {
     async fn view(
         &self,
         viewer_id: ID,
-        repository_ids: Option<Vec<ID>>,
+        repo_ids: Option<Vec<ID>>,
         search_string: Option<String>,
     ) -> Result<View> {
         let view = View {
-            repository_ids,
+            repo_ids,
             search_string,
             viewer_id,
         };

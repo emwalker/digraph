@@ -20,30 +20,31 @@ type Props = {
 }
 
 export const query = graphql`
-query LayoutQuery(
-  $viewerId: ID!,
-  $repoIds: [ID!],
-  $searchString: String,
-) {
-  alerts {
-    id
-    text
-    type
-  }
-
-  view(
-    viewerId: $viewerId,
-    repositoryIds: $repoIds,
-    searchString: $searchString,
+  query LayoutQuery(
+    $viewerId: ID!,
+    $repoIds: [ID!],
+    $searchString: String,
   ) {
-    viewer {
-      ...DesktopNav_viewer
-      ...SelectedRepo_viewer
+    alerts {
+      id
+      text
+      type
     }
 
-    ...SearchBox_view
+    view(
+      repoIds: $repoIds,
+      searchString: $searchString,
+      viewerId: $viewerId,
+    ) {
+      viewer {
+        ...DesktopNav_viewer
+        ...SelectedRepo_viewer
+      }
+
+      ...SearchBox_view
+    }
   }
-}`
+`
 
 export default function Layout({ alerts, children, view, match, router }: Props) {
   return (

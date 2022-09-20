@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { Express } from 'express'
-import { RouteMatch, Route, RedirectException, createRender, makeRouteConfig } from 'found'
+import { RouteMatch, Route, RedirectException, createRender, makeRouteConfig, Match } from 'found'
 import { queryMiddleware } from 'farce'
 import { Store, Action, Middleware, Dispatch, AnyAction } from 'redux'
 import { Resolver } from 'found-relay'
@@ -10,9 +10,7 @@ import TermsOfUse from 'components/TermsOfUse'
 import RecentPage, { query as recentPageQuery } from 'components/RecentPage'
 import ReviewPage, { query as reviewPageQuery } from 'components/ReviewPage'
 import UserSettings, { query as userSettingsQuery } from 'components/UserSettings'
-import { query as topicPageQuery } from 'components/TopicPage'
-import renderTopicPage from 'components/renderTopicPage'
-import { query as topicSearchPageQuery } from 'components/TopicSearchPage'
+import TopicPage, { query as topicPageQuery } from 'components/TopicPage'
 import Layout, { query as layoutQuery } from 'components/Layout'
 import withErrorBoundary from 'components/withErrorBoundary'
 import SignInPage from 'components/SignInPage'
@@ -32,14 +30,36 @@ export function createResolver(fetcher: FetcherBase) {
 const prepareVariablesFn = (viewer: Express.User) => (variables: FoundRelayVariables) => {
   const viewerId = viewer?.id || ''
   const sessionId = viewer?.sessionId || ''
-  const { topicId } = variables
+  const { topicId, searchString } = variables
 
   return {
     ...variables,
     topicId,
     sessionId,
     viewerId,
+    searchString: searchString || '',
   }
+}
+
+function renderTopicPage({ match: { location }, ...rest }: {
+  match: Match,
+}) {
+  // @ts-expect-error
+  if (!rest?.variables) {
+    console.log('params: ', rest)
+    return <div>Loading ...</div>
+  }
+
+  // @ts-expect-error
+  const variables = rest.variables as FoundRelayVariables
+  if (!variables.searchString)
+    variables.searchString = ''
+
+  return (
+    <Suspense fallback="loading ...">
+      <TopicPage variables={variables} location={location} />
+    </Suspense>
+  )
 }
 
 export const createRouteConfig = (store: RouteStore) => {
@@ -117,13 +137,9 @@ export const createRouteConfig = (store: RouteStore) => {
         >
           <Route
             path=""
+            Component={TopicPage}
             render={renderTopicPage}
-            prepareVariables={prepareVariables}
-            getQuery={({ location }: RouteMatch) => (
-              location.query.q
-                ? topicSearchPageQuery
-                : topicPageQuery
-            )}
+            query={topicPageQuery}
           />
           <Route
             path="recent"

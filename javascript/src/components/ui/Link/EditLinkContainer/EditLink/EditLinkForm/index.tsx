@@ -222,14 +222,14 @@ export default createRefetchContainer(EditLinkForm, {
 },
 graphql`
   query EditLinkFormRefetchQuery(
-    $viewerId: ID!,
-    $repoIds: [ID!],
     $linkId: String!,
+    $repoIds: [ID!],
     $searchString: String,
+    $viewerId: ID!,
   ) {
     view(
+      repoIds: $repoIds,
       viewerId: $viewerId,
-      repositoryIds: $repoIds,
     ) {
       viewer {
         ...EditLinkForm_viewer

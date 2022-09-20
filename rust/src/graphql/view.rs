@@ -17,7 +17,7 @@ pub struct ViewStats {
 
 #[derive(Clone)]
 pub struct View {
-    pub repository_ids: Option<Vec<ID>>,
+    pub repo_ids: Option<Vec<ID>>,
     pub search_string: Option<String>,
     pub viewer_id: ID,
 }

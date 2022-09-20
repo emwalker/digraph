@@ -18,8 +18,8 @@ export default graphql`
     }
 
     view(
+      repoIds: $repoIds,
       viewerId: $viewerId,
-      repositoryIds: $repoIds,
     ) {
       ...UserSettings_view
     }
