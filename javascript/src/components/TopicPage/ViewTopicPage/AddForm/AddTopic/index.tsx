@@ -67,6 +67,7 @@ export default function AddTopic(props: Props) {
           onChange={updateName}
           onKeyPress={onKeyPress}
           placeholder="Name or description"
+          data-testid="topic-name-input"
           value={name}
         />
       </dd>

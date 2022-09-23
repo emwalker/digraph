@@ -13,6 +13,7 @@ module.exports = {
     'react/jsx-props-no-spreading': 'off',
     'react/require-default-props': 'off',
     'react/static-property-placement': ['error', 'static public field'],
+    'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
     semi: ['error', 'never'],
     'template-curly-spacing': 'off',
     '@typescript-eslint/no-redeclare': 'off',
