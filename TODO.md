@@ -19,6 +19,7 @@ Before switchover:
 * Bug: the repo ownership component is not vertically aligned with the "Close" button
 * Bug: repo topic forms not updated when a new repo is selected
 * Bug: parent topics are not sorted in alphabetical order in upper righthand box
+* Bug: something has happened with the search bar
 * Bring link edit form up to date
 * Repo topics/links: Return collection of repo views / edit forms instead of edit form
 * Repo topics/links: show timerange in read-only view

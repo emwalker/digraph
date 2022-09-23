@@ -1,18 +1,10 @@
 import React from 'react'
-import { graphql, useLazyLoadQuery } from 'react-relay'
-import { Location } from 'found'
+import { graphql } from 'react-relay'
+import { Match } from 'found'
 
 import TopicSearchPage from './TopicSearchPage'
 import ViewTopicPage from './ViewTopicPage'
-import {
-  TopicPage_query_Query,
-  TopicPage_query_Query$variables,
-} from '__generated__/TopicPage_query_Query.graphql'
-
-type Props = {
-  location: Location,
-  variables: TopicPage_query_Query$variables,
-}
+import { TopicPage_query_Query$data } from '__generated__/TopicPage_query_Query.graphql'
 
 export const query = graphql`
   query TopicPage_query_Query(
@@ -44,17 +36,21 @@ export const query = graphql`
   }
 `
 
-export default function TopicPage({ location, variables }: Props) {
-  const data = useLazyLoadQuery<TopicPage_query_Query>(query, variables)
+type ViewType = TopicPage_query_Query$data['view']
 
-  const { topic, viewer } = data.view
-  if (!topic || !viewer) return null
+type TopicPageProps = {
+  view: ViewType,
+  match: Match,
+}
+
+export function TopicPage({ match: { location }, view }: TopicPageProps) {
+  if (!view || !view.topic || !view.viewer) return null
 
   if (location.query.q) {
     return (
       <TopicSearchPage
-        topic={topic}
-        viewer={viewer}
+        topic={view.topic}
+        viewer={view.viewer}
       />
     )
   }
@@ -62,8 +58,8 @@ export default function TopicPage({ location, variables }: Props) {
   return (
     <ViewTopicPage
       location={location}
-      topic={topic}
-      viewer={viewer}
+      topic={view.topic}
+      viewer={view.viewer}
     />
   )
 }
