@@ -44,7 +44,7 @@ type TopicPageProps = {
 }
 
 export function TopicPage({ match: { location }, view }: TopicPageProps) {
-  if (!view || !view.topic || !view.viewer) return null
+  if (!view || !view.topic || !view.viewer) return <div>Loading ...</div>
 
   if (location.query.q) {
     return (

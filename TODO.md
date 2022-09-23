@@ -44,6 +44,7 @@ Before switchover:
 Later:
 * Repo topics/links: Add UX for updating any fields on an item that isn't in the selected repo
 * Repo topics/links: Add UX for updating select fields of an item that isn't in the selected repo
+* Fiddle with relay-router to avoid a blank page in some transitions
 * Experiment with using borrows in some resolvers instead of copying
 * Replace <Suspense>loading...</Suspense> with something nice
 * Get UX working on mobile devices again
