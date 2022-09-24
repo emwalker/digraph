@@ -1,17 +1,38 @@
-import { Dispatch, SetStateAction, useCallback, KeyboardEvent  } from 'react'
-import { DeclarativeMutationConfig, graphql, useMutation } from 'react-relay'
+import { Dispatch, SetStateAction, useCallback, KeyboardEvent } from 'react'
+import { graphql, useMutation, ConnectionHandler } from 'react-relay'
+import { RecordSourceSelectorProxy } from 'relay-runtime'
 import { upsertTopicMutation } from '__generated__/upsertTopicMutation.graphql'
 
-function relayConfigs(parentID: string) {
-  return [{
-    type: 'RANGE_ADD',
-    parentID,
-    connectionInfo: [{
-      key: 'Topic_children',
-      rangeBehavior: 'prepend',
-    }],
-    edgeName: 'topicEdge',
-  }]
+function makeUpdater(parentTopicId: string) {
+  return (store: RecordSourceSelectorProxy) => {
+    const connectionId = ConnectionHandler.getConnectionID(parentTopicId,
+      'ViewTopicPage_topic_children', { searchString: '' })
+
+    if (!connectionId) {
+      console.log('connection id not found for parent topic:', parentTopicId)
+      return
+    }
+
+    const connection = store.get(connectionId)
+    if (!connection) {
+      console.log('connection not found for id:', connectionId)
+      return
+    }
+
+    const payload = store.getRootField('upsertTopic')
+    if (!payload) {
+      console.log('payload not found in mutation response')
+      return
+    }
+
+    const topicEdge = payload.getLinkedRecord('topicEdge')
+    if (!topicEdge) {
+      console.log('no topic edge found in mutation response')
+      return
+    }
+
+    ConnectionHandler.insertEdgeBefore(connection, topicEdge)
+  }
 }
 
 const query = graphql`
@@ -50,7 +71,7 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId }: {
       console.log('repo not selected')
       return
     }
-    
+
     upsertTopic({
       variables: {
         input: {
@@ -59,9 +80,9 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId }: {
           parentTopicId: topicId,
         },
       },
-      configs: relayConfigs(topicId) as DeclarativeMutationConfig[],
+      updater: makeUpdater(topicId),
     })
-  
+
     setName('')
   }, [upsertTopic, selectedRepoId, topicId, name, setName])
 }

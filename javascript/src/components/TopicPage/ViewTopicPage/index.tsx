@@ -21,12 +21,12 @@ import {
 } from '__generated__/ViewTopicPage_viewer.graphql'
 import {
   ViewTopicPage_topic$key,
-  ViewTopicPage_topic$data as TopicType,
+  ViewTopicPage_topic$data as TopicNodeType,
 } from '__generated__/ViewTopicPage_topic.graphql'
 import AddForm from './AddForm'
 
-type TopicChildType = NodeTypeOf<TopicType['children']>
-type ParentTopicType = NodeTypeOf<TopicType['displayParentTopics']>
+type TopicChildType = NodeTypeOf<TopicNodeType['children']>
+type ParentTopicType = NodeTypeOf<TopicNodeType['displayParentTopics']>
 
 type Props = {
   location: Location,
@@ -44,9 +44,9 @@ const viewerFragment = graphql`
 `
 
 const topicFragment = graphql`
-  fragment ViewTopicPage_topic on Topic @argumentDefinitions(
-    searchString: {type: "String!", defaultValue: ""},
-  ) {
+  fragment ViewTopicPage_topic on Topic
+  @argumentDefinitions(searchString: {type: "String!", defaultValue: ""})
+  {
     displayName
     id
     showRepoOwnership
@@ -68,7 +68,8 @@ const topicFragment = graphql`
       }
     }
 
-    children(first: 1000, searchString: $searchString) @connection(key: "Topic_children") {
+    children(first: 1000, searchString: $searchString)
+    @connection(key: "ViewTopicPage_topic_children") {
       edges {
         node {
           __typename
@@ -116,7 +117,7 @@ function renderTopicChild(viewer: ViewerType, child: TopicChildType | null) {
   return null
 }
 
-function renderRepoOwnership(topic: TopicType) {
+function renderRepoOwnership(topic: TopicNodeType) {
   const repoColors = topic.repoTopics.map((repoTopic) => repoTopic.displayColor as Color)
 
   return (
@@ -127,7 +128,7 @@ function renderRepoOwnership(topic: TopicType) {
   )
 }
 
-function headingDetail(topic: TopicType) {
+function headingDetail(topic: TopicNodeType) {
   const length = topic.displaySynonyms.length
 
   if (length < 2) return <div>{renderRepoOwnership(topic)}</div>
@@ -155,7 +156,7 @@ const renderNotification = () => (
   </div>
 )
 
-function renderTopicViews(topic: TopicType, isGuest: boolean) {
+function renderTopicViews(topic: TopicNodeType, isGuest: boolean) {
   const recentActivityLocation = {
     pathname: `${topicPath(topic.id)}/recent`,
     query: {},
