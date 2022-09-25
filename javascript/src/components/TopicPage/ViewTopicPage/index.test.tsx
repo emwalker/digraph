@@ -13,7 +13,7 @@ jest.mock('found',
   () => ({
     Link: ({ to, children }: any) => {
       return `<Link href="${to.pathname}">${children}</a>`
-    }
+    },
   }),
 )
 
@@ -70,8 +70,7 @@ async function setup() {
             displaySynonyms: [],
 
             children: {
-              edges: [
-              ],
+              edges: [],
             },
           }
         },
@@ -104,25 +103,47 @@ describe('<ViewTopicPage>', () => {
 
   it('allows a new topic to be added', async () => {
     const { environment, user } = await setup()
-    const displayName = 'New topic'
+    const topicName = 'New topic'
 
     environment.mock.queueOperationResolver((op) => {
       return MockPayloadGenerator.generate(op, {
         Topic() {
           return {
-            __typename: 'Topic',
-            id: 'new-topic-id',
-            displayName,
+            displayName: topicName,
           }
         },
       })
     })
 
     const nameInput = screen.getByTestId('topic-name-input')
-    await user.type(nameInput, `${displayName}{enter}`)
-  
+    await user.type(nameInput, `${topicName}{enter}`)
+
     const str = screen.getByTestId('List').innerHTML
-    expect(str).toContain(displayName)
+    expect(str).toContain(topicName)
+    expect(str).not.toContain('random')
+  })
+
+  it('allows a new link to be added', async () => {
+    const { environment, user } = await setup()
+    const linkUrl = 'http://www.google.com'
+
+    environment.mock.queueOperationResolver((op) => {
+      return MockPayloadGenerator.generate(op, {
+        Link() {
+          return {
+            __typename: 'Link',
+            id: 'new-link-id',
+            displayUrl: linkUrl,
+          }
+        },
+      })
+    })
+
+    const urlInput = screen.getByTestId('link-url-input')
+    await user.type(urlInput, `${linkUrl}{enter}`)
+
+    const str = screen.getByTestId('List').innerHTML
+    expect(str).toContain(linkUrl)
     expect(str).not.toContain('random')
   })
 })

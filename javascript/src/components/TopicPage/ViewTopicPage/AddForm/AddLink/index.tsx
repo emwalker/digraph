@@ -57,8 +57,9 @@ export default function AddLink(props: Props) {
       </dt>
       <dd>
         <input
-          className="form-control test-link-url input-sm"
+          className="form-control input-sm"
           disabled={props.disabled}
+          data-testid="link-url-input"
           id="create-link-url"
           onChange={onChange}
           onKeyPress={onKeyPress}

@@ -1,5 +1,5 @@
 Before switchover:
-* Restore parent topics with a suitable query
+* Get parent topic select box working again
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Clean up database: odds and ends
@@ -12,23 +12,18 @@ Before switchover:
 * Decide whether to support link reviews or remove the feature
 * Bug: client: the JS client doesn't show new links and topics in the right place when they're added
 * Bug: client: some history entries are not displaying properly
-* Bug: a topic search causes the client to crash
-* Repo topics/links: Figure out how to represent / what to do with partial details in edit forms (no title, no url, but parent topics)
 * Bug: backend: whitespace not removed from page titles
 * Bug: backend: whitespace not removed from synonyms
 * Bug: the repo ownership component is not vertically aligned with the "Close" button
 * Bug: repo topic forms not updated when a new repo is selected
 * Bug: parent topics are not sorted in alphabetical order in upper righthand box
 * Bug: something has happened with the search bar
-* Bring link edit form up to date
-* Repo topics/links: Return collection of repo views / edit forms instead of edit form
 * Repo topics/links: show timerange in read-only view
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 * Verify that history entries are working for cross-repo mutations
 * Verify that account creation still works
 * Verify that account deletion still works
-* Verify that references mirroring private topics are not unexpectedly created in the Wiki repo
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo

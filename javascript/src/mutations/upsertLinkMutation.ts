@@ -21,7 +21,7 @@ function makeUpdater(parentTopicId: string | null) {
       return
     }
 
-    const payload = store.getRootField('upsertTopic')
+    const payload = store.getRootField('upsertLink')
     if (!payload) {
       console.log('payload not found in mutation response')
       return
