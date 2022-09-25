@@ -1,39 +1,40 @@
 import React, { useCallback, useState } from 'react'
-import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
+import { graphql, useFragment, useMutation } from 'react-relay'
 import classNames from 'classnames'
 
-import reviewLinkMutation, { Input } from 'mutations/reviewLinkMutation'
+import reviewLinkQuery from 'mutations/reviewLinkMutation'
+import { reviewLinkMutation } from '__generated__/reviewLinkMutation.graphql'
 import { Review_link$key } from '__generated__/Review_link.graphql'
 
 type Props = {
   link: Review_link$key,
 }
 
+const linkFragment = graphql`
+  fragment Review_link on Link {
+    displayTitle
+    displayUrl
+    id
+
+    viewerReview {
+      reviewedAt
+    }
+  }
+`
+
 export default function Review(props: Props) {
-  const environment = useRelayEnvironment()
-
-  const link = useFragment(
-    graphql`
-      fragment Review_link on Link {
-        displayTitle
-        displayUrl
-        id
-
-        viewerReview {
-          reviewedAt
-        }
-      }
-    `,
-    props.link,
-  )
-
+  const reviewLink = useMutation<reviewLinkMutation>(reviewLinkQuery)[0]
+  const link = useFragment(linkFragment, props.link)
   const [reviewed, setReviewed] = useState(false)
 
   const onChange = useCallback(() => {
-    const input: Input = { linkId: link.id, reviewed: !reviewed }
-    reviewLinkMutation(environment, input)
+    reviewLink({
+      variables: {
+        input: { linkId: link.id, reviewed: !reviewed },
+      },
+    })
     setReviewed(!reviewed)
-  }, [setReviewed, reviewLinkMutation, environment])
+  }, [setReviewed, reviewLink])
 
   const className = classNames(
     'Box-row clearfix Review', 'd-flex', 'flex-items-center', {

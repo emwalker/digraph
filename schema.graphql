@@ -100,38 +100,6 @@ type DeleteTopicPayload {
   deletedTopicId: String
 }
 
-input RemoveTopicTimerangeInput {
-  clientMutationId: String
-  repoId: String!
-  topicId: String!
-}
-
-type RemoveTopicTimerangePayload {
-  clientMutationId: String
-  updatedRepoTopic: RepoTopic!
-  updatedTopic: Topic!
-}
-
-type RepoLink {
-  availableParentTopics(
-    searchString: String,
-  ): LiveSearchTopicsPayload!
-  createdAt: DateTime!
-  displayColor: Color!
-  linkId: String!
-  parentTopics(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicConnection!
-  repository: Repository!
-  title: String!
-  updatedAt: DateTime!
-  url: String!
-  viewerCanUpdate: Boolean!
-}
-
 type Link {
   displayParentTopics(
     first: Int,
@@ -192,6 +160,38 @@ type LinkReview {
   user: User!
 }
 
+input RemoveTopicTimerangeInput {
+  clientMutationId: String
+  repoId: String!
+  topicId: String!
+}
+
+type RemoveTopicTimerangePayload {
+  clientMutationId: String
+  updatedRepoTopic: RepoTopic!
+  updatedTopic: Topic!
+}
+
+type RepoLink {
+  availableParentTopics(
+    searchString: String,
+  ): LiveSearchTopicsPayload!
+  createdAt: DateTime!
+  displayColor: Color!
+  inWikiRepo: Boolean!
+  linkId: String!
+  parentTopics(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String
+  ): TopicConnection!
+  repo: Repository!
+  title: String!
+  updatedAt: DateTime!
+  url: String!
+  viewerCanUpdate: Boolean!
+}
 type SynonymMatch {
   displayName: String!
   id: String!
@@ -300,33 +300,6 @@ type ReviewLinkPayload {
   link: Link!
 }
 
-union TopicChild = Topic | Link
-
-type TopicChildEdge {
-  cursor: String!
-  node: TopicChild!
-}
-
-type TopicChildConnection {
-  edges: [TopicChildEdge]
-  pageInfo: PageInfo!
-}
-
-input SelectRepositoryInput {
-  clientMutationId: String
-  repositoryId: ID
-}
-
-type SelectRepositoryPayload {
-  repository: Repository
-  viewer: User!
-}
-
-type Synonym {
-  locale: LocaleIdentifier!
-  name: String!
-}
-
 type RepoTopic {
   availableParentTopics(
     searchString: String,
@@ -351,6 +324,33 @@ type RepoTopic {
   updatedAt: DateTime!
   viewerCanDeleteSynonyms: Boolean!
   viewerCanUpdate: Boolean!
+}
+
+input SelectRepositoryInput {
+  clientMutationId: String
+  repositoryId: ID
+}
+
+type SelectRepositoryPayload {
+  repository: Repository
+  viewer: User!
+}
+
+type Synonym {
+  locale: LocaleIdentifier!
+  name: String!
+}
+
+union TopicChild = Topic | Link
+
+type TopicChildEdge {
+  cursor: String!
+  node: TopicChild!
+}
+
+type TopicChildConnection {
+  edges: [TopicChildEdge]
+  pageInfo: PageInfo!
 }
 
 type Topic {

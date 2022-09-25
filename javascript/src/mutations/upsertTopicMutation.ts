@@ -67,7 +67,6 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId }: {
     if (event.key !== 'Enter') return
 
     if (!selectedRepoId) {
-      // eslint-disable-next-line no-console
       console.log('repo not selected')
       return
     }

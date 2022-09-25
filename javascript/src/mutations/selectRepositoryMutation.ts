@@ -1,11 +1,6 @@
 import { graphql } from 'react-relay'
 
-import { SelectRepositoryInput } from '__generated__/selectRepositoryMutation.graphql'
-import defaultMutation from './util/defaultMutation'
-
-export type Input = SelectRepositoryInput
-
-export default defaultMutation(graphql`
+export default graphql`
   mutation selectRepositoryMutation(
     $input: SelectRepositoryInput!
   ) {
@@ -20,4 +15,4 @@ export default defaultMutation(graphql`
       }
     }
   }
-`)
+`

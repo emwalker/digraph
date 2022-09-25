@@ -22,7 +22,7 @@ export default ({ children, hasItems, placeholder }: Props) => {
   if (!hasItems) return <Blankslate message={placeholder} />
 
   return (
-    <div className="Box">
+    <div className="Box" data-testid="List">
       <ul>
         { children }
       </ul>

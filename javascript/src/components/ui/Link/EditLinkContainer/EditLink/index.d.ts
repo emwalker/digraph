@@ -1,10 +1,9 @@
-declare type CallerProps = {
-    isOpen: boolean;
+import { EditLink_link$key } from '__generated__/EditLink_link.graphql';
+declare type Props = {
+    link: EditLink_link$key;
+    refetch: Function;
     toggleForm: () => void;
+    viewer: any;
 };
-declare type RenderArgs = {
-    error: Error | null;
-    props?: unknown;
-};
-declare const _default: ({ isOpen, toggleForm }: CallerProps) => ({ error, props }: RenderArgs) => JSX.Element | null;
-export default _default;
+export default function EditLink({ refetch, toggleForm, viewer, ...rest }: Props): JSX.Element;
+export {};

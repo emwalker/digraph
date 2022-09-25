@@ -7,7 +7,7 @@ type Props = {
   renderHeadingDetail?: Function,
 }
 
-const Subhead = (props: Props) => {
+export default function Subhead(props: Props) {
   const { heading, renderHeadingDetail } = props
 
   useDocumentTitle(`${heading} | Digraph`)
@@ -21,9 +21,3 @@ const Subhead = (props: Props) => {
     </div>
   )
 }
-
-Subhead.defaultProps = {
-  renderHeadingDetail: null,
-}
-
-export default Subhead

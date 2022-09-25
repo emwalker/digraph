@@ -1,126 +1,94 @@
-import { Environment } from 'react-relay'
-import { ConnectionHandler, RecordProxy, RecordSourceSelectorProxy } from 'relay-runtime'
-import { commitMutation, graphql, DeclarativeMutationConfig } from 'react-relay'
-import { v1 as uuidv1 } from 'uuid'
+import { Dispatch, SetStateAction, useCallback, MouseEvent } from 'react'
+import { ConnectionHandler, graphql, useMutation } from 'react-relay'
+import { RecordSourceSelectorProxy } from 'relay-runtime'
 
-import type { UpsertLinkInput } from '__generated__/upsertLinkMutation.graphql'
-import flashMessageUpdater from './util/flashMessageUpdater'
+import { upsertLinkMutation } from '__generated__/upsertLinkMutation.graphql'
 
-export type Input = UpsertLinkInput
+function makeUpdater(parentTopicId: string | null) {
+  if (!parentTopicId) return null
 
-type Config = {
-  configs: DeclarativeMutationConfig[],
+  return (store: RecordSourceSelectorProxy) => {
+    const connectionId = ConnectionHandler.getConnectionID(parentTopicId,
+      'ViewTopicPage_topic_children', { searchString: '' })
+    if (!connectionId) {
+      console.log('no connection id found under topic:', parentTopicId)
+      return
+    }
+
+    const connection = store.get(connectionId)
+    if (!connection) {
+      console.log('no connection found for id:', connectionId)
+      return
+    }
+
+    const payload = store.getRootField('upsertTopic')
+    if (!payload) {
+      console.log('payload not found in mutation response')
+      return
+    }
+
+    const linkEdge = payload.getLinkedRecord('linkEdge')
+    if (!linkEdge) {
+      console.log('no topic edge found in mutation response')
+      return
+    }
+
+    ConnectionHandler.insertEdgeBefore(connection, linkEdge)
+  }
 }
 
-let tmpId = 0
+const query = graphql`
+  mutation upsertLinkMutation($input: UpsertLinkInput!) {
+    upsertLink(input: $input) {
+      alerts {
+        text
+        type
+        id
+      }
 
-export default (environment: Environment, input: Input, config?: Config) => {
-  const mutation = graphql`
-    mutation upsertLinkMutation(
-      $input: UpsertLinkInput!
-    ) {
-      upsertLink(input: $input) {
-        alerts {
-          text
-          type
+      linkEdge {
+        node {
           id
-        }
-
-        linkEdge {
-          node {
-            id
-            ...Link_link
-          }
+          ...Link_link
         }
       }
     }
-  `
+  }
+`
 
-  const insertLink = (conn: RecordProxy, edge: RecordProxy, itemId: string) => {
-    const prevEdges = conn.getLinkedRecords('edges')
-    if (!prevEdges) return
+type Props = {
+  linkId?: string,
+  selectedRepoId: string | null,
+  setUrl?: Dispatch<SetStateAction<string>>,
+  title?: string | null,
+  topicId?: string | null,
+  url: string,
+}
 
-    let node = prevEdges.map((e) => e.getLinkedRecord('node'))
-      .find((n) => n?.getValue('id') == itemId)
+export function makeUpsertLinkCallback({
+  linkId, selectedRepoId, setUrl, title, topicId, url,
+}: Props) {
+  const upsertLink = useMutation<upsertLinkMutation>(query)[0]
 
-    if (node) {
-      console.log('link found, skipping')
+  return useCallback(() => {
+    if (!selectedRepoId) {
+      console.log('repo not selected')
       return
     }
 
-    console.log('adding new link')
-    // Find first link; we'll insert before it
-    // https://github.com/facebook/relay/issues/2761#issuecomment-501552410
-    let firstLinkIndex = prevEdges.map((e) => e.getLinkedRecord('node'))
-      .findIndex((n) => n?.getValue('__typename') == 'Link')
-
-    if (!firstLinkIndex) {
-      ConnectionHandler.insertEdgeAfter(conn, edge)
-      return
-    }
-
-    prevEdges.splice(firstLinkIndex, 0, edge)
-    conn.setLinkedRecords(prevEdges, 'edges')
-  }
-
-  const optimisticUpdater = (store: RecordSourceSelectorProxy) => {
-    tmpId += 1
-    const parentTopicId = input.addParentTopicId || null
-
-    const nodeId = input.linkId || `client:link:${tmpId}`
-    let node = store.get(nodeId) || store.create(nodeId, 'Link')
-    node.setValue(nodeId, 'id')
-    node.setValue(input.title || 'Adding link to repo ...', 'displayTitle')
-    node.setValue(input.url, 'displayUrl')
-    node.setValue(true, 'loading')
-
-    if (parentTopicId) {
-      const topicProxy = store.get(parentTopicId)
-      if (!topicProxy) return
-
-      const conn = ConnectionHandler.getConnection(topicProxy, 'Topic_children')
-      if (!conn) return
-
-      const edge = store.create(`client:newEdge:${tmpId}`, 'TopicChildEdge')
-      edge.setLinkedRecord(node, 'node')
-
-      insertLink(conn, edge, nodeId)
-    }
-  }
-
-  const updater = (store: RecordSourceSelectorProxy) => {
-    const payload = store.getRootField('upsertLink')
-    const edge = payload?.getLinkedRecord('linkEdge')
-    const link = edge?.getLinkedRecord('node')
-    const linkId = link?.getValue('id') as string
-
-    if (!edge) return
-    if (!linkId) return
-
-    const parentTopicId = input.addParentTopicId || null
-
-    if (parentTopicId) {
-      const topicProxy = store.get(parentTopicId)
-      if (topicProxy) {
-        const conn = ConnectionHandler.getConnection(topicProxy, 'Topic_children')
-        if (conn)
-          insertLink(conn, edge, linkId)
-      }
-    }
-
-    flashMessageUpdater('upsertLink')
-  }
-
-  return commitMutation(
-    environment,
-    {
-      ...config,
-      mutation,
-      optimisticUpdater,
-      updater,
+    upsertLink({
       variables: {
-        input: { clientMutationId: uuidv1(), ...input },
+        input: {
+          addParentTopicId: topicId,
+          linkId,
+          repoId: selectedRepoId,
+          title,
+          url,
+        },
       },
-    },
-  )
+      updater: makeUpdater(topicId || null),
+    })
+
+    if (setUrl) setUrl('')
+  }, [upsertLink, selectedRepoId, topicId, url, setUrl])
 }

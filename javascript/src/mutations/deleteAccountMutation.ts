@@ -1,12 +1,6 @@
 import { graphql } from 'react-relay'
 
-import { DeleteAccountInput } from '__generated__/deleteAccountMutation.graphql'
-import defaultMutation from './util/defaultMutation'
-import flashMessageUpdater from './util/flashMessageUpdater'
-
-export type Input = DeleteAccountInput
-
-export default defaultMutation(graphql`
+export default graphql`
   mutation deleteAccountMutation(
     $input: DeleteAccountInput!
   ) {
@@ -21,4 +15,4 @@ export default defaultMutation(graphql`
       }
     }
   }
-`, flashMessageUpdater('deleteAccount'))
+`

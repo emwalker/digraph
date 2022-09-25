@@ -21,12 +21,11 @@ import {
 } from '__generated__/ViewTopicPage_viewer.graphql'
 import {
   ViewTopicPage_topic$key,
-  ViewTopicPage_topic$data as TopicNodeType,
+  ViewTopicPage_topic$data as TopicType,
 } from '__generated__/ViewTopicPage_topic.graphql'
 import AddForm from './AddForm'
 
-type TopicChildType = NodeTypeOf<TopicNodeType['children']>
-type ParentTopicType = NodeTypeOf<TopicNodeType['displayParentTopics']>
+type TopicChildType = NodeTypeOf<TopicType['children']>
 
 type Props = {
   location: Location,
@@ -37,9 +36,7 @@ type Props = {
 const viewerFragment = graphql`
   fragment ViewTopicPage_viewer on User {
     id
-    isGuest
     ...AddForm_viewer
-    ...Link_viewer
   }
 `
 
@@ -50,6 +47,7 @@ const topicFragment = graphql`
     displayName
     id
     showRepoOwnership
+    viewerCanUpdate
 
     repoTopics {
       displayColor
@@ -109,7 +107,7 @@ function renderTopicChild(viewer: ViewerType, child: TopicChildType | null) {
       <Link
         key={child.id}
         link={child}
-        viewer={viewer}
+        viewerId={viewer.id}
       />
     )
   }
@@ -117,7 +115,7 @@ function renderTopicChild(viewer: ViewerType, child: TopicChildType | null) {
   return null
 }
 
-function renderRepoOwnership(topic: TopicNodeType) {
+function renderRepoOwnership(topic: TopicType) {
   const repoColors = topic.repoTopics.map((repoTopic) => repoTopic.displayColor as Color)
 
   return (
@@ -128,7 +126,7 @@ function renderRepoOwnership(topic: TopicNodeType) {
   )
 }
 
-function headingDetail(topic: TopicNodeType) {
+function headingDetail(topic: TopicType) {
   const length = topic.displaySynonyms.length
 
   if (length < 2) return <div>{renderRepoOwnership(topic)}</div>
@@ -156,7 +154,7 @@ const renderNotification = () => (
   </div>
 )
 
-function renderTopicViews(topic: TopicNodeType, isGuest: boolean) {
+function renderTopicViews(topic: TopicType, canUpdate: boolean) {
   const recentActivityLocation = {
     pathname: `${topicPath(topic.id)}/recent`,
     query: {},
@@ -186,7 +184,7 @@ function renderTopicViews(topic: TopicNodeType, isGuest: boolean) {
             Recent activity
           </FoundLink>
         </li>
-        {!isGuest && (
+        {canUpdate && (
           <li className="Box-row">
             <FoundLink to={linksToReviewLocation} className="Box-row-link">
               Links to review
@@ -201,10 +199,10 @@ function renderTopicViews(topic: TopicNodeType, isGuest: boolean) {
 export default function TopicPage(props: Props) {
   const topic = useFragment(topicFragment, props.topic)
   const viewer = useFragment(viewerFragment, props.viewer)
-
+  const canEdit = topic.viewerCanUpdate
+  const children = liftNodes(topic.children)
+  const parentTopics = liftNodes(topic.displayParentTopics)
   const renderHeadingDetail = useCallback(() => headingDetail(topic), [headingDetail, topic])
-  const children = liftNodes<TopicChildType>(topic.children)
-  const isGuest = viewer.isGuest
 
   if (!topic) {
     return (
@@ -224,14 +222,14 @@ export default function TopicPage(props: Props) {
       <Columns>
         <RightColumn>
           <SidebarList
-            items={liftNodes<ParentTopicType>(topic.displayParentTopics)}
+            items={parentTopics}
             placeholder="There are no parent topics for this topic."
             title="Parent topics"
           />
-          {renderTopicViews(topic, isGuest)}
-          {isGuest
-            ? renderNotification()
-            : <AddForm topic={topic} viewer={viewer} />}
+          {renderTopicViews(topic, canEdit)}
+          {canEdit
+            ? <AddForm topic={topic} viewer={viewer} />
+            : renderNotification()}
         </RightColumn>
         <LeftColumn>
           <List

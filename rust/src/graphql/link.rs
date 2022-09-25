@@ -2,7 +2,7 @@ use async_graphql::connection::*;
 use async_graphql::{Context, Object, SimpleObject};
 use itertools::Itertools;
 
-use super::{relay, time, LiveSearchTopicsPayload, TopicConnection, User};
+use super::{relay, time, LiveSearchTopicsPayload, Repository, TopicConnection, User};
 use crate::git;
 use crate::prelude::*;
 use crate::store::Store;
@@ -42,23 +42,12 @@ impl RepoLink {
         }
     }
 
+    async fn in_wiki_repo(&self) -> bool {
+        self.0.repo_id.is_wiki()
+    }
+
     async fn link_id(&self) -> &str {
         self.0.link_id().as_str()
-    }
-
-    async fn title(&self) -> &str {
-        self.0.title()
-    }
-
-    async fn url(&self) -> &str {
-        self.0.url()
-    }
-
-    async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {
-        ctx.data_unchecked::<Store>()
-            .viewer
-            .write_repo_ids
-            .include(&self.0.repo_id)
     }
 
     async fn parent_topics(
@@ -74,6 +63,35 @@ impl RepoLink {
             .fetch_topics(self.0.parent_topic_ids(), 50)
             .await?;
         relay::topics(after, before, first, last, topics)
+    }
+
+    async fn repo(&self, ctx: &Context<'_>) -> Result<Repository> {
+        match ctx
+            .data_unchecked::<Store>()
+            .repo(self.0.repo_id.to_string())
+            .await
+        {
+            Ok(Some(repo)) => Ok(repo),
+            _ => Err(Error::NotFound(format!(
+                "repo not found: {}",
+                self.0.repo_id
+            ))),
+        }
+    }
+
+    async fn title(&self) -> &str {
+        self.0.title()
+    }
+
+    async fn url(&self) -> &str {
+        self.0.url()
+    }
+
+    async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {
+        ctx.data_unchecked::<Store>()
+            .viewer
+            .write_repo_ids
+            .include(&self.0.repo_id)
     }
 }
 

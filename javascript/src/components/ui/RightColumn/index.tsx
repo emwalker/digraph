@@ -4,10 +4,10 @@ type Props = {
   children: ReactNode,
 }
 
-const RightColumn = ({ children }: Props) => (
-  <div className="col-lg-4 col-md-6 col-12 float-right pb-3">
-    { children }
-  </div>
-)
-
-export default RightColumn
+export default function RightColumn({ children }: Props) {
+  return (
+    <div className="col-lg-4 col-md-6 col-12 float-right pb-3">
+      { children }
+    </div>
+  )
+}

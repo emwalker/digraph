@@ -1,11 +1,8 @@
-import { graphql } from 'react-relay'
+import { useCallback } from 'react'
+import { graphql, useMutation } from 'react-relay'
+import { deleteLinkMutation } from '__generated__/deleteLinkMutation.graphql'
 
-import { DeleteLinkInput } from '__generated__/deleteLinkMutation.graphql'
-import defaultMutation from './util/defaultMutation'
-
-export type Input = DeleteLinkInput
-
-export default defaultMutation(graphql`
+const query = graphql`
   mutation deleteLinkMutation(
     $input: DeleteLinkInput!
   ) {
@@ -14,4 +11,24 @@ export default defaultMutation(graphql`
       deletedLinkId
     }
   }
-`)
+`
+
+export function makeDeleteLinkCallback({ selectedRepoId, linkId }: {
+  linkId: string,
+  selectedRepoId: string | null,
+}) {
+  const deleteLink = useMutation<deleteLinkMutation>(query)[0]
+
+  return useCallback(() => {
+    if (!selectedRepoId) {
+      console.log('no repo selected')
+      return
+    }
+
+    deleteLink({
+      variables: {
+        input: { repoId: selectedRepoId, linkId },
+      },
+    })
+  }, [deleteLink, selectedRepoId, linkId])
+}

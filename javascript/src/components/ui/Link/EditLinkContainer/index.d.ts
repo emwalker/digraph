@@ -1,10 +1,8 @@
-declare type Link = {
-    id: string;
-};
+import { PreloadedQuery } from 'react-relay';
+import { EditLinkQuery as EditLinkQueryType } from '__generated__/EditLinkQuery.graphql';
 declare type Props = {
-    isOpen: boolean;
-    link: Link;
+    queryRef: PreloadedQuery<EditLinkQueryType>;
     toggleForm: () => void;
 };
-export default function EditLinkContainer({ isOpen, link, toggleForm }: Props): JSX.Element;
+export default function EditLinkContainer(props: Props): JSX.Element | null;
 export {};

@@ -1,13 +1,28 @@
 import React from 'react'
-import { useQueryLoader, PreloadedQuery } from 'react-relay'
+import { useQueryLoader, PreloadedQuery, usePreloadedQuery } from 'react-relay'
 
-import EditTopicOuter from '../EditTopicOuter'
 import EditTopicQuery from '../EditTopicQuery'
 import { EditTopicQuery as EditTopicQueryType } from '__generated__/EditTopicQuery.graphql'
+import EditTopic from './EditTopic'
 
 type Props = {
   queryRef: PreloadedQuery<EditTopicQueryType>,
   toggleForm: () => void,
+}
+
+function Outer(props: Props) {
+  const data = usePreloadedQuery<EditTopicQueryType>(EditTopicQuery, props.queryRef)
+
+  if (!data.view || !data.view.topic) return null
+  const topic = data.view.topic
+
+  return (
+    <EditTopic
+      toggleForm={props.toggleForm}
+      topic={topic}
+      viewer={data.view.viewer}
+    />
+  )
 }
 
 export default function EditTopicContainer(props: Props) {
@@ -17,7 +32,7 @@ export default function EditTopicContainer(props: Props) {
   if (!queryRef) return null
 
   return (
-    <EditTopicOuter
+    <Outer
       queryRef={queryRef}
       toggleForm={props.toggleForm}
     />

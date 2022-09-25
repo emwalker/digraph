@@ -1,21 +1,43 @@
-import { graphql } from 'react-relay'
+import { useCallback } from 'react'
+import { graphql, useMutation } from 'react-relay'
 
-import { UpdateLinkParentTopicsInput } from '__generated__/updateLinkParentTopicsMutation.graphql'
-import defaultMutation from './util/defaultMutation'
+import { updateLinkParentTopicsMutation } from '__generated__/updateLinkParentTopicsMutation.graphql'
 
-export type Input = UpdateLinkParentTopicsInput
-
-export default defaultMutation(graphql`
+const query = graphql`
   mutation updateLinkParentTopicsMutation(
     $input: UpdateLinkParentTopicsInput!
   ) {
     updateLinkParentTopics(input: $input) {
       link {
         repoLinks {
-          ...EditLinkForm_repoLink
+          ...EditRepoLink_repoLink
         }
         ...Link_link
       }
     }
   }
-`)
+`
+
+export function makeUpdateLinkParentTopicsCallback({ linkId, selectedRepoId }: {
+  linkId: string,
+  selectedRepoId: string | null,
+}) {
+  const updateParentTopics = useMutation<updateLinkParentTopicsMutation>(query)[0]
+
+  return useCallback((parentTopicIds: string[]) => {
+    if (!selectedRepoId) {
+      console.log('no repo selected')
+      return
+    }
+
+    updateParentTopics({
+      variables: {
+        input: {
+          linkId,
+          parentTopicIds,
+          repoId: selectedRepoId,
+        },
+      },
+    })
+  }, [updateParentTopics, linkId, selectedRepoId])
+}

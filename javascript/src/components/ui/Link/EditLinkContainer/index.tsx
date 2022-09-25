@@ -1,51 +1,41 @@
 import React from 'react'
-import { QueryRenderer, graphql, useRelayEnvironment } from 'react-relay'
+import { PreloadedQuery, usePreloadedQuery, useQueryLoader } from 'react-relay'
 
-import makeEditLink from './EditLink'
-
-type Link = {
-  id: string,
-}
+import EditLink from './EditLink'
+import EditLinkQuery from '../EditLinkQuery'
+import { EditLinkQuery as EditLinkQueryType } from '__generated__/EditLinkQuery.graphql'
 
 type Props = {
-  isOpen: boolean,
-  link: Link,
+  queryRef: PreloadedQuery<EditLinkQueryType>,
   toggleForm: () => void,
 }
 
-const query = graphql`
-  query EditLinkContainerQuery(
-    $linkId: String!,
-    $repoIds: [ID!],
-    $viewerId: ID!,
-  ) {
-    view(
-      repoIds: $repoIds,
-      viewerId: $viewerId,
-    ) {
-      link(id: $linkId) {
-        repoLinks {
-          ...EditLinkForm_repoLink
-        }
-      }
-    }
-  }
-`
+function Outer(props: Props) {
+  const data = usePreloadedQuery<EditLinkQueryType>(EditLinkQuery, props.queryRef)
 
-export default function EditLinkContainer({ isOpen, link, toggleForm }: Props) {
-  const environment = useRelayEnvironment()
+  if (!data.view || !data.view.link) return null
+  const link = data.view.link
 
   return (
-    <QueryRenderer
-      environment={environment}
-      query={query}
-      variables={{
-        repoName: null,
-        linkId: link.id,
-        viewerId: '',
-        repoIds: [],
-      }}
-      render={makeEditLink({ isOpen, toggleForm })}
+    <EditLink
+      toggleForm={props.toggleForm}
+      link={link}
+      refetch={() => {}}
+      viewer={data.view.viewer}
+    />
+  )
+}
+
+export default function EditLinkContainer(props: Props) {
+  const queryRef =
+    useQueryLoader<EditLinkQueryType>(EditLinkQuery, props.queryRef)[0]
+
+  if (!queryRef) return null
+
+  return (
+    <Outer
+      queryRef={queryRef}
+      toggleForm={props.toggleForm}
     />
   )
 }

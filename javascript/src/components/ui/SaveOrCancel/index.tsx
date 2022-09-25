@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { MouseEventHandler } from 'react'
 
 type Props = {
-  onSave: () => void,
+  onSave: MouseEventHandler<HTMLButtonElement>,
   onCancel: () => void,
 }
 

@@ -2,13 +2,14 @@ import React, { FormEvent } from 'react'
 
 type Props = {
   className: string,
+  disabled?: boolean,
   id: string,
   label: string,
-  onChange: (event: FormEvent<HTMLInputElement>) => void,
+  onChange?: (event: FormEvent<HTMLInputElement>) => void,
   value: string | undefined,
 }
 
-export default ({ className, id, label, onChange, value }: Props) => (
+export default ({ className, disabled, id, label, onChange, value }: Props) => (
   <div className={className}>
     <dl className="form-group">
       <dt>
@@ -19,6 +20,7 @@ export default ({ className, id, label, onChange, value }: Props) => (
           className="form-control"
           defaultValue={value || ''}
           id={id}
+          disabled={disabled}
           onChange={onChange}
           type="text"
         />

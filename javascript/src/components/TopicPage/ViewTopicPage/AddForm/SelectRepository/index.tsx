@@ -1,8 +1,9 @@
 import React, { FormEvent, useCallback } from 'react'
-import { graphql, useFragment, useRelayEnvironment } from 'react-relay'
+import { graphql, useFragment, useMutation } from 'react-relay'
 
 import { EdgeTypeOf } from 'components/types'
-import selectRepositoryMutation, { Input } from 'mutations/selectRepositoryMutation'
+import selectRepositoryQuery from 'mutations/selectRepositoryMutation'
+import { selectRepositoryMutation } from '__generated__/selectRepositoryMutation.graphql'
 import {
   SelectRepository_viewer$key,
   SelectRepository_viewer$data as ViewerType,
@@ -25,39 +26,36 @@ const renderOption = (edge: EdgeType) => (
   )
 )
 
-export default function SelectRepository(props: Props) {
-  const environment = useRelayEnvironment()
+const viewerFragment = graphql`
+  fragment SelectRepository_viewer on User {
+    selectedRepository {
+      id
+      isPrivate
+    }
 
-  const viewer = useFragment(
-    graphql`
-      fragment SelectRepository_viewer on User {
-        selectedRepository {
+    repositories(first: 100) {
+      edges {
+        isSelected
+
+        node {
+          fullName
           id
-          isPrivate
-        }
-
-        repositories(first: 100) {
-          edges {
-            isSelected
-
-            node {
-              fullName
-              id
-            }
-          }
         }
       }
-    `,
-    props.viewer,
-  )
+    }
+  }
+`
+
+export default function SelectRepository(props: Props) {
+  const selectRepo = useMutation<selectRepositoryMutation>(selectRepositoryQuery)[0]
+  const viewer = useFragment(viewerFragment, props.viewer)
 
   const onChange = useCallback((event: FormEvent<HTMLSelectElement>) => {
-    const repositoryId = event.currentTarget.value
-    const input: Input = {
-      repositoryId: repositoryId === 'placeholder' ? null : repositoryId,
-    }
-    selectRepositoryMutation(environment, input)
-  }, [selectRepositoryMutation, environment])
+    const repoId = event.currentTarget.value
+    selectRepo({
+      variables: { input: { repositoryId: repoId } },
+    })
+  }, [selectRepo])
 
   const repositoryEdges = viewer.repositories?.edges || []
   const selectedId = viewer.selectedRepository?.id || undefined

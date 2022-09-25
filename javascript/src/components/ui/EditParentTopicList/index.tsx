@@ -1,5 +1,4 @@
-import React, { Component } from 'react'
-import { ActionMeta } from 'react-select'
+import React, { useCallback, useState } from 'react'
 import AsyncSelect from 'react-select/async'
 import debounce from 'es6-promise-debounce'
 
@@ -8,8 +7,6 @@ import {
 } from '__generated__/EditRepoTopic_repoTopic.graphql'
 import { TopicOption } from 'components/types'
 import colourStyles from './colourStyles'
-
-/* eslint react/no-unused-state: 0 */
 
 type SynonymMatches = RepoTopicType['availableTopics']['synonymMatches']
 type SelectedTopics = ({ label: string, value: string } | null)[]
@@ -32,39 +29,20 @@ type LoadOptionsType = (str: string) => Promise<readonly TopicOption[]>
 type Props = {
   loadOptions: LoadOptionsType,
   selectedTopics: readonly TopicOption[],
-  updateTopics: (topics: string[]) => void,
+  updateTopics: (topicIds: string[]) => void,
 }
 
-type State = {
-  inputValue: string,
-  selectedTopics: readonly TopicOption[],
-}
+export default function EditParentTopicList(props: Props) {
+  const loadOptions = debounce(props.loadOptions, 500)
+  const [selectedTopics, setSelectedTopics] = useState(props.selectedTopics)
+  const updateTopics = props.updateTopics
 
-class EditParentTopicList extends Component<Props, State> {
-  loadOptions: LoadOptionsType
+  const onChange = useCallback((topics: readonly TopicOption[]) => {
+    setSelectedTopics(topics)
+    updateTopics(topics.map((option: TopicOption) => option.value))
+  }, [setSelectedTopics])
 
-  constructor(props: Props) {
-    super(props)
-    this.state = {
-      inputValue: '',
-      selectedTopics: props.selectedTopics.map((option: TopicOption) => ({ ...option, color })),
-    }
-    this.loadOptions = debounce(this.props.loadOptions, 500)
-  }
-
-  onInputChange = (newValue: string) => {
-    const inputValue = newValue.replace(/\W/g, '')
-    this.setState({ inputValue })
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onChange = (selectedTopics: readonly TopicOption[], action: ActionMeta<TopicOption>) => {
-    this.setState({ selectedTopics }, () => {
-      this.props.updateTopics(selectedTopics.map((option: TopicOption) => option.value))
-    })
-  }
-
-  render = () => (
+  return (
     <div className="form-group">
       <label htmlFor="parent-topics">
         Parent topics
@@ -76,20 +54,17 @@ class EditParentTopicList extends Component<Props, State> {
         components={{
           ClearIndicator: undefined,
         }}
-        defaultOptions={this.state.selectedTopics}
+        defaultOptions={selectedTopics}
         escapeClearsValue={false}
         id="parent-topics"
         isClearable={false}
         isMulti
-        loadOptions={this.loadOptions}
-        onChange={this.onChange}
-        onInputChange={this.onInputChange}
+        loadOptions={loadOptions}
+        onChange={onChange}
         placeholder="Add a topic"
         styles={colourStyles}
-        value={this.state.selectedTopics}
+        value={selectedTopics}
       />
     </div>
   )
 }
-
-export default EditParentTopicList

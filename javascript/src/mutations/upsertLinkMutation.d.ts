@@ -1,9 +1,11 @@
-import { Environment } from 'react-relay';
-import { DeclarativeMutationConfig } from 'react-relay';
-import type { UpsertLinkInput } from '__generated__/upsertLinkMutation.graphql';
-export declare type Input = UpsertLinkInput;
-declare type Config = {
-    configs: DeclarativeMutationConfig[];
+import { Dispatch, SetStateAction } from 'react';
+declare type Props = {
+    linkId?: string;
+    selectedRepoId: string | null;
+    setUrl?: Dispatch<SetStateAction<string>>;
+    title?: string | null;
+    topicId?: string | null;
+    url: string;
 };
-declare const _default: (environment: Environment, input: Input, config?: Config) => import("react-relay").Disposable;
-export default _default;
+export declare function makeUpsertLinkCallback({ linkId, selectedRepoId, setUrl, title, topicId, url, }: Props): () => void;
+export {};

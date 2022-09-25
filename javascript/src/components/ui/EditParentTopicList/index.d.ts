@@ -1,5 +1,3 @@
-import { Component } from 'react';
-import { ActionMeta } from 'react-select';
 import { EditRepoTopic_repoTopic$data as RepoTopicType } from '__generated__/EditRepoTopic_repoTopic.graphql';
 import { TopicOption } from 'components/types';
 declare type SynonymMatches = RepoTopicType['availableTopics']['synonymMatches'];
@@ -12,17 +10,7 @@ declare type LoadOptionsType = (str: string) => Promise<readonly TopicOption[]>;
 declare type Props = {
     loadOptions: LoadOptionsType;
     selectedTopics: readonly TopicOption[];
-    updateTopics: (topics: string[]) => void;
+    updateTopics: (topicIds: string[]) => void;
 };
-declare type State = {
-    inputValue: string;
-    selectedTopics: readonly TopicOption[];
-};
-declare class EditParentTopicList extends Component<Props, State> {
-    loadOptions: LoadOptionsType;
-    constructor(props: Props);
-    onInputChange: (newValue: string) => void;
-    onChange: (selectedTopics: readonly TopicOption[], action: ActionMeta<TopicOption>) => void;
-    render: () => JSX.Element;
-}
-export default EditParentTopicList;
+export default function EditParentTopicList(props: Props): JSX.Element;
+export {};

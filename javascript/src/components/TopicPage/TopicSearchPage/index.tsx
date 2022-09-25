@@ -68,28 +68,27 @@ const topicFragmentQuery = graphql`
 const viewerFragmentQuery = graphql`
   fragment TopicSearchPage_viewer on User {
     id
-    ...Link_viewer
   }
 `
 
 const renderSearchResultItem = (viewer: ViewerType, item: SearchItemType | null) => {
   if (!item) return null
 
-  if (item.__typename === 'Link') {
-    return (
-      <Link
-        key={item.id}
-        link={item}
-        viewer={viewer}
-      />
-    )
-  }
-
   if (item.__typename === 'Topic') {
     return (
       <Topic
         key={item.id}
         topic={item}
+        viewerId={viewer.id}
+      />
+    )
+  }
+
+  if (item.__typename === 'Link') {
+    return (
+      <Link
+        key={item.id}
+        link={item}
         viewerId={viewer.id}
       />
     )

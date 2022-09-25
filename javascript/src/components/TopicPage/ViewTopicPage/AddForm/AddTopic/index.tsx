@@ -1,17 +1,9 @@
-import React, {
-  FormEvent, useCallback, useState,
-} from 'react'
-import {
-  graphql, useFragment,
-} from 'react-relay'
+import React, { FormEvent, useCallback, useState } from 'react'
+import { graphql, useFragment } from 'react-relay'
 
 import { makeUpsertTopic } from 'mutations/upsertTopicMutation'
-import {
-  AddTopic_viewer$key,
-} from '__generated__/AddTopic_viewer.graphql'
-import {
-  AddTopic_topic$key,
-} from '__generated__/AddTopic_topic.graphql'
+import { AddTopic_viewer$key } from '__generated__/AddTopic_viewer.graphql'
+import { AddTopic_topic$key } from '__generated__/AddTopic_topic.graphql'
 
 const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
   + 'afterwards if it also belongs under another topic.\n'

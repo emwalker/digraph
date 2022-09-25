@@ -1,43 +1,76 @@
 import React from 'react'
+import { graphql, useFragment } from 'react-relay'
 
-import {
-  EditLinkContainerQuery$data as Response,
-} from '__generated__/EditLinkContainerQuery.graphql'
-import EditLinkForm from './EditLinkForm'
+import { backgroundColor, borderColor } from 'components/helpers'
+import { EditLink_link$key } from '__generated__/EditLink_link.graphql'
+import EditRepoLink from './EditRepoLink'
+import ViewRepoLink from './ViewRepoLink'
 
-type ContainerViewType = Response['view']
-
-type CallerProps = {
-  isOpen: boolean,
+type Props = {
+  link: EditLink_link$key,
+  refetch: Function,
   toggleForm: () => void,
+  viewer: any,
 }
 
-type RenderArgs = {
-  error: Error | null,
-  props?: unknown
-}
+const linkFragment = graphql`
+  fragment EditLink_link on Link {
+    displayTitle
 
-type RenderProps = {
-  view: ContainerViewType
-}
+    repoLinks {
+      repo {
+        name
+      }
 
-export default ({ isOpen, toggleForm }: CallerProps) => (
-  { error, props: renderProps }: RenderArgs,
-) => {
-  if (error) return <div>{error.message}</div>
-  if (!renderProps) return null
-  const { view } = renderProps as RenderProps
+      viewerCanUpdate
+      displayColor
 
-  // FIXME
-  const repoLinks = view?.link?.repoLinks || []
-  if (repoLinks.length < 1) return null
+      ...EditRepoLink_repoLink
+      ...ViewRepoLink_repoLink
+    }
+  }
+`
+
+export default function EditLink({ refetch, toggleForm, viewer, ...rest }: Props) {
+  const link = useFragment(linkFragment, rest.link)
 
   return (
-    <EditLinkForm
-      isOpen={isOpen}
-      toggleForm={toggleForm}
-      // @ts-expect-error
-      repoLink={repoLinks[0]}
-    />
+    <div className="mt-3">
+      {link.repoLinks.map((repoLink, index) => (
+        <ul
+          key={index}
+          className="Box Box--condensed mt-3"
+          style={{ borderColor: borderColor(repoLink.displayColor) }}
+        >
+          <div
+            className="Box-header"
+            style={{
+              backgroundColor: backgroundColor(repoLink.displayColor),
+              borderColor: borderColor(repoLink.displayColor),
+            }}
+          >
+            {repoLink.repo.name}
+          </div>
+
+          {repoLink.viewerCanUpdate
+            ? <EditRepoLink
+                refetch={refetch}
+                repoLink={repoLink}
+                viewer={viewer}
+              />
+            : <ViewRepoLink repoLink={repoLink} />}
+        </ul>
+      ))}
+
+      <dl className="form-group mb-5">
+        <button
+          className="btn-link float-right"
+          onClick={toggleForm}
+          type="button"
+        >
+          Close
+        </button>
+      </dl>
+    </div>
   )
 }

@@ -1,16 +1,6 @@
 import { graphql } from 'react-relay'
 
-import {
-  CreateGithubSessionInput,
-  createGithubSessionMutation$data,
-} from '__generated__/createGithubSessionMutation.graphql'
-import defaultMutation from './util/defaultMutation'
-import flashMessageUpdater from './util/flashMessageUpdater'
-
-export type Input = CreateGithubSessionInput
-export type Response = createGithubSessionMutation$data
-
-export default defaultMutation(graphql`
+export default graphql`
   mutation createGithubSessionMutation(
     $input: CreateGithubSessionInput!
   ) {
@@ -34,4 +24,4 @@ export default defaultMutation(graphql`
       }
     }
   }
-`, flashMessageUpdater('createGithubSession'))
+`

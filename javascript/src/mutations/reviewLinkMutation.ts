@@ -1,11 +1,6 @@
 import { graphql } from 'react-relay'
 
-import { ReviewLinkInput } from '__generated__/reviewLinkMutation.graphql'
-import defaultMutation from './util/defaultMutation'
-
-export type Input = ReviewLinkInput
-
-export default defaultMutation(graphql`
+export default graphql`
   mutation reviewLinkMutation(
     $input: ReviewLinkInput!
   ) {
@@ -15,4 +10,4 @@ export default defaultMutation(graphql`
       }
     }
   }
-`)
+`
