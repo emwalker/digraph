@@ -1,5 +1,2 @@
-import { CreateGithubSessionInput, createGithubSessionMutation$data } from '__generated__/createGithubSessionMutation.graphql';
-export declare type Input = CreateGithubSessionInput;
-export declare type Response = createGithubSessionMutation$data;
-declare const _default: (...args: any) => import("react-relay").Disposable;
+declare const _default: import("react-relay").GraphQLTaggedNode;
 export default _default;

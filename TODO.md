@@ -10,6 +10,7 @@ Before switchover:
 * Synonym "Add" button should be disabled until there's something in the inputName field
 * Put a note up on the info page that says that I may work using production data from time to time
 * Decide whether to support link reviews or remove the feature
+* Bug: you should not be able to upsert a link under the Wiki repo when looking at a private topic
 * Bug: client: the JS client doesn't show new links and topics in the right place when they're added
 * Bug: client: some history entries are not displaying properly
 * Bug: backend: whitespace not removed from page titles

@@ -10,17 +10,15 @@ type Props = {
   toggleForm: () => void,
 }
 
-function Outer(props: Props) {
+function UnwrapData(props: Props) {
   const data = usePreloadedQuery<EditLinkQueryType>(EditLinkQuery, props.queryRef)
 
   if (!data.view || !data.view.link) return null
-  const link = data.view.link
 
   return (
     <EditLink
       toggleForm={props.toggleForm}
-      link={link}
-      refetch={() => {}}
+      link={data.view.link}
       viewer={data.view.viewer}
     />
   )
@@ -32,10 +30,5 @@ export default function EditLinkContainer(props: Props) {
 
   if (!queryRef) return null
 
-  return (
-    <Outer
-      queryRef={queryRef}
-      toggleForm={props.toggleForm}
-    />
-  )
+  return <UnwrapData queryRef={queryRef} toggleForm={props.toggleForm} />
 }

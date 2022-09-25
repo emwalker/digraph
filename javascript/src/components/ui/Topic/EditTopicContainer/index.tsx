@@ -10,16 +10,15 @@ type Props = {
   toggleForm: () => void,
 }
 
-function Outer(props: Props) {
+function UnwrapData(props: Props) {
   const data = usePreloadedQuery<EditTopicQueryType>(EditTopicQuery, props.queryRef)
 
   if (!data.view || !data.view.topic) return null
-  const topic = data.view.topic
 
   return (
     <EditTopic
       toggleForm={props.toggleForm}
-      topic={topic}
+      topic={data.view.topic}
       viewer={data.view.viewer}
     />
   )
@@ -31,10 +30,5 @@ export default function EditTopicContainer(props: Props) {
 
   if (!queryRef) return null
 
-  return (
-    <Outer
-      queryRef={queryRef}
-      toggleForm={props.toggleForm}
-    />
-  )
+  return <UnwrapData queryRef={queryRef} toggleForm={props.toggleForm} />
 }

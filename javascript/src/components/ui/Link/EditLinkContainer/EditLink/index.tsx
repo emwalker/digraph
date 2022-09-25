@@ -8,7 +8,6 @@ import ViewRepoLink from './ViewRepoLink'
 
 type Props = {
   link: EditLink_link$key,
-  refetch: Function,
   toggleForm: () => void,
   viewer: any,
 }
@@ -31,7 +30,7 @@ const linkFragment = graphql`
   }
 `
 
-export default function EditLink({ refetch, toggleForm, viewer, ...rest }: Props) {
+export default function EditLink({ toggleForm, viewer, ...rest }: Props) {
   const link = useFragment(linkFragment, rest.link)
 
   return (
@@ -54,7 +53,6 @@ export default function EditLink({ refetch, toggleForm, viewer, ...rest }: Props
 
           {repoLink.viewerCanUpdate
             ? <EditRepoLink
-                refetch={refetch}
                 repoLink={repoLink}
                 viewer={viewer}
               />

@@ -112,6 +112,7 @@ type Link {
   id: String!
   loading: Boolean!
   newlyAdded: Boolean!
+  repoLink(repoId: String!): RepoLink
   repoLinks: [RepoLink!]!
   sha1: String!
   showRepoOwnership: Boolean!
@@ -377,6 +378,7 @@ type Topic {
     last: Int,
     before: String
   ): TopicChildConnection!
+  repoTopic(repoId: String!): RepoTopic
   repoTopics: [RepoTopic!]!
   displayName: String!
   displayParentTopics(

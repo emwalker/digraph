@@ -1,4 +1,2 @@
-import { ReviewLinkInput } from '__generated__/reviewLinkMutation.graphql';
-export declare type Input = ReviewLinkInput;
-declare const _default: (...args: any) => import("react-relay").Disposable;
+declare const _default: import("react-relay").GraphQLTaggedNode;
 export default _default;

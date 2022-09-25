@@ -26,7 +26,7 @@ export default function EditLinkLoader({ linkId, toggleForm, viewerId }: Props) 
   }, [setQueryRef, viewerId])
 
   return (
-    <Suspense fallback={<div>Loading form ...</div>}>
+    <Suspense fallback={<div>Loading ...</div>}>
       {queryRef !== emptyQueryRef && (
         <EditLinkContainer
           toggleForm={toggleForm}

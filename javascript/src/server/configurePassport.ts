@@ -5,18 +5,28 @@ import session from 'express-session'
 import store from 'connect-redis'
 import cookieParser from 'cookie-parser'
 
-import deleteSessionMutation, { Input } from 'mutations/deleteSessionMutation'
+import deleteSessionQuery from 'mutations/deleteSessionMutation'
+import { deleteSessionMutation } from '__generated__/deleteSessionMutation.graphql'
 import { createEnvironment } from '../environment'
 import withGithub from './auth/withGithub'
 import { FetcherBase } from '../FetcherBase'
+import { commitMutation } from 'react-relay'
+import { Environment, MutationConfig } from 'relay-runtime'
 
 const RedisStore = store(session)
 const redisClient = createClient({
   url: process.env.DIGRAPH_NODE_REDIS_URL || 'redis://localhost:6379',
   legacyMode: true,
 })
-// eslint-disable-next-line no-console
 redisClient.connect().catch(console.error)
+
+type Config = Omit<MutationConfig<deleteSessionMutation>, 'mutation'>
+
+function deleteSession(environment: Environment, config: Config) {
+  // @ts-expect-error
+  return commitMutation<deleteSessionMutation>(environment,
+    { ...config, mutation: deleteSessionQuery })
+}
 
 export default (app: Express, fetcher: FetcherBase): Express => {
   const environment = createEnvironment(fetcher)
@@ -49,26 +59,22 @@ export default (app: Express, fetcher: FetcherBase): Express => {
       return
     }
 
-    const input: Input = { sessionId }
-    deleteSessionMutation(
-      environment,
-      input,
-      {
-        onCompleted() {
-          // eslint-disable-next-line no-console
-          console.log('Deleted session for user', req.user?.id)
-          req.logout()
-          res.redirect('/')
-        },
+    const variables = { input: { sessionId } }
 
-        onError(error: Error) {
-          const userId = req.user?.id
-          // eslint-disable-next-line no-console
-          console.log(`Failed to delete session for user ${userId}`, error)
-          req.logout()
-        },
-      },
-    )
+    const onCompleted = () => {
+      console.log('Deleted session for user', req.user?.id)
+      req.logout()
+      res.redirect('/')
+    }
+
+    const onError = (error: Error) => {
+      const userId = req.user?.id
+      // eslint-disable-next-line no-console
+      console.log(`Failed to delete session for user ${userId}`, error)
+      req.logout()
+    }
+
+    deleteSession(environment, { variables, onCompleted, onError })
   })
 
   passport.serializeUser((viewer, done) => {

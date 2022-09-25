@@ -1,4 +1,2 @@
-import { DeleteAccountInput } from '__generated__/deleteAccountMutation.graphql';
-export declare type Input = DeleteAccountInput;
-declare const _default: (...args: any) => import("react-relay").Disposable;
+declare const _default: import("react-relay").GraphQLTaggedNode;
 export default _default;

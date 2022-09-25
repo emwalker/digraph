@@ -1,4 +1,2 @@
-import { DeleteSessionInput } from '__generated__/deleteSessionMutation.graphql';
-export declare type Input = DeleteSessionInput;
-declare const _default: (...args: any) => import("react-relay").Disposable;
+declare const _default: import("react-relay").GraphQLTaggedNode;
 export default _default;
