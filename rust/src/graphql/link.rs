@@ -148,6 +148,16 @@ impl Link {
         false
     }
 
+    async fn repo_link(&self, repo_id: String) -> Result<Option<RepoLink>> {
+        let repo_id: RepoId = repo_id.try_into()?;
+        Ok(self
+            .0
+            .repo_links
+            .iter()
+            .find(|repo_link| repo_link.repo_id == repo_id)
+            .map(|repo_link| repo_link.into()))
+    }
+
     async fn repo_links(&self) -> Vec<RepoLink> {
         self.0.repo_links.iter().map(RepoLink::from).collect_vec()
     }

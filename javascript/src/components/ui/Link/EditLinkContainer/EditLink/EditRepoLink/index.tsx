@@ -87,19 +87,19 @@ export default function EditRepoLink(props: Props) {
         value={url}
       />
 
-      <div>
+      <ParentTopics
+        viewerId={viewerId}
+        selectedRepoId={selectedRepoId}
+        repoLink={repoLink}
+      />
+
+      <div className="pb-1">
         <button type="submit" onClick={onSave} className="btn-primary">Save</button>
         <DeleteButton
           className="float-right"
           onDelete={onDelete}
         />
       </div>
-
-      <ParentTopics
-        viewerId={viewerId}
-        selectedRepoId={selectedRepoId}
-        repoLink={repoLink}
-      />
     </li>
   )
 }

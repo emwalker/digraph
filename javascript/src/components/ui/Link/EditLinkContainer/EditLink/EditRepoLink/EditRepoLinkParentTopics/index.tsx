@@ -52,43 +52,51 @@ type MakeLoadOptionsProps = {
 }
 
 function makeLoadOptions({
-  environment, linkId, repoLink, selectedRepoId, setQueryRef, viewerId, ...rest
+  environment, linkId, repoLink, selectedRepoId, viewerId, setQueryRef, ...rest
 }: MakeLoadOptionsProps) {
-  const [isRefetching, setIsRefetching] = useState(false)
-  const [queryRef, loadQuery] = useQueryLoader<EditRepoLinkParentTopicsRefetchQuery>(refetchQuery,
-    rest.queryRef)
+  // const [isRefetching, setIsRefetching] = useState(false)
 
   const refetch = useCallback(({ searchString, onComplete }: {
     searchString: string, onComplete: () => void,
   }) => {
-    if (isRefetching) return
-    setIsRefetching(true)
+    const [queryRef, loadQuery] = useQueryLoader<EditRepoLinkParentTopicsRefetchQuery>(refetchQuery,
+      rest.queryRef)
+
+    // if (isRefetching) return
+    // setIsRefetching(true)
 
     const variables = { linkId, viewerId, repoIds: [], selectedRepoId, searchString }
+    loadQuery(variables, { fetchPolicy: 'store-only' })
+    setQueryRef(queryRef)
+    onComplete()
 
-    fetchQuery(environment, refetchQuery, variables)
-      .subscribe({
-        complete() {
-          setIsRefetching(false)
-          loadQuery(variables, { fetchPolicy: 'store-only' })
-          onComplete()
-        },
+    // fetchQuery(environment, refetchQuery, variables)
+    //   .subscribe({
+    //     complete() {
+    //       console.log('here! 3')
+    //       setIsRefetching(false)
+    //       onComplete()
+    //       console.log('here! 4')
+    //     },
 
-        error() {
-          setIsRefetching(false)
-        },
-      })
-  }, [setIsRefetching, loadQuery])
+    //     error() {
+    //       setIsRefetching(false)
+    //     },
+    //   })
+  }, [fetchQuery, environment])
 
   return useCallback((searchString: string) => {
     return new Promise<readonly TopicOption[]>((resolve) => {
-      if (!queryRef) return
+      if (!rest.queryRef) return
 
       refetch({
         searchString,
 
         onComplete() {
-          const data = usePreloadedQuery<EditRepoLinkParentTopicsRefetchQuery>(refetchQuery, queryRef)
+          console.log('here! 4')
+          const data = usePreloadedQuery<EditRepoLinkParentTopicsRefetchQuery>(
+            refetchQuery, rest.queryRef,
+          )
           const topics = data.view.link?.repoLink?.availableTopics?.synonymMatches || []
           const topicOpitions = makeOptions(topics)
           resolve(topicOpitions)
@@ -98,7 +106,7 @@ function makeLoadOptions({
   }, [refetch, repoLink])
 }
 
-const repoTopicFragment = graphql`
+const repoLinkFragment = graphql`
   fragment EditRepoLinkParentTopics_repoLink on RepoLink {
     linkId
 
@@ -121,13 +129,15 @@ type Props = {
 
 export default function ParentTopics({ selectedRepoId, viewerId, ...rest }: Props) {
   const environment = useRelayEnvironment()
-  const repoLink = useFragment(repoTopicFragment, rest.repoLink)
   const emptyQueryRef = {} as PreloadedQuery<EditRepoLinkParentTopicsRefetchQuery>
   const [queryRef, setQueryRef] = useState(emptyQueryRef)
+  const repoLink = useFragment(repoLinkFragment, rest.repoLink)
 
   const linkId = repoLink.linkId
-  const loadOptions = makeLoadOptions({ environment, selectedRepoId, repoLink, viewerId,
-    queryRef, setQueryRef, linkId })
+  const loadOptions = makeLoadOptions({
+    environment, selectedRepoId, repoLink, viewerId, queryRef, setQueryRef, linkId,
+  })
+
   const selectedTopics = makeOptions(liftNodes(repoLink.selectedTopics))
   const updateTopics = makeUpdateLinkParentTopicsCallback({ selectedRepoId, linkId })
 
