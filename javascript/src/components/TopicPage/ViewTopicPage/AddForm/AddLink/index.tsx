@@ -22,9 +22,7 @@ type Props = {
 
 const viewerFragment = graphql`
   fragment AddLink_viewer on User {
-    selectedRepository {
-      id
-    }
+    selectedRepoId
   }
 `
 
@@ -38,7 +36,7 @@ export default function AddLink(props: Props) {
   const viewer = useFragment(viewerFragment, props.viewer)
   const topic = useFragment(topicFragment, props.topic)
   const [url, setUrl] = useState('')
-  const selectedRepoId = viewer.selectedRepository?.id  || null
+  const selectedRepoId = viewer.selectedRepoId
   const onKeyPress = makeUpsertLinkCallback({ url, setUrl, topicId: topic.id, selectedRepoId })
 
   const onChange = useCallback((event: FormEvent<HTMLInputElement>) => {

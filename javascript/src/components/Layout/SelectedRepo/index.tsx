@@ -11,7 +11,7 @@ export default function SelectedRepo(props: Props) {
   const viewer = useFragment(
     graphql`
       fragment SelectedRepo_viewer on User {
-        selectedRepository {
+        selectedRepo {
           displayColor
           fullName
           isPrivate
@@ -21,7 +21,7 @@ export default function SelectedRepo(props: Props) {
     props.viewer,
   )
 
-  const repo = viewer.selectedRepository
+  const repo = viewer.selectedRepo
   if (!repo || !repo.isPrivate) return null
   const backgroundColor = repo.displayColor as string
 

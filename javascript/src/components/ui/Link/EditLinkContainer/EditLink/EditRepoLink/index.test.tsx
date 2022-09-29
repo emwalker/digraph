@@ -21,8 +21,8 @@ const testQuery = graphql`
   query EditRepoLinkTestQuery(
     $viewerId: ID!,
     $repoIds: [ID!],
-    $linkId: String!,
-    $selectedRepoId: String!,
+    $linkId: ID!,
+    $selectedRepoId: ID!,
   ) @relay_test_operation {
     view(
       viewerId: $viewerId,

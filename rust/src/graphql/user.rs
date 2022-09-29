@@ -12,7 +12,7 @@ pub enum User {
         avatar_url: String,
         id: ID,
         name: String,
-        selected_repository_id: Option<ID>,
+        selected_repo_id: Option<ID>,
     },
 }
 
@@ -58,7 +58,7 @@ impl User {
         }
     }
 
-    pub async fn repositories(
+    pub async fn repos(
         &self,
         ctx: &Context<'_>,
         after: Option<String>,
@@ -66,18 +66,18 @@ impl User {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<RepositoryConnection> {
-        let (selected_repository_id, results) = match self {
+        let (selected_repo_id, results) = match self {
             Self::Guest => (ID("".into()), vec![]),
             Self::Registered {
                 id,
-                selected_repository_id,
+                selected_repo_id,
                 ..
             } => {
                 let results = ctx
                     .data_unchecked::<Store>()
                     .repositories_for_user(id.to_string())
                     .await?;
-                (selected_repository_id.clone().unwrap_or_default(), results)
+                (selected_repo_id.clone().unwrap_or_default(), results)
             }
         };
 
@@ -89,7 +89,7 @@ impl User {
             |_after, _before, _first, _last| async move {
                 let mut connection = Connection::new(false, false);
                 connection.edges.extend(results.into_iter().map(|n| {
-                    let repository_id = match &n {
+                    let repo_id = match &n {
                         Repository::Default => ID("".to_string()),
                         Repository::Fetched { id, .. } => ID(id.clone()),
                     };
@@ -98,7 +98,7 @@ impl User {
                         0_usize,
                         n,
                         RepositoryEdgeFields {
-                            is_selected: repository_id == selected_repository_id,
+                            is_selected: repo_id == selected_repo_id,
                         },
                     )
                 }));
@@ -109,14 +109,26 @@ impl User {
         .map_err(Error::from)
     }
 
-    pub async fn selected_repository(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
+    pub async fn selected_repo(&self, ctx: &Context<'_>) -> Result<Option<Repository>> {
         match self {
             Self::Guest => Ok(None),
             Self::Registered {
-                selected_repository_id,
-                ..
-            } => match selected_repository_id {
+                selected_repo_id, ..
+            } => match selected_repo_id {
                 Some(id) => ctx.data_unchecked::<Store>().repo(id.to_string()).await,
+                None => Ok(None),
+            },
+        }
+    }
+
+    pub async fn selected_repo_id(&self, ctx: &Context<'_>) -> Result<Option<ID>> {
+        match self {
+            Self::Guest => Ok(None),
+
+            Self::Registered {
+                selected_repo_id, ..
+            } => match selected_repo_id {
+                Some(repo_id) => Ok(Some(repo_id.to_owned())),
                 None => Ok(None),
             },
         }

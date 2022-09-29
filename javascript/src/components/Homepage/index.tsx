@@ -28,9 +28,9 @@ const Homepage = ({ view, router }: Props) => {
   useDocumentTitle('Digraph')
 
   const recents = (view.activity.edges || []).map(
-    (edge) => (
+    (edge, index) => (
       edge?.node &&
-      <LineItem key={edge.node.description} item={edge.node} />
+      <LineItem key={index} item={edge.node} />
     ),
   )
 

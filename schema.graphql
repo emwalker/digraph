@@ -100,7 +100,7 @@ type DeleteTopicPayload {
   deletedTopicId: String
 }
 
-type Link {
+type Link @fetchable(field_name: "id") {
   displayParentTopics(
     first: Int,
     after: String,
@@ -112,7 +112,7 @@ type Link {
   id: String!
   loading: Boolean!
   newlyAdded: Boolean!
-  repoLink(repoId: String!): RepoLink
+  repoLink(repoId: ID!): RepoLink
   repoLinks: [RepoLink!]!
   sha1: String!
   showRepoOwnership: Boolean!
@@ -180,7 +180,8 @@ type RepoLink {
   createdAt: DateTime!
   displayColor: Color!
   inWikiRepo: Boolean!
-  linkId: String!
+  link: Link!
+  linkId: ID!
   parentTopics(
     first: Int,
     after: String,
@@ -301,7 +302,7 @@ type ReviewLinkPayload {
   link: Link!
 }
 
-type RepoTopic {
+type RepoTopic @fetchable(field_name: "repoId") {
   availableParentTopics(
     searchString: String,
   ): LiveSearchTopicsPayload!
@@ -309,7 +310,6 @@ type RepoTopic {
   createdAt: DateTime!
   displayColor: Color!
   displayName: String!
-  id: String!
   inWikiRepo: Boolean!
   parentTopics(
     first: Int,
@@ -318,6 +318,7 @@ type RepoTopic {
     before: String
   ): TopicConnection!
   repo: Repository!
+  repoId: ID!
   synonyms: [Synonym!]!
   timerange: Timerange
   timerangePrefix: String!
@@ -378,7 +379,7 @@ type Topic {
     last: Int,
     before: String
   ): TopicChildConnection!
-  repoTopic(repoId: String!): RepoTopic
+  repoTopic(repoId: ID!): RepoTopic
   repoTopics: [RepoTopic!]!
   displayName: String!
   displayParentTopics(
@@ -427,18 +428,19 @@ type TopicConnection {
 type User {
   avatarUrl: String!
   createdAt: DateTime!
-  defaultRepository: Repository
+  defaultRepo: Repository
   id: ID
   isGuest: Boolean!
   name: String!
   primaryEmail: String!
-  repositories(
+  repos(
     first: Int,
     after: String,
     last: Int,
     before: String
   ): RepositoryConnection!
-  selectedRepository: Repository
+  selectedRepo: Repository
+  selectedRepoId: ID
   updatedAt: DateTime!
 }
 
@@ -562,7 +564,7 @@ type View {
   ): ActivityLineItemConnection!
   currentRepository: Repository
   defaultOrganization: Organization!
-  link(id: String!): Link
+  link(id: ID!): Link
   links(
     searchString: String,
     first: Int,

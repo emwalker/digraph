@@ -9,7 +9,7 @@ import {
   SelectRepository_viewer$data as ViewerType,
 } from '__generated__/SelectRepository_viewer.graphql'
 
-type EdgeType = EdgeTypeOf<ViewerType['repositories']>
+type EdgeType = EdgeTypeOf<ViewerType['repos']>
 
 type Props = {
   viewer: SelectRepository_viewer$key,
@@ -28,12 +28,12 @@ const renderOption = (edge: EdgeType) => (
 
 const viewerFragment = graphql`
   fragment SelectRepository_viewer on User {
-    selectedRepository {
+    selectedRepo {
       id
       isPrivate
     }
 
-    repositories(first: 100) {
+    repos(first: 100) {
       edges {
         isSelected
 
@@ -57,8 +57,8 @@ export default function SelectRepository(props: Props) {
     })
   }, [selectRepo])
 
-  const repositoryEdges = viewer.repositories?.edges || []
-  const selectedId = viewer.selectedRepository?.id || undefined
+  const repositoryEdges = viewer.repos?.edges || []
+  const selectedId = viewer.selectedRepo?.id || undefined
 
   return (
     <dl className="form-group">

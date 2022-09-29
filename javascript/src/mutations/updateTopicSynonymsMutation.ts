@@ -19,7 +19,7 @@ export default graphql`
       }
 
       updatedRepoTopic {
-        id
+        topicId
         ...RepoTopicSynonyms_repoTopic
       }
     }

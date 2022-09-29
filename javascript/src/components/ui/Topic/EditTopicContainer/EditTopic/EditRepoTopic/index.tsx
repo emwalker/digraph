@@ -117,9 +117,7 @@ const repoTopicFragment = graphql`
 
 const viewerFragment = graphql`
   fragment EditRepoTopic_viewer on User {
-    selectedRepository {
-      id
-    }
+    selectedRepoId
 
     ...RepoTopicTimerange_viewer
     ...RepoTopicTimerangeForm_viewer
@@ -136,7 +134,7 @@ export default function EditRepoTopic(props: Props) {
 
   const topics = repoTopic.selectedTopics
   const selectedTopics = topics ? makeOptions(liftNodes(topics)) : []
-  const selectedRepoId = viewer.selectedRepository?.id || null
+  const selectedRepoId = viewer.selectedRepoId || null
 
   const loadOptions = makeLoadOptions({ repoTopic })
   const onDelete = makeOnDelete({ deleteTopic, repoTopic, selectedRepoId })

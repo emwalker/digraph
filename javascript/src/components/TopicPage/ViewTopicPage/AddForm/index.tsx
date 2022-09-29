@@ -17,7 +17,7 @@ export default function AddForm(props: Props) {
   const viewer = useFragment(
     graphql`
       fragment AddForm_viewer on User {
-        selectedRepository {
+        selectedRepo {
           isPrivate
           displayColor
         }
@@ -41,11 +41,11 @@ export default function AddForm(props: Props) {
     props.topic,
   )
 
-  const isPrivateRepo = !!viewer.selectedRepository?.isPrivate
-  const repoSelected = !!viewer.selectedRepository
+  const isPrivateRepo = !!viewer.selectedRepo?.isPrivate
+  const repoSelected = !!viewer.selectedRepo
   const selectRepositoryStyle = {
     backgroundColor: isPrivateRepo ?
-      viewer.selectedRepository?.displayColor :
+      viewer.selectedRepo?.displayColor :
       'transparent',
   }
 

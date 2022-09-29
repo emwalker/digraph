@@ -1,4 +1,4 @@
-use async_graphql::connection::*;
+use async_graphql::{connection::*, ID};
 use async_graphql::{Context, Object, SimpleObject};
 use itertools::Itertools;
 
@@ -46,8 +46,25 @@ impl RepoLink {
         self.0.repo_id.is_wiki()
     }
 
-    async fn link_id(&self) -> &str {
-        self.0.link_id().as_str()
+    async fn link(&self, ctx: &Context<'_>) -> Result<Link> {
+        let link_id = self.0.link_id();
+
+        let link: Option<git::Link> = ctx
+            .data_unchecked::<Store>()
+            .fetch_link(link_id.to_owned())
+            .await?;
+
+        match link {
+            Some(link) => Ok(link.into()),
+            None => Err(Error::NotFound(format!(
+                "parent link not found: {}",
+                link_id
+            ))),
+        }
+    }
+
+    async fn link_id(&self) -> String {
+        self.0.link_id().to_string()
     }
 
     async fn parent_topics(

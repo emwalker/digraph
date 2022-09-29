@@ -13,7 +13,7 @@ export default graphql`
       }
 
       updatedRepoTopic {
-        id
+        topicId
 
         timerange {
           prefixFormat

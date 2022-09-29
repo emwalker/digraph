@@ -33,9 +33,7 @@ const repoTopicFragment = graphql`
 
 const viewerFragment = graphql`
   fragment RepoTopicTimerangeForm_viewer on User {
-    selectedRepository {
-      id
-    }
+    selectedRepoId
   }
 `
 
@@ -47,7 +45,7 @@ export default function RepoTopicTimerangeForm(props: Props) {
 
   const [startsAt, setStartsAt] = useState(moment(repoTopic.timerange?.startsAt as string))
   const prefixFormat = repoTopic.timerange?.prefixFormat
-  const repoId = viewer.selectedRepository?.id || null
+  const repoId = viewer.selectedRepoId
 
   const updateStartsAt = useDebouncedCallback(
     (dt: Moment) => {

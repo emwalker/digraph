@@ -1,6 +1,5 @@
-import { EditRepoLinkParentTopics_repoLink$key } from '__generated__/EditRepoLinkParentTopics_repoLink.graphql';
 declare type Props = {
-    repoLink: EditRepoLinkParentTopics_repoLink$key;
+    linkId: string;
     viewerId: string;
     selectedRepoId: string;
 };

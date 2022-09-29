@@ -2,7 +2,7 @@ import { graphql } from 'react-relay'
 
 export default graphql`
   query EditLinkQuery(
-    $linkId: String!,
+    $linkId: ID!,
     $repoIds: [ID!],
     $viewerId: ID!,
   ) {

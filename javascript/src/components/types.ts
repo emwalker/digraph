@@ -21,7 +21,7 @@ export function liftEdges<T>(connection: Connection<T>) {
 
 export function liftNodes<T>(connection: Connection<T> | undefined) {
   if (!connection) return []
-  return liftEdges(connection).map((edge) => edge?.node || null) || []
+  return liftEdges(connection).map((edge) => edge?.node || null).filter(Boolean) || []
 }
 
 type LocationState = {

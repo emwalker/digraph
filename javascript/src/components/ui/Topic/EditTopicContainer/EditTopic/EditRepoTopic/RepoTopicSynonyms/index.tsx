@@ -125,15 +125,11 @@ const renderAddForm = (
 
 const repoTopicFragment = graphql`
   fragment RepoTopicSynonyms_repoTopic on RepoTopic {
-    id
+    repoId
     timerangePrefix
     topicId
     viewerCanDeleteSynonyms
     viewerCanUpdate
-
-    repo {
-      id
-    }
 
     synonyms {
       name
@@ -144,9 +140,7 @@ const repoTopicFragment = graphql`
 
 const viewerFragment = graphql`
   fragment RepoTopicSynonyms_viewer on User {
-    selectedRepository {
-      id
-    }
+    selectedRepoId
   }
 `
 
@@ -158,7 +152,7 @@ export default function RepoTopicSynonyms(props: Props) {
   const [inputName, setInputName] = useState('')
   const [inputLocale, setInputLocale] = useState('en')
 
-  const repoId = viewer.selectedRepository?.id || null
+  const repoId = viewer.selectedRepoId
   const synonyms = repoTopic?.synonyms || []
   const environment = useRelayEnvironment()
 

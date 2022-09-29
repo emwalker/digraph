@@ -63,9 +63,7 @@ const repoTopicFragment = graphql`
 
 const viewerFragment = graphql`
   fragment RepoTopicTimerange_viewer on User {
-    selectedRepository {
-      id
-    }
+    selectedRepoId
     ...RepoTopicTimerangeForm_viewer
   }
 `

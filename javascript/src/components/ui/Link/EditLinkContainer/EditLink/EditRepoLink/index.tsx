@@ -1,4 +1,4 @@
-import React, { FormEvent, useCallback, useState } from 'react'
+import React, { FormEvent, Suspense, useCallback, useState } from 'react'
 import { graphql, useFragment } from 'react-relay'
 
 import Input from 'components/ui/Input'
@@ -17,20 +17,16 @@ type Props = {
 const viewerFragment = graphql`
   fragment EditRepoLink_viewer on User {
     id
-    selectedRepository {
-      id
-    }
+    selectedRepoId
   }
 `
 
 const repoLinkFragment = graphql`
   fragment EditRepoLink_repoLink on RepoLink {
     displayColor
-    linkId
     title
     url
-
-    ...EditRepoLinkParentTopics_repoLink
+    linkId
   }
 `
 
@@ -39,7 +35,7 @@ export default function EditRepoLink(props: Props) {
   const repoLink = useFragment(repoLinkFragment, props.repoLink)
   const [title, setTitle] = useState(repoLink.title)
 
-  const selectedRepoId = viewer.selectedRepository?.id || null
+  const selectedRepoId = viewer.selectedRepoId
   const viewerId = viewer.id
   const { linkId, url } = repoLink
 
@@ -87,11 +83,13 @@ export default function EditRepoLink(props: Props) {
         value={url}
       />
 
-      <ParentTopics
-        viewerId={viewerId}
-        selectedRepoId={selectedRepoId}
-        repoLink={repoLink}
-      />
+      <Suspense fallback="Loading ...">
+        <ParentTopics
+          linkId={linkId}
+          selectedRepoId={selectedRepoId}
+          viewerId={viewerId}
+        />
+      </Suspense>
 
       <div className="pb-1">
         <button type="submit" onClick={onSave} className="btn-primary">Save</button>

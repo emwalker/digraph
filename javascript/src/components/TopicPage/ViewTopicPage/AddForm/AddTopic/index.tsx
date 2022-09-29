@@ -23,9 +23,7 @@ const topicFragment = graphql`
 
 const viewerFragment = graphql`
   fragment AddTopic_viewer on User {
-    selectedRepository {
-      id
-    }
+    selectedRepoId
   }
 `
 
@@ -34,7 +32,7 @@ export default function AddTopic(props: Props) {
   const topic = useFragment(topicFragment, props.topic)
   const [name, setName] = useState('')
 
-  const selectedRepoId = viewer.selectedRepository?.id || null
+  const selectedRepoId = viewer.selectedRepoId
   const onKeyPress = makeUpsertTopic({ selectedRepoId, name, setName, topicId: topic.id })
 
   const updateName = useCallback((event: FormEvent<HTMLInputElement>) => {
