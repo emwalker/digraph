@@ -2,26 +2,18 @@ import React, { useCallback, useState } from 'react'
 import AsyncSelect from 'react-select/async'
 import debounce from 'es6-promise-debounce'
 
-import {
-  EditRepoTopic_repoTopic$data as RepoTopicType,
-} from '__generated__/EditRepoTopic_repoTopic.graphql'
 import { TopicOption } from 'components/types'
 import colourStyles from './colourStyles'
 
-type SynonymMatches = RepoTopicType['availableTopics']['synonymMatches']
-type SelectedTopics = ({ label: string, value: string } | null)[]
+type SelectedTopics = readonly ({ label: string, value: string } | null)[]
 
 const color = '#0366d6'
 
-export const makeOptions = (matches: SynonymMatches | SelectedTopics): TopicOption[] => {
-  return matches
-    ? (
-      matches.map((match) => match
-        ? { value: match.value, label: match.label, color }
-        : { value: 'missing', label: '<missing>', color: '' },
-      ) as TopicOption[]
-    )
-    : []
+export const makeOptions = (matches: SelectedTopics): readonly TopicOption[] => {
+  return matches.map((match) => match
+    ? { value: match.value, label: match.label, color }
+    : { value: 'missing', label: '<missing>', color: '' },
+  ) as TopicOption[]
 }
 
 type LoadOptionsType = (str: string) => Promise<readonly TopicOption[]>
@@ -47,6 +39,7 @@ export default function EditParentTopicList(props: Props) {
       <label htmlFor="parent-topics">
         Parent topics
       </label>
+
       <AsyncSelect
         backspaceRemovesValue={false}
         cacheOptions={false}

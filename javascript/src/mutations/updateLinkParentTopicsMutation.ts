@@ -1,7 +1,9 @@
 import { useCallback } from 'react'
 import { graphql, useMutation } from 'react-relay'
 
-import { updateLinkParentTopicsMutation } from '__generated__/updateLinkParentTopicsMutation.graphql'
+import {
+  updateLinkParentTopicsMutation,
+} from '__generated__/updateLinkParentTopicsMutation.graphql'
 
 const query = graphql`
   mutation updateLinkParentTopicsMutation(
@@ -18,18 +20,15 @@ const query = graphql`
   }
 `
 
-export function makeUpdateLinkParentTopicsCallback({ linkId, selectedRepoId }: {
+type Props = {
   linkId: string,
-  selectedRepoId: string | null,
-}) {
+  selectedRepoId: string,
+}
+
+export function makeUpdateLinkParentTopicsCallback({ linkId, selectedRepoId }: Props) {
   const updateParentTopics = useMutation<updateLinkParentTopicsMutation>(query)[0]
 
   return useCallback((parentTopicIds: string[]) => {
-    if (!selectedRepoId) {
-      console.log('no repo selected')
-      return
-    }
-
     updateParentTopics({
       variables: {
         input: {

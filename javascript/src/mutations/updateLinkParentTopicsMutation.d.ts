@@ -1,4 +1,6 @@
-export declare function makeUpdateLinkParentTopicsCallback({ linkId, selectedRepoId }: {
+declare type Props = {
     linkId: string;
-    selectedRepoId: string | null;
-}): (parentTopicIds: string[]) => void;
+    selectedRepoId: string;
+};
+export declare function makeUpdateLinkParentTopicsCallback({ linkId, selectedRepoId }: Props): (parentTopicIds: string[]) => void;
+export {};

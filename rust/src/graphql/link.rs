@@ -1,4 +1,4 @@
-use async_graphql::{connection::*, ID};
+use async_graphql::connection::*;
 use async_graphql::{Context, Object, SimpleObject};
 use itertools::Itertools;
 

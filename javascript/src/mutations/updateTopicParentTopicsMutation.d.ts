@@ -1,2 +1,6 @@
-declare const _default: import("react-relay").GraphQLTaggedNode;
-export default _default;
+declare type Props = {
+    repoId: string | null;
+    topicId: string;
+};
+export declare function makeUpdateTopicParentTopicsCallback({ repoId, topicId }: Props): (parentTopicIds: string[]) => void;
+export {};

@@ -124,6 +124,10 @@ impl RepoTopic {
         }
     }
 
+    async fn repo_id(&self) -> String {
+        self.0.repo_id.to_string()
+    }
+
     async fn synonyms(&self) -> Vec<Synonym> {
         self.0.synonyms().iter().map(Synonym::from).collect_vec()
     }
@@ -320,6 +324,16 @@ impl Topic {
 
     async fn newly_added(&self) -> bool {
         false
+    }
+
+    async fn repo_topic(&self, repo_id: String) -> Result<Option<RepoTopic>> {
+        let repo_id: RepoId = repo_id.try_into()?;
+        Ok(self
+            .0
+            .repo_topics
+            .iter()
+            .find(|repo_topic| repo_topic.repo_id == repo_id)
+            .map(|repo_topic| repo_topic.into()))
     }
 
     async fn repo_topics(&self) -> Vec<RepoTopic> {

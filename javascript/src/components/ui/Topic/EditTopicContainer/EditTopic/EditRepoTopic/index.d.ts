@@ -4,5 +4,5 @@ declare type Props = {
     repoTopic: EditRepoTopic_repoTopic$key;
     viewer: EditRepoTopic_viewer$key;
 };
-export default function EditRepoTopic(props: Props): JSX.Element;
+export default function EditRepoTopic(props: Props): JSX.Element | null;
 export {};

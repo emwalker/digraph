@@ -576,7 +576,7 @@ type View {
   queryInfo: QueryInfo!
   searchString: String
   stats: ViewStats!
-  topic(id: String!): Topic
+  topic(id: ID!): Topic
   topicGraph: String
   topicLiveSearch(
     searchString: String,

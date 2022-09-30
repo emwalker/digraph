@@ -1,15 +1,21 @@
 import { graphql } from 'react-relay'
 
 export default graphql`
-  query EditRepoLinkParentTopicsRefetchQuery(
+  query RepoLinkParentTopicsRefetchQuery(
     $linkId: ID!,
+    $searchString: String!,
     $selectedRepoId: ID!,
     $viewerId: ID!,
   ) {
     view(viewerId: $viewerId) {
       link(id: $linkId) {
         repoLink(repoId: $selectedRepoId) {
-          ...EditRepoLinkParentTopics_repoLink
+          availableParentTopics(searchString: $searchString) {
+            synonymMatches {
+              value: id
+              label: displayName
+            }
+          }
         }
       }
     }

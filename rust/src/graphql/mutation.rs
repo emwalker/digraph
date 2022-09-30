@@ -172,6 +172,7 @@ pub struct UpdateTopicParentTopicsInput {
 #[derive(SimpleObject)]
 pub struct UpdateTopicParentTopicsPayload {
     alerts: Vec<alert::Alert>,
+    topic: Topic,
 }
 
 #[derive(Debug, InputObject)]
@@ -438,8 +439,9 @@ impl MutationRoot {
             ..
         } = &input;
 
-        let git::UpdateTopicParentTopicsResult { alerts, .. } = ctx
-            .data_unchecked::<Store>()
+        let store = ctx.data_unchecked::<Store>();
+
+        let git::UpdateTopicParentTopicsResult { alerts, repo_topic } = store
             .update_topic_parent_topics(
                 &repo_id.try_into()?,
                 &topic_id.try_into()?,
@@ -450,8 +452,14 @@ impl MutationRoot {
             )
             .await?;
 
+        let topic: Topic = store
+            .fetch_topic(repo_topic.topic_id().to_owned())
+            .await?
+            .try_into()?;
+
         Ok(UpdateTopicParentTopicsPayload {
             alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
+            topic,
         })
     }
 

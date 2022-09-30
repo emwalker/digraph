@@ -3,7 +3,7 @@ import { graphql } from 'react-relay'
 export default graphql`
   query EditTopicQuery(
     $repoIds: [ID!],
-    $topicId: String!,
+    $topicId: ID!,
     $viewerId: ID!,
   ) {
     view(

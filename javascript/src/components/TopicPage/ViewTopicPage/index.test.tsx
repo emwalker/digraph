@@ -19,9 +19,9 @@ jest.mock('found',
 
 const testQuery = graphql`
   query ViewTopicPageTestQuery(
-    $viewerId: ID!,
     $repoIds: [ID!],
-    $topicId: String!,
+    $topicId: ID!,
+    $viewerId: ID!,
   ) @relay_test_operation {
     view(
       viewerId: $viewerId,

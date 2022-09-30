@@ -10,7 +10,7 @@ export const query = graphql`
   query TopicPage_query_Query(
     $viewerId: ID!,
     $repoIds: [ID!],
-    $topicId: String!,
+    $topicId: ID!,
     $searchString: String!,
   ) {
     alerts {

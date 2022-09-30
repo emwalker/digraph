@@ -7,21 +7,22 @@ import {
 export type ViewType = Response['view']
 
 export default graphql`
-query reviewPageQuery_query_Query(
-  $repoIds: [ID!],
-  $topicId: String!,
-  $viewerId: ID!,
-) {
-  alerts {
-    id
-    text
-    type
-  }
-
-  view(
-    repoIds: $repoIds,
-    viewerId: $viewerId,
+  query reviewPageQuery_query_Query(
+    $repoIds: [ID!],
+    $topicId: ID!,
+    $viewerId: ID!,
   ) {
-    ...ReviewPage_view
+    alerts {
+      id
+      text
+      type
+    }
+
+    view(
+      repoIds: $repoIds,
+      viewerId: $viewerId,
+    ) {
+      ...ReviewPage_view
+    }
   }
-}`
+`

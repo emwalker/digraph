@@ -121,7 +121,7 @@ impl User {
         }
     }
 
-    pub async fn selected_repo_id(&self, ctx: &Context<'_>) -> Result<Option<ID>> {
+    pub async fn selected_repo_id(&self) -> Result<Option<ID>> {
         match self {
             Self::Guest => Ok(None),
 

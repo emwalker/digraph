@@ -16,7 +16,7 @@ declare type LocationState = {
     itemTitle: string;
 };
 export declare type LocationType = Pick<Location<LocationState>, 'pathname' | 'query' | 'search' | 'state'>;
-export interface TopicOption extends OptionProps {
+export interface TopicOption {
     value: string;
     label: string;
     color: string;

@@ -1,4 +1,4 @@
-import React, { FormEvent, Suspense, useCallback, useState } from 'react'
+import React, { FormEvent, useCallback, useState } from 'react'
 import { graphql, useFragment } from 'react-relay'
 
 import Input from 'components/ui/Input'
@@ -7,7 +7,7 @@ import DeleteButton from 'components/ui/DeleteButton'
 import { EditRepoLink_repoLink$key } from '__generated__/EditRepoLink_repoLink.graphql'
 import { EditRepoLink_viewer$key } from '__generated__/EditRepoLink_viewer.graphql'
 import { makeDeleteLinkCallback as makeDeleteLinkCallback } from 'mutations/deleteLinkMutation'
-import ParentTopics from './EditRepoLinkParentTopics'
+import ParentTopics from './RepoLinkParentTopics'
 
 type Props = {
   repoLink: EditRepoLink_repoLink$key,
@@ -27,6 +27,8 @@ const repoLinkFragment = graphql`
     title
     url
     linkId
+
+    ...RepoLinkParentTopics_repoLink
   }
 `
 
@@ -83,13 +85,11 @@ export default function EditRepoLink(props: Props) {
         value={url}
       />
 
-      <Suspense fallback="Loading ...">
-        <ParentTopics
-          linkId={linkId}
-          selectedRepoId={selectedRepoId}
-          viewerId={viewerId}
-        />
-      </Suspense>
+      <ParentTopics
+        repoLink={repoLink}
+        selectedRepoId={selectedRepoId}
+        viewerId={viewerId}
+      />
 
       <div className="pb-1">
         <button type="submit" onClick={onSave} className="btn-primary">Save</button>
