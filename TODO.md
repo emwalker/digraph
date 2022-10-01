@@ -1,9 +1,8 @@
 Next:
-* Bug: backend: whitespace not removed from page titles
-
-Before switchover:
 * Bug: synonym edit form is not updated when a synonym is added
 * Bug: synonym edit form is not updated when a synonym is removed
+
+Before switchover:
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Clean up database: odds and ends

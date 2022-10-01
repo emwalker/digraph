@@ -75,14 +75,14 @@ impl Fixtures {
         Ok(self.leaked_data()?.is_empty())
     }
 
-    pub fn fetch_link<F>(&self, repo: &RepoId, topic_id: &Oid, block: F)
+    pub fn fetch_link<F>(&self, repo_id: &RepoId, link_id: &Oid, block: F)
     where
         F: Fn(RepoLink),
     {
         let link = self
             .git
-            .fetch_link(repo, topic_id)
-            .unwrap_or_else(|| panic!("expected a link: {:?}", topic_id));
+            .fetch_link(repo_id, link_id)
+            .unwrap_or_else(|| panic!("expected a link: {:?}", link_id));
 
         block(link);
     }
