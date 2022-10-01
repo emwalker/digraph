@@ -62,7 +62,7 @@ const renderSynonyms = (
   onDelete: (position: number) => void,
   updateTopicSynonyms: (synonyms: SynonymType[]) => void,
 ) => {
-  if (synonyms.length === 0) 
+  if (synonyms.length === 0)
     return <div className="blankslate"><p>There are no synonyms</p></div>
 
   return (
@@ -75,53 +75,66 @@ const renderSynonyms = (
   )
 }
 
-const renderAddForm = (
+type AddFormProps = {
   inputName: string,
   onNameChange: ChangeEventHandler<HTMLInputElement>,
   onLocaleChange: ChangeEventHandler<HTMLSelectElement>,
   onAdd: MouseEventHandler<HTMLButtonElement>,
-) => (
-  <div className="clearfix">
-    <input
-      id="names-and-synonyms"
-      style={{ width: '70%' }}
-      className="form-control col-12 col-lg-10 mr-2"
-      onChange={onNameChange}
-      value={inputName}
-    />
+}
 
-    <div className="col-12 col-lg-3 mt-2 d-inline-block">
-      <select onChange={onLocaleChange} className="form-select mr-2">
-        <option>en</option>
-        <option>ar</option>
-        <option>de</option>
-        <option>el</option>
-        <option>es</option>
-        <option>fa</option>
-        <option>fi</option>
-        <option>fr</option>
-        <option>hi</option>
-        <option>it</option>
-        <option>ja</option>
-        <option>ji</option>
-        <option>ko</option>
-        <option>la</option>
-        <option>nl</option>
-        <option>no</option>
-        <option>pt</option>
-        <option>ru</option>
-        <option>sv</option>
-        <option>tr</option>
-        <option>uk</option>
-        <option>zh</option>
-      </select>
+function AddForm({ inputName, onNameChange, onLocaleChange, onAdd }: AddFormProps) {
+  const addDisabled = inputName === ''
 
-      <button type="button" onClick={onAdd} className="btn">
-        Add
-      </button>
+  return (
+    <div className="clearfix">
+      <input
+        className="form-control col-12 col-lg-10 mr-2"
+        data-testid="synonym-input"
+        id="names-and-synonyms"
+        onChange={onNameChange}
+        style={{ width: '70%' }}
+        value={inputName}
+      />
+
+      <div className="col-12 col-lg-3 mt-2 d-inline-block">
+        <select onChange={onLocaleChange} className="form-select mr-2">
+          <option>en</option>
+          <option>ar</option>
+          <option>de</option>
+          <option>el</option>
+          <option>es</option>
+          <option>fa</option>
+          <option>fi</option>
+          <option>fr</option>
+          <option>hi</option>
+          <option>it</option>
+          <option>ja</option>
+          <option>ji</option>
+          <option>ko</option>
+          <option>la</option>
+          <option>nl</option>
+          <option>no</option>
+          <option>pt</option>
+          <option>ru</option>
+          <option>sv</option>
+          <option>tr</option>
+          <option>uk</option>
+          <option>zh</option>
+        </select>
+
+        <button
+          className="btn"
+          data-testid="add-button"
+          disabled={addDisabled}
+          onClick={onAdd}
+          type="button"
+        >
+          Add
+        </button>
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 const repoTopicFragment = graphql`
   fragment RepoTopicSynonyms_repoTopic on RepoTopic {
@@ -207,7 +220,14 @@ export default function RepoTopicSynonyms(props: Props) {
         {renderSynonyms(synonyms, repoTopic.viewerCanUpdate, onDelete, updateTopicSynonyms)}
       </ul>
 
-      {repoTopic.viewerCanUpdate && renderAddForm(inputName, onNameChange, onLocaleChange, onAdd)}
+      {repoTopic.viewerCanUpdate && (
+        <AddForm
+          inputName={inputName}
+          onAdd={onAdd}
+          onLocaleChange={onLocaleChange}
+          onNameChange={onNameChange}
+        />
+      )}
     </dl>
   )
 }

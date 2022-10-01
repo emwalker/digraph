@@ -1,9 +1,10 @@
 Next:
-* Synonym "Add" button should be disabled until there's something in the inputName field
 * Bug: backend: whitespace not removed from page titles
 * Bug: backend: whitespace not removed from synonyms
 
 Before switchover:
+* Bug: synonym edit form is not updated when a synonym is added
+* Bug: synonym edit form is not updated when a synonym is removed
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Clean up database: odds and ends
