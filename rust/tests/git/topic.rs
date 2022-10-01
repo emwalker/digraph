@@ -550,6 +550,44 @@ mod update_topic_synonyms {
         assert_eq!(synonyms[0].name, "A topic");
         assert_eq!(synonyms[1].name, "Second synonym");
     }
+
+    #[test]
+    fn empty_synonyms_dropped() {
+        let f = Fixtures::copy("simple");
+        let repo = RepoId::wiki();
+        let topic_id = parse_id("00001");
+
+        let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
+            actor: actor(),
+            repo_id: repo,
+            topic_id,
+            synonyms: vec![synonym("A topic"), synonym("  ")],
+        }
+        .call(f.mutation(), &redis::Noop)
+        .unwrap();
+
+        let synonyms = repo_topic.synonyms();
+        assert_eq!(synonyms.len(), 1);
+
+        assert_eq!(synonyms[0].name, "A topic");
+    }
+
+    #[test]
+    fn error_if_no_synonyms() {
+        let f = Fixtures::copy("simple");
+        let repo = RepoId::wiki();
+        let topic_id = parse_id("00001");
+
+        let result = UpdateTopicSynonyms {
+            actor: actor(),
+            repo_id: repo,
+            topic_id,
+            synonyms: vec![synonym(""), synonym("  ")],
+        }
+        .call(f.mutation(), &redis::Noop);
+
+        assert!(matches!(result, Err(_)));
+    }
 }
 
 #[cfg(test)]

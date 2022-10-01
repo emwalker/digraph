@@ -376,10 +376,15 @@ impl UpdateTopicSynonyms {
 
         // Preserve the date the synonym was added
         for new in &self.synonyms {
+            let name = new.name.trim();
+            if name.len() == 0 {
+                continue;
+            }
+
             let new = Synonym {
                 added: new.added,
                 locale: new.locale,
-                name: new.name.trim().to_owned(),
+                name: name.to_owned(),
             };
 
             let key = (new.name.to_owned(), new.locale.to_owned());
@@ -398,6 +403,10 @@ impl UpdateTopicSynonyms {
             } else {
                 synonyms.push(new.to_owned());
             }
+        }
+
+        if synonyms.is_empty() {
+            return Err(Error::Repo("at least one synonym is required".to_owned()));
         }
 
         let added = after
