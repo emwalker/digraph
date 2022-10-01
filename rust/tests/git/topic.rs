@@ -528,6 +528,28 @@ mod update_topic_synonyms {
         let topic = f.git.fetch_topic(&private_repo_id, &topic_id).unwrap();
         assert_eq!(topic.synonyms().first().unwrap().name, "Other name");
     }
+
+    #[test]
+    fn whitespace_removed() {
+        let f = Fixtures::copy("simple");
+        let repo = RepoId::wiki();
+        let topic_id = parse_id("00001");
+
+        let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
+            actor: actor(),
+            repo_id: repo,
+            topic_id,
+            synonyms: vec![synonym("A topic"), synonym("  Second synonym ")],
+        }
+        .call(f.mutation(), &redis::Noop)
+        .unwrap();
+
+        let synonyms = repo_topic.synonyms();
+        assert_eq!(synonyms.len(), 2);
+
+        assert_eq!(synonyms[0].name, "A topic");
+        assert_eq!(synonyms[1].name, "Second synonym");
+    }
 }
 
 #[cfg(test)]

@@ -376,6 +376,12 @@ impl UpdateTopicSynonyms {
 
         // Preserve the date the synonym was added
         for new in &self.synonyms {
+            let new = Synonym {
+                added: new.added,
+                locale: new.locale,
+                name: new.name.trim().to_owned(),
+            };
+
             let key = (new.name.to_owned(), new.locale.to_owned());
 
             // Remove duplicates

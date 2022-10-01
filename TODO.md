@@ -1,6 +1,5 @@
 Next:
 * Bug: backend: whitespace not removed from page titles
-* Bug: backend: whitespace not removed from synonyms
 
 Before switchover:
 * Bug: synonym edit form is not updated when a synonym is added
