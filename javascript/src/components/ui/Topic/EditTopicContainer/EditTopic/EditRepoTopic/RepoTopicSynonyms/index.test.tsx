@@ -59,10 +59,12 @@ async function setup() {
       MockPayloadGenerator.generate(operation, {
         RepoTopic() {
           return {
+            id: 'topic-id:repo-id',
             topicId: 'topic-id',
-            title: 'Reddit',
-            url: 'https://reddit.com',
             viewerCanUpdate: true,
+            synonyms: [
+              { name: 'Global heating', locale: 'en' },
+            ],
           }
         },
       }),
@@ -87,10 +89,49 @@ describe('<RepoTopicSynonyms>', () => {
 
     const input = screen.getByTestId('synonym-input')
     expect(input).toHaveTextContent('')
-    const button = screen.getByTestId('add-button')
-    expect(button).toBeDisabled()
+    const addButton = screen.getByTestId('add-button')
+    expect(addButton).toBeDisabled()
+
+    await user.type(input, '     ')
+    expect(addButton).toBeDisabled()
 
     await user.type(input, 'synonym')
-    expect(button).not.toBeDisabled()
+    expect(addButton).not.toBeDisabled()
+  })
+
+  it('adds a new synonym to the bottom of the list', async () => {
+    const { environment, user } = await setup()
+
+    let list = screen.getByTestId('synonym-list').innerHTML
+    const input = screen.getByTestId('synonym-input')
+    const addButton = screen.getByTestId('add-button')
+
+    expect(list).toContain('Global heating')
+    expect(list).not.toContain('Climate change')
+
+    await user.type(input, 'Climate change')
+    await user.click(addButton)
+
+    await waitFor(() => {
+      environment.mock.resolveMostRecentOperation((operation) =>
+        MockPayloadGenerator.generate(operation, {
+          RepoTopic() {
+            return {
+              id: 'topic-id:repo-id',
+              topicId: 'topic-id',
+              repoId: 'repo-id',
+              synonyms: [
+                { name: 'Global heating', locale: 'en' },
+                { name: 'Climate change', locale: 'en' },
+              ],
+            }
+          },
+        }),
+      )
+    })
+
+    list = screen.getByTestId('synonym-list').innerHTML
+    expect(list).toContain('Global heating')
+    expect(list).toContain('Climate change')
   })
 })

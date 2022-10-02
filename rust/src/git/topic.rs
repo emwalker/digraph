@@ -377,7 +377,7 @@ impl UpdateTopicSynonyms {
         // Preserve the date the synonym was added
         for new in &self.synonyms {
             let name = new.name.trim();
-            if name.len() == 0 {
+            if name.is_empty() {
                 continue;
             }
 

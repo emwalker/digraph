@@ -310,6 +310,7 @@ type RepoTopic @fetchable(field_name: "repoId") {
   createdAt: DateTime!
   displayColor: Color!
   displayName: String!
+  id: String!
   inWikiRepo: Boolean!
   parentTopics(
     first: Int,

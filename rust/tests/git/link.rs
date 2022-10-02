@@ -131,7 +131,12 @@ mod upsert_link {
         assert!(!f.git.exists(&repo, &link_id).unwrap());
         assert!(!f.git.appears_in(&repo, &search, &entry).unwrap());
 
-        f.upsert_link(&repo, &url, Some("Page title".to_owned()), Some(parent_topic));
+        f.upsert_link(
+            &repo,
+            &url,
+            Some("Page title".to_owned()),
+            Some(parent_topic),
+        );
 
         assert!(f.git.exists(&repo, &link_id).unwrap());
         assert!(f.git.appears_in(&repo, &search, &entry).unwrap());
@@ -145,7 +150,12 @@ mod upsert_link {
         let link_id = url.id().unwrap();
         let parent_topic = parse_id("00001");
 
-        f.upsert_link(&repo_id, &url, Some("   Page title   ".to_owned()), Some(parent_topic));
+        f.upsert_link(
+            &repo_id,
+            &url,
+            Some("   Page title   ".to_owned()),
+            Some(parent_topic),
+        );
 
         f.fetch_link(&repo_id, &link_id, |link| {
             assert_eq!(link.title(), "Page title");

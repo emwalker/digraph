@@ -16,19 +16,21 @@ export default function SynonymList({ canUpdate, onDelete, onUpdate, synonyms }:
 
   if (!canSort) {
     return (
-      <>
+      <div data-testid="synonym-list">
         {synonyms.map((value, index) => (
           <SortableSynonym key={value.name} id={index} synonym={value} />
         ))}
-      </>
+      </div>
     )
   }
 
   return (
-    <SortableSynonymList
-      synonyms={synonyms}
-      onDelete={onDelete}
-      onUpdate={onUpdate}
-    />
+    <div data-testid="synonym-list">
+      <SortableSynonymList
+        synonyms={synonyms}
+        onDelete={onDelete}
+        onUpdate={onUpdate}
+      />
+    </div>
   )
 }

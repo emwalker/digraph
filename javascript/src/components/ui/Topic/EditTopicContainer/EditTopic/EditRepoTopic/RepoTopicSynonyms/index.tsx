@@ -1,15 +1,11 @@
 import React, {
   MouseEventHandler, ChangeEventHandler, FormEvent, ChangeEvent, useCallback, useState,
 } from 'react'
-import { graphql, useFragment, useMutation, useRelayEnvironment } from 'react-relay'
+import { graphql, useFragment } from 'react-relay'
 
-import updateSynonymsQuery from 'mutations/updateTopicSynonymsMutation'
-import {
-  updateTopicSynonymsMutation,
-} from '__generated__/updateTopicSynonymsMutation.graphql'
+import { makeUpdateTopicSynonymsCallback } from 'mutations/updateTopicSynonymsMutation'
 import {
   RepoTopicSynonyms_repoTopic$key,
-  RepoTopicSynonyms_repoTopic$data as RepoTopicType,
 } from '__generated__/RepoTopicSynonyms_repoTopic.graphql'
 import { RepoTopicSynonyms_viewer$key } from '__generated__/RepoTopicSynonyms_viewer.graphql'
 import { SynonymType } from 'components/types'
@@ -21,47 +17,16 @@ type Props = {
   viewer: RepoTopicSynonyms_viewer$key,
 }
 
-function name(synonyms: readonly SynonymType[]) {
-  if (synonyms.length > 0) {
-    for (const synonym of synonyms) {
-      if (synonym.locale !== 'en') // FIXME
-        continue
-      return synonym.name
-    }
-    return synonyms[0].name
-  }
-
-  return 'Missing name'
-}
-
-function displayName(synonyms: readonly SynonymType[], timerangPrefix: string | null) {
-  const suffix = name(synonyms)
-  return timerangPrefix ? `${timerangPrefix} ${suffix}` : suffix
-}
-
-function optimisticResponse(repoTopic: RepoTopicType, synonymUpdate: SynonymType[]) {
-  return {
-    updateTopicSynonyms: {
-      clientMutationId: null,
-      alerts: [],
-      updatedTopic: {
-        id: repoTopic.topicId,
-        displayName: displayName(repoTopic.synonyms, repoTopic.timerangePrefix),
-      },
-      updatedRepoTopic: {
-        ...repoTopic,
-        synonyms: synonymUpdate,
-      },
-    },
-  }
-}
-
-const renderSynonyms = (
+type SynonymListOuterProps = {
   synonyms: readonly SynonymType[],
   viewerCanUpdate: boolean,
   onDelete: (position: number) => void,
   updateTopicSynonyms: (synonyms: SynonymType[]) => void,
-) => {
+}
+
+function SynonymListOuter({
+  synonyms, viewerCanUpdate, onDelete, updateTopicSynonyms,
+}: SynonymListOuterProps) {
   if (synonyms.length === 0)
     return <div className="blankslate"><p>There are no synonyms</p></div>
 
@@ -83,7 +48,7 @@ type AddFormProps = {
 }
 
 function AddForm({ inputName, onNameChange, onLocaleChange, onAdd }: AddFormProps) {
-  const addDisabled = inputName === ''
+  const addDisabled = inputName.trim() === ''
 
   return (
     <div className="clearfix">
@@ -138,6 +103,7 @@ function AddForm({ inputName, onNameChange, onLocaleChange, onAdd }: AddFormProp
 
 const repoTopicFragment = graphql`
   fragment RepoTopicSynonyms_repoTopic on RepoTopic {
+    id
     repoId
     timerangePrefix
     topicId
@@ -160,31 +126,16 @@ const viewerFragment = graphql`
 export default function RepoTopicSynonyms(props: Props) {
   const repoTopic = useFragment(repoTopicFragment, props.repoTopic)
   const viewer = useFragment(viewerFragment, props.viewer)
-  const updateSynonyms = useMutation<updateTopicSynonymsMutation>(updateSynonymsQuery)[0]
+  const selectedRepoId = viewer.selectedRepoId
 
   const [inputName, setInputName] = useState('')
   const [inputLocale, setInputLocale] = useState('en')
 
-  const repoId = viewer.selectedRepoId
+  const updateSynonyms = makeUpdateTopicSynonymsCallback({
+    selectedRepoId, repoTopic, setInputName,
+  })
+
   const synonyms = repoTopic?.synonyms || []
-  const environment = useRelayEnvironment()
-
-  const updateTopicSynonyms = useCallback((synonymUpdate: SynonymType[]) => {
-    if (!repoTopic) return null
-
-    if (!repoId) {
-      console.log('no repo selected')
-      return
-    }
-
-    updateSynonyms({
-      variables: {
-        input: { repoId, topicId: repoTopic.topicId, synonyms: synonymUpdate },
-      },
-      optimisticResponse: optimisticResponse(repoTopic, synonymUpdate),
-    })
-    setInputName('')
-  }, [repoId, repoTopic, environment, setInputName, updateSynonyms])
 
   const onNameChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setInputName(event.currentTarget.value)
@@ -198,26 +149,28 @@ export default function RepoTopicSynonyms(props: Props) {
     const update = copySynonyms(synonyms)
     const synonym = { name: inputName, locale: inputLocale }
     update.push(synonym)
-    updateTopicSynonyms(update)
-  }, [inputName, repoTopic, synonyms, copySynonyms, updateTopicSynonyms])
+    updateSynonyms(update)
+  }, [inputName, repoTopic, synonyms, copySynonyms, updateSynonyms])
 
   const onDelete = useCallback((position: number) => {
     if (!window.confirm('Are you sure you want to delete this synonym?')) return
 
     const update = copySynonyms(synonyms)
     update.splice(position, 1)
-    updateTopicSynonyms(update)
-  }, [copySynonyms, updateTopicSynonyms])
+    updateSynonyms(update)
+  }, [copySynonyms, updateSynonyms])
 
   return (
     <dl className="form-group">
-      <label
-        htmlFor="names-and-synonyms"
-      >
-        Names and synonyms
-      </label>
+      <label htmlFor="names-and-synonyms">Names and synonyms</label>
+
       <ul className="Box list-style-none mt-1 mb-2">
-        {renderSynonyms(synonyms, repoTopic.viewerCanUpdate, onDelete, updateTopicSynonyms)}
+        <SynonymListOuter
+          onDelete={onDelete}
+          synonyms={synonyms}
+          updateTopicSynonyms={updateSynonyms}
+          viewerCanUpdate={repoTopic.viewerCanUpdate}
+        />
       </ul>
 
       {repoTopic.viewerCanUpdate && (
