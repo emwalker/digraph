@@ -3,7 +3,6 @@ import { screen, waitFor } from '@testing-library/react'
 import { renderWithUser } from 'components/test-utils'
 import { useLazyLoadQuery } from 'react-relay'
 import { MockPayloadGenerator } from 'relay-test-utils'
-import { Location } from 'farce'
 
 import graphql from 'babel-plugin-relay/macro'
 import { RepoTopicSynonymsTestQuery } from '__generated__/RepoTopicSynonymsTestQuery.graphql'

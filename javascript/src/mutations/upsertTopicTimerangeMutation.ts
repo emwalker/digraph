@@ -11,9 +11,14 @@ export default graphql`
         type
       }
 
-      topic {
+      updatedTopic {
         id
         ...EditTopic_topic
+      }
+
+      updatedRepoTopic {
+        id
+        ...RepoTopicTimerange_repoTopic
       }
     }
   }

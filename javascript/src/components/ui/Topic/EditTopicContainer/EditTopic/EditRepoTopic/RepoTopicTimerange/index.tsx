@@ -51,6 +51,7 @@ function makeOnChange({ upsertTopicTimerange, removeTopicTimerange, repoId, repo
 
 const repoTopicFragment = graphql`
   fragment RepoTopicTimerange_repoTopic on RepoTopic {
+    id
     topicId
 
     timerange {
@@ -77,18 +78,19 @@ export default function RepoTopicTimeRange(props: Props) {
     useMutation<removeTopicTimerangeMutation>(removeQuery)
 
   const checked = !!repoTopic.timerange
-  const repoId = viewer.selectedRepository?.id
+  const repoId = viewer.selectedRepoId
   const onChange = makeOnChange({ upsertTopicTimerange, removeTopicTimerange, repoId, repoTopic })
   const disabled = upsertTimerangeInFlight || removeTimerangeInFlight
 
   return (
     <div>
       <div className="form-checkbox mb-1">
-        <label htmlFor="time-range-checkbox">
+        <label htmlFor="timerange-checkbox">
           <input
             checked={checked}
+            data-testid="timerange-checkbox"
             disabled={disabled}
-            id="time-range-checkbox"
+            id="timerange-checkbox"
             onChange={onChange}
             type="checkbox"
           />
@@ -97,7 +99,11 @@ export default function RepoTopicTimeRange(props: Props) {
       </div>
 
       {checked && (
-        <RepoTopicTimerangeForm viewer={props.viewer} repoTopic={repoTopic} disabled={disabled} />
+        <RepoTopicTimerangeForm
+          viewer={viewer}
+          repoTopic={repoTopic}
+          disabled={disabled}
+        />
       )}
     </div>
   )

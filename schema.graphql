@@ -546,7 +546,8 @@ type UpsertTopicPayload implements Alertable {
 type UpsertTopicTimerangePayload implements Alertable {
   alerts: [Alert!]!
   timerangeEdge: TimerangeEdge
-  topic: Topic!
+  updatedRepoTopic: RepoTopic!
+  updatedTopic: Topic!
 }
 
 type ViewStats {

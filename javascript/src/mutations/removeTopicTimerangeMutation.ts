@@ -13,12 +13,8 @@ export default graphql`
       }
 
       updatedRepoTopic {
-        topicId
-
-        timerange {
-          prefixFormat
-          startsAt
-        }
+        id
+        ...RepoTopicTimerange_repoTopic
       }
     }
   }

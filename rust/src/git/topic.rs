@@ -689,6 +689,7 @@ pub struct UpsertTopicTimerange {
 pub struct UpsertTopicTimerangeResult {
     pub alerts: Vec<Alert>,
     pub timerange: Timerange,
+    pub updated_repo_topic: RepoTopicWrapper,
 }
 
 impl UpsertTopicTimerange {
@@ -696,15 +697,15 @@ impl UpsertTopicTimerange {
     where
         S: SaveChangesForPrefix,
     {
-        let topic = mutation.fetch_topic(&self.repo_id, &self.topic_id);
-        if topic.is_none() {
+        let repo_topic = mutation.fetch_topic(&self.repo_id, &self.topic_id);
+        if repo_topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
-        let mut topic = topic.unwrap();
+        let mut repo_topic = repo_topic.unwrap();
 
-        let previous_timerange = topic.timerange().clone();
+        let previous_timerange = repo_topic.timerange().clone();
 
-        match &mut topic.metadata.details {
+        match &mut repo_topic.metadata.details {
             Some(details) => {
                 details.timerange = Some(self.timerange.clone());
             }
@@ -712,13 +713,17 @@ impl UpsertTopicTimerange {
             None => {}
         }
 
-        mutation.save_topic(&self.repo_id, &topic)?;
-        mutation.add_change(&self.repo_id, &self.change(&topic, previous_timerange))?;
+        mutation.save_topic(&self.repo_id, &repo_topic)?;
+        mutation.add_change(&self.repo_id, &self.change(&repo_topic, previous_timerange))?;
         mutation.write(store)?;
 
         Ok(UpsertTopicTimerangeResult {
             alerts: vec![],
             timerange: self.timerange.clone(),
+            updated_repo_topic: RepoTopicWrapper {
+                repo_topic,
+                repo_id: self.repo_id.to_owned(),
+            },
         })
     }
 

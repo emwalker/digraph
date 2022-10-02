@@ -220,7 +220,8 @@ pub struct UpsertTopicTimerangeInput {
 pub struct UpsertTopicTimerangePayload {
     alerts: Vec<alert::Alert>,
     timerange_edge: Option<time::TimerangeEdge>,
-    topic: Topic,
+    updated_repo_topic: RepoTopic,
+    updated_topic: Topic,
 }
 
 pub struct MutationRoot;
@@ -543,8 +544,11 @@ impl MutationRoot {
         let store = ctx.data_unchecked::<Store>();
         let topic_id: Oid = (&input.topic_id).try_into()?;
 
-        let git::UpsertTopicTimerangeResult { alerts, timerange } =
-            store.upsert_topic_timerange(input).await?;
+        let git::UpsertTopicTimerangeResult {
+            alerts,
+            timerange,
+            updated_repo_topic,
+        } = store.upsert_topic_timerange(input).await?;
         let topic: Topic = store.fetch_topic(topic_id).await?.try_into()?;
 
         let timerange_edge = Some(time::TimerangeEdge::new(
@@ -554,7 +558,8 @@ impl MutationRoot {
 
         Ok(UpsertTopicTimerangePayload {
             alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
-            topic,
+            updated_topic: topic,
+            updated_repo_topic: updated_repo_topic.into(),
             timerange_edge,
         })
     }

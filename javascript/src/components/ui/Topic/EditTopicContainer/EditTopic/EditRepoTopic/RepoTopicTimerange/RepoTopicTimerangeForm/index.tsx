@@ -99,7 +99,7 @@ export default function RepoTopicTimerangeForm(props: Props) {
   const disabled = props.disabled || upsertTimerangeInFlight
 
   return (
-    <div className="topicTimeRangeFormFormElements">
+    <div className="topicTimeRangeFormFormElements" data-testid="timerange-form">
       <dl className="form-group my-0">
         <dt><label htmlFor="time-range-prefix-format">Prefix</label></dt>
         <dd>
