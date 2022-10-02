@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction } from 'react';
 declare type Props = {
-    linkId?: string;
+    linkId?: string | null;
     selectedRepoId: string | null;
     setUrl?: Dispatch<SetStateAction<string>>;
     title?: string | null;

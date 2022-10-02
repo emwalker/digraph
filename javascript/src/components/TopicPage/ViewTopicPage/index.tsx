@@ -89,13 +89,17 @@ const topicFragment = graphql`
   }
 `
 
-function renderTopicChild(viewer: ViewerType, child: TopicChildType | null) {
+type TopicChildProps = {
+  child: TopicChildType | null,
+  viewer: ViewerType,
+}
+
+function TopicChild({ child, viewer }: TopicChildProps) {
   if (!child) return null
 
   if (child.__typename == 'Topic') {
     return (
       <Topic
-        key={child.id}
         topic={child}
         viewerId={viewer.id}
       />
@@ -105,7 +109,6 @@ function renderTopicChild(viewer: ViewerType, child: TopicChildType | null) {
   if (child.__typename == 'Link') {
     return (
       <Link
-        key={child.id}
         link={child}
         viewerId={viewer.id}
       />
@@ -236,7 +239,19 @@ export default function TopicPage(props: Props) {
             placeholder="There are no items in this list."
             hasItems={!isEmpty(children)}
           >
-            {children.filter(Boolean).map((child) => renderTopicChild(viewer, child))}
+            {children.filter(Boolean).map((child) => {
+              const key = (child?.__typename == 'Link' || child?.__typename == 'Topic')
+                ? child.id
+                : 'client:topicChildren:0'
+
+              return (
+                <TopicChild
+                  key={key}
+                  child={child}
+                  viewer={viewer}
+                />
+              )
+            })}
           </List>
         </LeftColumn>
       </Columns>

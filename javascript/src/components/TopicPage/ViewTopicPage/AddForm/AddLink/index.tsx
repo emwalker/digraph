@@ -1,5 +1,5 @@
 import React, {
-  FormEvent, useState, useCallback,
+  FormEvent, useState, useCallback, KeyboardEvent,
 } from 'react'
 import { graphql, useFragment } from 'react-relay'
 
@@ -37,7 +37,12 @@ export default function AddLink(props: Props) {
   const topic = useFragment(topicFragment, props.topic)
   const [url, setUrl] = useState('')
   const selectedRepoId = viewer.selectedRepoId
-  const onKeyPress = makeUpsertLinkCallback({ url, setUrl, topicId: topic.id, selectedRepoId })
+  const upsertLink = makeUpsertLinkCallback({ url, setUrl, topicId: topic.id, selectedRepoId })
+
+  const onKeyPress = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return
+    upsertLink()
+  }, [upsertLink])
 
   const onChange = useCallback((event: FormEvent<HTMLInputElement>) => {
     setUrl(event.currentTarget.value)

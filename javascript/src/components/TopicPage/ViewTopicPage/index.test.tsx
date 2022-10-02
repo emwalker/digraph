@@ -127,6 +127,9 @@ describe('<ViewTopicPage>', () => {
     const { environment, user } = await setup()
     const linkUrl = 'http://www.google.com'
 
+    const urlInput = screen.getByTestId('link-url-input')
+    await user.type(urlInput, `${linkUrl}{enter}`)
+
     environment.mock.queueOperationResolver((op) => {
       return MockPayloadGenerator.generate(op, {
         Link() {
@@ -134,16 +137,16 @@ describe('<ViewTopicPage>', () => {
             __typename: 'Link',
             id: 'new-link-id',
             displayUrl: linkUrl,
+            displayTitle: 'title',
           }
         },
       })
     })
 
-    const urlInput = screen.getByTestId('link-url-input')
-    await user.type(urlInput, `${linkUrl}{enter}`)
+    expect(environment.mock.getAllOperations().length).toBe(1)
 
-    const str = screen.getByTestId('List').innerHTML
-    expect(str).toContain(linkUrl)
-    expect(str).not.toContain('random')
+    const list = screen.getByTestId('List').innerHTML
+    expect(list).toContain(linkUrl)
+    expect(list).not.toContain('random')
   })
 })

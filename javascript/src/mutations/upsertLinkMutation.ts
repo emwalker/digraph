@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useCallback, MouseEvent } from 'react'
+import { Dispatch, KeyboardEvent, SetStateAction, useCallback } from 'react'
 import { ConnectionHandler, graphql, useMutation } from 'react-relay'
 import { RecordSourceSelectorProxy } from 'relay-runtime'
 
@@ -48,8 +48,12 @@ const query = graphql`
 
       linkEdge {
         node {
+          displayTitle
+          displayUrl
           id
-          ...Link_link
+          loading
+          newlyAdded
+          viewerCanUpdate
         }
       }
     }
@@ -57,7 +61,7 @@ const query = graphql`
 `
 
 type Props = {
-  linkId?: string,
+  linkId?: string | null,
   selectedRepoId: string | null,
   setUrl?: Dispatch<SetStateAction<string>>,
   title?: string | null,
@@ -68,13 +72,38 @@ type Props = {
 export function makeUpsertLinkCallback({
   linkId, selectedRepoId, setUrl, title, topicId, url,
 }: Props) {
-  const upsertLink = useMutation<upsertLinkMutation>(query)[0]
+  const [upsertLink, upsertLinkInFlight] = useMutation<upsertLinkMutation>(query)
 
   return useCallback(() => {
+    if (upsertLinkInFlight) {
+      console.log('mutation already in flight')
+      return
+    }
+
     if (!selectedRepoId) {
       console.log('repo not selected')
       return
     }
+
+    const displayTitle = title || 'Fetching page title ...'
+
+    const optimisticResponse = {
+      upsertLink: {
+        alerts: [],
+        linkEdge: {
+          node: {
+            displayTitle,
+            displayUrl: url,
+            id: linkId || `client:links:${Math.random()}`,
+            loading: true,
+            newlyAdded: linkId == null,
+            viewerCanUpdate: true,
+          },
+        },
+      },
+    }
+
+    const updater = makeUpdater(topicId || null)
 
     upsertLink({
       variables: {
@@ -86,9 +115,11 @@ export function makeUpsertLinkCallback({
           url,
         },
       },
-      updater: makeUpdater(topicId || null),
+      updater,
+      optimisticUpdater: updater,
+      optimisticResponse,
     })
 
     if (setUrl) setUrl('')
-  }, [upsertLink, selectedRepoId, topicId, url, setUrl])
+  }, [upsertLink, selectedRepoId, topicId, url, setUrl, title])
 }

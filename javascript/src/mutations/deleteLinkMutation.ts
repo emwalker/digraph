@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { graphql, useMutation } from 'react-relay'
+import { RecordSourceSelectorProxy } from 'relay-runtime'
 import { deleteLinkMutation } from '__generated__/deleteLinkMutation.graphql'
 
 const query = graphql`
@@ -19,6 +20,10 @@ export function makeDeleteLinkCallback({ selectedRepoId, linkId }: {
 }) {
   const deleteLink = useMutation<deleteLinkMutation>(query)[0]
 
+  const updater = (store: RecordSourceSelectorProxy) => {
+    store.delete(linkId)
+  }
+
   return useCallback(() => {
     if (!selectedRepoId) {
       console.log('no repo selected')
@@ -29,6 +34,8 @@ export function makeDeleteLinkCallback({ selectedRepoId, linkId }: {
       variables: {
         input: { repoId: selectedRepoId, linkId },
       },
+      optimisticUpdater: updater,
+      updater,
     })
-  }, [deleteLink, selectedRepoId, linkId])
+  }, [deleteLink, selectedRepoId, linkId, updater])
 }

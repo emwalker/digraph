@@ -2,7 +2,7 @@ import React, { FormEvent, useCallback, useState } from 'react'
 import { graphql, useFragment } from 'react-relay'
 
 import Input from 'components/ui/Input'
-import { makeUpsertLinkCallback as makeUpsertLinkCallback } from 'mutations/upsertLinkMutation'
+import { makeUpsertLinkCallback } from 'mutations/upsertLinkMutation'
 import DeleteButton from 'components/ui/DeleteButton'
 import { EditRepoLink_repoLink$key } from '__generated__/EditRepoLink_repoLink.graphql'
 import { EditRepoLink_viewer$key } from '__generated__/EditRepoLink_viewer.graphql'
