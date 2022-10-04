@@ -154,7 +154,7 @@
     "razzle-plugin-scss": "^4.2.16",
     "relay-compiler": "^12.0.0",
     "relay-compiler-language-typescript": "^15.0.1",
-    "semver": "~7.3.7",
+    "semver": "~7.3.8",
     "styled-components": "^5.3.5",
     "typescript": "^4.7.4",
     "typescript-plugin-css-modules": "^3.4.0",
