@@ -65,7 +65,6 @@ export default function Topic(props: Props) {
     >
       {formIsOpen && props.viewerId && (
         <EditTopicLoader
-          toggleForm={toggleForm}
           topicId={topic.id}
           viewerId={props.viewerId}
         />

@@ -7,7 +7,6 @@ import EditTopic from './EditTopic'
 
 type Props = {
   queryRef: PreloadedQuery<EditTopicQueryType>,
-  toggleForm: () => void,
 }
 
 function UnwrapData(props: Props) {
@@ -17,7 +16,6 @@ function UnwrapData(props: Props) {
 
   return (
     <EditTopic
-      toggleForm={props.toggleForm}
       topic={data.view.topic}
       viewer={data.view.viewer}
     />
@@ -30,5 +28,5 @@ export default function EditTopicContainer(props: Props) {
 
   if (!queryRef) return null
 
-  return <UnwrapData queryRef={queryRef} toggleForm={props.toggleForm} />
+  return <UnwrapData queryRef={queryRef} />
 }

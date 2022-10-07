@@ -6,12 +6,11 @@ import EditTopicQuery from '../EditTopicQuery'
 import { EditTopicQuery as EditTopicQueryType } from '__generated__/EditTopicQuery.graphql'
 
 type Props = {
-  toggleForm: () => void,
   topicId: string,
   viewerId: string,
 }
 
-export default function EditTopicLoader({ toggleForm, topicId, viewerId }: Props) {
+export default function EditTopicLoader({ topicId, viewerId }: Props) {
   const environment = useRelayEnvironment()
   const emptyQueryRef = {} as PreloadedQuery<EditTopicQueryType>
   const [queryRef, setQueryRef] = useState(emptyQueryRef)
@@ -27,12 +26,7 @@ export default function EditTopicLoader({ toggleForm, topicId, viewerId }: Props
 
   return (
     <Suspense fallback={<div>Loading form ...</div>}>
-      {queryRef !== emptyQueryRef && (
-        <EditTopicContainer
-          toggleForm={toggleForm}
-          queryRef={queryRef}
-        />
-      )}
+      {queryRef !== emptyQueryRef && <EditTopicContainer queryRef={queryRef} />}
     </Suspense>
   )
 }

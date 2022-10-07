@@ -14,7 +14,7 @@ export default function RepoOwnership(props: Props) {
   const width = repoColors.length === 0 ? '100%' : `${100 / repoColors.length}%`
 
   return (
-    <span className="Progress mt-2 RepoOwnership">
+    <span className="Progress RepoOwnership">
       {repoColors.map((color, index) =>
         <span
           key={index}

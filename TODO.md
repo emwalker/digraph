@@ -12,7 +12,6 @@ Before switchover:
 * Decide whether to support link reviews or remove the feature
 * Bug: you should not be able to upsert a link under the Wiki repo when looking at a private topic
 * Bug: client: some history entries are not displaying properly
-* Bug: the repo ownership component is not vertically aligned with the "Close" button
 * Bug: repo topic forms not updated when a new repo is selected
 * Bug: parent topics are not sorted in alphabetical order in upper righthand box
 * Repo topics/links: show timerange in read-only view
@@ -21,7 +20,7 @@ Before switchover:
 * Verify that history entries are working for cross-repo mutations
 * Verify that account creation still works
 * Verify that account deletion still works
-* Verify that topics still show up in their own topic search
+* Verify that topics still show up at the top of their own topic search
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo

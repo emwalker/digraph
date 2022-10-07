@@ -122,10 +122,12 @@ function renderRepoOwnership(topic: TopicType) {
   const repoColors = topic.repoTopics.map((repoTopic) => repoTopic.displayColor as Color)
 
   return (
-    <RepoOwnership
-      showRepoOwnership={topic.showRepoOwnership}
-      repoColors={repoColors}
-    />
+    <div className="mt-2">
+      <RepoOwnership
+        showRepoOwnership={topic.showRepoOwnership}
+        repoColors={repoColors}
+      />
+    </div>
   )
 }
 

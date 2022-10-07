@@ -1,9 +1,8 @@
-import React, { Component, ReactNode } from 'react'
+import React, { ReactNode } from 'react'
 import classNames from 'classnames'
 
 import { Color } from 'components/types'
 import { topicPath } from 'components/helpers'
-import { LocationType } from 'components/types'
 import LinkOrA from './LinkOrA'
 import TopicBadge from '../TopicBadge'
 import RepoOwnership from '../RepoOwnership'
@@ -13,7 +12,145 @@ import RepoOwnership from '../RepoOwnership'
 type Topic = {
   displayName: string,
   id: string,
-} | null
+}
+
+function locationDescriptor(pathname: string, itemTitle: string) {
+  return {
+    pathname,
+    query: {},
+    search: '',
+    state: {
+      itemTitle,
+    },
+  }
+}
+
+function CloseButton({ toggleForm }: { toggleForm: () => void }) {
+  return (
+    <dl className="form-group">
+      <button className="btn-link" onClick={toggleForm} type="button">Close</button>
+    </dl>
+  )
+}
+
+function Url({ url, showLink }: { url: string | null, showLink: boolean }) {
+  if (!url || !showLink) return null
+
+  return (
+    <div
+      className="mt-1 link-url branch-name css-truncate css-truncate-target"
+    >
+      {url}
+    </div>
+  )
+}
+
+function TitleLink({ url, title }: { url: string | null, title: string }) {
+  if (!url) {
+    return (
+      <a
+        className="Box-row-link"
+        href="#"
+      >
+        {title}
+      </a>
+    )
+  }
+
+  const to = locationDescriptor(url, title)
+
+  return (
+    <LinkOrA to={to} className="Box-row-link">
+      {title}
+    </LinkOrA>
+  )
+}
+
+function OuterTopicBadge({ topic }: { topic: Topic }) {
+  const { id, displayName } = topic
+
+  return (
+    <TopicBadge
+      key={id}
+      displayName={displayName}
+      to={locationDescriptor(topicPath(id), displayName)}
+    />
+  )
+}
+
+type WideItemProps = {
+  description: string | null,
+  showLink: boolean,
+  title: string,
+  topics: Topic[],
+  url: string | null,
+}
+
+function ItemView({ url, description, topics, title, showLink }: WideItemProps) {
+  return (
+    <div className="clearfix d-flex flex-items-center">
+      <div className="col-12">
+        <div>
+          <TitleLink url={url} title={title} />
+          <div>{description}</div>
+        </div>
+        <Url url={url} showLink={showLink} />
+        <div>
+          {topics.map((topic) => <OuterTopicBadge key={topic.id} topic={topic} />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type EditableItemProps = {
+  children: ReactNode,
+  description: string | null,
+  formIsOpen: boolean,
+  showEditButton: boolean,
+  showLink: boolean,
+  title: string,
+  toggleForm: () => void,
+  topics: Topic[],
+  url: string | null,
+}
+
+function ItemEditForm({
+  formIsOpen, description, url, topics, showEditButton, toggleForm, title, children, showLink,
+}: EditableItemProps) {
+  return (
+    <div>
+      <div className="clearfix d-flex flex-items-center">
+        <div className="col-10">
+          <div>
+            <TitleLink url={url} title={title} />
+            <div>{description}</div>
+          </div>
+          <Url url={url} showLink={showLink} />
+          <div>
+            {topics.map((topic) => <OuterTopicBadge key={topic.id} topic={topic} />)}
+          </div>
+        </div>
+        <div className="col-2 text-center">
+          {showEditButton
+            ? (
+              <button
+                className="btn-link"
+                onClick={toggleForm}
+                type="button"
+              >
+                Edit
+              </button>
+            )
+            : <a className="color-fg-muted no-underline">Edit</a>}
+        </div>
+      </div>
+      <div>
+        {formIsOpen && children}
+      </div>
+    </div>
+  )
+}
 
 type Props = {
   canEdit: boolean,
@@ -23,7 +160,7 @@ type Props = {
   formIsOpen: boolean,
   newlyAdded: boolean,
   repoColors: Color[],
-  showEditButton: boolean | null,
+  showEditButton: boolean,
   showLink?: boolean,
   showRepoOwnership: boolean,
   title: string,
@@ -32,141 +169,49 @@ type Props = {
   url: string | null,
 }
 
-class Item extends Component<Props> {
-  static defaultProps = {
-    description: null,
-    showLink: false,
-  }
+export default function Item(props: Props) {
+  const className = classNames('Item-row Box-row', props.className,
+    { 'anim-fade-in': props.newlyAdded })
+  const showEditButton = !props.formIsOpen && props.showEditButton === true
 
-  get className(): string {
-    return classNames(
-      'Item-row',
-      'Box-row',
-      this.props.className,
-      { 'anim-fade-in': this.props.newlyAdded },
-    )
-  }
-
-  get showEditButton(): boolean {
-    return !this.props.formIsOpen && this.props.showEditButton === true
-  }
-
-  get url() {
-    if (!this.props.url || !this.props.showLink) return null
-
-    return (
-      <div
-        className="mt-1 link-url branch-name css-truncate css-truncate-target"
-      >
-        {this.props.url}
-      </div>
-    )
-  }
-
-  get titleLink() {
-    if (!this.props.url) {
-      return (
-        <a
-          className="Box-row-link"
-          href="#"
-        >
-          {this.props.title}
-        </a>
-      )
-    }
-
-    const to = this.locationDescriptor(this.props.url, this.props.title)
-
-    return (
-      <LinkOrA to={to} className="Box-row-link">
-        {this.props.title}
-      </LinkOrA>
-    )
-  }
-
-  locationDescriptor = (pathname: string, itemTitle: string): LocationType => (
-    {
-      pathname,
-      query: {},
-      search: '',
-      state: {
-        itemTitle,
-      },
-    }
-  )
-
-  renderTopicBadge = (topic: Topic) => {
-    if (!topic) return null
-    const { id, displayName } = topic
-    return (
-      <TopicBadge
-        key={id}
-        displayName={displayName}
-        to={this.locationDescriptor(topicPath(id), displayName)}
+  const inner = props.canEdit
+    ? (
+      <ItemEditForm
+        children={props.children}
+        description={props.description || null}
+        formIsOpen={props.formIsOpen}
+        showEditButton={showEditButton}
+        showLink={props.showLink || false}
+        title={props.title}
+        toggleForm={props.toggleForm}
+        topics={props.topics}
+        url={props.url}
       />
     )
-  }
-
-  renderEditable = () => (
-    <>
-      <div className="clearfix d-flex flex-items-center">
-        <div className="col-10">
-          <div>
-            {this.titleLink}
-            <div>{this.props.description}</div>
-          </div>
-          {this.url}
-          <div>
-            {this.props.topics.map(this.renderTopicBadge)}
-          </div>
-        </div>
-        <div className="col-2 text-center">
-          {this.showEditButton
-            ? (
-              <button
-                className="btn-link"
-                onClick={this.props.toggleForm}
-                type="button"
-              >
-                Edit
-              </button>
-            )
-            : <span className="itemDisabledLink">Edit</span>}
-        </div>
-      </div>
-      <div>
-        {this.props.formIsOpen && this.props.children}
-      </div>
-    </>
-  )
-
-  renderWide = () => (
-    <div className="clearfix d-flex flex-items-center">
-      <div className="col-12">
-        <div>
-          {this.titleLink}
-          <div>{this.props.description}</div>
-        </div>
-        {this.url}
-        <div>
-          {this.props.topics.map(this.renderTopicBadge)}
-        </div>
-      </div>
-    </div>
-  )
-
-  render = () => (
-    <li className={this.className} key={this.props.url}>
-      {this.props.canEdit
-        ? this.renderEditable()
-        : this.renderWide()}
-
-      <RepoOwnership
-        showRepoOwnership={this.props.showRepoOwnership}
-        repoColors={this.props.repoColors}
+    : (
+      <ItemView
+        description={props.description || null}
+        showLink={props.showLink || false}
+        title={props.title}
+        topics={props.topics}
+        url={props.url}
       />
+    )
+
+  return (
+    <li className={className} key={props.url}>
+      {inner}
+
+      <div className="d-flex mb-1 mt-2 flex-items-center">
+        <div className="mr-auto">
+          <RepoOwnership
+            showRepoOwnership={props.showRepoOwnership}
+            repoColors={props.repoColors}
+          />
+        </div>
+
+        {!showEditButton && <CloseButton toggleForm={props.toggleForm} />}
+      </div>
     </li>
   )
 }
-
-export default Item

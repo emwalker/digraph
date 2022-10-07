@@ -7,7 +7,6 @@ import ViewRepoTopic from './ViewRepoTopic'
 import { EditTopic_topic$key } from '__generated__/EditTopic_topic.graphql'
 
 type Props = {
-  toggleForm: () => void,
   topic: EditTopic_topic$key,
   viewer: any,
 }
@@ -56,16 +55,6 @@ export default function EditTopic(props: Props) {
             : <ViewRepoTopic repoTopic={repoTopic} />}
         </ul>
       ))}
-
-      <dl className="form-group mb-5">
-        <button
-          className="btn-link float-right"
-          onClick={props.toggleForm}
-          type="button"
-        >
-          Close
-        </button>
-      </dl>
     </div>
   )
 }
