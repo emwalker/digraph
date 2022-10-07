@@ -8,7 +8,6 @@ import ViewRepoLink from './ViewRepoLink'
 
 type Props = {
   link: EditLink_link$key,
-  toggleForm: () => void,
   viewer: any,
 }
 
@@ -30,7 +29,7 @@ const linkFragment = graphql`
   }
 `
 
-export default function EditLink({ toggleForm, viewer, ...rest }: Props) {
+export default function EditLink({ viewer, ...rest }: Props) {
   const link = useFragment(linkFragment, rest.link)
 
   return (
@@ -59,16 +58,6 @@ export default function EditLink({ toggleForm, viewer, ...rest }: Props) {
             : <ViewRepoLink repoLink={repoLink} />}
         </ul>
       ))}
-
-      <dl className="form-group mb-5">
-        <button
-          className="btn-link float-right"
-          onClick={toggleForm}
-          type="button"
-        >
-          Close
-        </button>
-      </dl>
     </div>
   )
 }

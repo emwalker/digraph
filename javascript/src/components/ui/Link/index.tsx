@@ -69,7 +69,6 @@ export default function Link(props: Props) {
       {formIsOpen && props.viewerId && (
         <EditLinkLoader
           linkId={link.id}
-          toggleForm={toggleForm}
           viewerId={props.viewerId}
         />
       )}

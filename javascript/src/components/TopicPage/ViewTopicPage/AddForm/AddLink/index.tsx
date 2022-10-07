@@ -8,15 +8,15 @@ import {
   AddLink_viewer$key,
 } from '__generated__/AddLink_viewer.graphql'
 import {
-  AddLink_topic$key,
-} from '__generated__/AddLink_topic.graphql'
+  AddLink_parentTopic$key,
+} from '__generated__/AddLink_parentTopic.graphql'
 
 const tooltip = 'Add a link to this topic.\n'
   + 'Press "Return" to submit the new link.'
 
 type Props = {
   disabled?: boolean,
-  topic: AddLink_topic$key,
+  parentTopic: AddLink_parentTopic$key,
   viewer: AddLink_viewer$key,
 }
 
@@ -27,17 +27,19 @@ const viewerFragment = graphql`
 `
 
 const topicFragment = graphql`
-  fragment AddLink_topic on Topic {
+  fragment AddLink_parentTopic on Topic {
     id
   }
 `
 
 export default function AddLink(props: Props) {
   const viewer = useFragment(viewerFragment, props.viewer)
-  const topic = useFragment(topicFragment, props.topic)
+  const parentTopic = useFragment(topicFragment, props.parentTopic)
   const [url, setUrl] = useState('')
   const selectedRepoId = viewer.selectedRepoId
-  const upsertLink = makeUpsertLinkCallback({ url, setUrl, topicId: topic.id, selectedRepoId })
+  const upsertLink = makeUpsertLinkCallback({
+    url, setUrl, topicId: parentTopic.id, selectedRepoId,
+  })
 
   const onKeyPress = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Enter') return

@@ -11,8 +11,8 @@ import ViewTopicPage from '.'
 
 jest.mock('found',
   () => ({
-    Link: ({ to, children }: any) => {
-      return `<Link href="${to.pathname}">${children}</a>`
+    Link: ({ children }: any) => {
+      return children
     },
   }),
 )
@@ -38,6 +38,31 @@ const testQuery = graphql`
   }
 `
 
+function childrenFor(context: MockPayloadGenerator.MockResolverContext) {
+  const path = (context.path || []).toString()
+  if (path !== ['view', 'topic'].toString()) return {}
+
+  return {
+    edges: [
+      {
+        node: {
+          __typename: 'Topic',
+          id: 'child-1-topic',
+          displayName: 'Climate change',
+        },
+      },
+      {
+        node: {
+          __typename: 'Link',
+          id: 'child-2-link',
+          displayTitle: 'Climate change',
+          displayUrl: 'https://en.wikipedia.org/wiki/Climate_change',
+        },
+      },
+    ],
+  }
+}
+
 const TestRenderer = () => {
   const data = useLazyLoadQuery<ViewTopicPageTestQuery>(testQuery,
     { topicId: 'topic-id', viewerId: 'viewer-id' })
@@ -60,18 +85,26 @@ async function setup() {
   await waitFor(() => {
     environment.mock.resolveMostRecentOperation((operation) =>
       MockPayloadGenerator.generate(operation, {
-        Topic() {
+        Topic(context) {
           return {
             __typename: 'Topic',
             id: 'topic-id',
-            displayName: 'Topic name',
+            displayName: 'Existing topic',
             viewerCanUpdate: true,
             displayParentTopics: [],
             displaySynonyms: [],
+            children: childrenFor(context),
+          }
+        },
 
-            children: {
-              edges: [],
-            },
+        Link() {
+          return {
+            __typename: 'Link',
+            id: 'link-id',
+            displayTitle: 'Existing link',
+            displayUrl: 'https://www.reddit.com',
+            viewerCanUpdate: true,
+            displayParentTopics: [],
           }
         },
 
@@ -97,7 +130,7 @@ async function setup() {
 describe('<ViewTopicPage>', () => {
   it('renders', async () => {
     await setup()
-    expect(screen.getByText('Topic name')).toBeInTheDocument()
+    expect(screen.getAllByText('Existing topic').length).toBeGreaterThan(0)
     expect(screen.getByText('Add subtopic')).toBeInTheDocument()
   })
 
@@ -123,30 +156,37 @@ describe('<ViewTopicPage>', () => {
     expect(str).not.toContain('random')
   })
 
-  it('allows a new link to be added', async () => {
-    const { environment, user } = await setup()
+  describe('adding a link', () => {
     const linkUrl = 'http://www.google.com'
 
-    const urlInput = screen.getByTestId('link-url-input')
-    await user.type(urlInput, `${linkUrl}{enter}`)
+    beforeEach(async () => {
+      const { environment, user } = await setup()
 
-    environment.mock.queueOperationResolver((op) => {
-      return MockPayloadGenerator.generate(op, {
-        Link() {
-          return {
-            __typename: 'Link',
-            id: 'new-link-id',
-            displayUrl: linkUrl,
-            displayTitle: 'title',
-          }
-        },
-      })
+      const urlInput = screen.getByTestId('link-url-input')
+      await user.type(urlInput, `${linkUrl}{enter}`)
+
+      environment.mock.queueOperationResolver(MockPayloadGenerator.generate)
+      expect(environment.mock.getAllOperations().length).toBe(1)
+      expect(screen.getByText('Existing link')).toBeInTheDocument()
     })
 
-    expect(environment.mock.getAllOperations().length).toBe(1)
+    it('works', () => {
+      const list = screen.getByTestId('List')
+      expect(list).toHaveTextContent(linkUrl)
+      expect(list).not.toHaveTextContent('random')
+      expect(list).not.toHaveTextContent('Close')
+    })
 
-    const list = screen.getByTestId('List').innerHTML
-    expect(list).toContain(linkUrl)
-    expect(list).not.toContain('random')
+    it('adds the link above existing links and below existing topics', async () => {
+      const list = screen.getByTestId('List')
+      const titles = Array.from(list.querySelectorAll('li div.item-title'))
+        .map((child) => child.textContent)
+
+      expect(titles).toEqual([
+        'Existing topic',
+        'Fetching link title ...',
+        'Existing link',
+      ])
+    })
   })
 })

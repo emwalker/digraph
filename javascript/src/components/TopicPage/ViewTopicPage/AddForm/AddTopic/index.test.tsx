@@ -24,14 +24,14 @@ const TestRenderer = () => {
           }
 
           topic(id: $topicId) {
-            ...AddTopic_topic
+            ...AddTopic_parentTopic
           }
         }
       }
     `,
     { topicId: 'topic-id', viewerId: 'viewer-id' },
   )
-  return <AddTopic topic={data.view.topic!} viewer={data.view.viewer!} />
+  return <AddTopic parentTopic={data.view.topic!} viewer={data.view.viewer!} />
 }
 
 async function setup() {

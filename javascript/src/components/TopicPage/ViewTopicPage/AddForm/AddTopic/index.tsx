@@ -3,7 +3,7 @@ import { graphql, useFragment } from 'react-relay'
 
 import { makeUpsertTopic } from 'mutations/upsertTopicMutation'
 import { AddTopic_viewer$key } from '__generated__/AddTopic_viewer.graphql'
-import { AddTopic_topic$key } from '__generated__/AddTopic_topic.graphql'
+import { AddTopic_parentTopic$key } from '__generated__/AddTopic_parentTopic.graphql'
 
 const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
   + 'afterwards if it also belongs under another topic.\n'
@@ -11,12 +11,12 @@ const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
 
 type Props = {
   disabled?: boolean,
-  topic: AddTopic_topic$key,
+  parentTopic: AddTopic_parentTopic$key,
   viewer: AddTopic_viewer$key,
 }
 
 const topicFragment = graphql`
-  fragment AddTopic_topic on Topic {
+  fragment AddTopic_parentTopic on Topic {
     id
   }
 `
@@ -29,11 +29,11 @@ const viewerFragment = graphql`
 
 export default function AddTopic(props: Props) {
   const viewer = useFragment(viewerFragment, props.viewer)
-  const topic = useFragment(topicFragment, props.topic)
+  const parentTopic = useFragment(topicFragment, props.parentTopic)
   const [name, setName] = useState('')
 
   const selectedRepoId = viewer.selectedRepoId
-  const onKeyPress = makeUpsertTopic({ selectedRepoId, name, setName, topicId: topic.id })
+  const onKeyPress = makeUpsertTopic({ selectedRepoId, name, setName, topicId: parentTopic.id })
 
   const updateName = useCallback((event: FormEvent<HTMLInputElement>) => {
     setName(event.currentTarget.value)

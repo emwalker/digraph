@@ -1,5 +1,4 @@
 Next:
-* Bug: client: the JS client doesn't show new links and topics in the right place when they're added
 
 Before switchover:
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership

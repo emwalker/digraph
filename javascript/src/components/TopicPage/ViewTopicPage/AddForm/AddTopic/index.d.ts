@@ -1,8 +1,8 @@
 import { AddTopic_viewer$key } from '__generated__/AddTopic_viewer.graphql';
-import { AddTopic_topic$key } from '__generated__/AddTopic_topic.graphql';
+import { AddTopic_parentTopic$key } from '__generated__/AddTopic_parentTopic.graphql';
 declare type Props = {
     disabled?: boolean;
-    topic: AddTopic_topic$key;
+    parentTopic: AddTopic_parentTopic$key;
     viewer: AddTopic_viewer$key;
 };
 export default function AddTopic(props: Props): JSX.Element;

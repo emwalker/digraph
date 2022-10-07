@@ -34,8 +34,8 @@ export default function AddForm(props: Props) {
   const topic = useFragment(
     graphql`
       fragment AddForm_topic on Topic {
-        ...AddLink_topic
-        ...AddTopic_topic
+        ...AddLink_parentTopic
+        ...AddTopic_parentTopic
       }
     `,
     props.topic,
@@ -54,8 +54,8 @@ export default function AddForm(props: Props) {
       <SelectRepository viewer={viewer} />
       {repoSelected && (
         <>
-          <AddTopic disabled={!repoSelected} topic={topic} viewer={viewer} />
-          <AddLink disabled={!repoSelected} topic={topic} viewer={viewer} />
+          <AddTopic disabled={!repoSelected} parentTopic={topic} viewer={viewer} />
+          <AddLink disabled={!repoSelected} parentTopic={topic} viewer={viewer} />
         </>
       )}
     </form>

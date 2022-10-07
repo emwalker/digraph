@@ -11,7 +11,7 @@ export declare type EdgesTypeOf<C extends Connection<any>> = C['edges'];
 export declare type EdgeTypeOf<C extends Connection<any>> = NonNullable<EdgesTypeOf<C>>[number];
 export declare type NodeTypeOf<C extends Connection<any>> = NonNullable<EdgeTypeOf<C>>['node'];
 export declare function liftEdges<T>(connection: Connection<T>): readonly Edge<T>[];
-export declare function liftNodes<T>(connection: Connection<T> | undefined): (NonNullable<T> | null)[];
+export declare function liftNodes<T>(connection: Connection<T> | undefined): NonNullable<T>[];
 declare type LocationState = {
     itemTitle: string;
 };

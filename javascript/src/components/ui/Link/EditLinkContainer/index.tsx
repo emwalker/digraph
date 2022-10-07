@@ -7,7 +7,6 @@ import { EditLinkQuery as EditLinkQueryType } from '__generated__/EditLinkQuery.
 
 type Props = {
   queryRef: PreloadedQuery<EditLinkQueryType>,
-  toggleForm: () => void,
 }
 
 function UnwrapData(props: Props) {
@@ -17,7 +16,6 @@ function UnwrapData(props: Props) {
 
   return (
     <EditLink
-      toggleForm={props.toggleForm}
       link={data.view.link}
       viewer={data.view.viewer}
     />
@@ -30,5 +28,5 @@ export default function EditLinkContainer(props: Props) {
 
   if (!queryRef) return null
 
-  return <UnwrapData queryRef={queryRef} toggleForm={props.toggleForm} />
+  return <UnwrapData queryRef={queryRef} />
 }

@@ -8,5 +8,5 @@ declare type Props = {
     showButton?: boolean;
     view: SearchBox_view$key;
 };
-export default function SearchBox(props: Props): JSX.Element;
+export default function SearchBox({ router, className, showButton, location, ...rest }: Props): JSX.Element;
 export {};

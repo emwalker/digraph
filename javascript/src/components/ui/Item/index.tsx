@@ -60,9 +60,11 @@ function TitleLink({ url, title }: { url: string | null, title: string }) {
   const to = locationDescriptor(url, title)
 
   return (
-    <LinkOrA to={to} className="Box-row-link">
-      {title}
-    </LinkOrA>
+    <div className="item-title">
+      <LinkOrA to={to} className="Box-row-link">
+        {title}
+      </LinkOrA>
+    </div>
   )
 }
 
@@ -170,6 +172,7 @@ export default function Item(props: Props) {
   const className = classNames('Item-row Box-row', props.className,
     { 'anim-fade-in': props.newlyAdded })
   const showEditButton = !props.formIsOpen && props.showEditButton === true
+  const showBottom = props.formIsOpen || props.showRepoOwnership
 
   const inner = props.canEdit
     ? (
@@ -199,16 +202,18 @@ export default function Item(props: Props) {
     <li className={className} key={props.url}>
       {inner}
 
-      <div className="d-flex mb-1 mt-2 flex-items-center">
-        <div className="mr-auto">
-          <RepoOwnership
-            showRepoOwnership={props.showRepoOwnership}
-            repoColors={props.repoColors}
-          />
-        </div>
+      {showBottom && (
+        <div className="d-flex mb-1 mt-2 flex-items-center">
+          <div className="mr-auto">
+            <RepoOwnership
+              showRepoOwnership={props.showRepoOwnership}
+              repoColors={props.repoColors}
+            />
+          </div>
 
-        {!showEditButton && <CloseButton toggleForm={props.toggleForm} />}
-      </div>
+          {props.formIsOpen && <CloseButton toggleForm={props.toggleForm} />}
+        </div>
+      )}
     </li>
   )
 }

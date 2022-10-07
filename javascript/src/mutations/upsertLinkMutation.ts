@@ -33,7 +33,13 @@ function makeUpdater(parentTopicId: string | null) {
       return
     }
 
-    ConnectionHandler.insertEdgeBefore(connection, linkEdge)
+    const prevEdges = connection.getLinkedRecords('edges') || []
+    const index = prevEdges.findIndex((edge) => {
+      const node = edge.getLinkedRecord('node')
+      return node?.getValue('__typename') == 'Link'
+    })
+    prevEdges.splice(index, 0, linkEdge)
+    connection.setLinkedRecords(prevEdges, 'edges')
   }
 }
 
@@ -48,12 +54,7 @@ const query = graphql`
 
       linkEdge {
         node {
-          displayTitle
-          displayUrl
-          id
-          loading
-          newlyAdded
-          viewerCanUpdate
+          ...Link_link
         }
       }
     }
@@ -85,19 +86,22 @@ export function makeUpsertLinkCallback({
       return
     }
 
-    const displayTitle = title || 'Fetching page title ...'
+    const displayTitle = title || 'Fetching link title ...'
 
     const optimisticResponse = {
       upsertLink: {
         alerts: [],
         linkEdge: {
           node: {
+            displayParentTopics: { edges: [] },
             displayTitle,
             displayUrl: url,
             id: linkId || `client:links:${Math.random()}`,
             loading: true,
             newlyAdded: linkId == null,
-            viewerCanUpdate: true,
+            repoLinks: [],
+            showRepoOwnership: false,
+            viewerCanUpdate: false,
           },
         },
       },

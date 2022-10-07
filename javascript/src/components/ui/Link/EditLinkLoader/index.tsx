@@ -8,10 +8,9 @@ import { EditLinkQuery as EditLinkQueryType } from '__generated__/EditLinkQuery.
 type Props = {
   linkId: string,
   viewerId: string,
-  toggleForm: () => void,
 }
 
-export default function EditLinkLoader({ linkId, toggleForm, viewerId }: Props) {
+export default function EditLinkLoader({ linkId, viewerId }: Props) {
   const environment = useRelayEnvironment()
   const emptyQueryRef = {} as PreloadedQuery<EditLinkQueryType>
   const [queryRef, setQueryRef] = useState(emptyQueryRef)
@@ -27,12 +26,7 @@ export default function EditLinkLoader({ linkId, toggleForm, viewerId }: Props) 
 
   return (
     <Suspense fallback={<div>Loading ...</div>}>
-      {queryRef !== emptyQueryRef && (
-        <EditLinkContainer
-          toggleForm={toggleForm}
-          queryRef={queryRef}
-        />
-      )}
+      {queryRef !== emptyQueryRef && <EditLinkContainer queryRef={queryRef} />}
     </Suspense>
   )
 }
