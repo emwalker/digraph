@@ -11,14 +11,6 @@ import { SearchBox_view$key } from '__generated__/SearchBox_view.graphql'
 import TextInput from './TextInput'
 import queryFromState from './queryFromState'
 
-type Props = {
-  className?: string,
-  location: LocationType,
-  router: Router,
-  showButton?: boolean,
-  view: SearchBox_view$key,
-}
-
 const atHomepage = (pathname: string) => pathname === '/'
 
 const pathnameFor = (pathname: string, selectedScope: string) => {
@@ -30,11 +22,13 @@ const onFormSubmit = (event: FormEvent<HTMLFormElement>) => {
   event.preventDefault()
 }
 
-const inputSelect = (
+type SelectScopeProps = {
   pathname: string,
   selectedScope: string,
-  onSelectChange: (event: ChangeEvent<HTMLSelectElement>) => void,
-) => {
+  onChange: (event: ChangeEvent<HTMLSelectElement>) => void,
+}
+
+function SelectScope({ pathname, selectedScope, onChange }: SelectScopeProps) {
   if (atHomepage(pathname)) {
     return (
       <button className="btn searchBoxInnerButton" type="button">
@@ -45,7 +39,7 @@ const inputSelect = (
 
   return (
     <select
-      onChange={onSelectChange}
+      onChange={onChange}
       value={selectedScope}
       className="btn searchBoxInnerButton"
     >
@@ -55,7 +49,15 @@ const inputSelect = (
   )
 }
 
-export default function SearchBox(props: Props) {
+type Props = {
+  className?: string,
+  location: LocationType,
+  router: Router,
+  showButton?: boolean,
+  view: SearchBox_view$key,
+}
+
+export default function SearchBox({ router, className, showButton, location, ...rest }: Props) {
   const view = useFragment(
     graphql`
       fragment SearchBox_view on View {
@@ -73,11 +75,10 @@ export default function SearchBox(props: Props) {
         }
       }
     `,
-    props.view,
+    rest.view,
   )
 
-  const { router, className, showButton } = props
-  const pathname = props.location.pathname
+  const pathname = location.pathname
   const [selectedScope, setSelectedScope] = useState('Everything')
 
   const handleReturn = useCallback(
@@ -100,7 +101,7 @@ export default function SearchBox(props: Props) {
     setSelectedScope(value)
   }, [setSelectedScope])
 
-  const actualClassName = classNames('searchBoxInnerSearchBox input-group', className)
+  const actualClassName = classNames('searchBoxInnerSearchBox input-group px-3', className)
 
   return (
     <form className={actualClassName} onSubmit={onFormSubmit}>
@@ -108,11 +109,13 @@ export default function SearchBox(props: Props) {
         handleReturn={handleReturn}
         queryInfo={view?.queryInfo}
       />
-      {showButton && (
-        <div className="input-group-button searchBoxInnerButtonContainer">
-          {inputSelect(pathname, selectedScope, onSelectChange)}
-        </div>
-      )}
+      <div className="input-group-button searchBoxInnerButtonContainer">
+        <SelectScope
+          pathname={pathname}
+          selectedScope={selectedScope}
+          onChange={onSelectChange}
+        />
+      </div>
     </form>
   )
 }

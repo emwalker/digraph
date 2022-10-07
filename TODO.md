@@ -1,5 +1,4 @@
 Next:
-* Bug: the search bar is missing the current topic, and its styling has changed
 
 Before switchover:
 * Bug: client: the JS client doesn't show new links and topics in the right place when they're added
@@ -22,6 +21,7 @@ Before switchover:
 * Verify that history entries are working for cross-repo mutations
 * Verify that account creation still works
 * Verify that account deletion still works
+* Verify that topics still show up in their own topic search
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo
