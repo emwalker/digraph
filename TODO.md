@@ -1,7 +1,8 @@
 Next:
-* Bug: client: the JS client doesn't show new links and topics in the right place when they're added
+* Bug: the search bar is missing the current topic, and its styling has changed
 
 Before switchover:
+* Bug: client: the JS client doesn't show new links and topics in the right place when they're added
 * Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Clean up database: odds and ends
@@ -15,7 +16,6 @@ Before switchover:
 * Bug: the repo ownership component is not vertically aligned with the "Close" button
 * Bug: repo topic forms not updated when a new repo is selected
 * Bug: parent topics are not sorted in alphabetical order in upper righthand box
-* Bug: the search bar is missing the current topic, and its styling has changed
 * Repo topics/links: show timerange in read-only view
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
