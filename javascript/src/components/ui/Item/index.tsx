@@ -120,7 +120,7 @@ function ItemEditForm({
 }: EditableItemProps) {
   return (
     <div>
-      <div className="clearfix d-flex flex-items-center">
+      <div className="clearfix d-flex">
         <div className="col-10">
           <div>
             <TitleLink url={url} title={title} />
@@ -132,23 +132,20 @@ function ItemEditForm({
           </div>
         </div>
         <div className="col-2 text-center">
-          {showEditButton
-            ? (
-              <button
-                className="btn-link"
-                onClick={toggleForm}
-                type="button"
-              >
-                Edit
-              </button>
-            )
-            : <a className="color-fg-muted no-underline">Edit</a>}
+          <button
+            className="btn-link mt-1"
+            onClick={toggleForm}
+            disabled={!showEditButton}
+            type="button"
+          >
+            Edit
+          </button>
         </div>
       </div>
       <div>
         {formIsOpen && children}
       </div>
-    </div>
+    </div >
   )
 }
 
