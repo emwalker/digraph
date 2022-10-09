@@ -1,7 +1,7 @@
 Next:
 
 Before switchover:
-* Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership
+* Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership (what happens after refreshing page?)
 * Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
 * Clean up database: odds and ends
 * Order links by reverse chronological date
