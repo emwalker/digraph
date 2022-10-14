@@ -65,7 +65,7 @@
     "react-async-ssr": "^0.7.2",
     "react-dom": "~18.1.0",
     "react-google-recaptcha": "^2.1.0",
-    "react-icons": "^4.3.1",
+    "react-icons": "^4.6.0",
     "react-markdown": "^6.0.2",
     "react-redux": "^8.0.2",
     "react-relay": "^14.0.0",
