@@ -1,9 +1,6 @@
 Next:
 
 Before switchover:
-* Bug: client: upserting a link that is found in a private repo into a half/half doesn't result in half/half ownership (what happens after refreshing page?)
-* Bug: client: upserting a link that is found in a private repo into a wiki-only topic doesnt work
-* Clean up database: odds and ends
 * Order links by reverse chronological date
 * Bug: export: the child links under Reading list are in the wiki repo rather than the private repo
 * Bug: export: links are showing up in more than one repo, when they should just be private
@@ -12,7 +9,6 @@ Before switchover:
 * Bug: you should not be able to upsert a link under the Wiki repo when looking at a private topic
 * Bug: client: some history entries are not displaying properly
 * Bug: repo topic forms not updated when a new repo is selected
-* Bug: parent topics are not sorted in alphabetical order in upper righthand box
 * Repo topics/links: show timerange in read-only view
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
@@ -20,6 +16,7 @@ Before switchover:
 * Verify that account creation still works
 * Verify that account deletion still works
 * Verify that topics still show up at the top of their own topic search
+* Clean up database: odds and ends
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying
 * Git: provide UX to download personal repo

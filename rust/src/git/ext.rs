@@ -319,6 +319,28 @@ impl TryFrom<Option<&Object>> for Topic {
     }
 }
 
+impl std::cmp::PartialEq for Topic {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl std::cmp::Eq for Topic {}
+
+impl std::cmp::PartialOrd for Topic {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl std::cmp::Ord for Topic {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // FIXME
+        self.display_name(Locale::EN)
+            .cmp(&other.display_name(Locale::EN))
+    }
+}
+
 impl Topic {
     pub fn can_update(&self, write_repo_ids: &RepoIds) -> bool {
         self.repo_topics

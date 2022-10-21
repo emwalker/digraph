@@ -1,6 +1,7 @@
 use async_graphql::{connection::*, OutputType};
 use futures::executor;
 use itertools::Itertools;
+use std::collections::BTreeSet;
 
 use super::Topic;
 use crate::git;
@@ -37,7 +38,7 @@ pub fn topics(
     before: Option<String>,
     first: Option<i32>,
     last: Option<i32>,
-    topics: Vec<git::Topic>,
+    topics: BTreeSet<git::Topic>,
 ) -> Result<
     Connection<String, Topic, EmptyFields, EmptyFields, DefaultConnectionName, DefaultEdgeName>,
 > {

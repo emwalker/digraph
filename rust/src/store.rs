@@ -219,12 +219,16 @@ impl Store {
         }
     }
 
-    pub async fn fetch_topics(&self, topic_ids: Vec<Oid>, take: usize) -> Result<Vec<git::Topic>> {
+    pub async fn fetch_topics(
+        &self,
+        topic_ids: Vec<Oid>,
+        take: usize,
+    ) -> Result<BTreeSet<git::Topic>> {
         self.fetch_objects(topic_ids, take)
             .await?
             .into_iter()
             .map(git::Topic::try_from)
-            .collect::<Result<Vec<git::Topic>>>()
+            .collect::<Result<BTreeSet<git::Topic>>>()
     }
 
     pub async fn remove_topic_timerange(
