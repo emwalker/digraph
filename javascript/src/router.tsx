@@ -8,7 +8,6 @@ import { Resolver } from 'found-relay'
 import Homepage, { query as homepageQuery } from 'components/Homepage'
 import TermsOfUse from 'components/TermsOfUse'
 import RecentPage, { query as recentPageQuery } from 'components/RecentPage'
-import ReviewPage, { query as reviewPageQuery } from 'components/ReviewPage'
 import UserSettings, { query as userSettingsQuery } from 'components/UserSettings'
 import { TopicPage, query as topicPageQuery } from 'components/TopicPage'
 import Layout, { query as layoutQuery } from 'components/Layout'
@@ -78,12 +77,6 @@ export const createRouteConfig = (store: RouteStore) => {
         render={withErrorBoundary(RecentPage)}
       />
       <Route
-        path="/review"
-        prepareVariables={prepareVariables}
-        query={reviewPageQuery}
-        render={withErrorBoundary(ReviewPage)}
-      />
-      <Route
         path="/settings"
       >
         <Route
@@ -124,12 +117,6 @@ export const createRouteConfig = (store: RouteStore) => {
             prepareVariables={prepareVariables}
             query={recentPageQuery}
             render={withErrorBoundary(RecentPage)}
-          />
-          <Route
-            path="review"
-            prepareVariables={prepareVariables}
-            query={reviewPageQuery}
-            render={withErrorBoundary(ReviewPage)}
           />
         </Route>
       </Route>

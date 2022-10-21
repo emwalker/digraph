@@ -159,18 +159,9 @@ const renderNotification = () => (
   </div>
 )
 
-function renderTopicViews(topic: TopicType, canUpdate: boolean) {
+function renderTopicViews(topic: TopicType) {
   const recentActivityLocation = {
     pathname: `${topicPath(topic.id)}/recent`,
-    query: {},
-    search: '',
-    state: {
-      itemTitle: topic.displayName,
-    },
-  }
-
-  const linksToReviewLocation = {
-    pathname: `${topicPath(topic.id)}/review`,
     query: {},
     search: '',
     state: {
@@ -189,13 +180,6 @@ function renderTopicViews(topic: TopicType, canUpdate: boolean) {
             Recent activity
           </FoundLink>
         </li>
-        {canUpdate && (
-          <li className="Box-row">
-            <FoundLink to={linksToReviewLocation} className="Box-row-link">
-              Links to review
-            </FoundLink>
-          </li>
-        )}
       </ul>
     </div>
   )
@@ -231,7 +215,7 @@ export default function TopicPage(props: Props) {
             placeholder="There are no parent topics for this topic."
             title="Parent topics"
           />
-          {renderTopicViews(topic, canEdit)}
+          {renderTopicViews(topic)}
           {canEdit
             ? <AddForm topic={topic} viewer={viewer} />
             : renderNotification()}
