@@ -405,6 +405,10 @@ impl TryFrom<(&RepoId, &RepoObject)> for RepoLinkWrapper {
 }
 
 impl RepoLinkWrapper {
+    pub fn added(&self) -> Timestamp {
+        self.repo_link.added()
+    }
+
     pub fn in_wiki_repo(&self) -> bool {
         self.repo_id.is_wiki()
     }
@@ -479,7 +483,33 @@ impl TryFrom<Option<Link>> for Link {
     }
 }
 
+impl std::cmp::PartialEq for Link {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl std::cmp::Eq for Link {}
+
+impl std::cmp::PartialOrd for Link {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl std::cmp::Ord for Link {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // Reverse chronological order
+        // Eventually: reverse chronological order of the date of the web page?
+        other.added().cmp(&self.added())
+    }
+}
+
 impl Link {
+    pub fn added(&self) -> Timestamp {
+        self.display_link.added()
+    }
+
     pub fn can_update(&self, write_repo_ids: &RepoIds) -> bool {
         self.repo_links
             .iter()

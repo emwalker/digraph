@@ -194,12 +194,12 @@ impl Store {
         link_ids: &[Oid],
         take: usize,
         _reviewed: Option<bool>,
-    ) -> Result<Vec<git::Link>> {
+    ) -> Result<BTreeSet<git::Link>> {
         self.fetch_objects(link_ids.to_owned(), take)
             .await?
             .into_iter()
             .map(git::Link::try_from)
-            .collect::<Result<Vec<git::Link>>>()
+            .collect::<Result<BTreeSet<git::Link>>>()
     }
 
     pub async fn fetch_objects(&self, ids: Vec<Oid>, take: usize) -> Result<Vec<git::Object>> {

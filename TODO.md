@@ -1,10 +1,9 @@
 Next:
+* Figure out a way to sanitize production imports so that other people's data are not used
 
 Before switchover:
-* Order links by reverse chronological date
 * Bug: export: the child links under Reading list are in the wiki repo rather than the private repo
 * Bug: export: links are showing up in more than one repo, when they should just be private
-* Put a note up on the info page that says that I may work using production data from time to time
 * Decide whether to support link reviews or remove the feature
 * Bug: you should not be able to upsert a link under the Wiki repo when looking at a private topic
 * Bug: client: some history entries are not displaying properly
