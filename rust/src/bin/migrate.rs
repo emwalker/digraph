@@ -121,6 +121,15 @@ async fn update_repo_and_org_names(pool: &PgPool) -> Result<()> {
     Ok(())
 }
 
+async fn update_personal_repos(pool: &PgPool) -> Result<()> {
+    sqlx::query("update repositories set private = 't' where id <> $1::uuid")
+        .bind(WIKI_REPOSITORY_ID)
+        .execute(pool)
+        .await?;
+
+    Ok(())
+}
+
 static DROP_COLUMNS: &[(&str, &str)] = &[
     ("repositories", "system"),
     ("organizations", "description"),
@@ -219,6 +228,7 @@ async fn main() -> async_graphql::Result<()> {
     add_columns_to_organizations(&pool).await.unwrap();
     add_user_repositories(&pool).await.unwrap();
     update_repo_and_org_names(&pool).await.unwrap();
+    update_personal_repos(&pool).await.unwrap();
 
     if opts.destructive_migrations {
         log::info!("running destructive migrations");

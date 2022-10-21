@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -euf -o pipefail
+
+psql template1 <<SQL
+drop database if exists digraph_production;
+drop database if exists digraph_dev;
+create database digraph_dev with template digraph_fixtures owner postgres;
+SQL
+
+find data/ -name "production-*" | xargs rm

@@ -2,10 +2,10 @@
 set -euf -o pipefail
 
 if [ ! -f data/production-backup.dump ]; then
-  echo >&2 data/production-backup.dump not found
+  echo >&2 data/production-backup.dump not found. You must run make save-production first
   exit 1
 fi
 
-dropdb digraph_dev
-createdb digraph_dev
-psql digraph_dev < data/production-backup.dump
+dropdb digraph_production >/dev/null 2>&1 || true
+createdb digraph_production
+psql digraph_production < data/production-backup.dump

@@ -1,5 +1,4 @@
 Next:
-* Figure out a way to sanitize production imports so that other people's data are not used
 
 Before switchover:
 * Bug: export: the child links under Reading list are in the wiki repo rather than the private repo

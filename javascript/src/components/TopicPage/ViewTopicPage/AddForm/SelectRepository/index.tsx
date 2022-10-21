@@ -51,7 +51,7 @@ export default function SelectRepository(props: Props) {
   const viewer = useFragment(viewerFragment, props.viewer)
 
   const onChange = useCallback((event: FormEvent<HTMLSelectElement>) => {
-    const repoId = event.currentTarget.value
+    const repoId = event.currentTarget.value === '' ? null : event.currentTarget.value
     selectRepo({
       variables: { input: { repositoryId: repoId } },
     })
@@ -74,7 +74,7 @@ export default function SelectRepository(props: Props) {
           defaultValue={selectedId}
           onChange={onChange}
         >
-          <option key="0" value="placeholder">Select a repository</option>
+          <option key="0" value="">Select a repository</option>
           {repositoryEdges.map(renderOption)}
         </select>
       </dd>

@@ -223,7 +223,7 @@ impl Topic {
 
         let objects = ctx
             .data_unchecked::<Store>()
-            .fetch_objects(self.0.child_ids().to_owned(), 500)
+            .fetch_objects(self.0.child_ids().to_owned(), 50)
             .await?
             .into_iter();
 

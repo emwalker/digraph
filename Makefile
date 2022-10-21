@@ -40,15 +40,8 @@ deploy-k8s:
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
 
-export:
-	$(MAKE) -C rust export
-
 fixtures: data/fixtures.sql
 	bash ./scripts/make-fixtures
-
-load-production:
-	bash ./scripts/load-production-db
-	$(MAKE) -C rust migrate
 
 logs:
 	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs
@@ -70,7 +63,16 @@ push-git:
 	git push origin main
 
 reset-db:
-	bash ./scripts/reset-db
+	bash ./scripts/load-production-db
+	bash ./scripts/make-fixtures
+	bash ./scripts/promote-fixtures
+	$(MAKE) -C rust migrate
+
+reset-data-dir:
+	rm -rf ~/data/digraph-data
+	mkdir -p ~/data/digraph-data
+	$(MAKE) -C rust export
+	ls -l ~/data/digraph-data
 
 save-production:
 	bash ./scripts/save-production-db

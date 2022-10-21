@@ -1,12 +1,14 @@
 #!/bin/bash
 
-database=digraph_dev
+set -euf -o pipefail
+
+database=digraph_production
 fixtures=digraph_fixtures
 
 echo "Copying ${database} over to ${fixtures}"
 psql $database <<SQL
 drop database if exists digraph_fixtures;
-create database digraph_fixtures with template digraph_dev owner postgres;
+create database digraph_fixtures with template digraph_production owner postgres;
 SQL
 
 echo "Deleting all but one person's data"
@@ -20,29 +22,26 @@ delete from google_accounts;
 SQL
 
 echo ""
-count=$(psql digraph_fixtures -t -c "select count(*) from users")
+count=$(psql $fixtures -t -c "select count(*) from users")
 echo "${count//[[:space:]]/} users"
 
-count=$(psql digraph_fixtures -t -c "select count(*) from repositories")
+count=$(psql $fixtures -t -c "select count(*) from repositories")
 echo "${count//[[:space:]]/} repositories"
 
-count=$(psql digraph_fixtures -t -c "select count(*) from organizations")
+count=$(psql $fixtures -t -c "select count(*) from organizations")
 echo "${count//[[:space:]]/} organizations"
 
-count=$(psql digraph_fixtures -t -c "select count(*) from sessions")
+count=$(psql $fixtures -t -c "select count(*) from sessions")
 echo "${count//[[:space:]]/} sessions"
 
-count=$(psql digraph_fixtures -t -c "select count(distinct user_id) from user_links")
-echo "${count//[[:space:]]/} user links"
-
-count=$(psql digraph_fixtures -t -c "select count(*) from daily_snapshot")
+count=$(psql $fixtures -t -c "select count(*) from daily_snapshot")
 echo "${count//[[:space:]]/} snapshots"
 
-count=$(psql digraph_fixtures -t -c "select count(*) from github_accounts")
+count=$(psql $fixtures -t -c "select count(*) from github_accounts")
 echo "${count//[[:space:]]/} GitHub accounts"
 
-count=$(psql digraph_fixtures -t -c "select count(*) from google_accounts")
+count=$(psql $fixtures -t -c "select count(*) from google_accounts")
 echo "${count//[[:space:]]/} Google accounts"
 
 echo "Saving fixtures.sql"
-pg_dump digraph_fixtures > data/fixtures.sql
+pg_dump $fixtures > data/fixtures.sql
