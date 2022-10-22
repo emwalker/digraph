@@ -58,6 +58,22 @@ pub enum TopicChild {
 
 pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;
 
+pub struct RepoTopicDetails<'a>(pub(crate) &'a git::RepoTopicDetails);
+
+#[Object]
+impl<'a> RepoTopicDetails<'a> {
+    async fn synonyms(&self) -> Vec<Synonym> {
+        self.0.synonyms.iter().map(Synonym::from).collect_vec()
+    }
+
+    async fn timerange(&self) -> Result<Option<time::Timerange>> {
+        match &self.0.timerange {
+            Some(timerange) => Ok(Some(timerange.try_into()?)),
+            None => Ok(None),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct RepoTopic(pub(crate) git::RepoTopicWrapper);
 
@@ -74,6 +90,10 @@ impl RepoTopic {
             .search_topics(search_string)
             .await?;
         Ok(LiveSearchTopicsPayload(result))
+    }
+
+    async fn details(&self) -> Option<RepoTopicDetails> {
+        self.0.details().map(RepoTopicDetails)
     }
 
     async fn display_name(&self) -> String {
@@ -123,17 +143,6 @@ impl RepoTopic {
 
     async fn repo_id(&self) -> String {
         self.0.repo_id.to_string()
-    }
-
-    async fn synonyms(&self) -> Vec<Synonym> {
-        self.0.synonyms().iter().map(Synonym::from).collect_vec()
-    }
-
-    async fn timerange(&self) -> Result<Option<time::Timerange>> {
-        match self.0.timerange() {
-            Some(timerange) => Ok(Some(timerange.try_into()?)),
-            None => Ok(None),
-        }
     }
 
     async fn timerange_prefix(&self) -> String {

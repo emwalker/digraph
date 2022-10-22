@@ -20,23 +20,26 @@ const repoTopicFragment = graphql`
   fragment ViewRepoTopic_repoTopic on RepoTopic {
     displayColor
 
-    synonyms {
-      name
-      locale
+    details {
+      synonyms {
+        name
+        locale
+      }
     }
   }
 `
 
 export default function ViewRepoTopic(props: Props) {
   const repoTopic = useFragment(repoTopicFragment, props.repoTopic)
+  const synonyms = repoTopic.details?.synonyms || []
 
-  if (repoTopic.synonyms.length === 0) return <Placeholder />
+  if (synonyms.length === 0) return <Placeholder />
 
   return (
     <li className="Box-row" style={{ borderColor: borderColor(repoTopic.displayColor) }}>
       <div>Names and synonyms</div>
       <ul className="Box Box--condensed mt-2" style={{ background: 'inherit' }}>
-        {repoTopic.synonyms.map(({ name, locale }, index) => (
+        {synonyms.map(({ name, locale }, index) => (
           <Synonym key={index} name={name} locale={locale} />
         ))}
       </ul>

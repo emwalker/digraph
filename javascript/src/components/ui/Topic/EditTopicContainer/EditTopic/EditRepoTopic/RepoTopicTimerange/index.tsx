@@ -28,7 +28,7 @@ function makeOnChange({ upsertTopicTimerange, removeTopicTimerange, repoId, repo
       return
     }
 
-    if (repoTopic.timerange) {
+    if (repoTopic.details?.timerange) {
       removeTopicTimerange({
         variables: {
           input: { repoId, topicId: repoTopic.topicId },
@@ -54,8 +54,10 @@ const repoTopicFragment = graphql`
     id
     topicId
 
-    timerange {
-      startsAt
+    details {
+      timerange {
+        startsAt
+      }
     }
 
     ...RepoTopicTimerangeForm_repoTopic
@@ -77,7 +79,7 @@ export default function RepoTopicTimeRange(props: Props) {
   const [removeTopicTimerange, removeTimerangeInFlight] =
     useMutation<removeTopicTimerangeMutation>(removeQuery)
 
-  const checked = !!repoTopic.timerange
+  const checked = !!repoTopic.details?.timerange
   const repoId = viewer.selectedRepoId
   const onChange = makeOnChange({ upsertTopicTimerange, removeTopicTimerange, repoId, repoTopic })
   const disabled = upsertTimerangeInFlight || removeTimerangeInFlight

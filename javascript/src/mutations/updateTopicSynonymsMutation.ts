@@ -27,17 +27,21 @@ function displayName(synonyms: readonly SynonymType[], timerangPrefix: string | 
 }
 
 function optimisticResponse(repoTopic: RepoTopicType, synonymUpdate: SynonymType[]) {
+  const synonyms = repoTopic.details?.synonyms || []
+
   return {
     updateTopicSynonyms: {
       clientMutationId: null,
       alerts: [],
       updatedTopic: {
         id: repoTopic.topicId,
-        displayName: displayName(repoTopic.synonyms, repoTopic.timerangePrefix),
+        displayName: displayName(synonyms, repoTopic.timerangePrefix),
       },
       updatedRepoTopic: {
         ...repoTopic,
-        synonyms: synonymUpdate,
+        details: {
+          synonyms: synonymUpdate,
+        },
       },
     },
   }

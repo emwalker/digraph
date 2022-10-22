@@ -1,12 +1,12 @@
 Next:
 
 Before switchover:
-* Bug: exports: When you look at a link in "Reading list" and click "Edit", you see "no title" and "no url" in the private repo link form
 * Bug: when you're editing a link or topic, the repo-specific forms for other repos should be disabled
 * Bug: when you switch from one repo to another, the repo-specific forms and other UI elements should be re-rendered for the new repo (repo ownership, repo forms in the Edit view)
 * Bug: you should not be able to upsert a link under the Wiki repo when looking at a private topic
 * Bug: client: some history entries are not displaying properly
 * Bug: repo topic forms not updated when a new repo is selected
+* Bug: topic searches do not bring up private topics (Reading list)
 * Repo topics/links: show timerange in read-only view
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)

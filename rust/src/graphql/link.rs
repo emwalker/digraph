@@ -7,6 +7,19 @@ use crate::git;
 use crate::prelude::*;
 use crate::store::Store;
 
+pub struct RepoLinkDetails<'a>(pub(crate) &'a git::RepoLinkDetails);
+
+#[Object]
+impl<'a> RepoLinkDetails<'a> {
+    async fn title(&self) -> &str {
+        &self.0.title
+    }
+
+    async fn url(&self) -> &str {
+        &self.0.url
+    }
+}
+
 impl TryFrom<Option<Link>> for Link {
     type Error = Error;
 
@@ -32,6 +45,10 @@ impl RepoLink {
             .search_topics(search_string)
             .await?;
         Ok(LiveSearchTopicsPayload(result))
+    }
+
+    async fn details(&self) -> Option<RepoLinkDetails> {
+        self.0.details().map(RepoLinkDetails)
     }
 
     async fn display_color(&self) -> &str {
@@ -94,14 +111,6 @@ impl RepoLink {
                 self.0.repo_id
             ))),
         }
-    }
-
-    async fn title(&self) -> &str {
-        self.0.title()
-    }
-
-    async fn url(&self) -> &str {
-        self.0.url()
     }
 
     async fn viewer_can_update(&self, ctx: &Context<'_>) -> bool {

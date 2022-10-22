@@ -61,6 +61,11 @@ async function setup() {
             id: 'topic-id:repo-id',
             topicId: 'topic-id',
             viewerCanUpdate: true,
+          }
+        },
+
+        RepoTopicDetails() {
+          return {
             synonyms: [
               { name: 'Global heating', locale: 'en' },
             ],
@@ -112,6 +117,13 @@ describe('<RepoTopicSynonyms>', () => {
     await user.click(addButton)
 
     await waitFor(() => {
+      const details = {
+        synonyms: [
+          { name: 'Global heating', locale: 'en' },
+          { name: 'Climate change', locale: 'en' },
+        ],
+      }
+
       environment.mock.resolveMostRecentOperation((operation) =>
         MockPayloadGenerator.generate(operation, {
           RepoTopic() {
@@ -119,11 +131,12 @@ describe('<RepoTopicSynonyms>', () => {
               id: 'topic-id:repo-id',
               topicId: 'topic-id',
               repoId: 'repo-id',
-              synonyms: [
-                { name: 'Global heating', locale: 'en' },
-                { name: 'Climate change', locale: 'en' },
-              ],
+              details,
             }
+          },
+
+          RepoTopicDetails() {
+            return details
           },
         }),
       )

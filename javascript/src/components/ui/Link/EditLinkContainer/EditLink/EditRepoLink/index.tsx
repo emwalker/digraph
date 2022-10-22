@@ -24,9 +24,12 @@ const viewerFragment = graphql`
 const repoLinkFragment = graphql`
   fragment EditRepoLink_repoLink on RepoLink {
     displayColor
-    title
-    url
     linkId
+
+    details {
+      title
+      url
+    }
 
     ...RepoLinkParentTopics_repoLink
   }
@@ -35,13 +38,14 @@ const repoLinkFragment = graphql`
 export default function EditRepoLink(props: Props) {
   const viewer = useFragment(viewerFragment, props.viewer)
   const repoLink = useFragment(repoLinkFragment, props.repoLink)
-  const [title, setTitle] = useState(repoLink.title)
+  const { linkId, details } = repoLink
+  const [title, setTitle] = useState(details?.title)
 
   const selectedRepoId = viewer.selectedRepoId
   const viewerId = viewer.id
-  const { linkId, url } = repoLink
+  const url = details?.url
 
-  const onSave = makeUpsertLinkCallback({ selectedRepoId, linkId, title, url })
+  const onSave = makeUpsertLinkCallback({ selectedRepoId, linkId, title, url: url || null })
   const onDelete = makeDeleteLinkCallback({ selectedRepoId, linkId })
   const inputId = `edit-link-title-${linkId}`
 
@@ -72,6 +76,7 @@ export default function EditRepoLink(props: Props) {
               defaultValue={title || ''}
               id={inputId}
               onChange={updateTitle}
+              placeholder="inherited"
             />
           </dd>
         </dl>
@@ -82,6 +87,7 @@ export default function EditRepoLink(props: Props) {
         id={`edit-link-url-${linkId}`}
         label="Url"
         disabled={true}
+        placeholder="inherited"
         value={url}
       />
 

@@ -5,7 +5,10 @@ use std::{
     convert::{TryFrom, TryInto},
 };
 
-use super::{Kind, Phrase, RepoLink, RepoObject, RepoTopic, Search, SearchMatch, SortKey, Synonym};
+use super::{
+    Kind, Phrase, RepoLink, RepoLinkDetails, RepoObject, RepoTopic, RepoTopicDetails, Search,
+    SearchMatch, SortKey, Synonym,
+};
 use crate::prelude::*;
 
 #[derive(Clone, Debug, Default)]
@@ -218,6 +221,10 @@ impl RepoTopicWrapper {
             .collect_vec()
     }
 
+    pub fn details(&self) -> Option<&RepoTopicDetails> {
+        self.repo_topic.details()
+    }
+
     pub fn parent_topic_ids(&self) -> Vec<Oid> {
         self.repo_topic
             .parent_topics
@@ -407,6 +414,10 @@ impl TryFrom<(&RepoId, &RepoObject)> for RepoLinkWrapper {
 impl RepoLinkWrapper {
     pub fn added(&self) -> Timestamp {
         self.repo_link.added()
+    }
+
+    pub fn details(&self) -> Option<&RepoLinkDetails> {
+        self.repo_link.details()
     }
 
     pub fn in_wiki_repo(&self) -> bool {

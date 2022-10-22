@@ -10,17 +10,20 @@ type Props = {
 
 const repoLinkFragment = graphql`
   fragment ViewRepoLink_repoLink on RepoLink {
-    title
     displayColor
+    details {
+      title
+    }
   }
 `
 
 export default function ViewRepoLink(props: Props) {
   const repoLink = useFragment(repoLinkFragment, props.repoLink)
+  const details = repoLink.details
 
   return (
     <li className="Box-row" style={{ borderColor: borderColor(repoLink.displayColor) }}>
-      <div>{ repoLink.title } </div>
+      <div>{ details?.title || '(inherited title)' } </div>
     </li >
   )
 }

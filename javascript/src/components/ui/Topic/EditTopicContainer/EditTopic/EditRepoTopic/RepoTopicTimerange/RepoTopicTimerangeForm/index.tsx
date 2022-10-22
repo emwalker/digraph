@@ -12,7 +12,7 @@ import {
   RepoTopicTimerangeForm_repoTopic$data as RepoTopic,
 } from '__generated__/RepoTopicTimerangeForm_repoTopic.graphql'
 
-type PrefixFormat = NonNullable<RepoTopic['timerange']>['prefixFormat']
+type PrefixFormat = NonNullable<NonNullable<RepoTopic['details']>['timerange']>['prefixFormat']
 
 type Props = {
   disabled: boolean,
@@ -24,9 +24,11 @@ const repoTopicFragment = graphql`
   fragment RepoTopicTimerangeForm_repoTopic on RepoTopic {
     topicId
 
-    timerange {
-      startsAt
-      prefixFormat
+    details {
+      timerange {
+        startsAt
+        prefixFormat
+      }
     }
   }
 `
@@ -43,8 +45,9 @@ export default function RepoTopicTimerangeForm(props: Props) {
 
   const [upsertTopicTimerangeMutation, upsertTimerangeInFlight] = useMutation(timerangeQuery)
 
-  const [startsAt, setStartsAt] = useState(moment(repoTopic.timerange?.startsAt as string))
-  const prefixFormat = repoTopic.timerange?.prefixFormat
+  const timerange = repoTopic.details?.timerange
+  const [startsAt, setStartsAt] = useState(moment(timerange?.startsAt as string))
+  const prefixFormat = timerange?.prefixFormat
   const repoId = viewer.selectedRepoId
 
   const updateStartsAt = useDebouncedCallback(

@@ -66,6 +66,11 @@ async function setup({ timerange }: { timerange: Object | null }) {
           return {
             id: 'topic-id:repo-id',
             topicId: 'topic-id',
+          }
+        },
+
+        RepoTopicDetails() {
+          return {
             timerange,
           }
         },
@@ -147,6 +152,11 @@ describe('<RepoTopicTimerange>', () => {
           RepoTopic() {
             return {
               id: 'topic-id:repo-id',
+            }
+          },
+
+          RepoTopicDetails() {
+            return {
               timerange: null,
             }
           },

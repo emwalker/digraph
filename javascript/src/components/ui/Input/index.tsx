@@ -6,10 +6,11 @@ type Props = {
   id: string,
   label: string,
   onChange?: (event: FormEvent<HTMLInputElement>) => void,
+  placeholder?: string,
   value: string | undefined,
 }
 
-export default ({ className, disabled, id, label, onChange, value }: Props) => (
+export default ({ className, disabled, id, label, onChange, placeholder, value }: Props) => (
   <div className={className}>
     <dl className="form-group">
       <dt>
@@ -22,6 +23,7 @@ export default ({ className, disabled, id, label, onChange, value }: Props) => (
           id={id}
           disabled={disabled}
           onChange={onChange}
+          placeholder={placeholder}
           type="text"
         />
       </dd>

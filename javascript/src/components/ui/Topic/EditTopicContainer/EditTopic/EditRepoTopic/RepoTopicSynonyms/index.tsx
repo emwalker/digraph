@@ -110,9 +110,11 @@ const repoTopicFragment = graphql`
     viewerCanDeleteSynonyms
     viewerCanUpdate
 
-    synonyms {
-      name
-      locale
+    details {
+      synonyms {
+        name
+        locale
+      }
     }
   }
 `
@@ -135,7 +137,7 @@ export default function RepoTopicSynonyms(props: Props) {
     selectedRepoId, repoTopic, setInputName,
   })
 
-  const synonyms = repoTopic?.synonyms || []
+  const synonyms = repoTopic.details?.synonyms || []
 
   const onNameChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setInputName(event.currentTarget.value)

@@ -172,6 +172,9 @@ type RepoLink {
     searchString: String,
   ): LiveSearchTopicsPayload!
   createdAt: DateTime!
+  # details might be null if the link is a reference to a link in another repo and the details have
+  # not been overridden
+  details: RepoLinkDetails
   displayColor: Color!
   inWikiRepo: Boolean!
   link: Link!
@@ -183,11 +186,15 @@ type RepoLink {
     before: String
   ): TopicConnection!
   repo: Repository!
-  title: String!
   updatedAt: DateTime!
-  url: String!
   viewerCanUpdate: Boolean!
 }
+
+type RepoLinkDetails {
+  title: String!
+  url: String!
+}
+
 type SynonymMatch {
   displayName: String!
   id: String!
@@ -291,6 +298,7 @@ type RepoTopic @fetchable(field_name: "repoId") {
   ): LiveSearchTopicsPayload!
   color: Color!
   createdAt: DateTime!
+  details: RepoTopicDetails
   displayColor: Color!
   displayName: String!
   id: String!
@@ -303,13 +311,16 @@ type RepoTopic @fetchable(field_name: "repoId") {
   ): TopicConnection!
   repo: Repository!
   repoId: ID!
-  synonyms: [Synonym!]!
-  timerange: Timerange
   timerangePrefix: String!
   topicId: String!
   updatedAt: DateTime!
   viewerCanDeleteSynonyms: Boolean!
   viewerCanUpdate: Boolean!
+}
+
+type RepoTopicDetails {
+  synonyms: [Synonym!]!
+  timerange: Timerange
 }
 
 input SelectRepositoryInput {

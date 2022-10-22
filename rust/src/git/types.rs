@@ -123,6 +123,10 @@ impl RepoLink {
         self.metadata.added
     }
 
+    pub fn details(&self) -> Option<&RepoLinkDetails> {
+        self.metadata.details.as_ref()
+    }
+
     pub fn has_details(&self) -> bool {
         self.metadata.details.is_some()
     }
@@ -350,6 +354,10 @@ impl RepoTopic {
 
     pub fn added(&self) -> Timestamp {
         self.metadata.added
+    }
+
+    pub fn details(&self) -> Option<&RepoTopicDetails> {
+        self.metadata.details.as_ref()
     }
 
     pub fn has_child(&self, id: &Oid) -> bool {

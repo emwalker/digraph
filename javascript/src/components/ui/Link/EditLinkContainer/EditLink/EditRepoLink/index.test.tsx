@@ -59,14 +59,22 @@ async function setup() {
   expect(screen.getByText('Loading...')).toBeInTheDocument()
 
   await waitFor(() => {
+    const details = {
+      title: 'Reddit',
+      url: 'https://reddit.com',
+    }
+
     environment.mock.resolveMostRecentOperation((operation) =>
       MockPayloadGenerator.generate(operation, {
         RepoLink() {
           return {
             linkId: 'link-id',
-            title: 'Reddit',
-            url: 'https://reddit.com',
+            details,
           }
+        },
+
+        RepoLinkDetails() {
+          return details
         },
 
         User() {

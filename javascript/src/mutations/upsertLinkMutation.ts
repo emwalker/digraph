@@ -67,7 +67,7 @@ type Props = {
   setUrl?: Dispatch<SetStateAction<string>>,
   title?: string | null,
   topicId?: string | null,
-  url: string,
+  url: string | null,
 }
 
 export function makeUpsertLinkCallback({
@@ -83,6 +83,11 @@ export function makeUpsertLinkCallback({
 
     if (!selectedRepoId) {
       console.log('repo not selected')
+      return
+    }
+
+    if (!url) {
+      console.log('no url')
       return
     }
 
