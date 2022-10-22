@@ -116,7 +116,6 @@ type Link @fetchable(field_name: "id") {
   repoLinks: [RepoLink!]!
   sha1: String!
   showRepoOwnership: Boolean!
-  viewerReview: LinkReview
   viewerCanUpdate: Boolean!
 }
 
@@ -154,11 +153,6 @@ enum LocaleIdentifier {
   tr
   uk
   zh
-}
-
-type LinkReview {
-  reviewedAt: DateTime
-  user: User!
 }
 
 input RemoveTopicTimerangeInput {
@@ -211,7 +205,6 @@ type Mutation {
   deleteSession(input: DeleteSessionInput!): DeleteSessionPayload
   deleteTopic(input: DeleteTopicInput!): DeleteTopicPayload
   removeTopicTimerange(input: RemoveTopicTimerangeInput!): RemoveTopicTimerangePayload
-  reviewLink(input: ReviewLinkInput!): ReviewLinkPayload
   selectRepository(input: SelectRepositoryInput!): SelectRepositoryPayload
   updateLinkParentTopics(input: UpdateLinkParentTopicsInput!): UpdateLinkParentTopicsPayload
   updateTopicParentTopics(input: UpdateTopicParentTopicsInput!): UpdateTopicParentTopicsPayload
@@ -292,16 +285,6 @@ type RepositoryEdge {
   isSelected: Boolean!
 }
 
-input ReviewLinkInput {
-  clientMutationId: String
-  linkId: String!
-  reviewed: Boolean!
-}
-
-type ReviewLinkPayload {
-  link: Link!
-}
-
 type RepoTopic @fetchable(field_name: "repoId") {
   availableParentTopics(
     searchString: String,
@@ -363,16 +346,6 @@ type Topic {
     last: Int,
     before: String
   ): ActivityLineItemConnection!
-  # For link review page
-  childLinks(
-    first: Int,
-    after: String,
-    last: Int,
-    before: String,
-    searchString: String,
-    reviewed: Boolean,
-    descendants: Boolean,
-  ): LinkConnection!
   children(
     searchString: String,
     first: Int,
@@ -573,7 +546,6 @@ type View {
     after: String,
     last: Int,
     before: String,
-    reviewed: Boolean,
   ): LinkConnection!
   queryInfo: QueryInfo!
   searchString: String

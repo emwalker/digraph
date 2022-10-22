@@ -14,6 +14,7 @@ Before switchover:
 * Verify that account creation still works
 * Verify that account deletion still works
 * Verify that topics still show up at the top of their own topic search
+* Verify that searches can be scoped to the current topic instead of "Everything"
 * Clean up database: odds and ends
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying

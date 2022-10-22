@@ -1,5 +1,5 @@
 use async_graphql::connection::*;
-use async_graphql::{Context, Object, SimpleObject};
+use async_graphql::{Context, Object};
 use itertools::Itertools;
 
 use super::{relay, time, LiveSearchTopicsPayload, Repository, TopicConnection, User};
@@ -115,13 +115,7 @@ impl RepoLink {
 #[derive(Debug)]
 pub struct Link(pub(crate) git::Link);
 
-#[derive(SimpleObject)]
-pub struct LinkConnectionFields {
-    pub total_count: i64,
-}
-
 pub type LinkEdge = Edge<String, Link, EmptyFields>;
-pub type LinkConnection = Connection<String, Link, LinkConnectionFields, EmptyFields>;
 
 #[Object]
 impl Link {

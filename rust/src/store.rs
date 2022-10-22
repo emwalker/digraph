@@ -266,24 +266,6 @@ impl Store {
         self.repository_by_name_loader.load_one(name).await
     }
 
-    pub async fn review_link(
-        &self,
-        repo_id: &RepoId,
-        link_id: &Oid,
-        reviewed: bool,
-    ) -> Result<psql::ReviewLinkResult> {
-        let link: git::Link = self.fetch_link(link_id.to_owned()).await?.try_into()?;
-
-        psql::ReviewLink {
-            actor: self.viewer.clone(),
-            repo_id: repo_id.to_owned(),
-            link,
-            reviewed,
-        }
-        .call(&self.db)
-        .await
-    }
-
     pub async fn search(
         &self,
         parent_topic: &git::Topic,

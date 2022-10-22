@@ -3,10 +3,7 @@ use async_graphql::{Context, Object, Union};
 use itertools::Itertools;
 use std::collections::BTreeSet;
 
-use super::{
-    relay, time, ActivityLineItem, ActivityLineItemConnection, Link, LinkConnection,
-    LinkConnectionFields, Repository,
-};
+use super::{relay, time, ActivityLineItem, ActivityLineItemConnection, Link, Repository};
 use crate::store::Store;
 use crate::types::TimerangePrefix;
 use crate::{git, prelude::*};
@@ -241,49 +238,6 @@ impl Topic {
         }
 
         relay::connection(after, before, first, last, results)
-    }
-
-    // For link review page
-    #[allow(unused_variables, clippy::too_many_arguments)]
-    async fn child_links(
-        &self,
-        ctx: &Context<'_>,
-        after: Option<String>,
-        before: Option<String>,
-        first: Option<i32>,
-        last: Option<i32>,
-        search_string: Option<String>,
-        reviewed: Option<bool>,
-        descendants: Option<bool>,
-    ) -> Result<LinkConnection> {
-        let result = ctx
-            .data::<Store>()?
-            .fetch_links(&self.0.child_link_ids(), 50, reviewed)
-            .await?;
-
-        query(
-            after,
-            before,
-            first,
-            last,
-            |_after, _before, _first, _last| async move {
-                let mut connection = Connection::with_additional_fields(
-                    false,
-                    false,
-                    LinkConnectionFields {
-                        total_count: result.len() as i64,
-                    },
-                );
-
-                connection.edges.extend(result.into_iter().map(|n| {
-                    Edge::with_additional_fields(String::from("0"), n.into(), EmptyFields)
-                }));
-
-                Ok::<_, Error>(connection)
-            },
-        )
-        .await
-        .map_err(Error::Resolver)
     }
 
     async fn display_name(&self) -> String {

@@ -96,19 +96,6 @@ pub struct RemoveTopicTimerangePayload {
 }
 
 #[derive(Debug, InputObject)]
-pub struct ReviewLinkInput {
-    client_mutation_id: Option<String>,
-    link_id: String,
-    repo_id: String,
-    reviewed: bool,
-}
-
-#[derive(Debug, SimpleObject)]
-pub struct ReviewLinkPayload {
-    link: Link,
-}
-
-#[derive(Debug, InputObject)]
 pub struct SelectRepositoryInput {
     pub client_mutation_id: Option<String>,
     pub repository_id: Option<ID>,
@@ -377,28 +364,6 @@ impl MutationRoot {
             updated_repo_topic: repo_topic.into(),
             updated_topic,
         })
-    }
-
-    async fn review_link(
-        &self,
-        ctx: &Context<'_>,
-        input: ReviewLinkInput,
-    ) -> Result<ReviewLinkPayload> {
-        let ReviewLinkInput {
-            link_id,
-            repo_id,
-            reviewed,
-            ..
-        } = &input;
-        let link_id: Oid = link_id.try_into()?;
-        let store = ctx.data_unchecked::<Store>();
-
-        let _ = store
-            .review_link(&repo_id.try_into()?, &link_id, *reviewed)
-            .await?;
-
-        let link: Link = store.fetch_link(link_id).await?.try_into()?;
-        Ok(ReviewLinkPayload { link })
     }
 
     async fn select_repository(
