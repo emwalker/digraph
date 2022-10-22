@@ -3,8 +3,8 @@ Next:
 Before switchover:
 * Bug: you should not be able to upsert a link under the Wiki repo when looking at a private topic
 * Bug: client: some history entries are not displaying properly
-* Bug: repo topic forms not updated when a new repo is selected
 * Bug: topic searches do not bring up private topics (Reading list)
+* Bug: the "Edit" links should not be visible if no repo is selected
 * Repo topics/links: show timerange in read-only view
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
