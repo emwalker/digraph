@@ -36,7 +36,10 @@ export default function ViewRepoTopic(props: Props) {
   if (synonyms.length === 0) return <Placeholder />
 
   return (
-    <li className="Box-row" style={{ borderColor: borderColor(repoTopic.displayColor) }}>
+    <li
+      className="Box-row view-repo-topic"
+      style={{ borderColor: borderColor(repoTopic.displayColor) }}
+    >
       <div>Names and synonyms</div>
       <ul className="Box Box--condensed mt-2" style={{ background: 'inherit' }}>
         {synonyms.map(({ name, locale }, index) => (

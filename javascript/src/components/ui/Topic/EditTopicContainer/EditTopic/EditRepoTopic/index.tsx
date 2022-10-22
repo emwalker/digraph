@@ -87,7 +87,10 @@ export default function EditRepoTopic(props: Props) {
   }
 
   return (
-    <li className="Box-row" style={{ borderColor: borderColor(repoTopic.displayColor) }}>
+    <li
+      className="Box-row edit-repo-topic"
+      style={{ borderColor: borderColor(repoTopic.displayColor) }}
+    >
       <RepoTopicSynonyms viewer={viewer} repoTopic={repoTopic} />
       <RepoTopicTimerange viewer={viewer} repoTopic={repoTopic} />
 

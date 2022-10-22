@@ -64,7 +64,7 @@ export default function EditRepoLink(props: Props) {
   }
 
   return (
-    <li className="Box-row">
+    <li className="Box-row edit-repo-link">
       <div className="col-12">
         <dl className="form-group">
           <dt>

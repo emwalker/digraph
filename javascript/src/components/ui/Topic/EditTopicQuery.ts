@@ -11,7 +11,7 @@ export default graphql`
       viewerId: $viewerId,
     ) {
       viewer {
-        ...EditRepoTopic_viewer
+        ...EditTopic_viewer
       }
 
       topic(id: $topicId) {

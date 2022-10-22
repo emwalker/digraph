@@ -22,7 +22,10 @@ export default function ViewRepoLink(props: Props) {
   const details = repoLink.details
 
   return (
-    <li className="Box-row" style={{ borderColor: borderColor(repoLink.displayColor) }}>
+    <li
+      className="Box-row view-repo-link"
+      style={{ borderColor: borderColor(repoLink.displayColor) }}
+    >
       <div>{ details?.title || '(inherited title)' } </div>
     </li >
   )

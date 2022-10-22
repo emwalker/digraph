@@ -11,7 +11,7 @@ export default graphql`
       viewerId: $viewerId,
     ) {
       viewer {
-        ...EditRepoLink_viewer
+        ...EditLink_viewer
       }
 
       link(id: $linkId) {

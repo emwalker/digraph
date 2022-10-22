@@ -5,7 +5,8 @@ declare type Props = {
     id: string;
     label: string;
     onChange?: (event: FormEvent<HTMLInputElement>) => void;
+    placeholder?: string;
     value: string | undefined;
 };
-declare const _default: ({ className, disabled, id, label, onChange, value }: Props) => JSX.Element;
+declare const _default: ({ className, disabled, id, label, onChange, placeholder, value }: Props) => JSX.Element;
 export default _default;
