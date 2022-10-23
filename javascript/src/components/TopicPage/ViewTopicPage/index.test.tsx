@@ -139,7 +139,7 @@ function makeMocks(environment: MockEnvironment, options?: Options) {
           return {
             id: 'viewer-id',
             selectedRepoId,
-            selectedRepo: {
+            selectedRepo: selectedRepoId == null ? null : {
               id: selectedRepoId,
               isPrivate,
             },
@@ -259,6 +259,12 @@ describe('<ViewTopicPage>', () => {
     it('does not show "Edit" buttons', async () => {
       await setup(makeMocks, { selectedRepoId: null })
       expect(screen.queryByText('Edit')).not.toBeInTheDocument()
+    })
+
+    it('does not show the upserts-disabled blankslate', async () => {
+      await setup(makeMocks, { selectedRepoId: null })
+      expect(screen.queryByTestId('link-url-input')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('upserts-disabled')).not.toBeInTheDocument()
     })
   })
 })

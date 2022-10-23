@@ -1,9 +1,9 @@
 Next:
 
 Before switchover:
+* Repo topics/links: show timerange in read-only view
 * Bug: client: some history entries are not displaying properly
 * Bug: topic searches do not bring up private topics (Reading list)
-* Repo topics/links: show timerange in read-only view
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 * Show a blank edit form when a repo is selected and there's no reference for the topic/link
@@ -43,6 +43,8 @@ Later:
 * Drop need for Github email permission
 * Repo selection UX: showing items
 * Repo selection UX: updating items
+* Decide whether the UX logic that is determining whether to show the "Edit" buttons should be moved into the meaning of viewerCanUpdate (e.g., whether a repo is selected)
+* Decide whether the UX logic that determines whether the add link and add topic forms should be moved into the backend (e.g., when the topic is private and the selected repo is Wiki)
 * Provide a guess as to what the stats are while they're being computed instead of return 0 topics and 0 links
 * Use a queue for rebasing commits before mering, instead of retrying
 * Look into using iterators for the search code instead of copying large buffers around
