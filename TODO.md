@@ -3,7 +3,6 @@ Next:
 Before switchover:
 * Bug: client: some history entries are not displaying properly
 * Bug: topic searches do not bring up private topics (Reading list)
-* Bug: the "Edit" links should not be visible if no repo is selected
 * Repo topics/links: show timerange in read-only view
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
@@ -15,6 +14,7 @@ Before switchover:
 * Verify that account deletion still works
 * Verify that topics still show up at the top of their own topic search
 * Verify that searches can be scoped to the current topic instead of "Everything"
+* Verify that things work when not logged in
 * Clean up database: odds and ends
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying

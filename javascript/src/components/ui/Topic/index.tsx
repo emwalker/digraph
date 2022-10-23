@@ -3,18 +3,26 @@ import { graphql, useFragment } from 'react-relay'
 
 import { topicPath } from 'components/helpers'
 import { NodeTypeOf, liftNodes, Color } from 'components/types'
-import { Topic_topic$data, Topic_topic$key } from '__generated__/Topic_topic.graphql'
 import Item from '../Item'
 import EditTopicLoader from './EditTopicLoader'
+import { Topic_topic$data, Topic_topic$key } from '__generated__/Topic_topic.graphql'
+import { Topic_viewer$key } from '__generated__/Topic_viewer.graphql'
 
 type ParentTopicType = NodeTypeOf<Topic_topic$data['displayParentTopics']>
 
 type Props = {
   topic: Topic_topic$key,
-  viewerId: string | null,
+  viewer: Topic_viewer$key,
 }
 
-const topicFragmentQuery = graphql`
+const viewerFragment = graphql`
+  fragment Topic_viewer on User {
+    id
+    selectedRepoId
+  }
+`
+
+const topicFragment = graphql`
   fragment Topic_topic on Topic {
     displayName
     id
@@ -40,17 +48,19 @@ const topicFragmentQuery = graphql`
 `
 
 export default function Topic(props: Props) {
+  const topic = useFragment(topicFragment, props.topic)
+  const viewer = useFragment(viewerFragment, props.viewer)
   const [formIsOpen, setFormIsOpen] = useState(false)
-  const topic = useFragment(topicFragmentQuery, props.topic)
 
   const toggleForm = useCallback(() => setFormIsOpen(!formIsOpen), [setFormIsOpen, formIsOpen])
   const showEditButton = !topic.loading && topic.viewerCanUpdate
   const displayParentTopics = liftNodes<ParentTopicType>(topic.displayParentTopics)
   const repoColors = (topic.repoTopics || []) .map((repoTopic) => repoTopic.displayColor as Color)
+  const canEdit = !!(topic.viewerCanUpdate && viewer.selectedRepoId)
 
   return (
     <Item
-      canEdit={topic.viewerCanUpdate}
+      canEdit={canEdit}
       className="topicTopicRow Box-row--topic"
       formIsOpen={formIsOpen}
       newlyAdded={topic.newlyAdded}
@@ -63,10 +73,10 @@ export default function Topic(props: Props) {
       topics={displayParentTopics}
       url={topicPath(topic.id)}
     >
-      {formIsOpen && props.viewerId && (
+      {formIsOpen && viewer.id && (
         <EditTopicLoader
           topicId={topic.id}
-          viewerId={props.viewerId}
+          viewerId={viewer.id}
         />
       )}
     </Item>

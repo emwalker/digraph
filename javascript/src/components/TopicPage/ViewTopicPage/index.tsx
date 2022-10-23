@@ -37,6 +37,8 @@ const viewerFragment = graphql`
   fragment ViewTopicPage_viewer on User {
     id
     ...AddForm_viewer
+    ...Link_viewer
+    ...Topic_viewer
   }
 `
 
@@ -101,7 +103,7 @@ function TopicChild({ child, viewer }: TopicChildProps) {
     return (
       <Topic
         topic={child}
-        viewerId={viewer.id}
+        viewer={viewer}
       />
     )
   }
@@ -110,7 +112,7 @@ function TopicChild({ child, viewer }: TopicChildProps) {
     return (
       <Link
         link={child}
-        viewerId={viewer.id}
+        viewer={viewer}
       />
     )
   }

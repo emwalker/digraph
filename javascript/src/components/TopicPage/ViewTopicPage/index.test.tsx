@@ -79,7 +79,7 @@ const TestRenderer = () => {
 
 type Options = {
   repoIds?: string[],
-  selectedRepoId?: string,
+  selectedRepoId?: string | null,
 }
 
 async function setup(
@@ -95,60 +95,62 @@ async function setup(
   return { environment, user }
 }
 
-describe('<ViewTopicPage>', () => {
-  function makeMocks(environment: MockEnvironment, options?: Options) {
-    const repoIds = options?.repoIds || ['wiki-repo-id']
-    const selectedRepoId = options?.selectedRepoId || 'wiki-repo-id'
+function makeMocks(environment: MockEnvironment, options?: Options) {
+  const repoIds = options?.repoIds || ['wiki-repo-id']
+  const selectedRepoId = options?.selectedRepoId !== undefined
+    ? options?.selectedRepoId
+    : 'wiki-repo-id'
 
-    return () => {
-      environment.mock.resolveMostRecentOperation((operation) =>
-        MockPayloadGenerator.generate(operation, {
-          Topic(context) {
-            return {
-              __typename: 'Topic',
-              children: childrenFor(context),
-              displayName: 'Existing topic',
-              displayParentTopics: [],
-              displaySynonyms: [],
-              id: 'topic-id',
-              repoTopics: repoIds.map((repoId) => ({
-                repoId,
-                repo: {
-                  name: repoId,
-                  id: repoId,
-                },
-              })),
-              viewerCanUpdate: true,
-            }
-          },
-
-          Link() {
-            return {
-              __typename: 'Link',
-              id: 'link-id',
-              displayTitle: 'Existing link',
-              displayUrl: 'https://www.reddit.com',
-              viewerCanUpdate: true,
-              displayParentTopics: [],
-            }
-          },
-
-          User() {
-            const isPrivate = selectedRepoId !== 'wiki-repo-id'
-            return {
-              id: 'viewer-id',
-              selectedRepoId,
-              selectedRepo: {
-                id: selectedRepoId,
-                isPrivate,
+  return () => {
+    environment.mock.resolveMostRecentOperation((operation) =>
+      MockPayloadGenerator.generate(operation, {
+        Topic(context) {
+          return {
+            __typename: 'Topic',
+            children: childrenFor(context),
+            displayName: 'Existing topic',
+            displayParentTopics: [],
+            displaySynonyms: [],
+            id: 'topic-id',
+            repoTopics: repoIds.map((repoId) => ({
+              repoId,
+              repo: {
+                name: repoId,
+                id: repoId,
               },
-            }
-          },
-        }),
-      )
-    }
-  }
+            })),
+            viewerCanUpdate: true,
+          }
+        },
 
+        Link() {
+          return {
+            __typename: 'Link',
+            id: 'link-id',
+            displayTitle: 'Existing link',
+            displayUrl: 'https://www.reddit.com',
+            viewerCanUpdate: true,
+            displayParentTopics: [],
+          }
+        },
+
+        User() {
+          const isPrivate = selectedRepoId !== 'wiki-repo-id'
+          return {
+            id: 'viewer-id',
+            selectedRepoId,
+            selectedRepo: {
+              id: selectedRepoId,
+              isPrivate,
+            },
+          }
+        },
+      }),
+    )
+  }
+}
+
+describe('<ViewTopicPage>', () => {
   it('renders', async () => {
     await setup(makeMocks)
     expect(screen.getAllByText('Existing topic').length).toBeGreaterThan(0)
@@ -250,6 +252,13 @@ describe('<ViewTopicPage>', () => {
         expect(screen.queryByTestId('link-url-input')).toBeInTheDocument()
         expect(screen.queryByTestId('upserts-disabled')).not.toBeInTheDocument()
       })
+    })
+  })
+
+  describe('when no repo is selected', () => {
+    it('does not show "Edit" buttons', async () => {
+      await setup(makeMocks, { selectedRepoId: null })
+      expect(screen.queryByText('Edit')).not.toBeInTheDocument()
     })
   })
 })

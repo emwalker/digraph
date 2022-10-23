@@ -29,7 +29,7 @@ type Props = {
   viewer: TopicSearchPage_viewer$key,
 }
 
-const topicFragmentQuery = graphql`
+const topicFragment = graphql`
   fragment TopicSearchPage_topic on Topic @argumentDefinitions(
     searchString: {type: "String!", defaultValue: ""},
   ) {
@@ -65,9 +65,11 @@ const topicFragmentQuery = graphql`
   }
 `
 
-const viewerFragmentQuery = graphql`
+const viewerFragment = graphql`
   fragment TopicSearchPage_viewer on User {
     id
+    ...Topic_viewer
+    ...Link_viewer
   }
 `
 
@@ -79,7 +81,7 @@ const renderSearchResultItem = (viewer: ViewerType, item: SearchItemType | null)
       <Topic
         key={item.id}
         topic={item}
-        viewerId={viewer.id}
+        viewer={viewer}
       />
     )
   }
@@ -89,7 +91,7 @@ const renderSearchResultItem = (viewer: ViewerType, item: SearchItemType | null)
       <Link
         key={item.id}
         link={item}
-        viewerId={viewer.id}
+        viewer={viewer}
       />
     )
   }
@@ -98,8 +100,8 @@ const renderSearchResultItem = (viewer: ViewerType, item: SearchItemType | null)
 }
 
 export default function TopicSearchPage(props: Props) {
-  const topic = useFragment(topicFragmentQuery, props.topic)
-  const viewer = useFragment(viewerFragmentQuery, props.viewer)
+  const topic = useFragment(topicFragment, props.topic)
+  const viewer = useFragment(viewerFragment, props.viewer)
 
   if (topic == null) return <div>Error parsing route</div>
 
