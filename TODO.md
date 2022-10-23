@@ -1,7 +1,6 @@
 Next:
 
 Before switchover:
-* Bug: you should not be able to upsert a link under the Wiki repo when looking at a private topic
 * Bug: client: some history entries are not displaying properly
 * Bug: topic searches do not bring up private topics (Reading list)
 * Bug: the "Edit" links should not be visible if no repo is selected
@@ -9,6 +8,8 @@ Before switchover:
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 * Show a blank edit form when a repo is selected and there's no reference for the topic/link
+* When upserting a topic that exists in a private repo into the Wiki repo, get confirmation first
+* When upserting a topic that exists in a private repo into the Wiki repo, add a non-nil details struct
 * Verify that history entries are working for cross-repo mutations
 * Verify that account creation still works
 * Verify that account deletion still works

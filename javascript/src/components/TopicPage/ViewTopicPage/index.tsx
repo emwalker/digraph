@@ -188,19 +188,11 @@ function renderTopicViews(topic: TopicType) {
 export default function TopicPage(props: Props) {
   const topic = useFragment(topicFragment, props.topic)
   const viewer = useFragment(viewerFragment, props.viewer)
-  const canEdit = topic.viewerCanUpdate
   const children = liftNodes(topic.children)
   const parentTopics = liftNodes(topic.displayParentTopics)
   const renderHeadingDetail = useCallback(() => headingDetail(topic), [headingDetail, topic])
 
-  if (!topic) {
-    return (
-      <div>
-        Topic not found:
-        {location.pathname}
-      </div>
-    )
-  }
+  const canEdit = topic.viewerCanUpdate
 
   return (
     <Page>

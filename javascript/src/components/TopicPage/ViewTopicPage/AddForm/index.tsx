@@ -7,42 +7,51 @@ import AddTopic from './AddTopic'
 import AddLink from './AddLink'
 import SelectRepository from './SelectRepository'
 import './index.css'
+import Blankslate from 'components/ui/Blankslate'
 
 type Props = {
   topic: AddForm_topic$key,
   viewer: AddForm_viewer$key,
 }
 
+const viewerFragment = graphql`
+  fragment AddForm_viewer on User {
+    selectedRepoId
+
+    selectedRepo {
+      isPrivate
+      displayColor
+    }
+
+    ...AddLink_viewer
+    ...AddTopic_viewer
+    ...SelectRepository_viewer
+    ...SelectedRepo_viewer
+  }
+`
+
+const topicFragment = graphql`
+  fragment AddForm_topic on Topic {
+    ...AddLink_parentTopic
+    ...AddTopic_parentTopic
+
+    repoTopics {
+      repoId
+    }
+  }
+`
+
 export default function AddForm(props: Props) {
-  const viewer = useFragment(
-    graphql`
-      fragment AddForm_viewer on User {
-        selectedRepo {
-          isPrivate
-          displayColor
-        }
+  const viewer = useFragment(viewerFragment, props.viewer)
+  const topic = useFragment(topicFragment, props.topic)
 
-        ...AddLink_viewer
-        ...AddTopic_viewer
-        ...SelectRepository_viewer
-        ...SelectedRepo_viewer
-      }
-    `,
-    props.viewer,
-  )
-
-  const topic = useFragment(
-    graphql`
-      fragment AddForm_topic on Topic {
-        ...AddLink_parentTopic
-        ...AddTopic_parentTopic
-      }
-    `,
-    props.topic,
-  )
-
+  const selectedRepoId = viewer.selectedRepoId
   const isPrivateRepo = !!viewer.selectedRepo?.isPrivate
-  const repoSelected = !!viewer.selectedRepo
+  const hasSelectedRepo = !!viewer.selectedRepo
+  const topicInSelectedRepo = !!topic.repoTopics
+    .find((repoTopic) => repoTopic.repoId == selectedRepoId)
+  const canUpsert = hasSelectedRepo && (isPrivateRepo || topicInSelectedRepo)
+
   const selectRepositoryStyle = {
     backgroundColor: isPrivateRepo ?
       viewer.selectedRepo?.displayColor :
@@ -52,12 +61,22 @@ export default function AddForm(props: Props) {
   return (
     <form className="border rounded-1 px-md-2 px-3 mt-3" style={selectRepositoryStyle}>
       <SelectRepository viewer={viewer} />
-      {repoSelected && (
-        <>
-          <AddTopic disabled={!repoSelected} parentTopic={topic} viewer={viewer} />
-          <AddLink disabled={!repoSelected} parentTopic={topic} viewer={viewer} />
-        </>
-      )}
+      {canUpsert ?
+        (
+          <>
+            <AddTopic disabled={!hasSelectedRepo} parentTopic={topic} viewer={viewer} />
+            <AddLink disabled={!hasSelectedRepo} parentTopic={topic} viewer={viewer} />
+          </>
+        )
+        : (
+          <div data-testid="upserts-disabled">
+            <Blankslate>
+              <p>This is a private tocic, and in order to protect confidentiality,
+                subtopics and links cannot be added to it by way of a public repo</p>
+            </Blankslate>
+          </div>
+        )
+      }
     </form>
   )
 }

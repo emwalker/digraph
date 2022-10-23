@@ -61,7 +61,7 @@ export default function SelectRepository(props: Props) {
   const selectedId = viewer.selectedRepo?.id || undefined
 
   return (
-    <dl className="form-group">
+    <dl className="form-group" data-testid="select-repo">
       <dt>
         <label htmlFor="select-repo">New links and topics added to</label>
       </dt>
