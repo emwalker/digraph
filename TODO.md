@@ -1,7 +1,6 @@
 Next:
 
 Before switchover:
-* Repo topics/links: show timerange in read-only view
 * Bug: client: some history entries are not displaying properly
 * Bug: topic searches do not bring up private topics (Reading list)
 * Get alerts working again (test case: you add a synonym that already exists)

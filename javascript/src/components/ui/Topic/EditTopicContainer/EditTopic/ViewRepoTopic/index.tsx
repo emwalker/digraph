@@ -19,6 +19,8 @@ const Placeholder = () => (
 const repoTopicFragment = graphql`
   fragment ViewRepoTopic_repoTopic on RepoTopic {
     displayColor
+    repoId
+    timerangePrefix
 
     details {
       synonyms {
@@ -32,20 +34,30 @@ const repoTopicFragment = graphql`
 export default function ViewRepoTopic(props: Props) {
   const repoTopic = useFragment(repoTopicFragment, props.repoTopic)
   const synonyms = repoTopic.details?.synonyms || []
+  const timerangePrefix = repoTopic.timerangePrefix
 
   if (synonyms.length === 0) return <Placeholder />
 
   return (
     <li
       className="Box-row view-repo-topic"
+      data-testid={`repo-topic-${repoTopic.repoId}`}
       style={{ borderColor: borderColor(repoTopic.displayColor) }}
     >
-      <div>Names and synonyms</div>
-      <ul className="Box Box--condensed mt-2" style={{ background: 'inherit' }}>
-        {synonyms.map(({ name, locale }, index) => (
-          <Synonym key={index} name={name} locale={locale} />
-        ))}
-      </ul>
-    </li >
+      <div>
+        <div>Names and synonyms</div>
+        <ul className="Box Box--condensed mt-2" style={{ background: 'inherit' }}>
+          {synonyms.map(({ name, locale }, index) => (
+            <Synonym key={index} name={name} locale={locale} />
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-2">
+        <div data-testid="timerange">
+          <div>Starts at: {timerangePrefix || 'n/a'}</div>
+        </div>
+      </div>
+    </li>
   )
 }

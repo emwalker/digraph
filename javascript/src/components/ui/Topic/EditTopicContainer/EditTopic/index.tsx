@@ -41,10 +41,11 @@ const topicFragment = graphql`
 export default function EditTopic(props: Props) {
   const topic = useFragment(topicFragment, props.topic)
   const viewer = useFragment(viewerFragment, props.viewer)
+  const repoTopics = topic.repoTopics || []
 
   return (
     <div className="mt-3" data-testid="edit-topic">
-      {topic.repoTopics.map((repoTopic, index) => {
+      {repoTopics.map((repoTopic, index) => {
         const { id: repoId, name: repoName } = repoTopic.repo
         const showEditForm = repoTopic.viewerCanUpdate && viewer.selectedRepoId === repoId
 
