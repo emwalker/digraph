@@ -134,7 +134,7 @@ impl Search {
 
 pub struct FetchTopicLiveSearch {
     pub limit: usize,
-    pub repos: Vec<RepoId>,
+    pub repos: RepoIds,
     pub search: Search,
     pub viewer: Viewer,
 }
@@ -163,7 +163,7 @@ impl FetchTopicLiveSearch {
 
     fn fetch(&self, client: &Client) -> BTreeSet<SynonymEntry> {
         let mut matches = BTreeSet::new();
-        for prefix in &self.repos {
+        for prefix in self.repos.iter() {
             self.fetch_prefix(client, prefix, &mut matches);
         }
         matches

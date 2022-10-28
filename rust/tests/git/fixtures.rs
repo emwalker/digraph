@@ -114,7 +114,7 @@ impl Fixtures {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            repos: vec![RepoId::wiki()],
+            repos: RepoIds::from(vec![RepoId::wiki()]),
             search: Search::parse(name).unwrap(),
             viewer: actor(),
         }

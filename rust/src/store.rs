@@ -109,20 +109,6 @@ impl Store {
         }
     }
 
-    fn mutation(&self) -> Result<git::Mutation> {
-        self.git.mutation(git::IndexMode::Update)
-    }
-
-    fn update_by(&self, actor: &Viewer) -> Result<git::Mutation> {
-        let git = git::Client {
-            root: self.git.root.to_owned(),
-            timespec: self.git.timespec.to_owned(),
-            viewer: actor.to_owned(),
-        };
-
-        git.mutation(git::IndexMode::Update)
-    }
-
     pub async fn delete_account(&self, user_id: String) -> Result<psql::DeleteAccountResult> {
         log::info!("account deletion: fetching account info for {}", user_id);
         let psql::FetchAccountInfoResult { personal_repos } = psql::FetchAccountInfo {
@@ -231,6 +217,10 @@ impl Store {
             .collect::<Result<BTreeSet<git::Topic>>>()
     }
 
+    fn mutation(&self) -> Result<git::Mutation> {
+        self.git.mutation(git::IndexMode::Update)
+    }
+
     pub async fn remove_topic_timerange(
         &self,
         repo_id: &RepoId,
@@ -299,7 +289,7 @@ impl Store {
         git::FetchTopicLiveSearch {
             limit: 10,
             viewer: self.viewer.to_owned(),
-            repos: vec![RepoId::wiki()],
+            repos: self.viewer.read_repo_ids.to_owned(),
             search,
         }
         .call(&self.git)
@@ -312,6 +302,16 @@ impl Store {
         psql::SelectRepository::new(self.viewer.clone(), repository_id)
             .call(&self.db)
             .await
+    }
+
+    fn update_by(&self, actor: &Viewer) -> Result<git::Mutation> {
+        let git = git::Client {
+            root: self.git.root.to_owned(),
+            timespec: self.git.timespec.to_owned(),
+            viewer: actor.to_owned(),
+        };
+
+        git.mutation(git::IndexMode::Update)
     }
 
     pub async fn update_link_parent_topics(

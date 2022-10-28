@@ -22,7 +22,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            repos: vec![RepoId::wiki()],
+            repos: RepoIds::from(vec![RepoId::wiki()]),
             search: Search::parse("existing non-root topic").unwrap(),
             viewer: actor(),
         }
@@ -41,7 +41,7 @@ mod fetch_topic_live_search {
     #[test]
     fn indexing_works() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let parent = Oid::root_topic();
         let search = Search::parse("clim chan soc").unwrap();
 
@@ -50,7 +50,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            repos: vec![repo.to_owned()],
+            repos: RepoIds::from(vec![repo_id.to_owned()]),
             search: search.clone(),
             viewer: actor(),
         }
@@ -60,7 +60,7 @@ mod fetch_topic_live_search {
         assert!(matches.is_empty());
 
         f.upsert_topic(
-            &repo,
+            &repo_id,
             "Climate change and society",
             &parent,
             OnMatchingSynonym::Ask,
@@ -72,7 +72,7 @@ mod fetch_topic_live_search {
             ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            repos: vec![repo],
+            repos: RepoIds::from(vec![repo_id]),
             search,
             viewer: actor(),
         }

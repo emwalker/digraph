@@ -1,8 +1,11 @@
 Next:
 
 Before switchover:
+* Bug: after selecting "Reading list" in the topic live search, searching for it does not bring it or its children up in the topic search view
+* Bug: when the private repo is selected, toggling the timerange prefix doesn't work
 * Bug: client: some history entries are not displaying properly
-* Bug: topic searches do not bring up private topics (Reading list)
+* Bug: when changing from private repo to Wiki, the edit form doesn't appear for a repo topic
+* Bug: a reference to XupOirPbeLkV5aJfU-TsqPxQ5gNf33Lq-40g_3Pun8Q (Reading list) is improperly being added to the Wiki repo
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 * Show a blank edit form when a repo is selected and there's no reference for the topic/link
