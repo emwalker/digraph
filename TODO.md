@@ -1,5 +1,4 @@
 Next:
-* Get alerts working again (test case: you add a synonym that already exists)
 
 Before switchover:
 * Bug: client: some history entries are not displaying properly
@@ -15,6 +14,7 @@ Before switchover:
 * Verify that topics still show up at the top of their own topic search
 * Verify that searches can be scoped to the current topic instead of "Everything"
 * Verify that things work when not logged in
+* Verify that upserting a link under a Wiki topic via the private repo does not result in a change in the Wiki repo
 * Clean up database: odds and ends
 * Git: Start work on git rebases and commits
 * Git: Sort out logistics of merging branch and deploying

@@ -1,3 +1,5 @@
+import { AlertMessageType } from './types'
+
 function topicPath(id: string): string {
   return `/topics/${id}`
 }
@@ -10,4 +12,15 @@ function borderColor(hexColor: string) {
   return hexColor === '' ? '' : `${hexColor}ff`
 }
 
-export { topicPath, backgroundColor, borderColor }
+type GetAlertsType<R> = (response: R) => readonly AlertMessageType[]
+
+function showAlerts<R>(getAlerts: GetAlertsType<R>): (response: R) => void {
+  return (response: R) => {
+    const alerts = getAlerts(response)
+    const addMessage = window.flashMessages?.addMessage
+    if (addMessage == null || alerts.length === 0) return
+    alerts.forEach(addMessage)
+  }
+}
+
+export { topicPath, backgroundColor, borderColor, showAlerts }

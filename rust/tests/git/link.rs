@@ -189,9 +189,12 @@ mod upsert_link {
         assert!(!f.git.exists(&repo, &link_id).unwrap());
 
         f.upsert_link(&repo, &url, None, Some(parent_topic.to_owned()));
-        f.upsert_link(&repo, &url, None, Some(parent_topic));
+        let UpsertLinkResult { alerts, .. } = f.upsert_link(&repo, &url, None, Some(parent_topic));
 
         assert!(f.git.exists(&repo, &link_id).unwrap());
+
+        // An alert says that the link was already in the selected repo
+        assert_eq!(alerts.len(), 1);
     }
 
     #[test]

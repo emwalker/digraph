@@ -2,7 +2,11 @@ import { Dispatch, KeyboardEvent, SetStateAction, useCallback } from 'react'
 import { ConnectionHandler, graphql, useMutation } from 'react-relay'
 import { RecordSourceSelectorProxy } from 'relay-runtime'
 
-import { upsertLinkMutation } from '__generated__/upsertLinkMutation.graphql'
+import { showAlerts } from 'components/helpers'
+import {
+  upsertLinkMutation,
+  upsertLinkMutation$data as ResponseType,
+} from '__generated__/upsertLinkMutation.graphql'
 
 function makeUpdater(parentTopicId: string | null) {
   if (!parentTopicId) return null
@@ -26,6 +30,9 @@ function makeUpdater(parentTopicId: string | null) {
       console.log('payload not found in mutation response')
       return
     }
+
+    const alerts = payload.getLinkedRecords('alerts') || []
+    if (alerts.length !== 0) return
 
     const linkEdge = payload.getLinkedRecord('linkEdge')
     if (!linkEdge) {
@@ -74,6 +81,7 @@ export function makeUpsertLinkCallback({
   linkId, selectedRepoId, setUrl, title, topicId, url,
 }: Props) {
   const [upsertLink, upsertLinkInFlight] = useMutation<upsertLinkMutation>(query)
+  const onCompleted = showAlerts((response: ResponseType) => response.upsertLink?.alerts || [])
 
   return useCallback(() => {
     if (upsertLinkInFlight) {
@@ -115,6 +123,10 @@ export function makeUpsertLinkCallback({
     const updater = makeUpdater(topicId || null)
 
     upsertLink({
+      onCompleted,
+      updater,
+      optimisticUpdater: updater,
+      optimisticResponse,
       variables: {
         input: {
           addParentTopicId: topicId,
@@ -124,9 +136,6 @@ export function makeUpsertLinkCallback({
           url,
         },
       },
-      updater,
-      optimisticUpdater: updater,
-      optimisticResponse,
     })
 
     if (setUrl) setUrl('')

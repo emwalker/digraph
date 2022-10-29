@@ -1,7 +1,12 @@
 import { Dispatch, SetStateAction, useCallback, KeyboardEvent } from 'react'
 import { graphql, useMutation, ConnectionHandler } from 'react-relay'
 import { RecordSourceSelectorProxy } from 'relay-runtime'
-import { upsertTopicMutation } from '__generated__/upsertTopicMutation.graphql'
+
+import { showAlerts } from 'components/helpers'
+import {
+  upsertTopicMutation,
+  upsertTopicMutation$data as ResponseType,
+} from '__generated__/upsertTopicMutation.graphql'
 
 function makeUpdater(parentTopicId: string) {
   return (store: RecordSourceSelectorProxy) => {
@@ -62,6 +67,7 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId }: {
   topicId: string,
 }) {
   const upsertTopic = useMutation<upsertTopicMutation>(query)[0]
+  const onCompleted = showAlerts((response: ResponseType) => response.upsertTopic?.alerts || [])
 
   return useCallback((event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Enter') return
@@ -72,6 +78,8 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId }: {
     }
 
     upsertTopic({
+      onCompleted,
+      updater: makeUpdater(topicId),
       variables: {
         input: {
           name,
@@ -79,7 +87,6 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId }: {
           parentTopicId: topicId,
         },
       },
-      updater: makeUpdater(topicId),
     })
 
     setName('')

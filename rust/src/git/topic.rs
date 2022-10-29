@@ -511,8 +511,8 @@ impl UpsertTopic {
                 OnMatchingSynonym::Ask => {
                     log::info!("topic '{}' exists and OnMatchingSynonym::Ask", self.name);
                     let alert = Alert::Warning(format!(
-                        r#"A topic with the name '{}' already exists. Would you like to update it
-                        or create a new topic?"#,
+                        r#"A topic with the name '{}' already exists in the selected repo. Would
+                        you like to update the existing topic or create a new topic?"#,
                         self.name
                     ));
 

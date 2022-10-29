@@ -1,12 +1,15 @@
 import { SynonymType } from 'components/types'
 import { useCallback } from 'react'
 import { graphql, useMutation } from 'react-relay'
-import { updateTopicSynonymsMutation } from '__generated__/updateTopicSynonymsMutation.graphql'
 
+import { showAlerts } from 'components/helpers'
+import {
+  updateTopicSynonymsMutation,
+  updateTopicSynonymsMutation$data as ResponseType,
+} from '__generated__/updateTopicSynonymsMutation.graphql'
 import {
   RepoTopicSynonyms_repoTopic$data as RepoTopicType,
 } from '__generated__/RepoTopicSynonyms_repoTopic.graphql'
-
 
 function name(synonyms: readonly SynonymType[]) {
   if (synonyms.length > 0) {
@@ -81,6 +84,9 @@ export function makeUpdateTopicSynonymsCallback({
   selectedRepoId, repoTopic, setInputName,
 }: Props) {
   const updateSynonyms = useMutation<updateTopicSynonymsMutation>(query)[0]
+  const onCompleted = showAlerts(
+    (response: ResponseType) => response.updateTopicSynonyms?.alerts || [],
+  )
 
   return useCallback((synonymUpdate: SynonymType[]) => {
     if (!selectedRepoId) {
@@ -89,10 +95,11 @@ export function makeUpdateTopicSynonymsCallback({
     }
 
     updateSynonyms({
+      onCompleted,
+      optimisticResponse: optimisticResponse(repoTopic, synonymUpdate),
       variables: {
         input: { repoId: selectedRepoId, topicId: repoTopic.topicId, synonyms: synonymUpdate },
       },
-      optimisticResponse: optimisticResponse(repoTopic, synonymUpdate),
     })
 
     setInputName('')

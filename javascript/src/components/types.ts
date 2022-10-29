@@ -52,3 +52,9 @@ export type SynonymType = {
 }
 
 export type AlertType = 'ERROR' | 'WARN' | 'SUCCESS' | '%future added value'
+
+export interface AlertMessageType {
+  text: string,
+  id: string,
+  type: AlertType,
+}

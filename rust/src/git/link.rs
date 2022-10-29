@@ -211,8 +211,17 @@ impl UpsertLink {
         let url = RepoUrl::parse(&self.url)?;
         let link_id = url.id()?;
         let date = Utc::now();
+        let mut alerts = vec![];
 
         let (mut link, previous_title) = self.make_link(&mutation, &link_id, &url)?;
+
+        if previous_title.is_some() {
+            let alert = Alert::Success(format!(
+                "An existing link was found in the selected repo: {}",
+                url
+            ));
+            alerts.push(alert);
+        }
 
         if let Some(title) = &self.title {
             match &mut link.metadata.details {
@@ -252,7 +261,7 @@ impl UpsertLink {
         mutation.write(store)?;
 
         Ok(UpsertLinkResult {
-            alerts: vec![],
+            alerts,
             link: Some(link),
         })
     }
