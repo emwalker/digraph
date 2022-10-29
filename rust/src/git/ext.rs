@@ -633,11 +633,13 @@ impl Objects {
     ) -> Result<BTreeSet<SearchMatch>> {
         let mut matches = BTreeSet::new();
 
-        for (_oid, object) in self.0.into_iter().take(take) {
+        for (_oid, object) in self.0.into_iter() {
             matches.insert(object.to_search_match(locale, search)?);
         }
 
-        Ok(matches)
+        // We won't know what is at the top of the results (e.g., a matching topic) until we've
+        // built the full btree set. So we wait to apply the limit until after this has been done.
+        Ok(matches.into_iter().take(take).collect())
     }
 
     pub fn into_hash(self) -> HashMap<Oid, Object> {

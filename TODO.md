@@ -1,5 +1,4 @@
 Next:
-* Bug: topics are not included in topic search results
 
 Before switchover:
 * Bug: when the private repo is selected, toggling the timerange prefix doesn't work
