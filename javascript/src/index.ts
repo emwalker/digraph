@@ -1,6 +1,5 @@
 import http from 'http'
 
-/* eslint no-console: 0, global-require: 0 */
 let app = require('./server').default
 
 let currentApp = app

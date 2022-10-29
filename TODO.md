@@ -1,9 +1,9 @@
 Next:
+* Bug: user session is tied to Redis rather than a cookie
 
 Before switchover:
-* Bug: when the private repo is selected, toggling the timerange prefix doesn't work
 * Bug: client: some history entries are not displaying properly
-* Bug: when changing from private repo to Wiki, the edit form doesn't appear for a repo topic
+* Bug: The topic "Reading list" doesn't reliably show at the top of its own topic search
 * Bug: a reference to XupOirPbeLkV5aJfU-TsqPxQ5gNf33Lq-40g_3Pun8Q (Reading list) is improperly being added to the Wiki repo
 * Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)

@@ -23,6 +23,7 @@ relay:
 reinstall-javacript: clean
 	yarn install
 	rm -rf src/__generated__
+	mkdir src/__generated__
 	yarn relay
 
 start:
