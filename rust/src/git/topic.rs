@@ -373,6 +373,7 @@ impl UpdateTopicSynonyms {
 
         let mut synonyms = vec![];
         let mut after = HashSet::new();
+        let mut alerts = vec![];
 
         // Preserve the date the synonym was added
         for new in &self.synonyms {
@@ -391,6 +392,10 @@ impl UpdateTopicSynonyms {
 
             // Remove duplicates
             if after.contains(&key) {
+                alerts.push(Alert::Success(format!(
+                    "Synonym already exists: {}",
+                    new.name
+                )));
                 continue;
             }
             after.insert(key.to_owned());
@@ -437,7 +442,7 @@ impl UpdateTopicSynonyms {
         mutation.write(store)?;
 
         Ok(UpdateTopicSynonymsResult {
-            alerts: vec![],
+            alerts,
             repo_topic: RepoTopicWrapper {
                 repo_topic,
                 repo_id: self.repo_id.to_owned(),

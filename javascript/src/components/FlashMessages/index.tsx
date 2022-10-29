@@ -60,7 +60,10 @@ class FlashMessages extends Component<Props, State> {
     if (alerts.length === 0) return null
 
     return (
-      <div className="container-lg clearfix my-2 px-3 px-md-6 px-lg-3">
+      <div
+        data-testid="alerts"
+        className="container-lg clearfix my-2 px-3 px-md-6 px-lg-3"
+      >
         { alerts }
       </div>
     )

@@ -393,7 +393,9 @@ mod update_topic_synonyms {
 
         assert_eq!(count(&f, "A topic"), 1);
 
-        let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
+        let UpdateTopicSynonymsResult {
+            repo_topic, alerts, ..
+        } = UpdateTopicSynonyms {
             actor: actor(),
             repo_id: repo,
             topic_id,
@@ -403,8 +405,10 @@ mod update_topic_synonyms {
         .unwrap();
 
         assert_eq!(repo_topic.synonyms().len(), 1);
-
         assert_eq!(count(&f, "A topic"), 1);
+
+        // There's an alert
+        assert_eq!(alerts.len(), 1);
     }
 
     #[test]

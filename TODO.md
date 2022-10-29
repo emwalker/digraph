@@ -1,11 +1,10 @@
 Next:
-* Bug: user session is tied to Redis rather than a cookie
+* Get alerts working again (test case: you add a synonym that already exists)
 
 Before switchover:
 * Bug: client: some history entries are not displaying properly
 * Bug: The topic "Reading list" doesn't reliably show at the top of its own topic search
 * Bug: a reference to XupOirPbeLkV5aJfU-TsqPxQ5gNf33Lq-40g_3Pun8Q (Reading list) is improperly being added to the Wiki repo
-* Get alerts working again (test case: you add a synonym that already exists)
 * Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 * Show a blank edit form when a repo is selected and there's no reference for the topic/link
 * When upserting a topic that exists in a private repo into the Wiki repo, get confirmation first
@@ -30,6 +29,7 @@ Before switchover:
 
 
 Later:
+* Bug: user session is tied to Redis rather than a cookie
 * Repo topics/links: Add UX for updating any fields on an item that isn't in the selected repo
 * Repo topics/links: Add UX for updating select fields of an item that isn't in the selected repo
 * Fiddle with relay-router to avoid a blank page in some transitions

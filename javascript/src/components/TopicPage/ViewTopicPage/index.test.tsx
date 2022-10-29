@@ -1,11 +1,11 @@
 import React from 'react'
 import { screen, waitFor } from '@testing-library/react'
-import { renderWithUser } from 'components/test-utils'
 import { useLazyLoadQuery } from 'react-relay'
 import { MockEnvironment, MockPayloadGenerator } from 'relay-test-utils'
 import { Location } from 'farce'
-
 import graphql from 'babel-plugin-relay/macro'
+
+import { renderWithUser } from 'components/test-utils'
 import { ViewTopicPageTestQuery } from '__generated__/ViewTopicPageTestQuery.graphql'
 import ViewTopicPage from '.'
 
@@ -151,32 +151,34 @@ function makeMocks(environment: MockEnvironment, options?: Options) {
 }
 
 describe('<ViewTopicPage>', () => {
-  it('renders', async () => {
-    await setup(makeMocks)
-    expect(screen.getAllByText('Existing topic').length).toBeGreaterThan(0)
-    expect(screen.getByText('Add subtopic')).toBeInTheDocument()
-  })
-
-  it('allows a new topic to be added', async () => {
-    const { environment, user } = await setup(makeMocks)
-    const topicName = 'New topic'
-
-    environment.mock.queueOperationResolver((op) => {
-      return MockPayloadGenerator.generate(op, {
-        Topic() {
-          return {
-            displayName: topicName,
-          }
-        },
-      })
+  describe('a simple case', () => {
+    it('renders', async () => {
+      await setup(makeMocks)
+      expect(screen.getAllByText('Existing topic').length).toBeGreaterThan(0)
+      expect(screen.getByText('Add subtopic')).toBeInTheDocument()
     })
 
-    const nameInput = screen.getByTestId('topic-name-input')
-    await user.type(nameInput, `${topicName}{enter}`)
+    it('allows a new topic to be added', async () => {
+      const { environment, user } = await setup(makeMocks)
+      const topicName = 'New topic'
 
-    const str = screen.getByTestId('List').innerHTML
-    expect(str).toContain(topicName)
-    expect(str).not.toContain('random')
+      environment.mock.queueOperationResolver((op) => {
+        return MockPayloadGenerator.generate(op, {
+          Topic() {
+            return {
+              displayName: topicName,
+            }
+          },
+        })
+      })
+
+      const nameInput = screen.getByTestId('topic-name-input')
+      await user.type(nameInput, `${topicName}{enter}`)
+
+      const str = screen.getByTestId('List').innerHTML
+      expect(str).toContain(topicName)
+      expect(str).not.toContain('random')
+    })
   })
 
   describe('adding a link', () => {
