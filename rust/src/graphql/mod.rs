@@ -50,6 +50,7 @@ struct SessionRow {
 impl From<SessionRow> for Viewer {
     fn from(row: SessionRow) -> Self {
         let repo_ids: Vec<RepoId> = row.write_repo_ids.into_iter().map(RepoId::from).collect();
+
         let selected_repo_id: RepoId = match row.selected_repository_id {
             Some(uuid) => uuid.into(),
             None => RepoId::wiki(),

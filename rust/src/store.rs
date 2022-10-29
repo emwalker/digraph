@@ -261,7 +261,7 @@ impl Store {
         parent_topic: &git::Topic,
         search_string: String,
     ) -> Result<git::FindMatchesResult> {
-        log::info!("search: search string {}", search_string);
+        log::debug!("search: search string {}", search_string);
         let viewer = &self.viewer;
 
         let fetcher = git::RedisFetchDownSet {

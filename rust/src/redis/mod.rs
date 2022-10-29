@@ -41,7 +41,10 @@ pub struct Key(String);
 
 impl Key {
     fn downset(path: &ReadPath) -> Self {
-        Self(format!("topic:{}:{}:down", path.id, path.commit))
+        Self(format!(
+            "repo:{}:topic:{}:{}:down",
+            path.repo_id, path.id, path.commit
+        ))
     }
 }
 
@@ -102,16 +105,20 @@ impl Redis {
         Ok(Redis { url })
     }
 
-    pub fn intersection<F>(&self, fetch: &F, paths: &[ReadPath]) -> Result<HashSet<Oid>>
+    // For each topic read path (a commit, oid, repo_id combo), fetch the downset for the repo
+    // topic, save the oids in the downset to redis and perform the intersection of the sets,
+    // returning the resulting list of oids.
+    pub fn intersection<F>(&self, fetch: &F, topic_paths: &[ReadPath]) -> Result<HashSet<Oid>>
     where
         F: Downset,
     {
-        if paths.is_empty() {
+        if topic_paths.is_empty() {
             log::warn!("no paths provided for transitive closure, exiting early");
             return Ok(HashSet::new());
         }
 
-        let (head, tail) = paths.split_at(1);
+        log::info!("redis: fetching intersection of paths {:?}", topic_paths);
+        let (head, tail) = topic_paths.split_at(1);
         let mut con = self.connection()?;
         let mut keys = vec![];
 
@@ -122,7 +129,12 @@ impl Redis {
 
                 if !con.exists(&key)? {
                     log::info!("redis: {:?} not found in redis, saving", key);
-                    self.save_downset(&mut con, &key, &fetch.downset(path))?;
+                    let set = fetch.downset(path);
+                    self.save_downset(&mut con, &key, &set)?;
+
+                    if set.is_empty() {
+                        return Ok(HashSet::new());
+                    }
                 }
 
                 for other_path in tail {
@@ -131,7 +143,12 @@ impl Redis {
 
                     if !con.exists(&key)? {
                         log::info!("redis: {:?} not found in redis, saving", key);
-                        self.save_downset(&mut con, &key, &fetch.downset(other_path))?;
+                        let set = fetch.downset(other_path);
+                        self.save_downset(&mut con, &key, &set)?;
+
+                        if set.is_empty() {
+                            return Ok(HashSet::new());
+                        }
                     }
                 }
 
@@ -162,7 +179,7 @@ impl Redis {
         redis_rs::transaction(con, &[key], |con, pipe| {
             let set = set.iter().map(Oid::to_string).collect::<HashSet<String>>();
             if set.is_empty() {
-                pipe.ignore()
+                pipe.del(key).ignore()
             } else {
                 pipe.sadd(key, set).ignore()
             }

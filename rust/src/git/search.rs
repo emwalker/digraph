@@ -312,13 +312,17 @@ impl FindMatches {
         F: Downset,
     {
         if self.search.is_empty() {
-            log::info!("empty search, returning no results");
+            log::info!("search: empty search, returning no results");
             return Ok(FindMatchesResult {
                 matches: BTreeSet::new(),
             });
         }
 
-        log::info!("searching within topic {}", self.topic_id);
+        log::info!(
+            "search: looking within topic {} for {:?}",
+            self.topic_id,
+            self.search
+        );
         let now = Instant::now();
 
         let matches = if self.search.topics_only() {
@@ -328,7 +332,7 @@ impl FindMatches {
         };
 
         let elapsed = now.elapsed();
-        log::info!("search took {:.2?}", elapsed);
+        log::info!("search: elapsed time {:.2?}", elapsed);
 
         Ok(FindMatchesResult { matches })
     }
@@ -390,7 +394,7 @@ impl FindMatches {
 
         objects
             .finalize(&self.viewer.context_repo_id)?
-            .into_matches(&self.search, self.locale)
+            .into_matches(&self.search, self.locale, self.limit)
     }
 
     fn fetch_downset<F>(&self, client: &Client, fetch: &F) -> Result<BTreeSet<SearchMatch>>
@@ -398,27 +402,37 @@ impl FindMatches {
         F: Downset,
     {
         let topic_ids = self.intersection(client, fetch)?;
-        log::info!("fetching topic downset ({} paths)", topic_ids.len());
+        log::info!(
+            "search: fetching topic downset ({} paths) in repos {:?}",
+            topic_ids.len(),
+            self.viewer.read_repo_ids
+        );
 
         let mut objects = ObjectBuilders::new();
-        let mut count: usize = 0;
 
-        for repo_id in self.viewer.read_repo_ids.iter() {
+        // Ensure that the wiki repo id is a the end of the list so that private items appear at the
+        // top of search results;
+        let wiki_repo_id = RepoId::wiki();
+        let mut repo_ids = self
+            .viewer
+            .read_repo_ids
+            .iter()
+            .cloned()
+            .collect::<Vec<RepoId>>();
+        repo_ids.sort_by_key(|repo_id| repo_id == &wiki_repo_id);
+
+        for repo_id in repo_ids.iter() {
+            log::info!("search: looking within {:?} for {:?}", repo_id, self.search);
             for topic_id in topic_ids.iter().take(self.limit) {
                 if let Some(object) = client.fetch(repo_id, topic_id) {
                     objects.add(topic_id.to_owned(), repo_id.to_owned(), object);
-                    count += 1;
-
-                    if count >= self.limit {
-                        break;
-                    }
                 }
             }
         }
 
         objects
             .finalize(&self.viewer.context_repo_id)?
-            .into_matches(&self.search, self.locale)
+            .into_matches(&self.search, self.locale, self.limit)
     }
 
     fn intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<Oid>>
@@ -430,8 +444,8 @@ impl FindMatches {
         for repo_id in self.viewer.read_repo_ids.iter() {
             let mut topic_paths = vec![];
 
-            // The (wiki) root topic is mostly not needed for now; let's exclude it until we know how to
-            // make the downset and related implementation details fast.
+            // The (wiki) root topic is mostly not needed for now; let's exclude it until we know
+            // how to make the downset and related implementation details fast.
             if !self.topic_id.is_root() {
                 let path = client.read_path(repo_id, &self.topic_id)?;
                 topic_paths.push(path);
@@ -469,7 +483,7 @@ impl FindMatches {
                 let url = match RepoUrl::parse(url) {
                     Ok(url) => url,
                     Err(err) => {
-                        log::error!("problem parsing url: {}", err);
+                        log::error!("search: problem parsing url: {}", err);
                         return Ok(UrlMatches::impossible_result());
                     }
                 };

@@ -1,7 +1,7 @@
 Next:
+* Bug: topics are not included in topic search results
 
 Before switchover:
-* Bug: after selecting "Reading list" in the topic live search, searching for it does not bring it or its children up in the topic search view
 * Bug: when the private repo is selected, toggling the timerange prefix doesn't work
 * Bug: client: some history entries are not displaying properly
 * Bug: when changing from private repo to Wiki, the edit form doesn't appear for a repo topic

@@ -48,7 +48,7 @@ impl Map {
         }
 
         if display_link.is_none() {
-            return Err(Error::Repo("no display topic".into()));
+            return Err(Error::Repo("no display link".into()));
         }
 
         Ok((topics, display_link.unwrap()))
@@ -159,7 +159,15 @@ impl ObjectBuilders {
         let mut map = HashMap::new();
 
         for (oid, builder) in self.0 {
-            map.insert(oid, builder.finalize(context)?);
+            match builder.finalize(context) {
+                Ok(object) => {
+                    map.insert(oid, object);
+                }
+
+                Err(err) => {
+                    log::warn!("problem finalizing {}: {:?}", oid, err);
+                }
+            }
         }
 
         Ok(Objects(map))
@@ -617,10 +625,15 @@ impl Object {
 pub struct Objects(HashMap<Oid, Object>);
 
 impl Objects {
-    pub fn into_matches(self, search: &Search, locale: Locale) -> Result<BTreeSet<SearchMatch>> {
+    pub fn into_matches(
+        self,
+        search: &Search,
+        locale: Locale,
+        take: usize,
+    ) -> Result<BTreeSet<SearchMatch>> {
         let mut matches = BTreeSet::new();
 
-        for (_oid, object) in self.0.into_iter() {
+        for (_oid, object) in self.0.into_iter().take(take) {
             matches.insert(object.to_search_match(locale, search)?);
         }
 

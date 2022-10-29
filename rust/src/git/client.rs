@@ -148,8 +148,8 @@ impl Client {
     pub fn downset(&self, topic_path: &ReadPath) -> DownsetIter {
         DownsetIter::new(
             self.clone(),
-            topic_path.repo.to_owned(),
-            self.fetch_topic(&topic_path.repo, &topic_path.id),
+            topic_path.repo_id.to_owned(),
+            self.fetch_topic(&topic_path.repo_id, &topic_path.id),
         )
     }
 
@@ -301,12 +301,12 @@ impl Client {
         Ok(searches)
     }
 
-    pub fn read_path(&self, repo: &RepoId, id: &Oid) -> Result<ReadPath> {
-        let commit = self.repo(repo)?.commit_oid(&self.timespec)?;
+    pub fn read_path(&self, repo_id: &RepoId, id: &Oid) -> Result<ReadPath> {
+        let commit = self.repo(repo_id)?.commit_oid(&self.timespec)?;
         Ok(ReadPath {
             commit,
             id: id.to_owned(),
-            repo: repo.to_owned(),
+            repo_id: repo_id.to_owned(),
         })
     }
 
@@ -389,8 +389,8 @@ impl Client {
     pub fn topic_downset(&self, topic_path: &ReadPath) -> TopicDownsetIter {
         TopicDownsetIter::new(
             self.clone(),
-            topic_path.repo.to_owned(),
-            self.fetch_topic(&topic_path.repo, &topic_path.id),
+            topic_path.repo_id.to_owned(),
+            self.fetch_topic(&topic_path.repo_id, &topic_path.id),
         )
     }
 

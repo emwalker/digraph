@@ -329,7 +329,7 @@ pub struct Timespec;
 pub struct ReadPath {
     pub commit: git2::Oid,
     pub id: Oid,
-    pub repo: RepoId,
+    pub repo_id: RepoId,
 }
 
 pub trait Downset {
