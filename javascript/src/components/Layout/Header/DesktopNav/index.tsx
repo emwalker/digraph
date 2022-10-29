@@ -38,7 +38,7 @@ export default function DesktopNav(props: Props) {
             href="/"
             className="primaryLogo n-link no-underline d-flex"
           >
-            <div className="mr-2 d-inline-block">
+            <div className="logo-container mr-2">
               <DigraphLogo height="28px" width="28px" fill="#000" />
             </div>
 
