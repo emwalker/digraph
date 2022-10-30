@@ -110,8 +110,7 @@ impl Fixtures {
 
     pub fn find_topic(&self, name: &str) -> Option<Oid> {
         let FetchTopicLiveSearchResult {
-            synonym_matches: matches,
-            ..
+            synonyms: matches, ..
         } = FetchTopicLiveSearch {
             limit: 10,
             repos: RepoIds::from(vec![RepoId::wiki()]),

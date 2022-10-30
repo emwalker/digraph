@@ -5,7 +5,7 @@ use std::convert::TryInto;
 use std::str::FromStr;
 
 use super::{
-    Link, RepoLink, RepoTopic, Synonym, SynonymInput, SynonymMatch, Topic, TopicChild, ViewStats,
+    Link, RepoLink, RepoTopic, Synonym, SynonymEntry, SynonymInput, Topic, TopicChild, ViewStats,
 };
 use crate::git;
 use crate::prelude::*;
@@ -79,7 +79,7 @@ impl TryFrom<git::SearchMatch> for TopicChild {
     }
 }
 
-impl<'a> From<&'a git::SynonymEntry> for SynonymMatch<'a> {
+impl<'a> From<&'a git::SynonymEntry> for SynonymEntry<'a> {
     fn from(value: &'a git::SynonymEntry) -> Self {
         Self(value)
     }

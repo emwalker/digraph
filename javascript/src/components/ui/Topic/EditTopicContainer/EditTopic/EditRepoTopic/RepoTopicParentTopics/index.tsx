@@ -28,7 +28,7 @@ function makeLoadOptions({ selectedRepoId, topicId, viewerId }: LoadOptionsProps
         .subscribe({
           next(data) {
             const options =
-              makeOptions(data.view.topic?.repoTopic?.availableParentTopics.synonymMatches || [])
+              makeOptions(data.view.topic?.repoTopic?.availableParentTopics.synonyms || [])
             resolve(options)
           },
         })

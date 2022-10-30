@@ -141,7 +141,7 @@ pub struct FetchTopicLiveSearch {
 
 #[derive(Debug)]
 pub struct FetchTopicLiveSearchResult {
-    pub synonym_matches: BTreeSet<SynonymEntry>,
+    pub synonyms: BTreeSet<SynonymEntry>,
 }
 
 impl FetchTopicLiveSearch {
@@ -149,7 +149,7 @@ impl FetchTopicLiveSearch {
         if self.search.tokens.is_empty() {
             log::info!("empty search, returning no results");
             return Ok(FetchTopicLiveSearchResult {
-                synonym_matches: BTreeSet::new(),
+                synonyms: BTreeSet::new(),
             });
         }
 
@@ -157,7 +157,7 @@ impl FetchTopicLiveSearch {
         let matches = self.fetch(client);
 
         Ok(FetchTopicLiveSearchResult {
-            synonym_matches: matches.iter().take(self.limit).cloned().collect(),
+            synonyms: matches.iter().take(self.limit).cloned().collect(),
         })
     }
 

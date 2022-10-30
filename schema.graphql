@@ -130,6 +130,10 @@ type LinkConnection {
   totalCount: Int!
 }
 
+type LiveSearchTopicsPayload {
+  synonyms: [SynonymEntry!]!
+}
+
 enum LocaleIdentifier {
   ar
   de
@@ -195,13 +199,9 @@ type RepoLinkDetails {
   url: String!
 }
 
-type SynonymMatch {
+type SynonymEntry {
   displayName: String!
   id: String!
-}
-
-type LiveSearchTopicsPayload {
-  synonymMatches: [SynonymMatch!]!
 }
 
 type Mutation {

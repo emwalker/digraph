@@ -23,10 +23,10 @@ impl Synonym {
 }
 
 #[derive(Debug)]
-pub struct SynonymMatch<'a>(pub(crate) &'a git::SynonymEntry);
+pub struct SynonymEntry<'a>(pub(crate) &'a git::SynonymEntry);
 
 #[Object]
-impl<'a> SynonymMatch<'a> {
+impl<'a> SynonymEntry<'a> {
     async fn display_name(&self) -> &str {
         &self.0.name
     }
@@ -41,12 +41,8 @@ pub struct LiveSearchTopicsPayload(pub(crate) git::FetchTopicLiveSearchResult);
 
 #[Object]
 impl LiveSearchTopicsPayload {
-    async fn synonym_matches(&self) -> Vec<SynonymMatch<'_>> {
-        self.0
-            .synonym_matches
-            .iter()
-            .map(SynonymMatch::from)
-            .collect()
+    async fn synonyms(&self) -> Vec<SynonymEntry<'_>> {
+        self.0.synonyms.iter().map(SynonymEntry::from).collect()
     }
 }
 

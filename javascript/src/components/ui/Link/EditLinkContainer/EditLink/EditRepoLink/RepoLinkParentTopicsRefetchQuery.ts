@@ -11,7 +11,7 @@ export default graphql`
       link(id: $linkId) {
         repoLink(repoId: $selectedRepoId) {
           availableParentTopics(searchString: $searchString) {
-            synonymMatches {
+            synonyms {
               value: id
               label: displayName
             }

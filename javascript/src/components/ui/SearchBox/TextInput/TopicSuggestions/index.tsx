@@ -14,7 +14,7 @@ type Mutable<Type> = {
 };
 
 type ViewType = Response['view']
-type SynonymMatches = Mutable<ViewType['topicLiveSearch']['synonymMatches']>
+type SynonymMatches = Mutable<ViewType['topicLiveSearch']['synonyms']>
 
 const query = graphql`
   query TopicSuggestionsQuery (
@@ -22,7 +22,7 @@ const query = graphql`
   ) {
     view(viewerId: "") {
       topicLiveSearch(searchString: $searchString) {
-        synonymMatches {
+        synonyms {
           name: displayName
           link: id
         }
@@ -47,7 +47,7 @@ const TopicSuggestions = ({ Suggestions, isOpen, setMentionListOpen }: Props) =>
     fetchQuery<Query>(environment, query, { searchString: modifiedValue })
       .subscribe({
         next: (data) => {
-          const mentions = data?.view?.topicLiveSearch?.synonymMatches || []
+          const mentions = data?.view?.topicLiveSearch?.synonyms || []
           setSuggestions(mentions as SynonymMatches)
         },
       })

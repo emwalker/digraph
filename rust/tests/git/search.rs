@@ -18,8 +18,7 @@ mod fetch_topic_live_search {
         let f = Fixtures::copy("simple");
 
         let FetchTopicLiveSearchResult {
-            synonym_matches: matches,
-            ..
+            synonyms: matches, ..
         } = FetchTopicLiveSearch {
             limit: 10,
             repos: RepoIds::from(vec![RepoId::wiki()]),
@@ -46,8 +45,7 @@ mod fetch_topic_live_search {
         let search = Search::parse("clim chan soc").unwrap();
 
         let FetchTopicLiveSearchResult {
-            synonym_matches: matches,
-            ..
+            synonyms: matches, ..
         } = FetchTopicLiveSearch {
             limit: 10,
             repos: RepoIds::from(vec![repo_id.to_owned()]),
@@ -68,8 +66,7 @@ mod fetch_topic_live_search {
         .unwrap();
 
         let FetchTopicLiveSearchResult {
-            synonym_matches: matches,
-            ..
+            synonyms: matches, ..
         } = FetchTopicLiveSearch {
             limit: 10,
             repos: RepoIds::from(vec![repo_id]),
