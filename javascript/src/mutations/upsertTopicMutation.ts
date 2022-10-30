@@ -8,6 +8,8 @@ import {
   upsertTopicMutation$data as ResponseType,
 } from '__generated__/upsertTopicMutation.graphql'
 
+export type MatchingTopicsType = NonNullable<ResponseType['upsertTopic']>['matchingTopics']
+
 function makeUpdater(parentTopicId: string) {
   return (store: RecordSourceSelectorProxy) => {
     const connectionId = ConnectionHandler.getConnectionID(parentTopicId,
@@ -56,6 +58,16 @@ const query = graphql`
           ...Topic_topic
         }
       }
+
+      matchingTopics {
+        displayName
+        id
+
+        displaySynonyms {
+          name
+          locale
+        }
+      }
     }
   }
 `
@@ -65,17 +77,18 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId, makeAl
   selectedRepoId: string | null,
   setName: Dispatch<SetStateAction<string>>,
   topicId: string,
-  makeAlert: (alert: AlertMessageType) => void,
+  makeAlert: (alert: AlertMessageType, matchingTopics: MatchingTopicsType) => void,
 }) {
   const upsertTopic = useMutation<upsertTopicMutation>(query)[0]
 
   const onCompleted = ((response: ResponseType) => {
     const alerts = response.upsertTopic?.alerts || []
+    const matchingTopics = response.upsertTopic?.matchingTopics || []
     const addAlert = window.flashMessages?.addAlert
     if (addAlert == null) return
 
     for (const alert of alerts)
-      addAlert(makeAlert(alert))
+      addAlert(makeAlert(alert, matchingTopics))
   })
 
   return useCallback((event: KeyboardEvent<HTMLInputElement>) => {

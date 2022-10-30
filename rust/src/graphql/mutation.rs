@@ -191,6 +191,7 @@ pub struct UpsertTopicInput {
 pub struct UpsertTopicPayload {
     alerts: Vec<alert::Alert>,
     topic_edge: Option<TopicEdge>,
+    matching_topics: Vec<Topic>,
 }
 
 #[derive(Debug, InputObject)]
@@ -483,9 +484,15 @@ impl MutationRoot {
     ) -> Result<UpsertTopicPayload> {
         log::info!("upserting topic: {:?}", input);
         let store = ctx.data_unchecked::<Store>();
-        let result = store.upsert_topic(input).await?;
 
-        let topic_edge = match &result.repo_topic {
+        let git::UpsertTopicResult {
+            alerts,
+            repo_topic,
+            matching_repo_topics,
+            ..
+        } = store.upsert_topic(input).await?;
+
+        let topic_edge = match &repo_topic {
             Some(topic) => {
                 let topic_id = topic.topic_id();
                 let topic: Topic = store.fetch_topic(topic_id.to_owned()).await?.try_into()?;
@@ -495,9 +502,17 @@ impl MutationRoot {
             None => None,
         };
 
+        let mut matching_topics = vec![];
+        for synonym_match in &matching_repo_topics {
+            let topic_id = synonym_match.repo_topic.topic_id();
+            let topic: Topic = store.fetch_topic(topic_id.to_owned()).await?.try_into()?;
+            matching_topics.push(topic);
+        }
+
         Ok(UpsertTopicPayload {
-            alerts: result.alerts.iter().map(alert::Alert::from).collect_vec(),
+            alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
             topic_edge,
+            matching_topics,
         })
     }
 

@@ -1,13 +1,12 @@
 import React, { FormEvent, MouseEvent, useCallback, useState } from 'react'
 import { graphql, useFragment } from 'react-relay'
 
-import { makeUpsertTopic } from 'mutations/upsertTopicMutation'
+import { topicPath } from 'components/helpers'
+import { makeUpsertTopic, MatchingTopicsType } from 'mutations/upsertTopicMutation'
 import { AddTopic_viewer$key } from '__generated__/AddTopic_viewer.graphql'
 import { AddTopic_parentTopic$key } from '__generated__/AddTopic_parentTopic.graphql'
 import { AlertMessageType } from 'components/types'
 import Alert from 'components/FlashMessages/Alert'
-import CreateTopicButton from './CreateTopicButton'
-import UpdateTopicButton from './UpdateTopicButton'
 
 const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
   + 'afterwards if it also belongs under another topic.\n'
@@ -31,14 +30,35 @@ const viewerFragment = graphql`
   }
 `
 
-function makeAlert(alert: AlertMessageType) {
+function makeAlert(alert: AlertMessageType, matchingTopics: MatchingTopicsType) {
+  if (!/existing topic/.test(alert.text) || matchingTopics.length === 0)
+    return <Alert key={alert.id} alert={alert} />
+
+  const removeAlert = window.flashMessages?.removeAlert
+  const onClick = () => removeAlert && removeAlert(alert)
+
   return (
     <Alert key={alert.id} alert={alert}>
-      <div className="d-flex flex-justify-center flex-items-center">
-        <div className="m-2"> <UpdateTopicButton /> </div>
-        <div className="m-2"> <CreateTopicButton /> </div>
-        <div className="m-2"> <a href="#">Do nothing</a> </div>
-      </div>
+      <ul className="px-5 py-3">
+        {matchingTopics.map((topic) => {
+          const href = topicPath(topic.id)
+
+          return (
+            <li className="p-1">
+              Add <a href={href} target="_blank">{ topic.displayName }</a> to the current parent
+              topic
+              <button type="button" className="btn btn-secondary btn-sm ml-2">update</button>
+            </li>
+          )
+        })}
+
+        <li className="p-1">
+          Create a new topic
+          <button type="button" className="btn btn-secondary btn-sm ml-2">create</button>
+        </li>
+
+        <li className="p-1"> <a href="#" onClick={onClick}>Do nothing</a> </li>
+      </ul>
     </Alert>
   )
 }

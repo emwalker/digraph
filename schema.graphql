@@ -504,6 +504,7 @@ input UpsertTopicInput {
   name: String!
   parentTopicId: String!
   repoId: String!
+  # onMatchingSynonym: OnMatchingSynonym
 }
 
 input UpsertTopicTimerangeInput {
@@ -518,6 +519,7 @@ input UpsertTopicTimerangeInput {
 type UpsertTopicPayload implements Alertable {
   alerts: [Alert!]!
   topicEdge: TopicEdge
+  matchingTopics: [Topic!]!
 }
 
 type UpsertTopicTimerangePayload implements Alertable {
