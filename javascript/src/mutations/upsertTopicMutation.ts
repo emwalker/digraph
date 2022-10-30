@@ -11,7 +11,7 @@ import {
 function makeUpdater(parentTopicId: string) {
   return (store: RecordSourceSelectorProxy) => {
     const connectionId = ConnectionHandler.getConnectionID(parentTopicId,
-      'ViewTopicPage_topic_children', { searchString: '' })
+      'ViewTopicPage_topic_children', { searchString: undefined })
 
     if (!connectionId) {
       console.log('connection id not found for parent topic:', parentTopicId)

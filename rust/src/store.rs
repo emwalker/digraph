@@ -259,9 +259,9 @@ impl Store {
     pub async fn search(
         &self,
         parent_topic: &git::Topic,
-        search_string: String,
+        search: &git::Search,
     ) -> Result<git::FindMatchesResult> {
-        log::debug!("search: search string {}", search_string);
+        log::debug!("search: {:?}", search);
         let viewer = &self.viewer;
 
         let fetcher = git::RedisFetchDownSet {
@@ -273,7 +273,7 @@ impl Store {
             limit: 100,
             locale: Locale::EN,
             recursive: true,
-            search: git::Search::parse(&search_string)?,
+            search: search.to_owned(),
             timespec: Timespec,
             topic_id: parent_topic.id.to_owned(),
             viewer: viewer.to_owned(),

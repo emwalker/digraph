@@ -44,7 +44,7 @@ const viewerFragment = graphql`
 
 const topicFragment = graphql`
   fragment ViewTopicPage_topic on Topic
-  @argumentDefinitions(searchString: {type: "String!", defaultValue: ""})
+  @argumentDefinitions(searchString: {type: "String"})
   {
     displayName
     id
@@ -68,7 +68,7 @@ const topicFragment = graphql`
       }
     }
 
-    children(first: 1000, searchString: $searchString)
+    children(first: 100, searchString: $searchString)
     @connection(key: "ViewTopicPage_topic_children") {
       edges {
         node {

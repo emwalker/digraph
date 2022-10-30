@@ -5,7 +5,7 @@ use std::convert::TryInto;
 use std::str::FromStr;
 
 use super::{
-    Link, RepoLink, RepoTopic, Synonym, SynonymEntry, SynonymInput, Topic, TopicChild, ViewStats,
+    Link, RepoLink, RepoTopic, SearchMatch, Synonym, SynonymEntry, SynonymInput, Topic, ViewStats,
 };
 use crate::git;
 use crate::prelude::*;
@@ -35,11 +35,11 @@ impl Loader<Oid> for ObjectLoader {
     }
 }
 
-impl From<git::Object> for TopicChild {
+impl From<git::Object> for SearchMatch {
     fn from(value: git::Object) -> Self {
         match value {
-            git::Object::Link(link) => TopicChild::Link(Link(link)),
-            git::Object::Topic(topic) => TopicChild::Topic(Topic(topic)),
+            git::Object::Link(link) => SearchMatch::Link(Link(link)),
+            git::Object::Topic(topic) => SearchMatch::Topic(Topic(topic)),
         }
     }
 }
@@ -66,14 +66,14 @@ impl TryFrom<git::Object> for Topic {
     }
 }
 
-impl TryFrom<git::SearchMatch> for TopicChild {
+impl TryFrom<git::SearchMatch> for SearchMatch {
     type Error = Error;
 
     fn try_from(item: git::SearchMatch) -> Result<Self> {
         let git::SearchMatch { object, kind, .. } = item;
         let child = match kind {
-            git::Kind::Topic => TopicChild::Topic(object.try_into()?),
-            git::Kind::Link => TopicChild::Link(object.try_into()?),
+            git::Kind::Topic => SearchMatch::Topic(object.try_into()?),
+            git::Kind::Link => SearchMatch::Link(object.try_into()?),
         };
         Ok(child)
     }

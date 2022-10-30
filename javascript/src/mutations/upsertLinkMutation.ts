@@ -13,17 +13,14 @@ function makeUpdater(parentTopicId: string | null) {
 
   return (store: RecordSourceSelectorProxy) => {
     const connectionId = ConnectionHandler.getConnectionID(parentTopicId,
-      'ViewTopicPage_topic_children', { searchString: '' })
+      'ViewTopicPage_topic_children')
     if (!connectionId) {
       console.log('no connection id found under topic:', parentTopicId)
       return
     }
 
     const connection = store.get(connectionId)
-    if (!connection) {
-      console.log('no connection found for id:', connectionId)
-      return
-    }
+    if (!connection) return
 
     const payload = store.getRootField('upsertLink')
     if (!payload) {

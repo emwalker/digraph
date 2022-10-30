@@ -338,15 +338,15 @@ type Synonym {
   name: String!
 }
 
-union TopicChild = Topic | Link
+union SearchMatch = Topic | Link
 
-type TopicChildEdge {
+type SearchMatchEdge {
   cursor: String!
-  node: TopicChild!
+  node: SearchMatch!
 }
 
-type TopicChildConnection {
-  edges: [TopicChildEdge]
+type SearchResultConnection {
+  edges: [SearchMatchEdge]
   pageInfo: PageInfo!
 }
 
@@ -363,7 +363,7 @@ type Topic {
     after: String,
     last: Int,
     before: String
-  ): TopicChildConnection!
+  ): SearchResultConnection!
   repoTopic(repoId: ID!): RepoTopic
   repoTopics: [RepoTopic!]!
   displayName: String!
@@ -378,13 +378,6 @@ type Topic {
   id: String!
   loading: Boolean!
   newlyAdded: Boolean!
-  search(
-    searchString: String!,
-    first: Int,
-    after: String,
-    last: Int,
-    before: String
-  ): TopicChildConnection!
   showRepoOwnership: Boolean!
   viewerCanUpdate: Boolean!
 }

@@ -11,7 +11,7 @@ export const query = graphql`
     $viewerId: ID!,
     $repoIds: [ID!],
     $topicId: ID!,
-    $searchString: String!,
+    $searchString: String,
   ) {
     alerts {
       id

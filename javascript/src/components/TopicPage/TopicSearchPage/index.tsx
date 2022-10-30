@@ -22,7 +22,7 @@ import {
 } from '__generated__/TopicSearchPage_topic.graphql'
 
 type ParentTopicType = NodeTypeOf<TopicType['displayParentTopics']>
-type SearchItemType = NodeTypeOf<TopicType['search']>
+type SearchItemType = NodeTypeOf<TopicType['children']>
 
 type Props = {
   topic: TopicSearchPage_topic$key,
@@ -31,7 +31,7 @@ type Props = {
 
 const topicFragment = graphql`
   fragment TopicSearchPage_topic on Topic @argumentDefinitions(
-    searchString: {type: "String!", defaultValue: ""},
+    searchString: {type: "String"},
   ) {
     id
     displayName
@@ -45,7 +45,7 @@ const topicFragment = graphql`
       }
     }
 
-    search(first: 100, searchString: $searchString) {
+    children(first: 100, searchString: $searchString) {
       edges {
         node {
           __typename
@@ -106,7 +106,7 @@ export default function TopicSearchPage(props: Props) {
   if (topic == null) return <div>Error parsing route</div>
 
   const {
-    search: searchResults,
+    children: searchResults,
     displayName,
     displayParentTopics,
   } = topic

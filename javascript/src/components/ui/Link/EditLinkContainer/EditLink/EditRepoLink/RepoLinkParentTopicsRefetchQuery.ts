@@ -3,7 +3,7 @@ import { graphql } from 'react-relay'
 export default graphql`
   query RepoLinkParentTopicsRefetchQuery(
     $linkId: ID!,
-    $searchString: String!,
+    $searchString: String,
     $selectedRepoId: ID!,
     $viewerId: ID!,
   ) {

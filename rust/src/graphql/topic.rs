@@ -47,12 +47,12 @@ impl LiveSearchTopicsPayload {
 }
 
 #[derive(Union)]
-pub enum TopicChild {
+pub enum SearchMatch {
     Link(Link),
     Topic(Topic),
 }
 
-pub type TopicChildConnection = Connection<String, TopicChild, EmptyFields, EmptyFields>;
+pub type SearchResultConnection = Connection<String, SearchMatch, EmptyFields, EmptyFields>;
 
 pub struct RepoTopicDetails<'a>(pub(crate) &'a git::RepoTopicDetails);
 
@@ -211,24 +211,36 @@ impl Topic {
         relay::connection(after, before, first, last, results)
     }
 
-    #[allow(unused_variables)]
     async fn children(
         &self,
         ctx: &Context<'_>,
+        search_string: Option<String>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-        search_string: Option<String>,
-    ) -> Result<TopicChildConnection> {
-        let search = git::Search::empty();
+    ) -> Result<SearchResultConnection> {
+        let search = git::Search::parse(&search_string.unwrap_or_default())?;
+
+        if !search.is_empty() {
+            let git::FindMatchesResult { matches, .. } = ctx
+                .data_unchecked::<Store>()
+                .search(&self.0, &search)
+                .await?;
+
+            let mut results = vec![];
+            for row in matches {
+                results.push(row.try_into()?);
+            }
+
+            return relay::connection(after, before, first, last, results);
+        }
 
         let objects = ctx
             .data_unchecked::<Store>()
             .fetch_objects(self.0.child_ids().to_owned(), 50)
             .await?
             .into_iter();
-
         let mut matches = BTreeSet::new();
 
         for object in objects {
@@ -297,29 +309,6 @@ impl Topic {
 
     async fn repo_topics(&self) -> Vec<RepoTopic> {
         self.0.repo_topics.iter().map(RepoTopic::from).collect_vec()
-    }
-
-    #[allow(unused_variables)]
-    async fn search(
-        &self,
-        ctx: &Context<'_>,
-        first: Option<i32>,
-        after: Option<String>,
-        last: Option<i32>,
-        before: Option<String>,
-        search_string: String,
-    ) -> Result<TopicChildConnection> {
-        let git::FindMatchesResult { matches, .. } = ctx
-            .data_unchecked::<Store>()
-            .search(&self.0, search_string)
-            .await?;
-
-        let mut results = vec![];
-        for row in matches {
-            results.push(row.try_into()?);
-        }
-
-        relay::connection(after, before, first, last, results)
     }
 
     async fn show_repo_ownership(&self) -> bool {

@@ -14,7 +14,7 @@ const TestRenderer = () => {
         $repoIds: [ID!],
         $topicId: ID!,
         $viewerId: ID!,
-        $searchString: String!,
+        $searchString: String,
       ) @relay_test_operation {
         view(
           viewerId: $viewerId,
