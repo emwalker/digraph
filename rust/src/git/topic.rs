@@ -490,120 +490,104 @@ pub struct UpsertTopic {
 
 pub struct UpsertTopicResult {
     pub alerts: Vec<Alert>,
-    pub matching_synonyms: BTreeSet<SynonymMatch>,
+    pub matching_repo_topics: BTreeSet<SynonymMatch>,
     pub repo_topic: Option<RepoTopic>,
     pub saved: bool,
 }
 
 impl UpsertTopic {
-    pub fn call<S>(&self, mut mutation: Mutation, store: &S) -> Result<UpsertTopicResult>
+    pub fn call<S>(&self, mutation: Mutation, store: &S) -> Result<UpsertTopicResult>
     where
         S: SaveChangesForPrefix,
     {
-        let mut parent = self.fetch_parent(&mutation);
-        let mut matches = mutation.synonym_phrase_matches(&[&self.repo_id], &self.name)?;
-        let date = chrono::Utc::now();
+        let parent = self.fetch_parent(&mutation);
+        let matches = mutation.synonym_phrase_matches(&self.actor.read_repo_ids, &self.name)?;
 
-        let (child, parent_topics) = if matches.is_empty() {
-            self.make_topic(&parent)?
-        } else {
-            match &self.on_matching_synonym {
-                OnMatchingSynonym::Ask => {
-                    log::info!("topic '{}' exists and OnMatchingSynonym::Ask", self.name);
-                    let alert = Alert::Warning(format!(
-                        r#"A topic with the name '{}' already exists in the selected repo. Would
-                        you like to update the existing topic or create a new topic?"#,
-                        self.name
-                    ));
+        if matches.is_empty() {
+            return self.add_repo_topic(mutation, store, parent, matches);
+        }
 
-                    let parent_id = &parent.topic_id();
-                    let mut matching_synonyms: BTreeSet<SynonymMatch> = BTreeSet::new();
+        match &self.on_matching_synonym {
+            OnMatchingSynonym::Ask => self.request_decision(mutation, parent, matches),
 
-                    for synonym_match in matches {
-                        let topic_id = &synonym_match.topic.topic_id();
-                        if mutation.cycle_exists(&self.repo_id, topic_id, parent_id)? {
-                            matching_synonyms.insert(synonym_match.with_cycle(true));
-                        } else {
-                            matching_synonyms.insert(synonym_match);
-                        }
-                    }
-
-                    return Ok(UpsertTopicResult {
-                        alerts: vec![alert],
-                        matching_synonyms,
-                        repo_topic: None,
-                        saved: false,
-                    });
-                }
-
-                OnMatchingSynonym::CreateDistinct => {
-                    log::info!(
-                        "creating new topic even though there are matching synonyms: {:?}",
-                        matches
-                    );
-                    self.make_topic(&parent)?
-                }
-
-                OnMatchingSynonym::Update(topic_id) => {
-                    if mutation.cycle_exists(&self.repo_id, topic_id, parent.topic_id())? {
-                        let ancestor = mutation.fetch_topic(&self.repo_id, topic_id);
-                        if ancestor.is_none() {
-                            return Err(Error::NotFound(format!("not found: {}", topic_id)));
-                        }
-                        let ancestor = ancestor.unwrap();
-
-                        log::info!("a cycle was found");
-                        let alerts = vec![Alert::Warning(format!(
-                            "{} is a subtopic of {}",
-                            &parent.name(Locale::EN),
-                            &ancestor.name(Locale::EN),
-                        ))];
-
-                        matches.replace(SynonymMatch {
-                            cycle: true,
-                            entry: SynonymEntry {
-                                name: self.name.to_owned(),
-                                id: topic_id.to_owned(),
-                            },
-                            name: self.name.to_owned(),
-                            topic: ancestor,
-                        });
-
-                        return Ok(UpsertTopicResult {
-                            alerts,
-                            matching_synonyms: matches,
-                            repo_topic: None,
-                            saved: false,
-                        });
-                    }
-
-                    log::info!("updating existing topic {:?}", topic_id);
-                    let topic = mutation.fetch_topic(&self.repo_id, topic_id);
-                    if topic.is_none() {
-                        return Err(Error::NotFound(format!("not found: {}", topic_id)));
-                    }
-                    let mut topic = topic.unwrap();
-                    let parent_topics = topic.parent_topics.clone();
-
-                    topic.parent_topics.insert(parent.to_parent_topic());
-
-                    match &mut topic.metadata.details {
-                        Some(details) => {
-                            details.synonyms.push(Synonym {
-                                added: date,
-                                locale: self.locale,
-                                name: self.name.to_owned(),
-                            });
-                        }
-
-                        None => {}
-                    }
-
-                    (topic, parent_topics)
-                }
+            OnMatchingSynonym::CreateDistinct => {
+                self.add_repo_topic(mutation, store, parent, matches)
             }
-        };
 
+            OnMatchingSynonym::Update(topic_id) => {
+                self.update_repo_topic(mutation, store, topic_id, parent, matches)
+            }
+        }
+    }
+
+    fn request_decision(
+        &self,
+        mutation: Mutation,
+        parent: RepoTopic,
+        matches: BTreeSet<SynonymMatch>,
+    ) -> Result<UpsertTopicResult> {
+        log::info!("topic '{}' exists and OnMatchingSynonym::Ask", self.name);
+
+        let alert = Alert::Success(format!(
+            r#"One or more existing topics with a synonym of "{}" were found. Would you like to
+            add one of the matching topics to the parent topic we're looking at, or would you like
+            to create a new subtopic with the same name?"#,
+            self.name
+        ));
+
+        let parent_id = &parent.topic_id();
+        let mut matching_repo_topics: BTreeSet<SynonymMatch> = BTreeSet::new();
+
+        for synonym_match in matches {
+            let topic_id = &synonym_match.repo_topic.topic_id();
+            if mutation.cycle_exists(&self.repo_id, topic_id, parent_id)? {
+                matching_repo_topics.insert(synonym_match.with_cycle(true));
+            } else {
+                matching_repo_topics.insert(synonym_match);
+            }
+        }
+
+        Ok(UpsertTopicResult {
+            alerts: vec![alert],
+            matching_repo_topics,
+            repo_topic: None,
+            saved: false,
+        })
+    }
+
+    fn add_repo_topic<S>(
+        &self,
+        mutation: Mutation,
+        store: &S,
+        parent: RepoTopic,
+        matches: BTreeSet<SynonymMatch>,
+    ) -> Result<UpsertTopicResult>
+    where
+        S: SaveChangesForPrefix,
+    {
+        if !matches.is_empty() {
+            log::info!(
+                "creating new repo topic even though there are matching synonyms: {:?}",
+                matches
+            );
+        }
+
+        let (child, parent_topics) = self.make_topic(&parent)?;
+        self.persist_repo_topic(mutation, store, child, parent, parent_topics)
+    }
+
+    fn persist_repo_topic<S>(
+        &self,
+        mut mutation: Mutation,
+        store: &S,
+        child: RepoTopic,
+        mut parent: RepoTopic,
+        parent_topics: BTreeSet<ParentTopic>,
+    ) -> Result<UpsertTopicResult>
+    where
+        S: SaveChangesForPrefix,
+    {
+        let date = chrono::Utc::now();
         parent.children.insert(child.to_topic_child(date));
 
         let change = self.change(&child, &parent_topics, &parent, date);
@@ -614,10 +598,80 @@ impl UpsertTopic {
 
         Ok(UpsertTopicResult {
             alerts: vec![],
-            matching_synonyms: BTreeSet::new(),
+            matching_repo_topics: BTreeSet::new(),
             repo_topic: Some(child),
             saved: true,
         })
+    }
+
+    fn update_repo_topic<S>(
+        &self,
+        mutation: Mutation,
+        store: &S,
+        topic_id: &Oid,
+        parent: RepoTopic,
+        mut matches: BTreeSet<SynonymMatch>,
+    ) -> Result<UpsertTopicResult>
+    where
+        S: SaveChangesForPrefix,
+    {
+        let date = chrono::Utc::now();
+
+        if mutation.cycle_exists(&self.repo_id, topic_id, parent.topic_id())? {
+            let ancestor = mutation.fetch_topic(&self.repo_id, topic_id);
+            if ancestor.is_none() {
+                return Err(Error::NotFound(format!("not found: {}", topic_id)));
+            }
+            let ancestor = ancestor.unwrap();
+
+            log::info!("a cycle was found");
+            let alerts = vec![Alert::Warning(format!(
+                "{} is a subtopic of {}",
+                &parent.name(Locale::EN),
+                &ancestor.name(Locale::EN),
+            ))];
+
+            matches.replace(SynonymMatch {
+                cycle: true,
+                entry: SynonymEntry {
+                    name: self.name.to_owned(),
+                    id: topic_id.to_owned(),
+                },
+                name: self.name.to_owned(),
+                repo_topic: ancestor,
+            });
+
+            return Ok(UpsertTopicResult {
+                alerts,
+                matching_repo_topics: matches,
+                repo_topic: None,
+                saved: false,
+            });
+        }
+
+        log::info!("updating existing topic {:?}", topic_id);
+        let topic = mutation.fetch_topic(&self.repo_id, topic_id);
+        if topic.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", topic_id)));
+        }
+        let mut topic = topic.unwrap();
+        let parent_topics = topic.parent_topics.clone();
+
+        topic.parent_topics.insert(parent.to_parent_topic());
+
+        match &mut topic.metadata.details {
+            Some(details) => {
+                details.synonyms.push(Synonym {
+                    added: date,
+                    locale: self.locale,
+                    name: self.name.to_owned(),
+                });
+            }
+
+            None => {}
+        }
+
+        self.persist_repo_topic(mutation, store, topic, parent, parent_topics)
     }
 
     fn change(

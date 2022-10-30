@@ -1,7 +1,8 @@
 Next:
-* Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 
 Before switchover:
+* Return all matching topics in current repo if there are topics with the requested name
+* Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 * Bug: client: some history entries are not displaying properly
 * Bug: The topic "Reading list" doesn't reliably show at the top of its own topic search
 * Bug: a reference to XupOirPbeLkV5aJfU-TsqPxQ5gNf33Lq-40g_3Pun8Q (Reading list) is improperly being added to the Wiki repo

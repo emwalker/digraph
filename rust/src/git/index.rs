@@ -111,7 +111,7 @@ pub struct SynonymMatch {
     pub cycle: bool,
     pub entry: SynonymEntry,
     pub name: String,
-    pub topic: RepoTopic,
+    pub repo_topic: RepoTopic,
 }
 
 impl std::cmp::Ord for SynonymMatch {
@@ -132,7 +132,7 @@ impl SynonymMatch {
             cycle,
             entry: self.entry.to_owned(),
             name: self.name.to_owned(),
-            topic: self.topic.to_owned(),
+            repo_topic: self.repo_topic.to_owned(),
         }
     }
 }

@@ -338,7 +338,7 @@ mod update_topic_synonyms {
 
     fn count(f: &Fixtures, name: &str) -> usize {
         f.git
-            .synonym_phrase_matches(&[&RepoId::wiki()], name)
+            .synonym_phrase_matches(&actor().read_repo_ids, name)
             .unwrap()
             .len()
     }
@@ -611,7 +611,7 @@ mod upsert_topic {
             .unwrap();
 
         assert!(result.saved);
-        assert_eq!(result.matching_synonyms, BTreeSet::new());
+        assert_eq!(result.matching_repo_topics, BTreeSet::new());
 
         let topic = &result.repo_topic;
         assert!(topic.is_some());
@@ -640,7 +640,7 @@ mod upsert_topic {
 
         assert!(result.repo_topic.is_none());
         assert!(!result.saved);
-        assert_ne!(result.matching_synonyms, BTreeSet::new());
+        assert_ne!(result.matching_repo_topics, BTreeSet::new());
     }
 
     #[test]
@@ -710,7 +710,7 @@ mod upsert_topic {
 
         let matches = f
             .git
-            .synonym_phrase_matches(&[&RepoId::wiki()], "Topic name")
+            .synonym_phrase_matches(&actor().read_repo_ids, "Topic name")
             .unwrap();
         let mut names = matches
             .iter()
@@ -767,8 +767,8 @@ mod upsert_topic {
         let alert = result.alerts.first().unwrap();
         assert!(matches!(alert, Alert::Warning(_)));
 
-        let synonym_match = result.matching_synonyms.iter().next().unwrap();
-        assert_eq!(&synonym_match.topic, &parent);
+        let synonym_match = result.matching_repo_topics.iter().next().unwrap();
+        assert_eq!(&synonym_match.repo_topic, &parent);
         assert!(synonym_match.cycle);
     }
 
@@ -803,7 +803,7 @@ mod upsert_topic_timerange {
 
     fn count(f: &Fixtures, name: &str) -> usize {
         f.git
-            .synonym_phrase_matches(&[&RepoId::wiki()], name)
+            .synonym_phrase_matches(&actor().read_repo_ids, name)
             .unwrap()
             .len()
     }

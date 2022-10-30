@@ -318,10 +318,10 @@ impl Client {
     // alludes to the prefix scan that is done to find matching synonyms.
     pub fn search_token_prefix_matches(
         &self,
-        prefix: &RepoId,
+        repo_id: &RepoId,
         token: &Phrase,
     ) -> Result<HashSet<SearchEntry>> {
-        let key = prefix.index_key(token)?;
+        let key = repo_id.index_key(token)?;
         let index = key.search_index(self, IndexType::Search, IndexMode::ReadOnly)?;
         Ok(index.prefix_matches(token))
     }
@@ -332,28 +332,28 @@ impl Client {
 
     pub fn synonym_phrase_matches(
         &self,
-        repos: &[&RepoId],
+        repo_ids: &RepoIds,
         name: &str,
     ) -> Result<BTreeSet<SynonymMatch>> {
         let phrase = Phrase::parse(name);
         let mut matches = BTreeSet::new();
 
-        for repo in repos {
-            let key = repo.index_key(&phrase)?;
+        for repo_id in repo_ids.iter() {
+            let key = repo_id.index_key(&phrase)?;
             for entry in &key
                 .synonym_index(self, IndexType::SynonymPhrase, IndexMode::Update)?
                 .full_matches(&phrase)?
             {
-                if !self.viewer.can_read(repo) {
+                if !self.viewer.can_read(repo_id) {
                     continue;
                 }
 
-                if let Some(topic) = self.fetch_topic(repo, &entry.id) {
+                if let Some(topic) = self.fetch_topic(repo_id, &entry.id) {
                     matches.insert(SynonymMatch {
                         cycle: false,
                         entry: (*entry).clone(),
                         name: name.to_string(),
-                        topic,
+                        repo_topic: topic,
                     });
                 }
             }
@@ -656,10 +656,10 @@ impl Mutation {
 
     pub fn synonym_phrase_matches(
         &self,
-        prefixes: &[&RepoId],
+        repo_ids: &RepoIds,
         name: &str,
     ) -> Result<BTreeSet<SynonymMatch>> {
-        self.client.synonym_phrase_matches(prefixes, name)
+        self.client.synonym_phrase_matches(repo_ids, name)
     }
 }
 
