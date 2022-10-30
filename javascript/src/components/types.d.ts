@@ -30,4 +30,9 @@ export declare type SynonymType = {
     name: string;
 };
 export declare type AlertType = 'ERROR' | 'WARN' | 'SUCCESS' | '%future added value';
+export interface AlertMessageType {
+    readonly text: string;
+    readonly id: string;
+    readonly type: AlertType;
+}
 export {};

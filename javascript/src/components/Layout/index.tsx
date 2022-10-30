@@ -57,7 +57,7 @@ export default function Layout({ alerts, children, view, match, router }: Props)
       />
       <div className="clearfix">
         <SelectedRepo viewer={view.viewer} />
-        <FlashMessages initialAlerts={alerts} />
+        <FlashMessages initialAlertMessages={alerts} />
         { children }
       </div>
       <Footer />

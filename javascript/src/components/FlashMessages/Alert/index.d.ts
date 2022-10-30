@@ -1,15 +1,10 @@
-import { Component } from 'react';
-import { AlertType } from 'components/types';
+import { MouseEventHandler, type ReactNode } from 'react';
+import { AlertMessageType } from 'components/types';
+export declare type OnCloseType = MouseEventHandler<HTMLButtonElement>;
 declare type Props = {
-    message: {
-        text: string;
-        type: AlertType;
-    };
-    onClose: () => void;
+    children?: ReactNode;
+    alert: AlertMessageType;
+    onClose?: OnCloseType;
 };
-declare class Alert extends Component<Props> {
-    get className(): string;
-    alertClass: (type: AlertType) => string;
-    render: () => JSX.Element;
-}
-export default Alert;
+export default function Alert({ children, alert, onClose }: Props): JSX.Element;
+export {};

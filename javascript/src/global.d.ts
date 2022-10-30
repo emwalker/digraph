@@ -1,5 +1,7 @@
+import { AlertMessageType } from 'components/types';
 import { User } from 'express';
 import { RouteMatch, Location, RouteObjectBase } from 'found'
+import { ReactNode } from 'react-markdown';
 import { StoreEnhancer } from 'redux'
 
 declare global {
@@ -16,6 +18,9 @@ declare global {
   interface Window {
     flashMessages: {
       addMessage: (AddFlashMessagesProps) => void,
+      addAlert: (ReactNode) => void,
+      removeAlert: (alert: ReactElement<typeof Alert>) => void,
+      removeMessage: (alert: AlertMessageType) => void,
     } | undefined,
     __PRELOADED_STATE__?: StoreEnhancer<unknown, unknown>
     __RELAY_PAYLOADS__?: PreloadsType

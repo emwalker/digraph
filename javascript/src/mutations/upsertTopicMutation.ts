@@ -2,7 +2,7 @@ import { Dispatch, SetStateAction, useCallback, KeyboardEvent } from 'react'
 import { graphql, useMutation, ConnectionHandler } from 'react-relay'
 import { RecordSourceSelectorProxy } from 'relay-runtime'
 
-import { showAlerts } from 'components/helpers'
+import { AlertMessageType } from 'components/types'
 import {
   upsertTopicMutation,
   upsertTopicMutation$data as ResponseType,
@@ -60,14 +60,27 @@ const query = graphql`
   }
 `
 
-export function makeUpsertTopic({ selectedRepoId, name, setName, topicId }: {
+export function makeUpsertTopic({ selectedRepoId, name, setName, topicId, makeAlert }: {
   name: string,
   selectedRepoId: string | null,
   setName: Dispatch<SetStateAction<string>>,
   topicId: string,
+  makeAlert: (alert: AlertMessageType) => void,
 }) {
   const upsertTopic = useMutation<upsertTopicMutation>(query)[0]
-  const onCompleted = showAlerts((response: ResponseType) => response.upsertTopic?.alerts || [])
+
+  const onCompleted = ((response: ResponseType) => {
+    const alerts = response.upsertTopic?.alerts || []
+    const addAlert = window.flashMessages?.addAlert
+
+    if (addAlert == null) {
+      console.log('no flashMessages.addAlert found')
+      return
+    }
+
+    for (const alert of alerts)
+      addAlert(makeAlert(alert))
+  })
 
   return useCallback((event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Enter') return

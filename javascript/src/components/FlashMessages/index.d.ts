@@ -1,21 +1,20 @@
-import { Component } from 'react';
-import { AlertType } from 'components/types';
-declare type AlertPayload = {
-    id: string;
-    type: AlertType;
-    text: string;
-};
+import { Component, ReactElement } from 'react';
+import { AlertMessageType } from 'components/types';
+import Alert from './Alert';
 declare type Props = {
-    initialAlerts: readonly AlertPayload[];
+    initialAlertMessages: readonly AlertMessageType[];
 };
 declare type State = {
-    messages: readonly AlertPayload[];
+    messages: readonly AlertMessageType[];
+    alerts: ReactElement<typeof Alert>[];
 };
 declare class FlashMessages extends Component<Props, State> {
     constructor(props: Props);
     get alerts(): JSX.Element[];
-    removeMessage: (message: AlertPayload) => void;
-    addMessage: (message: AlertPayload) => void;
+    removeAlert: (component: ReactElement<typeof Alert>) => void;
+    removeMessage: (alert: AlertMessageType) => void;
+    addMessage: (message: AlertMessageType) => void;
+    addAlert: (alert: ReactElement<typeof Alert>) => void;
     render: () => JSX.Element | null;
 }
 export default FlashMessages;

@@ -1,10 +1,10 @@
 Next:
+* Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 
 Before switchover:
 * Bug: client: some history entries are not displaying properly
 * Bug: The topic "Reading list" doesn't reliably show at the top of its own topic search
 * Bug: a reference to XupOirPbeLkV5aJfU-TsqPxQ5gNf33Lq-40g_3Pun8Q (Reading list) is improperly being added to the Wiki repo
-* Add support for the "Ask if what to do" case for topics (test case: add a topic that already exists in the repo)
 * Show a blank edit form when a repo is selected and there's no reference for the topic/link
 * When upserting a topic that exists in a private repo into the Wiki repo, get confirmation first
 * When upserting a topic that exists in a private repo into the Wiki repo, add a non-nil details struct
