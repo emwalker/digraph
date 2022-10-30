@@ -72,11 +72,7 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId, makeAl
   const onCompleted = ((response: ResponseType) => {
     const alerts = response.upsertTopic?.alerts || []
     const addAlert = window.flashMessages?.addAlert
-
-    if (addAlert == null) {
-      console.log('no flashMessages.addAlert found')
-      return
-    }
+    if (addAlert == null) return
 
     for (const alert of alerts)
       addAlert(makeAlert(alert))

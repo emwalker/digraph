@@ -6,6 +6,8 @@ import { AddTopic_viewer$key } from '__generated__/AddTopic_viewer.graphql'
 import { AddTopic_parentTopic$key } from '__generated__/AddTopic_parentTopic.graphql'
 import { AlertMessageType } from 'components/types'
 import Alert from 'components/FlashMessages/Alert'
+import CreateTopicButton from './CreateTopicButton'
+import UpdateTopicButton from './UpdateTopicButton'
 
 const tooltipText = 'Add a subtopic to this topic. You can click "Edit"\n'
   + 'afterwards if it also belongs under another topic.\n'
@@ -31,7 +33,13 @@ const viewerFragment = graphql`
 
 function makeAlert(alert: AlertMessageType) {
   return (
-    <Alert key={alert.id} alert={alert}></Alert>
+    <Alert key={alert.id} alert={alert}>
+      <div className="d-flex flex-justify-center flex-items-center">
+        <div className="m-2"> <UpdateTopicButton /> </div>
+        <div className="m-2"> <CreateTopicButton /> </div>
+        <div className="m-2"> <a href="#">Do nothing</a> </div>
+      </div>
+    </Alert>
   )
 }
 
