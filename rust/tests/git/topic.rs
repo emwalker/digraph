@@ -157,7 +157,7 @@ mod delete_topic {
         let repo = RepoId::wiki();
         let root = Oid::root_topic();
 
-        let climate_change = make_topic(&f, &root, "Climate change");
+        let climate_change = make_topic(&f, &root, "Topic name");
         let activity = f
             .git
             .fetch_activity(&repo, climate_change.topic_id(), 1)
@@ -602,7 +602,7 @@ mod upsert_topic {
     #[test]
     fn topic_added() {
         let f = Fixtures::copy("simple");
-        let search = Search::parse("topic name").unwrap();
+        let search = Search::parse("Topic name").unwrap();
         let repo = RepoId::wiki();
         let path = parse_id("00001");
 
@@ -636,7 +636,7 @@ mod upsert_topic {
         assert!(result.saved);
 
         let result = f
-            .upsert_topic(&repo, "Topic Name", &parent_topic_2, OnMatchingSynonym::Ask)
+            .upsert_topic(&repo, "Topic name", &parent_topic_2, OnMatchingSynonym::Ask)
             .unwrap();
 
         assert!(result.repo_topic.is_none());
@@ -644,14 +644,12 @@ mod upsert_topic {
         assert!(!result.matching_repo_topics.is_empty());
     }
 
-    #[test]
-    fn update_topic() {
+    fn assert_update_works(repo_1: &RepoId, repo_2: &RepoId, expected_parent_topics: &[&str]) {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
         let topic_id = parse_id("00001");
 
         let result = f
-            .upsert_topic(&repo, "Topic name", &topic_id, OnMatchingSynonym::Ask)
+            .upsert_topic(&repo_1, "Topic name", &topic_id, OnMatchingSynonym::Ask)
             .unwrap();
         assert!(result.saved);
         let parent_topic = result.repo_topic.unwrap();
@@ -660,8 +658,8 @@ mod upsert_topic {
         let topic_path = parse_id("00002");
         let result = f
             .upsert_topic(
-                &repo,
-                "Topic Name",
+                repo_2,
+                "Topic name",
                 &topic_path,
                 OnMatchingSynonym::Update(parent_id.to_owned()),
             )
@@ -678,7 +676,18 @@ mod upsert_topic {
             .map(|topic| topic.id.to_string())
             .collect::<Vec<String>>();
 
-        assert_eq!(parent_topics, &["00001", "00002"]);
+        assert_eq!(parent_topics, expected_parent_topics);
+    }
+
+    #[test]
+    fn update_topic() {
+        let repo_id = RepoId::wiki();
+        assert_update_works(&repo_id, &repo_id, &["00001", "00002"]);
+    }
+
+    #[test]
+    fn create_a_reference_in_a_private_repo() {
+        assert_update_works(&RepoId::wiki(), &RepoId::other(), &["00002"]);
     }
 
     #[test]
@@ -697,7 +706,7 @@ mod upsert_topic {
         let result = f
             .upsert_topic(
                 &repo,
-                "Topic Name",
+                "Topic name",
                 &topic_path,
                 OnMatchingSynonym::CreateDistinct,
             )
@@ -718,7 +727,7 @@ mod upsert_topic {
             .map(|m| m.entry.name.to_owned())
             .collect::<Vec<String>>();
         names.sort();
-        assert_eq!(names, vec!["Topic Name", "Topic name"]);
+        assert_eq!(names, vec!["Topic name", "Topic name"]);
     }
 
     #[test]

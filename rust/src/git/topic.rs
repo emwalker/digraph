@@ -500,7 +500,7 @@ impl UpsertTopic {
     where
         S: SaveChangesForPrefix,
     {
-        let parent = self.fetch_parent(&mutation);
+        let parent = self.ensure_topic(&mutation, &self.parent_topic_id);
         let matches = self.find_matches(&mutation)?;
 
         if matches.is_empty() {
@@ -614,7 +614,7 @@ impl UpsertTopic {
         store: &S,
         topic_id: &Oid,
         parent: RepoTopic,
-        mut matches: BTreeSet<SynonymMatch>,
+        matches: BTreeSet<SynonymMatch>,
     ) -> Result<UpsertTopicResult>
     where
         S: SaveChangesForPrefix,
@@ -622,44 +622,11 @@ impl UpsertTopic {
         let date = chrono::Utc::now();
 
         if mutation.cycle_exists(&self.repo_id, topic_id, parent.topic_id())? {
-            let ancestor = mutation.fetch_topic(&self.repo_id, topic_id);
-            if ancestor.is_none() {
-                return Err(Error::NotFound(format!("not found: {}", topic_id)));
-            }
-            let ancestor = ancestor.unwrap();
-
-            log::info!("a cycle was found");
-            let alerts = vec![Alert::Warning(format!(
-                "{} is a subtopic of {}",
-                &parent.name(Locale::EN),
-                &ancestor.name(Locale::EN),
-            ))];
-
-            matches.replace(SynonymMatch {
-                cycle: true,
-                entry: SynonymEntry {
-                    name: self.name.to_owned(),
-                    id: topic_id.to_owned(),
-                },
-                name: self.name.to_owned(),
-                repo_id: self.repo_id.to_owned(),
-                repo_topic: ancestor,
-            });
-
-            return Ok(UpsertTopicResult {
-                alerts,
-                matching_repo_topics: matches,
-                repo_topic: None,
-                saved: false,
-            });
+            return self.handle_cycle(mutation, topic_id, parent, matches);
         }
 
         log::info!("updating existing topic {:?}", topic_id);
-        let topic = mutation.fetch_topic(&self.repo_id, topic_id);
-        if topic.is_none() {
-            return Err(Error::NotFound(format!("not found: {}", topic_id)));
-        }
-        let mut topic = topic.unwrap();
+        let mut topic = self.ensure_topic(&mutation, topic_id);
         let parent_topics = topic.parent_topics.clone();
 
         topic.parent_topics.insert(parent.to_parent_topic());
@@ -677,6 +644,45 @@ impl UpsertTopic {
         }
 
         self.persist_repo_topic(mutation, store, topic, parent, parent_topics)
+    }
+
+    fn handle_cycle(
+        &self,
+        mutation: Mutation,
+        topic_id: &Oid,
+        parent: RepoTopic,
+        mut matches: BTreeSet<SynonymMatch>,
+    ) -> Result<UpsertTopicResult> {
+        let ancestor = mutation.fetch_topic(&self.repo_id, topic_id);
+        if ancestor.is_none() {
+            return Err(Error::NotFound(format!("not found: {}", topic_id)));
+        }
+        let ancestor = ancestor.unwrap();
+
+        log::info!("a cycle was found");
+        let alerts = vec![Alert::Warning(format!(
+            "{} is a subtopic of {}",
+            &parent.name(Locale::EN),
+            &ancestor.name(Locale::EN),
+        ))];
+
+        matches.replace(SynonymMatch {
+            cycle: true,
+            entry: SynonymEntry {
+                name: self.name.to_owned(),
+                id: topic_id.to_owned(),
+            },
+            name: self.name.to_owned(),
+            repo_id: self.repo_id.to_owned(),
+            repo_topic: ancestor,
+        });
+
+        Ok(UpsertTopicResult {
+            alerts,
+            matching_repo_topics: matches,
+            repo_topic: None,
+            saved: false,
+        })
     }
 
     fn change(
@@ -726,18 +732,18 @@ impl UpsertTopic {
         Ok((topic, parent_topics))
     }
 
-    fn fetch_parent(&self, mutation: &Mutation) -> RepoTopic {
-        match mutation.fetch_topic(&self.repo_id, &self.parent_topic_id) {
+    fn ensure_topic(&self, mutation: &Mutation, topic_id: &Oid) -> RepoTopic {
+        match mutation.fetch_topic(&self.repo_id, topic_id) {
             Some(topic) => topic,
 
             // If the topic is being upserted into another repo, we create a reference to the
             // parent topic in the current repo
             None => {
                 log::info!(
-                    "no parent topic found in selected repo, creating reference: {}",
-                    self.parent_topic_id
+                    "no topic found in selected repo, creating reference: {}",
+                    topic_id
                 );
-                RepoTopic::make_reference(self.parent_topic_id.to_owned())
+                RepoTopic::make_reference(topic_id.to_owned())
             }
         }
     }
