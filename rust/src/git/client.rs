@@ -353,6 +353,7 @@ impl Client {
                         cycle: false,
                         entry: (*entry).clone(),
                         name: name.to_string(),
+                        repo_id: repo_id.to_owned(),
                         repo_topic: topic,
                     });
                 }

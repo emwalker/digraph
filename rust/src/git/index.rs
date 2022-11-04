@@ -111,6 +111,7 @@ pub struct SynonymMatch {
     pub cycle: bool,
     pub entry: SynonymEntry,
     pub name: String,
+    pub repo_id: RepoId,
     pub repo_topic: RepoTopic,
 }
 
@@ -132,6 +133,7 @@ impl SynonymMatch {
             cycle,
             entry: self.entry.to_owned(),
             name: self.name.to_owned(),
+            repo_id: self.repo_id.to_owned(),
             repo_topic: self.repo_topic.to_owned(),
         }
     }

@@ -143,7 +143,7 @@ mod delete_topic {
             name: name.to_owned(),
             repo_id: RepoId::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
-            parent_topic: parent.to_owned(),
+            parent_topic_id: parent.to_owned(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
@@ -627,20 +627,21 @@ mod upsert_topic {
     fn action_requested() {
         let f = Fixtures::copy("simple");
         let repo = RepoId::wiki();
-        let path = parse_id("00001");
+        let parent_topic_1 = parse_id("00001");
+        let parent_topic_2 = parse_id("00002");
 
         let result = f
-            .upsert_topic(&repo, "Topic name", &path, OnMatchingSynonym::Ask)
+            .upsert_topic(&repo, "Topic name", &parent_topic_1, OnMatchingSynonym::Ask)
             .unwrap();
         assert!(result.saved);
 
         let result = f
-            .upsert_topic(&repo, "Topic Name", &path, OnMatchingSynonym::Ask)
+            .upsert_topic(&repo, "Topic Name", &parent_topic_2, OnMatchingSynonym::Ask)
             .unwrap();
 
         assert!(result.repo_topic.is_none());
         assert!(!result.saved);
-        assert_ne!(result.matching_repo_topics, BTreeSet::new());
+        assert!(!result.matching_repo_topics.is_empty());
     }
 
     #[test]

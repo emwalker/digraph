@@ -414,17 +414,45 @@ impl Store {
 
     pub async fn upsert_topic(
         &self,
-        input: graphql::UpsertTopicInput,
+        graphql::UpsertTopicInput {
+            name,
+            repo_id,
+            parent_topic_id,
+            on_matching_synonym,
+            update_topic_id,
+            ..
+        }: graphql::UpsertTopicInput,
     ) -> Result<git::UpsertTopicResult> {
-        let parent_topic = Oid::try_from(&input.parent_topic_id)?;
+        let parent_topic = Oid::try_from(&parent_topic_id)?;
+
+        let on_matching_synonym = match &(on_matching_synonym, update_topic_id) {
+            (graphql::OnMatchingSynonym::Ask, None) => git::OnMatchingSynonym::Ask,
+
+            (graphql::OnMatchingSynonym::CreateDistinct, None) => {
+                git::OnMatchingSynonym::CreateDistinct
+            }
+
+            (graphql::OnMatchingSynonym::Update, Some(topic_id)) => {
+                git::OnMatchingSynonym::Update(topic_id.try_into()?)
+            }
+
+            (enum_value, update_topic_id) => {
+                log::warn!(
+                    "unrecognized upsert topic resolution: {:?} / {:?}",
+                    enum_value,
+                    update_topic_id,
+                );
+                git::OnMatchingSynonym::Ask
+            }
+        };
 
         git::UpsertTopic {
             actor: self.viewer.clone(),
             locale: Locale::EN,
-            name: input.name.to_owned(),
-            on_matching_synonym: git::OnMatchingSynonym::Ask,
-            repo_id: input.repo_id.try_into()?,
-            parent_topic,
+            name,
+            on_matching_synonym,
+            repo_id: repo_id.try_into()?,
+            parent_topic_id: parent_topic,
         }
         .call(self.mutation()?, &self.redis)
     }

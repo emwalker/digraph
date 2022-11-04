@@ -161,7 +161,12 @@ mod fetch_matches {
 
         assert_eq!(
             sort_key,
-            &SortKey(Kind::Topic, true, "Existing non-root topic".to_owned())
+            &SortKey(
+                Kind::Topic,
+                true,
+                "Existing non-root topic".to_owned(),
+                object.id().to_owned()
+            )
         );
 
         assert_eq!(object.display_string(Locale::EN), "Existing non-root topic");
@@ -285,7 +290,12 @@ mod fetch_matches {
 
         assert_eq!(
             sort_key,
-            &SortKey(Kind::Link, false, "Other repo".to_owned())
+            &SortKey(
+                Kind::Link,
+                false,
+                "Other repo".to_owned(),
+                object.id().to_owned()
+            )
         );
 
         assert_eq!(object.display_string(Locale::EN), "Other repo");

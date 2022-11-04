@@ -186,7 +186,7 @@ impl FetchTopicLiveSearch {
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SortKey(pub Kind, pub bool, pub String);
+pub struct SortKey(pub Kind, pub bool, pub String, pub Oid);
 
 #[derive(Clone, Debug)]
 pub struct SearchMatch {

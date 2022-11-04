@@ -6,6 +6,7 @@ import { AlertMessageType } from 'components/types'
 import {
   upsertTopicMutation,
   upsertTopicMutation$data as ResponseType,
+  OnMatchingSynonym as OnMatchingSynonymType,
 } from '__generated__/upsertTopicMutation.graphql'
 
 export type MatchingTopicsType = NonNullable<ResponseType['upsertTopic']>['matchingTopics']
@@ -67,18 +68,28 @@ const query = graphql`
           name
           locale
         }
+
+        ...UpdateTopic_updateTopic
       }
     }
   }
 `
 
-export function makeUpsertTopic({ selectedRepoId, name, setName, topicId, makeAlert }: {
-  name: string,
-  selectedRepoId: string | null,
-  setName: Dispatch<SetStateAction<string>>,
-  topicId: string,
+type Props<E> = {
+  ignoreEvent?: (event: E) => boolean,
   makeAlert: (alert: AlertMessageType, matchingTopics: MatchingTopicsType) => void,
-}) {
+  name: string,
+  onMatchingSynonym: OnMatchingSynonymType,
+  parentTopicId: string,
+  selectedRepoId: string | null,
+  setName?: Dispatch<SetStateAction<string>>,
+  updateTopicId?: string,
+}
+
+export function makeUpsertTopic<E>({
+  ignoreEvent, makeAlert, name, onMatchingSynonym, selectedRepoId, setName, parentTopicId,
+  updateTopicId,
+}: Props<E>) {
   const upsertTopic = useMutation<upsertTopicMutation>(query)[0]
 
   const onCompleted = ((response: ResponseType) => {
@@ -91,8 +102,8 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId, makeAl
       addAlert(makeAlert(alert, matchingTopics))
   })
 
-  return useCallback((event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== 'Enter') return
+  return useCallback((event: E) => {
+    if (ignoreEvent && ignoreEvent(event)) return
 
     if (!selectedRepoId) {
       console.log('repo not selected')
@@ -101,16 +112,18 @@ export function makeUpsertTopic({ selectedRepoId, name, setName, topicId, makeAl
 
     upsertTopic({
       onCompleted,
-      updater: makeUpdater(topicId),
+      updater: makeUpdater(parentTopicId),
       variables: {
         input: {
           name,
+          onMatchingSynonym,
+          parentTopicId,
           repoId: selectedRepoId,
-          parentTopicId: topicId,
+          updateTopicId,
         },
       },
     })
 
-    setName('')
-  }, [upsertTopic, selectedRepoId, topicId, name, setName])
+    setName?.('')
+  }, [upsertTopic, selectedRepoId, parentTopicId, name, setName])
 }

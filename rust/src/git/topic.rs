@@ -484,7 +484,7 @@ pub struct UpsertTopic {
     pub locale: Locale,
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
-    pub parent_topic: Oid,
+    pub parent_topic_id: Oid,
     pub repo_id: RepoId,
 }
 
@@ -501,7 +501,7 @@ impl UpsertTopic {
         S: SaveChangesForPrefix,
     {
         let parent = self.fetch_parent(&mutation);
-        let matches = mutation.synonym_phrase_matches(&self.actor.read_repo_ids, &self.name)?;
+        let matches = self.find_matches(&mutation)?;
 
         if matches.is_empty() {
             return self.add_repo_topic(mutation, store, parent, matches);
@@ -518,6 +518,10 @@ impl UpsertTopic {
                 self.update_repo_topic(mutation, store, topic_id, parent, matches)
             }
         }
+    }
+
+    fn find_matches(&self, mutation: &Mutation) -> Result<BTreeSet<SynonymMatch>> {
+        mutation.synonym_phrase_matches(&self.actor.read_repo_ids, &self.name)
     }
 
     fn request_decision(
@@ -638,6 +642,7 @@ impl UpsertTopic {
                     id: topic_id.to_owned(),
                 },
                 name: self.name.to_owned(),
+                repo_id: self.repo_id.to_owned(),
                 repo_topic: ancestor,
             });
 
@@ -722,7 +727,7 @@ impl UpsertTopic {
     }
 
     fn fetch_parent(&self, mutation: &Mutation) -> RepoTopic {
-        match mutation.fetch_topic(&self.repo_id, &self.parent_topic) {
+        match mutation.fetch_topic(&self.repo_id, &self.parent_topic_id) {
             Some(topic) => topic,
 
             // If the topic is being upserted into another repo, we create a reference to the
@@ -730,9 +735,9 @@ impl UpsertTopic {
             None => {
                 log::info!(
                     "no parent topic found in selected repo, creating reference: {}",
-                    self.parent_topic
+                    self.parent_topic_id
                 );
-                RepoTopic::make_reference(self.parent_topic.to_owned())
+                RepoTopic::make_reference(self.parent_topic_id.to_owned())
             }
         }
     }

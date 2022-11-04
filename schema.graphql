@@ -221,6 +221,12 @@ type Mutation {
   upsertTopicTimerange(input: UpsertTopicTimerangeInput!): UpsertTopicTimerangePayload
 }
 
+enum OnMatchingSynonym {
+  ASK
+  CREATE_DISTINCT
+  UPDATE
+}
+
 type Organization {
   createdAt: DateTime!
   defaultRepository: Repository!
@@ -241,12 +247,6 @@ type PageInfo {
 type QueryInfo {
   topics: TopicConnection!
   stringTokens: [String!]!
-}
-
-enum TimerangePrefixFormat {
-  NONE
-  START_YEAR
-  START_YEAR_MONTH
 }
 
 type Query {
@@ -348,6 +348,12 @@ type SearchMatchEdge {
 type SearchResultConnection {
   edges: [SearchMatchEdge]
   pageInfo: PageInfo!
+}
+
+enum TimerangePrefixFormat {
+  NONE
+  START_YEAR
+  START_YEAR_MONTH
 }
 
 type Topic {
@@ -502,9 +508,10 @@ input UpsertTopicInput {
   clientMutationId: String
   description: String
   name: String!
+  onMatchingSynonym: OnMatchingSynonym!
   parentTopicId: String!
   repoId: String!
-  # onMatchingSynonym: OnMatchingSynonym
+  updateTopicId: String,
 }
 
 input UpsertTopicTimerangeInput {

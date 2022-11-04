@@ -599,7 +599,12 @@ impl Object {
 
         match self {
             Self::Link { .. } => Ok(SearchMatch {
-                sort_key: SortKey(Kind::Link, &search_string != normalized, display_string),
+                sort_key: SortKey(
+                    Kind::Link,
+                    &search_string != normalized,
+                    display_string,
+                    self.id().to_owned(),
+                ),
                 kind: Kind::Link,
                 object: self,
             }),
@@ -612,6 +617,7 @@ impl Object {
                         Kind::Topic,
                         !explicit_in_search && &search_string != normalized,
                         display_string,
+                        topic_id.to_owned(),
                     ),
                     kind: Kind::Topic,
                     object: self,

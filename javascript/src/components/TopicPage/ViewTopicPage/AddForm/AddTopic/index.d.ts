@@ -5,5 +5,5 @@ declare type Props = {
     parentTopic: AddTopic_parentTopic$key;
     viewer: AddTopic_viewer$key;
 };
-export default function AddTopic(props: Props): JSX.Element;
+export default function AddTopic(props: Props): JSX.Element | null;
 export {};

@@ -170,7 +170,7 @@ impl Fixtures {
     ) -> Result<UpsertTopicResult> {
         UpsertTopic {
             actor: actor(),
-            parent_topic: parent_topic.to_owned(),
+            parent_topic_id: parent_topic.to_owned(),
             locale: Locale::EN,
             name: name.into(),
             on_matching_synonym,
@@ -201,7 +201,7 @@ mod tests {
             name: "Climate change".to_owned(),
             repo_id: repo.to_owned(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_path),
-            parent_topic: root.clone(),
+            parent_topic_id: root.clone(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
@@ -223,7 +223,7 @@ mod tests {
             name: "Weather".to_owned(),
             repo_id: RepoId::wiki(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
-            parent_topic: root,
+            parent_topic_id: root,
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
@@ -244,7 +244,7 @@ mod tests {
             name: "Climate change and weather".to_owned(),
             repo_id: repo.to_owned(),
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
-            parent_topic: climate_change.topic_id().to_owned(),
+            parent_topic_id: climate_change.topic_id().to_owned(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();

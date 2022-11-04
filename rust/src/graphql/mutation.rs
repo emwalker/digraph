@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use async_graphql::{Context, InputObject, Object, SimpleObject, ID};
+use async_graphql::{Context, Enum, InputObject, Object, SimpleObject, ID};
 use itertools::Itertools;
 
 use super::{
@@ -178,13 +178,22 @@ pub struct UpsertLinkPayload {
     link_edge: Option<LinkEdge>,
 }
 
+#[derive(Clone, Copy, Debug, Enum, PartialEq, Eq)]
+pub enum OnMatchingSynonym {
+    Ask,
+    CreateDistinct,
+    Update,
+}
+
 #[derive(Debug, InputObject)]
 pub struct UpsertTopicInput {
     pub client_mutation_id: Option<String>,
     pub description: Option<String>,
     pub name: String,
+    pub on_matching_synonym: OnMatchingSynonym,
     pub parent_topic_id: String,
     pub repo_id: String,
+    pub update_topic_id: Option<String>,
 }
 
 #[derive(SimpleObject)]
