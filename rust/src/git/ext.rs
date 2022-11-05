@@ -92,8 +92,8 @@ impl Map {
 
 #[derive(Clone, Debug)]
 pub enum ObjectBuilder {
-    Topic { id: Oid, map: Map },
-    Link { id: Oid, map: Map },
+    Topic { key: Okey, map: Map },
+    Link { key: Okey, map: Map },
 }
 
 impl ObjectBuilder {
@@ -106,20 +106,20 @@ impl ObjectBuilder {
 
     pub fn finalize(self, context: &RepoId) -> Result<Object> {
         match self {
-            Self::Topic { id, map } => {
+            Self::Topic { key, map } => {
                 let (details, display_topic) = map.topic_details(context)?;
                 Ok(Object::Topic(Topic {
-                    id,
+                    key,
                     display_topic,
                     repo_topics: details,
                     _map: map,
                 }))
             }
 
-            Self::Link { id, map } => {
+            Self::Link { key, map } => {
                 let (details, display_link) = map.link_details(context)?;
                 Ok(Object::Link(Link {
-                    id,
+                    key,
                     display_link,
                     repo_links: details,
                     _map: map,
@@ -130,24 +130,24 @@ impl ObjectBuilder {
 }
 
 #[derive(Clone, Default)]
-pub struct ObjectBuilders(HashMap<Oid, ObjectBuilder>);
+pub struct ObjectBuilders(HashMap<Okey, ObjectBuilder>);
 
 impl ObjectBuilders {
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn add(&mut self, id: Oid, repo_id: RepoId, repo_obj: RepoObject) {
+    pub fn add(&mut self, key: Okey, repo_id: RepoId, repo_obj: RepoObject) {
         let builder = self
             .0
-            .entry(id.to_owned())
+            .entry(key.to_owned())
             .or_insert_with(|| match repo_obj {
                 RepoObject::Link(_) => ObjectBuilder::Link {
-                    id,
+                    key,
                     map: Map::new(),
                 },
                 RepoObject::Topic(_) => ObjectBuilder::Topic {
-                    id,
+                    key,
                     map: Map::new(),
                 },
             });
@@ -155,17 +155,17 @@ impl ObjectBuilders {
         builder.insert(repo_id, repo_obj);
     }
 
-    pub fn finalize(self, context: &RepoId) -> Result<Objects> {
+    pub fn finalize(self) -> Result<Objects> {
         let mut map = HashMap::new();
 
-        for (oid, builder) in self.0 {
-            match builder.finalize(context) {
+        for (key, builder) in self.0 {
+            match builder.finalize(&key.1) {
                 Ok(object) => {
-                    map.insert(oid, object);
+                    map.insert(key, object);
                 }
 
                 Err(err) => {
-                    log::warn!("problem finalizing {}: {:?}", oid, err);
+                    log::warn!("problem finalizing {:?}: {:?}", key, err);
                 }
             }
         }
@@ -282,7 +282,7 @@ pub struct Topic {
     _map: Map,
     display_topic: RepoTopicWrapper,
     pub repo_topics: Vec<RepoTopicWrapper>,
-    pub id: Oid,
+    pub key: Okey,
 }
 
 impl TryFrom<Object> for Topic {
@@ -336,7 +336,7 @@ impl TryFrom<Option<&Object>> for Topic {
 
 impl std::cmp::PartialEq for Topic {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+        self.key == other.key
     }
 }
 
@@ -375,6 +375,10 @@ impl Topic {
             .iter()
             .flat_map(|topic| topic.child_ids())
             .collect_vec()
+    }
+
+    pub fn context_id(&self) -> &RepoId {
+        &self.key.1
     }
 
     pub fn display_color(&self) -> &str {
@@ -458,7 +462,7 @@ pub struct Link {
     _map: Map,
     display_link: RepoLinkWrapper,
     pub repo_links: Vec<RepoLinkWrapper>,
-    pub id: Oid,
+    pub key: Okey,
 }
 
 impl TryFrom<Object> for Link {
@@ -504,7 +508,7 @@ impl TryFrom<Option<Link>> for Link {
 
 impl std::cmp::PartialEq for Link {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+        self.key == other.key
     }
 }
 
@@ -533,6 +537,10 @@ impl Link {
         self.repo_links
             .iter()
             .any(|link| write_repo_ids.include(&link.repo_id))
+    }
+
+    pub fn context_id(&self) -> &RepoId {
+        &self.key.1
     }
 
     pub fn display_title(&self) -> &str {
@@ -587,8 +595,8 @@ impl Object {
 
     pub fn id(&self) -> &Oid {
         match self {
-            Self::Topic(Topic { id, .. }) => id,
-            Self::Link(Link { id, .. }) => id,
+            Self::Topic(Topic { key, .. }) => &key.0,
+            Self::Link(Link { key, .. }) => &key.0,
         }
     }
 
@@ -628,7 +636,7 @@ impl Object {
 }
 
 #[derive(Debug)]
-pub struct Objects(HashMap<Oid, Object>);
+pub struct Objects(HashMap<Okey, Object>);
 
 impl Objects {
     pub fn into_matches(
@@ -639,7 +647,7 @@ impl Objects {
     ) -> Result<BTreeSet<SearchMatch>> {
         let mut matches = BTreeSet::new();
 
-        for (_oid, object) in self.0.into_iter() {
+        for (_key, object) in self.0.into_iter() {
             matches.insert(object.to_search_match(locale, search)?);
         }
 
@@ -648,7 +656,7 @@ impl Objects {
         Ok(matches.into_iter().take(take).collect())
     }
 
-    pub fn into_hash(self) -> HashMap<Oid, Object> {
+    pub fn into_hash(self) -> HashMap<Okey, Object> {
         self.0
     }
 }

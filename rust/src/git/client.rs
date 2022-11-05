@@ -228,16 +228,16 @@ impl Client {
         }
     }
 
-    pub fn fetch_all(&self, oids: &[Oid]) -> ObjectBuilders {
+    pub fn fetch_all(&self, keys: &[Okey]) -> ObjectBuilders {
         let mut objects = ObjectBuilders::new();
 
         for repo_id in self.viewer.read_repo_ids.iter() {
-            for id in oids {
-                let object = self.fetch(repo_id, id);
+            for key in keys {
+                let object = self.fetch(repo_id, &key.0);
                 if object.is_none() {
                     continue;
                 }
-                objects.add(id.to_owned(), repo_id.to_owned(), object.unwrap());
+                objects.add(key.to_owned(), repo_id.to_owned(), object.unwrap());
             }
         }
 

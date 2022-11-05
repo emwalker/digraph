@@ -292,6 +292,7 @@ impl Downset for RedisFetchDownSet {
 }
 
 pub struct FindMatches {
+    pub context_repo_id: RepoId,
     pub limit: usize,
     pub locale: Locale,
     pub recursive: bool,
@@ -377,12 +378,13 @@ impl FindMatches {
             }
 
             for entry in entries.iter() {
-                if let Some(object) = client.fetch(repo_id, &entry.id) {
-                    if !filter.test(&object) {
+                if let Some(repo_object) = client.fetch(repo_id, &entry.id) {
+                    if !filter.test(&repo_object) {
                         continue;
                     }
 
-                    objects.add(entry.id.to_owned(), repo_id.to_owned(), object);
+                    let key = Okey(entry.id.to_owned(), self.context_repo_id.to_owned());
+                    objects.add(key, repo_id.to_owned(), repo_object);
                     count += 1;
 
                     if count >= self.limit {
@@ -393,7 +395,7 @@ impl FindMatches {
         }
 
         objects
-            .finalize(&self.viewer.context_repo_id)?
+            .finalize()?
             .into_matches(&self.search, self.locale, self.limit)
     }
 
@@ -424,14 +426,15 @@ impl FindMatches {
         for repo_id in repo_ids.iter() {
             log::info!("search: looking within {:?} for {:?}", repo_id, self.search);
             for topic_id in topic_ids.iter().take(self.limit) {
-                if let Some(object) = client.fetch(repo_id, topic_id) {
-                    objects.add(topic_id.to_owned(), repo_id.to_owned(), object);
+                if let Some(repo_object) = client.fetch(repo_id, topic_id) {
+                    let key = Okey(topic_id.to_owned(), self.context_repo_id.to_owned());
+                    objects.add(key, repo_id.to_owned(), repo_object);
                 }
             }
         }
 
         objects
-            .finalize(&self.viewer.context_repo_id)?
+            .finalize()?
             .into_matches(&self.search, self.locale, self.limit)
     }
 

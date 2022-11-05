@@ -46,6 +46,7 @@ export default function EditTopic(props: Props) {
   return (
     <div className="mt-3" data-testid="edit-topic">
       {repoTopics.map((repoTopic, index) => {
+        if (!repoTopic?.repo) return null
         const { id: repoId, name: repoName } = repoTopic.repo
         const showEditForm = repoTopic.viewerCanUpdate && viewer.selectedRepoId === repoId
 

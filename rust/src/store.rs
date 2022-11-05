@@ -40,7 +40,7 @@ impl Store {
             psql::RepositoryByNameLoader::new(viewer.clone(), db.clone());
         let repository_by_prefix_loader =
             psql::RepositoryByIdLoader::new(viewer.clone(), db.clone());
-        let object_loader = graphql::ObjectLoader::new(viewer.clone(), git.clone());
+        let object_loader = graphql::ObjectLoader::new(git.clone());
         let user_loader = psql::UserLoader::new(viewer.clone(), db.clone());
 
         Self {
@@ -169,7 +169,8 @@ impl Store {
     }
 
     pub async fn fetch_link(&self, link_id: Oid) -> Result<Option<git::Link>> {
-        match self.object_loader.load_one(link_id).await? {
+        let key = Okey(link_id, self.viewer.context_repo_id.to_owned());
+        match self.object_loader.load_one(key).await? {
             Some(object) => Ok(Some(object.try_into()?)),
             None => Ok(None),
         }
@@ -189,17 +190,37 @@ impl Store {
     }
 
     pub async fn fetch_objects(&self, ids: Vec<Oid>, take: usize) -> Result<Vec<git::Object>> {
-        let ids = ids.into_iter().take(take).collect::<Vec<Oid>>();
+        let context_id = &self.viewer.context_repo_id;
+        self.fetch_objects_with_context(ids, take, context_id).await
+    }
+
+    pub async fn fetch_objects_with_context(
+        &self,
+        ids: Vec<Oid>,
+        take: usize,
+        context_id: &RepoId,
+    ) -> Result<Vec<git::Object>> {
+        let keys = ids
+            .into_iter()
+            .take(take)
+            .map(|oid| Okey(oid, context_id.to_owned()))
+            .collect::<Vec<Okey>>();
+
         Ok(self
             .object_loader
-            .load_many(ids)
+            .load_many(keys)
             .await?
             .into_values()
             .collect::<Vec<git::Object>>())
     }
 
     pub async fn fetch_topic(&self, topic_id: Oid) -> Result<Option<git::Topic>> {
-        match self.object_loader.load_one(topic_id).await? {
+        let key = Okey(topic_id, self.viewer.context_repo_id.to_owned());
+        self.fetch_topic_by_key(key).await
+    }
+
+    pub async fn fetch_topic_by_key(&self, key: Okey) -> Result<Option<git::Topic>> {
+        match self.object_loader.load_one(key).await? {
             Some(object) => Ok(Some(object.try_into()?)),
             None => Ok(None),
         }
@@ -210,7 +231,17 @@ impl Store {
         topic_ids: Vec<Oid>,
         take: usize,
     ) -> Result<BTreeSet<git::Topic>> {
-        self.fetch_objects(topic_ids, take)
+        self.fetch_topics_with_context(topic_ids, take, &self.viewer.context_repo_id)
+            .await
+    }
+
+    pub async fn fetch_topics_with_context(
+        &self,
+        topic_ids: Vec<Oid>,
+        take: usize,
+        context_id: &RepoId,
+    ) -> Result<BTreeSet<git::Topic>> {
+        self.fetch_objects_with_context(topic_ids, take, context_id)
             .await?
             .into_iter()
             .map(git::Topic::try_from)
@@ -270,12 +301,13 @@ impl Store {
         };
 
         git::FindMatches {
+            context_repo_id: parent_topic.key.1.to_owned(),
             limit: 100,
             locale: Locale::EN,
             recursive: true,
             search: search.to_owned(),
             timespec: Timespec,
-            topic_id: parent_topic.id.to_owned(),
+            topic_id: parent_topic.key.0.to_owned(),
             viewer: viewer.to_owned(),
         }
         .call(&self.git, &fetcher)
@@ -297,9 +329,9 @@ impl Store {
 
     pub async fn select_repository(
         &self,
-        repository_id: Option<String>,
+        repo_id: Option<RepoId>,
     ) -> Result<psql::SelectRepositoryResult> {
-        psql::SelectRepository::new(self.viewer.clone(), repository_id)
+        psql::SelectRepository::new(self.viewer.clone(), repo_id)
             .call(&self.db)
             .await
     }

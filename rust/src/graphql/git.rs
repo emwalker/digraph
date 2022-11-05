@@ -13,25 +13,23 @@ use crate::prelude::*;
 pub use git::{Client, DataRoot};
 
 pub struct ObjectLoader {
-    viewer: Viewer,
     client: git::Client,
 }
 
 impl ObjectLoader {
-    pub fn new(viewer: Viewer, client: git::Client) -> Self {
-        Self { viewer, client }
+    pub fn new(client: git::Client) -> Self {
+        Self { client }
     }
 }
 
 #[async_trait::async_trait]
-impl Loader<Oid> for ObjectLoader {
+impl Loader<Okey> for ObjectLoader {
     type Value = git::Object;
     type Error = Error;
 
-    async fn load(&self, oids: &[Oid]) -> Result<HashMap<Oid, Self::Value>> {
-        log::debug!("batch load topics: {:?}", oids);
-        let context = &self.viewer.context_repo_id;
-        Ok(self.client.fetch_all(oids).finalize(context)?.into_hash())
+    async fn load(&self, keys: &[Okey]) -> Result<HashMap<Okey, Self::Value>> {
+        log::debug!("batch load topics: {:?}", keys);
+        Ok(self.client.fetch_all(keys).finalize()?.into_hash())
     }
 }
 

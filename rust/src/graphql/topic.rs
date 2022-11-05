@@ -188,7 +188,7 @@ impl Topic {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<ActivityLineItemConnection> {
-        let topic_id = Some(self.0.id.to_owned());
+        let topic_id = Some(self.0.key.0.to_owned());
         let store = ctx.data_unchecked::<Store>();
 
         let activity = store
@@ -238,7 +238,7 @@ impl Topic {
 
         let objects = ctx
             .data_unchecked::<Store>()
-            .fetch_objects(self.0.child_ids().to_owned(), 50)
+            .fetch_objects_with_context(self.0.child_ids().to_owned(), 50, self.0.context_id())
             .await?
             .into_iter();
         let mut matches = BTreeSet::new();
@@ -271,7 +271,7 @@ impl Topic {
     ) -> Result<TopicConnection> {
         let topics = ctx
             .data_unchecked::<Store>()
-            .fetch_topics(self.0.parent_topic_ids(), 50)
+            .fetch_topics_with_context(self.0.parent_topic_ids(), 50, self.0.context_id())
             .await?;
         relay::topics(after, before, first, last, topics)
     }
@@ -290,7 +290,7 @@ impl Topic {
     }
 
     async fn id(&self) -> &str {
-        self.0.id.as_str()
+        self.0.key.0.as_str()
     }
 
     async fn newly_added(&self) -> bool {

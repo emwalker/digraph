@@ -9,9 +9,13 @@ export default graphql`
         ...AddForm_viewer
       }
 
-      repository {
+      repo {
         id
         isPrivate
+      }
+
+      currentTopic {
+        ...ViewTopicPage_topic
       }
     }
   }

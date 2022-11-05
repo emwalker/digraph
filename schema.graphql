@@ -325,11 +325,13 @@ type RepoTopicDetails {
 
 input SelectRepositoryInput {
   clientMutationId: String
-  repositoryId: ID
+  currentTopicId: ID
+  repoId: ID
 }
 
 type SelectRepositoryPayload {
-  repository: Repository
+  currentTopic: Topic
+  repo: Repository
   viewer: User!
 }
 

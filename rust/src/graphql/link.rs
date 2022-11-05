@@ -138,7 +138,7 @@ impl Link {
     ) -> Result<TopicConnection> {
         let topics = ctx
             .data_unchecked::<Store>()
-            .fetch_topics(self.0.parent_topic_ids(), 50)
+            .fetch_topics_with_context(self.0.parent_topic_ids(), 50, self.0.context_id())
             .await?;
         relay::topics(after, before, first, last, topics)
     }
@@ -160,7 +160,7 @@ impl Link {
     }
 
     async fn id(&self) -> String {
-        self.0.id.to_string()
+        self.0.key.0.to_string()
     }
 
     // Used by the JS client to highlight a link that was just added

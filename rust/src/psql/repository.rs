@@ -209,33 +209,31 @@ impl Loader<String> for RepositoryByIdLoader {
 
 pub struct SelectRepository {
     actor: Viewer,
-    repository_id: Option<String>,
+    repo_id: Option<RepoId>,
 }
 
 pub struct SelectRepositoryResult {
-    pub repository: Option<Repository>,
+    pub repo: Option<Repository>,
     pub actor: user::Row,
 }
 
 impl SelectRepository {
-    pub fn new(actor: Viewer, repository_id: Option<String>) -> Self {
-        Self {
-            actor,
-            repository_id,
-        }
+    pub fn new(actor: Viewer, repo_id: Option<RepoId>) -> Self {
+        Self { actor, repo_id }
     }
 
     pub async fn call(&self, pool: &PgPool) -> Result<SelectRepositoryResult> {
         log::info!(
             "selecting repository {:?} for viewer {:?}",
-            self.repository_id,
+            self.repo_id,
             self.actor
         );
-        let repository_id = &self.repository_id;
 
-        let repository = if let Some(repository_id) = repository_id {
+        let repo_id = self.repo_id.as_ref().map(|repo_id| repo_id.to_string());
+
+        let repo = if let Some(repo_id) = repo_id {
             sqlx::query("update users set selected_repository_id = $1::uuid where id = $2::uuid")
-                .bind(repository_id)
+                .bind(repo_id.to_owned())
                 .bind(&self.actor.user_id)
                 .execute(pool)
                 .await?;
@@ -252,7 +250,7 @@ impl SelectRepository {
             );
 
             let row = sqlx::query_as::<_, repository::Row>(&query)
-                .bind(repository_id)
+                .bind(repo_id)
                 .bind(&self.actor.write_repo_ids.to_vec())
                 .fetch_one(pool)
                 .await?;
@@ -269,9 +267,6 @@ impl SelectRepository {
 
         let row = fetch_user(&self.actor.write_repo_ids, &self.actor.user_id, pool).await?;
 
-        Ok(SelectRepositoryResult {
-            actor: row,
-            repository,
-        })
+        Ok(SelectRepositoryResult { actor: row, repo })
     }
 }

@@ -12,6 +12,7 @@ import {
 type EdgeType = EdgeTypeOf<ViewerType['repos']>
 
 type Props = {
+  currentTopicId: string,
   viewer: SelectRepository_viewer$key,
 }
 
@@ -46,14 +47,14 @@ const viewerFragment = graphql`
   }
 `
 
-export default function SelectRepository(props: Props) {
+export default function SelectRepository({ currentTopicId: parentTopicId, ...rest }: Props) {
   const selectRepo = useMutation<selectRepositoryMutation>(selectRepositoryQuery)[0]
-  const viewer = useFragment(viewerFragment, props.viewer)
+  const viewer = useFragment(viewerFragment, rest.viewer)
 
   const onChange = useCallback((event: FormEvent<HTMLSelectElement>) => {
     const repoId = event.currentTarget.value === '' ? null : event.currentTarget.value
     selectRepo({
-      variables: { input: { repositoryId: repoId } },
+      variables: { input: { repoId, currentTopicId: parentTopicId } },
     })
   }, [selectRepo])
 

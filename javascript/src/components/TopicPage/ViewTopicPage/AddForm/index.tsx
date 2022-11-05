@@ -2,8 +2,9 @@ import React from 'react'
 import { graphql, useFragment } from 'react-relay'
 
 import {
-  AddForm_topic$key, AddForm_topic$data as TopicType,
-} from '__generated__/AddForm_topic.graphql'
+  AddForm_parentTopic$key,
+  AddForm_parentTopic$data as TopicType,
+} from '__generated__/AddForm_parentTopic.graphql'
 import {
   AddForm_viewer$key, AddForm_viewer$data as ViewerType,
 } from '__generated__/AddForm_viewer.graphql'
@@ -14,7 +15,7 @@ import './index.css'
 import Blankslate from 'components/ui/Blankslate'
 
 type Props = {
-  topic: AddForm_topic$key,
+  parentTopic: AddForm_parentTopic$key,
   viewer: AddForm_viewer$key,
 }
 
@@ -34,8 +35,10 @@ const viewerFragment = graphql`
   }
 `
 
-const topicFragment = graphql`
-  fragment AddForm_topic on Topic {
+const parentTopicFragment = graphql`
+  fragment AddForm_parentTopic on Topic {
+    id
+
     ...AddLink_parentTopic
     ...AddTopic_parentTopic
 
@@ -81,7 +84,7 @@ function InnerAddForm({ isPrivateRepo, viewer, topic }: InnerAddFormProps) {
 
 export default function AddForm(props: Props) {
   const viewer = useFragment(viewerFragment, props.viewer)
-  const topic = useFragment(topicFragment, props.topic)
+  const parentTopic = useFragment(parentTopicFragment, props.parentTopic)
   const isPrivateRepo = !!viewer.selectedRepo?.isPrivate
 
   const selectRepositoryStyle = {
@@ -92,8 +95,8 @@ export default function AddForm(props: Props) {
 
   return (
     <form className="border rounded-1 px-md-2 px-3 mt-3" style={selectRepositoryStyle}>
-      <SelectRepository viewer={viewer} />
-      <InnerAddForm isPrivateRepo={isPrivateRepo} topic={topic} viewer={viewer} />
+      <SelectRepository currentTopicId={parentTopic.id} viewer={viewer} />
+      <InnerAddForm isPrivateRepo={isPrivateRepo} topic={parentTopic} viewer={viewer} />
     </form>
   )
 }

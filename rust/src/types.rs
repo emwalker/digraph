@@ -308,6 +308,20 @@ impl Oid {
     }
 }
 
+// Lookup key for a topic or link from the standpoint of a specific repo.
+//
+// Links and topics are shown differently depending on what repo is currently selected by the
+// user.  It is convenient to handle objects viewed from the standpoint of different context repos
+// as different objects with different lookup keys, because knowing the context allows us to select
+// a "display" repo topic or repo link to be used for display purposes. If we select the display
+// repo topic or repo link up front on the basis of the context repo, we don't have to calculate it
+// dynamically over and over.  We need a distinct lookup key for each context repo so that we can
+// cache these different objects in the same maps.  We might need to have different versions of the
+// same link or topic if we're in the process of changing the selected repo as a result of a
+// mutation, for example.
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct Okey(pub Oid, pub RepoId);
+
 pub fn random_id() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)

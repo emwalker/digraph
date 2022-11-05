@@ -87,7 +87,7 @@ const topicFragment = graphql`
       }
     }
 
-    ...AddForm_topic
+    ...AddForm_parentTopic
   }
 `
 
@@ -211,7 +211,7 @@ export default function ViewTopicPage(props: Props) {
           />
           {renderTopicViews(topic)}
           {canEdit
-            ? <AddForm topic={topic} viewer={viewer} />
+            ? <AddForm parentTopic={topic} viewer={viewer} />
             : renderNotification()}
         </RightColumn>
         <LeftColumn>

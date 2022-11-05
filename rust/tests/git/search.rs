@@ -133,6 +133,7 @@ mod fetch_matches {
         let viewer = actor();
 
         let FindMatchesResult { matches } = FindMatches {
+            context_repo_id: RepoId::wiki(),
             limit: 100,
             locale: Locale::EN,
             recursive,
@@ -229,6 +230,7 @@ mod fetch_matches {
         assert!(search.urls.is_empty());
 
         let FindMatchesResult { matches } = FindMatches {
+            context_repo_id: RepoId::wiki(),
             limit: 3,
             locale: Locale::EN,
             recursive: true,

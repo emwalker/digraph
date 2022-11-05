@@ -98,12 +98,14 @@ pub struct RemoveTopicTimerangePayload {
 #[derive(Debug, InputObject)]
 pub struct SelectRepositoryInput {
     pub client_mutation_id: Option<String>,
-    pub repository_id: Option<ID>,
+    pub current_topic_id: Option<ID>,
+    pub repo_id: Option<ID>,
 }
 
 #[derive(Debug, SimpleObject)]
 pub struct SelectRepositoryPayload {
-    repository: Option<Repository>,
+    current_topic: Option<Topic>,
+    repo: Option<Repository>,
     viewer: User,
 }
 
@@ -382,12 +384,34 @@ impl MutationRoot {
         ctx: &Context<'_>,
         input: SelectRepositoryInput,
     ) -> Result<SelectRepositoryPayload> {
-        let psql::SelectRepositoryResult { repository, actor } = ctx
-            .data_unchecked::<Store>()
-            .select_repository(input.repository_id.map(|id| id.to_string()))
-            .await?;
+        let SelectRepositoryInput {
+            repo_id,
+            current_topic_id,
+            ..
+        } = input;
+
+        let repo_id: Option<RepoId> = match repo_id {
+            Some(repo_id) => Some(repo_id.to_string().try_into()?),
+            None => None,
+        };
+
+        let store = ctx.data_unchecked::<Store>();
+        let psql::SelectRepositoryResult { repo, actor } =
+            store.select_repository(repo_id.to_owned()).await?;
+
+        let current_topic = match (repo_id, current_topic_id) {
+            (Some(repo_id), Some(topic_id)) => {
+                let topic_id: Oid = topic_id.to_string().try_into()?;
+                let key = Okey(topic_id, repo_id.to_owned());
+                Some(store.fetch_topic_by_key(key).await?.try_into()?)
+            }
+
+            _ => None,
+        };
+
         Ok(SelectRepositoryPayload {
-            repository,
+            repo,
+            current_topic,
             viewer: User::from(&actor),
         })
     }
