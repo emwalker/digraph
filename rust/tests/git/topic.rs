@@ -543,16 +543,21 @@ mod update_topic_synonyms {
             actor: actor(),
             repo_id: repo,
             topic_id,
-            synonyms: vec![synonym("A topic"), synonym("  Second synonym ")],
+            synonyms: vec![
+                synonym("A topic"),
+                synonym("  Second synonym "),
+                synonym("\tSynonym with\ttabs\t"),
+            ],
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         let synonyms = repo_topic.synonyms();
-        assert_eq!(synonyms.len(), 2);
+        assert_eq!(synonyms.len(), 3);
 
         assert_eq!(synonyms[0].name, "A topic");
         assert_eq!(synonyms[1].name, "Second synonym");
+        assert_eq!(synonyms[2].name, "Synonym with tabs");
     }
 
     #[test]
@@ -599,15 +604,16 @@ mod upsert_topic {
     use super::*;
     use digraph::git::{OnMatchingSynonym, Search};
 
-    #[test]
-    fn topic_added() {
+    fn assert_topic_added(name: &str, expected_name: &str) {
         let f = Fixtures::copy("simple");
         let search = Search::parse("Topic name").unwrap();
         let repo = RepoId::wiki();
         let path = parse_id("00001");
 
+        assert!(f.find_topic(expected_name).is_none());
+
         let result = f
-            .upsert_topic(&repo, "Topic name", &path, OnMatchingSynonym::Ask)
+            .upsert_topic(&repo, name, &path, OnMatchingSynonym::Ask)
             .unwrap();
 
         assert!(result.saved);
@@ -621,6 +627,20 @@ mod upsert_topic {
             .git
             .appears_in(&repo, &search, &topic.to_search_entry())
             .unwrap());
+
+        assert!(f.find_topic(expected_name).is_some());
+    }
+
+    #[test]
+    fn topic_added() {
+        assert_topic_added("Topic name", "Topic name");
+    }
+
+    #[test]
+    fn whitespace_removed() {
+        assert_topic_added("\tTopic name\t", "Topic name");
+        assert_topic_added("\nTopic name  ", "Topic name");
+        assert_topic_added("   Topic   name  ", "Topic name");
     }
 
     #[test]

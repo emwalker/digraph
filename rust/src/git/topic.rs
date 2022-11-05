@@ -1,11 +1,17 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
+use itertools::Itertools;
+
 use super::{
     activity, Kind, Mutation, ParentTopic, RepoLink, RepoObject, RepoTopic, RepoTopicDetails,
     RepoTopicMetadata, RepoTopicWrapper, SaveChangesForPrefix, Synonym, SynonymEntry, SynonymMatch,
     TopicChild,
 };
 use crate::prelude::*;
+
+fn normalize_name(name: &str) -> String {
+    name.split_whitespace().join(" ")
+}
 
 pub struct DeleteTopic {
     pub actor: Viewer,
@@ -377,7 +383,7 @@ impl UpdateTopicSynonyms {
 
         // Preserve the date the synonym was added
         for new in &self.synonyms {
-            let name = new.name.trim();
+            let name = normalize_name(&new.name);
             if name.is_empty() {
                 continue;
             }
@@ -500,28 +506,29 @@ impl UpsertTopic {
     where
         S: SaveChangesForPrefix,
     {
+        let name = normalize_name(&self.name);
         let parent = self.ensure_topic(&mutation, &self.parent_topic_id);
-        let matches = self.find_matches(&mutation)?;
+        let matches = self.find_matches(&mutation, &name)?;
 
         if matches.is_empty() {
-            return self.add_repo_topic(mutation, store, parent, matches);
+            return self.add_repo_topic(mutation, store, name, parent, matches);
         }
 
         match &self.on_matching_synonym {
             OnMatchingSynonym::Ask => self.request_decision(mutation, parent, matches),
 
             OnMatchingSynonym::CreateDistinct => {
-                self.add_repo_topic(mutation, store, parent, matches)
+                self.add_repo_topic(mutation, store, name, parent, matches)
             }
 
             OnMatchingSynonym::Update(topic_id) => {
-                self.update_repo_topic(mutation, store, topic_id, parent, matches)
+                self.update_repo_topic(mutation, store, name, topic_id, parent, matches)
             }
         }
     }
 
-    fn find_matches(&self, mutation: &Mutation) -> Result<BTreeSet<SynonymMatch>> {
-        mutation.synonym_phrase_matches(&self.actor.read_repo_ids, &self.name)
+    fn find_matches(&self, mutation: &Mutation, name: &String) -> Result<BTreeSet<SynonymMatch>> {
+        mutation.synonym_phrase_matches(&self.actor.read_repo_ids, name)
     }
 
     fn request_decision(
@@ -563,6 +570,7 @@ impl UpsertTopic {
         &self,
         mutation: Mutation,
         store: &S,
+        name: String,
         parent: RepoTopic,
         matches: BTreeSet<SynonymMatch>,
     ) -> Result<UpsertTopicResult>
@@ -576,7 +584,7 @@ impl UpsertTopic {
             );
         }
 
-        let (child, parent_topics) = self.make_topic(&parent)?;
+        let (child, parent_topics) = self.make_topic(&parent, name)?;
         self.persist_repo_topic(mutation, store, child, parent, parent_topics)
     }
 
@@ -612,6 +620,7 @@ impl UpsertTopic {
         &self,
         mutation: Mutation,
         store: &S,
+        name: String,
         topic_id: &Oid,
         parent: RepoTopic,
         matches: BTreeSet<SynonymMatch>,
@@ -636,7 +645,7 @@ impl UpsertTopic {
                 details.synonyms.push(Synonym {
                     added: date,
                     locale: self.locale,
-                    name: self.name.to_owned(),
+                    name,
                 });
             }
 
@@ -705,7 +714,11 @@ impl UpsertTopic {
         })
     }
 
-    fn make_topic(&self, parent: &RepoTopic) -> Result<(RepoTopic, BTreeSet<ParentTopic>)> {
+    fn make_topic(
+        &self,
+        parent: &RepoTopic,
+        name: String,
+    ) -> Result<(RepoTopic, BTreeSet<ParentTopic>)> {
         let added = chrono::Utc::now();
         let id = Oid::make();
         let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
@@ -720,7 +733,7 @@ impl UpsertTopic {
                     synonyms: vec![Synonym {
                         added,
                         locale: self.locale.to_owned(),
-                        name: self.name.to_owned(),
+                        name,
                     }],
                     timerange: None,
                 }),
