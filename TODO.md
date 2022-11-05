@@ -1,14 +1,13 @@
 Next:
 
 Before switchover:
-* Show newly added topic after choosing to create a new topic on an upsert match
 * Bug: the topic and link counts on the front page are wrong
 * Bug: client: some history entries are not displaying properly
 * Bug: The topic "Reading list" doesn't reliably show at the top of its own topic search
 * Bug: a reference to XupOirPbeLkV5aJfU-TsqPxQ5gNf33Lq-40g_3Pun8Q (Reading list) is improperly being added to the Wiki repo
 * Bug: no optimistic response when upserting a link
 * Bug: Topic upsert of "Knowledge" is taking 44 seconds (related to cycle detection?)
-* Bug: when a topic has different display names in different repos, the display name is not updated when changing the repo
+* Bug: when a topic has different display names in different repos, the display name is not updated when changing the repo.  Possible fix: include the context repo id in the keys that are used to fetch topics and links
 * Show a blank edit form when a repo is selected and there's no reference for the topic/link
 * When upserting a topic that exists in a private repo into the Wiki repo, get confirmation first
 * When upserting a topic that exists in a private repo into the Wiki repo, add a non-nil details struct

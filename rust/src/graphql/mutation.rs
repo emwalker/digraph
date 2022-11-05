@@ -199,8 +199,9 @@ pub struct UpsertTopicInput {
 #[derive(SimpleObject)]
 pub struct UpsertTopicPayload {
     alerts: Vec<alert::Alert>,
-    topic_edge: Option<TopicEdge>,
     matching_topics: Vec<Topic>,
+    topic_edge: Option<TopicEdge>,
+    updated_parent_topic: Topic,
 }
 
 #[derive(Debug, InputObject)]
@@ -492,6 +493,8 @@ impl MutationRoot {
         input: UpsertTopicInput,
     ) -> Result<UpsertTopicPayload> {
         log::info!("upserting topic: {:?}", input);
+
+        let parent_id: Oid = (&input.parent_topic_id).try_into()?;
         let store = ctx.data_unchecked::<Store>();
 
         let git::UpsertTopicResult {
@@ -518,10 +521,22 @@ impl MutationRoot {
             matching_topics.push(topic);
         }
 
+        let result = store.fetch_topic(parent_id.to_owned()).await?;
+        let updated_parent_topic: Topic = match result {
+            Some(parent_topic) => parent_topic.into(),
+            None => {
+                return Err(Error::NotFound(format!(
+                    "expected a parent topic: {}",
+                    parent_id
+                )))
+            }
+        };
+
         Ok(UpsertTopicPayload {
             alerts: alerts.iter().map(alert::Alert::from).collect_vec(),
-            topic_edge,
             matching_topics,
+            topic_edge,
+            updated_parent_topic,
         })
     }
 

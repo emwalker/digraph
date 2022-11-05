@@ -41,6 +41,7 @@ export default function AddTopic(props: Props) {
     (alert: AlertMessageType, matchingTopics: MatchingTopicsType) => (
       <UpsertTopicAlert
         alert={alert}
+        key={alert.id}
         matchingTopics={matchingTopics}
         name={name}
         parentTopicId={parentTopic.id}

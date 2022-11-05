@@ -14,7 +14,7 @@ export type MatchingTopicsType = NonNullable<ResponseType['upsertTopic']>['match
 function makeUpdater(parentTopicId: string) {
   return (store: RecordSourceSelectorProxy) => {
     const connectionId = ConnectionHandler.getConnectionID(parentTopicId,
-      'ViewTopicPage_topic_children', { searchString: undefined })
+      'ViewTopicPage_topic_children', { searchString: '' })
 
     if (!connectionId) {
       console.log('connection id not found for parent topic:', parentTopicId)
@@ -52,6 +52,10 @@ const query = graphql`
         text
         type
         id
+      }
+
+      updatedParentTopic {
+        ...ViewTopicPage_topic
       }
 
       topicEdge {
@@ -92,7 +96,7 @@ export function makeUpsertTopic<E>({
 }: Props<E>) {
   const upsertTopic = useMutation<upsertTopicMutation>(query)[0]
 
-  const onCompleted = ((response: ResponseType) => {
+  const onCompleted = useCallback(((response: ResponseType) => {
     const alerts = response.upsertTopic?.alerts || []
     const matchingTopics = response.upsertTopic?.matchingTopics || []
     const addAlert = window.flashMessages?.addAlert
@@ -100,7 +104,7 @@ export function makeUpsertTopic<E>({
 
     for (const alert of alerts)
       addAlert(makeAlert(alert, matchingTopics))
-  })
+  }), [makeAlert])
 
   return useCallback((event: E) => {
     if (ignoreEvent && ignoreEvent(event)) return

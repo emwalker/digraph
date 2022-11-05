@@ -7,5 +7,5 @@ declare type Props = {
     parentTopicId: string;
     selectedRepoId: string;
 };
-export default function UpsertTopicAlert({ alert, matchingTopics, selectedRepoId, name, parentTopicId, ...rest }: Props): JSX.Element;
+export default function UpsertTopicAlert({ alert, matchingTopics, selectedRepoId, name, parentTopicId, }: Props): JSX.Element;
 export {};

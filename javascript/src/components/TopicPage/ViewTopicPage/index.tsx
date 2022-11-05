@@ -187,7 +187,7 @@ function renderTopicViews(topic: TopicType) {
   )
 }
 
-export default function TopicPage(props: Props) {
+export default function ViewTopicPage(props: Props) {
   const topic = useFragment(topicFragment, props.topic)
   const viewer = useFragment(viewerFragment, props.viewer)
   const children = liftNodes(topic.children)

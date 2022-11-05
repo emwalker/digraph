@@ -527,6 +527,7 @@ type UpsertTopicPayload implements Alertable {
   alerts: [Alert!]!
   topicEdge: TopicEdge
   matchingTopics: [Topic!]!
+  updatedParentTopic: Topic!
 }
 
 type UpsertTopicTimerangePayload implements Alertable {

@@ -18,16 +18,17 @@ export default function UpsertTopicAlert({
   alert, matchingTopics, selectedRepoId, name, parentTopicId,
 }: Props) {
   if (!/existing topic/.test(alert.text) || matchingTopics.length === 0)
-    return <Alert key={alert.id} alert={alert} />
+    return <Alert alert={alert} />
 
   const removeAlert = window.flashMessages?.removeAlert
   const removeHandler = () => removeAlert && removeAlert(alert)
 
   return (
-    <Alert key={alert.id} alert={alert}>
+    <Alert alert={alert}>
       <ul className="px-5 py-3">
         {matchingTopics.map((topic) => (
           <UpdateTopic
+            key={topic.id}
             name={name}
             parentTopicId={parentTopicId}
             removeAlert={removeHandler}
