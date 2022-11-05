@@ -13,6 +13,48 @@ fn normalize_name(name: &str) -> String {
     name.split_whitespace().join(" ")
 }
 
+fn append_synonym(
+    mut repo_topic: RepoTopic,
+    name: &str,
+    locale: Locale,
+    date: Timestamp,
+) -> RepoTopic {
+    let mut synonyms = vec![Synonym {
+        name: name.to_owned(),
+        added: date,
+        locale: Locale::EN,
+    }];
+
+    match &mut repo_topic.metadata.details {
+        Some(details) => {
+            let mut seen: HashSet<(String, Locale)> = HashSet::new();
+            seen.insert((name.to_owned(), locale));
+
+            for synonym in &details.synonyms {
+                let key = (synonym.name.to_owned(), synonym.locale);
+                if seen.contains(&key) {
+                    continue;
+                }
+
+                seen.insert(key);
+                synonyms.push(synonym.to_owned());
+            }
+
+            details.synonyms = synonyms;
+        }
+
+        None => {
+            repo_topic.metadata.details = Some(RepoTopicDetails {
+                root: false,
+                synonyms,
+                timerange: None,
+            });
+        }
+    }
+
+    repo_topic
+}
+
 pub struct DeleteTopic {
     pub actor: Viewer,
     pub repo: RepoId,
@@ -527,7 +569,7 @@ impl UpsertTopic {
         }
     }
 
-    fn find_matches(&self, mutation: &Mutation, name: &String) -> Result<BTreeSet<SynonymMatch>> {
+    fn find_matches(&self, mutation: &Mutation, name: &str) -> Result<BTreeSet<SynonymMatch>> {
         mutation.synonym_phrase_matches(&self.actor.read_repo_ids, name)
     }
 
@@ -639,19 +681,7 @@ impl UpsertTopic {
         let parent_topics = topic.parent_topics.clone();
 
         topic.parent_topics.insert(parent.to_parent_topic());
-
-        match &mut topic.metadata.details {
-            Some(details) => {
-                details.synonyms.push(Synonym {
-                    added: date,
-                    locale: self.locale,
-                    name,
-                });
-            }
-
-            None => {}
-        }
-
+        topic = append_synonym(topic, &name, self.locale, date);
         self.persist_repo_topic(mutation, store, topic, parent, parent_topics)
     }
 

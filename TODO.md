@@ -1,7 +1,6 @@
 Next:
 
 Before switchover:
-* Bug: when a synonym is upserted, it's not deduped (test case: upsert an existing synonym and click "update")
 * Show newly added topic after choosing to create a new topic on an upsert match
 * Bug: the topic and link counts on the front page are wrong
 * Bug: client: some history entries are not displaying properly

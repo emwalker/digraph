@@ -602,7 +602,7 @@ mod update_topic_synonyms {
 #[cfg(test)]
 mod upsert_topic {
     use super::*;
-    use digraph::git::{OnMatchingSynonym, Search};
+    use digraph::git::{OnMatchingSynonym, Search, UpsertTopicResult};
 
     fn assert_topic_added(name: &str, expected_name: &str) {
         let f = Fixtures::copy("simple");
@@ -664,27 +664,29 @@ mod upsert_topic {
         assert!(!result.matching_repo_topics.is_empty());
     }
 
-    fn assert_update_works(repo_1: &RepoId, repo_2: &RepoId, expected_parent_topics: &[&str]) {
+    fn upsert_topic(repo_1: &RepoId, repo_2: &RepoId, name: &str) -> Result<UpsertTopicResult> {
         let f = Fixtures::copy("simple");
         let topic_id = parse_id("00001");
 
         let result = f
-            .upsert_topic(&repo_1, "Topic name", &topic_id, OnMatchingSynonym::Ask)
+            .upsert_topic(&repo_1, name, &topic_id, OnMatchingSynonym::Ask)
             .unwrap();
         assert!(result.saved);
         let parent_topic = result.repo_topic.unwrap();
         let parent_id = parent_topic.topic_id();
 
         let topic_path = parse_id("00002");
-        let result = f
-            .upsert_topic(
-                repo_2,
-                "Topic name",
-                &topic_path,
-                OnMatchingSynonym::Update(parent_id.to_owned()),
-            )
-            .unwrap();
 
+        f.upsert_topic(
+            repo_2,
+            name,
+            &topic_path,
+            OnMatchingSynonym::Update(parent_id.to_owned()),
+        )
+    }
+
+    fn assert_update_works(repo_1: &RepoId, repo_2: &RepoId, expected_parent_topics: &[&str]) {
+        let result = upsert_topic(repo_1, repo_2, "Topic name").unwrap();
         assert!(result.repo_topic.is_some());
         assert!(result.saved);
 
@@ -708,6 +710,14 @@ mod upsert_topic {
     #[test]
     fn create_a_reference_in_a_private_repo() {
         assert_update_works(&RepoId::wiki(), &RepoId::other(), &["00002"]);
+    }
+
+    #[test]
+    fn synonyms_are_deduped() {
+        let wiki_id = RepoId::wiki();
+        upsert_topic(&wiki_id, &wiki_id, "Topic name").unwrap();
+        let result = upsert_topic(&wiki_id, &wiki_id, "Topic name").unwrap();
+        assert_eq!(result.repo_topic.unwrap().metadata.synonyms().len(), 1);
     }
 
     #[test]
