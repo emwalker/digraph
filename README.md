@@ -1,9 +1,10 @@
 # Digraph
 
-Digraph is an app that helps keep track of large numbers of links by organizing them into topics.  No topic is too specific, and if a link points to something that you might want to refer to later on for some reason, it can be added.  Links can be found by searching within one or more subtopics.
+Keep public and private repos of large numbers of links and topics that can be overlayed on top of one another in a unified view.  Every modification is tracked in a history of changes that will eventually provide the basis for traveling back in time.
 
 * [Public site](https://digraph.app)
-* [Long-term vision](https://blog.digraph.app/2022-05-29-next-steps.html)
+* [Roadmap](https://github.com/users/emwalker/projects/1/views/1)
+* [Vision](https://blog.digraph.app/2022-05-29-next-steps.html)
 
 ## Screenshots
 
@@ -20,7 +21,8 @@ Digraph is an app that helps keep track of large numbers of links by organizing 
 Technical details:
 
 * GraphQL backend written in Rust
-* Postgres
+* Graphs of links and topics stored in individual Git repos
+* Other metadata stored in Postgres
 * React/Relay client
 * Webpack 5
 * Server-side rendering with [Razzle](https://github.com/jaredpalmer/razzle)
