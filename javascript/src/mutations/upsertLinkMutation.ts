@@ -13,7 +13,8 @@ function makeUpdater(parentTopicId: string | null) {
 
   return (store: RecordSourceSelectorProxy) => {
     const connectionId = ConnectionHandler.getConnectionID(parentTopicId,
-      'ViewTopicPage_topic_children')
+      'ViewTopicPage_topic_children', { searchString: '' })
+
     if (!connectionId) {
       console.log('no connection id found under topic:', parentTopicId)
       return

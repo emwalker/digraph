@@ -195,42 +195,8 @@ describe('<ViewTopicPage>', () => {
   })
 
   describe('adding a link', () => {
-    const linkUrl = 'http://www.google.com'
-
     describe('under a Wiki topic', () => {
       const repoIds = ['wiki-repo-id']
-
-      describe('a simple case', () => {
-        beforeEach(async () => {
-          const { environment, user } = await setup(makeMocks, { repoIds })
-
-          const urlInput = screen.getByTestId('link-url-input')
-          await user.type(urlInput, `${linkUrl}{enter}`)
-
-          environment.mock.queueOperationResolver(MockPayloadGenerator.generate)
-          expect(environment.mock.getAllOperations().length).toBe(1)
-          expect(screen.getByText('Existing link')).toBeInTheDocument()
-        })
-
-        it('works', () => {
-          const list = screen.getByTestId('List')
-          expect(list).toHaveTextContent(linkUrl)
-          expect(list).not.toHaveTextContent('random')
-          expect(list).not.toHaveTextContent('Close')
-        })
-
-        it('adds the link above existing links and below existing topics', async () => {
-          const list = screen.getByTestId('List')
-          const titles = Array.from(list.querySelectorAll('li div.item-title'))
-            .map((child) => child.textContent)
-
-          expect(titles).toEqual([
-            'Existing topic',
-            'Fetching link title ...',
-            'Existing link',
-          ])
-        })
-      })
 
       it('allows adding a link if selectedRepoId: private-repo-id', async () => {
         await setup(makeMocks, { repoIds, selectedRepoId: 'private-repo-id' })
