@@ -166,8 +166,8 @@ pub struct View {
 }
 
 impl View {
-    pub fn ensure(root: &DataRoot, prefix: &RepoId, timespec: &Timespec) -> Result<Self> {
-        let repo = Repo::ensure(root, prefix)?;
+    pub fn ensure(root: &DataRoot, repo_id: &RepoId, timespec: &Timespec) -> Result<Self> {
+        let repo = Repo::ensure(root, repo_id)?;
         let commit = repo.commit_oid(timespec)?;
         Ok(Self { repo, commit })
     }
@@ -253,9 +253,9 @@ impl View {
                 match self.repo.inner.find_blob(oid) {
                     Ok(blob) => {
                         let haystack = blob.content();
-                        if has_subsequence(haystack, b"\nkind: Topic\n") {
+                        if has_subsequence(haystack, b"kind: RepoTopic\n") {
                             topic_count += 1;
-                        } else if has_subsequence(haystack, b"\nkind: Link\n") {
+                        } else if has_subsequence(haystack, b"kind: RepoLink\n") {
                             link_count += 1;
                         }
                     }

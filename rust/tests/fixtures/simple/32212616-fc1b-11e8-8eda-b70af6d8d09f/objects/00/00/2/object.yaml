@@ -1,6 +1,6 @@
 ---
 apiVersion: objects/v1
-kind: Topic
+kind: RepoTopic
 metadata:
   added: "2021-03-18T00:09:59.350933Z"
   id: "00002"

@@ -1,5 +1,5 @@
 ---
-kind: Topic
+kind: RepoTopic
 apiVersion: objects/v1
 metadata:
   added: "2022-07-04T15:51:59.103316907Z"

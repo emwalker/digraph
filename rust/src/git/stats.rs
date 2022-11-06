@@ -63,11 +63,11 @@ impl FetchStats {
     {
         let mut stats = vec![];
 
-        for prefix in self.viewer.read_repo_ids.iter() {
-            let view = git.view(prefix)?;
+        for repo_id in self.viewer.read_repo_ids.iter() {
+            let view = git.view(repo_id)?;
 
             let commit = view.commit.to_string();
-            let s = match cache.fetch(prefix, &commit)? {
+            let s = match cache.fetch(repo_id, &commit)? {
                 Some(stats) => stats,
 
                 None => {
@@ -78,12 +78,12 @@ impl FetchStats {
                     };
                     // Save a placeholder that will be updated with the computed values.  Expires
                     // after 180 seconds in case something happens and it should be retried.
-                    cache.save(prefix, &commit, &stats, Some(120))?;
+                    cache.save(repo_id, &commit, &stats, Some(120))?;
 
                     let view = view.duplicate()?;
                     let cache = cache.to_owned();
                     let commit = commit.to_owned();
-                    let prefix = prefix.to_owned();
+                    let prefix = repo_id.to_owned();
 
                     let _ = actix_web::web::block(move || {
                         let key = format!("{}:{}", prefix, commit);
