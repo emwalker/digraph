@@ -1,6 +1,6 @@
-import { Dispatch, SetStateAction, useCallback, KeyboardEvent } from 'react'
+import { Dispatch, SetStateAction, useCallback } from 'react'
 import { graphql, useMutation, ConnectionHandler } from 'react-relay'
-import { RecordSourceSelectorProxy } from 'relay-runtime'
+import { RecordSourceSelectorProxy, RecordProxy } from 'relay-runtime'
 
 import { AlertMessageType } from 'components/types'
 import {
@@ -11,22 +11,46 @@ import {
 
 export type MatchingTopicsType = NonNullable<ResponseType['upsertTopic']>['matchingTopics']
 
+function insertEdge(
+  parentTopicId: string, store: RecordSourceSelectorProxy, topicEdge: RecordProxy<{}>,
+) {
+  const connectionId = ConnectionHandler.getConnectionID(parentTopicId,
+    'ViewTopicPage_topic_children', { searchString: '' })
+
+  if (!connectionId) {
+    console.log('connection id not found for parent topic:', parentTopicId)
+    return
+  }
+
+  const connection = store.get(connectionId)
+  if (!connection) return
+
+  ConnectionHandler.insertEdgeBefore(connection, topicEdge)
+}
+
+let tmpId = 0
+
+function makeOptimisticUpdater(parentTopicId: string, displayName: string) {
+  return (store: RecordSourceSelectorProxy) => {
+    tmpId += 1
+    const id = `client:topic:${tmpId}`
+    const node = store.create(id, 'Topic')
+
+    node.setValue(id, 'id')
+    node.setValue(displayName, 'displayName')
+    node.setValue(true, 'loading')
+    node.setValue(null, 'repoTopics')
+    node.setValue(false, 'showRepoOwnership')
+
+    const topicEdge = store.create(`client:newEdge:${tmpId}`, 'TopicChildEdge')
+    topicEdge.setLinkedRecord(node, 'node')
+
+    return insertEdge(parentTopicId, store, topicEdge)
+  }
+}
+
 function makeUpdater(parentTopicId: string) {
   return (store: RecordSourceSelectorProxy) => {
-    const connectionId = ConnectionHandler.getConnectionID(parentTopicId,
-      'ViewTopicPage_topic_children', { searchString: '' })
-
-    if (!connectionId) {
-      console.log('connection id not found for parent topic:', parentTopicId)
-      return
-    }
-
-    const connection = store.get(connectionId)
-    if (!connection) {
-      console.log('connection not found for id:', connectionId)
-      return
-    }
-
     const payload = store.getRootField('upsertTopic')
     if (!payload) {
       console.log('payload not found in mutation response')
@@ -39,7 +63,7 @@ function makeUpdater(parentTopicId: string) {
       return
     }
 
-    ConnectionHandler.insertEdgeBefore(connection, topicEdge)
+    return insertEdge(parentTopicId, store, topicEdge)
   }
 }
 
@@ -106,28 +130,32 @@ export function makeUpsertTopic<E>({
       addAlert(makeAlert(alert, matchingTopics))
   }), [makeAlert])
 
-  return useCallback((event: E) => {
-    if (ignoreEvent && ignoreEvent(event)) return
+  return useCallback(
+    (event: E) => {
+      if (ignoreEvent && ignoreEvent(event)) return
 
-    if (!selectedRepoId) {
-      console.log('repo not selected')
-      return
-    }
+      if (!selectedRepoId) {
+        console.log('repo not selected')
+        return
+      }
 
-    upsertTopic({
-      onCompleted,
-      updater: makeUpdater(parentTopicId),
-      variables: {
-        input: {
-          name,
-          onMatchingSynonym,
-          parentTopicId,
-          repoId: selectedRepoId,
-          updateTopicId,
+      upsertTopic({
+        onCompleted,
+        updater: makeUpdater(parentTopicId),
+        optimisticUpdater: makeOptimisticUpdater(parentTopicId, name),
+        variables: {
+          input: {
+            name,
+            onMatchingSynonym,
+            parentTopicId,
+            repoId: selectedRepoId,
+            updateTopicId,
+          },
         },
-      },
-    })
+      })
 
-    setName?.('')
-  }, [upsertTopic, selectedRepoId, parentTopicId, name, setName])
+      setName?.('')
+    },
+    [upsertTopic, selectedRepoId, parentTopicId, name, setName, makeUpdater, makeOptimisticUpdater],
+  )
 }
