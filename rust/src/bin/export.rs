@@ -34,7 +34,7 @@ fn parse_args() -> Opts {
     opts.reqopt(
         "d",
         "data-dir",
-        "root directory of a repo to export to",
+        "root directory of a repo_id to export to",
         "DIRNAME",
     );
 
@@ -49,6 +49,14 @@ fn parse_args() -> Opts {
 
     Opts {
         root: PathBuf::from(root),
+    }
+}
+
+fn prefer_private_repo(repo_1: &RepoId, repo_2: &RepoId) -> RepoId {
+    if repo_1.is_wiki() {
+        repo_2.to_owned()
+    } else {
+        repo_1.to_owned()
     }
 }
 
@@ -154,28 +162,31 @@ impl TryFrom<&TopicChildRow> for TopicChild {
 }
 
 #[derive(Debug)]
-struct Topics {
-    topic: RepoTopic,
-    topics: HashMap<RepoId, RepoTopic>,
+struct RepoTopics {
+    repo_topic: RepoTopic,
+    references: HashMap<RepoId, RepoTopic>,
 }
 
-impl Topics {
-    fn new(repo: RepoId, topic: RepoTopic) -> Self {
-        let mut topics: HashMap<RepoId, RepoTopic> = HashMap::new();
-        topics.insert(repo, topic.clone());
-        Self { topic, topics }
+impl RepoTopics {
+    fn new(repo_id: RepoId, repo_topic: RepoTopic) -> Self {
+        let mut references: HashMap<RepoId, RepoTopic> = HashMap::new();
+        references.insert(repo_id, repo_topic.clone());
+        Self {
+            repo_topic,
+            references,
+        }
     }
 
-    fn get_mut(&mut self, repo: &RepoId) -> &mut RepoTopic {
-        let topics = &mut self.topics;
+    fn get_mut(&mut self, repo_id: &RepoId) -> &mut RepoTopic {
+        let topics = &mut self.references;
 
-        topics.entry(repo.to_owned()).or_insert_with(|| {
-            let id = self.topic.topic_id().to_owned();
+        topics.entry(repo_id.to_owned()).or_insert_with(|| {
+            let id = self.repo_topic.topic_id().to_owned();
 
             RepoTopic {
                 api_version: API_VERSION.to_string(),
                 metadata: RepoTopicMetadata {
-                    added: self.topic.added(),
+                    added: self.repo_topic.added(),
                     id,
                     details: None,
                 },
@@ -188,8 +199,8 @@ impl Topics {
 
 fn persist_topic(
     mutation: &mut Mutation,
-    repo_id: &RepoId,
-    topic: &mut RepoTopic,
+    repo_topic_repo_id: &RepoId,
+    repo_topic: &mut RepoTopic,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,
 ) -> Result<()> {
@@ -207,7 +218,7 @@ fn persist_topic(
         } = child;
         let child_repo_id = RepoId::try_from(repository_id).unwrap();
 
-        if repo_id != &child_repo_id {
+        if repo_topic_repo_id != &child_repo_id {
             continue;
         }
 
@@ -232,7 +243,7 @@ fn persist_topic(
     let mut parents = vec![];
     for topic in parent_topics {
         let topic_repo_id = RepoId::try_from(&topic.repository_id).unwrap();
-        if &topic_repo_id != repo_id {
+        if &topic_repo_id != repo_topic_repo_id {
             continue;
         }
 
@@ -247,21 +258,21 @@ fn persist_topic(
     let change = activity::Change::ImportTopic(activity::ImportTopic {
         actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
         date: chrono::Utc::now(),
-        imported_topic: activity::TopicInfo::from(&*topic),
+        imported_topic: activity::TopicInfo::from(&*repo_topic),
         child_links: activity::LinkInfoList::from(&child_links),
         child_topics: activity::TopicInfoList::from(&child_topics),
         id: activity::Change::new_id(),
         parent_topics: activity::TopicInfoList::from(&parents),
     });
 
-    mutation.save_topic(repo_id, topic)?;
-    mutation.add_change(repo_id, &change)
+    mutation.save_topic(repo_topic_repo_id, repo_topic)?;
+    mutation.add_change(repo_topic_repo_id, &change)
 }
 
 // 1. Don't place paths for items in private repos under /wiki/
 fn persist_topics(
     mutation: &mut Mutation,
-    repo: &RepoId,
+    repo_topic_repo_id: &RepoId,
     topic_id: &Oid,
     meta: &TopicMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
@@ -287,7 +298,7 @@ fn persist_topics(
         _ => None,
     };
 
-    let topic = RepoTopic {
+    let repo_topic = RepoTopic {
         api_version: API_VERSION.to_string(),
         metadata: RepoTopicMetadata {
             added: meta.added,
@@ -302,21 +313,23 @@ fn persist_topics(
         children: BTreeSet::new(),
     };
 
-    let mut topics = Topics::new(repo.to_owned(), topic);
+    let mut topics = RepoTopics::new(repo_topic_repo_id.to_owned(), repo_topic);
 
     for parent in parent_topics {
-        let repo_id = RepoId::try_from(&parent.repository_id).unwrap();
+        let parent_repo_id = RepoId::try_from(&parent.repository_id).unwrap();
+        let repo_id = prefer_private_repo(repo_topic_repo_id, &parent_repo_id);
         let topic = topics.get_mut(&repo_id);
         topic.parent_topics.insert(parent.try_into()?);
     }
 
     for child in children {
         let parent_repo_id = RepoId::try_from(&child.repository_id).unwrap();
-        let topic = topics.get_mut(&parent_repo_id);
+        let repo_id = prefer_private_repo(repo_topic_repo_id, &parent_repo_id);
+        let topic = topics.get_mut(&repo_id);
         topic.children.insert(child.try_into()?);
     }
 
-    let repo_ids = topics.topics.keys().cloned().collect::<Vec<RepoId>>();
+    let repo_ids = topics.references.keys().cloned().collect::<Vec<RepoId>>();
 
     for repo_id in repo_ids {
         let topic = topics.get_mut(&repo_id);
@@ -421,22 +434,22 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
 }
 
 #[derive(Debug)]
-struct Links {
+struct RepoLinks {
     link: RepoLink,
     links: HashMap<RepoId, RepoLink>,
 }
 
-impl Links {
-    fn new(repo: RepoId, link: RepoLink) -> Self {
+impl RepoLinks {
+    fn new(repo_id: RepoId, link: RepoLink) -> Self {
         let mut links: HashMap<RepoId, RepoLink> = HashMap::new();
-        links.insert(repo, link.clone());
+        links.insert(repo_id, link.clone());
         Self { link, links }
     }
 
-    fn get_mut(&mut self, repo: &RepoId) -> &mut RepoLink {
+    fn get_mut(&mut self, repo_id: &RepoId) -> &mut RepoLink {
         let links = &mut self.links;
 
-        links.entry(repo.to_owned()).or_insert_with(|| RepoLink {
+        links.entry(repo_id.to_owned()).or_insert_with(|| RepoLink {
             api_version: API_VERSION.to_string(),
             metadata: RepoLinkMetadata {
                 added: self.link.added(),
@@ -450,15 +463,15 @@ impl Links {
 
 fn persist_link(
     mutation: &mut Mutation,
-    repo: &RepoId,
-    link: &mut RepoLink,
+    repo_link_repo_id: &RepoId,
+    repo_link: &mut RepoLink,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
     let mut topics = BTreeSet::new();
 
     for parent in parent_topics {
         let parent_repo_id = RepoId::try_from(&parent.repository_id).unwrap();
-        if repo != &parent_repo_id {
+        if repo_link_repo_id != &parent_repo_id {
             continue;
         }
 
@@ -474,41 +487,42 @@ fn persist_link(
         actor_id: "461c87c8-fb8f-11e8-9cbc-afde6c54d881".to_owned(),
         date: chrono::Utc::now(),
         id: activity::Change::new_id(),
-        imported_link: activity::LinkInfo::from(&*link),
+        imported_link: activity::LinkInfo::from(&*repo_link),
         parent_topics: activity::TopicInfoList::from(&topics),
     });
 
-    mutation.save_link(repo, link).unwrap();
-    mutation.add_change(repo, &change).unwrap();
+    mutation.save_link(repo_link_repo_id, repo_link).unwrap();
+    mutation.add_change(repo_link_repo_id, &change).unwrap();
 
     Ok(())
 }
 
 fn persist_links(
     mutation: &mut Mutation,
-    repo: &RepoId,
-    meta: &LinkMetadataRow,
+    repo_link_repo_id: &RepoId,
+    repo_link_meta: &LinkMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
-    let link = RepoLink {
+    let repo_link = RepoLink {
         api_version: API_VERSION.to_string(),
-        metadata: RepoLinkMetadata::try_from(meta).unwrap(),
+        metadata: RepoLinkMetadata::try_from(repo_link_meta).unwrap(),
         parent_topics: BTreeSet::new(),
     };
 
-    let mut links = Links::new(repo.to_owned(), link);
+    let mut repo_links = RepoLinks::new(repo_link_repo_id.to_owned(), repo_link);
 
     for parent in parent_topics {
-        let repo = RepoId::try_from(&parent.repository_id).unwrap();
-        let link = links.get_mut(&repo);
-        link.parent_topics.insert(parent.try_into().unwrap());
+        let parent_repo_id = RepoId::try_from(&parent.repository_id).unwrap();
+        let repo_id = prefer_private_repo(repo_link_repo_id, &parent_repo_id);
+        let reference = repo_links.get_mut(&repo_id);
+        reference.parent_topics.insert(parent.try_into().unwrap());
     }
 
-    let repos = links.links.keys().cloned().collect::<Vec<RepoId>>();
+    let repo_ids = repo_links.links.keys().cloned().collect::<Vec<RepoId>>();
 
-    for repo in repos {
-        let link = links.get_mut(&repo);
-        persist_link(mutation, &repo, link, parent_topics).unwrap();
+    for repo_id in repo_ids {
+        let link = repo_links.get_mut(&repo_id);
+        persist_link(mutation, &repo_id, link, parent_topics).unwrap();
     }
 
     Ok(())
@@ -531,7 +545,7 @@ async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
     .await?;
 
     for meta in rows {
-        let repo = RepoId::try_from(&meta.repository_id).expect("failed to parse repo");
+        let repo_id = RepoId::try_from(&meta.repository_id).expect("failed to parse repo_id");
         let link_id = meta.link_id.clone();
         let parent_topics = sqlx::query_as::<_, ParentTopicRow>(
             r#"select
@@ -549,7 +563,7 @@ async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
         .fetch_all(pool)
         .await?;
 
-        persist_links(mutation, &repo, &meta, &parent_topics).unwrap();
+        persist_links(mutation, &repo_id, &meta, &parent_topics).unwrap();
     }
 
     Ok(())
