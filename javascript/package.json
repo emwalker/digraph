@@ -123,7 +123,7 @@
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "10.1.0",
     "babel-jest": "^28.1.1",
-    "babel-loader": "^8.2.5",
+    "babel-loader": "^9.1.0",
     "babel-plugin-react-css-modules": "~5.2.6",
     "babel-plugin-relay": "^13.2.0",
     "babel-preset-razzle": "^4.2.16",
