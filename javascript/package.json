@@ -144,7 +144,7 @@
     "jest-enzyme": "~7.1.1",
     "jest-matcher-utils": "^28.1.1",
     "jest-snapshot": "^28.1.0",
-    "mini-css-extract-plugin": "^2.6.1",
+    "mini-css-extract-plugin": "^2.7.0",
     "node-polyfill-webpack-plugin": "^1.1.4",
     "normalize.css": "~8.0.1",
     "postcss-import": "^14.1.0",
