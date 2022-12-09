@@ -78,7 +78,7 @@
     "regenerator-runtime": "^0.13.9",
     "relay-hooks": "^7.1.0",
     "relay-runtime": "^13.2.0",
-    "sass": "^1.52.1",
+    "sass": "^1.56.2",
     "serialize-javascript": "^6.0.0",
     "use-debounce": "^8.0.1",
     "uuid": "^8.3.2"
