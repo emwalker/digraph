@@ -1,5 +1,5 @@
 ---
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: digraph-take-snapshot
@@ -13,9 +13,9 @@ spec:
       template:
         spec:
           containers:
-          - name: cron
-            image: emwalker/digraph-cron:v373
-            envFrom:
-            - secretRef:
-                name: digraph-secrets
+            - name: cron
+              image: emwalker/digraph-cron:latest
+              envFrom:
+                - secretRef:
+                    name: digraph-secrets
           restartPolicy: Never

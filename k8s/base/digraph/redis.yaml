@@ -4,24 +4,24 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: true
 metadata:
-  name: default-redis
+  name: digraph-redis
   namespace: "default"
   labels:
     app.kubernetes.io/name: redis
-    helm.sh/chart: redis-17.0.8
-    app.kubernetes.io/instance: default
+    helm.sh/chart: redis-17.3.17
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: redis/templates/configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: default-redis-configuration
+  name: digraph-redis-configuration
   namespace: "default"
   labels:
     app.kubernetes.io/name: redis
-    helm.sh/chart: redis-17.0.8
-    app.kubernetes.io/instance: default
+    helm.sh/chart: redis-17.3.17
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
 data:
   redis.conf: |-
@@ -48,12 +48,12 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: default-redis-health
+  name: digraph-redis-health
   namespace: "default"
   labels:
     app.kubernetes.io/name: redis
-    helm.sh/chart: redis-17.0.8
-    app.kubernetes.io/instance: default
+    helm.sh/chart: redis-17.3.17
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
 data:
   ping_readiness_local.sh: |-
@@ -155,22 +155,22 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: default-redis-scripts
+  name: digraph-redis-scripts
   namespace: "default"
   labels:
     app.kubernetes.io/name: redis
-    helm.sh/chart: redis-17.0.8
-    app.kubernetes.io/instance: default
+    helm.sh/chart: redis-17.3.17
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
 data:
   start-master.sh: |
     #!/bin/bash
 
     [[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD="$(< "${REDIS_PASSWORD_FILE}")"
-    if [[ ! -f /opt/bitnami/redis/etc/master.conf ]];then
+    if [[ -f /opt/bitnami/redis/mounted-etc/master.conf ]];then
         cp /opt/bitnami/redis/mounted-etc/master.conf /opt/bitnami/redis/etc/master.conf
     fi
-    if [[ ! -f /opt/bitnami/redis/etc/redis.conf ]];then
+    if [[ -f /opt/bitnami/redis/mounted-etc/redis.conf ]];then
         cp /opt/bitnami/redis/mounted-etc/redis.conf /opt/bitnami/redis/etc/redis.conf
     fi
     ARGS=("--port" "${REDIS_PORT}")
@@ -183,12 +183,12 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: default-redis-headless
+  name: digraph-redis-headless
   namespace: "default"
   labels:
     app.kubernetes.io/name: redis
-    helm.sh/chart: redis-17.0.8
-    app.kubernetes.io/instance: default
+    helm.sh/chart: redis-17.3.17
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
   annotations:
     
@@ -201,18 +201,18 @@ spec:
       targetPort: redis
   selector:
     app.kubernetes.io/name: redis
-    app.kubernetes.io/instance: default
+    app.kubernetes.io/instance: digraph
 ---
 # Source: redis/templates/master/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: default-redis-master
+  name: digraph-redis-master
   namespace: "default"
   labels:
     app.kubernetes.io/name: redis
-    helm.sh/chart: redis-17.0.8
-    app.kubernetes.io/instance: default
+    helm.sh/chart: redis-17.3.17
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: master
 spec:
@@ -226,19 +226,19 @@ spec:
       nodePort: null
   selector:
     app.kubernetes.io/name: redis
-    app.kubernetes.io/instance: default
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/component: master
 ---
 # Source: redis/templates/master/application.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: default-redis-master
+  name: digraph-redis-master
   namespace: "default"
   labels:
     app.kubernetes.io/name: redis
-    helm.sh/chart: redis-17.0.8
-    app.kubernetes.io/instance: default
+    helm.sh/chart: redis-17.3.17
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: master
 spec:
@@ -246,9 +246,9 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: redis
-      app.kubernetes.io/instance: default
+      app.kubernetes.io/instance: digraph
       app.kubernetes.io/component: master
-  serviceName: default-redis-headless
+  serviceName: digraph-redis-headless
   updateStrategy:
     rollingUpdate: {}
     type: RollingUpdate
@@ -256,20 +256,20 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: redis
-        helm.sh/chart: redis-17.0.8
-        app.kubernetes.io/instance: default
+        helm.sh/chart: redis-17.3.17
+        app.kubernetes.io/instance: digraph
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: master
       annotations:
-        checksum/configmap: bfed9db7bccdf56705dab34dbc41ddece96f57152082556ac53497a9ac63de0c
-        checksum/health: f4b032723651697fbab3b152f89564611fb3a6645d0fb63eb6934641b8e25407
-        checksum/scripts: 12e2c8538c34f19e591a2382f0291643b970cc70cbd39b67f7972768da11e24e
+        checksum/configmap: 54500f2be89c4d0bf93673b700f74b7c034ca1250ae007e362866760070dacf9
+        checksum/health: 959900a54cec0e8505266bd5e4c976bc407865ebe1b95aa1d91839dcdbed64a4
+        checksum/scripts: 56ca9798eb7b04f6251e6305102c7a229c00304d3d8db5f7c461b7fdbff3aa0b
         checksum/secret: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     spec:
       
       securityContext:
         fsGroup: 1001
-      serviceAccountName: default-redis
+      serviceAccountName: digraph-redis
       affinity:
         podAffinity:
           
@@ -279,10 +279,8 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: redis
-                    app.kubernetes.io/instance: default
+                    app.kubernetes.io/instance: digraph
                     app.kubernetes.io/component: master
-                namespaces:
-                  - "default"
                 topologyKey: kubernetes.io/hostname
               weight: 1
         nodeAffinity:
@@ -346,7 +344,6 @@ spec:
               mountPath: /health
             - name: redis-data
               mountPath: /data
-              subPath: 
             - name: config
               mountPath: /opt/bitnami/redis/mounted-etc
             - name: redis-tmp-conf
@@ -356,15 +353,15 @@ spec:
       volumes:
         - name: start-scripts
           configMap:
-            name: default-redis-scripts
+            name: digraph-redis-scripts
             defaultMode: 0755
         - name: health
           configMap:
-            name: default-redis-health
+            name: digraph-redis-health
             defaultMode: 0755
         - name: config
           configMap:
-            name: default-redis-configuration
+            name: digraph-redis-configuration
         - name: redis-tmp-conf
           emptyDir: {}
         - name: tmp
@@ -374,7 +371,7 @@ spec:
         name: redis-data
         labels:
           app.kubernetes.io/name: redis
-          app.kubernetes.io/instance: default
+          app.kubernetes.io/instance: digraph
           app.kubernetes.io/component: master
       spec:
         accessModes:

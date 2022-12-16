@@ -1,0 +1,3 @@
+resources:
+  - cert-manager.yaml
+  - acme-issuer-prod.yaml

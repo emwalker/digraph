@@ -1,0 +1,35 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: digraph-frontend-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+    - hosts:
+        - digraph.app
+        - prod.digraph.app
+      secretName: digraph-frontend-tls
+  rules:
+    - host: prod.digraph.app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: digraph-frontend
+                port:
+                  number: 3001
+    - host: digraph.app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: digraph-frontend
+                port:
+                  number: 3001

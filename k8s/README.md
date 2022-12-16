@@ -16,14 +16,15 @@ Following are some dependencies included under k8s/.
 ### Postgres
 
 ```sh
-$ helm template bitnami/postgresql --name-template default \
-  --values k8s/base/default/postgresql-values.yaml > k8s/base/default/postgresql.yaml
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+$ helm template bitnami/postgresql --name-template digraph \
+  --values k8s/base/digraph/postgresql-values.yaml > k8s/base/digraph/postgresql.yaml
 ```
 
 ### Redis
 
 ```sh
 $ helm repo add bitnami https://charts.bitnami.com/bitnami
-$ helm template bitnami/redis --name-template default \
-  --values k8s/base/default/redis-values.yaml > k8s/base/default/redis.yaml
+$ helm template bitnami/redis --name-template digraph \
+  --values k8s/base/digraph/redis-values.yaml > k8s/base/digraph/redis.yaml
 ```

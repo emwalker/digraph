@@ -1,0 +1,3 @@
+resources:
+  - postgresql.yaml
+  - redis.yaml

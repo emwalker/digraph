@@ -9,16 +9,16 @@ metadata:
 spec:
   tls:
   - hosts:
-    - digraph.app
+    - next.digraph.app
     secretName: frontend-tls
   rules:
-  - host: digraph.app
+  - host: next.digraph.app
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: frontend
+            name: digraph-frontend
             port:
               number: 3001

@@ -1,0 +1,14 @@
+namespace: digraph-next
+
+bases:
+  - ../../../base/digraph
+
+resources:
+  - digraph-frontend.yaml
+  - digraph-ingress.yaml
+
+images:
+- name: emwalker/digraph-api
+  newTag: v377
+- name: emwalker/digraph-node
+  newTag: v377

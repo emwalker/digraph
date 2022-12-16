@@ -3,12 +3,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: default-postgresql-hl
+  name: digraph-postgresql-hl
   namespace: "default"
   labels:
     app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-11.6.25
-    app.kubernetes.io/instance: default
+    helm.sh/chart: postgresql-12.1.5
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
     # Use this annotation in addition to the actual publishNotReadyAddresses
@@ -29,19 +29,19 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: default
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/component: primary
 ---
 # Source: postgresql/templates/primary/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: default-postgresql
+  name: digraph-postgresql
   namespace: "default"
   labels:
     app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-11.6.25
-    app.kubernetes.io/instance: default
+    helm.sh/chart: postgresql-12.1.5
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
@@ -55,40 +55,40 @@ spec:
       nodePort: null
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: default
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/component: primary
 ---
 # Source: postgresql/templates/primary/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: default-postgresql
+  name: digraph-postgresql
   namespace: "default"
   labels:
     app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-11.6.25
-    app.kubernetes.io/instance: default
+    helm.sh/chart: postgresql-12.1.5
+    app.kubernetes.io/instance: digraph
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
 spec:
   replicas: 1
-  serviceName: default-postgresql-hl
+  serviceName: digraph-postgresql-hl
   updateStrategy:
     rollingUpdate: {}
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: default
+      app.kubernetes.io/instance: digraph
       app.kubernetes.io/component: primary
   template:
     metadata:
-      name: default-postgresql
+      name: digraph-postgresql
       labels:
         app.kubernetes.io/name: postgresql
-        helm.sh/chart: postgresql-11.6.25
-        app.kubernetes.io/instance: default
+        helm.sh/chart: postgresql-12.1.5
+        app.kubernetes.io/instance: digraph
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: primary
       annotations:
@@ -104,10 +104,8 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: default
+                    app.kubernetes.io/instance: digraph
                     app.kubernetes.io/component: primary
-                namespaces:
-                  - "default"
                 topologyKey: kubernetes.io/hostname
               weight: 1
         nodeAffinity:

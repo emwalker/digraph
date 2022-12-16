@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: digraph-frontend
+spec:
+  ports:
+    - name: digraph-frontend-http
+      port: 80
+      protocol: TCP
+      targetPort: 3001
+    - name: digraph-frontend-https
+      port: 443
+      protocol: TCP
+      targetPort: 3001
+  selector:
+    app: digraph
+    tier: digraph-frontend
+  type: NodePort
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: digraph
+    tier: digraph-frontend
+  name: digraph-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: digraph
+      tier: digraph-frontend
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: digraph
+        tier: digraph-frontend
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: api
+          envFrom:
+            - secretRef:
+                name: digraph-secrets
+          image: emwalker/digraph-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              memory: 100Mi
+            limits:
+              memory: 600Mi
+        - name: node
+          envFrom:
+            - secretRef:
+                name: digraph-secrets
+          image: emwalker/digraph-node:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              memory: 150Mi
+            limits:
+              memory: 400Mi

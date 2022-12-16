@@ -1,2 +1,0 @@
-postgres: kubectl port-forward --namespace default svc/postgres-postgresql 5431:5432
-frontend: kubectl port-forward --namespace default svc/frontend 3000:80

@@ -35,7 +35,7 @@ check-rust:
 	$(MAKE) -C rust check
 
 deploy-k8s:
-	kubectl apply -f k8s/cluster
+	kubectl apply -k k8s/overlays/next
 
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
@@ -43,14 +43,14 @@ dump:
 fixtures: data/fixtures.sql
 	bash ./scripts/make-fixtures
 
-logs:
-	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs
+logs-prod:
+	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs-prod
 
 migrate:
 	$(MAKE) -C rust full-migration
 
-proxy:
-	overmind s -f Procfile.proxies
+proxy-prod:
+	overmind s -f Procfile.proxies-prod
 
 push-docker:
 	docker push emwalker/digraph-cron:$(shell cat k8s/release)
