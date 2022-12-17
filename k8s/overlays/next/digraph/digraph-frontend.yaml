@@ -1,16 +1,5 @@
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: digraph-data
-spec:
-  resources:
-    requests:
-      storage: 10Gi
-
-
----
-apiVersion: v1
 kind: Service
 metadata:
   name: digraph-frontend
@@ -19,11 +8,11 @@ spec:
     - name: digraph-frontend-http
       port: 80
       protocol: TCP
-      targetPort: 3000
+      targetPort: 3001
     - name: digraph-frontend-https
       port: 443
       protocol: TCP
-      targetPort: 3000
+      targetPort: 3001
   selector:
     app: digraph
     tier: digraph-frontend
@@ -78,7 +67,7 @@ spec:
           image: emwalker/digraph-node:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 3000
+            - containerPort: 3001
               name: http
               protocol: TCP
           resources:
@@ -86,7 +75,3 @@ spec:
               memory: 150Mi
             limits:
               memory: 400Mi
-      volumes:
-        - name: digraph-data
-          persistentVolumeClaim:
-            claimName: digraph-data

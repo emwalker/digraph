@@ -7,8 +7,18 @@ resources:
   - digraph-frontend.yaml
   - digraph-ingress.yaml
 
+secretGenerator:
+  - name: postgres-secrets
+    envs:
+      - .env.postgres
+  - name: digraph-secrets
+    envs:
+      - .env.digraph
+
 images:
-- name: emwalker/digraph-api
-  newTag: v377
-- name: emwalker/digraph-node
-  newTag: v377
+  - name: emwalker/digraph-api
+    newTag: v377
+  - name: emwalker/digraph-cron
+    newTag: v377
+  - name: emwalker/digraph-node
+    newTag: v377
