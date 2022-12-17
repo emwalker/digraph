@@ -49,6 +49,9 @@ logs-prod:
 migrate:
 	$(MAKE) -C rust full-migration
 
+proxy-next:
+	overmind s -f Procfile.proxies-next
+
 proxy-prod:
 	overmind s -f Procfile.proxies-prod
 

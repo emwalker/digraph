@@ -1,0 +1,1 @@
+postgres: kubectl port-forward --namespace digraph-next svc/digraph-postgresql 5431:5432
