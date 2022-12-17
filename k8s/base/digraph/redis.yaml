@@ -26,8 +26,8 @@ metadata:
 data:
   redis.conf: |-
     # User-supplied common configuration:
-    # Enable AOF https://redis.io/topics/persistence#append-only-file
-    appendonly yes
+    # Disable AOF https://redis.io/topics/persistence#append-only-file
+    appendonly no
     # Disable RDB persistence, AOF persistence already enabled.
     save ""
     # End of common configuration
@@ -261,7 +261,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: master
       annotations:
-        checksum/configmap: 54500f2be89c4d0bf93673b700f74b7c034ca1250ae007e362866760070dacf9
+        checksum/configmap: f0f3a5bf9f1bfd484104c7f2ff50512e8c34a626ddf0c01a267d0011483f286f
         checksum/health: 959900a54cec0e8505266bd5e4c976bc407865ebe1b95aa1d91839dcdbed64a4
         checksum/scripts: 56ca9798eb7b04f6251e6305102c7a229c00304d3d8db5f7c461b7fdbff3aa0b
         checksum/secret: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
