@@ -13,8 +13,18 @@ TIMESTAMP        = $(shell date -u +%s)
 LINT_DIRECTORIES = $(shell find cmd -type d ! -name "loaders" ! -name "server")
 DBNAME           := $(if $(DBNAME),$(DBNAME),digraph_dev)
 
+build: build-container-api build-container-node
+
 build-client:
 	$(MAKE) -C javascript build
+
+build-container-api:
+	docker compose build api
+	docker tag emwalker/digraph-api:latest emwalker/digraph-api:$(shell cat k8s/release)
+
+build-container-node: build-client
+	docker compose build node
+	docker tag emwalker/digraph-node:latest emwalker/digraph-node:$(shell cat k8s/release)
 
 clean:
 	$(MAKE) -C javascript clean
@@ -43,6 +53,9 @@ dump:
 fixtures: data/fixtures.sql
 	bash ./scripts/make-fixtures
 
+logs-next:
+	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs-next
+
 logs-prod:
 	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs-prod
 
@@ -56,7 +69,6 @@ proxy-prod:
 	overmind s -f Procfile.proxies-prod
 
 push-docker:
-	docker push emwalker/digraph-cron:$(shell cat k8s/release)
 	docker push emwalker/digraph-api:$(shell cat k8s/release)
 	docker push emwalker/digraph-node:$(shell cat k8s/release)
 

@@ -5,8 +5,8 @@ authors = ["Eric Walker <eric.walker@gmail.com>"]
 edition = "2021"
 
 [[bin]]
-name = "frontend"
-path = "src/bin/frontend.rs"
+name = "api"
+path = "src/bin/api.rs"
 
 [[bin]]
 name = "cron"

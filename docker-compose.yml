@@ -20,7 +20,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: k8s/docker/frontend/Dockerfile
+      dockerfile: k8s/docker/api/Dockerfile
     image: emwalker/digraph-api:latest
     expose:
       - "8080"
@@ -39,7 +39,7 @@ services:
       context: .
       dockerfile: k8s/docker/node/Dockerfile
     ports:
-      - "3001:3001"
+      - "3000:3000"
     env_file:
     - .env.docker.local
     depends_on:

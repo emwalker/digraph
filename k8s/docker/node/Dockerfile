@@ -14,6 +14,6 @@ WORKDIR /app
 COPY --from=0 /app .
 ADD ./javascript/build/ /app/build/
 
-EXPOSE 3001
+EXPOSE 3000
 
 CMD ["node", "build/server.js"]

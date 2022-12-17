@@ -1,5 +1,17 @@
 ---
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: digraph-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: digraph-frontend
@@ -8,14 +20,14 @@ spec:
     - name: digraph-frontend-http
       port: 80
       protocol: TCP
-      targetPort: 3001
+      targetPort: 3000
     - name: digraph-frontend-https
       port: 443
       protocol: TCP
-      targetPort: 3001
+      targetPort: 3000
   selector:
     app: digraph
-    tier: digraph-frontend
+    tier: frontend
   type: NodePort
 
 ---
@@ -24,14 +36,14 @@ kind: Deployment
 metadata:
   labels:
     app: digraph
-    tier: digraph-frontend
+    tier: frontend
   name: digraph-frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: digraph
-      tier: digraph-frontend
+      tier: frontend
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -41,7 +53,7 @@ spec:
     metadata:
       labels:
         app: digraph
-        tier: digraph-frontend
+        tier: frontend
     spec:
       restartPolicy: Always
       containers:
@@ -60,6 +72,9 @@ spec:
               memory: 100Mi
             limits:
               memory: 600Mi
+          volumeMounts:
+            - mountPath: /var/lib/digraph
+              name: digraph-data
         - name: node
           envFrom:
             - secretRef:
@@ -67,7 +82,7 @@ spec:
           image: emwalker/digraph-node:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 3001
+            - containerPort: 3000
               name: http
               protocol: TCP
           resources:
@@ -75,3 +90,7 @@ spec:
               memory: 150Mi
             limits:
               memory: 400Mi
+      volumes:
+        - name: digraph-data
+          persistentVolumeClaim:
+            claimName: digraph-data

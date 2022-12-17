@@ -24,10 +24,10 @@ full-migration:
 	RUST_LOG=migrate=info cargo run --bin migrate -- --destructive
 
 start:
-	RUST_LOG=info,sqlx=warn cargo run --bin frontend
+	RUST_LOG=info,sqlx=warn cargo run --bin api
 
 start-prod:
-	RUST_LOG=warn,digraph=info target/release/frontend
+	RUST_LOG=warn,digraph=info target/release/api
 
 test:
 	cargo test
