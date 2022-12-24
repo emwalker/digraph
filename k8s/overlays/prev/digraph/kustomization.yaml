@@ -1,9 +1,10 @@
-namespace: digraph-next-disabled
+namespace: digraph-prod
 
 bases:
   - ../../../base/digraph
 
 resources:
+  - digraph-cron.yaml
   - digraph-frontend.yaml
   - digraph-ingress.yaml
 
@@ -17,6 +18,8 @@ secretGenerator:
 
 images:
   - name: emwalker/digraph-api
-    newTag: v1.0.3
+    newTag: v377
+  - name: emwalker/digraph-cron
+    newTag: v377
   - name: emwalker/digraph-node
-    newTag: v1.0.3
+    newTag: v377

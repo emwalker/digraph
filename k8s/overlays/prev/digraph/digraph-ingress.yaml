@@ -9,11 +9,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - digraph.app
-        - prod.digraph.app
+        - fast.digraph.app
       secretName: digraph-frontend-tls
   rules:
-    - host: prod.digraph.app
+    - host: fast.digraph.app
       http:
         paths:
           - path: /
@@ -22,14 +21,4 @@ spec:
               service:
                 name: digraph-frontend
                 port:
-                  number: 3000
-    - host: digraph.app
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: digraph-frontend
-                port:
-                  number: 3000
+                  number: 3001
