@@ -67,11 +67,11 @@ spec:
             - containerPort: 8080
               name: http
               protocol: TCP
-          resources:
-            requests:
-              memory: 100Mi
-            limits:
-              memory: 600Mi
+          # resources:
+          #   requests:
+          #     memory: 100Mi
+          #   limits:
+          #     memory: 600Mi
           volumeMounts:
             - mountPath: /var/lib/digraph
               name: digraph-data

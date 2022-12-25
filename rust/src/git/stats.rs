@@ -1,4 +1,4 @@
-use actix_web;
+// use actix_web;
 use serde::{Deserialize, Serialize};
 
 use super::Client;
@@ -80,20 +80,20 @@ impl FetchStats {
                     // after 180 seconds in case something happens and it should be retried.
                     cache.save(repo_id, &commit, &stats, Some(120))?;
 
-                    let view = view.duplicate()?;
-                    let cache = cache.to_owned();
-                    let commit = commit.to_owned();
-                    let prefix = repo_id.to_owned();
+                    // let view = view.duplicate()?;
+                    // let cache = cache.to_owned();
+                    // let commit = commit.to_owned();
+                    // let prefix = repo_id.to_owned();
 
-                    let _ = actix_web::web::block(move || {
-                        let key = format!("{}:{}", prefix, commit);
-                        log::info!("computing stats for {} ...", key);
-                        let stats = view.stats().expect("failed to fetch stats");
-                        cache
-                            .save(&prefix, &commit, &stats, None)
-                            .expect("failed to save stats");
-                        log::info!("stats for {} saved to cache", key);
-                    });
+                    // let _ = actix_web::web::block(move || {
+                    //     let key = format!("{}:{}", prefix, commit);
+                    //     log::info!("computing stats for {} ...", key);
+                    //     let stats = view.stats().expect("failed to fetch stats");
+                    //     cache
+                    //         .save(&prefix, &commit, &stats, None)
+                    //         .expect("failed to save stats");
+                    //     log::info!("stats for {} saved to cache", key);
+                    // });
 
                     stats
                 }
