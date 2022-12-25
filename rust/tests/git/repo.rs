@@ -131,7 +131,7 @@ mod ensure_personal_repo {
 
         let result = ensure(&f, &vec![], actor, &actor.user_id).unwrap();
 
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
         let repo_id = result.created_repo_id.unwrap();
         let topic = f.git.fetch_topic(&repo_id, &root).unwrap();
         assert_eq!(topic.name(Locale::EN), "Everything");

@@ -297,7 +297,7 @@ impl MutationRoot {
             link_id,
             repo_id,
         } = input;
-        let link_id = Oid::try_from(&link_id)?;
+        let link_id = ExternalId::try_from(&link_id)?;
 
         let git::DeleteLinkResult {
             deleted_link_id, ..
@@ -342,7 +342,7 @@ impl MutationRoot {
             repo_id,
             topic_id,
         } = input;
-        let topic_id = Oid::try_from(&topic_id)?;
+        let topic_id = ExternalId::try_from(&topic_id)?;
 
         ctx.data_unchecked::<Store>()
             .delete_topic(&repo_id.try_into()?, &topic_id)
@@ -401,7 +401,7 @@ impl MutationRoot {
 
         let current_topic = match (repo_id, current_topic_id) {
             (Some(repo_id), Some(topic_id)) => {
-                let topic_id: Oid = topic_id.to_string().try_into()?;
+                let topic_id: ExternalId = topic_id.to_string().try_into()?;
                 let key = Okey(topic_id, repo_id.to_owned());
                 Some(store.fetch_topic_by_key(key).await?.try_into()?)
             }
@@ -422,7 +422,7 @@ impl MutationRoot {
         input: UpdateLinkParentTopicsInput,
     ) -> Result<UpdateLinkParentTopicsPayload> {
         let store = ctx.data_unchecked::<Store>();
-        let link_id: Oid = (&input.link_id).try_into()?;
+        let link_id: ExternalId = (&input.link_id).try_into()?;
         store.update_link_parent_topics(input).await?;
         let link: Link = store.fetch_link(link_id).await?.try_into()?;
         Ok(UpdateLinkParentTopicsPayload { link })
@@ -448,8 +448,8 @@ impl MutationRoot {
                 &topic_id.try_into()?,
                 parent_topic_ids
                     .iter()
-                    .map(Oid::try_from)
-                    .collect::<Result<Vec<Oid>>>()?,
+                    .map(ExternalId::try_from)
+                    .collect::<Result<Vec<ExternalId>>>()?,
             )
             .await?;
 
@@ -518,7 +518,7 @@ impl MutationRoot {
     ) -> Result<UpsertTopicPayload> {
         log::info!("upserting topic: {:?}", input);
 
-        let parent_id: Oid = (&input.parent_topic_id).try_into()?;
+        let parent_id: ExternalId = (&input.parent_topic_id).try_into()?;
         let store = ctx.data_unchecked::<Store>();
 
         let git::UpsertTopicResult {
@@ -570,7 +570,7 @@ impl MutationRoot {
         input: UpsertTopicTimerangeInput,
     ) -> Result<UpsertTopicTimerangePayload> {
         let store = ctx.data_unchecked::<Store>();
-        let topic_id: Oid = (&input.topic_id).try_into()?;
+        let topic_id: ExternalId = (&input.topic_id).try_into()?;
 
         let git::UpsertTopicTimerangeResult {
             alerts,

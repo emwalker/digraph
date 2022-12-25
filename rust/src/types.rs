@@ -129,7 +129,7 @@ impl RepoId {
         format!("{}/", self.0)
     }
 
-    pub fn root_topic_id(&self) -> Oid {
+    pub fn root_topic_id(&self) -> ExternalId {
         ROOT_TOPIC_ID
             .try_into()
             .expect("failed to convert root topic id")
@@ -220,15 +220,15 @@ impl RepoIds {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct Oid(String);
+pub struct ExternalId(String);
 
-impl std::fmt::Display for Oid {
+impl std::fmt::Display for ExternalId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl TryFrom<&str> for Oid {
+impl TryFrom<&str> for ExternalId {
     type Error = Error;
 
     fn try_from(id: &str) -> Result<Self> {
@@ -236,7 +236,7 @@ impl TryFrom<&str> for Oid {
     }
 }
 
-impl TryFrom<&String> for Oid {
+impl TryFrom<&String> for ExternalId {
     type Error = Error;
 
     fn try_from(id: &String) -> Result<Self> {
@@ -244,7 +244,7 @@ impl TryFrom<&String> for Oid {
     }
 }
 
-impl TryFrom<String> for Oid {
+impl TryFrom<String> for ExternalId {
     type Error = Error;
 
     fn try_from(id: String) -> Result<Self> {
@@ -268,7 +268,7 @@ impl TryFrom<String> for Oid {
     }
 }
 
-impl Oid {
+impl ExternalId {
     pub fn make() -> Self {
         let s: String = random_id();
         Self::try_from(&s).unwrap()
@@ -320,7 +320,7 @@ impl Oid {
 // same link or topic if we're in the process of changing the selected repo as a result of a
 // mutation, for example.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct Okey(pub Oid, pub RepoId);
+pub struct Okey(pub ExternalId, pub RepoId);
 
 pub fn random_id() -> String {
     rand::thread_rng()
@@ -340,16 +340,16 @@ pub enum Alert {
 pub struct Timespec;
 
 #[derive(Debug)]
-pub struct ReadPath {
+pub struct TopicPath {
     pub commit: git2::Oid,
-    pub id: Oid,
     pub repo_id: RepoId,
+    pub topic_id: ExternalId,
 }
 
 pub trait Downset {
-    fn intersection(&self, topic_ids: &[ReadPath]) -> Result<HashSet<Oid>>;
+    fn intersection(&self, topic_ids: &[TopicPath]) -> Result<HashSet<ExternalId>>;
 
-    fn downset(&self, path: &ReadPath) -> HashSet<Oid>;
+    fn downset(&self, path: &TopicPath) -> HashSet<ExternalId>;
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

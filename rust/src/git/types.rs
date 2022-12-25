@@ -50,7 +50,7 @@ pub struct RepoLinkDetails {
 #[serde(rename_all = "camelCase")]
 pub struct RepoLinkMetadata {
     pub added: Timestamp,
-    pub id: Oid,
+    pub id: ExternalId,
     pub details: Option<RepoLinkDetails>,
 }
 
@@ -131,7 +131,7 @@ impl RepoLink {
         self.metadata.details.is_some()
     }
 
-    pub fn id(&self) -> &Oid {
+    pub fn id(&self) -> &ExternalId {
         &self.metadata.id
     }
 
@@ -165,7 +165,7 @@ impl RepoLink {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ParentTopic {
-    pub id: Oid,
+    pub id: ExternalId,
 }
 
 impl std::cmp::Ord for ParentTopic {
@@ -191,7 +191,7 @@ impl ParentTopic {
 pub struct TopicChild {
     pub added: Timestamp,
     pub kind: Kind,
-    pub id: Oid,
+    pub id: ExternalId,
 }
 
 impl std::cmp::PartialEq for TopicChild {
@@ -267,7 +267,7 @@ pub struct RepoTopicDetails {
 #[serde(rename_all = "camelCase")]
 pub struct RepoTopicMetadata {
     pub added: Timestamp,
-    pub id: Oid,
+    pub id: ExternalId,
     pub details: Option<RepoTopicDetails>,
 }
 
@@ -339,7 +339,7 @@ impl std::hash::Hash for RepoTopic {
 }
 
 impl RepoTopic {
-    pub fn make_reference(id: Oid) -> Self {
+    pub fn make_reference(id: ExternalId) -> Self {
         Self {
             api_version: API_VERSION.into(),
             metadata: RepoTopicMetadata {
@@ -360,7 +360,7 @@ impl RepoTopic {
         self.metadata.details.as_ref()
     }
 
-    pub fn has_child(&self, id: &Oid) -> bool {
+    pub fn has_child(&self, id: &ExternalId) -> bool {
         self.children.iter().any(|child| &child.id == id)
     }
 
@@ -437,7 +437,7 @@ impl RepoTopic {
         }
     }
 
-    pub fn topic_id(&self) -> &Oid {
+    pub fn topic_id(&self) -> &ExternalId {
         &self.metadata.id
     }
 }
@@ -602,11 +602,11 @@ impl TopicDownsetIter {
 #[derive(Debug)]
 pub struct DownsetIter {
     iter: TopicDownsetIter,
-    links: Vec<Oid>,
+    links: Vec<ExternalId>,
 }
 
 impl Iterator for DownsetIter {
-    type Item = Oid;
+    type Item = ExternalId;
 
     fn next(&mut self) -> Option<Self::Item> {
         if !self.links.is_empty() {

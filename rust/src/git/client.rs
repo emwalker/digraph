@@ -14,7 +14,7 @@ use super::{
     Search, SearchTokenIndex, SynonymIndex, TopicDownsetIter,
 };
 use crate::prelude::*;
-use crate::types::{ReadPath, Timespec};
+use crate::types::{TopicPath, Timespec};
 
 #[derive(Clone, Debug, Default)]
 pub struct DataRoot {
@@ -27,7 +27,7 @@ impl std::fmt::Display for DataRoot {
     }
 }
 
-pub fn parse_path(input: &str) -> Result<(DataRoot, RepoId, Oid)> {
+pub fn parse_path(input: &str) -> Result<(DataRoot, RepoId, ExternalId)> {
     lazy_static! {
         static ref RE: Regex =
             Regex::new(r"^(.+?)/([\w-]+)/objects/([\w_-]{2})/([\w_-]{2})/([\w_-]+)/object.yaml$")
@@ -53,7 +53,7 @@ pub fn parse_path(input: &str) -> Result<(DataRoot, RepoId, Oid)> {
             _ => return Err(Error::Repo(format!("bad path: {}", input))),
         };
 
-    let oid: Oid = format!("{}{}{}", part1, part2, part3).try_into()?;
+    let oid: ExternalId = format!("{}{}{}", part1, part2, part3).try_into()?;
     let root = PathBuf::from(root);
 
     Ok((DataRoot::new(root), repo_id, oid))
@@ -91,7 +91,7 @@ pub trait GitPaths {
     fn parts(&self) -> Result<(&str, &str, &str)>;
 }
 
-impl GitPaths for Oid {
+impl GitPaths for ExternalId {
     fn parts(&self) -> Result<(&str, &str, &str)> {
         self.parts()
     }
@@ -128,10 +128,10 @@ impl Client {
     }
 
     // How to handle path visibility?
-    fn cycle_exists(&self, repo: &RepoId, descendant_id: &Oid, ancestor_id: &Oid) -> Result<bool> {
+    fn cycle_exists(&self, repo: &RepoId, descendant_id: &ExternalId, ancestor_id: &ExternalId) -> Result<bool> {
         let mut i = 0;
 
-        let descendant_path = self.read_path(repo, descendant_id)?;
+        let descendant_path = self.topic_path(repo, descendant_id)?;
 
         for topic in self.topic_downset(&descendant_path) {
             i += 1;
@@ -145,15 +145,15 @@ impl Client {
         Ok(false)
     }
 
-    pub fn downset(&self, topic_path: &ReadPath) -> DownsetIter {
+    pub fn downset(&self, topic_path: &TopicPath) -> DownsetIter {
         DownsetIter::new(
             self.clone(),
             topic_path.repo_id.to_owned(),
-            self.fetch_topic(&topic_path.repo_id, &topic_path.id),
+            self.fetch_topic(&topic_path.repo_id, &topic_path.topic_id),
         )
     }
 
-    pub fn exists(&self, repo: &RepoId, id: &Oid) -> Result<bool> {
+    pub fn exists(&self, repo: &RepoId, id: &ExternalId) -> Result<bool> {
         if !self.viewer.can_read(repo) {
             return Ok(false);
         }
@@ -161,7 +161,7 @@ impl Client {
         repo.object_exists(id)
     }
 
-    pub fn fetch(&self, repo: &RepoId, id: &Oid) -> Option<RepoObject> {
+    pub fn fetch(&self, repo: &RepoId, id: &ExternalId) -> Option<RepoObject> {
         if !self.viewer.can_read(repo) {
             log::warn!("viewer cannot read path: {}", id);
             return None;
@@ -185,7 +185,7 @@ impl Client {
     pub fn fetch_activity(
         &self,
         repo: &RepoId,
-        id: &Oid,
+        id: &ExternalId,
         first: usize,
     ) -> Result<Vec<activity::Change>> {
         log::info!("fetching first {} change logs from Git for {}", first, id);
@@ -206,7 +206,7 @@ impl Client {
     pub fn fetch_activity_log(
         &self,
         repo: &RepoId,
-        id: &Oid,
+        id: &ExternalId,
         index_mode: IndexMode,
     ) -> Result<ActivityIndex> {
         let filename = id.activity_log_filename()?;
@@ -218,7 +218,7 @@ impl Client {
         }
     }
 
-    pub fn fetch_link(&self, repo_id: &RepoId, link_id: &Oid) -> Option<RepoLink> {
+    pub fn fetch_link(&self, repo_id: &RepoId, link_id: &ExternalId) -> Option<RepoLink> {
         match &self.fetch(repo_id, link_id)? {
             RepoObject::Link(link) => Some(link.to_owned()),
             other => {
@@ -272,7 +272,7 @@ impl Client {
         }
     }
 
-    pub fn fetch_topic(&self, repo: &RepoId, topic_id: &Oid) -> Option<RepoTopic> {
+    pub fn fetch_topic(&self, repo: &RepoId, topic_id: &ExternalId) -> Option<RepoTopic> {
         match &self.fetch(repo, topic_id)? {
             RepoObject::Topic(topic) => Some(topic.to_owned()),
             _ => None,
@@ -301,11 +301,12 @@ impl Client {
         Ok(searches)
     }
 
-    pub fn read_path(&self, repo_id: &RepoId, id: &Oid) -> Result<ReadPath> {
+    pub fn topic_path(&self, repo_id: &RepoId, id: &ExternalId) -> Result<TopicPath> {
         let commit = self.repo(repo_id)?.commit_oid(&self.timespec)?;
-        Ok(ReadPath {
+
+        Ok(TopicPath {
             commit,
-            id: id.to_owned(),
+            topic_id: id.to_owned(),
             repo_id: repo_id.to_owned(),
         })
     }
@@ -387,11 +388,11 @@ impl Client {
         }
     }
 
-    pub fn topic_downset(&self, topic_path: &ReadPath) -> TopicDownsetIter {
+    pub fn topic_downset(&self, topic_path: &TopicPath) -> TopicDownsetIter {
         TopicDownsetIter::new(
             self.clone(),
             topic_path.repo_id.to_owned(),
-            self.fetch_topic(&topic_path.repo_id, &topic_path.id),
+            self.fetch_topic(&topic_path.repo_id, &topic_path.topic_id),
         )
     }
 
@@ -454,7 +455,7 @@ impl Mutation {
     pub fn activity_log(
         &self,
         repo: &RepoId,
-        id: &Oid,
+        id: &ExternalId,
         index_mode: IndexMode,
     ) -> Result<ActivityIndex> {
         self.client.fetch_activity_log(repo, id, index_mode)
@@ -481,8 +482,8 @@ impl Mutation {
     pub fn cycle_exists(
         &self,
         repo: &RepoId,
-        descendant_id: &Oid,
-        ancestor_id: &Oid,
+        descendant_id: &ExternalId,
+        ancestor_id: &ExternalId,
     ) -> Result<bool> {
         self.client.cycle_exists(repo, descendant_id, ancestor_id)
     }
@@ -491,23 +492,23 @@ impl Mutation {
         core::Repo::delete(&self.client.root, repo)
     }
 
-    pub fn exists(&self, repo: &RepoId, id: &Oid) -> Result<bool> {
+    pub fn exists(&self, repo: &RepoId, id: &ExternalId) -> Result<bool> {
         self.client.exists(repo, id)
     }
 
-    pub fn fetch(&self, repo: &RepoId, id: &Oid) -> Option<RepoObject> {
+    pub fn fetch(&self, repo: &RepoId, id: &ExternalId) -> Option<RepoObject> {
         self.client.fetch(repo, id)
     }
 
-    pub fn fetch_link(&self, repo: &RepoId, link_id: &Oid) -> Option<RepoLink> {
+    pub fn fetch_link(&self, repo: &RepoId, link_id: &ExternalId) -> Option<RepoLink> {
         self.client.fetch_link(repo, link_id)
     }
 
-    pub fn fetch_topic(&self, repo: &RepoId, topic_id: &Oid) -> Option<RepoTopic> {
+    pub fn fetch_topic(&self, repo: &RepoId, topic_id: &ExternalId) -> Option<RepoTopic> {
         self.client.fetch_topic(repo, topic_id)
     }
 
-    pub fn mark_deleted(&mut self, repo: &RepoId, id: &Oid) -> Result<()> {
+    pub fn mark_deleted(&mut self, repo: &RepoId, id: &ExternalId) -> Result<()> {
         self.check_can_update(repo)?;
 
         let activity = self.client.fetch_activity(repo, id, usize::MAX)?;
@@ -520,13 +521,13 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn remove(&mut self, repo: &RepoId, id: &Oid) -> Result<()> {
+    pub fn remove(&mut self, repo: &RepoId, id: &ExternalId) -> Result<()> {
         let filename = id.object_filename()?;
         self.files.insert((repo.to_owned(), filename), None);
         Ok(())
     }
 
-    pub fn remove_link(&mut self, repo: &RepoId, link_id: &Oid, link: &RepoLink) -> Result<()> {
+    pub fn remove_link(&mut self, repo: &RepoId, link_id: &ExternalId, link: &RepoLink) -> Result<()> {
         self.check_can_update(repo)?;
 
         let searches = self.client.link_searches(Some(link.to_owned()))?;
@@ -539,7 +540,7 @@ impl Mutation {
         self.remove(repo, link_id)
     }
 
-    pub fn remove_topic(&mut self, repo: &RepoId, topic_id: &Oid, topic: &RepoTopic) -> Result<()> {
+    pub fn remove_topic(&mut self, repo: &RepoId, topic_id: &ExternalId, topic: &RepoTopic) -> Result<()> {
         self.check_can_update(repo)?;
 
         self.indexer
@@ -623,7 +624,7 @@ impl Mutation {
         self.save_object(repo, link_id, oid)
     }
 
-    fn save_object(&mut self, repo: &RepoId, id: &Oid, oid: git2::Oid) -> Result<()> {
+    fn save_object(&mut self, repo: &RepoId, id: &ExternalId, oid: git2::Oid) -> Result<()> {
         let filename = id.object_filename()?;
         self.files.insert((repo.to_owned(), filename), Some(oid));
         Ok(())
@@ -704,14 +705,14 @@ mod tests {
         #[test]
         fn object_filename() {
             assert_eq!(
-                Oid::try_from("123456").unwrap().object_filename().unwrap(),
+                ExternalId::try_from("123456").unwrap().object_filename().unwrap(),
                 PathBuf::from("objects/12/34/56/object.yaml")
             );
         }
 
         #[test]
         fn parts() {
-            let id = Oid::try_from("q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
+            let id = ExternalId::try_from("q-ZZmeNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ").unwrap();
             assert_eq!(
                 id.parts().unwrap(),
                 ("q-", "ZZ", "meNzLnZvgk_QGVjqPIpSgkADx71iWZrapMTphpQ")

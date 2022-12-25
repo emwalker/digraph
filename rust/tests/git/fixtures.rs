@@ -75,7 +75,7 @@ impl Fixtures {
         Ok(self.leaked_data()?.is_empty())
     }
 
-    pub fn fetch_link<F>(&self, repo_id: &RepoId, link_id: &Oid, block: F)
+    pub fn fetch_link<F>(&self, repo_id: &RepoId, link_id: &ExternalId, block: F)
     where
         F: Fn(RepoLink),
     {
@@ -87,7 +87,7 @@ impl Fixtures {
         block(link);
     }
 
-    pub fn fetch_topic<F>(&self, repo: &RepoId, topic_id: &Oid, block: F)
+    pub fn fetch_topic<F>(&self, repo: &RepoId, topic_id: &ExternalId, block: F)
     where
         F: Fn(RepoTopic),
     {
@@ -104,11 +104,11 @@ impl Fixtures {
     }
 
     pub fn topic(&self, repo: &RepoId, topic_id: &str) -> RepoTopic {
-        let topic_id = Oid::try_from(topic_id).unwrap();
+        let topic_id = ExternalId::try_from(topic_id).unwrap();
         self.git.fetch_topic(repo, &topic_id).unwrap()
     }
 
-    pub fn find_topic(&self, name: &str) -> Option<Oid> {
+    pub fn find_topic(&self, name: &str) -> Option<ExternalId> {
         let FetchTopicLiveSearchResult {
             synonyms: matches, ..
         } = FetchTopicLiveSearch {
@@ -140,7 +140,7 @@ impl Fixtures {
         repo_id: &RepoId,
         url: &RepoUrl,
         title: Option<String>,
-        add_parent_topic_id: Option<Oid>,
+        add_parent_topic_id: Option<ExternalId>,
     ) -> UpsertLinkResult {
         let html = match &title {
             Some(title) => format!("<title>{}</title>", title),
@@ -165,7 +165,7 @@ impl Fixtures {
         &self,
         repo: &RepoId,
         name: &str,
-        parent_topic: &Oid,
+        parent_topic: &ExternalId,
         on_matching_synonym: OnMatchingSynonym,
     ) -> Result<UpsertTopicResult> {
         UpsertTopic {
@@ -190,7 +190,7 @@ mod tests {
     #[allow(dead_code)]
     fn update_simple_fixtures() {
         let f = Fixtures::copy("simple");
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
         let repo = RepoId::wiki();
 
         let topic_path =

@@ -14,12 +14,12 @@ use super::{Mutation, RepoLinkDetails};
 pub struct DeleteLink {
     pub actor: Viewer,
     pub repo: RepoId,
-    pub link_id: Oid,
+    pub link_id: ExternalId,
 }
 
 pub struct DeleteLinkResult {
     pub alerts: Vec<Alert>,
-    pub deleted_link_id: Oid,
+    pub deleted_link_id: ExternalId,
 }
 
 impl DeleteLink {
@@ -82,8 +82,8 @@ impl DeleteLink {
 pub struct UpdateLinkParentTopics {
     pub actor: Viewer,
     pub repo_id: RepoId,
-    pub link_id: Oid,
-    pub parent_topic_ids: BTreeSet<Oid>,
+    pub link_id: ExternalId,
+    pub parent_topic_ids: BTreeSet<ExternalId>,
 }
 
 pub struct UpdateLinkParentTopicsResult {
@@ -189,7 +189,7 @@ impl UpdateLinkParentTopics {
 #[derivative(Debug)]
 pub struct UpsertLink {
     pub actor: Viewer,
-    pub add_parent_topic_id: Option<Oid>,
+    pub add_parent_topic_id: Option<ExternalId>,
     #[derivative(Debug = "ignore")]
     pub fetcher: Box<dyn http::Fetch + Send + Sync>,
     pub repo_id: RepoId,
@@ -270,7 +270,7 @@ impl UpsertLink {
         &self,
         mutation: &mut Mutation,
         link: &RepoLink,
-    ) -> Result<(Option<RepoTopic>, HashMap<Oid, RepoTopic>)> {
+    ) -> Result<(Option<RepoTopic>, HashMap<ExternalId, RepoTopic>)> {
         let mut parent_topics = HashMap::new();
 
         for parent in &link.parent_topics {
@@ -301,7 +301,7 @@ impl UpsertLink {
         if parent_topics.is_empty() {
             // There's a client error if we get to this point.
             log::warn!("no topic found, placing under root topic");
-            if let Some(topic) = mutation.fetch_topic(&self.repo_id, &Oid::root_topic()) {
+            if let Some(topic) = mutation.fetch_topic(&self.repo_id, &ExternalId::root_topic()) {
                 parent_topics.insert(topic.topic_id().to_owned(), topic);
             }
         }
@@ -329,7 +329,7 @@ impl UpsertLink {
                 .parent_topics
                 .iter()
                 .map(|parent| parent.id.to_owned())
-                .collect::<BTreeSet<Oid>>(),
+                .collect::<BTreeSet<ExternalId>>(),
             previous_title: previous_title.to_owned(),
             upserted_link: activity::LinkInfo::from(link),
         })
@@ -338,7 +338,7 @@ impl UpsertLink {
     fn make_link(
         &self,
         mutation: &Mutation,
-        link_id: &Oid,
+        link_id: &ExternalId,
         url: &RepoUrl,
     ) -> Result<(RepoLink, Option<String>)> {
         if mutation.exists(&self.repo_id, link_id)? {

@@ -75,8 +75,8 @@ impl RepoUrl {
         self.path.ends_with(suffix)
     }
 
-    pub fn id(&self) -> Result<Oid> {
-        Oid::try_from(&self.sha256)
+    pub fn id(&self) -> Result<ExternalId> {
+        ExternalId::try_from(&self.sha256)
     }
 
     pub fn is_pdf(&self) -> bool {

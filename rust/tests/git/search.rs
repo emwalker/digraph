@@ -41,7 +41,7 @@ mod fetch_topic_live_search {
     fn indexing_works() {
         let f = Fixtures::copy("simple");
         let repo_id = RepoId::wiki();
-        let parent = Oid::root_topic();
+        let parent = ExternalId::root_topic();
         let search = Search::parse("clim chan soc").unwrap();
 
         let FetchTopicLiveSearchResult {
@@ -88,7 +88,7 @@ mod fetch_topic_live_search {
 #[cfg(test)]
 mod fetch_matches {
     use digraph::git::Client;
-    use digraph::types::{Downset, ReadPath, Timespec};
+    use digraph::types::{Downset, TopicPath, Timespec};
     use std::collections::HashSet;
 
     use crate::git::valid_url;
@@ -98,7 +98,7 @@ mod fetch_matches {
     struct FetchDownset(Client);
 
     impl Downset for FetchDownset {
-        fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<Oid>> {
+        fn intersection(&self, topic_paths: &[TopicPath]) -> Result<HashSet<ExternalId>> {
             if topic_paths.is_empty() {
                 return Ok(HashSet::new());
             }
@@ -118,8 +118,8 @@ mod fetch_matches {
             }
         }
 
-        fn downset(&self, path: &ReadPath) -> HashSet<Oid> {
-            self.0.downset(path).collect::<HashSet<Oid>>()
+        fn downset(&self, path: &TopicPath) -> HashSet<ExternalId> {
+            self.0.downset(path).collect::<HashSet<ExternalId>>()
         }
     }
 
@@ -127,7 +127,7 @@ mod fetch_matches {
         matches.iter().filter(|m| m.kind == kind).count()
     }
 
-    fn search(f: &Fixtures, topic_id: &Oid, input: &str, recursive: bool) -> BTreeSet<SearchMatch> {
+    fn search(f: &Fixtures, topic_id: &ExternalId, input: &str, recursive: bool) -> BTreeSet<SearchMatch> {
         let fetcher = FetchDownset(f.git.clone());
         let search = Search::parse(input).unwrap();
         let viewer = actor();
@@ -152,7 +152,7 @@ mod fetch_matches {
     fn matching_topics() {
         let f = Fixtures::copy("simple");
 
-        let matches = search(&f, &Oid::root_topic(), "exist non root topic", true);
+        let matches = search(&f, &ExternalId::root_topic(), "exist non root topic", true);
         assert!(!matches.is_empty());
         let row = matches.iter().next().unwrap();
 
@@ -192,7 +192,7 @@ mod fetch_matches {
     fn topic_search() {
         let f = Fixtures::copy("simple");
 
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
         let climate_change = f.find_topic("Climate change").unwrap();
         let query = format!("in:{}", climate_change);
 
@@ -205,7 +205,7 @@ mod fetch_matches {
     fn combined_search() {
         let f = Fixtures::copy("simple");
 
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
         let climate_change = f.find_topic("Climate change").unwrap();
         let query = format!("in:{} frequency", climate_change);
 
@@ -222,7 +222,7 @@ mod fetch_matches {
         let f = Fixtures::copy("simple");
 
         let fetcher = FetchDownset(f.git.clone());
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
         let climate_change = f.find_topic("Climate change and weather").unwrap();
         let query = format!("in:{}", climate_change);
         let search = Search::parse(&query).unwrap();
@@ -250,7 +250,7 @@ mod fetch_matches {
     fn topic_used_in_search_appears_at_top() {
         let f = Fixtures::copy("simple");
 
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
         let weather = f.find_topic("Weather").unwrap();
         let query = format!("in:{}", weather);
         let matches = search(&f, &root, &query, true);
@@ -262,7 +262,7 @@ mod fetch_matches {
     #[test]
     fn url_search() {
         let f = Fixtures::copy("simple");
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
 
         let matches = search(
             &f,
@@ -278,7 +278,7 @@ mod fetch_matches {
     fn search_works_across_prefixes() {
         let f = Fixtures::copy("simple");
         let repo_id = RepoId::other();
-        let root_id = Oid::root_topic();
+        let root_id = ExternalId::root_topic();
 
         let _ = f.upsert_link(&repo_id, &valid_url(), Some("Other repo".to_owned()), None);
 

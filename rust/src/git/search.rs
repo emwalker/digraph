@@ -9,7 +9,7 @@ use super::{Client, Kind, Object, ObjectBuilders, Phrase, RepoObject, SynonymEnt
 use crate::git::SearchEntry;
 use crate::prelude::*;
 use crate::redis;
-use crate::types::{Downset, ReadPath, Timespec};
+use crate::types::{Downset, TopicPath, Timespec};
 
 #[derive(
     Copy,
@@ -33,7 +33,7 @@ pub enum TopicSpecOperation {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct SearchTopicSpec {
     pub op: TopicSpecOperation,
-    pub id: Oid,
+    pub id: ExternalId,
 }
 
 const ID_PATTERN: &str = r#"^in:[\w-]+$"#;
@@ -57,7 +57,7 @@ impl SearchTopicSpec {
         let op = TopicSpecOperation::from_str(&parts[0])?;
         Ok(Self {
             op,
-            id: Oid::try_from(&parts[1])?,
+            id: ExternalId::try_from(&parts[1])?,
         })
     }
 }
@@ -186,7 +186,7 @@ impl FetchTopicLiveSearch {
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SortKey(pub Kind, pub bool, pub String, pub Oid);
+pub struct SortKey(pub Kind, pub bool, pub String, pub ExternalId);
 
 #[derive(Clone, Debug)]
 pub struct SearchMatch {
@@ -216,7 +216,7 @@ impl std::cmp::PartialEq for SearchMatch {
 impl std::cmp::Eq for SearchMatch {}
 
 struct UrlMatches {
-    ids: HashSet<Oid>,
+    ids: HashSet<ExternalId>,
     impossible_result: bool,
 }
 
@@ -255,7 +255,7 @@ impl UrlMatches {
 }
 
 struct Filter {
-    paths: HashSet<Oid>,
+    paths: HashSet<ExternalId>,
     urls: UrlMatches,
 }
 
@@ -282,12 +282,12 @@ pub struct RedisFetchDownSet {
 }
 
 impl Downset for RedisFetchDownSet {
-    fn intersection(&self, topic_paths: &[ReadPath]) -> Result<HashSet<Oid>> {
+    fn intersection(&self, topic_paths: &[TopicPath]) -> Result<HashSet<ExternalId>> {
         self.redis.intersection(self, topic_paths)
     }
 
-    fn downset(&self, path: &ReadPath) -> HashSet<Oid> {
-        self.client.downset(path).collect::<HashSet<Oid>>()
+    fn downset(&self, path: &TopicPath) -> HashSet<ExternalId> {
+        self.client.downset(path).collect::<HashSet<ExternalId>>()
     }
 }
 
@@ -298,7 +298,7 @@ pub struct FindMatches {
     pub recursive: bool,
     pub search: Search,
     pub timespec: Timespec,
-    pub topic_id: Oid,
+    pub topic_id: ExternalId,
     pub viewer: Viewer,
 }
 
@@ -438,7 +438,7 @@ impl FindMatches {
             .into_matches(&self.search, self.locale, self.limit)
     }
 
-    fn intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<Oid>>
+    fn intersection<F>(&self, client: &Client, fetch: &F) -> Result<HashSet<ExternalId>>
     where
         F: Downset,
     {
@@ -450,12 +450,12 @@ impl FindMatches {
             // The (wiki) root topic is mostly not needed for now; let's exclude it until we know
             // how to make the downset and related implementation details fast.
             if !self.topic_id.is_root() {
-                let path = client.read_path(repo_id, &self.topic_id)?;
+                let path = client.topic_path(repo_id, &self.topic_id)?;
                 topic_paths.push(path);
             }
 
             for spec in &self.search.topic_specs {
-                let path = client.read_path(repo_id, &spec.id)?;
+                let path = client.topic_path(repo_id, &spec.id)?;
                 topic_paths.push(path);
             }
 
@@ -544,7 +544,7 @@ mod tests {
         assert_eq!(s.op, TopicSpecOperation::IN);
         assert_eq!(
             s.id,
-            Oid::try_from("e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap(),
+            ExternalId::try_from("e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap(),
         );
     }
 

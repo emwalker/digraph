@@ -102,7 +102,7 @@ impl Repository {
 
     async fn root_topic(&self, ctx: &Context<'_>) -> Result<Topic> {
         ctx.data_unchecked::<Store>()
-            .fetch_topic(Oid::root_topic())
+            .fetch_topic(ExternalId::root_topic())
             .await?
             .try_into()
     }

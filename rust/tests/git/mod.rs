@@ -27,6 +27,6 @@ fn valid_url() -> RepoUrl {
     RepoUrl::parse("https://www.google.com").unwrap()
 }
 
-fn parse_id(id: &str) -> Oid {
-    Oid::try_from(id).unwrap()
+fn parse_id(id: &str) -> ExternalId {
+    ExternalId::try_from(id).unwrap()
 }

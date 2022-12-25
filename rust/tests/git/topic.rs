@@ -72,7 +72,7 @@ mod delete_topic {
         let f = Fixtures::copy("simple");
         let repo = RepoId::wiki();
         let path = parse_id("00001");
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
         let parent = f.git.fetch_topic(&repo, &root).unwrap();
         assert!(parent.has_child(&path));
 
@@ -93,7 +93,7 @@ mod delete_topic {
         let f = Fixtures::copy("simple");
         let repo = RepoId::wiki();
 
-        let root = f.git.fetch_topic(&repo, &Oid::root_topic()).unwrap();
+        let root = f.git.fetch_topic(&repo, &ExternalId::root_topic()).unwrap();
         let topic_id = f.find_topic("Climate change").unwrap();
         let child_id = f.find_topic("Climate change and weather").unwrap();
 
@@ -108,7 +108,7 @@ mod delete_topic {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        let root = f.git.fetch_topic(&repo, &Oid::root_topic()).unwrap();
+        let root = f.git.fetch_topic(&repo, &ExternalId::root_topic()).unwrap();
 
         assert!(!root.has_child(&topic_id));
         assert!(root.has_child(&child_id));
@@ -118,7 +118,7 @@ mod delete_topic {
     fn cannot_delete_root_topic() {
         let f = Fixtures::copy("simple");
         let repo = RepoId::wiki();
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
         let topic = f.git.fetch_topic(&repo, &root).unwrap();
         assert!(topic.root());
 
@@ -134,7 +134,7 @@ mod delete_topic {
         assert!(topic.root());
     }
 
-    fn make_topic(f: &Fixtures, parent: &Oid, name: &str) -> RepoTopic {
+    fn make_topic(f: &Fixtures, parent: &ExternalId, name: &str) -> RepoTopic {
         let topic_id = parse_id("dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
 
         let UpsertTopicResult { repo_topic, .. } = UpsertTopic {
@@ -155,7 +155,7 @@ mod delete_topic {
     fn change_entries_updated() {
         let f = Fixtures::copy("simple");
         let repo = RepoId::wiki();
-        let root = Oid::root_topic();
+        let root = ExternalId::root_topic();
 
         let climate_change = make_topic(&f, &root, "Topic name");
         let activity = f

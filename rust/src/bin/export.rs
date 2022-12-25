@@ -21,9 +21,9 @@ struct Opts {
     root: PathBuf,
 }
 
-fn sha256_id(id: &str) -> Oid {
+fn sha256_id(id: &str) -> ExternalId {
     let id = sha256_base64(id);
-    Oid::try_from(&id).unwrap()
+    ExternalId::try_from(&id).unwrap()
 }
 
 fn parse_args() -> Opts {
@@ -273,7 +273,7 @@ fn persist_topic(
 fn persist_topics(
     mutation: &mut Mutation,
     repo_topic_repo_id: &RepoId,
-    topic_id: &Oid,
+    topic_id: &ExternalId,
     meta: &TopicMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,

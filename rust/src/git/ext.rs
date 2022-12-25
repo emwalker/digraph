@@ -210,7 +210,7 @@ impl TryFrom<(&RepoId, &RepoObject)> for RepoTopicWrapper {
 }
 
 impl RepoTopicWrapper {
-    pub fn child_ids(&self) -> Vec<Oid> {
+    pub fn child_ids(&self) -> Vec<ExternalId> {
         self.repo_topic
             .children
             .iter()
@@ -218,7 +218,7 @@ impl RepoTopicWrapper {
             .collect_vec()
     }
 
-    pub fn child_link_ids(&self) -> Vec<Oid> {
+    pub fn child_link_ids(&self) -> Vec<ExternalId> {
         self.repo_topic
             .children
             .iter()
@@ -233,7 +233,7 @@ impl RepoTopicWrapper {
         self.repo_topic.details()
     }
 
-    pub fn parent_topic_ids(&self) -> Vec<Oid> {
+    pub fn parent_topic_ids(&self) -> Vec<ExternalId> {
         self.repo_topic
             .parent_topics
             .iter()
@@ -272,7 +272,7 @@ impl RepoTopicWrapper {
         self.repo_topic.timerange()
     }
 
-    pub fn topic_id(&self) -> &Oid {
+    pub fn topic_id(&self) -> &ExternalId {
         self.repo_topic.topic_id()
     }
 }
@@ -363,14 +363,14 @@ impl Topic {
             .any(|topic| write_repo_ids.include(&topic.repo_id))
     }
 
-    pub fn child_link_ids(&self) -> Vec<Oid> {
+    pub fn child_link_ids(&self) -> Vec<ExternalId> {
         self.repo_topics
             .iter()
             .flat_map(|topic| topic.child_link_ids())
             .collect_vec()
     }
 
-    pub fn child_ids(&self) -> Vec<Oid> {
+    pub fn child_ids(&self) -> Vec<ExternalId> {
         self.repo_topics
             .iter()
             .flat_map(|topic| topic.child_ids())
@@ -397,7 +397,7 @@ impl Topic {
         self.display_topic.synonyms()
     }
 
-    pub fn parent_topic_ids(&self) -> Vec<Oid> {
+    pub fn parent_topic_ids(&self) -> Vec<ExternalId> {
         self.repo_topics
             .iter()
             .flat_map(|parent| parent.parent_topic_ids())
@@ -436,11 +436,11 @@ impl RepoLinkWrapper {
         self.repo_id.is_wiki()
     }
 
-    pub fn link_id(&self) -> &Oid {
+    pub fn link_id(&self) -> &ExternalId {
         self.repo_link.id()
     }
 
-    pub fn parent_topic_ids(&self) -> Vec<Oid> {
+    pub fn parent_topic_ids(&self) -> Vec<ExternalId> {
         self.repo_link
             .parent_topics
             .iter()
@@ -563,7 +563,7 @@ impl Link {
         self.repo_links.iter().any(|link| &link.repo_id == repo_id)
     }
 
-    pub fn parent_topic_ids(&self) -> Vec<Oid> {
+    pub fn parent_topic_ids(&self) -> Vec<ExternalId> {
         self.repo_links
             .iter()
             .flat_map(|parent| parent.parent_topic_ids())
@@ -593,7 +593,7 @@ impl Object {
         }
     }
 
-    pub fn id(&self) -> &Oid {
+    pub fn id(&self) -> &ExternalId {
         match self {
             Self::Topic(Topic { key, .. }) => &key.0,
             Self::Link(Link { key, .. }) => &key.0,

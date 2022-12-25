@@ -58,12 +58,12 @@ fn append_synonym(
 pub struct DeleteTopic {
     pub actor: Viewer,
     pub repo: RepoId,
-    pub topic_id: Oid,
+    pub topic_id: ExternalId,
 }
 
 pub struct DeleteTopicResult {
     pub alerts: Vec<Alert>,
-    pub deleted_topic_id: Oid,
+    pub deleted_topic_id: ExternalId,
 }
 
 impl DeleteTopic {
@@ -185,7 +185,7 @@ impl DeleteTopic {
 pub struct RemoveTopicTimerange {
     pub actor: Viewer,
     pub repo_id: RepoId,
-    pub topic_id: Oid,
+    pub topic_id: ExternalId,
 }
 
 pub struct RemoveTopicTimerangeResult {
@@ -250,9 +250,9 @@ impl RemoveTopicTimerange {
 
 pub struct UpdateTopicParentTopics {
     pub actor: Viewer,
-    pub parent_topic_ids: BTreeSet<Oid>,
+    pub parent_topic_ids: BTreeSet<ExternalId>,
     pub repo_id: RepoId,
-    pub topic_id: Oid,
+    pub topic_id: ExternalId,
 }
 
 pub struct UpdateTopicParentTopicsResult {
@@ -348,7 +348,7 @@ impl UpdateTopicParentTopics {
             parent_topic_ids: parent_topics
                 .iter()
                 .map(|parent| parent.id.to_owned())
-                .collect::<BTreeSet<Oid>>(),
+                .collect::<BTreeSet<ExternalId>>(),
             removed_parent_topics: activity::TopicInfoList::from(removed),
             updated_topic: activity::TopicInfo::from(topic),
         })
@@ -378,7 +378,7 @@ pub struct UpdateTopicSynonyms {
     pub actor: Viewer,
     pub repo_id: RepoId,
     pub synonyms: Vec<Synonym>,
-    pub topic_id: Oid,
+    pub topic_id: ExternalId,
 }
 
 pub struct UpdateTopicSynonymsResult {
@@ -513,7 +513,7 @@ impl UpdateTopicSynonyms {
                 .parent_topics
                 .iter()
                 .map(|parent| parent.id.to_owned())
-                .collect::<BTreeSet<Oid>>(),
+                .collect::<BTreeSet<ExternalId>>(),
             reordered: added.is_empty() && removed.is_empty(),
             removed_synonyms: activity::SynonymList::from(removed),
             updated_topic: activity::TopicInfo::from(topic),
@@ -524,7 +524,7 @@ impl UpdateTopicSynonyms {
 pub enum OnMatchingSynonym {
     Ask,
     CreateDistinct,
-    Update(Oid),
+    Update(ExternalId),
 }
 
 pub struct UpsertTopic {
@@ -532,7 +532,7 @@ pub struct UpsertTopic {
     pub locale: Locale,
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
-    pub parent_topic_id: Oid,
+    pub parent_topic_id: ExternalId,
     pub repo_id: RepoId,
 }
 
@@ -663,7 +663,7 @@ impl UpsertTopic {
         mutation: Mutation,
         store: &S,
         name: String,
-        topic_id: &Oid,
+        topic_id: &ExternalId,
         parent: RepoTopic,
         matches: BTreeSet<SynonymMatch>,
     ) -> Result<UpsertTopicResult>
@@ -688,7 +688,7 @@ impl UpsertTopic {
     fn handle_cycle(
         &self,
         mutation: Mutation,
-        topic_id: &Oid,
+        topic_id: &ExternalId,
         parent: RepoTopic,
         mut matches: BTreeSet<SynonymMatch>,
     ) -> Result<UpsertTopicResult> {
@@ -739,7 +739,7 @@ impl UpsertTopic {
             parent_topic_ids: parent_topics
                 .iter()
                 .map(|parent| parent.id.to_owned())
-                .collect::<BTreeSet<Oid>>(),
+                .collect::<BTreeSet<ExternalId>>(),
             upserted_topic: activity::TopicInfo::from(topic),
         })
     }
@@ -750,7 +750,7 @@ impl UpsertTopic {
         name: String,
     ) -> Result<(RepoTopic, BTreeSet<ParentTopic>)> {
         let added = chrono::Utc::now();
-        let id = Oid::make();
+        let id = ExternalId::make();
         let parent_topics = BTreeSet::from([parent.to_parent_topic()]);
 
         let topic = RepoTopic {
@@ -775,7 +775,7 @@ impl UpsertTopic {
         Ok((topic, parent_topics))
     }
 
-    fn ensure_topic(&self, mutation: &Mutation, topic_id: &Oid) -> RepoTopic {
+    fn ensure_topic(&self, mutation: &Mutation, topic_id: &ExternalId) -> RepoTopic {
         match mutation.fetch_topic(&self.repo_id, topic_id) {
             Some(topic) => topic,
 
@@ -796,7 +796,7 @@ pub struct UpsertTopicTimerange {
     pub actor: Viewer,
     pub repo_id: RepoId,
     pub timerange: Timerange,
-    pub topic_id: Oid,
+    pub topic_id: ExternalId,
 }
 
 pub struct UpsertTopicTimerangeResult {

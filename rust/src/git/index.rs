@@ -91,7 +91,7 @@ pub trait Index {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct SynonymEntry {
     pub name: String,
-    pub id: Oid,
+    pub id: ExternalId,
 }
 
 impl std::cmp::PartialOrd for SynonymEntry {
@@ -214,7 +214,7 @@ impl SynonymIndex {
         Self { filename, index }
     }
 
-    pub fn add(&mut self, topic_id: &Oid, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn add(&mut self, topic_id: &ExternalId, phrase: Phrase, name: &str) -> Result<()> {
         let paths = self.index.synonyms.entry(phrase).or_insert(BTreeSet::new());
 
         paths.insert(SynonymEntry {
@@ -229,7 +229,7 @@ impl SynonymIndex {
         Ok(self.index.full_matches(phrase))
     }
 
-    pub fn remove(&mut self, id: &Oid, phrase: Phrase, name: &str) -> Result<()> {
+    pub fn remove(&mut self, id: &ExternalId, phrase: Phrase, name: &str) -> Result<()> {
         if let Some(paths) = self.index.synonyms.get_mut(&phrase) {
             paths.remove(&SynonymEntry {
                 name: name.to_owned(),
@@ -250,7 +250,7 @@ impl SynonymIndex {
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SearchEntry {
     pub kind: Kind,
-    pub id: Oid,
+    pub id: ExternalId,
 }
 
 impl From<&TopicChild> for SearchEntry {
@@ -388,7 +388,7 @@ impl TryInto<SynonymIndexMap> for git2::Blob<'_> {
 
 #[derive(Clone, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ChangeReference {
-    pub id: Oid,
+    pub id: ExternalId,
     pub date: Timestamp,
 }
 
@@ -577,7 +577,7 @@ pub trait SaveChangesForPrefix {
 }
 
 pub struct Indexer {
-    path_activity: HashMap<(RepoId, Oid), ActivityIndex>,
+    path_activity: HashMap<(RepoId, ExternalId), ActivityIndex>,
     pub mode: IndexMode,
     repo_changes: HashMap<RepoId, BTreeSet<activity::Change>>,
     search_tokens: HashMap<IndexKey, SearchTokenIndex>,
@@ -621,7 +621,7 @@ impl Indexer {
         &mut self,
         client: &Client,
         repo: &RepoId,
-        id: &Oid,
+        id: &ExternalId,
     ) -> Result<&mut ActivityIndex> {
         let key = (repo.to_owned(), id.to_owned());
         let index = self
@@ -733,7 +733,7 @@ impl Indexer {
         &mut self,
         client: &Client,
         repo: &RepoId,
-        id: &Oid,
+        id: &ExternalId,
         topic: &RepoTopic,
     ) -> Result<()> {
         self.synonym_indexes(

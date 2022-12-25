@@ -83,7 +83,7 @@ mod update_link_parent_topics {
     fn topics_updated() {
         let f = Fixtures::copy("simple");
         let repo = RepoId::wiki();
-        let parent1 = Oid::root_topic();
+        let parent1 = ExternalId::root_topic();
         let parent2 = parse_id("00001");
         let url = valid_url();
 
@@ -175,7 +175,7 @@ mod upsert_link {
         f.fetch_link(&repo, &link_id, |link| {
             assert_eq!(link.parent_topics.len(), 1);
             let topic = link.parent_topics.iter().next().unwrap();
-            assert_eq!(topic.id, Oid::root_topic());
+            assert_eq!(topic.id, ExternalId::root_topic());
         });
     }
 

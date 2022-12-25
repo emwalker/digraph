@@ -35,7 +35,7 @@ impl View {
     ) -> Result<ActivityLineItemConnection> {
         let store = ctx.data_unchecked::<Store>();
         let repo = RepoId::wiki();
-        let topic_id: Option<Oid> = match topic_id {
+        let topic_id: Option<ExternalId> = match topic_id {
             Some(topic_id) => Some(topic_id.try_into()?),
             None => None,
         };

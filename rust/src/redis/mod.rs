@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::git;
 use crate::prelude::*;
-use crate::types::{Downset, ReadPath};
+use crate::types::{Downset, TopicPath};
 
 #[derive(Clone, Debug)]
 pub struct Noop;
@@ -40,10 +40,10 @@ impl git::CacheStats for Noop {
 pub struct Key(String);
 
 impl Key {
-    fn downset(path: &ReadPath) -> Self {
+    fn downset(path: &TopicPath) -> Self {
         Self(format!(
             "repo:{}:topic:{}:{}:down",
-            path.repo_id, path.id, path.commit
+            path.repo_id, path.topic_id, path.commit
         ))
     }
 }
@@ -108,7 +108,7 @@ impl Redis {
     // For each topic read path (a commit, oid, repo_id combo), fetch the downset for the repo
     // topic, save the oids in the downset to redis and perform the intersection of the sets,
     // returning the resulting list of oids.
-    pub fn intersection<F>(&self, fetch: &F, topic_paths: &[ReadPath]) -> Result<HashSet<Oid>>
+    pub fn intersection<F>(&self, fetch: &F, topic_paths: &[TopicPath]) -> Result<HashSet<ExternalId>>
     where
         F: Downset,
     {
@@ -155,8 +155,8 @@ impl Redis {
                 let set: HashSet<String> = con.sinter(&keys)?;
                 Ok(set
                     .iter()
-                    .map(Oid::try_from)
-                    .collect::<Result<HashSet<Oid>>>()?)
+                    .map(ExternalId::try_from)
+                    .collect::<Result<HashSet<ExternalId>>>()?)
             }
 
             None => Ok(HashSet::new()),
@@ -174,10 +174,10 @@ impl Redis {
         &self,
         con: &mut redis_rs::Connection,
         key: &Key,
-        set: &HashSet<Oid>,
+        set: &HashSet<ExternalId>,
     ) -> Result<()> {
         redis_rs::transaction(con, &[key], |con, pipe| {
-            let set = set.iter().map(Oid::to_string).collect::<HashSet<String>>();
+            let set = set.iter().map(ExternalId::to_string).collect::<HashSet<String>>();
             if set.is_empty() {
                 pipe.del(key).ignore()
             } else {

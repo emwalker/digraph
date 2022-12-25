@@ -17,7 +17,7 @@ pub fn timerange_epoch() -> Geotime {
 pub fn topic(name: &str) -> RepoTopic {
     let added = chrono::Utc::now();
     // Some unique path
-    let id: Oid = sha256_base64(name).try_into().unwrap();
+    let id: ExternalId = sha256_base64(name).try_into().unwrap();
     RepoTopic {
         api_version: API_VERSION.to_owned(),
         metadata: RepoTopicMetadata {

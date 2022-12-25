@@ -177,7 +177,7 @@ impl View {
         Ok(blob.is_some())
     }
 
-    pub fn change(&self, id: &Oid) -> Result<activity::Change> {
+    pub fn change(&self, id: &ExternalId) -> Result<activity::Change> {
         let result = self.find_blob_by_filename(&id.change_filename()?)?;
         match result {
             Some(blob) => Ok(blob.try_into()?),
@@ -204,11 +204,11 @@ impl View {
         Ok(None)
     }
 
-    fn find_blob(&self, id: &Oid) -> Result<Option<git2::Blob>> {
+    fn find_blob(&self, id: &ExternalId) -> Result<Option<git2::Blob>> {
         self.find_blob_by_filename(&id.object_filename()?)
     }
 
-    pub fn link(&self, id: &Oid) -> Result<Option<RepoLink>> {
+    pub fn link(&self, id: &ExternalId) -> Result<Option<RepoLink>> {
         let link = match self.find_blob(id)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,
@@ -216,7 +216,7 @@ impl View {
         Ok(link)
     }
 
-    pub fn object(&self, path: &Oid) -> Result<Option<RepoObject>> {
+    pub fn object(&self, path: &ExternalId) -> Result<Option<RepoObject>> {
         let object = match self.find_blob(path)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,
@@ -224,7 +224,7 @@ impl View {
         Ok(object)
     }
 
-    pub fn object_exists(&self, id: &Oid) -> Result<bool> {
+    pub fn object_exists(&self, id: &ExternalId) -> Result<bool> {
         let filename = id.object_filename()?;
         self.blob_exists(&filename)
     }
@@ -276,7 +276,7 @@ impl View {
         })
     }
 
-    pub fn topic(&self, id: &Oid) -> Result<Option<RepoTopic>> {
+    pub fn topic(&self, id: &ExternalId) -> Result<Option<RepoTopic>> {
         let topic = match self.find_blob(id)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,
