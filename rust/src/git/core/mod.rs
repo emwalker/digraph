@@ -127,6 +127,19 @@ impl Repo {
 
         self.path_to_oid(subtree, path)
     }
+
+    pub fn topic_oid(
+        &self,
+        _timespec: &Timespec,
+        topic_id: &ExternalId,
+    ) -> Result<Option<git2::Oid>> {
+        let filename = topic_id.object_filename()?;
+        let mut path = deque_from_path(&filename);
+        let reference = self.inner.find_reference("HEAD")?;
+        let tree = reference.peel_to_tree()?;
+        let oid = self.path_to_oid(tree, &mut path);
+        Ok(oid)
+    }
 }
 
 impl<'repo> TryInto<RepoLink> for git2::Blob<'repo> {

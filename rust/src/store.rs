@@ -189,7 +189,11 @@ impl Store {
             .collect::<Result<BTreeSet<git::Link>>>()
     }
 
-    pub async fn fetch_objects(&self, ids: Vec<ExternalId>, take: usize) -> Result<Vec<git::Object>> {
+    pub async fn fetch_objects(
+        &self,
+        ids: Vec<ExternalId>,
+        take: usize,
+    ) -> Result<Vec<git::Object>> {
         let context_id = &self.viewer.context_repo_id;
         self.fetch_objects_with_context(ids, take, context_id).await
     }
@@ -376,7 +380,10 @@ impl Store {
             actor: self.viewer.clone(),
             repo_id: repo_id.to_owned(),
             topic_id: topic_id.to_owned(),
-            parent_topic_ids: parent_topics.iter().cloned().collect::<BTreeSet<ExternalId>>(),
+            parent_topic_ids: parent_topics
+                .iter()
+                .cloned()
+                .collect::<BTreeSet<ExternalId>>(),
         }
         .call(self.mutation()?, &self.redis)
     }

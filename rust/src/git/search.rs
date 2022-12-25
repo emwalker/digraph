@@ -9,7 +9,7 @@ use super::{Client, Kind, Object, ObjectBuilders, Phrase, RepoObject, SynonymEnt
 use crate::git::SearchEntry;
 use crate::prelude::*;
 use crate::redis;
-use crate::types::{Downset, TopicPath, Timespec};
+use crate::types::{Downset, Timespec, TopicPath};
 
 #[derive(
     Copy,
@@ -450,13 +450,15 @@ impl FindMatches {
             // The (wiki) root topic is mostly not needed for now; let's exclude it until we know
             // how to make the downset and related implementation details fast.
             if !self.topic_id.is_root() {
-                let path = client.topic_path(repo_id, &self.topic_id)?;
-                topic_paths.push(path);
+                if let Some(path) = client.topic_path(repo_id, &self.topic_id)? {
+                    topic_paths.push(path);
+                }
             }
 
             for spec in &self.search.topic_specs {
-                let path = client.topic_path(repo_id, &spec.id)?;
-                topic_paths.push(path);
+                if let Some(path) = client.topic_path(repo_id, &spec.id)? {
+                    topic_paths.push(path);
+                }
             }
 
             let set = fetch.intersection(&topic_paths)?;

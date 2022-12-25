@@ -394,7 +394,12 @@ impl Change {
         }
     }
 
-    pub fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&ExternalId>) -> String {
+    pub fn markdown(
+        &self,
+        locale: Locale,
+        actor_name: &str,
+        context: Option<&ExternalId>,
+    ) -> String {
         use crate::git::activity::markdown::Markdown;
         match self {
             Self::DeleteLink(inner) => inner.markdown(locale, actor_name, context),
@@ -790,7 +795,12 @@ mod markdown {
     use super::*;
 
     pub trait Markdown {
-        fn markdown(&self, locale: Locale, actor_name: &str, context: Option<&ExternalId>) -> String;
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            context: Option<&ExternalId>,
+        ) -> String;
     }
 
     impl LinkInfo {
@@ -862,7 +872,12 @@ mod markdown {
     }
 
     impl Markdown for DeleteLink {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             if self.parent_topics.is_empty() {
                 format!("{} deleted {}", actor_name, self.deleted_link.markdown())
             } else {
@@ -877,7 +892,12 @@ mod markdown {
     }
 
     impl Markdown for DeleteTopic {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             let mut markdown = format!(
                 "{} deleted {}",
                 actor_name,
@@ -924,7 +944,12 @@ mod markdown {
     }
 
     impl Markdown for ImportLink {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             format!(
                 "{} added {} to {}",
                 actor_name,
@@ -935,7 +960,12 @@ mod markdown {
     }
 
     impl Markdown for ImportTopic {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             let mut children = vec![];
 
             if !self.child_topics.is_empty() {
@@ -984,7 +1014,12 @@ mod markdown {
     }
 
     impl Markdown for RemoveTopicTimerange {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             let topic = self.updated_topic.markdown(locale);
 
             match &self.previous_timerange {
@@ -1016,7 +1051,12 @@ mod markdown {
     }
 
     impl Markdown for UpdateLinkParentTopics {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             if self.added_parent_topics.is_empty() && self.removed_parent_topics.is_empty() {
                 return format!(
                     "{} updated {}, but information about the change has been lost",
@@ -1053,7 +1093,12 @@ mod markdown {
     }
 
     impl Markdown for UpdateTopicParentTopics {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             let mut actions = vec![];
             let updated_topic = self.updated_topic.markdown(locale);
 
@@ -1082,7 +1127,12 @@ mod markdown {
     }
 
     impl Markdown for UpdateTopicSynonyms {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             let mut actions = vec![];
 
             if !self.added_synonyms.is_empty() {
@@ -1113,7 +1163,12 @@ mod markdown {
     }
 
     impl Markdown for UpsertLink {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             match &self.add_parent_topic {
                 Some(topic) => format!(
                     "{} added {} to {}",
@@ -1136,7 +1191,12 @@ mod markdown {
     }
 
     impl Markdown for UpsertTopic {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             format!(
                 "{} added {} to {}",
                 actor_name,
@@ -1147,7 +1207,12 @@ mod markdown {
     }
 
     impl Markdown for UpsertTopicTimerange {
-        fn markdown(&self, locale: Locale, actor_name: &str, _context: Option<&ExternalId>) -> String {
+        fn markdown(
+            &self,
+            locale: Locale,
+            actor_name: &str,
+            _context: Option<&ExternalId>,
+        ) -> String {
             let topic = self.updated_topic.markdown(locale);
             let prefix = TimerangePrefix::from(&self.updated_timerange);
 

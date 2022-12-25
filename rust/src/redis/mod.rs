@@ -43,7 +43,7 @@ impl Key {
     fn downset(path: &TopicPath) -> Self {
         Self(format!(
             "repo:{}:topic:{}:{}:down",
-            path.repo_id, path.topic_id, path.commit
+            path.repo_id, path.topic_id, path.topic_oid
         ))
     }
 }
@@ -108,7 +108,11 @@ impl Redis {
     // For each topic read path (a commit, oid, repo_id combo), fetch the downset for the repo
     // topic, save the oids in the downset to redis and perform the intersection of the sets,
     // returning the resulting list of oids.
-    pub fn intersection<F>(&self, fetch: &F, topic_paths: &[TopicPath]) -> Result<HashSet<ExternalId>>
+    pub fn intersection<F>(
+        &self,
+        fetch: &F,
+        topic_paths: &[TopicPath],
+    ) -> Result<HashSet<ExternalId>>
     where
         F: Downset,
     {
@@ -177,7 +181,10 @@ impl Redis {
         set: &HashSet<ExternalId>,
     ) -> Result<()> {
         redis_rs::transaction(con, &[key], |con, pipe| {
-            let set = set.iter().map(ExternalId::to_string).collect::<HashSet<String>>();
+            let set = set
+                .iter()
+                .map(ExternalId::to_string)
+                .collect::<HashSet<String>>();
             if set.is_empty() {
                 pipe.del(key).ignore()
             } else {

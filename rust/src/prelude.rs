@@ -1,8 +1,8 @@
 pub use super::errors::Error;
 pub use super::http::RepoUrl;
 pub use super::types::{
-    Alert, Locale, ExternalId, Okey, RepoId, RepoIds, Result, Timerange, TimerangePrefixFormat, Timestamp,
-    Viewer,
+    Alert, ExternalId, Locale, Okey, RepoId, RepoIds, Result, Timerange, TimerangePrefixFormat,
+    Timestamp, Viewer,
 };
 
 pub const API_VERSION: &str = "objects/v1";

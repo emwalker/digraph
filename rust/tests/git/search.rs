@@ -88,7 +88,7 @@ mod fetch_topic_live_search {
 #[cfg(test)]
 mod fetch_matches {
     use digraph::git::Client;
-    use digraph::types::{Downset, TopicPath, Timespec};
+    use digraph::types::{Downset, Timespec, TopicPath};
     use std::collections::HashSet;
 
     use crate::git::valid_url;
@@ -127,7 +127,12 @@ mod fetch_matches {
         matches.iter().filter(|m| m.kind == kind).count()
     }
 
-    fn search(f: &Fixtures, topic_id: &ExternalId, input: &str, recursive: bool) -> BTreeSet<SearchMatch> {
+    fn search(
+        f: &Fixtures,
+        topic_id: &ExternalId,
+        input: &str,
+        recursive: bool,
+    ) -> BTreeSet<SearchMatch> {
         let fetcher = FetchDownset(f.git.clone());
         let search = Search::parse(input).unwrap();
         let viewer = actor();

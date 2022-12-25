@@ -341,9 +341,9 @@ pub struct Timespec;
 
 #[derive(Debug)]
 pub struct TopicPath {
-    pub commit: git2::Oid,
     pub repo_id: RepoId,
     pub topic_id: ExternalId,
+    pub topic_oid: git2::Oid,
 }
 
 pub trait Downset {

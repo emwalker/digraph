@@ -14,7 +14,7 @@ use super::{
     Search, SearchTokenIndex, SynonymIndex, TopicDownsetIter,
 };
 use crate::prelude::*;
-use crate::types::{TopicPath, Timespec};
+use crate::types::{Timespec, TopicPath};
 
 #[derive(Clone, Debug, Default)]
 pub struct DataRoot {
@@ -128,16 +128,21 @@ impl Client {
     }
 
     // How to handle path visibility?
-    fn cycle_exists(&self, repo: &RepoId, descendant_id: &ExternalId, ancestor_id: &ExternalId) -> Result<bool> {
+    fn cycle_exists(
+        &self,
+        repo: &RepoId,
+        descendant_id: &ExternalId,
+        ancestor_id: &ExternalId,
+    ) -> Result<bool> {
         let mut i = 0;
 
-        let descendant_path = self.topic_path(repo, descendant_id)?;
-
-        for topic in self.topic_downset(&descendant_path) {
-            i += 1;
-            if topic.topic_id() == ancestor_id {
-                log::info!("cycle found after {} iterations", i);
-                return Ok(true);
+        if let Some(descendant_path) = self.topic_path(repo, descendant_id)? {
+            for topic in self.topic_downset(&descendant_path) {
+                i += 1;
+                if topic.topic_id() == ancestor_id {
+                    log::info!("cycle found after {} iterations", i);
+                    return Ok(true);
+                }
             }
         }
 
@@ -301,14 +306,18 @@ impl Client {
         Ok(searches)
     }
 
-    pub fn topic_path(&self, repo_id: &RepoId, id: &ExternalId) -> Result<TopicPath> {
-        let commit = self.repo(repo_id)?.commit_oid(&self.timespec)?;
+    pub fn topic_path(&self, repo_id: &RepoId, topic_id: &ExternalId) -> Result<Option<TopicPath>> {
+        let topic_oid = self.repo(repo_id)?.topic_oid(&self.timespec, topic_id)?;
 
-        Ok(TopicPath {
-            commit,
-            topic_id: id.to_owned(),
-            repo_id: repo_id.to_owned(),
-        })
+        if let Some(commit) = topic_oid {
+            return Ok(Some(TopicPath {
+                topic_oid: commit,
+                topic_id: topic_id.to_owned(),
+                repo_id: repo_id.to_owned(),
+            }));
+        }
+
+        Ok(None)
     }
 
     fn repo(&self, prefix: &RepoId) -> Result<core::Repo> {
@@ -527,7 +536,12 @@ impl Mutation {
         Ok(())
     }
 
-    pub fn remove_link(&mut self, repo: &RepoId, link_id: &ExternalId, link: &RepoLink) -> Result<()> {
+    pub fn remove_link(
+        &mut self,
+        repo: &RepoId,
+        link_id: &ExternalId,
+        link: &RepoLink,
+    ) -> Result<()> {
         self.check_can_update(repo)?;
 
         let searches = self.client.link_searches(Some(link.to_owned()))?;
@@ -540,7 +554,12 @@ impl Mutation {
         self.remove(repo, link_id)
     }
 
-    pub fn remove_topic(&mut self, repo: &RepoId, topic_id: &ExternalId, topic: &RepoTopic) -> Result<()> {
+    pub fn remove_topic(
+        &mut self,
+        repo: &RepoId,
+        topic_id: &ExternalId,
+        topic: &RepoTopic,
+    ) -> Result<()> {
         self.check_can_update(repo)?;
 
         self.indexer
@@ -705,7 +724,10 @@ mod tests {
         #[test]
         fn object_filename() {
             assert_eq!(
-                ExternalId::try_from("123456").unwrap().object_filename().unwrap(),
+                ExternalId::try_from("123456")
+                    .unwrap()
+                    .object_filename()
+                    .unwrap(),
                 PathBuf::from("objects/12/34/56/object.yaml")
             );
         }
