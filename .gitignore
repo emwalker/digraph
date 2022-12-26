@@ -21,3 +21,4 @@ target/
 .env*
 scratchpad.md
 .vscode
+dump.rdb

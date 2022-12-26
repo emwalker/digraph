@@ -216,10 +216,7 @@ impl UpsertLink {
         let (mut link, previous_title) = self.make_link(&mutation, &link_id, &url)?;
 
         if previous_title.is_some() {
-            let alert = Alert::Success(format!(
-                "An existing link was found in the selected repo: {}",
-                url
-            ));
+            let alert = Alert::Success("This link was found in the selected repo".into());
             alerts.push(alert);
         }
 

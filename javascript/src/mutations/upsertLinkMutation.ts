@@ -1,12 +1,25 @@
 import { Dispatch, KeyboardEvent, SetStateAction, useCallback } from 'react'
 import { ConnectionHandler, graphql, useMutation } from 'react-relay'
-import { RecordSourceSelectorProxy } from 'relay-runtime'
+import { RecordProxy, RecordSourceSelectorProxy } from 'relay-runtime'
 
 import { showAlerts } from 'components/helpers'
 import {
   upsertLinkMutation,
   upsertLinkMutation$data as ResponseType,
 } from '__generated__/upsertLinkMutation.graphql'
+
+function hasErrors(payload: RecordProxy<{}>) {
+  const errors = (payload.getLinkedRecords('alerts') || []).filter((alert: RecordProxy<{}>) => {
+    return alert.getValue('type') == 'ERROR'
+  })
+
+  if (errors.length !== 0) {
+    console.log('errors present, not updating link connection')
+    return true
+  }
+
+  return false
+}
 
 function makeUpdater(parentTopicId: string | null) {
   if (!parentTopicId) return null
@@ -29,8 +42,7 @@ function makeUpdater(parentTopicId: string | null) {
       return
     }
 
-    const alerts = payload.getLinkedRecords('alerts') || []
-    if (alerts.length !== 0) return
+    if (hasErrors(payload)) return
 
     const linkEdge = payload.getLinkedRecord('linkEdge')
     if (!linkEdge) {
