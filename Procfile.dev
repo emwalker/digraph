@@ -1,2 +1,3 @@
 node: make -C javascript start-dev
 frontend: make -C rust start
+redis: redis-server
