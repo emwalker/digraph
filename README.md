@@ -8,13 +8,9 @@ Keep public and private repos of large numbers of links and topics that can be o
 
 ## Screenshots
 
-![Landing page](https://user-images.githubusercontent.com/760949/87226926-59d4aa00-c354-11ea-9082-689e079b7100.png)
+![Landing page](https://user-images.githubusercontent.com/760949/210140290-fc3fe6de-b309-4cb0-afe5-5cabcc49fb6b.png)
 
-![Example of a topic](https://user-images.githubusercontent.com/760949/87226972-c5b71280-c354-11ea-9305-54ee1b24068f.png)
-
-![Synonyms for a topic](https://user-images.githubusercontent.com/760949/87226975-c9e33000-c354-11ea-83b2-ef919c570035.png)
-
-![Links to review](https://user-images.githubusercontent.com/760949/87226978-cea7e400-c354-11ea-848e-e8462d51e908.png)
+![Example of a topic](https://user-images.githubusercontent.com/760949/210140356-22092211-ac18-4a97-aade-09a0f60ff021.png)
 
 ## Development
 
