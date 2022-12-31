@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -euf -o pipefail
+
+warn() {
+  echo >&2 "$1"
+}
+
+fail() {
+  warn "$1"
+  exit 1
+}
+
+datadir=${1-}
+
+if [ -z "$datadir" ]; then
+  fail "usage: $0 data-dir"
+fi
+
+tempfile=/tmp/$(basename $0)-`date +%s`.log
+touch $tempfile
+echo "packing repos under $datadir ..." | tee -a $tempfile
+
+find $datadir -maxdepth 1 -mindepth 1 -type d | while IFS= read -r dir; do
+  echo "packing $dir ..." | tee -a $tempfile
+  cd $dir
+  git gc 2>/dev/null
+  git repack -Ad 2>/dev/null
+  git prune 2>/dev/null
+done
+
+echo "done packing repos." | tee -a $tempfile

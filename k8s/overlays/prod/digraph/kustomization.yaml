@@ -17,6 +17,6 @@ secretGenerator:
 
 images:
   - name: emwalker/digraph-api
-    newTag: v1.0.7
+    newTag: v1.0.8
   - name: emwalker/digraph-node
-    newTag: v1.0.7
+    newTag: v1.0.8
