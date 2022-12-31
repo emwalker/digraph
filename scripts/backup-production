@@ -7,7 +7,10 @@ podname=$(
 timestamp=$(date +"%Y%m%d")
 
 echo "packing repo files ..."
-kubectl -n digraph-next exec -it $podname -- /tmp/pack-data-container
+kubectl -n digraph-next exec -it $podname -- /tmp/container-pack-data
+
+echo "saving a snapshot of the database ..."
+kubectl -n digraph-next exec -it $podname -- /tmp/container-save-db-snapshot
 
 echo "creating a tar file of the repos ..."
 kubectl -n digraph-next exec -it $podname \
