@@ -8,4 +8,6 @@ LABEL Name=api
 RUN apt-get update && apt-get install -y ca-certificates libssl-dev && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/src/digraph/target/release/api /app/api
 ADD ./scripts/pack-data /tmp/pack-data
+ADD ./scripts/pack-data-container /tmp/pack-data-container
+RUN chmod +x /tmp/pack-data-container
 CMD ["/app/api"]

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -euf -o pipefail
+
+apt update && apt install -y tmux git
+chmod +x /tmp/pack-data
+tmux new-session -s pack-data '/tmp/pack-data /var/lib/digraph/digraph-data'
