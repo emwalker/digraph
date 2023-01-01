@@ -7,21 +7,21 @@ localgeneric=./data/production.tar.gz
 localbackup=./data/$filename
 
 podname=$(
-  kubectl get pods -n digraph-next -l app=digraph -l \
+  kubectl get pods -n digraph-prod -l app=digraph -l \
     tier=frontend --no-headers -o custom-columns=":metadata.name"
 )
 
 echo "packing repo files ..."
-kubectl -n digraph-next exec -it $podname -- /tmp/container-pack-data
+kubectl -n digraph-prod exec -it $podname -- /tmp/container-pack-data
 
 echo "saving a snapshot of the database ..."
-kubectl -n digraph-next exec -it $podname -- /tmp/container-save-db-snapshot
+kubectl -n digraph-prod exec -it $podname -- /tmp/container-save-db-snapshot
 
 echo "creating a tar file of the repos ..."
-kubectl -n digraph-next exec -it $podname -- tar -zcf $archive -C /var/lib/digraph digraph-data/
+kubectl -n digraph-prod exec -it $podname -- tar -zcf $archive -C /var/lib/digraph digraph-data/
 
 echo "copying $archive from $podname to $localgeneric ..."
-kubectl cp --retries=-1 -n digraph-next $podname:$archive $localgeneric
+kubectl cp --retries=-1 -n digraph-prod $podname:$archive $localgeneric
 
 echo "copying $localgeneric to $localbackup..."
 cp $localgeneric $localbackup

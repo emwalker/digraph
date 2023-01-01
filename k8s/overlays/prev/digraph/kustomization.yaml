@@ -1,4 +1,4 @@
-namespace: digraph-prod
+namespace: digraph-prod-disabled
 
 bases:
   - ../../../base/digraph

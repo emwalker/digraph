@@ -1,4 +1,4 @@
-namespace: digraph-next
+namespace: digraph-prod
 
 bases:
   - ../../../base/digraph

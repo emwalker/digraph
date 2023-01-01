@@ -1,4 +1,4 @@
-namespace: digraph-next-disabled
+namespace: digraph-next
 
 bases:
   - ../../../base/digraph
@@ -17,6 +17,6 @@ secretGenerator:
 
 images:
   - name: emwalker/digraph-api
-    newTag: v1.0.3
+    newTag: v1.0.11
   - name: emwalker/digraph-node
-    newTag: v1.0.3
+    newTag: v1.0.11
