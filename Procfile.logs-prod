@@ -1,2 +1,2 @@
-postgres: kubectl logs -f -l app.kubernetes.io/name=postgresql -n digraph-next
-api: kubectl logs -f deployment/digraph-frontend -n digraph-next
+postgres: kubectl logs -f -l app.kubernetes.io/name=postgresql -n digraph-prod
+api: kubectl logs -f deployment/digraph-frontend -n digraph-prod
