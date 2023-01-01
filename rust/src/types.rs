@@ -118,6 +118,10 @@ impl RepoId {
         Self::try_from(OTHER_REPOSITORY_ID).unwrap()
     }
 
+    pub fn wiki() -> Self {
+        Self::try_from(WIKI_REPOSITORY_ID).unwrap()
+    }
+
     pub fn is_wiki(&self) -> bool {
         lazy_static! {
             static ref WIKI: Uuid = WIKI_REPOSITORY_ID.try_into().unwrap();
@@ -133,10 +137,6 @@ impl RepoId {
         ROOT_TOPIC_ID
             .try_into()
             .expect("failed to convert root topic id")
-    }
-
-    pub fn wiki() -> Self {
-        Self::try_from(WIKI_REPOSITORY_ID).unwrap()
     }
 }
 
@@ -208,6 +208,10 @@ impl RepoIds {
 
     pub fn iter(&self) -> std::slice::Iter<'_, RepoId> {
         self.0.iter()
+    }
+
+    pub fn push(&mut self, repo_id: RepoId) {
+        self.0.push(repo_id);
     }
 
     pub fn to_vec(&self) -> Vec<String> {
@@ -525,6 +529,13 @@ impl Viewer {
 
     pub fn is_guest(&self) -> bool {
         self.session_id.is_none()
+    }
+
+    pub fn with_repos(mut self, repo_ids: &[RepoId]) -> Self {
+        for repo_id in repo_ids {
+            self.read_repo_ids.push(repo_id.to_owned());
+        }
+        self
     }
 }
 

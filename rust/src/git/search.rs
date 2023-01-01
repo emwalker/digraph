@@ -333,7 +333,11 @@ impl FindMatches {
         };
 
         let elapsed = now.elapsed();
-        log::info!("search: elapsed time {:.2?}", elapsed);
+        log::info!(
+            "search: elapsed time {:.2?}, {} matches",
+            elapsed,
+            matches.len()
+        );
 
         Ok(FindMatchesResult { matches })
     }
@@ -403,10 +407,10 @@ impl FindMatches {
     where
         F: Downset,
     {
-        let topic_ids = self.intersection(client, fetch)?;
+        let external_ids = self.intersection(client, fetch)?;
         log::info!(
             "search: fetching topic downset ({} paths) in repos {:?}",
-            topic_ids.len(),
+            external_ids.len(),
             self.viewer.read_repo_ids
         );
 
@@ -425,9 +429,9 @@ impl FindMatches {
 
         for repo_id in repo_ids.iter() {
             log::info!("search: looking within {:?} for {:?}", repo_id, self.search);
-            for topic_id in topic_ids.iter().take(self.limit) {
-                if let Some(repo_object) = client.fetch(repo_id, topic_id) {
-                    let key = Okey(topic_id.to_owned(), self.context_repo_id.to_owned());
+            for external_id in external_ids.iter().take(self.limit) {
+                if let Some(repo_object) = client.fetch(repo_id, external_id) {
+                    let key = Okey(external_id.to_owned(), self.context_repo_id.to_owned());
                     objects.add(key, repo_id.to_owned(), repo_object);
                 }
             }

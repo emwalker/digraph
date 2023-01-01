@@ -13,16 +13,20 @@ name = "cron"
 path = "src/bin/cron.rs"
 
 [[bin]]
-name = "show"
-path = "src/bin/show.rs"
-
-[[bin]]
 name = "export"
 path = "src/bin/export.rs"
 
 [[bin]]
+name = "indexer"
+path = "src/bin/indexer.rs"
+
+[[bin]]
 name = "migrate"
 path = "src/bin/migrate.rs"
+
+[[bin]]
+name = "show"
+path = "src/bin/show.rs"
 
 [[test]]
 name = "integration-tests"
@@ -48,6 +52,7 @@ git2 = "0"
 itertools = "0"
 lazy_static = "1"
 log = "0"
+queues = "1"
 quick-error = "2"
 rand = "0"
 redis = "0"

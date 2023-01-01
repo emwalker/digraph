@@ -229,8 +229,8 @@ impl View {
         Ok(link)
     }
 
-    pub fn object(&self, path: &ExternalId) -> Result<Option<RepoObject>> {
-        let object = match self.find_blob(path)? {
+    pub fn object(&self, id: &ExternalId) -> Result<Option<RepoObject>> {
+        let object = match self.find_blob(id)? {
             Some(blob) => Some(blob.try_into()?),
             None => None,
         };

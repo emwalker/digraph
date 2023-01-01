@@ -31,6 +31,8 @@ quick_error! {
             from(err: serde_json::Error) -> (format!("{:?}", err))
         }
 
+        Generic(err: String) { }
+
         Geotime(err: geotime::Error) {
             from()
         }

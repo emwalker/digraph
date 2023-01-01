@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
 use std::convert::TryInto;
+use std::fmt::Display;
 
 use super::{Client, Mutation, SearchEntry};
 use crate::prelude::*;
@@ -227,6 +228,12 @@ pub struct Synonym {
     pub added: Timestamp,
     pub locale: Locale,
     pub name: String,
+}
+
+impl Display for Synonym {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.name)
+    }
 }
 
 impl std::hash::Hash for Synonym {

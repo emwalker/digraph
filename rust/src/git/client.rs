@@ -277,8 +277,8 @@ impl Client {
         }
     }
 
-    pub fn fetch_topic(&self, repo: &RepoId, topic_id: &ExternalId) -> Option<RepoTopic> {
-        match &self.fetch(repo, topic_id)? {
+    pub fn fetch_topic(&self, repo_id: &RepoId, topic_id: &ExternalId) -> Option<RepoTopic> {
+        match &self.fetch(repo_id, topic_id)? {
             RepoObject::Topic(topic) => Some(topic.to_owned()),
             _ => None,
         }
@@ -439,8 +439,8 @@ impl Client {
         })
     }
 
-    pub fn view(&self, prefix: &RepoId) -> Result<core::View> {
-        core::View::ensure(&self.root, prefix, &self.timespec)
+    pub fn view(&self, repo_id: &RepoId) -> Result<core::View> {
+        core::View::ensure(&self.root, repo_id, &self.timespec)
     }
 }
 
