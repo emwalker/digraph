@@ -6,8 +6,8 @@ use std::{
 };
 
 use super::{
-    Kind, Phrase, RepoLink, RepoLinkDetails, RepoObject, RepoTopic, RepoTopicDetails, Search,
-    SearchMatch, SortKey, Synonym,
+    Kind, OuterRepoObject, Phrase, RepoLink, RepoLinkDetails, RepoObject, RepoTopic,
+    RepoTopicDetails, Search, SearchMatch, SortKey, Synonym,
 };
 use crate::prelude::*;
 
@@ -137,22 +137,29 @@ impl ObjectBuilders {
         Self::default()
     }
 
-    pub fn add(&mut self, key: Okey, repo_id: RepoId, repo_obj: RepoObject) {
+    pub fn add(&mut self, key: Okey, repo_id: RepoId, repo_obj: OuterRepoObject) {
         let builder = self
             .0
             .entry(key.to_owned())
             .or_insert_with(|| match repo_obj {
-                RepoObject::Link(_) => ObjectBuilder::Link {
+                OuterRepoObject {
+                    inner: RepoObject::Link(_),
+                    ..
+                } => ObjectBuilder::Link {
                     key,
                     map: Map::new(),
                 },
-                RepoObject::Topic(_) => ObjectBuilder::Topic {
+
+                OuterRepoObject {
+                    inner: RepoObject::Topic(_),
+                    ..
+                } => ObjectBuilder::Topic {
                     key,
                     map: Map::new(),
                 },
             });
 
-        builder.insert(repo_id, repo_obj);
+        builder.insert(repo_id, repo_obj.inner);
     }
 
     pub fn finalize(self) -> Result<Objects> {

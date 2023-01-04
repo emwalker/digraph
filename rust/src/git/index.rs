@@ -198,10 +198,11 @@ impl SynonymIndex {
     pub fn load(filename: &PathBuf, view: &core::View) -> Result<Self> {
         let index = if view.blob_exists(filename)? {
             match view.find_blob_by_filename(filename)? {
-                Some(blob) => Self {
+                Some((_oid, blob)) => Self {
                     filename: filename.to_owned(),
                     index: blob.try_into()?,
                 },
+
                 None => Self::new(filename),
             }
         } else {
@@ -452,10 +453,11 @@ impl ActivityIndex {
     pub fn load(filename: &PathBuf, view: &core::View) -> Result<Self> {
         let index = if view.blob_exists(filename)? {
             match view.find_blob_by_filename(filename)? {
-                Some(blob) => Self {
+                Some((_oid, blob)) => Self {
                     filename: filename.to_owned(),
                     index: blob.try_into()?,
                 },
+
                 None => Self::new(filename),
             }
         } else {

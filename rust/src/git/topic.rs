@@ -3,9 +3,9 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use itertools::Itertools;
 
 use super::{
-    activity, Kind, Mutation, ParentTopic, RepoLink, RepoObject, RepoTopic, RepoTopicDetails,
-    RepoTopicMetadata, RepoTopicWrapper, SaveChangesForPrefix, Synonym, SynonymEntry, SynonymMatch,
-    TopicChild,
+    activity, Kind, Mutation, OuterRepoObject, ParentTopic, RepoLink, RepoObject, RepoTopic,
+    RepoTopicDetails, RepoTopicMetadata, RepoTopicWrapper, SaveChangesForPrefix, Synonym,
+    SynonymEntry, SynonymMatch, TopicChild,
 };
 use crate::prelude::*;
 
@@ -102,7 +102,10 @@ impl DeleteTopic {
         // Remove the topic from its children
         for child in &topic.children {
             match mutation.fetch(&self.repo, &child.id) {
-                Some(RepoObject::Link(child_link)) => {
+                Some(OuterRepoObject {
+                    inner: RepoObject::Link(child_link),
+                    ..
+                }) => {
                     let mut child_link = child_link.to_owned();
                     child_link.parent_topics.remove(&topic.to_parent_topic());
                     child_link.parent_topics.append(&mut parent_topics.clone());
@@ -110,7 +113,10 @@ impl DeleteTopic {
                     mutation.save_link(&self.repo, &child_link)?;
                 }
 
-                Some(RepoObject::Topic(child_topic)) => {
+                Some(OuterRepoObject {
+                    inner: RepoObject::Topic(child_topic),
+                    ..
+                }) => {
                     let mut child_topic = child_topic.to_owned();
                     child_topic.parent_topics.remove(&topic.to_parent_topic());
                     child_topic.parent_topics.append(&mut parent_topics.clone());

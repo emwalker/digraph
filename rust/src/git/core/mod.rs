@@ -9,7 +9,7 @@ use crate::types::Timespec;
 
 use super::{
     activity::{self},
-    DataRoot, GitPaths, RepoLink, RepoObject, RepoStats, RepoTopic,
+    DataRoot, GitPaths, OuterRepoObject, RepoLink, RepoObject, RepoStats, RepoTopic,
 };
 
 pub fn deque_from_path(path: &Path) -> VecDeque<String> {
@@ -27,6 +27,7 @@ pub fn deque_from_path(path: &Path) -> VecDeque<String> {
 pub struct Repo {
     path: PathBuf,
     pub inner: git2::Repository,
+    pub repo_id: RepoId,
 }
 
 impl std::fmt::Debug for Repo {
@@ -36,16 +37,21 @@ impl std::fmt::Debug for Repo {
 }
 
 impl Repo {
-    pub fn ensure(root: &DataRoot, prefix: &RepoId) -> Result<Self> {
-        let path = root.repo_path(prefix);
-        Self::open(path)
+    pub fn ensure(root: &DataRoot, repo_id: &RepoId) -> Result<Self> {
+        let path = root.repo_path(repo_id);
+        Self::open(repo_id.to_owned(), path)
     }
 
-    pub fn open(path: PathBuf) -> Result<Self> {
+    pub fn open(repo_id: RepoId, path: PathBuf) -> Result<Self> {
         match git2::Repository::open(&path) {
-            Ok(repo) => Ok(Repo { inner: repo, path }),
+            Ok(repo) => Ok(Repo {
+                inner: repo,
+                path,
+                repo_id,
+            }),
+
             Err(err) => match err.code() {
-                git2::ErrorCode::NotFound => Self::init(&path),
+                git2::ErrorCode::NotFound => Self::init(repo_id, &path),
                 _ => Err(Error::Repo(format!("unable to open repo: {:?}", path))),
             },
         }
@@ -64,7 +70,7 @@ impl Repo {
     }
 
     // https://github.com/rust-lang/git2-rs/blob/master/examples/init.rs#L94
-    fn init(path: &PathBuf) -> Result<Self> {
+    fn init(repo_id: RepoId, path: &PathBuf) -> Result<Self> {
         let repo = git2::Repository::init(&path)?;
 
         log::info!("repo not found, initializing: {:?}", path);
@@ -83,6 +89,7 @@ impl Repo {
         Ok(Repo {
             inner: repo,
             path: path.to_owned(),
+            repo_id,
         })
     }
 
@@ -101,7 +108,7 @@ impl Repo {
     }
 
     pub fn duplicate(&self) -> Result<Self> {
-        Self::open(self.path.to_owned())
+        Self::open(self.repo_id.to_owned(), self.path.to_owned())
     }
 
     fn path_to_oid(&self, tree: git2::Tree, path: &mut VecDeque<String>) -> Option<git2::Oid> {
@@ -152,16 +159,6 @@ impl<'repo> TryInto<RepoLink> for git2::Blob<'repo> {
     }
 }
 
-impl<'repo> TryInto<RepoObject> for git2::Blob<'repo> {
-    type Error = Error;
-
-    fn try_into(self) -> Result<RepoObject> {
-        let bytes = self.content();
-        let object: RepoObject = serde_yaml::from_slice(bytes)?;
-        Ok(object)
-    }
-}
-
 impl<'repo> TryInto<RepoTopic> for git2::Blob<'repo> {
     type Error = Error;
 
@@ -193,7 +190,7 @@ impl View {
     pub fn change(&self, id: &ExternalId) -> Result<activity::Change> {
         let result = self.find_blob_by_filename(&id.change_filename()?)?;
         match result {
-            Some(blob) => Ok(blob.try_into()?),
+            Some((_oid, blob)) => Ok(blob.try_into()?),
             None => Err(Error::NotFound(format!("not found: {}", id))),
         }
     }
@@ -205,35 +202,47 @@ impl View {
         })
     }
 
-    pub(crate) fn find_blob_by_filename(&self, filename: &Path) -> Result<Option<git2::Blob>> {
+    pub(crate) fn find_blob_by_filename(
+        &self,
+        filename: &Path,
+    ) -> Result<Option<(git2::Oid, git2::Blob)>> {
         let mut path = deque_from_path(filename);
         let tree = self.repo.commit(self.commit)?.tree()?;
 
         if let Some(oid) = self.repo.path_to_oid(tree, &mut path) {
             let blob = self.repo.inner.find_blob(oid)?;
-            return Ok(Some(blob));
+            return Ok(Some((oid, blob)));
         }
 
         Ok(None)
     }
 
-    fn find_blob(&self, id: &ExternalId) -> Result<Option<git2::Blob>> {
+    fn find_blob(&self, id: &ExternalId) -> Result<Option<(git2::Oid, git2::Blob)>> {
         self.find_blob_by_filename(&id.object_filename()?)
     }
 
     pub fn link(&self, id: &ExternalId) -> Result<Option<RepoLink>> {
         let link = match self.find_blob(id)? {
-            Some(blob) => Some(blob.try_into()?),
+            Some((_oid, blob)) => Some(blob.try_into()?),
             None => None,
         };
         Ok(link)
     }
 
-    pub fn object(&self, id: &ExternalId) -> Result<Option<RepoObject>> {
+    pub fn object(&self, id: &ExternalId) -> Result<Option<OuterRepoObject>> {
         let object = match self.find_blob(id)? {
-            Some(blob) => Some(blob.try_into()?),
+            Some((oid, blob)) => {
+                let inner: RepoObject = blob.try_into()?;
+
+                Some(OuterRepoObject {
+                    inner,
+                    oid,
+                    repo_id: self.repo.repo_id.to_owned(),
+                })
+            }
             None => None,
         };
+
         Ok(object)
     }
 
@@ -291,7 +300,7 @@ impl View {
 
     pub fn topic(&self, id: &ExternalId) -> Result<Option<RepoTopic>> {
         let topic = match self.find_blob(id)? {
-            Some(blob) => Some(blob.try_into()?),
+            Some((_oid, blob)) => Some(blob.try_into()?),
             None => None,
         };
         Ok(topic)

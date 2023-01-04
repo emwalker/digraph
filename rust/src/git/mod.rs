@@ -43,6 +43,7 @@ pub use topic::{
 
 mod types;
 pub use types::{
-    DownsetIter, Kind, ParentTopic, RepoLink, RepoLinkDetails, RepoLinkMetadata, RepoObject,
-    RepoTopic, RepoTopicDetails, RepoTopicMetadata, Synonym, TopicChild, TopicDownsetIter, Visitor,
+    DownsetIter, Kind, OuterRepoObject, ParentTopic, RepoLink, RepoLinkDetails, RepoLinkMetadata,
+    RepoObject, RepoTopic, RepoTopicDetails, RepoTopicMetadata, Synonym, TopicChild,
+    TopicDownsetIter, Visitor,
 };

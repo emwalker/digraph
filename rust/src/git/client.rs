@@ -10,9 +10,10 @@ use super::index::{
     SearchEntry, SynonymEntry, SynonymMatch,
 };
 use super::{
-    activity, core, DownsetIter, ObjectBuilders, RepoLink, RepoObject, RepoStats, RepoTopic,
+    activity, core, DownsetIter, ObjectBuilders, OuterRepoObject, RepoLink, RepoStats, RepoTopic,
     Search, SearchTokenIndex, SynonymIndex, TopicDownsetIter,
 };
+use crate::git::RepoObject;
 use crate::prelude::*;
 use crate::types::{Timespec, TopicPath};
 
@@ -166,7 +167,7 @@ impl Client {
         repo.object_exists(id)
     }
 
-    pub fn fetch(&self, repo: &RepoId, id: &ExternalId) -> Option<RepoObject> {
+    pub fn fetch(&self, repo: &RepoId, id: &ExternalId) -> Option<OuterRepoObject> {
         if !self.viewer.can_read(repo) {
             log::warn!("viewer cannot read path: {}", id);
             return None;
@@ -225,9 +226,13 @@ impl Client {
 
     pub fn fetch_link(&self, repo_id: &RepoId, link_id: &ExternalId) -> Option<RepoLink> {
         match &self.fetch(repo_id, link_id)? {
-            RepoObject::Link(link) => Some(link.to_owned()),
+            OuterRepoObject {
+                inner: RepoObject::Link(link),
+                ..
+            } => Some(link.to_owned()),
+
             other => {
-                println!("expected a link, found: {:?}", other);
+                println!("expected a link, found: {:?}", other.inner);
                 None
             }
         }
@@ -253,7 +258,7 @@ impl Client {
         let view = self.view(prefix)?;
         let result = view.find_blob_by_filename(filename)?;
         match result {
-            Some(blob) => {
+            Some((_oid, blob)) => {
                 let index = blob.try_into()?;
                 Ok(SynonymIndex::make(filename.to_owned(), index))
             }
@@ -269,7 +274,7 @@ impl Client {
         let view = self.view(prefix)?;
         let result = view.find_blob_by_filename(filename)?;
         match result {
-            Some(blob) => Ok(SearchTokenIndex::make(
+            Some((_oid, blob)) => Ok(SearchTokenIndex::make(
                 filename.to_owned(),
                 blob.try_into()?,
             )),
@@ -279,7 +284,10 @@ impl Client {
 
     pub fn fetch_topic(&self, repo_id: &RepoId, topic_id: &ExternalId) -> Option<RepoTopic> {
         match &self.fetch(repo_id, topic_id)? {
-            RepoObject::Topic(topic) => Some(topic.to_owned()),
+            OuterRepoObject {
+                inner: RepoObject::Topic(topic),
+                ..
+            } => Some(topic.to_owned()),
             _ => None,
         }
     }
@@ -505,7 +513,7 @@ impl Mutation {
         self.client.exists(repo, id)
     }
 
-    pub fn fetch(&self, repo: &RepoId, id: &ExternalId) -> Option<RepoObject> {
+    pub fn fetch(&self, repo: &RepoId, id: &ExternalId) -> Option<OuterRepoObject> {
         self.client.fetch(repo, id)
     }
 

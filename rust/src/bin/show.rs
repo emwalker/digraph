@@ -62,12 +62,16 @@ impl<'r> ConsoleOutput<'r> {
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
         match &self.git.fetch(&self.repo_id, &topic.id) {
-            Some(RepoObject::Topic(topic)) => {
+            Some(OuterRepoObject {
+                inner: RepoObject::Topic(topic),
+                ..
+            }) => {
                 let meta = &topic.metadata;
                 let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.id);
                 self.buf.push_str(&s);
             }
-            other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
+
+            _ => return Err(Error::Repo("expected a topic".into())),
         }
 
         Ok(())
@@ -97,22 +101,32 @@ impl<'r> ConsoleOutput<'r> {
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
         match &self.git.fetch(&self.repo_id, &topic.id) {
-            Some(RepoObject::Topic(topic)) => {
+            Some(OuterRepoObject {
+                inner: RepoObject::Topic(topic),
+                ..
+            }) => {
                 let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.topic_id());
                 self.buf.push_str(&line);
             }
-            other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
+
+            _ => return Err(Error::Repo("expected a topic".into())),
         }
         Ok(())
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
         match &self.git.fetch(&self.repo_id, &child.id) {
-            Some(RepoObject::Topic(topic)) => {
+            Some(OuterRepoObject {
+                inner: RepoObject::Topic(topic),
+                ..
+            }) => {
                 self.visit_child_topic(topic)?;
             }
 
-            Some(RepoObject::Link(link)) => {
+            Some(OuterRepoObject {
+                inner: RepoObject::Link(link),
+                ..
+            }) => {
                 self.visit_child_link(link)?;
             }
 
@@ -142,7 +156,7 @@ async fn main() -> Result<()> {
             root_directory, repo_id, oid
         )));
     }
-    let object = object.unwrap();
+    let object = object.unwrap().inner;
 
     let mut output = ConsoleOutput {
         buf: String::new(),

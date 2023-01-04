@@ -5,7 +5,9 @@ use std::collections::{BTreeSet, HashSet};
 use std::time::Instant;
 use strum_macros::EnumString;
 
-use super::{Client, Kind, Object, ObjectBuilders, Phrase, RepoObject, SynonymEntry};
+use super::{
+    Client, Kind, Object, ObjectBuilders, OuterRepoObject, Phrase, RepoObject, SynonymEntry,
+};
 use crate::git::SearchEntry;
 use crate::prelude::*;
 use crate::redis;
@@ -235,7 +237,7 @@ impl UrlMatches {
         }
     }
 
-    fn test(&self, object: &RepoObject) -> bool {
+    fn test(&self, object: &OuterRepoObject) -> bool {
         if self.impossible_result {
             return false;
         }
@@ -244,7 +246,11 @@ impl UrlMatches {
             return true;
         }
 
-        if let RepoObject::Link(link) = object {
+        if let OuterRepoObject {
+            inner: RepoObject::Link(link),
+            ..
+        } = object
+        {
             if self.ids.contains(link.id()) {
                 return true;
             }
@@ -260,7 +266,7 @@ struct Filter {
 }
 
 impl Filter {
-    fn test(&self, object: &RepoObject) -> bool {
+    fn test(&self, object: &OuterRepoObject) -> bool {
         if !self.urls.test(object) {
             return false;
         }
@@ -270,8 +276,15 @@ impl Filter {
         }
 
         match object {
-            RepoObject::Topic(topic) => self.paths.contains(topic.topic_id()),
-            RepoObject::Link(link) => self.paths.contains(link.id()),
+            OuterRepoObject {
+                inner: RepoObject::Topic(topic),
+                ..
+            } => self.paths.contains(topic.topic_id()),
+
+            OuterRepoObject {
+                inner: RepoObject::Link(link),
+                ..
+            } => self.paths.contains(link.id()),
         }
     }
 }

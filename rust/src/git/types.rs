@@ -1,3 +1,4 @@
+use git2;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
 use std::convert::TryInto;
@@ -105,17 +106,6 @@ impl std::cmp::PartialOrd for RepoLink {
 impl std::hash::Hash for RepoLink {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.metadata.id.hash(state);
-    }
-}
-
-impl TryFrom<RepoObject> for RepoLink {
-    type Error = Error;
-
-    fn try_from(value: RepoObject) -> Result<Self> {
-        match value {
-            RepoObject::Link(link) => Ok(link),
-            _ => Err(Error::NotFound("no repo link".into())),
-        }
     }
 }
 
@@ -456,6 +446,23 @@ pub enum RepoObject {
     Link(RepoLink),
 }
 
+pub struct OuterRepoObject {
+    pub oid: git2::Oid,
+    pub repo_id: RepoId,
+    pub inner: RepoObject,
+}
+
+impl TryFrom<RepoObject> for RepoLink {
+    type Error = Error;
+
+    fn try_from(value: RepoObject) -> Result<Self> {
+        match value {
+            RepoObject::Link(link) => Ok(link),
+            _ => Err(Error::NotFound("no repo link".into())),
+        }
+    }
+}
+
 impl TryFrom<RepoObject> for RepoTopic {
     type Error = Error;
 
@@ -483,6 +490,16 @@ impl TryFrom<&RepoObject> for RepoTopic {
     }
 }
 
+impl<'repo> TryInto<RepoObject> for git2::Blob<'repo> {
+    type Error = Error;
+
+    fn try_into(self) -> Result<RepoObject> {
+        let bytes = self.content();
+        let object: RepoObject = serde_yaml::from_slice(bytes)?;
+        Ok(object)
+    }
+}
+
 impl RepoObject {
     pub fn accept<V>(&self, mut visitor: V) -> Result<()>
     where
@@ -492,6 +509,7 @@ impl RepoObject {
             Self::Topic(topic) => {
                 visitor.visit_topic(topic)?;
             }
+
             Self::Link(link) => {
                 visitor.visit_link(link)?;
             }

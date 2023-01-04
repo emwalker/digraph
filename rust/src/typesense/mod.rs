@@ -7,8 +7,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use unidecode::unidecode;
 
-use crate::git;
 use crate::git::Kind;
+use crate::git::{self, OuterRepoObject, RepoObject};
 use crate::prelude::*;
 
 fn normalize(input: &str) -> String {
@@ -35,7 +35,7 @@ pub struct DownsetIter<'v> {
 }
 
 impl<'v> Iterator for DownsetIter<'v> {
-    type Item = git::RepoObject;
+    type Item = git::OuterRepoObject;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.queue.size() > 0 {
@@ -47,7 +47,11 @@ impl<'v> Iterator for DownsetIter<'v> {
 
             match self.view.object(&id) {
                 Ok(Some(object)) => {
-                    if let git::RepoObject::Topic(topic) = &object {
+                    if let OuterRepoObject {
+                        inner: RepoObject::Topic(topic),
+                        ..
+                    } = &object
+                    {
                         for child in &topic.children {
                             if self.seen.contains(&child.id) {
                                 continue;
@@ -166,7 +170,11 @@ impl<'v> Iterator for GenerateRecords<'v> {
         object.as_ref()?;
 
         match object.unwrap() {
-            git::RepoObject::Topic(topic) => {
+            OuterRepoObject {
+                inner: RepoObject::Topic(topic),
+                oid,
+                repo_id,
+            } => {
                 let upset_topic_ids = self
                     .upsets
                     .build(Some(topic.topic_id()), &topic.parent_topics);
@@ -176,31 +184,37 @@ impl<'v> Iterator for GenerateRecords<'v> {
                     .iter()
                     .map(git::Synonym::to_string)
                     .collect();
+                let id = format!("{}@{}", topic.topic_id(), oid);
 
                 Some(Record {
                     display_string: name.to_owned(),
                     external_id: topic.topic_id().to_owned(),
-                    id: topic.topic_id().to_string(),
+                    id,
                     kind: Kind::Topic,
                     locale: self.locale,
-                    repo_id: WIKI_REPOSITORY_ID.into(),
+                    repo_id: repo_id.to_string(),
                     sort_key: format!("0|{name}"),
                     synonyms,
                     upset_topic_ids,
                 })
             }
 
-            git::RepoObject::Link(link) => {
+            OuterRepoObject {
+                inner: RepoObject::Link(link),
+                oid,
+                repo_id,
+            } => {
                 let upset_topic_ids = self.upsets.build(None, &link.parent_topics);
                 let added_desc = (self.future - link.added()).num_seconds().to_string();
+                let id = format!("{}@{}", link.id(), oid);
 
                 Some(Record {
                     display_string: link.title().to_owned(),
                     external_id: link.id().to_owned(),
-                    id: link.id().to_string(),
+                    id,
                     kind: Kind::Link,
                     locale: self.locale,
-                    repo_id: WIKI_REPOSITORY_ID.into(),
+                    repo_id: repo_id.to_string(),
                     sort_key: format!("1|{added_desc}"),
                     synonyms: vec![],
                     upset_topic_ids,
