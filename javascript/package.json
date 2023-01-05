@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.18.3",
-    "@dnd-kit/core": "^6.0.6",
+    "@dnd-kit/core": "^6.0.7",
     "@dnd-kit/sortable": "^7.0.1",
     "@dnd-kit/utilities": "^3.2.1",
     "@draft-js-plugins/editor": "^4.1.3",
