@@ -14,6 +14,6 @@ impl QueryInfo {
     }
 
     async fn topics(&self) -> Result<TopicConnection> {
-        connection(None, None, None, None, vec![])
+        connection(None, None, None, None, vec![]).await
     }
 }

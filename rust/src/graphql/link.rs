@@ -96,7 +96,7 @@ impl RepoLink {
             .data_unchecked::<Store>()
             .fetch_topics(self.0.parent_topic_ids(), 50)
             .await?;
-        relay::topics(after, before, first, last, topics)
+        relay::topics(after, before, first, last, topics).await
     }
 
     async fn repo(&self, ctx: &Context<'_>) -> Result<Repository> {
@@ -140,7 +140,7 @@ impl Link {
             .data_unchecked::<Store>()
             .fetch_topics_with_context(self.0.parent_topic_ids(), 50, self.0.context_id())
             .await?;
-        relay::topics(after, before, first, last, topics)
+        relay::topics(after, before, first, last, topics).await
     }
 
     async fn display_color(&self) -> &str {

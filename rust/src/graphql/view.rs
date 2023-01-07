@@ -56,7 +56,7 @@ impl View {
             });
         }
 
-        relay::connection(after, before, first, last, results)
+        relay::connection(after, before, first, last, results).await
     }
 
     async fn link(&self, ctx: &Context<'_>, id: String) -> Result<Option<Link>> {

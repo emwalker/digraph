@@ -1,5 +1,4 @@
 use async_graphql::{connection::*, OutputType};
-use futures::executor;
 use itertools::Itertools;
 use std::collections::BTreeSet;
 
@@ -7,7 +6,7 @@ use super::Topic;
 use crate::git;
 use crate::prelude::*;
 
-pub fn connection<N: OutputType>(
+pub async fn connection<N: OutputType>(
     after: Option<String>,
     before: Option<String>,
     first: Option<i32>,
@@ -29,11 +28,13 @@ pub fn connection<N: OutputType>(
             );
             Ok::<_, Error>(connection)
         },
-    );
-    executor::block_on(result).map_err(Error::Resolver)
+    )
+    .await?;
+
+    Ok(result)
 }
 
-pub fn topics(
+pub async fn topics(
     after: Option<String>,
     before: Option<String>,
     first: Option<i32>,
@@ -43,5 +44,5 @@ pub fn topics(
     Connection<String, Topic, EmptyFields, EmptyFields, DefaultConnectionName, DefaultEdgeName>,
 > {
     let results = topics.iter().map(Topic::from).collect_vec();
-    connection(after, before, first, last, results)
+    connection(after, before, first, last, results).await
 }

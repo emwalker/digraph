@@ -120,7 +120,7 @@ impl RepoTopic {
             .data_unchecked::<Store>()
             .fetch_topics(self.0.parent_topic_ids(), 50)
             .await?;
-        relay::topics(after, before, first, last, topics)
+        relay::topics(after, before, first, last, topics).await
     }
 
     async fn repo(&self, ctx: &Context<'_>) -> Result<Repository> {
@@ -208,7 +208,7 @@ impl Topic {
             });
         }
 
-        relay::connection(after, before, first, last, results)
+        relay::connection(after, before, first, last, results).await
     }
 
     async fn children(
@@ -233,7 +233,7 @@ impl Topic {
                 results.push(row.try_into()?);
             }
 
-            return relay::connection(after, before, first, last, results);
+            return relay::connection(after, before, first, last, results).await;
         }
 
         let objects = ctx
@@ -254,7 +254,7 @@ impl Topic {
             results.push(row.try_into()?);
         }
 
-        relay::connection(after, before, first, last, results)
+        relay::connection(after, before, first, last, results).await
     }
 
     async fn display_name(&self) -> String {
@@ -273,7 +273,7 @@ impl Topic {
             .data_unchecked::<Store>()
             .fetch_topics_with_context(self.0.parent_topic_ids(), 50, self.0.context_id())
             .await?;
-        relay::topics(after, before, first, last, topics)
+        relay::topics(after, before, first, last, topics).await
     }
 
     async fn display_synonyms(&self) -> Result<Vec<Synonym>> {
