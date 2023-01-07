@@ -10,7 +10,7 @@ use crate::store::Store;
 pub struct RepoLinkDetails<'a>(pub(crate) &'a git::RepoLinkDetails);
 
 #[Object]
-impl<'a> RepoLinkDetails<'a> {
+impl<'d> RepoLinkDetails<'d> {
     async fn title(&self) -> &str {
         &self.0.title
     }
@@ -31,10 +31,10 @@ impl TryFrom<Option<Link>> for Link {
     }
 }
 
-pub struct RepoLink(pub(crate) git::RepoLinkWrapper);
+pub struct RepoLink<'l>(pub(crate) &'l git::RepoLinkWrapper);
 
 #[Object]
-impl RepoLink {
+impl<'l> RepoLink<'l> {
     async fn available_parent_topics(
         &self,
         ctx: &Context<'_>,

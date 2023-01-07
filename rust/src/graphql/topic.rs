@@ -9,10 +9,10 @@ use crate::types::TimerangePrefix;
 use crate::{git, prelude::*};
 
 #[derive(Debug)]
-pub struct Synonym(pub(crate) git::Synonym);
+pub struct Synonym<'s>(pub(crate) &'s git::Synonym);
 
 #[Object]
-impl Synonym {
+impl<'s> Synonym<'s> {
     async fn name(&self) -> &str {
         &self.0.name
     }
@@ -23,10 +23,10 @@ impl Synonym {
 }
 
 #[derive(Debug)]
-pub struct SynonymEntry<'a>(pub(crate) &'a git::SynonymEntry);
+pub struct SynonymEntry<'e>(pub(crate) &'e git::SynonymEntry);
 
 #[Object]
-impl<'a> SynonymEntry<'a> {
+impl<'e> SynonymEntry<'e> {
     async fn display_name(&self) -> &str {
         &self.0.name
     }
@@ -276,13 +276,13 @@ impl Topic {
         relay::topics(after, before, first, last, topics).await
     }
 
-    async fn display_synonyms(&self) -> Result<Vec<Synonym>> {
+    async fn display_synonyms<'s>(&'s self) -> Result<Vec<Synonym<'s>>> {
         Ok(self
             .0
             .display_synonyms()
             .iter()
             .map(Synonym::from)
-            .collect_vec())
+            .collect())
     }
 
     async fn loading(&self) -> bool {

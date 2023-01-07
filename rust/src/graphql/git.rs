@@ -95,21 +95,15 @@ impl TryFrom<&SynonymInput> for git::Synonym {
     }
 }
 
-impl From<&git::Synonyms> for Vec<Synonym> {
-    fn from(value: &git::Synonyms) -> Self {
+impl<'s> From<&'s git::Synonyms> for Vec<Synonym<'s>> {
+    fn from(value: &'s git::Synonyms) -> Self {
         value.iter().map(Synonym::from).collect_vec()
     }
 }
 
-impl From<git::Synonym> for Synonym {
-    fn from(synonym: git::Synonym) -> Self {
-        Self(synonym)
-    }
-}
-
-impl From<&git::Synonym> for Synonym {
-    fn from(synonym: &git::Synonym) -> Self {
-        synonym.to_owned().into()
+impl<'s> From<&'s git::Synonym> for Synonym<'s> {
+    fn from(value: &'s git::Synonym) -> Self {
+        Synonym(value)
     }
 }
 
@@ -148,15 +142,9 @@ impl From<&git::RepoTopicWrapper> for RepoTopic {
     }
 }
 
-impl From<git::RepoLinkWrapper> for RepoLink {
-    fn from(value: git::RepoLinkWrapper) -> Self {
+impl<'l> From<&'l git::RepoLinkWrapper> for RepoLink<'l> {
+    fn from(value: &'l git::RepoLinkWrapper) -> Self {
         Self(value)
-    }
-}
-
-impl From<&git::RepoLinkWrapper> for RepoLink {
-    fn from(value: &git::RepoLinkWrapper) -> Self {
-        value.to_owned().into()
     }
 }
 
