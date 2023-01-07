@@ -15,15 +15,15 @@ use crate::types::Timespec;
 pub struct Store {
     db: PgPool,
     git: git::Client,
-    object_loader: DataLoader<graphql::ObjectLoader, HashMapCache>,
-    organization_loader: DataLoader<psql::OrganizationLoader, HashMapCache>,
+    object_loader: DataLoader<graphql::ObjectLoader>,
+    organization_loader: DataLoader<psql::OrganizationLoader>,
     pub server_secret: String,
-    pub user_loader: DataLoader<psql::UserLoader, HashMapCache>,
+    pub user_loader: DataLoader<psql::UserLoader>,
     pub viewer: Viewer,
     redis: redis::Redis,
-    repository_by_name_loader: DataLoader<psql::RepositoryByNameLoader, HashMapCache>,
-    repository_by_prefix_loader: DataLoader<psql::RepositoryByIdLoader, HashMapCache>,
-    repository_loader: DataLoader<psql::RepositoryLoader, HashMapCache>,
+    repository_by_name_loader: DataLoader<psql::RepositoryByNameLoader>,
+    repository_by_prefix_loader: DataLoader<psql::RepositoryByIdLoader>,
+    repository_loader: DataLoader<psql::RepositoryLoader>,
 }
 
 impl Store {
@@ -50,36 +50,18 @@ impl Store {
             server_secret,
             viewer,
 
-            organization_loader: DataLoader::with_cache(
-                organization_loader,
-                actix_web::rt::spawn,
-                HashMapCache::default(),
-            ),
-            repository_loader: DataLoader::with_cache(
-                repository_loader,
-                actix_web::rt::spawn,
-                HashMapCache::default(),
-            ),
-            repository_by_name_loader: DataLoader::with_cache(
+            organization_loader: DataLoader::new(organization_loader, actix_web::rt::spawn),
+            repository_loader: DataLoader::new(repository_loader, actix_web::rt::spawn),
+            repository_by_name_loader: DataLoader::new(
                 repository_by_name_loader,
                 actix_web::rt::spawn,
-                HashMapCache::default(),
             ),
-            repository_by_prefix_loader: DataLoader::with_cache(
+            repository_by_prefix_loader: DataLoader::new(
                 repository_by_prefix_loader,
                 actix_web::rt::spawn,
-                HashMapCache::default(),
             ),
-            object_loader: DataLoader::with_cache(
-                object_loader,
-                actix_web::rt::spawn,
-                HashMapCache::default(),
-            ),
-            user_loader: DataLoader::with_cache(
-                user_loader,
-                actix_web::rt::spawn,
-                HashMapCache::default(),
-            ),
+            object_loader: DataLoader::new(object_loader, actix_web::rt::spawn),
+            user_loader: DataLoader::new(user_loader, actix_web::rt::spawn),
         }
     }
 }
