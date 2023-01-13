@@ -80,7 +80,7 @@
     "relay-runtime": "^14.1.0",
     "sass": "^1.52.1",
     "serialize-javascript": "^6.0.0",
-    "use-debounce": "^8.0.4"
+    "use-debounce": "^9.0.3"
   },
   "main": "index.js",
   "repository": "git@github.com:olebedev/go-starter-kit.git",
