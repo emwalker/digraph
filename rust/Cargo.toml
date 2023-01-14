@@ -42,7 +42,7 @@ dotenv = "0"
 env_logger = "0"
 envy = "0"
 futures = "0"
-geotime = { git = "https://github.com/emwalker/geotime", branch = "main" }
+geotime = "0"
 getopts = "0"
 git2 = "0"
 itertools = "0"

@@ -1310,8 +1310,9 @@ dependencies = [
 
 [[package]]
 name = "geotime"
-version = "0.0.1"
-source = "git+https://github.com/emwalker/geotime?branch=main#e9f9c26a74b511ed4b175b101e97753a05f145f0"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ae0b2786f5e50b47d654a28e8c0b1dfd3499d703b994652a3b8e9edef274241"
 dependencies = [
  "base64",
  "chrono",
