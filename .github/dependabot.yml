@@ -5,8 +5,8 @@ updates:
     schedule:
       interval: "daily"
 
-  - package-ecosystem: "gomod"
-    directory: "/golang"
+  - package-ecosystem: "cargo"
+    directory: "/rust"
     schedule:
       interval: "daily"
 
