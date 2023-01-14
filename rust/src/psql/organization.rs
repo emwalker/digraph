@@ -63,7 +63,7 @@ impl Loader<String> for OrganizationLoader {
             from organizations o
             where o.id = any($1::uuid[]) and (o.owner_id = $2::uuid or o.public)",
         )
-        .bind(&ids)
+        .bind(ids)
         .bind(&self.viewer.user_id)
         .fetch_all(&self.pool)
         .await

@@ -17,7 +17,7 @@ mod topic_references {
         assert!(f.no_leaks().unwrap());
 
         let filename = other.join("file.txt");
-        fs::write(&filename, WIKI_REPOSITORY_ID).expect("unable to write file");
+        fs::write(filename, WIKI_REPOSITORY_ID).expect("unable to write file");
 
         assert!(!f.no_leaks().unwrap());
     }

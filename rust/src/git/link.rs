@@ -237,8 +237,8 @@ impl UpsertLink {
 
         let change = self.change(&link, &topic, &previous_title, date);
         link.parent_topics = parent_topics
-            .iter()
-            .map(|(path, _topic)| ParentTopic {
+            .keys()
+            .map(|path| ParentTopic {
                 id: path.to_owned(),
             })
             .collect::<BTreeSet<ParentTopic>>();

@@ -51,9 +51,9 @@ impl CompleteRegistration {
                 )
                 returning id",
         )
-        .bind(&organization_id)
+        .bind(organization_id)
         .bind(DEFAULT_REPOSITORY_NAME)
-        .bind(&user_id)
+        .bind(user_id)
         .fetch_one(&mut tx)
         .await?;
 
@@ -63,8 +63,8 @@ impl CompleteRegistration {
                 values ($1::uuid, $2, 't', 't')
                 on conflict do nothing",
         )
-        .bind(&organization_id)
-        .bind(&repository_id)
+        .bind(organization_id)
+        .bind(repository_id)
         .execute(&mut tx)
         .await?;
 
@@ -78,7 +78,7 @@ impl CompleteRegistration {
                 where o.login = 'wiki' and u.id = $1
                 on conflict do nothing",
         )
-        .bind(&user_id)
+        .bind(user_id)
         .execute(&mut tx)
         .await?;
 
@@ -91,7 +91,7 @@ impl CompleteRegistration {
                 where id = $2",
         )
         .bind(&self.login)
-        .bind(&user_id)
+        .bind(user_id)
         .execute(&mut tx)
         .await?;
 

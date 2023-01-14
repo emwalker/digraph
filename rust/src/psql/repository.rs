@@ -109,7 +109,7 @@ impl Loader<String> for RepositoryLoader {
             "#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(&ids)
+            .bind(ids)
             .bind(&self.viewer.read_repo_ids.to_vec())
             .fetch_all(&self.pool)
             .await?;
@@ -150,7 +150,7 @@ impl Loader<String> for RepositoryByNameLoader {
                 {REPOSITORY_GROUP_BY}"#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(&names)
+            .bind(names)
             .bind(&self.viewer.read_repo_ids.to_vec())
             .fetch_all(&self.pool)
             .await?;
@@ -195,7 +195,7 @@ impl Loader<String> for RepositoryByIdLoader {
            "#
         );
         let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(&repo_ids)
+            .bind(repo_ids)
             .bind(&self.viewer.read_repo_ids.to_vec())
             .fetch_all(&self.pool)
             .await?;

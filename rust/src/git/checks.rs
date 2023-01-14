@@ -36,7 +36,7 @@ impl LeakedData {
     }
 
     fn repos(&self, root: &PathBuf) -> Result<Vec<RepoId>> {
-        let paths = fs::read_dir(&root)?;
+        let paths = fs::read_dir(root)?;
 
         let mut repos = vec![];
         for path in paths {

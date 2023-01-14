@@ -215,7 +215,7 @@ impl SynonymIndex {
     }
 
     pub fn add(&mut self, topic_id: &ExternalId, phrase: Phrase, name: &str) -> Result<()> {
-        let paths = self.index.synonyms.entry(phrase).or_insert(BTreeSet::new());
+        let paths = self.index.synonyms.entry(phrase).or_default();
 
         paths.insert(SynonymEntry {
             name: name.to_owned(),
@@ -324,7 +324,7 @@ impl SearchTokenIndex {
     }
 
     fn add(&mut self, entry: &SearchEntry, token: Phrase) -> Result<()> {
-        let entries = self.index.tokens.entry(token).or_insert(BTreeSet::new());
+        let entries = self.index.tokens.entry(token).or_default();
         entries.insert(entry.to_owned());
         Ok(())
     }
@@ -341,15 +341,13 @@ impl SearchTokenIndex {
     }
 
     fn remove(&mut self, entry: &SearchEntry, token: Phrase) -> Result<()> {
-        match self.index.tokens.get_mut(&token) {
-            Some(entries) => {
-                entries.remove(entry);
-                if entries.is_empty() {
-                    self.index.tokens.remove(&token);
-                }
+        if let Some(entries) = self.index.tokens.get_mut(&token) {
+            entries.remove(entry);
+            if entries.is_empty() {
+                self.index.tokens.remove(&token);
             }
-            None => {}
         }
+
         Ok(())
     }
 }
@@ -608,10 +606,7 @@ impl Indexer {
             activity.add(change.to_reference());
         }
 
-        let set = self
-            .repo_changes
-            .entry(repo.to_owned())
-            .or_insert(BTreeSet::new());
+        let set = self.repo_changes.entry(repo.to_owned()).or_default();
         set.insert(change.to_owned());
 
         Ok(())

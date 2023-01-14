@@ -65,7 +65,7 @@ impl Repo {
 
     // https://github.com/rust-lang/git2-rs/blob/master/examples/init.rs#L94
     fn init(path: &PathBuf) -> Result<Self> {
-        let repo = git2::Repository::init(&path)?;
+        let repo = git2::Repository::init(path)?;
 
         log::info!("repo not found, initializing: {:?}", path);
         let sig = git2::Signature::now("digraph-bot", "noreply@digraph.app")?;

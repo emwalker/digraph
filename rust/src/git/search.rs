@@ -513,7 +513,7 @@ mod tests {
 
     fn phrases(iter: &[&str]) -> BTreeSet<Phrase> {
         iter.iter()
-            .map(|s| Phrase::parse(*s))
+            .map(|s| Phrase::parse(s))
             .collect::<BTreeSet<Phrase>>()
     }
 

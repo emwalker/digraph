@@ -669,7 +669,7 @@ mod upsert_topic {
         let topic_id = parse_id("00001");
 
         let result = f
-            .upsert_topic(&repo_1, name, &topic_id, OnMatchingSynonym::Ask)
+            .upsert_topic(repo_1, name, &topic_id, OnMatchingSynonym::Ask)
             .unwrap();
         assert!(result.saved);
         let parent_topic = result.repo_topic.unwrap();

@@ -55,13 +55,9 @@ impl SynonymList {
 
         match self.len() {
             0 => "[missing synonym]".to_owned(),
-            1 => self.0.iter().map(|(_locale, name)| quote(name)).join(""),
+            1 => self.0.values().map(quote).join(""),
 
-            2 => self
-                .0
-                .iter()
-                .map(|(_locale, name)| quote(name))
-                .join(" and "),
+            2 => self.0.values().map(quote).join(" and "),
 
             3 => {
                 let mut result = String::new();

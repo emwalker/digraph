@@ -20,7 +20,7 @@ struct AuthHeader(String);
 impl AuthHeader {
     fn decode(&self) -> Result<(String, String)> {
         let encoded = self.0.split(' ').last().unwrap_or_default();
-        let decoded = base64::decode(&encoded)?;
+        let decoded = base64::decode(encoded)?;
         let decoded = String::from_utf8_lossy(&decoded);
         let parts = decoded
             .split(':')

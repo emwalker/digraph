@@ -38,7 +38,7 @@ impl Fixtures {
         let root = &env::var("CARGO_MANIFEST_DIR").expect("$CARGO_MANIFEST_DIR");
         let mut source = PathBuf::from(root);
         source.push("tests/fixtures");
-        source.push(&fixture_dirname);
+        source.push(fixture_dirname);
 
         let tempdir = tempfile::tempdir().unwrap();
         let path = PathBuf::from(&tempdir.path());

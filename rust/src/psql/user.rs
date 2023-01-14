@@ -37,7 +37,7 @@ pub async fn fetch_user(_read_prefixes: &RepoIds, user_id: &String, pool: &PgPoo
          group by u.id"
     );
     let row = sqlx::query_as::<_, Row>(&query)
-        .bind(&user_id)
+        .bind(user_id)
         .fetch_one(pool)
         .await?;
     Ok(row)
@@ -72,7 +72,7 @@ impl Loader<String> for UserLoader {
              group by u.id",
         );
         let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(&ids)
+            .bind(ids)
             .fetch_all(&self.pool)
             .await;
 
@@ -164,7 +164,7 @@ impl UpsertRegisteredUser {
         .bind(&self.input.name)
         .bind(&self.input.github_avatar_url)
         .bind(&self.input.primary_email)
-        .bind(&row.id)
+        .bind(row.id)
         .bind(&self.input.github_username)
         .execute(&mut tx)
         .await?;

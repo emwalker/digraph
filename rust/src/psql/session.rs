@@ -39,7 +39,7 @@ impl CreateGithubSession {
             r#"insert into sessions (user_id) values ($1)
                 returning encode(session_id, 'hex') session_id, user_id"#,
         )
-        .bind(&user.id)
+        .bind(user.id)
         .fetch_one(pool)
         .await?;
 
@@ -48,7 +48,7 @@ impl CreateGithubSession {
              from users_repositories
              where user_id = $1 and is_personal_repo",
         )
-        .bind(&user.id)
+        .bind(user.id)
         .fetch_all(pool)
         .await?
         .iter()

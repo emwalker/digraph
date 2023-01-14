@@ -559,7 +559,7 @@ async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
             where lt.child_id = $1::uuid and t.repository_id = $2::uuid"#,
         )
         .bind(&link_id)
-        .bind(&meta.repository_id)
+        .bind(meta.repository_id)
         .fetch_all(pool)
         .await?;
 
