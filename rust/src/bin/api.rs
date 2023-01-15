@@ -3,6 +3,8 @@ use async_graphql::extensions;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use base64::engine::general_purpose;
+use base64::Engine;
 use digraph::types::Timespec;
 use std::path::PathBuf;
 
@@ -20,12 +22,10 @@ struct AuthHeader(String);
 impl AuthHeader {
     fn decode(&self) -> Result<(String, String)> {
         let encoded = self.0.split(' ').last().unwrap_or_default();
-        let decoded = base64::decode(encoded)?;
-        let decoded = String::from_utf8_lossy(&decoded);
-        let parts = decoded
-            .split(':')
-            .map(str::to_string)
-            .collect::<Vec<String>>();
+        let mut buffer = Vec::<u8>::new();
+        general_purpose::STANDARD.decode_vec(encoded, &mut buffer)?;
+        let s = std::str::from_utf8(&buffer)?;
+        let parts: Vec<String> = s.split(':').map(str::to_string).collect();
 
         if parts.len() != 2 {
             return Err(Error::Auth(format!("unexpected message: {}", self.0)));

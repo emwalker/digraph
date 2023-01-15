@@ -1,4 +1,4 @@
-use base64;
+use base64::engine::{self, Engine};
 use geotime::Geotime;
 use lazy_static::lazy_static;
 use rand::{distributions::Alphanumeric, Rng};
@@ -462,7 +462,7 @@ impl TimerangePrefix {
 pub fn sha256_base64(normalized: &str) -> String {
     let bytes = normalized.as_bytes();
     let hash = Sha256::digest(bytes);
-    base64::encode_config(hash, base64::URL_SAFE_NO_PAD)
+    engine::general_purpose::URL_SAFE_NO_PAD.encode(hash)
 }
 
 #[derive(Clone, Debug)]
@@ -554,7 +554,7 @@ mod tests {
         use super::*;
 
         fn valid_date() -> Option<Geotime> {
-            let dt = chrono::Utc.ymd(2000, 1, 1).and_hms(0, 0, 0);
+            let dt = chrono::Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap();
             Some(Geotime::from(&dt))
         }
 

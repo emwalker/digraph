@@ -1532,7 +1532,7 @@ mod tests {
         use super::*;
 
         fn date() -> Geotime {
-            let ts = chrono::Utc.ymd(1970, 1, 1).and_hms(0, 0, 1);
+            let ts = chrono::Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 1).unwrap();
             Geotime::from(&ts)
         }
 
@@ -1716,7 +1716,7 @@ mod tests {
         use super::*;
 
         fn change(topic: &RepoTopic, format: TimerangePrefixFormat) -> Change {
-            let dt = chrono::Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 444);
+            let dt = chrono::Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 1).unwrap();
             let ts = Geotime::from(&dt);
 
             let mut parent_topics = BTreeSet::new();
