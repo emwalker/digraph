@@ -346,9 +346,40 @@ version = "4.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9ed522678d412d77effe47b3c82314ac36952a35e6e852093dd48287c421f80"
 dependencies = [
- "async-graphql-derive",
- "async-graphql-parser",
- "async-graphql-value",
+ "async-graphql-derive 4.0.16",
+ "async-graphql-parser 4.0.16",
+ "async-graphql-value 4.0.16",
+ "async-stream",
+ "async-trait",
+ "base64 0.13.1",
+ "bytes",
+ "fnv",
+ "futures-util",
+ "http",
+ "indexmap",
+ "mime",
+ "multer",
+ "num-traits",
+ "once_cell",
+ "pin-project-lite",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "static_assertions",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "async-graphql"
+version = "5.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c7c1f9bf1a875b047e97404d16313b3dde09ea06d0639800c9657138e38a441"
+dependencies = [
+ "async-graphql-derive 5.0.5",
+ "async-graphql-parser 5.0.5",
+ "async-graphql-value 5.0.5",
  "async-stream",
  "async-trait",
  "base64 0.13.1",
@@ -359,6 +390,7 @@ dependencies = [
  "futures-channel",
  "futures-timer",
  "futures-util",
+ "handlebars",
  "http",
  "indexmap",
  "log",
@@ -390,7 +422,7 @@ dependencies = [
  "actix-web",
  "actix-web-actors",
  "async-channel",
- "async-graphql",
+ "async-graphql 4.0.16",
  "futures-channel",
  "futures-util",
  "serde_json",
@@ -404,7 +436,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c121a894495d7d3fc3d4e15e0a9843e422e4d1d9e3c514d8062a1c94b35b005d"
 dependencies = [
  "Inflector",
- "async-graphql-parser",
+ "async-graphql-parser 4.0.16",
+ "darling",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "thiserror",
+]
+
+[[package]]
+name = "async-graphql-derive"
+version = "5.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "381ed1575c53cfc864013932bb5a5df05c21802781dfa6dd27c57068eac9a80d"
+dependencies = [
+ "Inflector",
+ "async-graphql-parser 5.0.5",
  "darling",
  "proc-macro-crate",
  "proc-macro2",
@@ -419,7 +467,19 @@ version = "4.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b6c386f398145c6180206c1869c2279f5a3d45db5be4e0266148c6ac5c6ad68"
 dependencies = [
- "async-graphql-value",
+ "async-graphql-value 4.0.16",
+ "pest",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "async-graphql-parser"
+version = "5.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41a7ec217e184ca3034c806957842afb28914f894b69cb5a76b4a57e64f44506"
+dependencies = [
+ "async-graphql-value 5.0.5",
  "pest",
  "serde",
  "serde_json",
@@ -430,6 +490,18 @@ name = "async-graphql-value"
 version = "4.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a941b499fead4a3fb5392cabf42446566d18c86313f69f2deab69560394d65f"
+dependencies = [
+ "bytes",
+ "indexmap",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "async-graphql-value"
+version = "5.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e294ef57859c27d31a9bb23edf1db948f7534445df30115d8672314f65451858"
 dependencies = [
  "bytes",
  "indexmap",
@@ -992,7 +1064,7 @@ version = "0.1.0"
 dependencies = [
  "actix-rt",
  "actix-web",
- "async-graphql",
+ "async-graphql 5.0.5",
  "async-graphql-actix-web",
  "async-std",
  "async-trait",
@@ -1461,6 +1533,20 @@ name = "half"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eabb4a44450da02c90444cf74558da904edde8fb4e9035a9a6a4e15445af0bd7"
+
+[[package]]
+name = "handlebars"
+version = "4.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "035ef95d03713f2c347a72547b7cd38cbc9af7cd51e6099fb62d586d4a6dee3a"
+dependencies = [
+ "log",
+ "pest",
+ "pest_derive",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
 
 [[package]]
 name = "hashbrown"
@@ -2107,6 +2193,40 @@ checksum = "4257b4a04d91f7e9e6290be5d3da4804dd5784fafde3a497d73eb2b4a158c30a"
 dependencies = [
  "thiserror",
  "ucd-trie",
+]
+
+[[package]]
+name = "pest_derive"
+version = "2.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "241cda393b0cdd65e62e07e12454f1f25d57017dcc514b1514cd3c4645e3a0a6"
+dependencies = [
+ "pest",
+ "pest_generator",
+]
+
+[[package]]
+name = "pest_generator"
+version = "2.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46b53634d8c8196302953c74d5352f33d0c512a9499bd2ce468fc9f4128fa27c"
+dependencies = [
+ "pest",
+ "pest_meta",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "pest_meta"
+version = "2.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ef4f1332a8d4678b41966bb4cc1d0676880e84183a1ecc3f4b69f03e99c7a51"
+dependencies = [
+ "once_cell",
+ "pest",
+ "sha2",
 ]
 
 [[package]]
