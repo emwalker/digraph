@@ -122,7 +122,7 @@
     "@types/uuid": "^9.0.0",
     "@types/webpack-env": "^1.17.0",
     "@typescript-eslint/eslint-plugin": "^5.48.1",
-    "@typescript-eslint/parser": "^5.48.1",
+    "@typescript-eslint/parser": "^5.48.2",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "10.1.0",
     "babel-jest": "^28.1.1",
