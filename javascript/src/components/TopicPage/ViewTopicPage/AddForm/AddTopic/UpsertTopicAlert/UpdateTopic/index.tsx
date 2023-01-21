@@ -50,8 +50,8 @@ export default function UpdateTopic({
 
   return (
     <li className="p-1">
-      Add <a href={href} target="_blank">{topicToUpdate.displayName}</a> to the current parent
-      topic
+      Add <a href={href} target="_blank" rel="noopener noreferrer">{topicToUpdate.displayName}</a>
+      to the current parent topic
       <button type="button" className="btn btn-secondary btn-sm ml-2" onClick={onClick}>
         update
       </button>
