@@ -13,6 +13,7 @@ import { FetcherBase } from '../FetcherBase'
 import { commitMutation } from 'react-relay'
 import { Environment, MutationConfig } from 'relay-runtime'
 
+// @ts-expect-error
 const RedisStore = store(session)
 const redisClient = createClient({
   url: process.env.DIGRAPH_NODE_REDIS_URL || 'redis://localhost:6379',
@@ -23,7 +24,6 @@ redisClient.connect().catch(console.error)
 type Config = Omit<MutationConfig<deleteSessionMutation>, 'mutation'>
 
 function deleteSession(environment: Environment, config: Config) {
-  // @ts-expect-error
   return commitMutation<deleteSessionMutation>(environment,
     { ...config, mutation: deleteSessionQuery })
 }
@@ -32,6 +32,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
   const environment = createEnvironment(fetcher)
 
   app.use(session({
+    // @ts-expect-error
     store: new RedisStore({
       client: redisClient,
       logErrors: true,
@@ -39,6 +40,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
     secret: process.env.DIGRAPH_COOKIE_SECRET || 'keyboard cat',
     resave: true,
     saveUninitialized: true,
+    secure: process.env.NODE_ENV == 'production',
     // Expire in one month
     cookie: { maxAge: 1000 * 3600 * 24 * 30 },
   }))
