@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::sync::Arc;
 
 use super::{ChangeReference, Client, RepoLink, RepoTopic, Synonym};
 use crate::prelude::*;
@@ -1231,7 +1232,7 @@ mod markdown {
 }
 
 pub struct FetchActivity {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub first: usize,
     pub path: Option<(RepoId, ExternalId)>,
 }

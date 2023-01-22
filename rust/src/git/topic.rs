@@ -1,4 +1,7 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    sync::Arc,
+};
 
 use itertools::Itertools;
 
@@ -56,7 +59,7 @@ fn append_synonym(
 }
 
 pub struct DeleteTopic {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub repo: RepoId,
     pub topic_id: ExternalId,
 }
@@ -183,7 +186,7 @@ impl DeleteTopic {
 }
 
 pub struct RemoveTopicTimerange {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub repo_id: RepoId,
     pub topic_id: ExternalId,
 }
@@ -249,7 +252,7 @@ impl RemoveTopicTimerange {
 }
 
 pub struct UpdateTopicParentTopics {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub parent_topic_ids: BTreeSet<ExternalId>,
     pub repo_id: RepoId,
     pub topic_id: ExternalId,
@@ -375,7 +378,7 @@ impl UpdateTopicParentTopics {
 }
 
 pub struct UpdateTopicSynonyms {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub repo_id: RepoId,
     pub synonyms: Vec<Synonym>,
     pub topic_id: ExternalId,
@@ -528,7 +531,7 @@ pub enum OnMatchingSynonym {
 }
 
 pub struct UpsertTopic {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub locale: Locale,
     pub name: String,
     pub on_matching_synonym: OnMatchingSynonym,
@@ -793,7 +796,7 @@ impl UpsertTopic {
 }
 
 pub struct UpsertTopicTimerange {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub repo_id: RepoId,
     pub timerange: Timerange,
     pub topic_id: ExternalId,

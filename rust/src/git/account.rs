@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::sync::Arc;
 
 use super::{Mutation, RepoTopic, RepoTopicMetadata, Synonym};
 use crate::git::RepoTopicDetails;
@@ -6,7 +7,7 @@ use crate::prelude::*;
 use crate::redis;
 
 pub struct DeleteAccount {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub user_id: String,
     pub personal_repos: RepoIds,
 }
@@ -36,7 +37,7 @@ impl DeleteAccount {
 }
 
 pub struct EnsurePersonalRepo {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub user_id: String,
     pub personal_repo_ids: Vec<RepoId>,
 }

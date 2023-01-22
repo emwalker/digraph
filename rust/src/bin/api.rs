@@ -7,6 +7,7 @@ use base64::engine::general_purpose;
 use base64::Engine;
 use digraph::types::Timespec;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use std::env;
 
@@ -67,8 +68,8 @@ async fn index(
     http_req: HttpRequest,
 ) -> GraphQLResponse {
     let user_info = user_id_from_header(http_req);
-    let viewer = state.authenticate(user_info).await;
-    let store = state.store(&viewer, &Timespec);
+    let viewer = Arc::new(state.authenticate(user_info).await);
+    let store = state.store(viewer, &Timespec);
 
     state
         .schema

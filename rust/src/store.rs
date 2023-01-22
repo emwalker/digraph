@@ -3,6 +3,7 @@ use geotime::Geotime;
 use sqlx::postgres::PgPool;
 use std::collections::BTreeSet;
 use std::convert::TryInto;
+use std::sync::Arc;
 
 use crate::git;
 use crate::graphql;
@@ -19,27 +20,21 @@ pub struct Store {
     organization_loader: DataLoader<psql::OrganizationLoader>,
     pub server_secret: String,
     pub user_loader: DataLoader<psql::UserLoader>,
-    pub viewer: Viewer,
+    pub viewer: Arc<Viewer>,
     redis: redis::Redis,
-    repository_by_name_loader: DataLoader<psql::RepositoryByNameLoader>,
-    repository_by_prefix_loader: DataLoader<psql::RepositoryByIdLoader>,
     repository_loader: DataLoader<psql::RepositoryLoader>,
 }
 
 impl Store {
     pub fn new(
-        viewer: Viewer,
+        viewer: Arc<Viewer>,
         git: git::Client,
         db: PgPool,
         server_secret: String,
         redis: redis::Redis,
     ) -> Self {
-        let organization_loader = psql::OrganizationLoader::new(viewer.clone(), db.clone());
-        let repository_loader = psql::RepositoryLoader::new(viewer.clone(), db.clone());
-        let repository_by_name_loader =
-            psql::RepositoryByNameLoader::new(viewer.clone(), db.clone());
-        let repository_by_prefix_loader =
-            psql::RepositoryByIdLoader::new(viewer.clone(), db.clone());
+        let organization_loader = psql::OrganizationLoader::new(Arc::clone(&viewer), db.clone());
+        let repository_loader = psql::RepositoryLoader::new(Arc::clone(&viewer), db.clone());
         let object_loader = graphql::ObjectLoader::new(git.clone());
         let user_loader = psql::UserLoader::new(viewer.clone(), db.clone());
 
@@ -52,14 +47,6 @@ impl Store {
 
             organization_loader: DataLoader::new(organization_loader, actix_web::rt::spawn),
             repository_loader: DataLoader::new(repository_loader, actix_web::rt::spawn),
-            repository_by_name_loader: DataLoader::new(
-                repository_by_name_loader,
-                actix_web::rt::spawn,
-            ),
-            repository_by_prefix_loader: DataLoader::new(
-                repository_by_prefix_loader,
-                actix_web::rt::spawn,
-            ),
             object_loader: DataLoader::new(object_loader, actix_web::rt::spawn),
             user_loader: DataLoader::new(user_loader, actix_web::rt::spawn),
         }
@@ -74,7 +61,7 @@ impl Store {
         first: i32,
     ) -> Result<Vec<git::activity::Change>> {
         let result = git::activity::FetchActivity {
-            actor: self.viewer.clone(),
+            actor: Arc::clone(&self.viewer),
             path: topic_id
                 .as_ref()
                 .map(|id| (repo_id.to_owned(), id.to_owned())),
@@ -95,7 +82,7 @@ impl Store {
         log::info!("account deletion: fetching account info for {}", user_id);
         let psql::FetchAccountInfoResult { personal_repos } = psql::FetchAccountInfo {
             user_id: user_id.to_owned(),
-            viewer: self.viewer.to_owned(),
+            viewer: Arc::clone(&self.viewer),
         }
         .call(&self.db)
         .await?;
@@ -113,7 +100,7 @@ impl Store {
         .call(&self.mutation()?)?;
 
         log::info!("account deletion: postgres data for {}", user_id);
-        psql::DeleteAccount::new(self.viewer.clone(), user_id)
+        psql::DeleteAccount::new(Arc::clone(&self.viewer), user_id)
             .call(&self.db)
             .await
     }
@@ -124,7 +111,7 @@ impl Store {
         link_id: &ExternalId,
     ) -> Result<git::DeleteLinkResult> {
         git::DeleteLink {
-            actor: self.viewer.clone(),
+            actor: Arc::clone(&self.viewer),
             repo: repo_id.to_owned(),
             link_id: link_id.to_owned(),
         }
@@ -143,7 +130,7 @@ impl Store {
         topic_id: &ExternalId,
     ) -> Result<git::DeleteTopicResult> {
         git::DeleteTopic {
-            actor: self.viewer.clone(),
+            actor: Arc::clone(&self.viewer),
             repo: repo_id.to_owned(),
             topic_id: topic_id.to_owned(),
         }
@@ -244,7 +231,7 @@ impl Store {
         topic_id: &ExternalId,
     ) -> Result<git::RemoveTopicTimerangeResult> {
         git::RemoveTopicTimerange {
-            actor: self.viewer.clone(),
+            actor: Arc::clone(&self.viewer),
             repo_id: repo_id.to_owned(),
             topic_id: topic_id.clone(),
         }
@@ -256,7 +243,7 @@ impl Store {
     }
 
     pub async fn repositories_for_user(&self, user_id: String) -> Result<Vec<graphql::Repository>> {
-        psql::FetchWriteableRepositoriesForUser::new(self.viewer.clone(), user_id)
+        psql::FetchWriteableRepositoriesForUser::new(Arc::clone(&self.viewer), user_id)
             .call(&self.db)
             .await
     }
@@ -265,12 +252,8 @@ impl Store {
         self.repository_loader.load_one(id).await
     }
 
-    pub async fn repository_by_id(&self, prefix: String) -> Result<Option<graphql::Repository>> {
-        self.repository_by_prefix_loader.load_one(prefix).await
-    }
-
-    pub async fn repository_by_name(&self, name: String) -> Result<Option<graphql::Repository>> {
-        self.repository_by_name_loader.load_one(name).await
+    pub async fn repository_by_id(&self, repo_id: String) -> Result<Option<graphql::Repository>> {
+        self.repository_loader.load_one(repo_id).await
     }
 
     pub async fn search(
@@ -279,7 +262,6 @@ impl Store {
         search: &git::Search,
     ) -> Result<git::FindMatchesResult> {
         log::debug!("search: {:?}", search);
-        let viewer = &self.viewer;
 
         let fetcher = git::RedisFetchDownSet {
             client: self.git.clone(),
@@ -294,7 +276,7 @@ impl Store {
             search: search.to_owned(),
             timespec: Timespec,
             topic_id: parent_topic.key.0.to_owned(),
-            viewer: viewer.to_owned(),
+            viewer: Arc::clone(&self.viewer),
         }
         .call(&self.git, &fetcher)
     }
@@ -306,7 +288,7 @@ impl Store {
         let search = git::Search::parse(&search_string.unwrap_or_default())?;
         git::FetchTopicLiveSearch {
             limit: 10,
-            viewer: self.viewer.to_owned(),
+            viewer: Arc::clone(&self.viewer),
             repos: self.viewer.read_repo_ids.to_owned(),
             search,
         }
@@ -317,16 +299,16 @@ impl Store {
         &self,
         repo_id: Option<RepoId>,
     ) -> Result<psql::SelectRepositoryResult> {
-        psql::SelectRepository::new(self.viewer.clone(), repo_id)
+        psql::SelectRepository::new(Arc::clone(&self.viewer), repo_id)
             .call(&self.db)
             .await
     }
 
-    fn update_by(&self, actor: &Viewer) -> Result<git::Mutation> {
+    fn update_by(&self, actor: &Arc<Viewer>) -> Result<git::Mutation> {
         let git = git::Client {
             root: self.git.root.to_owned(),
             timespec: self.git.timespec.to_owned(),
-            viewer: actor.to_owned(),
+            viewer: Arc::clone(actor),
         };
 
         git.mutation(git::IndexMode::Update)
@@ -339,7 +321,7 @@ impl Store {
         let link_id = ExternalId::try_from(&input.link_id)?;
 
         git::UpdateLinkParentTopics {
-            actor: self.viewer.clone(),
+            actor: Arc::clone(&self.viewer),
             link_id,
             parent_topic_ids: input
                 .parent_topic_ids
@@ -359,7 +341,7 @@ impl Store {
         parent_topics: Vec<ExternalId>,
     ) -> Result<git::UpdateTopicParentTopicsResult> {
         git::UpdateTopicParentTopics {
-            actor: self.viewer.clone(),
+            actor: Arc::clone(&self.viewer),
             repo_id: repo_id.to_owned(),
             topic_id: topic_id.to_owned(),
             parent_topic_ids: parent_topics
@@ -382,7 +364,7 @@ impl Store {
         } = input;
 
         git::UpdateTopicSynonyms {
-            actor: self.viewer.clone(),
+            actor: Arc::clone(&self.viewer),
             repo_id: repo_id.try_into()?,
             synonyms: synonyms
                 .iter()
@@ -421,10 +403,10 @@ impl Store {
     ) -> Result<psql::CreateSessionResult> {
         let result = psql::CreateGithubSession::new(input).call(&self.db).await?;
 
-        let actor = Viewer::service_account();
+        let actor = Arc::new(Viewer::service_account());
 
         git::EnsurePersonalRepo {
-            actor: actor.to_owned(),
+            actor: Arc::clone(&actor),
             user_id: result.user.id.to_string(),
             personal_repo_ids: result.personal_repo_ids.to_owned(),
         }
@@ -468,7 +450,7 @@ impl Store {
         };
 
         git::UpsertTopic {
-            actor: self.viewer.clone(),
+            actor: Arc::clone(&self.viewer),
             locale: Locale::EN,
             name,
             on_matching_synonym,
@@ -486,7 +468,7 @@ impl Store {
         let starts = Geotime::from(&input.starts_at.0);
 
         git::UpsertTopicTimerange {
-            actor: self.viewer.clone(),
+            actor: Arc::clone(&self.viewer),
             timerange: Timerange {
                 starts: geotime::LexicalGeohash::from(starts),
                 prefix_format: TimerangePrefixFormat::from(&input.prefix_format),
@@ -508,7 +490,7 @@ impl Store {
 
     pub async fn view_stats(&self) -> Result<git::FetchStatsResult> {
         git::FetchStats {
-            viewer: self.viewer.clone(),
+            viewer: Arc::clone(&self.viewer),
         }
         .call(&self.git, self.redis.to_owned())
         .await

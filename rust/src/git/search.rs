@@ -2,6 +2,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
+use std::sync::Arc;
 use std::time::Instant;
 use strum_macros::EnumString;
 
@@ -136,7 +137,7 @@ pub struct FetchTopicLiveSearch {
     pub limit: usize,
     pub repos: RepoIds,
     pub search: Search,
-    pub viewer: Viewer,
+    pub viewer: Arc<Viewer>,
 }
 
 #[derive(Debug)]
@@ -299,7 +300,7 @@ pub struct FindMatches {
     pub search: Search,
     pub timespec: Timespec,
     pub topic_id: ExternalId,
-    pub viewer: Viewer,
+    pub viewer: Arc<Viewer>,
 }
 
 #[derive(Debug)]

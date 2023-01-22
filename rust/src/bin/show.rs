@@ -1,5 +1,6 @@
 use std::env;
 use std::io::{self, Write};
+use std::sync::Arc;
 
 use digraph::git::*;
 use digraph::prelude::*;
@@ -134,7 +135,8 @@ async fn main() -> Result<()> {
     let opts = parse_args();
     let (root_directory, repo_id, oid) = parse_path(&opts.filename)?;
 
-    let mut git = Client::new(&Viewer::service_account(), &root_directory, Timespec);
+    let actor = Arc::new(Viewer::service_account());
+    let mut git = Client::new(actor, &root_directory, Timespec);
     let object = git.fetch(&repo_id, &oid);
     if object.is_none() {
         return Err(Error::NotFound(format!(

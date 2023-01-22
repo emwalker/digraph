@@ -3,6 +3,7 @@ pub use async_graphql::ID;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::graphql::Organization;
 use crate::prelude::*;
@@ -28,11 +29,11 @@ impl TryFrom<Row> for Organization {
 
 pub struct OrganizationLoader {
     pool: PgPool,
-    viewer: Viewer,
+    viewer: Arc<Viewer>,
 }
 
 impl OrganizationLoader {
-    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+    pub fn new(viewer: Arc<Viewer>, pool: PgPool) -> Self {
         Self { viewer, pool }
     }
 }

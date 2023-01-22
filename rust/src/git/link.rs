@@ -1,5 +1,6 @@
 use chrono::Utc;
 use std::collections::{BTreeSet, HashMap};
+use std::sync::Arc;
 
 use crate::git::{
     activity, Kind, ParentTopic, RepoLink, RepoLinkMetadata, RepoTopic, SaveChangesForPrefix,
@@ -12,7 +13,7 @@ use super::activity::TopicInfoList;
 use super::{Mutation, RepoLinkDetails};
 
 pub struct DeleteLink {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub repo: RepoId,
     pub link_id: ExternalId,
 }
@@ -80,7 +81,7 @@ impl DeleteLink {
 }
 
 pub struct UpdateLinkParentTopics {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub repo_id: RepoId,
     pub link_id: ExternalId,
     pub parent_topic_ids: BTreeSet<ExternalId>,
@@ -188,7 +189,7 @@ impl UpdateLinkParentTopics {
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct UpsertLink {
-    pub actor: Viewer,
+    pub actor: Arc<Viewer>,
     pub add_parent_topic_id: Option<ExternalId>,
     #[derivative(Debug = "ignore")]
     pub fetcher: Box<dyn http::Fetch + Send + Sync>,

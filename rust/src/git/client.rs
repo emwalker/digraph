@@ -3,6 +3,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use super::checks::LeakedData;
 use super::index::{
@@ -101,15 +102,15 @@ impl GitPaths for ExternalId {
 pub struct Client {
     pub root: DataRoot,
     pub timespec: Timespec,
-    pub viewer: Viewer,
+    pub viewer: Arc<Viewer>,
 }
 
 impl Client {
-    pub fn new(viewer: &Viewer, root: &DataRoot, timespec: Timespec) -> Self {
+    pub fn new(viewer: Arc<Viewer>, root: &DataRoot, timespec: Timespec) -> Self {
         Self {
             root: root.to_owned(),
             timespec,
-            viewer: viewer.to_owned(),
+            viewer,
         }
     }
 

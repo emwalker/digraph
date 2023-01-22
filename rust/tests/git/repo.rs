@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::Arc;
 
 use super::{actor, viewer, Fixtures};
 use digraph::git;
@@ -29,9 +30,9 @@ mod delete_account {
 
     use super::*;
 
-    fn delete(f: &Fixtures, repo: &RepoId, actor: &Viewer, user_id: &str) -> Result<()> {
+    fn delete(f: &Fixtures, repo: &RepoId, actor: &Arc<Viewer>, user_id: &str) -> Result<()> {
         git::DeleteAccount {
-            actor: actor.to_owned(),
+            actor: Arc::clone(actor),
             user_id: user_id.to_owned(),
             personal_repos: RepoIds::try_from(&vec![repo.to_owned()]).unwrap(),
         }
@@ -113,11 +114,11 @@ mod ensure_personal_repo {
     fn ensure(
         f: &Fixtures,
         repo_ids: &Vec<RepoId>,
-        actor: &Viewer,
+        actor: &Arc<Viewer>,
         user_id: &str,
     ) -> Result<git::EnsurePersonalRepoResult> {
         git::EnsurePersonalRepo {
-            actor: actor.to_owned(),
+            actor: Arc::clone(actor),
             user_id: user_id.to_owned(),
             personal_repo_ids: repo_ids.to_owned(),
         }

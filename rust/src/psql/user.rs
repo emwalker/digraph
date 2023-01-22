@@ -2,6 +2,7 @@ use async_graphql::dataloader::*;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use super::{CompleteRegistration, PgTransaction};
 use crate::graphql::CreateGithubSessionInput;
@@ -46,11 +47,11 @@ pub async fn fetch_user(_read_prefixes: &RepoIds, user_id: &String, pool: &PgPoo
 pub struct UserLoader {
     pool: PgPool,
     #[allow(dead_code)]
-    viewer: Viewer,
+    viewer: Arc<Viewer>,
 }
 
 impl UserLoader {
-    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+    pub fn new(viewer: Arc<Viewer>, pool: PgPool) -> Self {
         Self { viewer, pool }
     }
 }
@@ -174,7 +175,7 @@ impl UpsertRegisteredUser {
 }
 
 pub struct FetchAccountInfo {
-    pub viewer: Viewer,
+    pub viewer: Arc<Viewer>,
     pub user_id: String,
 }
 
@@ -203,7 +204,7 @@ impl FetchAccountInfo {
 }
 
 pub struct DeleteAccount {
-    actor: Viewer,
+    actor: Arc<Viewer>,
     user_id: String,
 }
 
@@ -213,7 +214,7 @@ pub struct DeleteAccountResult {
 }
 
 impl DeleteAccount {
-    pub fn new(actor: Viewer, user_id: String) -> Self {
+    pub fn new(actor: Arc<Viewer>, user_id: String) -> Self {
         Self { actor, user_id }
     }
 

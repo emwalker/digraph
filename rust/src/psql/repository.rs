@@ -2,6 +2,7 @@ use async_graphql::dataloader::*;
 use sqlx::postgres::PgPool;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use super::{fetch_user, repository, user};
 use crate::graphql::Repository;
@@ -46,11 +47,11 @@ impl Row {
 
 pub struct FetchWriteableRepositoriesForUser {
     user_id: String,
-    viewer: Viewer,
+    viewer: Arc<Viewer>,
 }
 
 impl FetchWriteableRepositoriesForUser {
-    pub fn new(viewer: Viewer, user_id: String) -> Self {
+    pub fn new(viewer: Arc<Viewer>, user_id: String) -> Self {
         Self { viewer, user_id }
     }
 
@@ -81,11 +82,11 @@ impl FetchWriteableRepositoriesForUser {
 
 pub struct RepositoryLoader {
     pool: PgPool,
-    viewer: Viewer,
+    viewer: Arc<Viewer>,
 }
 
 impl RepositoryLoader {
-    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
+    pub fn new(viewer: Arc<Viewer>, pool: PgPool) -> Self {
         Self { viewer, pool }
     }
 }
@@ -121,94 +122,8 @@ impl Loader<String> for RepositoryLoader {
     }
 }
 
-pub struct RepositoryByNameLoader {
-    pool: PgPool,
-    viewer: Viewer,
-}
-
-impl RepositoryByNameLoader {
-    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
-        Self { viewer, pool }
-    }
-}
-
-#[async_trait::async_trait]
-impl Loader<String> for RepositoryByNameLoader {
-    type Value = Repository;
-    type Error = Error;
-
-    async fn load(&self, names: &[String]) -> Result<HashMap<String, Self::Value>> {
-        log::debug!("batch load repos by name: {:?}", names);
-
-        let query = format!(
-            r#"
-            "select
-                {REPOSITORY_FIELDS}
-                {REPOSITORY_JOINS}
-                where r.name = any($1)
-                    and r.id = any($2::uuid[])
-                {REPOSITORY_GROUP_BY}"#
-        );
-        let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(names)
-            .bind(&self.viewer.read_repo_ids.to_vec())
-            .fetch_all(&self.pool)
-            .await?;
-
-        Ok(rows
-            .iter()
-            .map(|r| (r.id.to_string(), r.to_repository()))
-            .collect::<HashMap<_, _>>())
-    }
-}
-
-pub struct RepositoryByIdLoader {
-    pool: PgPool,
-    viewer: Viewer,
-}
-
-impl RepositoryByIdLoader {
-    pub fn new(viewer: Viewer, pool: PgPool) -> Self {
-        Self { viewer, pool }
-    }
-}
-
-#[async_trait::async_trait]
-impl Loader<String> for RepositoryByIdLoader {
-    type Value = Repository;
-    type Error = Error;
-
-    async fn load(&self, repo_ids: &[String]) -> Result<HashMap<String, Self::Value>> {
-        log::debug!(
-            "batch load repos {:?} by id for users {:?}",
-            repo_ids,
-            self.viewer.read_repo_ids
-        );
-
-        let query = format!(
-            r#"select
-                {REPOSITORY_FIELDS}
-                {REPOSITORY_JOINS}
-                where r.id = any($1::uuid[])
-                    and r.id = any($2::uuid[])
-                {REPOSITORY_GROUP_BY}
-           "#
-        );
-        let rows = sqlx::query_as::<_, Row>(&query)
-            .bind(repo_ids)
-            .bind(&self.viewer.read_repo_ids.to_vec())
-            .fetch_all(&self.pool)
-            .await?;
-
-        Ok(rows
-            .iter()
-            .map(|r| (r.id.to_string(), r.to_repository()))
-            .collect::<HashMap<_, _>>())
-    }
-}
-
 pub struct SelectRepository {
-    actor: Viewer,
+    actor: Arc<Viewer>,
     repo_id: Option<RepoId>,
 }
 
@@ -218,7 +133,7 @@ pub struct SelectRepositoryResult {
 }
 
 impl SelectRepository {
-    pub fn new(actor: Viewer, repo_id: Option<RepoId>) -> Self {
+    pub fn new(actor: Arc<Viewer>, repo_id: Option<RepoId>) -> Self {
         Self { actor, repo_id }
     }
 

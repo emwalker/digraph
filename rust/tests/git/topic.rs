@@ -1,4 +1,5 @@
 use geotime::Geotime;
+use std::sync::Arc;
 
 use super::{actor, parse_id, Fixtures};
 use digraph::prelude::*;
@@ -10,16 +11,16 @@ mod visibility {
     use super::*;
     use digraph::{git::Client, types::Timespec};
 
-    fn viewer(repo_ids: &Vec<RepoId>) -> Viewer {
+    fn viewer(repo_ids: &Vec<RepoId>) -> Arc<Viewer> {
         let repo_ids = RepoIds::try_from(repo_ids).unwrap();
-        Viewer {
+        Arc::new(Viewer {
             context_repo_id: RepoId::wiki(),
             read_repo_ids: repo_ids.to_owned(),
             session_id: Some("1".to_owned()),
             super_user: false,
             user_id: "2".to_owned(),
             write_repo_ids: repo_ids,
-        }
+        })
     }
 
     #[test]
@@ -29,10 +30,10 @@ mod visibility {
         let topic = f.topic(&repo, ROOT_TOPIC_ID);
         let topic_id = topic.topic_id();
 
-        let git = Client::new(&viewer(&vec![RepoId::wiki()]), &f.git.root, Timespec);
+        let git = Client::new(viewer(&vec![RepoId::wiki()]), &f.git.root, Timespec);
         assert!(git.fetch(&repo, topic_id).is_some());
 
-        let git = Client::new(&viewer(&vec![RepoId::other()]), &f.git.root, Timespec);
+        let git = Client::new(viewer(&vec![RepoId::other()]), &f.git.root, Timespec);
         assert!(!git.exists(&repo, topic_id).unwrap());
         assert!(git.fetch(&repo, topic_id).is_none());
     }

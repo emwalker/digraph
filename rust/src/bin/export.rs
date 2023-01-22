@@ -5,6 +5,7 @@ use sqlx::{FromRow, PgPool};
 use std::collections::{BTreeSet, HashMap};
 use std::env;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use uuid::Uuid;
 
 use digraph::config::Config;
@@ -580,7 +581,8 @@ async fn main() -> Result<()> {
         return Err(Error::NotFound(format!("{:?}", opts.root)));
     }
     let root = DataRoot::new(opts.root);
-    let client = Client::new(&Viewer::service_account(), &root, Timespec);
+    let actor = Arc::new(Viewer::service_account());
+    let client = Client::new(actor, &root, Timespec);
     let mut mutation = client.mutation(IndexMode::Replace)?;
 
     export_topics(&mut mutation, &pool).await.unwrap();

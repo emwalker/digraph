@@ -1,5 +1,5 @@
-// use actix_web;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 use super::Client;
 use crate::prelude::*;
@@ -49,7 +49,7 @@ pub trait CacheStats {
 }
 
 pub struct FetchStats {
-    pub viewer: Viewer,
+    pub viewer: Arc<Viewer>,
 }
 
 pub struct FetchStatsResult {

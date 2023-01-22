@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_graphql::EmptySubscription;
 use sqlx::postgres::PgPool;
 
@@ -112,10 +114,10 @@ impl State {
         }
     }
 
-    pub fn store(&self, viewer: &Viewer, timespec: &Timespec) -> Store {
+    pub fn store(&self, viewer: Arc<Viewer>, timespec: &Timespec) -> Store {
         Store::new(
-            viewer.to_owned(),
-            git::Client::new(viewer, &self.root, timespec.to_owned()),
+            Arc::clone(&viewer),
+            git::Client::new(Arc::clone(&viewer), &self.root, timespec.to_owned()),
             self.pool.clone(),
             self.server_secret.clone(),
             self.redis.clone(),

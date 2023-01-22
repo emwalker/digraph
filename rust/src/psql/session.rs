@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use sqlx::{postgres::PgPool, types::Uuid, FromRow};
 
 use super::{user, UpsertRegisteredUser, UpsertUserResult};
@@ -71,7 +73,7 @@ impl CreateGithubSession {
 }
 
 pub struct DeleteSession {
-    viewer: Viewer,
+    viewer: Arc<Viewer>,
     session_id: String,
 }
 
@@ -80,7 +82,7 @@ pub struct DeleteSessionResult {
 }
 
 impl DeleteSession {
-    pub fn new(viewer: Viewer, session_id: String) -> Self {
+    pub fn new(viewer: Arc<Viewer>, session_id: String) -> Self {
         Self { viewer, session_id }
     }
 
