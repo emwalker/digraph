@@ -60,7 +60,7 @@ fn append_synonym(
 
 pub struct DeleteTopic {
     pub actor: Arc<Viewer>,
-    pub repo: RepoId,
+    pub repo_id: RepoId,
     pub topic_id: ExternalId,
 }
 
@@ -77,7 +77,7 @@ impl DeleteTopic {
         let topic_id = &self.topic_id;
         let added = chrono::Utc::now();
 
-        let topic = mutation.fetch_topic(&self.repo, topic_id);
+        let topic = mutation.fetch_topic(self.repo_id, topic_id);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", topic_id)));
         }
@@ -87,7 +87,7 @@ impl DeleteTopic {
             return Err(Error::Repo("cannot delete root topic".to_owned()));
         }
 
-        mutation.mark_deleted(&self.repo, topic_id)?;
+        mutation.mark_deleted(self.repo_id, topic_id)?;
 
         let parent_topics = topic
             .parent_topics
@@ -104,13 +104,13 @@ impl DeleteTopic {
 
         // Remove the topic from its children
         for child in &topic.children {
-            match mutation.fetch(&self.repo, &child.id) {
+            match mutation.fetch(self.repo_id, &child.id) {
                 Some(RepoObject::Link(child_link)) => {
                     let mut child_link = child_link.to_owned();
                     child_link.parent_topics.remove(&topic.to_parent_topic());
                     child_link.parent_topics.append(&mut parent_topics.clone());
                     child_links.push(child_link.clone());
-                    mutation.save_link(&self.repo, &child_link)?;
+                    mutation.save_link(self.repo_id, &child_link)?;
                 }
 
                 Some(RepoObject::Topic(child_topic)) => {
@@ -118,7 +118,7 @@ impl DeleteTopic {
                     child_topic.parent_topics.remove(&topic.to_parent_topic());
                     child_topic.parent_topics.append(&mut parent_topics.clone());
                     child_topics.push(child_topic.clone());
-                    mutation.save_topic(&self.repo, &child_topic)?;
+                    mutation.save_topic(self.repo_id, &child_topic)?;
                 }
 
                 None => {}
@@ -126,7 +126,7 @@ impl DeleteTopic {
         }
 
         for parent in &topic.parent_topics {
-            if let Some(mut parent) = mutation.fetch_topic(&self.repo, &parent.id) {
+            if let Some(mut parent) = mutation.fetch_topic(self.repo_id, &parent.id) {
                 // Remove the topic from the children of the parent topics
                 parent.children.remove(&TopicChild {
                     // The 'added' field is ignored
@@ -145,15 +145,15 @@ impl DeleteTopic {
                     parent.children.insert(child.to_topic_child(added));
                 }
 
-                mutation.save_topic(&self.repo, &parent)?;
+                mutation.save_topic(self.repo_id, &parent)?;
                 topics.push(parent.clone());
             }
         }
 
         let change = self.change(&topic, &topics, &child_links, &child_topics, added);
 
-        mutation.remove_topic(&self.repo, &self.topic_id, &topic)?;
-        mutation.add_change(&self.repo, &change)?;
+        mutation.remove_topic(self.repo_id, &self.topic_id, &topic)?;
+        mutation.add_change(self.repo_id, &change)?;
         mutation.write(store)?;
 
         Ok(DeleteTopicResult {
@@ -201,7 +201,7 @@ impl RemoveTopicTimerange {
     where
         S: SaveChangesForPrefix,
     {
-        let topic = mutation.fetch_topic(&self.repo_id, &self.topic_id);
+        let topic = mutation.fetch_topic(self.repo_id, &self.topic_id);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -217,15 +217,15 @@ impl RemoveTopicTimerange {
             None => {}
         }
 
-        mutation.save_topic(&self.repo_id, &repo_topic)?;
-        mutation.add_change(&self.repo_id, &self.change(&repo_topic, previous_timerange))?;
+        mutation.save_topic(self.repo_id, &repo_topic)?;
+        mutation.add_change(self.repo_id, &self.change(&repo_topic, previous_timerange))?;
         mutation.write(store)?;
 
         Ok(RemoveTopicTimerangeResult {
             alerts: vec![],
             repo_topic: RepoTopicWrapper {
                 repo_topic,
-                repo_id: self.repo_id.to_owned(),
+                repo_id: self.repo_id,
             },
         })
     }
@@ -275,7 +275,7 @@ impl UpdateTopicParentTopics {
         self.validate(&mutation)?;
 
         let date = chrono::Utc::now();
-        let child = mutation.fetch_topic(&self.repo_id, &self.topic_id);
+        let child = mutation.fetch_topic(self.repo_id, &self.topic_id);
         if child.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -296,7 +296,7 @@ impl UpdateTopicParentTopics {
         let mut added_topics = vec![];
 
         for parent in added {
-            if let Some(mut topic) = parent.fetch(&self.repo_id, &mutation)? {
+            if let Some(mut topic) = parent.fetch(self.repo_id, &mutation)? {
                 topic.children.insert(child.to_topic_child(date));
                 child.parent_topics.insert(parent.to_owned());
                 added_topics.push(topic.clone());
@@ -312,7 +312,7 @@ impl UpdateTopicParentTopics {
         let mut removed_topics = vec![];
 
         for parent in removed {
-            if let Some(mut topic) = parent.fetch(&self.repo_id, &mutation)? {
+            if let Some(mut topic) = parent.fetch(self.repo_id, &mutation)? {
                 topic.children.remove(&child.to_topic_child(date));
                 child.parent_topics.remove(&parent);
                 removed_topics.push(topic.clone());
@@ -324,9 +324,9 @@ impl UpdateTopicParentTopics {
 
         updates.push(child.clone());
         for topic in updates {
-            mutation.save_topic(&self.repo_id, &topic)?;
+            mutation.save_topic(self.repo_id, &topic)?;
         }
-        mutation.add_change(&self.repo_id, &change)?;
+        mutation.add_change(self.repo_id, &change)?;
         mutation.write(store)?;
 
         Ok(UpdateTopicParentTopicsResult {
@@ -365,7 +365,7 @@ impl UpdateTopicParentTopics {
         }
 
         for parent in &self.parent_topic_ids {
-            if mutation.cycle_exists(&self.repo_id, &self.topic_id, parent)? {
+            if mutation.cycle_exists(self.repo_id, &self.topic_id, parent)? {
                 return Err(Error::Repo(format!(
                     "{} is a parent topic of {}",
                     self.topic_id, parent
@@ -400,7 +400,7 @@ impl UpdateTopicSynonyms {
             self.repo_id
         );
 
-        let topic = mutation.fetch_topic(&self.repo_id, &self.topic_id);
+        let topic = mutation.fetch_topic(self.repo_id, &self.topic_id);
         if topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -488,15 +488,15 @@ impl UpdateTopicSynonyms {
             }
         }
 
-        mutation.save_topic(&self.repo_id, &repo_topic)?;
-        mutation.add_change(&self.repo_id, &self.change(&repo_topic, &added, &removed))?;
+        mutation.save_topic(self.repo_id, &repo_topic)?;
+        mutation.add_change(self.repo_id, &self.change(&repo_topic, &added, &removed))?;
         mutation.write(store)?;
 
         Ok(UpdateTopicSynonymsResult {
             alerts,
             repo_topic: RepoTopicWrapper {
                 repo_topic,
-                repo_id: self.repo_id.to_owned(),
+                repo_id: self.repo_id,
             },
         })
     }
@@ -596,7 +596,7 @@ impl UpsertTopic {
 
         for synonym_match in matches {
             let topic_id = &synonym_match.repo_topic.topic_id();
-            if mutation.cycle_exists(&self.repo_id, topic_id, parent_id)? {
+            if mutation.cycle_exists(self.repo_id, topic_id, parent_id)? {
                 matching_repo_topics.insert(synonym_match.with_cycle(true));
             } else {
                 matching_repo_topics.insert(synonym_match);
@@ -648,9 +648,9 @@ impl UpsertTopic {
         parent.children.insert(child.to_topic_child(date));
 
         let change = self.change(&child, &parent_topics, &parent, date);
-        mutation.save_topic(&self.repo_id, &child)?;
-        mutation.save_topic(&self.repo_id, &parent)?;
-        mutation.add_change(&self.repo_id, &change)?;
+        mutation.save_topic(self.repo_id, &child)?;
+        mutation.save_topic(self.repo_id, &parent)?;
+        mutation.add_change(self.repo_id, &change)?;
         mutation.write(store)?;
 
         Ok(UpsertTopicResult {
@@ -675,7 +675,7 @@ impl UpsertTopic {
     {
         let date = chrono::Utc::now();
 
-        if mutation.cycle_exists(&self.repo_id, topic_id, parent.topic_id())? {
+        if mutation.cycle_exists(self.repo_id, topic_id, parent.topic_id())? {
             return self.handle_cycle(mutation, topic_id, parent, matches);
         }
 
@@ -695,7 +695,7 @@ impl UpsertTopic {
         parent: RepoTopic,
         mut matches: BTreeSet<SynonymMatch>,
     ) -> Result<UpsertTopicResult> {
-        let ancestor = mutation.fetch_topic(&self.repo_id, topic_id);
+        let ancestor = mutation.fetch_topic(self.repo_id, topic_id);
         if ancestor.is_none() {
             return Err(Error::NotFound(format!("not found: {}", topic_id)));
         }
@@ -715,7 +715,7 @@ impl UpsertTopic {
                 id: topic_id.to_owned(),
             },
             name: self.name.to_owned(),
-            repo_id: self.repo_id.to_owned(),
+            repo_id: self.repo_id,
             repo_topic: ancestor,
         });
 
@@ -779,7 +779,7 @@ impl UpsertTopic {
     }
 
     fn ensure_topic(&self, mutation: &Mutation, topic_id: &ExternalId) -> RepoTopic {
-        match mutation.fetch_topic(&self.repo_id, topic_id) {
+        match mutation.fetch_topic(self.repo_id, topic_id) {
             Some(topic) => topic,
 
             // If the topic is being upserted into another repo, we create a reference to the
@@ -813,7 +813,7 @@ impl UpsertTopicTimerange {
     where
         S: SaveChangesForPrefix,
     {
-        let repo_topic = mutation.fetch_topic(&self.repo_id, &self.topic_id);
+        let repo_topic = mutation.fetch_topic(self.repo_id, &self.topic_id);
         if repo_topic.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -829,8 +829,8 @@ impl UpsertTopicTimerange {
             None => {}
         }
 
-        mutation.save_topic(&self.repo_id, &repo_topic)?;
-        mutation.add_change(&self.repo_id, &self.change(&repo_topic, previous_timerange))?;
+        mutation.save_topic(self.repo_id, &repo_topic)?;
+        mutation.add_change(self.repo_id, &self.change(&repo_topic, previous_timerange))?;
         mutation.write(store)?;
 
         Ok(UpsertTopicTimerangeResult {
@@ -838,7 +838,7 @@ impl UpsertTopicTimerange {
             timerange: self.timerange.clone(),
             updated_repo_topic: RepoTopicWrapper {
                 repo_topic,
-                repo_id: self.repo_id.to_owned(),
+                repo_id: self.repo_id,
             },
         })
     }

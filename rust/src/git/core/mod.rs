@@ -36,8 +36,8 @@ impl std::fmt::Debug for Repo {
 }
 
 impl Repo {
-    pub fn ensure(root: &DataRoot, prefix: &RepoId) -> Result<Self> {
-        let path = root.repo_path(prefix);
+    pub fn ensure(root: &DataRoot, repo_id: RepoId) -> Result<Self> {
+        let path = root.repo_path(repo_id);
         Self::open(path)
     }
 
@@ -51,9 +51,9 @@ impl Repo {
         }
     }
 
-    pub fn delete(root: &DataRoot, prefix: &RepoId) -> Result<()> {
-        let path = root.repo_path(prefix);
-        log::warn!("deleting repo {} at {:?}", prefix, path);
+    pub fn delete(root: &DataRoot, repo_id: RepoId) -> Result<()> {
+        let path = root.repo_path(repo_id);
+        log::warn!("deleting repo {} at {:?}", repo_id, path);
 
         match std::fs::remove_dir_all(&path) {
             Ok(()) => log::warn!("deleted {:?}", path),
@@ -179,7 +179,7 @@ pub struct View {
 }
 
 impl View {
-    pub fn ensure(root: &DataRoot, repo_id: &RepoId, timespec: &Timespec) -> Result<Self> {
+    pub fn ensure(root: &DataRoot, repo_id: RepoId, timespec: &Timespec) -> Result<Self> {
         let repo = Repo::ensure(root, repo_id)?;
         let commit = repo.commit_oid(timespec)?;
         Ok(Self { repo, commit })
@@ -362,17 +362,17 @@ impl Update {
         Self(HashMap::new())
     }
 
-    pub fn add(&mut self, repo: &RepoId, filename: &Path, oid: &Option<git2::Oid>) -> Result<()> {
+    pub fn add(&mut self, repo_id: RepoId, filename: &Path, oid: &Option<git2::Oid>) -> Result<()> {
         let mut deque = deque_from_path(filename);
-        let tree = self.0.entry(repo.to_owned()).or_insert_with(Tree::new);
+        let tree = self.0.entry(repo_id).or_insert_with(Tree::new);
         tree.add_blob(&mut deque, oid);
         Ok(())
     }
 
     // Writes should only target HEAD
     pub fn write(&self, root: &DataRoot, sig: &git2::Signature, message: &str) -> Result<()> {
-        for (prefix, tree) in &self.0 {
-            let repo = Repo::ensure(root, prefix)?;
+        for (repo_id, tree) in &self.0 {
+            let repo = Repo::ensure(root, *repo_id)?;
             let head = repo.inner.find_reference("HEAD")?;
             let before = head.peel_to_tree()?;
             let oid = tree.write(&repo.inner, Some(before))?;

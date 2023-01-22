@@ -26,16 +26,16 @@ mod visibility {
     #[test]
     fn viewer_can_read() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
-        let topic = f.topic(&repo, ROOT_TOPIC_ID);
+        let repo_id = RepoId::wiki();
+        let topic = f.topic(repo_id, ROOT_TOPIC_ID);
         let topic_id = topic.topic_id();
 
         let git = Client::new(viewer(&vec![RepoId::wiki()]), &f.git.root, Timespec);
-        assert!(git.fetch(&repo, topic_id).is_some());
+        assert!(git.fetch(repo_id, topic_id).is_some());
 
         let git = Client::new(viewer(&vec![RepoId::other()]), &f.git.root, Timespec);
-        assert!(!git.exists(&repo, topic_id).unwrap());
-        assert!(git.fetch(&repo, topic_id).is_none());
+        assert!(!git.exists(repo_id, topic_id).unwrap());
+        assert!(git.fetch(repo_id, topic_id).is_none());
     }
 }
 
@@ -50,51 +50,54 @@ mod delete_topic {
     #[test]
     fn topic_deleted() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
-        assert!(f.git.exists(&repo, &topic_id).unwrap());
+        assert!(f.git.exists(repo_id, &topic_id).unwrap());
 
         let DeleteTopicResult {
             deleted_topic_id, ..
         } = DeleteTopic {
             actor: actor(),
-            repo: repo.to_owned(),
+            repo_id,
             topic_id: topic_id.to_owned(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
         assert_eq!(topic_id, deleted_topic_id);
-        assert!(!f.git.exists(&repo, &topic_id).unwrap());
+        assert!(!f.git.exists(repo_id, &topic_id).unwrap());
     }
 
     #[test]
     fn parent_topics_updated() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let path = parse_id("00001");
         let root = ExternalId::root_topic();
-        let parent = f.git.fetch_topic(&repo, &root).unwrap();
+        let parent = f.git.fetch_topic(repo_id, &root).unwrap();
         assert!(parent.has_child(&path));
 
         DeleteTopic {
             actor: actor(),
-            repo: repo.to_owned(),
+            repo_id,
             topic_id: path.clone(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        let parent = f.git.fetch_topic(&repo, &root).unwrap();
+        let parent = f.git.fetch_topic(repo_id, &root).unwrap();
         assert!(!parent.has_child(&path));
     }
 
     #[test]
     fn children_added_to_parents() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
 
-        let root = f.git.fetch_topic(&repo, &ExternalId::root_topic()).unwrap();
+        let root = f
+            .git
+            .fetch_topic(repo_id, &ExternalId::root_topic())
+            .unwrap();
         let topic_id = f.find_topic("Climate change").unwrap();
         let child_id = f.find_topic("Climate change and weather").unwrap();
 
@@ -103,13 +106,16 @@ mod delete_topic {
 
         DeleteTopic {
             actor: actor(),
-            repo: repo.to_owned(),
+            repo_id,
             topic_id: topic_id.clone(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        let root = f.git.fetch_topic(&repo, &ExternalId::root_topic()).unwrap();
+        let root = f
+            .git
+            .fetch_topic(repo_id, &ExternalId::root_topic())
+            .unwrap();
 
         assert!(!root.has_child(&topic_id));
         assert!(root.has_child(&child_id));
@@ -118,20 +124,20 @@ mod delete_topic {
     #[test]
     fn cannot_delete_root_topic() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let root = ExternalId::root_topic();
-        let topic = f.git.fetch_topic(&repo, &root).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &root).unwrap();
         assert!(topic.root());
 
         let result = DeleteTopic {
             actor: actor(),
-            repo: repo.to_owned(),
+            repo_id,
             topic_id: topic.topic_id().to_owned(),
         }
         .call(f.mutation(), &redis::Noop);
 
         assert!(matches!(result, Err(Error::Repo(_))));
-        let topic = f.git.fetch_topic(&repo, &root).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &root).unwrap();
         assert!(topic.root());
     }
 
@@ -155,19 +161,19 @@ mod delete_topic {
     #[test]
     fn change_entries_updated() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let root = ExternalId::root_topic();
 
         let climate_change = make_topic(&f, &root, "Topic name");
         let activity = f
             .git
-            .fetch_activity(&repo, climate_change.topic_id(), 1)
+            .fetch_activity(repo_id, climate_change.topic_id(), 1)
             .unwrap();
         assert!(!activity.is_empty());
 
         DeleteTopic {
             actor: actor(),
-            repo: repo.to_owned(),
+            repo_id,
             topic_id: climate_change.topic_id().to_owned(),
         }
         .call(f.mutation(), &redis::Noop)
@@ -175,7 +181,7 @@ mod delete_topic {
 
         let activity = f
             .git
-            .fetch_activity(&repo, climate_change.topic_id(), 100)
+            .fetch_activity(repo_id, climate_change.topic_id(), 100)
             .unwrap();
 
         let mut found = false;
@@ -204,12 +210,12 @@ mod delete_topic_timerange {
     #[test]
     fn timerange_deleted() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
 
         UpsertTopicTimerange {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id,
             timerange: Timerange {
                 prefix_format: TimerangePrefixFormat::StartYearMonth,
                 starts: Geotime::now().into(),
@@ -219,18 +225,18 @@ mod delete_topic_timerange {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &topic_id).unwrap();
         assert!(topic.timerange().is_some());
 
         RemoveTopicTimerange {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id,
             topic_id: topic_id.to_owned(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &topic_id).unwrap();
         assert!(topic.timerange().is_none());
     }
 }
@@ -243,16 +249,16 @@ mod update_topic_parent_topics {
     #[test]
     fn parent_topic_added() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
-        let parent = f.topic(&repo, "00001");
+        let repo_id = RepoId::wiki();
+        let parent = f.topic(repo_id, "00001");
         assert_eq!(parent.children, BTreeSet::new());
 
-        let child = f.topic(&repo, "00002");
+        let child = f.topic(repo_id, "00002");
         assert!(!parent.has_child(child.topic_id()));
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id,
             topic_id: child.topic_id().to_owned(),
             parent_topic_ids: BTreeSet::from([parent.topic_id().to_owned()]),
         }
@@ -261,24 +267,24 @@ mod update_topic_parent_topics {
 
         assert_eq!(result.repo_topic, child);
 
-        let parent = f.topic(&repo, "00001");
-        let child = f.topic(&repo, "00002");
+        let parent = f.topic(repo_id, "00001");
+        let child = f.topic(repo_id, "00002");
         assert!(parent.has_child(child.topic_id()));
     }
 
     #[test]
     fn parent_topic_removed() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
-        let parent = f.topic(&repo, "00001");
+        let repo_id = RepoId::wiki();
+        let parent = f.topic(repo_id, "00001");
         assert_eq!(parent.children, BTreeSet::new());
 
-        let child = f.topic(&repo, "00002");
+        let child = f.topic(repo_id, "00002");
         assert!(!parent.has_child(child.topic_id()));
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id,
             topic_id: child.topic_id().to_owned(),
             parent_topic_ids: BTreeSet::from([parent.topic_id().to_owned()]),
         }
@@ -287,20 +293,20 @@ mod update_topic_parent_topics {
 
         assert_eq!(result.repo_topic, child);
 
-        let parent = f.topic(&repo, "00001");
-        let child = f.topic(&repo, "00002");
+        let parent = f.topic(repo_id, "00001");
+        let child = f.topic(repo_id, "00002");
         assert!(parent.has_child(child.topic_id()));
     }
 
     #[test]
     fn no_orphans() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
-        let child = f.topic(&repo, "00002");
+        let repo_id = RepoId::wiki();
+        let child = f.topic(repo_id, "00002");
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            repo_id: repo,
+            repo_id,
             topic_id: child.topic_id().to_owned(),
             parent_topic_ids: BTreeSet::new(),
         }
@@ -312,14 +318,14 @@ mod update_topic_parent_topics {
     #[test]
     fn no_cycles() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
-        let parent = f.topic(&repo, ROOT_TOPIC_ID);
-        let child = f.topic(&repo, "00001");
+        let repo_id = RepoId::wiki();
+        let parent = f.topic(repo_id, ROOT_TOPIC_ID);
+        let child = f.topic(repo_id, "00001");
         assert!(parent.has_child(child.topic_id()));
 
         let result = UpdateTopicParentTopics {
             actor: actor(),
-            repo_id: repo,
+            repo_id,
             topic_id: parent.topic_id().to_owned(),
             parent_topic_ids: BTreeSet::from([child.topic_id().to_owned()]),
         }
@@ -355,9 +361,9 @@ mod update_topic_synonyms {
     #[test]
     fn synonyms_added() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
-        let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &topic_id).unwrap();
 
         assert_eq!(topic.name(Locale::EN), "A topic");
         assert_eq!(topic.synonyms().len(), 1);
@@ -368,7 +374,7 @@ mod update_topic_synonyms {
 
         let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo,
+            repo_id,
             topic_id,
             synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
         }
@@ -385,9 +391,9 @@ mod update_topic_synonyms {
     #[test]
     fn synonyms_deduped() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
-        let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &topic_id).unwrap();
 
         assert_eq!(topic.name(Locale::EN), "A topic");
         assert_eq!(topic.synonyms().len(), 1);
@@ -398,7 +404,7 @@ mod update_topic_synonyms {
             repo_topic, alerts, ..
         } = UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo,
+            repo_id,
             topic_id,
             synonyms: vec![synonym("A topic"), synonym("A topic")],
         }
@@ -415,12 +421,12 @@ mod update_topic_synonyms {
     #[test]
     fn synonyms_removed() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
 
         let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id,
             topic_id: topic_id.clone(),
             synonyms: vec![synonym("A topic"), synonym("B topic"), synonym("C topic")],
         }
@@ -434,7 +440,7 @@ mod update_topic_synonyms {
 
         let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo,
+            repo_id,
             topic_id,
             synonyms: vec![synonym("C topic")],
         }
@@ -453,20 +459,20 @@ mod update_topic_synonyms {
         let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
 
-        let topic = f.git.fetch_topic(&repo_id, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &topic_id).unwrap();
         let syn = topic.synonyms().first().unwrap();
         let added = syn.added;
 
         UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo_id.to_owned(),
+            repo_id,
             topic_id: topic_id.clone(),
             synonyms: vec![synonym(&syn.name)],
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        let topic = f.git.fetch_topic(&repo_id, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &topic_id).unwrap();
         let syn = topic.synonyms().first().unwrap();
         assert_eq!(syn.added, added);
     }
@@ -474,36 +480,36 @@ mod update_topic_synonyms {
     #[test]
     fn lookup_indexes_updated() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
         let search = Search::parse("topicA").unwrap();
         let entry = SearchEntry {
             id: topic_id.to_owned(),
             kind: Kind::Topic,
         };
-        assert!(!f.git.appears_in(&repo, &search, &entry).unwrap());
+        assert!(!f.git.appears_in(repo_id, &search, &entry).unwrap());
 
         UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id,
             topic_id: topic_id.clone(),
             synonyms: vec![synonym("topicA")],
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        assert!(f.git.appears_in(&repo, &search, &entry).unwrap());
+        assert!(f.git.appears_in(repo_id, &search, &entry).unwrap());
 
         UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id,
             topic_id,
             synonyms: vec![synonym("topicB")],
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        assert!(!f.git.appears_in(&repo, &search, &entry).unwrap());
+        assert!(!f.git.appears_in(repo_id, &search, &entry).unwrap());
     }
 
     #[test]
@@ -516,33 +522,33 @@ mod update_topic_synonyms {
         let mut mutation = f.mutation();
 
         // The topic can be found
-        f.git.fetch_topic(&repo_id, &topic_id).unwrap();
+        f.git.fetch_topic(repo_id, &topic_id).unwrap();
 
-        mutation.save_topic(&private_repo_id, &reference).unwrap();
+        mutation.save_topic(private_repo_id, &reference).unwrap();
         mutation.write(&redis::Noop).unwrap();
 
         UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: private_repo_id.to_owned(),
+            repo_id: private_repo_id,
             topic_id: topic_id.clone(),
             synonyms: vec![synonym("Other name")],
         }
         .call(mutation, &redis::Noop)
         .unwrap();
 
-        let topic = f.git.fetch_topic(&private_repo_id, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(private_repo_id, &topic_id).unwrap();
         assert_eq!(topic.synonyms().first().unwrap().name, "Other name");
     }
 
     #[test]
     fn whitespace_removed() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
 
         let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo,
+            repo_id,
             topic_id,
             synonyms: vec![
                 synonym("A topic"),
@@ -564,12 +570,12 @@ mod update_topic_synonyms {
     #[test]
     fn empty_synonyms_dropped() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
 
         let UpdateTopicSynonymsResult { repo_topic, .. } = UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo,
+            repo_id,
             topic_id,
             synonyms: vec![synonym("A topic"), synonym("  ")],
         }
@@ -585,12 +591,12 @@ mod update_topic_synonyms {
     #[test]
     fn error_if_no_synonyms() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
 
         let result = UpdateTopicSynonyms {
             actor: actor(),
-            repo_id: repo,
+            repo_id,
             topic_id,
             synonyms: vec![synonym(""), synonym("  ")],
         }
@@ -608,13 +614,13 @@ mod upsert_topic {
     fn assert_topic_added(name: &str, expected_name: &str) {
         let f = Fixtures::copy("simple");
         let search = Search::parse("Topic name").unwrap();
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let path = parse_id("00001");
 
         assert!(f.find_topic(expected_name).is_none());
 
         let result = f
-            .upsert_topic(&repo, name, &path, OnMatchingSynonym::Ask)
+            .upsert_topic(repo_id, name, &path, OnMatchingSynonym::Ask)
             .unwrap();
 
         assert!(result.saved);
@@ -626,7 +632,7 @@ mod upsert_topic {
         let topic = (*topic).clone().unwrap();
         assert!(f
             .git
-            .appears_in(&repo, &search, &topic.to_search_entry())
+            .appears_in(repo_id, &search, &topic.to_search_entry())
             .unwrap());
 
         assert!(f.find_topic(expected_name).is_some());
@@ -647,17 +653,27 @@ mod upsert_topic {
     #[test]
     fn action_requested() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let parent_topic_1 = parse_id("00001");
         let parent_topic_2 = parse_id("00002");
 
         let result = f
-            .upsert_topic(&repo, "Topic name", &parent_topic_1, OnMatchingSynonym::Ask)
+            .upsert_topic(
+                repo_id,
+                "Topic name",
+                &parent_topic_1,
+                OnMatchingSynonym::Ask,
+            )
             .unwrap();
         assert!(result.saved);
 
         let result = f
-            .upsert_topic(&repo, "Topic name", &parent_topic_2, OnMatchingSynonym::Ask)
+            .upsert_topic(
+                repo_id,
+                "Topic name",
+                &parent_topic_2,
+                OnMatchingSynonym::Ask,
+            )
             .unwrap();
 
         assert!(result.repo_topic.is_none());
@@ -665,7 +681,7 @@ mod upsert_topic {
         assert!(!result.matching_repo_topics.is_empty());
     }
 
-    fn upsert_topic(repo_1: &RepoId, repo_2: &RepoId, name: &str) -> Result<UpsertTopicResult> {
+    fn upsert_topic(repo_1: RepoId, repo_2: RepoId, name: &str) -> Result<UpsertTopicResult> {
         let f = Fixtures::copy("simple");
         let topic_id = parse_id("00001");
 
@@ -686,7 +702,7 @@ mod upsert_topic {
         )
     }
 
-    fn assert_update_works(repo_1: &RepoId, repo_2: &RepoId, expected_parent_topics: &[&str]) {
+    fn assert_update_works(repo_1: RepoId, repo_2: RepoId, expected_parent_topics: &[&str]) {
         let result = upsert_topic(repo_1, repo_2, "Topic name").unwrap();
         assert!(result.repo_topic.is_some());
         assert!(result.saved);
@@ -705,30 +721,30 @@ mod upsert_topic {
     #[test]
     fn update_topic() {
         let repo_id = RepoId::wiki();
-        assert_update_works(&repo_id, &repo_id, &["00001", "00002"]);
+        assert_update_works(repo_id, repo_id, &["00001", "00002"]);
     }
 
     #[test]
     fn create_a_reference_in_a_private_repo() {
-        assert_update_works(&RepoId::wiki(), &RepoId::other(), &["00002"]);
+        assert_update_works(RepoId::wiki(), RepoId::other(), &["00002"]);
     }
 
     #[test]
     fn synonyms_are_deduped() {
         let wiki_id = RepoId::wiki();
-        upsert_topic(&wiki_id, &wiki_id, "Topic name").unwrap();
-        let result = upsert_topic(&wiki_id, &wiki_id, "Topic name").unwrap();
+        upsert_topic(wiki_id, wiki_id, "Topic name").unwrap();
+        let result = upsert_topic(wiki_id, wiki_id, "Topic name").unwrap();
         assert_eq!(result.repo_topic.unwrap().metadata.synonyms().len(), 1);
     }
 
     #[test]
     fn create_distinct() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
 
         let result = f
-            .upsert_topic(&repo, "Topic name", &topic_id, OnMatchingSynonym::Ask)
+            .upsert_topic(repo_id, "Topic name", &topic_id, OnMatchingSynonym::Ask)
             .unwrap();
         assert!(result.saved);
         let path1 = &result.repo_topic.unwrap().metadata.id;
@@ -736,7 +752,7 @@ mod upsert_topic {
         let topic_path = parse_id("00002");
         let result = f
             .upsert_topic(
-                &repo,
+                repo_id,
                 "Topic name",
                 &topic_path,
                 OnMatchingSynonym::CreateDistinct,
@@ -764,19 +780,19 @@ mod upsert_topic {
     #[test]
     fn parent_topic_updated() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let path = parse_id("00001");
-        let parent = f.topic(&repo, "00001");
+        let parent = f.topic(repo_id, "00001");
         assert_eq!(parent.children, BTreeSet::new());
 
         let result = f
-            .upsert_topic(&repo, "Topic name", &path, OnMatchingSynonym::Ask)
+            .upsert_topic(repo_id, "Topic name", &path, OnMatchingSynonym::Ask)
             .unwrap();
         assert!(result.saved);
         let child = result.repo_topic.unwrap();
         let child_id = &child.topic_id();
 
-        let parent = f.topic(&repo, "00001");
+        let parent = f.topic(repo_id, "00001");
         let children = parent
             .children
             .iter()
@@ -789,15 +805,15 @@ mod upsert_topic {
     #[test]
     fn no_cycles() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
-        let parent = f.topic(&repo, ROOT_TOPIC_ID);
+        let repo_id = RepoId::wiki();
+        let parent = f.topic(repo_id, ROOT_TOPIC_ID);
         let topic_id = parse_id("00001");
-        let child = f.git.fetch_topic(&repo, &topic_id).unwrap();
+        let child = f.git.fetch_topic(repo_id, &topic_id).unwrap();
         assert!(parent.has_child(&topic_id));
 
         let result = f
             .upsert_topic(
-                &repo,
+                repo_id,
                 "Everything",
                 child.topic_id(),
                 OnMatchingSynonym::Update(parse_id(ROOT_TOPIC_ID)),
@@ -822,7 +838,7 @@ mod upsert_topic {
 
         let result = f
             .upsert_topic(
-                &other_repo,
+                other_repo,
                 "Topic name",
                 &parent_path,
                 OnMatchingSynonym::Ask,
@@ -831,7 +847,7 @@ mod upsert_topic {
         let topic = result.repo_topic.unwrap();
         let topic_id = topic.topic_id();
 
-        assert!(f.git.exists(&other_repo, topic_id).unwrap());
+        assert!(f.git.exists(other_repo, topic_id).unwrap());
     }
 }
 
@@ -852,15 +868,15 @@ mod upsert_topic_timerange {
     #[test]
     fn timerange_added() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id = parse_id("00001");
 
-        let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &topic_id).unwrap();
         assert!(topic.timerange().is_none());
 
         UpsertTopicTimerange {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id,
             timerange: Timerange {
                 prefix_format: TimerangePrefixFormat::StartYearMonth,
                 starts: Geotime::now().into(),
@@ -870,18 +886,18 @@ mod upsert_topic_timerange {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
 
-        let topic = f.git.fetch_topic(&repo, &topic_id).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &topic_id).unwrap();
         assert!(topic.timerange().is_some());
     }
 
     #[test]
     fn synonym_indexes() {
         let f = Fixtures::copy("simple");
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let path = parse_id("00001");
         let date = Geotime::from(0);
 
-        let topic = f.git.fetch_topic(&repo, &path).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &path).unwrap();
         assert!(topic.timerange().is_none());
 
         assert_eq!(count(&f, "A topic"), 1);
@@ -889,7 +905,7 @@ mod upsert_topic_timerange {
 
         UpsertTopicTimerange {
             actor: actor(),
-            repo_id: repo,
+            repo_id,
             timerange: Timerange {
                 prefix_format: TimerangePrefixFormat::StartYear,
                 starts: date.into(),

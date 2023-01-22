@@ -75,7 +75,7 @@ impl Fixtures {
         Ok(self.leaked_data()?.is_empty())
     }
 
-    pub fn fetch_link<F>(&self, repo_id: &RepoId, link_id: &ExternalId, block: F)
+    pub fn fetch_link<F>(&self, repo_id: RepoId, link_id: &ExternalId, block: F)
     where
         F: Fn(RepoLink),
     {
@@ -87,13 +87,13 @@ impl Fixtures {
         block(link);
     }
 
-    pub fn fetch_topic<F>(&self, repo: &RepoId, topic_id: &ExternalId, block: F)
+    pub fn fetch_topic<F>(&self, repo_id: RepoId, topic_id: &ExternalId, block: F)
     where
         F: Fn(RepoTopic),
     {
         let topic = self
             .git
-            .fetch_topic(repo, topic_id)
+            .fetch_topic(repo_id, topic_id)
             .unwrap_or_else(|| panic!("expected a topic: {:?}", topic_id));
 
         block(topic);
@@ -103,9 +103,9 @@ impl Fixtures {
         self.git.leaked_data()
     }
 
-    pub fn topic(&self, repo: &RepoId, topic_id: &str) -> RepoTopic {
+    pub fn topic(&self, repo_id: RepoId, topic_id: &str) -> RepoTopic {
         let topic_id = ExternalId::try_from(topic_id).unwrap();
-        self.git.fetch_topic(repo, &topic_id).unwrap()
+        self.git.fetch_topic(repo_id, &topic_id).unwrap()
     }
 
     pub fn find_topic(&self, name: &str) -> Option<ExternalId> {
@@ -137,7 +137,7 @@ impl Fixtures {
 
     pub fn upsert_link(
         &self,
-        repo_id: &RepoId,
+        repo_id: RepoId,
         url: &RepoUrl,
         title: Option<String>,
         add_parent_topic_id: Option<ExternalId>,
@@ -151,7 +151,7 @@ impl Fixtures {
             actor: actor(),
             add_parent_topic_id,
             fetcher: Box::new(Fetcher(html)),
-            repo_id: repo_id.to_owned(),
+            repo_id,
             url: url.normalized.to_owned(),
             title,
         };
@@ -163,7 +163,7 @@ impl Fixtures {
 
     pub fn upsert_topic(
         &self,
-        repo: &RepoId,
+        repo_id: RepoId,
         name: &str,
         parent_topic: &ExternalId,
         on_matching_synonym: OnMatchingSynonym,
@@ -174,7 +174,7 @@ impl Fixtures {
             locale: Locale::EN,
             name: name.into(),
             on_matching_synonym,
-            repo_id: repo.to_owned(),
+            repo_id,
         }
         .call(self.mutation(), &redis::Noop)
     }
@@ -191,7 +191,7 @@ mod tests {
     fn update_simple_fixtures() {
         let f = Fixtures::copy("simple");
         let root = ExternalId::root_topic();
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
 
         let topic_path =
             parse_id("dPqrU4sZaPkNZEDyr9T68G4RJYV8bncmIXumedBNls9F994v8poSbxTo7dKK3Vhi");
@@ -199,7 +199,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change".to_owned(),
-            repo_id: repo.to_owned(),
+            repo_id,
             on_matching_synonym: OnMatchingSynonym::Update(topic_path),
             parent_topic_id: root.clone(),
         }
@@ -209,7 +209,7 @@ mod tests {
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Climate_change").unwrap();
         let result = f.upsert_link(
-            &repo,
+            repo_id,
             &url,
             Some("Climate change".into()),
             Some(climate_change.topic_id().to_owned()),
@@ -231,7 +231,7 @@ mod tests {
 
         let url = RepoUrl::parse("https://en.wikipedia.org/wiki/Weather").unwrap();
         f.upsert_link(
-            &repo,
+            repo_id,
             &url,
             Some("Weather".into()),
             Some(weather.topic_id().to_owned()),
@@ -242,7 +242,7 @@ mod tests {
             actor: actor(),
             locale: Locale::EN,
             name: "Climate change and weather".to_owned(),
-            repo_id: repo.to_owned(),
+            repo_id,
             on_matching_synonym: OnMatchingSynonym::Update(topic_id),
             parent_topic_id: climate_change.topic_id().to_owned(),
         }
@@ -252,7 +252,7 @@ mod tests {
 
         UpdateTopicParentTopics {
             actor: actor(),
-            repo_id: repo.to_owned(),
+            repo_id,
             parent_topic_ids: BTreeSet::from([
                 climate_change.topic_id().to_owned(),
                 weather.topic_id().to_owned(),
@@ -266,7 +266,7 @@ mod tests {
             RepoUrl::parse("https://royalsociety.org/topics-policy/projects/climate-change-evidence-causes/question-13/")
                 .unwrap();
         f.upsert_link(
-            &repo,
+            repo_id,
             &url,
             Some("13. How does climate change affect the strength and frequency of floods, droughts, hurricanes, and tornadoes?".into()),
             Some(climate_change_weather.topic_id().to_owned()),
@@ -276,7 +276,7 @@ mod tests {
             RepoUrl::parse("https://climate.nasa.gov/resources/global-warming-vs-climate-change/")
                 .unwrap();
         f.upsert_link(
-            &repo,
+            repo_id,
             &url,
             Some("Overview: Weather, Global Warming, and Climate Change".into()),
             Some(climate_change_weather.topic_id().to_owned()),

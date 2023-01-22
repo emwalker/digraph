@@ -34,13 +34,15 @@ impl View {
         topic_id: Option<String>,
     ) -> Result<ActivityLineItemConnection> {
         let store = ctx.data_unchecked::<Store>();
-        let repo = RepoId::wiki();
+        let repo_id = RepoId::wiki();
         let topic_id: Option<ExternalId> = match topic_id {
             Some(topic_id) => Some(topic_id.try_into()?),
             None => None,
         };
 
-        let activity = store.activity(&repo, &topic_id, first.unwrap_or(3)).await?;
+        let activity = store
+            .activity(repo_id, &topic_id, first.unwrap_or(3))
+            .await?;
 
         let mut results = vec![];
         for change in activity {

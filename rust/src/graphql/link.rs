@@ -117,7 +117,7 @@ impl<'l> RepoLink<'l> {
         ctx.data_unchecked::<Store>()
             .viewer
             .write_repo_ids
-            .include(&self.0.repo_id)
+            .include(self.0.repo_id)
     }
 }
 

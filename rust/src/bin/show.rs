@@ -62,7 +62,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_child_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&self.repo_id, &topic.id) {
+        match &self.git.fetch(self.repo_id, &topic.id) {
             Some(RepoObject::Topic(topic)) => {
                 let meta = &topic.metadata;
                 let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.id);
@@ -97,7 +97,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_parent_topic(&mut self, topic: &ParentTopic) -> Result<()> {
-        match &self.git.fetch(&self.repo_id, &topic.id) {
+        match &self.git.fetch(self.repo_id, &topic.id) {
             Some(RepoObject::Topic(topic)) => {
                 let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.topic_id());
                 self.buf.push_str(&line);
@@ -108,7 +108,7 @@ impl<'r> ConsoleOutput<'r> {
     }
 
     fn visit_topic_child(&mut self, child: &TopicChild) -> Result<()> {
-        match &self.git.fetch(&self.repo_id, &child.id) {
+        match &self.git.fetch(self.repo_id, &child.id) {
             Some(RepoObject::Topic(topic)) => {
                 self.visit_child_topic(topic)?;
             }
@@ -137,7 +137,7 @@ async fn main() -> Result<()> {
 
     let actor = Arc::new(Viewer::service_account());
     let mut git = Client::new(actor, &root_directory, Timespec);
-    let object = git.fetch(&repo_id, &oid);
+    let object = git.fetch(repo_id, &oid);
     if object.is_none() {
         return Err(Error::NotFound(format!(
             "{} does not contain {}/{}",

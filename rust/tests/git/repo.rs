@@ -30,11 +30,11 @@ mod delete_account {
 
     use super::*;
 
-    fn delete(f: &Fixtures, repo: &RepoId, actor: &Arc<Viewer>, user_id: &str) -> Result<()> {
+    fn delete(f: &Fixtures, repo_id: RepoId, actor: &Arc<Viewer>, user_id: &str) -> Result<()> {
         git::DeleteAccount {
             actor: Arc::clone(actor),
             user_id: user_id.to_owned(),
-            personal_repos: RepoIds::try_from(&vec![repo.to_owned()]).unwrap(),
+            personal_repos: RepoIds::try_from(&vec![repo_id]).unwrap(),
         }
         .call(&f.mutation())
     }
@@ -44,12 +44,12 @@ mod delete_account {
         let f = Fixtures::copy("simple");
         let actor = actor();
 
-        let repo = RepoId::other();
-        git::core::Repo::ensure(&f.git.root, &repo).unwrap();
-        let path = f.git.root.repo_path(&repo);
+        let repo_id = RepoId::other();
+        git::core::Repo::ensure(&f.git.root, repo_id).unwrap();
+        let path = f.git.root.repo_path(repo_id);
 
         assert!(path.exists());
-        delete(&f, &repo, &actor, &actor.user_id).unwrap();
+        delete(&f, repo_id, &actor, &actor.user_id).unwrap();
         assert!(!path.exists());
     }
 
@@ -58,14 +58,14 @@ mod delete_account {
         let f = Fixtures::copy("simple");
         let actor = actor();
 
-        let repo = RepoId::other();
-        git::core::Repo::ensure(&f.git.root, &repo).unwrap();
-        let path = f.git.root.repo_path(&repo);
+        let repo_id = RepoId::other();
+        git::core::Repo::ensure(&f.git.root, repo_id).unwrap();
+        let path = f.git.root.repo_path(repo_id);
 
         assert!(path.exists());
         assert_ne!(actor.user_id, "1");
 
-        let result = delete(&f, &repo, &actor, "1");
+        let result = delete(&f, repo_id, &actor, "1");
         assert!(matches!(result, Err(_)));
         assert!(path.exists());
     }
@@ -75,12 +75,12 @@ mod delete_account {
         let f = Fixtures::copy("simple");
         let actor = actor();
 
-        let repo = RepoId::wiki();
-        let path = f.git.root.repo_path(&repo);
+        let repo_id = RepoId::wiki();
+        let path = f.git.root.repo_path(repo_id);
 
         assert!(path.exists());
 
-        let result = delete(&f, &repo, &actor, &actor.user_id);
+        let result = delete(&f, repo_id, &actor, &actor.user_id);
         assert!(matches!(result, Err(_)));
         assert!(path.exists());
     }
@@ -90,15 +90,15 @@ mod delete_account {
         let f = Fixtures::copy("simple");
         let actor = actor();
 
-        let repo = RepoId::other();
-        git::core::Repo::ensure(&f.git.root, &repo).unwrap();
-        let path = f.git.root.repo_path(&repo);
+        let repo_id = RepoId::other();
+        git::core::Repo::ensure(&f.git.root, repo_id).unwrap();
+        let path = f.git.root.repo_path(repo_id);
         assert!(path.exists());
 
-        delete(&f, &repo, &actor, &actor.user_id).unwrap();
+        delete(&f, repo_id, &actor, &actor.user_id).unwrap();
         assert!(!path.exists());
 
-        let result = delete(&f, &repo, &actor, &actor.user_id);
+        let result = delete(&f, repo_id, &actor, &actor.user_id);
         assert!(matches!(result, Ok(_)));
         assert!(!path.exists());
     }
@@ -134,14 +134,14 @@ mod ensure_personal_repo {
 
         let root = ExternalId::root_topic();
         let repo_id = result.created_repo_id.unwrap();
-        let topic = f.git.fetch_topic(&repo_id, &root).unwrap();
+        let topic = f.git.fetch_topic(repo_id, &root).unwrap();
         assert_eq!(topic.name(Locale::EN), "Everything");
     }
 
     #[test]
     fn view_stats() {
         let f = Fixtures::copy("simple");
-        let stats = f.git.view_stats(&RepoId::wiki()).unwrap();
+        let stats = f.git.view_stats(RepoId::wiki()).unwrap();
         assert_eq!(stats.topic_count, Some(9));
         assert_eq!(stats.link_count, Some(4));
     }

@@ -1242,7 +1242,7 @@ pub struct FetchActivityResult {
 }
 
 pub trait ActivityForPrefix {
-    fn fetch_activity(&self, prefix: &RepoId, first: usize) -> Result<Vec<Change>>;
+    fn fetch_activity(&self, repo_id: RepoId, first: usize) -> Result<Vec<Change>>;
 }
 
 impl FetchActivity {
@@ -1251,12 +1251,12 @@ impl FetchActivity {
         F: ActivityForPrefix,
     {
         let changes = match &self.path {
-            Some((repo, id)) => git.fetch_activity(repo, id, self.first)?,
+            Some((repo_id, id)) => git.fetch_activity(*repo_id, id, self.first)?,
 
             // Fetch the top-level activity feed from Redis rather than Git so as to avoid
             // write contention on a single file for every update.  This could show up in the form
             // of merge conflicts when commits are being saved to Git.
-            None => fetch.fetch_activity(&RepoId::wiki(), self.first)?,
+            None => fetch.fetch_activity(RepoId::wiki(), self.first)?,
         };
 
         Ok(FetchActivityResult { changes })

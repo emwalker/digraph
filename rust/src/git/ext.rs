@@ -23,11 +23,8 @@ impl Map {
         self.0.insert(repo_id, repo_obj);
     }
 
-    pub fn link_details(
-        &self,
-        context: &RepoId,
-    ) -> Result<(Vec<RepoLinkWrapper>, RepoLinkWrapper)> {
-        let mut display_link: Option<RepoLinkWrapper> = match self.0.get(context) {
+    pub fn link_details(&self, context: RepoId) -> Result<(Vec<RepoLinkWrapper>, RepoLinkWrapper)> {
+        let mut display_link: Option<RepoLinkWrapper> = match self.0.get(&context) {
             Some(repo_topic) => {
                 if repo_topic.has_details() {
                     Some((context, repo_topic).try_into()?)
@@ -40,7 +37,7 @@ impl Map {
 
         let mut topics = vec![];
 
-        for (repo_id, object) in self.iter() {
+        for (&repo_id, object) in self.iter() {
             if display_link.is_none() && object.has_details() {
                 display_link = Some((repo_id, object).try_into()?);
             }
@@ -56,9 +53,9 @@ impl Map {
 
     pub fn topic_details(
         &self,
-        context: &RepoId,
+        context: RepoId,
     ) -> Result<(Vec<RepoTopicWrapper>, RepoTopicWrapper)> {
-        let mut display_topic: Option<RepoTopicWrapper> = match self.0.get(context) {
+        let mut display_topic: Option<RepoTopicWrapper> = match self.0.get(&context) {
             Some(repo_topic) => {
                 if repo_topic.has_details() {
                     Some((context, repo_topic).try_into()?)
@@ -71,7 +68,7 @@ impl Map {
 
         let mut topics = vec![];
 
-        for (repo_id, object) in self.iter() {
+        for (&repo_id, object) in self.iter() {
             if display_topic.is_none() && object.has_details() {
                 display_topic = Some((repo_id, object).try_into()?);
             }
@@ -104,7 +101,7 @@ impl ObjectBuilder {
         }
     }
 
-    pub fn finalize(self, context: &RepoId) -> Result<Object> {
+    pub fn finalize(self, context: RepoId) -> Result<Object> {
         match self {
             Self::Topic { key, map } => {
                 let (details, display_topic) = map.topic_details(context)?;
@@ -159,7 +156,7 @@ impl ObjectBuilders {
         let mut map = HashMap::new();
 
         for (key, builder) in self.0 {
-            match builder.finalize(&key.1) {
+            match builder.finalize(key.1) {
                 Ok(object) => {
                     map.insert(key, object);
                 }
@@ -197,13 +194,13 @@ pub struct RepoTopicWrapper {
     pub repo_id: RepoId,
 }
 
-impl TryFrom<(&RepoId, &RepoObject)> for RepoTopicWrapper {
+impl TryFrom<(RepoId, &RepoObject)> for RepoTopicWrapper {
     type Error = Error;
 
-    fn try_from((repo_id, object): (&RepoId, &RepoObject)) -> Result<Self> {
+    fn try_from((repo_id, object): (RepoId, &RepoObject)) -> Result<Self> {
         let repo_topic: RepoTopic = object.try_into()?;
         Ok(RepoTopicWrapper {
-            repo_id: repo_id.to_owned(),
+            repo_id,
             repo_topic,
         })
     }
@@ -241,8 +238,8 @@ impl RepoTopicWrapper {
             .collect_vec()
     }
 
-    pub fn in_repo(&self, repo_id: &RepoId) -> bool {
-        &self.repo_id == repo_id
+    pub fn in_repo(&self, repo_id: RepoId) -> bool {
+        self.repo_id == repo_id
     }
 
     pub fn in_wiki_repo(&self) -> bool {
@@ -360,7 +357,7 @@ impl Topic {
     pub fn can_update(&self, write_repo_ids: &RepoIds) -> bool {
         self.repo_topics
             .iter()
-            .any(|topic| write_repo_ids.include(&topic.repo_id))
+            .any(|topic| write_repo_ids.include(topic.repo_id))
     }
 
     pub fn child_link_ids(&self) -> Vec<ExternalId> {
@@ -377,12 +374,12 @@ impl Topic {
             .collect_vec()
     }
 
-    pub fn context_id(&self) -> &RepoId {
-        &self.key.1
+    pub fn context_id(&self) -> RepoId {
+        self.key.1
     }
 
     pub fn display_color(&self) -> &str {
-        if self.display_topic.in_repo(&RepoId::wiki()) {
+        if self.display_topic.in_repo(RepoId::wiki()) {
             ""
         } else {
             DEFAULT_PRIVATE_COLOR
@@ -411,15 +408,12 @@ pub struct RepoLinkWrapper {
     repo_link: RepoLink,
 }
 
-impl TryFrom<(&RepoId, &RepoObject)> for RepoLinkWrapper {
+impl TryFrom<(RepoId, &RepoObject)> for RepoLinkWrapper {
     type Error = Error;
 
-    fn try_from((repo_id, object): (&RepoId, &RepoObject)) -> Result<Self> {
+    fn try_from((repo_id, object): (RepoId, &RepoObject)) -> Result<Self> {
         let repo_link: RepoLink = object.try_into()?;
-        Ok(RepoLinkWrapper {
-            repo_id: repo_id.to_owned(),
-            repo_link,
-        })
+        Ok(RepoLinkWrapper { repo_id, repo_link })
     }
 }
 
@@ -536,11 +530,11 @@ impl Link {
     pub fn can_update(&self, write_repo_ids: &RepoIds) -> bool {
         self.repo_links
             .iter()
-            .any(|link| write_repo_ids.include(&link.repo_id))
+            .any(|link| write_repo_ids.include(link.repo_id))
     }
 
-    pub fn context_id(&self) -> &RepoId {
-        &self.key.1
+    pub fn context_id(&self) -> RepoId {
+        self.key.1
     }
 
     pub fn display_title(&self) -> &str {
@@ -552,15 +546,15 @@ impl Link {
     }
 
     pub fn display_color(&self) -> &str {
-        if self.in_repo(&RepoId::wiki()) {
+        if self.in_repo(RepoId::wiki()) {
             ""
         } else {
             DEFAULT_PRIVATE_COLOR
         }
     }
 
-    pub fn in_repo(&self, repo_id: &RepoId) -> bool {
-        self.repo_links.iter().any(|link| &link.repo_id == repo_id)
+    pub fn in_repo(&self, repo_id: RepoId) -> bool {
+        self.repo_links.iter().any(|link| link.repo_id == repo_id)
     }
 
     pub fn parent_topic_ids(&self) -> Vec<ExternalId> {

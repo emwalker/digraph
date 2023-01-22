@@ -146,9 +146,9 @@ impl SelectRepository {
 
         let repo_id = self.repo_id.as_ref().map(|repo_id| repo_id.to_string());
 
-        let repo = if let Some(repo_id) = repo_id {
+        let repo = if let Some(repo_id) = &repo_id {
             sqlx::query("update users set selected_repository_id = $1::uuid where id = $2::uuid")
-                .bind(repo_id.to_owned())
+                .bind(repo_id)
                 .bind(&self.actor.user_id)
                 .execute(pool)
                 .await?;

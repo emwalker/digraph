@@ -168,7 +168,7 @@ impl RepoTopic {
             return Ok(false);
         }
 
-        Ok(viewer.write_repo_ids.include(&self.0.repo_id))
+        Ok(viewer.write_repo_ids.include(self.0.repo_id))
     }
 }
 
@@ -192,7 +192,7 @@ impl Topic {
         let store = ctx.data_unchecked::<Store>();
 
         let activity = store
-            .activity(&RepoId::wiki(), &topic_id.to_owned(), first.unwrap_or(3))
+            .activity(RepoId::wiki(), &topic_id.to_owned(), first.unwrap_or(3))
             .await?;
 
         let mut results = vec![];

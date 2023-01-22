@@ -128,7 +128,7 @@ impl User {
             Self::Registered {
                 selected_repo_id, ..
             } => match selected_repo_id {
-                Some(repo_id) => Ok(Some(repo_id.to_owned())),
+                Some(repo_id) => Ok(Some(repo_id.clone())),
                 None => Ok(None),
             },
         }

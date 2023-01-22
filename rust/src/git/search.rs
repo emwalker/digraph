@@ -164,21 +164,21 @@ impl FetchTopicLiveSearch {
 
     fn fetch(&self, client: &Client) -> BTreeSet<SynonymEntry> {
         let mut matches = BTreeSet::new();
-        for prefix in self.repos.iter() {
-            self.fetch_prefix(client, prefix, &mut matches);
+        for &repo_id in self.repos.iter() {
+            self.fetch_prefix(client, repo_id, &mut matches);
         }
         matches
     }
 
-    fn fetch_prefix(&self, client: &Client, prefix: &RepoId, matches: &mut BTreeSet<SynonymEntry>) {
+    fn fetch_prefix(&self, client: &Client, repo_id: RepoId, matches: &mut BTreeSet<SynonymEntry>) {
         let tokens = &mut self.search.tokens.iter();
         let start = match tokens.next() {
-            Some(token) => client.synonym_token_prefix_matches(prefix, token),
+            Some(token) => client.synonym_token_prefix_matches(repo_id, token),
             None => BTreeSet::new(),
         };
 
         let mut result = tokens.fold(start, |acc, token| {
-            let result = client.synonym_token_prefix_matches(prefix, token);
+            let result = client.synonym_token_prefix_matches(repo_id, token);
             acc.intersection(&result).cloned().collect()
         });
 
@@ -364,7 +364,7 @@ impl FindMatches {
         let mut objects = ObjectBuilders::new();
         let mut count: usize = 0;
 
-        for repo_id in self.viewer.read_repo_ids.iter() {
+        for &repo_id in self.viewer.read_repo_ids.iter() {
             let mut iter = self.search.tokens.iter();
 
             if let Some(token) = iter.next() {
@@ -384,8 +384,8 @@ impl FindMatches {
                         continue;
                     }
 
-                    let key = Okey(entry.id.to_owned(), self.context_repo_id.to_owned());
-                    objects.add(key, repo_id.to_owned(), repo_object);
+                    let key = Okey(entry.id.to_owned(), self.context_repo_id);
+                    objects.add(key, repo_id, repo_object);
                     count += 1;
 
                     if count >= self.limit {
@@ -424,12 +424,12 @@ impl FindMatches {
             .collect::<Vec<RepoId>>();
         repo_ids.sort_by_key(|repo_id| repo_id == &wiki_repo_id);
 
-        for repo_id in repo_ids.iter() {
+        for &repo_id in repo_ids.iter() {
             log::info!("search: looking within {:?} for {:?}", repo_id, self.search);
             for topic_id in topic_ids.iter().take(self.limit) {
                 if let Some(repo_object) = client.fetch(repo_id, topic_id) {
-                    let key = Okey(topic_id.to_owned(), self.context_repo_id.to_owned());
-                    objects.add(key, repo_id.to_owned(), repo_object);
+                    let key = Okey(topic_id.to_owned(), self.context_repo_id);
+                    objects.add(key, repo_id, repo_object);
                 }
             }
         }
@@ -445,7 +445,7 @@ impl FindMatches {
     {
         let mut result = HashSet::new();
 
-        for repo_id in self.viewer.read_repo_ids.iter() {
+        for &repo_id in self.viewer.read_repo_ids.iter() {
             let mut topic_paths = vec![];
 
             // The (wiki) root topic is mostly not needed for now; let's exclude it until we know

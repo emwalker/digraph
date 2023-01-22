@@ -13,7 +13,7 @@ pub struct Noop;
 impl git::SaveChangesForPrefix for Noop {
     fn save(
         &self,
-        _prefix: &RepoId,
+        _prefix: RepoId,
         _changes: &HashMap<RepoId, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         // Do nothing
@@ -22,13 +22,13 @@ impl git::SaveChangesForPrefix for Noop {
 }
 
 impl git::CacheStats for Noop {
-    fn fetch(&self, _repo: &RepoId, _commit: &str) -> Result<Option<git::RepoStats>> {
+    fn fetch(&self, _repo_id: RepoId, _commit: &str) -> Result<Option<git::RepoStats>> {
         Ok(None)
     }
 
     fn save(
         &self,
-        _repo: &RepoId,
+        _repo: RepoId,
         _commit: &str,
         _stats: &git::RepoStats,
         _expires: Option<u32>,
@@ -64,8 +64,8 @@ pub struct Redis {
 }
 
 impl git::CacheStats for Arc<Redis> {
-    fn fetch(&self, repo: &RepoId, commit: &str) -> Result<Option<git::RepoStats>> {
-        let key = self.stats_key(repo, commit);
+    fn fetch(&self, repo_id: RepoId, commit: &str) -> Result<Option<git::RepoStats>> {
+        let key = self.stats_key(repo_id, commit);
         let mut con = self.connection().unwrap();
         let s: Option<String> = redis::cmd("GET").arg(key).query(&mut con)?;
 
@@ -81,12 +81,12 @@ impl git::CacheStats for Arc<Redis> {
 
     fn save(
         &self,
-        repo: &RepoId,
+        repo_id: RepoId,
         commit: &str,
         stats: &git::RepoStats,
         ttl: Option<u32>,
     ) -> Result<()> {
-        let key = self.stats_key(repo, commit);
+        let key = self.stats_key(repo_id, commit);
         let mut con = self.connection().unwrap();
         let s: String = stats.try_into()?;
 
@@ -197,21 +197,21 @@ impl Redis {
         Ok(())
     }
 
-    fn stats_key(&self, repo: &RepoId, commit: &str) -> String {
-        format!("stats:{}:{}", repo, commit)
+    fn stats_key(&self, repo_id: RepoId, commit: &str) -> String {
+        format!("stats:{}:{}", repo_id, commit)
     }
 }
 
 impl git::SaveChangesForPrefix for Arc<Redis> {
     fn save(
         &self,
-        prefix: &RepoId,
-        prefix_changes: &HashMap<RepoId, BTreeSet<git::activity::Change>>,
+        repo_id: RepoId,
+        repo_changes: &HashMap<RepoId, BTreeSet<git::activity::Change>>,
     ) -> Result<()> {
         let mut con = self.connection()?;
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
         let empty = BTreeSet::new();
-        let changes = prefix_changes.get(prefix).unwrap_or(&empty);
+        let changes = repo_changes.get(&repo_id).unwrap_or(&empty);
 
         let mut args = vec![];
         for change in changes {
@@ -219,7 +219,7 @@ impl git::SaveChangesForPrefix for Arc<Redis> {
             args.push((now, string));
         }
 
-        let key = Key(format!("activity:{}", prefix));
+        let key = Key(format!("activity:{}", repo_id));
         if !args.is_empty() {
             log::info!("saving changes to {:?}", key);
             con.zadd_multiple(key, &args)?;
@@ -232,8 +232,8 @@ impl git::SaveChangesForPrefix for Arc<Redis> {
 }
 
 impl git::activity::ActivityForPrefix for Arc<Redis> {
-    fn fetch_activity(&self, prefix: &RepoId, first: usize) -> Result<Vec<git::activity::Change>> {
-        let key = Key(format!("activity:{}", prefix));
+    fn fetch_activity(&self, repo_id: RepoId, first: usize) -> Result<Vec<git::activity::Change>> {
+        let key = Key(format!("activity:{}", repo_id));
         log::info!("fetching activity for prefix {:?} from Redis", key);
         let mut con = self.connection()?;
 

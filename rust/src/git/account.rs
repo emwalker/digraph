@@ -27,8 +27,8 @@ impl DeleteAccount {
             }
         }
 
-        for repo in self.personal_repos.iter() {
-            update.delete_repo(repo)?;
+        for &repo_id in self.personal_repos.iter() {
+            update.delete_repo(repo_id)?;
         }
         log::warn!("personal repos of {} have been deleted", self.user_id);
 
@@ -65,10 +65,10 @@ impl EnsurePersonalRepo {
         log::info!("ensuring personal repo for {}", self.user_id);
         let repo_id = RepoId::make();
 
-        mutation.repo(&repo_id)?;
+        mutation.repo(repo_id)?;
         let topic_id = repo_id.root_topic_id();
 
-        if !mutation.exists(&repo_id, &topic_id)? {
+        if !mutation.exists(repo_id, &topic_id)? {
             log::info!("creating root topic: {}", topic_id);
             let added = chrono::Utc::now();
 
@@ -91,7 +91,7 @@ impl EnsurePersonalRepo {
                 children: BTreeSet::new(),
             };
 
-            mutation.save_topic(&repo_id, &root)?;
+            mutation.save_topic(repo_id, &root)?;
             mutation.write(&redis::Noop)?;
         }
 

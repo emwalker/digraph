@@ -60,7 +60,7 @@ pub enum Locale {
     ZH,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[allow(dead_code)]
 pub struct RepoId(Uuid);
 
@@ -202,8 +202,8 @@ impl From<&RepoIds> for Vec<RepoId> {
 }
 
 impl RepoIds {
-    pub fn include(&self, repo: &RepoId) -> bool {
-        self.0.iter().any(|id| id == repo)
+    pub fn include(&self, repo_id: RepoId) -> bool {
+        self.0.iter().any(|id| id == &repo_id)
     }
 
     pub fn iter(&self) -> std::slice::Iter<'_, RepoId> {
@@ -487,8 +487,8 @@ impl Viewer {
         }
     }
 
-    pub fn ensure_can_read(&self, repo: &RepoId) -> Result<()> {
-        if !self.can_read(repo) {
+    pub fn ensure_can_read(&self, repo_id: RepoId) -> Result<()> {
+        if !self.can_read(repo_id) {
             return Err(Error::NotFound("not found".into()));
         }
 
@@ -509,18 +509,18 @@ impl Viewer {
         }
     }
 
-    pub fn can_read(&self, repo: &RepoId) -> bool {
+    pub fn can_read(&self, repo_id: RepoId) -> bool {
         if self.super_user {
             return true;
         }
-        self.read_repo_ids.include(repo)
+        self.read_repo_ids.include(repo_id)
     }
 
-    pub fn can_update(&self, repo: &RepoId) -> bool {
+    pub fn can_update(&self, repo_id: RepoId) -> bool {
         if self.super_user {
             return true;
         }
-        self.write_repo_ids.include(repo)
+        self.write_repo_ids.include(repo_id)
     }
 
     pub fn is_guest(&self) -> bool {

@@ -303,7 +303,7 @@ impl MutationRoot {
             deleted_link_id, ..
         } = ctx
             .data_unchecked::<Store>()
-            .delete_link(&repo_id.try_into()?, &link_id)
+            .delete_link(repo_id.try_into()?, &link_id)
             .await?;
 
         Ok(DeleteLinkPayload {
@@ -345,7 +345,7 @@ impl MutationRoot {
         let topic_id = ExternalId::try_from(&topic_id)?;
 
         ctx.data_unchecked::<Store>()
-            .delete_topic(&repo_id.try_into()?, &topic_id)
+            .delete_topic(repo_id.try_into()?, &topic_id)
             .await?;
 
         Ok(DeleteTopicPayload {
@@ -368,7 +368,7 @@ impl MutationRoot {
         let topic_id = topic_id.try_into()?;
         let store = ctx.data_unchecked::<Store>();
         let git::RemoveTopicTimerangeResult { repo_topic, .. } = store
-            .remove_topic_timerange(&repo_id.try_into()?, &topic_id)
+            .remove_topic_timerange(repo_id.try_into()?, &topic_id)
             .await?;
         let updated_topic: Topic = store.fetch_topic(topic_id).await?.try_into()?;
 
@@ -396,13 +396,12 @@ impl MutationRoot {
         };
 
         let store = ctx.data_unchecked::<Store>();
-        let psql::SelectRepositoryResult { repo, actor } =
-            store.select_repository(repo_id.to_owned()).await?;
+        let psql::SelectRepositoryResult { repo, actor } = store.select_repository(repo_id).await?;
 
         let current_topic = match (repo_id, current_topic_id) {
             (Some(repo_id), Some(topic_id)) => {
                 let topic_id: ExternalId = topic_id.to_string().try_into()?;
-                let key = Okey(topic_id, repo_id.to_owned());
+                let key = Okey(topic_id, repo_id);
                 Some(store.fetch_topic_by_key(key).await?.try_into()?)
             }
 
@@ -444,7 +443,7 @@ impl MutationRoot {
 
         let git::UpdateTopicParentTopicsResult { alerts, repo_topic } = store
             .update_topic_parent_topics(
-                &repo_id.try_into()?,
+                repo_id.try_into()?,
                 &topic_id.try_into()?,
                 parent_topic_ids
                     .iter()

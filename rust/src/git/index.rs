@@ -133,7 +133,7 @@ impl SynonymMatch {
             cycle,
             entry: self.entry.to_owned(),
             name: self.name.to_owned(),
-            repo_id: self.repo_id.to_owned(),
+            repo_id: self.repo_id,
             repo_topic: self.repo_topic.to_owned(),
         }
     }
@@ -483,7 +483,7 @@ impl Index for ActivityIndex {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct IndexKey {
-    pub repo: RepoId,
+    pub repo_id: RepoId,
     pub basename: String,
 }
 
@@ -498,7 +498,7 @@ pub trait GitIndexKey {
 
         match token.basename() {
             Some(basename) => Ok(IndexKey {
-                repo: self.prefix(),
+                repo_id: self.prefix(),
                 basename,
             }),
             None => Err(Error::Repo(format!("bad token: {}", token))),
@@ -537,8 +537,8 @@ impl IndexKey {
         let filename = self.index_filename(index_type)?;
         match mode {
             IndexMode::Replace => Ok(SearchTokenIndex::new(&filename)),
-            IndexMode::ReadOnly => client.fetch_token_index(&self.repo, &filename),
-            IndexMode::Update => client.fetch_token_index(&self.repo, &filename),
+            IndexMode::ReadOnly => client.fetch_token_index(self.repo_id, &filename),
+            IndexMode::Update => client.fetch_token_index(self.repo_id, &filename),
         }
     }
 
@@ -551,8 +551,8 @@ impl IndexKey {
         let filename = self.index_filename(index_type)?;
         match mode {
             IndexMode::Replace => Ok(SynonymIndex::new(&filename)),
-            IndexMode::ReadOnly => client.fetch_synonym_index(&self.repo, &filename),
-            IndexMode::Update => client.fetch_synonym_index(&self.repo, &filename),
+            IndexMode::ReadOnly => client.fetch_synonym_index(self.repo_id, &filename),
+            IndexMode::Update => client.fetch_synonym_index(self.repo_id, &filename),
         }
     }
 
@@ -560,8 +560,8 @@ impl IndexKey {
         let filename = self.index_filename(IndexType::Search)?;
         match mode {
             IndexMode::Replace => Ok(SearchTokenIndex::new(&filename)),
-            IndexMode::ReadOnly => client.fetch_token_index(&self.repo, &filename),
-            IndexMode::Update => client.fetch_token_index(&self.repo, &filename),
+            IndexMode::ReadOnly => client.fetch_token_index(self.repo_id, &filename),
+            IndexMode::Update => client.fetch_token_index(self.repo_id, &filename),
         }
     }
 }
@@ -569,7 +569,7 @@ impl IndexKey {
 pub trait SaveChangesForPrefix {
     fn save(
         &self,
-        prefix: &RepoId,
+        repo_id: RepoId,
         changes: &HashMap<RepoId, BTreeSet<activity::Change>>,
     ) -> Result<()>;
 }
@@ -597,16 +597,16 @@ impl Indexer {
 
     pub fn add_change(
         &mut self,
-        repo: &RepoId,
+        repo_id: RepoId,
         client: &Client,
         change: &activity::Change,
     ) -> Result<()> {
         for id in change.ids() {
-            let activity = self.id_activity(client, repo, id)?;
+            let activity = self.id_activity(client, repo_id, id)?;
             activity.add(change.to_reference());
         }
 
-        let set = self.repo_changes.entry(repo.to_owned()).or_default();
+        let set = self.repo_changes.entry(repo_id).or_default();
         set.insert(change.to_owned());
 
         Ok(())
@@ -615,14 +615,14 @@ impl Indexer {
     pub fn id_activity(
         &mut self,
         client: &Client,
-        repo: &RepoId,
+        repo_id: RepoId,
         id: &ExternalId,
     ) -> Result<&mut ActivityIndex> {
-        let key = (repo.to_owned(), id.to_owned());
+        let key = (repo_id, id.to_owned());
         let index = self
             .path_activity
             .entry(key)
-            .or_insert_with(|| client.fetch_activity_log(repo, id, self.mode).unwrap());
+            .or_insert_with(|| client.fetch_activity_log(repo_id, id, self.mode).unwrap());
         Ok(index)
     }
 
@@ -640,7 +640,7 @@ impl Indexer {
                     .index_filename(index_type)
                     .unwrap_or_else(|_| panic!("no index filename: {:?}", key));
                 client
-                    .fetch_synonym_index(&key.repo, &filename)
+                    .fetch_synonym_index(key.repo_id, &filename)
                     .unwrap_or_else(|_| panic!("no index: {:?}", filename))
             });
 
@@ -661,7 +661,7 @@ impl Indexer {
                     .index_filename(index_type)
                     .unwrap_or_else(|_| panic!("no index filename: {:?}", key));
                 client
-                    .fetch_synonym_index(&key.repo, &filename)
+                    .fetch_synonym_index(key.repo_id, &filename)
                     .unwrap_or_else(|_| panic!("no index: {:?}", filename))
             });
 
@@ -671,7 +671,7 @@ impl Indexer {
     fn synonym_indexes<'s, S, F>(
         &mut self,
         client: &Client,
-        prefix: &RepoId,
+        repo_id: RepoId,
         synonyms: S,
         f: F,
     ) -> Result<()>
@@ -685,7 +685,7 @@ impl Indexer {
                 continue;
             }
 
-            let key = prefix.index_key(&phrase)?;
+            let key = repo_id.index_key(&phrase)?;
             let index = self.synonym_phrase_index(client, &key, IndexType::SynonymPhrase)?;
             f(index, &phrase, &synonym.name)?;
 
@@ -694,7 +694,7 @@ impl Indexer {
                     continue;
                 }
 
-                let key = prefix.index_key(&token)?;
+                let key = repo_id.index_key(&token)?;
                 let index = self.synonym_token_index(client, &key, IndexType::SynonymToken)?;
                 f(index, &token, &synonym.name)?;
             }
@@ -706,7 +706,7 @@ impl Indexer {
     pub fn remove_searches<'s, S>(
         &mut self,
         client: &Client,
-        repo: &RepoId,
+        repo_id: RepoId,
         entry: &SearchEntry,
         searches: S,
     ) -> Result<()>
@@ -715,7 +715,7 @@ impl Indexer {
     {
         for search in searches {
             for token in &search.tokens {
-                let key = repo.index_key(token)?;
+                let key = repo_id.index_key(token)?;
                 self.search_token_index(client, &key)?
                     .remove(entry, token.to_owned())?;
             }
@@ -727,13 +727,13 @@ impl Indexer {
     pub fn remove_synonyms(
         &mut self,
         client: &Client,
-        repo: &RepoId,
+        repo_id: RepoId,
         id: &ExternalId,
         topic: &RepoTopic,
     ) -> Result<()> {
         self.synonym_indexes(
             client,
-            repo,
+            repo_id,
             topic.metadata.synonyms().iter(),
             |index, token, name| {
                 index.remove(id, token.to_owned(), name)?;
@@ -744,34 +744,34 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn files(&self) -> Result<Vec<(&RepoId, PathBuf, String)>> {
+    pub fn files(&self) -> Result<Vec<(RepoId, PathBuf, String)>> {
         let mut files = vec![];
 
         for (key, index) in &self.search_tokens {
-            files.push((&key.repo, index.filename().to_owned(), index.serialize()?));
+            files.push((key.repo_id, index.filename().to_owned(), index.serialize()?));
         }
 
         for (key, index) in &self.synonym_phrases {
-            files.push((&key.repo, index.filename().to_owned(), index.serialize()?));
+            files.push((key.repo_id, index.filename().to_owned(), index.serialize()?));
         }
 
         for (key, index) in &self.synonym_tokens {
-            files.push((&key.repo, index.filename().to_owned(), index.serialize()?));
+            files.push((key.repo_id, index.filename().to_owned(), index.serialize()?));
         }
 
-        for ((repo, _id), activity_log) in &self.path_activity {
+        for ((repo_id, _id), activity_log) in &self.path_activity {
             files.push((
-                repo,
+                *repo_id,
                 activity_log.filename().to_owned(),
                 activity_log.serialize()?,
             ));
         }
 
-        for (repo, changes) in &self.repo_changes {
+        for (&repo_id, changes) in &self.repo_changes {
             for change in changes {
                 let reference = change.to_reference();
                 files.push((
-                    repo,
+                    repo_id,
                     reference.id.change_filename()?,
                     serde_yaml::to_string(&change)?,
                 ));
@@ -785,7 +785,7 @@ impl Indexer {
     where
         S: SaveChangesForPrefix,
     {
-        match store.save(&RepoId::wiki(), &self.repo_changes) {
+        match store.save(RepoId::wiki(), &self.repo_changes) {
             Ok(_) => log::info!("changes saved to {}", WIKI_REPOSITORY_ID),
             Err(err) => log::error!("problem saving changes to prefix key: {}", err),
         }
@@ -807,7 +807,7 @@ impl Indexer {
     pub fn update(
         &mut self,
         client: &Client,
-        repo: &RepoId,
+        repo_id: RepoId,
         entry: &SearchEntry,
         before: &BTreeSet<Search>,
         after: &BTreeSet<Search>,
@@ -815,7 +815,7 @@ impl Indexer {
         let removed = before.difference(after);
         for search in removed {
             for token in &search.tokens {
-                let key = repo.index_key(token)?;
+                let key = repo_id.index_key(token)?;
                 self.search_token_index(client, &key)?
                     .remove(entry, token.to_owned())?;
             }
@@ -830,7 +830,7 @@ impl Indexer {
         let added = after.difference(before);
         for search in added {
             for token in &search.tokens {
-                let key = repo.index_key(token)?;
+                let key = repo_id.index_key(token)?;
                 self.search_token_index(client, &key)?
                     .add(entry, token.to_owned())?;
             }
@@ -842,7 +842,7 @@ impl Indexer {
     pub fn update_synonyms(
         &mut self,
         client: &Client,
-        repo: &RepoId,
+        repo_id: RepoId,
         before: &Option<RepoTopic>,
         after: &RepoTopic,
     ) -> Result<()> {
@@ -865,7 +865,7 @@ impl Indexer {
 
         self.synonym_indexes(
             client,
-            repo,
+            repo_id,
             after.difference(&before),
             |index, token, name| {
                 index.add(topic_id, token.to_owned(), name)?;
@@ -875,7 +875,7 @@ impl Indexer {
 
         self.synonym_indexes(
             client,
-            repo,
+            repo_id,
             before.difference(&after),
             |index, token, name| {
                 index.remove(topic_id, token.to_owned(), name)?;

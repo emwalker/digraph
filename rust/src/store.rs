@@ -56,15 +56,13 @@ impl Store {
 impl Store {
     pub async fn activity(
         &self,
-        repo_id: &RepoId,
+        repo_id: RepoId,
         topic_id: &Option<ExternalId>,
         first: i32,
     ) -> Result<Vec<git::activity::Change>> {
         let result = git::activity::FetchActivity {
             actor: Arc::clone(&self.viewer),
-            path: topic_id
-                .as_ref()
-                .map(|id| (repo_id.to_owned(), id.to_owned())),
+            path: topic_id.as_ref().map(|id| (repo_id, id.to_owned())),
             first: first.try_into().unwrap_or(3),
         }
         .call(&self.git, &self.redis);
@@ -107,12 +105,12 @@ impl Store {
 
     pub async fn delete_link(
         &self,
-        repo_id: &RepoId,
+        repo_id: RepoId,
         link_id: &ExternalId,
     ) -> Result<git::DeleteLinkResult> {
         git::DeleteLink {
             actor: Arc::clone(&self.viewer),
-            repo: repo_id.to_owned(),
+            repo_id,
             link_id: link_id.to_owned(),
         }
         .call(self.mutation()?, &self.redis)
@@ -126,19 +124,19 @@ impl Store {
 
     pub async fn delete_topic(
         &self,
-        repo_id: &RepoId,
+        repo_id: RepoId,
         topic_id: &ExternalId,
     ) -> Result<git::DeleteTopicResult> {
         git::DeleteTopic {
             actor: Arc::clone(&self.viewer),
-            repo: repo_id.to_owned(),
+            repo_id,
             topic_id: topic_id.to_owned(),
         }
         .call(self.mutation()?, &self.redis)
     }
 
     pub async fn fetch_link(&self, link_id: ExternalId) -> Result<Option<git::Link>> {
-        let key = Okey(link_id, self.viewer.context_repo_id.to_owned());
+        let key = Okey(link_id, self.viewer.context_repo_id);
         match self.object_loader.load_one(key).await? {
             Some(object) => Ok(Some(object.try_into()?)),
             None => Ok(None),
@@ -163,7 +161,7 @@ impl Store {
         ids: Vec<ExternalId>,
         take: usize,
     ) -> Result<Vec<git::Object>> {
-        let context_id = &self.viewer.context_repo_id;
+        let context_id = self.viewer.context_repo_id;
         self.fetch_objects_with_context(ids, take, context_id).await
     }
 
@@ -171,12 +169,12 @@ impl Store {
         &self,
         ids: Vec<ExternalId>,
         take: usize,
-        context_id: &RepoId,
+        context_id: RepoId,
     ) -> Result<Vec<git::Object>> {
         let keys = ids
             .into_iter()
             .take(take)
-            .map(|oid| Okey(oid, context_id.to_owned()))
+            .map(|oid| Okey(oid, context_id))
             .collect::<Vec<Okey>>();
 
         Ok(self
@@ -188,7 +186,7 @@ impl Store {
     }
 
     pub async fn fetch_topic(&self, topic_id: ExternalId) -> Result<Option<git::Topic>> {
-        let key = Okey(topic_id, self.viewer.context_repo_id.to_owned());
+        let key = Okey(topic_id, self.viewer.context_repo_id);
         self.fetch_topic_by_key(key).await
     }
 
@@ -204,7 +202,7 @@ impl Store {
         topic_ids: Vec<ExternalId>,
         take: usize,
     ) -> Result<BTreeSet<git::Topic>> {
-        self.fetch_topics_with_context(topic_ids, take, &self.viewer.context_repo_id)
+        self.fetch_topics_with_context(topic_ids, take, self.viewer.context_repo_id)
             .await
     }
 
@@ -212,7 +210,7 @@ impl Store {
         &self,
         topic_ids: Vec<ExternalId>,
         take: usize,
-        context_id: &RepoId,
+        context_id: RepoId,
     ) -> Result<BTreeSet<git::Topic>> {
         self.fetch_objects_with_context(topic_ids, take, context_id)
             .await?
@@ -227,12 +225,12 @@ impl Store {
 
     pub async fn remove_topic_timerange(
         &self,
-        repo_id: &RepoId,
+        repo_id: RepoId,
         topic_id: &ExternalId,
     ) -> Result<git::RemoveTopicTimerangeResult> {
         git::RemoveTopicTimerange {
             actor: Arc::clone(&self.viewer),
-            repo_id: repo_id.to_owned(),
+            repo_id,
             topic_id: topic_id.clone(),
         }
         .call(self.mutation()?, &self.redis)
@@ -335,14 +333,13 @@ impl Store {
 
     pub async fn update_topic_parent_topics(
         &self,
-        // FIXME: Use id instead of name
-        repo_id: &RepoId,
+        repo_id: RepoId,
         topic_id: &ExternalId,
         parent_topics: Vec<ExternalId>,
     ) -> Result<git::UpdateTopicParentTopicsResult> {
         git::UpdateTopicParentTopics {
             actor: Arc::clone(&self.viewer),
-            repo_id: repo_id.to_owned(),
+            repo_id,
             topic_id: topic_id.to_owned(),
             parent_topic_ids: parent_topics
                 .iter()

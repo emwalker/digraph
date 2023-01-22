@@ -181,8 +181,8 @@ impl std::cmp::PartialOrd for ParentTopic {
 }
 
 impl ParentTopic {
-    pub fn fetch(&self, repo: &RepoId, mutation: &Mutation) -> Result<Option<RepoTopic>> {
-        Ok(mutation.fetch_topic(repo, &self.id))
+    pub fn fetch(&self, repo_id: RepoId, mutation: &Mutation) -> Result<Option<RepoTopic>> {
+        Ok(mutation.fetch_topic(repo_id, &self.id))
     }
 }
 
@@ -539,7 +539,7 @@ pub trait Visitor {
 #[derive(Debug)]
 pub struct TopicDownsetIter {
     client: Client,
-    repo: RepoId,
+    repo_id: RepoId,
     seen: HashSet<TopicChild>,
     stack: Vec<TopicChild>,
 }
@@ -561,7 +561,7 @@ impl Iterator for TopicDownsetIter {
 
                     let topic_id = &topic_child.id;
 
-                    if let Some(topic) = self.client.fetch_topic(&self.repo, topic_id) {
+                    if let Some(topic) = self.client.fetch_topic(self.repo_id, topic_id) {
                         for child in &topic.children {
                             if child.kind != Kind::Topic {
                                 break;
@@ -593,7 +593,7 @@ impl TopicDownsetIter {
         Self {
             client,
             seen: HashSet::new(),
-            repo,
+            repo_id: repo,
             stack,
         }
     }

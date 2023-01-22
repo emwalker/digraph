@@ -53,11 +53,11 @@ fn parse_args() -> Opts {
     }
 }
 
-fn prefer_private_repo(repo_1: &RepoId, repo_2: &RepoId) -> RepoId {
+fn prefer_private_repo(repo_1: RepoId, repo_2: RepoId) -> RepoId {
     if repo_1.is_wiki() {
-        repo_2.to_owned()
+        repo_2
     } else {
-        repo_1.to_owned()
+        repo_1
     }
 }
 
@@ -178,10 +178,10 @@ impl RepoTopics {
         }
     }
 
-    fn get_mut(&mut self, repo_id: &RepoId) -> &mut RepoTopic {
+    fn get_mut(&mut self, repo_id: RepoId) -> &mut RepoTopic {
         let topics = &mut self.references;
 
-        topics.entry(repo_id.to_owned()).or_insert_with(|| {
+        topics.entry(repo_id).or_insert_with(|| {
             let id = self.repo_topic.topic_id().to_owned();
 
             RepoTopic {
@@ -200,7 +200,7 @@ impl RepoTopics {
 
 fn persist_topic(
     mutation: &mut Mutation,
-    repo_topic_repo_id: &RepoId,
+    repo_topic_repo_id: RepoId,
     repo_topic: &mut RepoTopic,
     parent_topics: &Vec<ParentTopicRow>,
     children: &Vec<TopicChildRow>,
@@ -219,7 +219,7 @@ fn persist_topic(
         } = child;
         let child_repo_id = RepoId::try_from(repository_id).unwrap();
 
-        if repo_topic_repo_id != &child_repo_id {
+        if repo_topic_repo_id != child_repo_id {
             continue;
         }
 
@@ -244,7 +244,7 @@ fn persist_topic(
     let mut parents = vec![];
     for topic in parent_topics {
         let topic_repo_id = RepoId::try_from(&topic.repository_id).unwrap();
-        if &topic_repo_id != repo_topic_repo_id {
+        if topic_repo_id != repo_topic_repo_id {
             continue;
         }
 
@@ -273,7 +273,7 @@ fn persist_topic(
 // 1. Don't place paths for items in private repos under /wiki/
 fn persist_topics(
     mutation: &mut Mutation,
-    repo_topic_repo_id: &RepoId,
+    repo_topic_repo_id: RepoId,
     topic_id: &ExternalId,
     meta: &TopicMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
@@ -314,27 +314,27 @@ fn persist_topics(
         children: BTreeSet::new(),
     };
 
-    let mut topics = RepoTopics::new(repo_topic_repo_id.to_owned(), repo_topic);
+    let mut topics = RepoTopics::new(repo_topic_repo_id, repo_topic);
 
     for parent in parent_topics {
         let parent_repo_id = RepoId::try_from(&parent.repository_id).unwrap();
-        let repo_id = prefer_private_repo(repo_topic_repo_id, &parent_repo_id);
-        let topic = topics.get_mut(&repo_id);
+        let repo_id = prefer_private_repo(repo_topic_repo_id, parent_repo_id);
+        let topic = topics.get_mut(repo_id);
         topic.parent_topics.insert(parent.try_into()?);
     }
 
     for child in children {
         let parent_repo_id = RepoId::try_from(&child.repository_id).unwrap();
-        let repo_id = prefer_private_repo(repo_topic_repo_id, &parent_repo_id);
-        let topic = topics.get_mut(&repo_id);
+        let repo_id = prefer_private_repo(repo_topic_repo_id, parent_repo_id);
+        let topic = topics.get_mut(repo_id);
         topic.children.insert(child.try_into()?);
     }
 
     let repo_ids = topics.references.keys().cloned().collect::<Vec<RepoId>>();
 
     for repo_id in repo_ids {
-        let topic = topics.get_mut(&repo_id);
-        persist_topic(mutation, &repo_id, topic, parent_topics, children)?;
+        let topic = topics.get_mut(repo_id);
+        persist_topic(mutation, repo_id, topic, parent_topics, children)?;
     }
 
     Ok(())
@@ -420,15 +420,7 @@ async fn export_topics(builder: &mut Mutation, pool: &PgPool) -> Result<()> {
         .await
         .unwrap();
 
-        persist_topics(
-            builder,
-            &repo_id,
-            &topic_id,
-            meta,
-            &parent_topics,
-            &children,
-        )
-        .unwrap();
+        persist_topics(builder, repo_id, &topic_id, meta, &parent_topics, &children).unwrap();
     }
 
     Ok(())
@@ -447,10 +439,10 @@ impl RepoLinks {
         Self { link, links }
     }
 
-    fn get_mut(&mut self, repo_id: &RepoId) -> &mut RepoLink {
+    fn get_mut(&mut self, repo_id: RepoId) -> &mut RepoLink {
         let links = &mut self.links;
 
-        links.entry(repo_id.to_owned()).or_insert_with(|| RepoLink {
+        links.entry(repo_id).or_insert_with(|| RepoLink {
             api_version: API_VERSION.to_string(),
             metadata: RepoLinkMetadata {
                 added: self.link.added(),
@@ -464,7 +456,7 @@ impl RepoLinks {
 
 fn persist_link(
     mutation: &mut Mutation,
-    repo_link_repo_id: &RepoId,
+    repo_link_repo_id: RepoId,
     repo_link: &mut RepoLink,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
@@ -472,7 +464,7 @@ fn persist_link(
 
     for parent in parent_topics {
         let parent_repo_id = RepoId::try_from(&parent.repository_id).unwrap();
-        if repo_link_repo_id != &parent_repo_id {
+        if repo_link_repo_id != parent_repo_id {
             continue;
         }
 
@@ -500,7 +492,7 @@ fn persist_link(
 
 fn persist_links(
     mutation: &mut Mutation,
-    repo_link_repo_id: &RepoId,
+    repo_link_repo_id: RepoId,
     repo_link_meta: &LinkMetadataRow,
     parent_topics: &Vec<ParentTopicRow>,
 ) -> Result<()> {
@@ -510,20 +502,20 @@ fn persist_links(
         parent_topics: BTreeSet::new(),
     };
 
-    let mut repo_links = RepoLinks::new(repo_link_repo_id.to_owned(), repo_link);
+    let mut repo_links = RepoLinks::new(repo_link_repo_id, repo_link);
 
     for parent in parent_topics {
         let parent_repo_id = RepoId::try_from(&parent.repository_id).unwrap();
-        let repo_id = prefer_private_repo(repo_link_repo_id, &parent_repo_id);
-        let reference = repo_links.get_mut(&repo_id);
+        let repo_id = prefer_private_repo(repo_link_repo_id, parent_repo_id);
+        let reference = repo_links.get_mut(repo_id);
         reference.parent_topics.insert(parent.try_into().unwrap());
     }
 
     let repo_ids = repo_links.links.keys().cloned().collect::<Vec<RepoId>>();
 
     for repo_id in repo_ids {
-        let link = repo_links.get_mut(&repo_id);
-        persist_link(mutation, &repo_id, link, parent_topics).unwrap();
+        let link = repo_links.get_mut(repo_id);
+        persist_link(mutation, repo_id, link, parent_topics).unwrap();
     }
 
     Ok(())
@@ -564,7 +556,7 @@ async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
         .fetch_all(pool)
         .await?;
 
-        persist_links(mutation, &repo_id, &meta, &parent_topics).unwrap();
+        persist_links(mutation, repo_id, &meta, &parent_topics).unwrap();
     }
 
     Ok(())

@@ -48,7 +48,7 @@ mod fetch_topic_live_search {
             synonyms: matches, ..
         } = FetchTopicLiveSearch {
             limit: 10,
-            repos: RepoIds::from(vec![repo_id.to_owned()]),
+            repos: RepoIds::from(vec![repo_id]),
             search: search.clone(),
             viewer: actor(),
         }
@@ -58,7 +58,7 @@ mod fetch_topic_live_search {
         assert!(matches.is_empty());
 
         f.upsert_topic(
-            &repo_id,
+            repo_id,
             "Climate change and society",
             &parent,
             OnMatchingSynonym::Ask,
@@ -285,7 +285,7 @@ mod fetch_matches {
         let repo_id = RepoId::other();
         let root_id = ExternalId::root_topic();
 
-        let _ = f.upsert_link(&repo_id, &valid_url(), Some("Other repo".to_owned()), None);
+        let _ = f.upsert_link(repo_id, &valid_url(), Some("Other repo".to_owned()), None);
 
         let matches = search(&f, &root_id, "other repo", true);
         assert!(!matches.is_empty());
