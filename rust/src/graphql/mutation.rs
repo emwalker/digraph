@@ -440,15 +440,16 @@ impl MutationRoot {
         } = &input;
 
         let store = ctx.data_unchecked::<Store>();
+        let parent_topic_ids = parent_topic_ids
+            .iter()
+            .map(ExternalId::try_from)
+            .collect::<Result<Vec<ExternalId>>>()?;
 
         let git::UpdateTopicParentTopicsResult { alerts, repo_topic } = store
             .update_topic_parent_topics(
                 repo_id.try_into()?,
                 &topic_id.try_into()?,
-                parent_topic_ids
-                    .iter()
-                    .map(ExternalId::try_from)
-                    .collect::<Result<Vec<ExternalId>>>()?,
+                &parent_topic_ids[..],
             )
             .await?;
 

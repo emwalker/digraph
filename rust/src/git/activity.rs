@@ -211,9 +211,9 @@ impl From<&RepoTopic> for TopicInfoList {
     }
 }
 
-impl From<&BTreeSet<TopicInfo>> for TopicInfoList {
-    fn from(set: &BTreeSet<TopicInfo>) -> Self {
-        Self(set.clone())
+impl From<BTreeSet<TopicInfo>> for TopicInfoList {
+    fn from(set: BTreeSet<TopicInfo>) -> Self {
+        Self(set)
     }
 }
 

@@ -3,13 +3,13 @@ use sqlx::types::Uuid;
 use super::{user, PgTransaction};
 use crate::prelude::*;
 
-pub struct CompleteRegistration {
-    login: String,
-    user: user::Row,
+pub struct CompleteRegistration<'s> {
+    login: &'s str,
+    user: &'s user::Row,
 }
 
-impl CompleteRegistration {
-    pub fn new(user: user::Row, login: String) -> Self {
+impl<'s> CompleteRegistration<'s> {
+    pub fn new(user: &'s user::Row, login: &'s str) -> Self {
         Self { user, login }
     }
 
@@ -24,7 +24,7 @@ impl CompleteRegistration {
                 values ($1, $2, false, $3)
                 returning id",
         )
-        .bind(&self.login)
+        .bind(self.login)
         .bind(DEFAULT_ORGANIZATION_NAME)
         .bind(user_id)
         .fetch_one(&mut tx)
@@ -90,7 +90,7 @@ impl CompleteRegistration {
                     login = $1
                 where id = $2",
         )
-        .bind(&self.login)
+        .bind(self.login)
         .bind(user_id)
         .execute(&mut tx)
         .await?;

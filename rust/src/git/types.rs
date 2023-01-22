@@ -537,14 +537,14 @@ pub trait Visitor {
 }
 
 #[derive(Debug)]
-pub struct TopicDownsetIter {
-    client: Client,
+pub struct TopicDownsetIter<'c> {
+    client: &'c Client,
     repo_id: RepoId,
     seen: HashSet<TopicChild>,
     stack: Vec<TopicChild>,
 }
 
-impl Iterator for TopicDownsetIter {
+impl<'c> Iterator for TopicDownsetIter<'c> {
     type Item = RepoTopic;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -583,8 +583,8 @@ impl Iterator for TopicDownsetIter {
     }
 }
 
-impl TopicDownsetIter {
-    pub fn new(client: Client, repo: RepoId, topic: Option<RepoTopic>) -> Self {
+impl<'c> TopicDownsetIter<'c> {
+    pub fn new(client: &'c Client, repo: RepoId, topic: Option<RepoTopic>) -> Self {
         let mut stack = vec![];
         if let Some(topic) = &topic {
             stack.push(topic.to_topic_child(chrono::Utc::now()));
@@ -600,12 +600,12 @@ impl TopicDownsetIter {
 }
 
 #[derive(Debug)]
-pub struct DownsetIter {
-    iter: TopicDownsetIter,
+pub struct DownsetIter<'c> {
+    iter: TopicDownsetIter<'c>,
     links: Vec<ExternalId>,
 }
 
-impl Iterator for DownsetIter {
+impl<'c> Iterator for DownsetIter<'c> {
     type Item = ExternalId;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -627,8 +627,8 @@ impl Iterator for DownsetIter {
     }
 }
 
-impl DownsetIter {
-    pub fn new(client: Client, repo: RepoId, topic: Option<RepoTopic>) -> Self {
+impl<'c> DownsetIter<'c> {
+    pub fn new(client: &'c Client, repo: RepoId, topic: Option<RepoTopic>) -> Self {
         Self {
             links: vec![],
             iter: TopicDownsetIter::new(client, repo, topic),

@@ -481,7 +481,7 @@ fn persist_link(
         date: chrono::Utc::now(),
         id: activity::Change::new_id(),
         imported_link: activity::LinkInfo::from(&*repo_link),
-        parent_topics: activity::TopicInfoList::from(&topics),
+        parent_topics: activity::TopicInfoList::from(topics),
     });
 
     mutation.save_link(repo_link_repo_id, repo_link).unwrap();

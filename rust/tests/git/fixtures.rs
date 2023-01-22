@@ -182,9 +182,7 @@ impl Fixtures {
 
 mod tests {
     use super::*;
-
     use digraph::git::{UpdateTopicParentTopics, UpsertTopic, UpsertTopicResult};
-    use std::collections::BTreeSet;
 
     // #[actix_web::test]
     #[allow(dead_code)]
@@ -249,15 +247,16 @@ mod tests {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
         let climate_change_weather = repo_topic.unwrap();
+        let parent_topic_ids = vec![
+            climate_change.topic_id().to_owned(),
+            weather.topic_id().to_owned(),
+        ];
 
         UpdateTopicParentTopics {
             actor: actor(),
             repo_id,
-            parent_topic_ids: BTreeSet::from([
-                climate_change.topic_id().to_owned(),
-                weather.topic_id().to_owned(),
-            ]),
-            topic_id: climate_change_weather.topic_id().to_owned(),
+            parent_topic_ids: &parent_topic_ids[..],
+            topic_id: climate_change_weather.topic_id(),
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();

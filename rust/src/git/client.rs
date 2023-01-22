@@ -158,7 +158,7 @@ impl Client {
 
     pub fn downset(&self, topic_path: &TopicPath) -> DownsetIter {
         DownsetIter::new(
-            self.clone(),
+            self,
             topic_path.repo_id,
             self.fetch_topic(topic_path.repo_id, &topic_path.topic_id),
         )
@@ -405,7 +405,7 @@ impl Client {
 
     pub fn topic_downset(&self, topic_path: &TopicPath) -> TopicDownsetIter {
         TopicDownsetIter::new(
-            self.clone(),
+            self,
             topic_path.repo_id,
             self.fetch_topic(topic_path.repo_id, &topic_path.topic_id),
         )

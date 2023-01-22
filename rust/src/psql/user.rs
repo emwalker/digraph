@@ -84,17 +84,17 @@ impl Loader<String> for UserLoader {
     }
 }
 
-pub struct UpsertRegisteredUser {
+pub struct UpsertRegisteredUser<'i> {
     // TODO: generalize
-    input: CreateGithubSessionInput,
+    input: &'i CreateGithubSessionInput,
 }
 
 pub struct UpsertUserResult {
     pub user: Row,
 }
 
-impl UpsertRegisteredUser {
-    pub fn new(input: CreateGithubSessionInput) -> Self {
+impl<'i> UpsertRegisteredUser<'i> {
+    pub fn new(input: &'i CreateGithubSessionInput) -> Self {
         Self { input }
     }
 
@@ -121,10 +121,9 @@ impl UpsertRegisteredUser {
                 log::info!("user {} not found, creating", username);
                 let tx = pool.begin().await?;
                 let (tx, user) = self.create_github_user(tx).await?;
-                let tx =
-                    CompleteRegistration::new(user.clone(), self.input.github_username.clone())
-                        .call(tx)
-                        .await?;
+                let tx = CompleteRegistration::new(&user, &self.input.github_username)
+                    .call(tx)
+                    .await?;
                 tx.commit().await?;
                 user
             }

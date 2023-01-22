@@ -335,16 +335,13 @@ impl Store {
         &self,
         repo_id: RepoId,
         topic_id: &ExternalId,
-        parent_topics: Vec<ExternalId>,
+        parent_topic_ids: &[ExternalId],
     ) -> Result<git::UpdateTopicParentTopicsResult> {
         git::UpdateTopicParentTopics {
             actor: Arc::clone(&self.viewer),
             repo_id,
-            topic_id: topic_id.to_owned(),
-            parent_topic_ids: parent_topics
-                .iter()
-                .cloned()
-                .collect::<BTreeSet<ExternalId>>(),
+            topic_id,
+            parent_topic_ids,
         }
         .call(self.mutation()?, &self.redis)
     }

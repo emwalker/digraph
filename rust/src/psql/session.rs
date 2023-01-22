@@ -33,9 +33,7 @@ impl CreateGithubSession {
         // the server secret provided with the one we have.  In the future, perhaps it would be good
         // to use a service account here?
 
-        let UpsertUserResult { user } = UpsertRegisteredUser::new(self.input.clone())
-            .call(pool)
-            .await?;
+        let UpsertUserResult { user } = UpsertRegisteredUser::new(&self.input).call(pool).await?;
 
         let result = sqlx::query_as::<_, DatabaseSession>(
             r#"insert into sessions (user_id) values ($1)

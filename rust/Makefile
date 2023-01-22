@@ -14,8 +14,8 @@ export:
 	RUST_LOG=warn,export=info target/release/export --data-dir ~/data/digraph-data
 
 format:
-	cargo clippy -- -D warnings
 	cargo fmt
+	cargo clippy --fix -- -D warnings
 
 migrate:
 	cargo run --bin migrate

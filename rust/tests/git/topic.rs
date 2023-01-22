@@ -259,8 +259,8 @@ mod update_topic_parent_topics {
         let result = UpdateTopicParentTopics {
             actor: actor(),
             repo_id,
-            topic_id: child.topic_id().to_owned(),
-            parent_topic_ids: BTreeSet::from([parent.topic_id().to_owned()]),
+            topic_id: child.topic_id(),
+            parent_topic_ids: &[parent.topic_id().to_owned()],
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
@@ -285,8 +285,8 @@ mod update_topic_parent_topics {
         let result = UpdateTopicParentTopics {
             actor: actor(),
             repo_id,
-            topic_id: child.topic_id().to_owned(),
-            parent_topic_ids: BTreeSet::from([parent.topic_id().to_owned()]),
+            topic_id: child.topic_id(),
+            parent_topic_ids: &[parent.topic_id().to_owned()],
         }
         .call(f.mutation(), &redis::Noop)
         .unwrap();
@@ -307,8 +307,8 @@ mod update_topic_parent_topics {
         let result = UpdateTopicParentTopics {
             actor: actor(),
             repo_id,
-            topic_id: child.topic_id().to_owned(),
-            parent_topic_ids: BTreeSet::new(),
+            topic_id: child.topic_id(),
+            parent_topic_ids: &[],
         }
         .call(f.mutation(), &redis::Noop);
 
@@ -326,8 +326,8 @@ mod update_topic_parent_topics {
         let result = UpdateTopicParentTopics {
             actor: actor(),
             repo_id,
-            topic_id: parent.topic_id().to_owned(),
-            parent_topic_ids: BTreeSet::from([child.topic_id().to_owned()]),
+            topic_id: parent.topic_id(),
+            parent_topic_ids: &[child.topic_id().to_owned()],
         }
         .call(f.mutation(), &redis::Noop);
 

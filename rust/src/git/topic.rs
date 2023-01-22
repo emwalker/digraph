@@ -251,11 +251,11 @@ impl RemoveTopicTimerange {
     }
 }
 
-pub struct UpdateTopicParentTopics {
+pub struct UpdateTopicParentTopics<'l> {
     pub actor: Arc<Viewer>,
-    pub parent_topic_ids: BTreeSet<ExternalId>,
+    pub parent_topic_ids: &'l [ExternalId],
     pub repo_id: RepoId,
-    pub topic_id: ExternalId,
+    pub topic_id: &'l ExternalId,
 }
 
 pub struct UpdateTopicParentTopicsResult {
@@ -263,7 +263,7 @@ pub struct UpdateTopicParentTopicsResult {
     pub repo_topic: RepoTopic,
 }
 
-impl UpdateTopicParentTopics {
+impl<'l> UpdateTopicParentTopics<'l> {
     pub fn call<S>(
         &self,
         mut mutation: Mutation,
@@ -275,7 +275,7 @@ impl UpdateTopicParentTopics {
         self.validate(&mutation)?;
 
         let date = chrono::Utc::now();
-        let child = mutation.fetch_topic(self.repo_id, &self.topic_id);
+        let child = mutation.fetch_topic(self.repo_id, self.topic_id);
         if child.is_none() {
             return Err(Error::NotFound(format!("not found: {}", self.topic_id)));
         }
@@ -364,8 +364,8 @@ impl UpdateTopicParentTopics {
             ));
         }
 
-        for parent in &self.parent_topic_ids {
-            if mutation.cycle_exists(self.repo_id, &self.topic_id, parent)? {
+        for parent in self.parent_topic_ids.iter() {
+            if mutation.cycle_exists(self.repo_id, self.topic_id, parent)? {
                 return Err(Error::Repo(format!(
                     "{} is a parent topic of {}",
                     self.topic_id, parent
