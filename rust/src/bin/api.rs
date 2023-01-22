@@ -107,7 +107,7 @@ async fn main() -> async_graphql::Result<()> {
         .finish();
 
     log::info!("loading graphql schema");
-    let redis = redis::Redis::new(config.digraph_redis_url.to_owned())?;
+    let redis = Arc::new(redis::Redis::new(config.digraph_redis_url.to_owned())?);
 
     log::info!("setting up app state");
     let state = State::new(pool, root, schema, config.digraph_server_secret, redis);

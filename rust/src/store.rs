@@ -15,28 +15,28 @@ use crate::types::Timespec;
 
 pub struct Store {
     db: PgPool,
-    git: git::Client,
+    git: Arc<git::Client>,
     object_loader: DataLoader<graphql::ObjectLoader>,
     organization_loader: DataLoader<psql::OrganizationLoader>,
     pub server_secret: String,
     pub user_loader: DataLoader<psql::UserLoader>,
     pub viewer: Arc<Viewer>,
-    redis: redis::Redis,
+    redis: Arc<redis::Redis>,
     repository_loader: DataLoader<psql::RepositoryLoader>,
 }
 
 impl Store {
     pub fn new(
         viewer: Arc<Viewer>,
-        git: git::Client,
+        git: Arc<git::Client>,
         db: PgPool,
         server_secret: String,
-        redis: redis::Redis,
+        redis: Arc<redis::Redis>,
     ) -> Self {
         let organization_loader = psql::OrganizationLoader::new(Arc::clone(&viewer), db.clone());
         let repository_loader = psql::RepositoryLoader::new(Arc::clone(&viewer), db.clone());
-        let object_loader = graphql::ObjectLoader::new(git.clone());
-        let user_loader = psql::UserLoader::new(viewer.clone(), db.clone());
+        let object_loader = graphql::ObjectLoader::new(Arc::clone(&git));
+        let user_loader = psql::UserLoader::new(Arc::clone(&viewer), db.clone());
 
         Self {
             db,
@@ -264,8 +264,8 @@ impl Store {
         log::debug!("search: {:?}", search);
 
         let fetcher = git::RedisFetchDownSet {
-            client: self.git.clone(),
-            redis: self.redis.clone(),
+            client: Arc::clone(&self.git),
+            redis: Arc::clone(&self.redis),
         };
 
         git::FindMatches {
@@ -492,7 +492,7 @@ impl Store {
         git::FetchStats {
             viewer: Arc::clone(&self.viewer),
         }
-        .call(&self.git, self.redis.to_owned())
+        .call(&self.git, &self.redis)
         .await
     }
 }

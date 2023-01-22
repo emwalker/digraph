@@ -3,6 +3,7 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use super::{
     Link, RepoLink, RepoTopic, SearchMatch, Synonym, SynonymEntry, SynonymInput, Topic, ViewStats,
@@ -13,11 +14,11 @@ use crate::prelude::*;
 pub use git::{Client, DataRoot};
 
 pub struct ObjectLoader {
-    client: git::Client,
+    client: Arc<git::Client>,
 }
 
 impl ObjectLoader {
-    pub fn new(client: git::Client) -> Self {
+    pub fn new(client: Arc<git::Client>) -> Self {
         Self { client }
     }
 }

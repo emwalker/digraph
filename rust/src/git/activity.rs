@@ -1246,7 +1246,7 @@ pub trait ActivityForPrefix {
 }
 
 impl FetchActivity {
-    pub fn call<F>(&self, git: &Client, fetch: &F) -> Result<FetchActivityResult>
+    pub fn call<F>(&self, git: &Arc<Client>, fetch: &F) -> Result<FetchActivityResult>
     where
         F: ActivityForPrefix,
     {

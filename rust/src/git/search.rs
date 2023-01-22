@@ -278,8 +278,8 @@ impl Filter {
 }
 
 pub struct RedisFetchDownSet {
-    pub client: Client,
-    pub redis: redis::Redis,
+    pub client: Arc<Client>,
+    pub redis: Arc<redis::Redis>,
 }
 
 impl Downset for RedisFetchDownSet {

@@ -153,7 +153,7 @@ mod ensure_personal_repo {
         let viewer = viewer(&repos);
 
         let git::FetchStatsResult { stats } = git::FetchStats { viewer }
-            .call(&f.git, redis::Noop)
+            .call(&f.git, &redis::Noop)
             .await
             .unwrap();
 

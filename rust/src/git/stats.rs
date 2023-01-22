@@ -57,7 +57,7 @@ pub struct FetchStatsResult {
 }
 
 impl FetchStats {
-    pub async fn call<C>(&self, git: &Client, cache: C) -> Result<FetchStatsResult>
+    pub async fn call<C>(&self, git: &Client, cache: &C) -> Result<FetchStatsResult>
     where
         C: CacheStats + Clone + Send + std::fmt::Debug + 'static,
     {

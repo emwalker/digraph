@@ -91,7 +91,7 @@ impl From<(String, Option<SessionRow>)> for Viewer {
 #[derive(Clone)]
 pub struct State {
     pub pool: PgPool,
-    pub redis: redis::Redis,
+    pub redis: Arc<redis::Redis>,
     pub root: git::DataRoot,
     pub schema: Schema,
     pub server_secret: String,
@@ -103,7 +103,7 @@ impl State {
         root: git::DataRoot,
         schema: Schema,
         server_secret: String,
-        redis: redis::Redis,
+        redis: Arc<redis::Redis>,
     ) -> Self {
         Self {
             pool,
@@ -115,12 +115,18 @@ impl State {
     }
 
     pub fn store(&self, viewer: Arc<Viewer>, timespec: &Timespec) -> Store {
+        let git = Arc::new(git::Client::new(
+            Arc::clone(&viewer),
+            &self.root,
+            timespec.to_owned(),
+        ));
+
         Store::new(
             Arc::clone(&viewer),
-            git::Client::new(Arc::clone(&viewer), &self.root, timespec.to_owned()),
+            git,
             self.pool.clone(),
             self.server_secret.clone(),
-            self.redis.clone(),
+            Arc::clone(&self.redis),
         )
     }
 

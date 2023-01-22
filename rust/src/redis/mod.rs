@@ -1,5 +1,6 @@
 use redis_rs::{self, Commands};
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::git;
@@ -62,7 +63,7 @@ pub struct Redis {
     url: String,
 }
 
-impl git::CacheStats for Redis {
+impl git::CacheStats for Arc<Redis> {
     fn fetch(&self, repo: &RepoId, commit: &str) -> Result<Option<git::RepoStats>> {
         let key = self.stats_key(repo, commit);
         let mut con = self.connection().unwrap();
@@ -201,7 +202,7 @@ impl Redis {
     }
 }
 
-impl git::SaveChangesForPrefix for Redis {
+impl git::SaveChangesForPrefix for Arc<Redis> {
     fn save(
         &self,
         prefix: &RepoId,
@@ -230,7 +231,7 @@ impl git::SaveChangesForPrefix for Redis {
     }
 }
 
-impl git::activity::ActivityForPrefix for Redis {
+impl git::activity::ActivityForPrefix for Arc<Redis> {
     fn fetch_activity(&self, prefix: &RepoId, first: usize) -> Result<Vec<git::activity::Change>> {
         let key = Key(format!("activity:{}", prefix));
         log::info!("fetching activity for prefix {:?} from Redis", key);
