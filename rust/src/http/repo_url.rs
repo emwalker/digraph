@@ -56,7 +56,7 @@ impl RepoUrl {
     pub fn parse(input: &str) -> Result<Self> {
         let url = parse_url(input)?;
         let input = input.to_string();
-        let normalized = format!("{}", url);
+        let normalized = format!("{url}");
         let sha256_base64 = sha256_base64(&normalized);
 
         Ok(Self {
@@ -112,7 +112,7 @@ fn parse_url(input: &str) -> Result<url::Url> {
     let url = url::Url::parse(input)?;
 
     if !url.has_host() {
-        return Err(Error::UrlParse(format!("invalid url: {}", input)));
+        return Err(Error::UrlParse(format!("invalid url: {input}")));
     }
 
     let host = url.host_str();

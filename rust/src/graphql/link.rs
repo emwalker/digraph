@@ -73,10 +73,7 @@ impl<'l> RepoLink<'l> {
 
         match link {
             Some(link) => Ok(link.into()),
-            None => Err(Error::NotFound(format!(
-                "parent link not found: {}",
-                link_id
-            ))),
+            None => Err(Error::NotFound(format!("parent link not found: {link_id}"))),
         }
     }
 

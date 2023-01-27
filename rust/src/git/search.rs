@@ -52,7 +52,7 @@ impl SearchTopicSpec {
 
         let parts: Vec<String> = input.trim().split(':').map(str::to_string).collect();
         if !parts.len() == 2 {
-            return Err(Error::Parse(format!("invalid topic spec: {}", input)));
+            return Err(Error::Parse(format!("invalid topic spec: {input}")));
         }
 
         let op = TopicSpecOperation::from_str(&parts[0])?;
@@ -603,7 +603,7 @@ mod tests {
         assert_eq!(token.len(), 21);
 
         // Long phrases are allowed for now, to accomodate synonym matches
-        let phrase = Search::parse(&format!("a aa aaa aaaa {}", token)).unwrap();
+        let phrase = Search::parse(&format!("a aa aaa aaaa {token}")).unwrap();
         assert_eq!(
             phrase.tokens,
             phrases(&["aa", "aaa", "aaaa", "aaaaaaaaaaaaaaaaaaaaa"])

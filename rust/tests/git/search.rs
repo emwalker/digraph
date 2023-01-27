@@ -199,7 +199,7 @@ mod fetch_matches {
 
         let root = ExternalId::root_topic();
         let climate_change = f.find_topic("Climate change").unwrap();
-        let query = format!("in:{}", climate_change);
+        let query = format!("in:{climate_change}");
 
         let matches = search(&f, &root, &query, true);
         assert_eq!(count(Kind::Topic, &matches), 2);
@@ -212,7 +212,7 @@ mod fetch_matches {
 
         let root = ExternalId::root_topic();
         let climate_change = f.find_topic("Climate change").unwrap();
-        let query = format!("in:{} frequency", climate_change);
+        let query = format!("in:{climate_change} frequency");
 
         // A link should be returned, since it matches the token search and is a child of the topic
         // included in the search.  The topic should not be included, because it doesn't match the
@@ -229,7 +229,7 @@ mod fetch_matches {
         let fetcher = FetchDownset(f.git.clone());
         let root = ExternalId::root_topic();
         let climate_change = f.find_topic("Climate change and weather").unwrap();
-        let query = format!("in:{}", climate_change);
+        let query = format!("in:{climate_change}");
         let search = Search::parse(&query).unwrap();
 
         assert!(search.urls.is_empty());
@@ -257,7 +257,7 @@ mod fetch_matches {
 
         let root = ExternalId::root_topic();
         let weather = f.find_topic("Weather").unwrap();
-        let query = format!("in:{}", weather);
+        let query = format!("in:{weather}");
         let matches = search(&f, &root, &query, true);
 
         let object = &matches.iter().next().unwrap().object;

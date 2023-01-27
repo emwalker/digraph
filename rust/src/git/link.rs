@@ -228,7 +228,7 @@ impl UpsertLink {
                 }
 
                 None => {
-                    let msg = format!("tried to save the title of a reference: {:?}", self);
+                    let msg = format!("tried to save the title of a reference: {self:?}");
                     return Err(Error::Repo(msg));
                 }
             }

@@ -493,7 +493,7 @@ pub trait GitIndexKey {
     // of urls, are more sensitive to normalization, and so we omit it in those cases.
     fn index_key(&self, token: &Phrase) -> Result<IndexKey> {
         if !token.is_valid() {
-            return Err(Error::Repo(format!("a valid token is required: {}", token)));
+            return Err(Error::Repo(format!("a valid token is required: {token}")));
         }
 
         match token.basename() {
@@ -501,7 +501,7 @@ pub trait GitIndexKey {
                 repo_id: self.prefix(),
                 basename,
             }),
-            None => Err(Error::Repo(format!("bad token: {}", token))),
+            None => Err(Error::Repo(format!("bad token: {token}"))),
         }
     }
 
@@ -638,10 +638,10 @@ impl Indexer {
             .or_insert_with(|| {
                 let filename = key
                     .index_filename(index_type)
-                    .unwrap_or_else(|_| panic!("no index filename: {:?}", key));
+                    .unwrap_or_else(|_| panic!("no index filename: {key:?}"));
                 client
                     .fetch_synonym_index(key.repo_id, &filename)
-                    .unwrap_or_else(|_| panic!("no index: {:?}", filename))
+                    .unwrap_or_else(|_| panic!("no index: {filename:?}"))
             });
 
         Ok(index)
@@ -659,10 +659,10 @@ impl Indexer {
             .or_insert_with(|| {
                 let filename = key
                     .index_filename(index_type)
-                    .unwrap_or_else(|_| panic!("no index filename: {:?}", key));
+                    .unwrap_or_else(|_| panic!("no index filename: {key:?}"));
                 client
                     .fetch_synonym_index(key.repo_id, &filename)
-                    .unwrap_or_else(|_| panic!("no index: {:?}", filename))
+                    .unwrap_or_else(|_| panic!("no index: {filename:?}"))
             });
 
         Ok(index)

@@ -79,7 +79,7 @@ impl DeleteTopic {
 
         let topic = mutation.fetch_topic(self.repo_id, topic_id);
         if topic.is_none() {
-            return Err(Error::NotFound(format!("not found: {}", topic_id)));
+            return Err(Error::NotFound(format!("not found: {topic_id}")));
         }
         let topic = topic.unwrap();
 
@@ -697,7 +697,7 @@ impl UpsertTopic {
     ) -> Result<UpsertTopicResult> {
         let ancestor = mutation.fetch_topic(self.repo_id, topic_id);
         if ancestor.is_none() {
-            return Err(Error::NotFound(format!("not found: {}", topic_id)));
+            return Err(Error::NotFound(format!("not found: {topic_id}")));
         }
         let ancestor = ancestor.unwrap();
 

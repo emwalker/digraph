@@ -22,7 +22,7 @@ impl LeakedData {
                 .arg(repo.to_string())
                 .arg(".")
                 .output()?;
-            let pat = format!(".{}", repo);
+            let pat = format!(".{repo}");
 
             let result = String::from_utf8(output.stdout)?;
             for line in result.lines() {

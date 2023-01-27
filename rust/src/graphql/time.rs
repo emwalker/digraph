@@ -22,7 +22,7 @@ impl std::fmt::Display for TimerangePrefixFormat {
             Self::StartYear => "START_YEAR",
             Self::StartYearMonth => "START_YEAR_MONTH",
         };
-        write!(f, "{}", string)
+        write!(f, "{string}")
     }
 }
 

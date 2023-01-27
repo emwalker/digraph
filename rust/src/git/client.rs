@@ -37,9 +37,9 @@ pub fn parse_path(input: &str) -> Result<(DataRoot, RepoId, ExternalId)> {
 
     let cap = RE
         .captures(input)
-        .ok_or_else(|| Error::Repo(format!("bad path: {}", input)))?;
+        .ok_or_else(|| Error::Repo(format!("bad path: {input}")))?;
     if cap.len() != 6 {
-        return Err(Error::Command(format!("bad path: {:?}", cap)));
+        return Err(Error::Command(format!("bad path: {cap:?}")));
     }
 
     let (root, repo_id, part1, part2, part3) =
@@ -51,10 +51,10 @@ pub fn parse_path(input: &str) -> Result<(DataRoot, RepoId, ExternalId)> {
                 part2.as_str(),
                 part3.as_str(),
             ),
-            _ => return Err(Error::Repo(format!("bad path: {}", input))),
+            _ => return Err(Error::Repo(format!("bad path: {input}"))),
         };
 
-    let oid: ExternalId = format!("{}{}{}", part1, part2, part3).try_into()?;
+    let oid: ExternalId = format!("{part1}{part2}{part3}").try_into()?;
     let root = PathBuf::from(root);
 
     Ok((DataRoot::new(root), repo_id, oid))
@@ -182,12 +182,12 @@ impl Client {
             Ok(repo) => match repo.object(id) {
                 Ok(object) => object,
                 Err(err) => {
-                    println!("failed to fetch object: {:?}", err);
+                    println!("failed to fetch object: {err:?}");
                     None
                 }
             },
             Err(err) => {
-                println!("failed to open repo: {:?}", err);
+                println!("failed to open repo: {err:?}");
                 None
             }
         }
@@ -233,7 +233,7 @@ impl Client {
         match &self.fetch(repo_id, link_id)? {
             RepoObject::Link(link) => Some(link.to_owned()),
             other => {
-                println!("expected a link, found: {:?}", other);
+                println!("expected a link, found: {other:?}");
                 None
             }
         }
@@ -417,7 +417,7 @@ impl Client {
         topic: Option<RepoTopic>,
     ) -> Result<BTreeSet<Search>> {
         if !self.viewer.can_read(repo_id) {
-            return Err(Error::NotFound(format!("not found: {:?}", topic)));
+            return Err(Error::NotFound(format!("not found: {topic:?}")));
         }
 
         let searches = match topic {
@@ -489,7 +489,7 @@ impl Mutation {
 
     fn check_can_update(&self, repo_id: RepoId) -> Result<()> {
         if !self.client.viewer.can_update(repo_id) {
-            return Err(Error::NotFound(format!("not found: {}", repo_id)));
+            return Err(Error::NotFound(format!("not found: {repo_id}")));
         }
         Ok(())
     }

@@ -68,7 +68,7 @@ impl<'r> ConsoleOutput<'r> {
                 let s = format!("  + [{}]({})\n", topic.name(Locale::EN), meta.id);
                 self.buf.push_str(&s);
             }
-            other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
+            other => return Err(Error::Repo(format!("expected a topic: {other:?}"))),
         }
 
         Ok(())
@@ -102,7 +102,7 @@ impl<'r> ConsoleOutput<'r> {
                 let line = format!("- [{}]({})\n", topic.name(Locale::EN), topic.topic_id());
                 self.buf.push_str(&line);
             }
-            other => return Err(Error::Repo(format!("expected a topic: {:?}", other))),
+            other => return Err(Error::Repo(format!("expected a topic: {other:?}"))),
         }
         Ok(())
     }
@@ -140,8 +140,7 @@ async fn main() -> Result<()> {
     let object = git.fetch(repo_id, &oid);
     if object.is_none() {
         return Err(Error::NotFound(format!(
-            "{} does not contain {}/{}",
-            root_directory, repo_id, oid
+            "{root_directory} does not contain {repo_id}/{oid}"
         )));
     }
     let object = object.unwrap();

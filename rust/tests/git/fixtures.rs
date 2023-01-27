@@ -82,7 +82,7 @@ impl Fixtures {
         let link = self
             .git
             .fetch_link(repo_id, link_id)
-            .unwrap_or_else(|| panic!("expected a link: {:?}", link_id));
+            .unwrap_or_else(|| panic!("expected a link: {link_id:?}"));
 
         block(link);
     }
@@ -94,7 +94,7 @@ impl Fixtures {
         let topic = self
             .git
             .fetch_topic(repo_id, topic_id)
-            .unwrap_or_else(|| panic!("expected a topic: {:?}", topic_id));
+            .unwrap_or_else(|| panic!("expected a topic: {topic_id:?}"));
 
         block(topic);
     }
@@ -143,7 +143,7 @@ impl Fixtures {
         add_parent_topic_id: Option<ExternalId>,
     ) -> UpsertLinkResult {
         let html = match &title {
-            Some(title) => format!("<title>{}</title>", title),
+            Some(title) => format!("<title>{title}</title>"),
             None => "<title>Some title</title>".into(),
         };
 

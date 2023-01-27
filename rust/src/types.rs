@@ -249,7 +249,7 @@ impl TryFrom<String> for ExternalId {
 
     fn try_from(id: String) -> Result<Self> {
         if id.len() < 5 {
-            return Err(Error::Path(format!("bad id: {}", id)));
+            return Err(Error::Path(format!("bad id: {id}")));
         }
 
         for c in id.chars() {
@@ -261,7 +261,7 @@ impl TryFrom<String> for ExternalId {
                 continue;
             }
 
-            return Err(Error::Path(format!("bad id: {}", id)));
+            return Err(Error::Path(format!("bad id: {id}")));
         }
 
         Ok(Self(id))
@@ -293,17 +293,17 @@ impl ExternalId {
 
         let cap = RE
             .captures(self.0.as_str())
-            .ok_or_else(|| Error::Path(format!("bad id: {}", self)))?;
+            .ok_or_else(|| Error::Path(format!("bad id: {self}")))?;
 
         if cap.len() != 4 {
-            return Err(Error::Path(format!("bad id: {}", self)));
+            return Err(Error::Path(format!("bad id: {self}")));
         }
 
         match (cap.get(1), cap.get(2), cap.get(3)) {
             (Some(part1), Some(part2), Some(part3)) => {
                 Ok((part1.as_str(), part2.as_str(), part3.as_str()))
             }
-            _ => Err(Error::Path(format!("bad id: {}", self))),
+            _ => Err(Error::Path(format!("bad id: {self}"))),
         }
     }
 }
@@ -453,7 +453,7 @@ impl TimerangePrefix {
 
     pub fn format(&self, name: &str) -> String {
         match self.prefix() {
-            Some(prefix) => format!("{} {}", prefix, name),
+            Some(prefix) => format!("{prefix} {name}"),
             None => name.to_owned(),
         }
     }
@@ -604,7 +604,7 @@ mod tests {
         fn display() {
             let id = RepoId::wiki();
             assert_eq!(
-                format!("{}", id),
+                format!("{id}"),
                 "32212616-fc1b-11e8-8eda-b70af6d8d09f".to_owned()
             );
         }

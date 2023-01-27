@@ -19,7 +19,7 @@ impl Config {
             "production"
         };
 
-        let filename = format!(".env.{}.local", profile);
+        let filename = format!(".env.{profile}.local");
         if Path::new(&filename).exists() {
             dotenv::from_filename(filename).ok();
         }

@@ -17,7 +17,7 @@ impl Kind {
         match kind {
             "Link" => Ok(Self::Link),
             "Topic" => Ok(Self::Topic),
-            _ => Err(Error::Repo(format!("unknown kind: {}", kind))),
+            _ => Err(Error::Repo(format!("unknown kind: {kind}"))),
         }
     }
 }

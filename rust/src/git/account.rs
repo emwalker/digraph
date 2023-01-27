@@ -23,7 +23,7 @@ impl DeleteAccount {
         let wiki = RepoId::wiki();
         for repo in self.personal_repos.iter() {
             if repo == &wiki {
-                return Err(Error::Repo(format!("not allowed to delete {}", wiki)));
+                return Err(Error::Repo(format!("not allowed to delete {wiki}")));
             }
         }
 

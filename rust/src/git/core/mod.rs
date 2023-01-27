@@ -46,7 +46,7 @@ impl Repo {
             Ok(repo) => Ok(Repo { inner: repo, path }),
             Err(err) => match err.code() {
                 git2::ErrorCode::NotFound => Self::init(&path),
-                _ => Err(Error::Repo(format!("unable to open repo: {:?}", path))),
+                _ => Err(Error::Repo(format!("unable to open repo: {path:?}"))),
             },
         }
     }
@@ -194,7 +194,7 @@ impl View {
         let result = self.find_blob_by_filename(&id.change_filename()?)?;
         match result {
             Some(blob) => Ok(blob.try_into()?),
-            None => Err(Error::NotFound(format!("not found: {}", id))),
+            None => Err(Error::NotFound(format!("not found: {id}"))),
         }
     }
 

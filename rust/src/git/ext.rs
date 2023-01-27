@@ -288,7 +288,7 @@ impl TryFrom<Object> for Topic {
     fn try_from(value: Object) -> Result<Self> {
         match value {
             Object::Topic(topic) => Ok(topic),
-            _ => Err(Error::Repo(format!("not a topic: {:?}", value))),
+            _ => Err(Error::Repo(format!("not a topic: {value:?}"))),
         }
     }
 }
@@ -465,7 +465,7 @@ impl TryFrom<Object> for Link {
     fn try_from(value: Object) -> Result<Self> {
         match value {
             Object::Link(link) => Ok(link),
-            _ => Err(Error::Repo(format!("not a link: {:?}", value))),
+            _ => Err(Error::Repo(format!("not a link: {value:?}"))),
         }
     }
 }

@@ -6,7 +6,7 @@ quick_error! {
         Auth(err: String) {}
 
         Blocking(err: String) {
-            from(err: actix_web::error::BlockingError) -> (format!("{}", err))
+            from(err: actix_web::error::BlockingError) -> (format!("{err}"))
         }
 
         Config(err: envy::Error) {
@@ -28,7 +28,7 @@ quick_error! {
         }
 
         Deserialization(err: String) {
-            from(err: serde_json::Error) -> (format!("{:?}", err))
+            from(err: serde_json::Error) -> (format!("{err:?}"))
         }
 
         Geotime(err: geotime::Error) {
@@ -36,15 +36,15 @@ quick_error! {
         }
 
         Git2(err: String) {
-            from(err: git2::Error) -> (format!("{}", err))
+            from(err: git2::Error) -> (format!("{err}"))
         }
 
         HeaderValue(err: String) {
-            from(err: actix_web::http::header::ToStrError) -> (format!("{:?}", err))
+            from(err: actix_web::http::header::ToStrError) -> (format!("{err:?}"))
         }
 
         IO(err: String) {
-            from(err: std::io::Error) -> (format!("{}", err))
+            from(err: std::io::Error) -> (format!("{err}"))
         }
 
         Load(err: String) {
@@ -62,7 +62,7 @@ quick_error! {
         RBAC(err: String) {}
 
         Redis(err: String) {
-            from(err: redis_rs::RedisError) -> (format!("{}", err))
+            from(err: redis_rs::RedisError) -> (format!("{err}"))
         }
 
         Repo(err: String) { }
@@ -76,11 +76,11 @@ quick_error! {
         }
 
         Ureq(err: String) {
-            from(err: ureq::Error) -> (format!("{}", err))
+            from(err: ureq::Error) -> (format!("{err}"))
         }
 
         UrlParse(err: String) {
-            from(err: url::ParseError) -> (format!("{}", err))
+            from(err: url::ParseError) -> (format!("{err}"))
         }
 
         Utf8Error(err: std::str::Utf8Error) {
@@ -96,7 +96,7 @@ quick_error! {
         }
 
         YAML(err: String) {
-            from(err: serde_yaml::Error) -> (format!("{}", err))
+            from(err: serde_yaml::Error) -> (format!("{err}"))
         }
     }
 }

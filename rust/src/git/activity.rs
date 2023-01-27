@@ -51,7 +51,7 @@ impl SynonymList {
 
     pub fn markdown(&self) -> String {
         fn quote(name: &String) -> String {
-            format!("\"{}\"", name)
+            format!("\"{name}\"")
         }
 
         match self.len() {
@@ -1006,7 +1006,7 @@ mod markdown {
                 }
             };
 
-            format!("{} {}", actor_name, markdown)
+            format!("{actor_name} {markdown}")
         }
     }
 
@@ -1025,22 +1025,19 @@ mod markdown {
                     match prefix.prefix() {
                         Some(prefix) => {
                             format!(
-                                r#"{} removed the time prefix "{}" from {}"#,
-                                actor_name, prefix, topic,
+                                r#"{actor_name} removed the time prefix "{prefix}" from {topic}"#,
                             )
                         }
                         None => {
                             format!(
-                                r#"{} removed the start time from {}, but no change will be seen"#,
-                                actor_name, topic,
+                                r#"{actor_name} removed the start time from {topic}, but no change will be seen"#,
                             )
                         }
                     }
                 }
                 None => {
                     format!(
-                        r#"{} removed the start time from {}, but it was already blank"#,
-                        actor_name, topic,
+                        r#"{actor_name} removed the start time from {topic}, but it was already blank"#,
                     )
                 }
             }
@@ -1116,7 +1113,7 @@ mod markdown {
             }
 
             if actions.is_empty() {
-                actions.push(format!("mysteriously updated {}", updated_topic));
+                actions.push(format!("mysteriously updated {updated_topic}"));
             }
 
             format!("{} {}", actor_name, actions.join(" and "))
@@ -1215,10 +1212,7 @@ mod markdown {
 
             match prefix.prefix() {
                 Some(prefix) => {
-                    format!(
-                        r#"{} updated the time prefix for {} to be "{}""#,
-                        actor_name, topic, prefix
-                    )
+                    format!(r#"{actor_name} updated the time prefix for {topic} to be "{prefix}""#)
                 }
                 None => format!(
                     "{} updated the start time for {} to be {}, but it will not be shown",

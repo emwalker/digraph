@@ -141,8 +141,7 @@ async fn drop_columns(pool: &PgPool) -> Result<()> {
     for (table, column) in DROP_COLUMNS {
         log::info!("dropping column {} from {} table", column, table);
         sqlx::query(&format!(
-            "alter table {} drop column if exists {}",
-            table, column
+            "alter table {table} drop column if exists {column}"
         ))
         .execute(pool)
         .await?;
@@ -177,7 +176,7 @@ static DROP_ITEMS: &[(&str, &str)] = &[
 async fn drop_items(pool: &PgPool) -> Result<()> {
     for (type_, name) in DROP_ITEMS {
         log::info!("dropping {} {}", type_, name);
-        sqlx::query(&format!("drop {} if exists {}", type_, name))
+        sqlx::query(&format!("drop {type_} if exists {name}"))
             .execute(pool)
             .await?;
     }

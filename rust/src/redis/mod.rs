@@ -198,7 +198,7 @@ impl Redis {
     }
 
     fn stats_key(&self, repo_id: RepoId, commit: &str) -> String {
-        format!("stats:{}:{}", repo_id, commit)
+        format!("stats:{repo_id}:{commit}")
     }
 }
 
@@ -219,7 +219,7 @@ impl git::SaveChangesForPrefix for Arc<Redis> {
             args.push((now, string));
         }
 
-        let key = Key(format!("activity:{}", repo_id));
+        let key = Key(format!("activity:{repo_id}"));
         if !args.is_empty() {
             log::info!("saving changes to {:?}", key);
             con.zadd_multiple(key, &args)?;
@@ -233,7 +233,7 @@ impl git::SaveChangesForPrefix for Arc<Redis> {
 
 impl git::activity::ActivityForPrefix for Arc<Redis> {
     fn fetch_activity(&self, repo_id: RepoId, first: usize) -> Result<Vec<git::activity::Change>> {
-        let key = Key(format!("activity:{}", repo_id));
+        let key = Key(format!("activity:{repo_id}"));
         log::info!("fetching activity for prefix {:?} from Redis", key);
         let mut con = self.connection()?;
 

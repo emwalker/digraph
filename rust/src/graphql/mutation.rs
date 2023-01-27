@@ -550,8 +550,7 @@ impl MutationRoot {
             Some(parent_topic) => parent_topic.into(),
             None => {
                 return Err(Error::NotFound(format!(
-                    "expected a parent topic: {}",
-                    parent_id
+                    "expected a parent topic: {parent_id}"
                 )))
             }
         };
