@@ -83,7 +83,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.4.3",
-    "@types/chroma-js": "^2.1.4",
+    "@types/chroma-js": "^2.1.5",
     "@types/compression": "^1.7.2",
     "@types/connect-redis": "^0.0.18",
     "@types/cookie-parser": "^1.4.3",
