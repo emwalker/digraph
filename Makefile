@@ -45,7 +45,7 @@ check-rust:
 	$(MAKE) -C rust check
 
 deploy-k8s:
-	kubectl apply -k k8s/overlays/next
+	kubectl apply -k k8s/overlays/prod
 
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
