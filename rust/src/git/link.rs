@@ -349,8 +349,10 @@ impl UpsertLink {
         let title = if let Some(title) = &self.title {
             title.clone()
         } else {
-            let response = self.fetcher.fetch(url)?;
-            response.title().unwrap_or_else(|| "Missing title".into())
+            match self.fetcher.fetch(url) {
+                Ok(response) => response.title().unwrap_or_else(|| "Missing title".into()),
+                Err(_) => "Failed to fetch title".into(),
+            }
         };
 
         let mut parent_topics = BTreeSet::new();

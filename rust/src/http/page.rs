@@ -1,4 +1,5 @@
 use scraper::{Html, Selector};
+use std::time::Duration;
 
 use super::repo_url::RepoUrl;
 use crate::prelude::*;
@@ -44,6 +45,7 @@ impl Page {
 
         log::info!("fetching page: {}", self.0);
         let text = ureq::get(&self.0.normalized)
+            .timeout(Duration::from_secs(20_000))
             .set("User-Agent", USER_AGENT)
             .call()?
             .into_string()?;
