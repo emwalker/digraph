@@ -67,7 +67,7 @@
     "regenerator-runtime": "^0.13.9",
     "relay-hooks": "^7.2.0",
     "relay-runtime": "^14.1.0",
-    "sass": "^1.58.0",
+    "sass": "^1.58.1",
     "serialize-javascript": "^6.0.1",
     "use-debounce": "^9.0.3"
   },
