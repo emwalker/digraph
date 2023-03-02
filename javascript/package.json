@@ -146,7 +146,7 @@
     "relay-compiler": "^14.1.0",
     "relay-test-utils": "^14.1.0",
     "semver": "~7.3.7",
-    "styled-components": "^5.3.5",
+    "styled-components": "^5.3.8",
     "typescript": "^4.9.5",
     "typescript-plugin-css-modules": "^4.2.2",
     "url-loader": "~4.1.0",
