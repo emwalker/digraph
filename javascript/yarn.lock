@@ -11741,10 +11741,10 @@ relay-compiler@^14.1.0:
   resolved "https://registry.yarnpkg.com/relay-compiler/-/relay-compiler-14.1.0.tgz#88e9c531eb14a6a31e6f14663982124d780bd1b6"
   integrity sha512-P8+CXm+Hq96z5NNwYl7hyGo5GgvMZDs9mXBRv7txUbJO4Ql9mXio3+D9EX3VfevRWTuE4ahM37i3Ssx1H604vA==
 
-relay-hooks@^7.2.0:
-  version "7.2.0"
-  resolved "https://registry.yarnpkg.com/relay-hooks/-/relay-hooks-7.2.0.tgz#0641929ce456a7be1d719e1e2f959b4b1c3611bb"
-  integrity sha512-5yBnAtjnxTPXArITn8oCqBqAIkYm06KykNWRY8cJCWFoBqBWbA2ygZ5AfOcsgNZk3cg1cEXxRzqj68vbDrr9TQ==
+relay-hooks@^7.2.1:
+  version "7.2.1"
+  resolved "https://registry.yarnpkg.com/relay-hooks/-/relay-hooks-7.2.1.tgz#c9a9e9ec49ab1374a044b30524245ebe7275e443"
+  integrity sha512-PQgiN7u0Yif0yVZ393S+qV4J8rYKOn/rdCdElMEp2RCfUcj7LdCrBQYgX0b0do9i1cNPWVWpbxPZ7kBUGODNCA==
   dependencies:
     "@restart/hooks" "^0.3.1"
     fbjs "^3.0.0"
