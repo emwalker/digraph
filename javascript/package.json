@@ -117,7 +117,7 @@
     "babel-jest": "^29.5.0",
     "babel-loader": "^9.1.2",
     "babel-plugin-react-css-modules": "~5.2.6",
-    "babel-plugin-relay": "^13.2.0",
+    "babel-plugin-relay": "^15.0.0",
     "babel-preset-razzle": "^4.2.16",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^15.0.0",
