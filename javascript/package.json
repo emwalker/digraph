@@ -143,7 +143,7 @@
     "razzle": "^4.2.16",
     "razzle-dev-utils": "^4.2.16",
     "razzle-plugin-scss": "^4.2.16",
-    "relay-compiler": "^14.1.0",
+    "relay-compiler": "^15.0.0",
     "relay-test-utils": "^15.0.0",
     "semver": "~7.3.7",
     "styled-components": "^5.3.8",
