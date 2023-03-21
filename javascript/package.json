@@ -153,7 +153,7 @@
     "webpack": "^5.76.0",
     "webpack-cli": "^4.10.0",
     "webpack-dev-middleware": "~5.3.3",
-    "webpack-dev-server": "^4.12.0",
+    "webpack-dev-server": "^4.13.1",
     "webpack-hot-middleware": "~2.25.1",
     "when": "~>3.7.8"
   },
