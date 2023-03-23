@@ -94,7 +94,7 @@
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/jest": "^29.4.1",
     "@types/jsdom": "^21.1.1",
-    "@types/node": "^18.15.0",
+    "@types/node": "^18.15.6",
     "@types/passport": "^1.0.7",
     "@types/passport-github2": "^1.2.5",
     "@types/ramda": "^0.28.23",
