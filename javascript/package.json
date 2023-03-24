@@ -152,7 +152,7 @@
     "url-loader": "~4.1.0",
     "webpack": "^5.76.3",
     "webpack-cli": "^4.10.0",
-    "webpack-dev-middleware": "~5.3.3",
+    "webpack-dev-middleware": "~6.0.2",
     "webpack-dev-server": "^4.13.1",
     "webpack-hot-middleware": "~2.25.1",
     "when": "~>3.7.8"
