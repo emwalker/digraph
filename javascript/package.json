@@ -49,7 +49,6 @@
     "path": "^0.12.7",
     "proxy-middleware": "~>0.15.0",
     "ramda": "~0.28.0",
-    "razzle-plugin-typescript": "^4.2.16",
     "react": "~18.2.0",
     "react-async-ssr": "^0.7.2",
     "react-dom": "~18.2.0",
