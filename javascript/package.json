@@ -61,7 +61,7 @@
     "react-select": "^5.7.2",
     "react-social-login-buttons": "^3.6.0",
     "react-timeago": "^7.1.0",
-    "redis": "^4.6.5",
+    "redis": "^4.6.6",
     "redux": "^4.2.1",
     "regenerator-runtime": "^0.13.9",
     "relay-hooks": "^7.2.1",
