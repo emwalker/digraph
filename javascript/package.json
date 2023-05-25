@@ -134,7 +134,7 @@
     "jest-environment-jsdom": "^29.5.0",
     "jest-matcher-utils": "^29.4.3",
     "jest-snapshot": "^29.5.0",
-    "mini-css-extract-plugin": "^2.7.5",
+    "mini-css-extract-plugin": "^2.7.6",
     "node-polyfill-webpack-plugin": "^1.1.4",
     "normalize.css": "~8.0.1",
     "postcss-import": "^14.1.0",
