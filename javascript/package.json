@@ -76,7 +76,7 @@
     "@babel/core": "^7.22.1",
     "@babel/plugin-proposal-throw-expressions": "^7.16.7",
     "@babel/plugin-transform-react-jsx": "^7.21.0",
-    "@babel/preset-react": "^7.17.12",
+    "@babel/preset-react": "^7.22.3",
     "@babel/preset-typescript": "^7.21.4",
     "@koddsson/postcss-sass": "^5.0.1",
     "@testing-library/jest-dom": "^5.16.5",
