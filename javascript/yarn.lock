@@ -2533,10 +2533,10 @@
   resolved "https://registry.yarnpkg.com/@types/regenerator-runtime/-/regenerator-runtime-0.13.1.tgz#1285f0b1b0508e0ead609104b9a42409473122d1"
   integrity sha512-Wr4Kopo+zs7kl1mxveVrP7Hl5nEzauQKdSNFN5Eg27Ze11MAgJYKgidYc9AAkQzGXXWH9lqVzPbXUGH6M8VY6g==
 
-"@types/relay-runtime@*", "@types/relay-runtime@^14.1.8":
-  version "14.1.8"
-  resolved "https://registry.yarnpkg.com/@types/relay-runtime/-/relay-runtime-14.1.8.tgz#81c8ceb30720c689971f1c7983c26d38a3ae4170"
-  integrity sha512-75kud8ZhIoMLGwcqpp4guE0q6gAvM2MtRCC+eweTGJe1pfaqSyxxIM4EnMS9bTRiJlLbHtlZNhJ5yIDwhF0BqA==
+"@types/relay-runtime@*", "@types/relay-runtime@^14.1.10":
+  version "14.1.10"
+  resolved "https://registry.yarnpkg.com/@types/relay-runtime/-/relay-runtime-14.1.10.tgz#302ca8bb47c72f591b137ac210a314faa44be5be"
+  integrity sha512-px/vskDhwlsh+fRiF9s9TBB84U6FbCfFzdgusnVtN8iQ3lLebHlt/v1v6YzpqUZFDXZxvC6GWUbhXcCfSZwN9A==
 
 "@types/relay-test-utils@^14.1.0":
   version "14.1.0"
