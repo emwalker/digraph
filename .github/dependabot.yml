@@ -3,14 +3,14 @@ updates:
   - package-ecosystem: "npm"
     directory: "/javascript"
     schedule:
-      interval: "daily"
+      interval: "weekly"
 
   - package-ecosystem: "cargo"
     directory: "/rust"
     schedule:
-      interval: "daily"
+      interval: "weekly"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
