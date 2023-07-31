@@ -32,7 +32,7 @@ path = "tests/lib.rs"
 actix-rt = "2"
 actix-web = "4"
 async-graphql = { version = "5", features = ["apollo_tracing", "cbor", "dataloader", "log", "uuid"] }
-async-graphql-actix-web = "5"
+async-graphql-actix-web = "6"
 async-std = "1"
 async-trait = "0"
 base64 = "0"
