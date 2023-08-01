@@ -75,7 +75,7 @@
   "devDependencies": {
     "@babel/core": "^7.22.5",
     "@babel/plugin-proposal-throw-expressions": "^7.16.7",
-    "@babel/plugin-transform-react-jsx": "^7.21.0",
+    "@babel/plugin-transform-react-jsx": "^7.22.5",
     "@babel/preset-react": "^7.22.3",
     "@babel/preset-typescript": "^7.22.5",
     "@koddsson/postcss-sass": "^5.0.1",
