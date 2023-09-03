@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 timestamp=$(date +"%Y%m%d")
 filename=${timestamp}-production-backup.tar.gz
 archive=/var/lib/digraph/backups/$filename
