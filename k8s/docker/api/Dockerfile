@@ -1,4 +1,4 @@
-FROM rust:1.66-buster as builder
+FROM rust:1.72-buster as builder
 WORKDIR /usr/src/digraph
 COPY ./rust .
 RUN cargo build --release --bin api
