@@ -1,10 +1,10 @@
-FROM mhart/alpine-node:14
+FROM node:20-alpine3.17
 
 WORKDIR /app
 
 COPY ./javascript/package.json ./
 COPY ./javascript/yarn.lock ./
-RUN yarn install --production
+RUN yarn install --production --ignore-platform
 
 
 FROM mhart/alpine-node:slim-14
