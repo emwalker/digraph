@@ -602,7 +602,7 @@ mod update_topic_synonyms {
         }
         .call(f.mutation(), &redis::Noop);
 
-        assert!(matches!(result, Err(_)));
+        assert!(result.is_err());
     }
 }
 

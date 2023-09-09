@@ -37,7 +37,7 @@ pub struct SearchTopicSpec {
     pub id: ExternalId,
 }
 
-const ID_PATTERN: &str = r#"^in:[\w-]+$"#;
+const ID_PATTERN: &str = r"^in:[\w-]+$";
 
 impl SearchTopicSpec {
     fn valid_path_spec(input: &str) -> bool {

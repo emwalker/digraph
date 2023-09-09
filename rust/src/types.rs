@@ -611,11 +611,8 @@ mod tests {
 
         #[test]
         fn validation() {
-            assert!(matches!(
-                RepoId::try_from("32212616-fc1b-11e8-8eda-b70af6d8d09"),
-                Err(_)
-            ));
-            assert!(matches!(RepoId::try_from("random"), Err(_)));
+            assert!(RepoId::try_from("32212616-fc1b-11e8-8eda-b70af6d8d09").is_err());
+            assert!(RepoId::try_from("random").is_err());
         }
     }
 }

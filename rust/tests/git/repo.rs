@@ -66,7 +66,7 @@ mod delete_account {
         assert_ne!(actor.user_id, "1");
 
         let result = delete(&f, repo_id, &actor, "1");
-        assert!(matches!(result, Err(_)));
+        assert!(result.is_err());
         assert!(path.exists());
     }
 
@@ -81,7 +81,7 @@ mod delete_account {
         assert!(path.exists());
 
         let result = delete(&f, repo_id, &actor, &actor.user_id);
-        assert!(matches!(result, Err(_)));
+        assert!(result.is_err());
         assert!(path.exists());
     }
 
@@ -99,7 +99,7 @@ mod delete_account {
         assert!(!path.exists());
 
         let result = delete(&f, repo_id, &actor, &actor.user_id);
-        assert!(matches!(result, Ok(_)));
+        assert!(result.is_ok());
         assert!(!path.exists());
     }
 }
