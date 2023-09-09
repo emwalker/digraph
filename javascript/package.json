@@ -17,7 +17,7 @@
     "@dnd-kit/sortable": "^7.0.2",
     "@dnd-kit/utilities": "^3.2.1",
     "@draft-js-plugins/editor": "^4.1.4",
-    "@draft-js-plugins/mention": "^5.2.1",
+    "@draft-js-plugins/mention": "^5.2.2",
     "@emotion/serialize": "^1.1.2",
     "@primer/css": "^21.0.1",
     "@types/react-dom": "^18.2.7",
