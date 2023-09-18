@@ -63,7 +63,7 @@
     "react-timeago": "^7.1.0",
     "redis": "^4.6.7",
     "redux": "^4.2.1",
-    "regenerator-runtime": "^0.13.9",
+    "regenerator-runtime": "^0.14.0",
     "relay-hooks": "^8.0.0",
     "relay-runtime": "^15.0.0",
     "sass": "^1.66.1",
