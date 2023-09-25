@@ -2640,10 +2640,10 @@
   resolved "https://registry.yarnpkg.com/@types/parse-json/-/parse-json-4.0.0.tgz#2f8bb441434d163b35fb8ffdccd7138927ffb8c0"
   integrity sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==
 
-"@types/passport-github2@^1.2.5":
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/@types/passport-github2/-/passport-github2-1.2.5.tgz#79064e213ff33ca0a9d21af3da09a3230fac8099"
-  integrity sha512-+WLyrd8JPsCxroK34EjegR0j3FMxp6wqB9cw/sRCFkWT9qic1dymAn021gr336EpyjzdhjUd2KKrqyxvdFSvOA==
+"@types/passport-github2@^1.2.6":
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/@types/passport-github2/-/passport-github2-1.2.6.tgz#d4473ce903a65a353f65dd096eb015933aa44976"
+  integrity sha512-AANBYVs8z/YlEWxt9LgzhSVMdKgJXuY5PDlyvwvV3KsD1s4+YeEAz3M4OPh2gV8n2PJp0HCNO4cGA1oaiZKqwA==
   dependencies:
     "@types/express" "*"
     "@types/passport" "*"
@@ -2658,14 +2658,7 @@
     "@types/oauth" "*"
     "@types/passport" "*"
 
-"@types/passport@*":
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/@types/passport/-/passport-1.0.7.tgz#85892f14932168158c86aecafd06b12f5439467a"
-  integrity sha512-JtswU8N3kxBYgo+n9of7C97YQBT+AYPP2aBfNGTzABqPAZnK/WOAaKfh3XesUYMZRrXFuoPc2Hv0/G/nQFveHw==
-  dependencies:
-    "@types/express" "*"
-
-"@types/passport@^1.0.7":
+"@types/passport@*", "@types/passport@^1.0.7":
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/@types/passport/-/passport-1.0.11.tgz#d046b41e28b280f4e7994614fb976e9b449cb7c6"
   integrity sha512-pz1cx9ptZvozyGKKKIPLcVDVHwae4hrH5d6g5J+DkMRRjR3cVETb4jMabhXAUbg3Ov7T22nFHEgaK2jj+5CBpw==
