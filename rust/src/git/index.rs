@@ -152,7 +152,7 @@ impl SynonymIndexMap {
         self.synonyms
             .get(term)
             .map(|set| set.to_owned())
-            .unwrap_or_else(BTreeSet::new)
+            .unwrap_or_default()
     }
 
     fn prefix_matches(&self, token: &Phrase) -> BTreeSet<SynonymEntry> {
