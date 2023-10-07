@@ -316,7 +316,7 @@ impl Tree {
             if path.is_empty() {
                 self.files.insert(name, oid.to_owned());
             } else {
-                let subtree = self.subtrees.entry(name).or_insert_with(Tree::new);
+                let subtree = self.subtrees.entry(name).or_default();
                 subtree.add_blob(path, oid);
             }
         }
@@ -364,7 +364,7 @@ impl Update {
 
     pub fn add(&mut self, repo_id: RepoId, filename: &Path, oid: &Option<git2::Oid>) -> Result<()> {
         let mut deque = deque_from_path(filename);
-        let tree = self.0.entry(repo_id).or_insert_with(Tree::new);
+        let tree = self.0.entry(repo_id).or_default();
         tree.add_blob(&mut deque, oid);
         Ok(())
     }
