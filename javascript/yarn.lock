@@ -1599,15 +1599,15 @@
   resolved "https://registry.yarnpkg.com/@github/image-crop-element/-/image-crop-element-5.0.0.tgz#6ae2c31f1e7dc355c41c3140554fb76ca7a71ef7"
   integrity sha512-Vgm2OwWAs1ESoib/t5sjxsAYo6YTOxxAjWDRxswX7qrqoyCejTZ3hshdo4Ep5e+Mz/GVTZC3rdMtg06dk/eT4g==
 
+"@github/include-fragment-element@^6.1.1":
+  version "6.3.0"
+  resolved "https://registry.yarnpkg.com/@github/include-fragment-element/-/include-fragment-element-6.3.0.tgz#c93d6252b14f7c190af4ccd9d61884185a612492"
+  integrity sha512-BJTt8ZE/arsbC9lQtTH8c1hZS0ZigiN+kzH54ffQ6MhHLT83h0OpSdS9NEVocPl2uuO6w3qxnEKTDzUGMQ5rdQ==
+
 "@github/mini-throttle@^1.0.7":
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/@github/mini-throttle/-/mini-throttle-1.0.7.tgz#938d6eb45d00d07043a669baabfcafa072833f10"
   integrity sha512-1fzCDXpxI4J59pNmO0r0Y1g+R8Sa2B5ersce8AuFu5STMu7b++9osdedK0zWduYowBIgsPQZihJBN19WrAF64g==
-
-"@github/mini-throttle@^2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@github/mini-throttle/-/mini-throttle-2.1.0.tgz#583a1d5e383caa21a1c067a649f15f7ab575dccf"
-  integrity sha512-iEeR2OdVCPkdIPUszL8gJnKNu4MR8ANh7y0u/LPyaatYezgaWxUZEzhFntloqQq+HE6MZkFy+cl+xzCNuljOdw==
 
 "@github/relative-time-element@^4.0.0":
   version "4.1.5"
@@ -2139,10 +2139,10 @@
     mkdirp "^1.0.4"
     rimraf "^3.0.2"
 
-"@oddbird/popover-polyfill@^0.0.10":
-  version "0.0.10"
-  resolved "https://registry.yarnpkg.com/@oddbird/popover-polyfill/-/popover-polyfill-0.0.10.tgz#1e6d928390205319fe7aa11f66e70214ee72dd53"
-  integrity sha512-jkfX/35EsxDe9ruTx3He59FyE+y5WDF5S4YJ7TABj0c8egHV2FLeADavknvr12CnSu0QTybv9ufKfPJDsYZYNw==
+"@oddbird/popover-polyfill@^0.2.1":
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/@oddbird/popover-polyfill/-/popover-polyfill-0.2.3.tgz#5e373c332061a2fa9b9aa17fdec8dc3048623d3c"
+  integrity sha512-XDK+V/gUeE4NEsWp79eVzhlK3wuVcRDJuaas63qo0IJLJpyOLHqycJLFYvuq8kebgT1nl87P3sbSb5ZN6Vyf5g==
 
 "@pmmmwh/react-refresh-webpack-plugin@^0.4.3":
   version "0.4.3"
@@ -2161,28 +2161,28 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.8.tgz#6b79032e760a0899cd4204710beede972a3a185f"
   integrity sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==
 
-"@primer/behaviors@^1.2.0":
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/@primer/behaviors/-/behaviors-1.3.1.tgz#febae28e5f7824f1fa547389b3ff8563e171da58"
-  integrity sha512-aMRDUQ350lk0FxtL5gJWPFHHOSSzDbJ6uNJVIt8XSqiGe1pxuW5mVVfrEp1uvzZ0pCHkCdm9fycjnfOeMeIrOQ==
+"@primer/behaviors@^1.3.4":
+  version "1.3.5"
+  resolved "https://registry.yarnpkg.com/@primer/behaviors/-/behaviors-1.3.5.tgz#111eb550675577790cc01b14f3cf720332a2a046"
+  integrity sha512-HWwz+6MrfK5NTWcg9GdKFpMBW/yrAV937oXiw2eDtsd88P3SRwoCt6ZO6QmKp9RP3nDU9cbqmuGZ0xBh0eIFeg==
 
-"@primer/css@^21.0.1":
-  version "21.0.1"
-  resolved "https://registry.yarnpkg.com/@primer/css/-/css-21.0.1.tgz#51982815ee3735151e022df625425cd33dc31d54"
-  integrity sha512-yHBDYnNQk0W7e3h0Eadh/RCbPl4WEvuO5dwj/qLE/kZodBn7JGhU7xMQKDnj37ck27dS311ngXUuLH42s3wXBw==
+"@primer/css@^21.0.9":
+  version "21.0.9"
+  resolved "https://registry.yarnpkg.com/@primer/css/-/css-21.0.9.tgz#44e0dd6f57452a2d3397614e9150e92753adf3ad"
+  integrity sha512-kk0TfLqtGwGYJ/qXGLMXDIL4d3qWPjlEB12Hvk08krulbsQRWEsnXjejBIvJG69GyOOuYxXNoHvP2NGenxQ8Jw==
   dependencies:
-    "@primer/primitives" "^7.11.7"
-    "@primer/view-components" "^0.1.0"
+    "@primer/primitives" "^7.12.0"
+    "@primer/view-components" "^0.5.1"
 
-"@primer/primitives@^7.11.7":
-  version "7.11.10"
-  resolved "https://registry.yarnpkg.com/@primer/primitives/-/primitives-7.11.10.tgz#9572358f1209dcd2ce3f1f0de12188dffae038e5"
-  integrity sha512-KwChxyp4qbLojZx5Nz8RUElM9K+ObzZWvzkYEu76TC4qEsqb9wW7n78jyov5WhUh5+qj2Qac1iCsPfeTQG5YBw==
+"@primer/primitives@^7.12.0":
+  version "7.14.1"
+  resolved "https://registry.yarnpkg.com/@primer/primitives/-/primitives-7.14.1.tgz#d650c6eb96f363b64f3afac7654f6009c92c5522"
+  integrity sha512-hFwHD85ymknQwIKbQw/hPdL3xoa7l3F1/SrBX5OeoDEOeH+W4/hYZPZF7epphVJxugkq5XhtbZ2no/BQEbasGQ==
 
-"@primer/view-components@^0.1.0":
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/@primer/view-components/-/view-components-0.1.4.tgz#2d45fc6c98a95cb9d62fce90b6f252be3476eed1"
-  integrity sha512-Z5rqs84o7Qox0pEMe5LJW5C/Pgn/YMV7cRjaWJxwvPrlMGtBIk1ds7IcgymcEH2DY/6Jvsm4WQIEwA2AIiHVlg==
+"@primer/view-components@^0.5.1":
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/@primer/view-components/-/view-components-0.5.1.tgz#5ea47ff3c76eb693af8cb1499e39f4545a112048"
+  integrity sha512-TI51R4rVobwK6sWRhu7HRHC6yxud2I9P1sYN6o/fHhIq7QU31mJyv1PtD8nfhmOqN/SsRC6q3pnCbh5Qt1wD/g==
   dependencies:
     "@github/auto-check-element" "^5.2.0"
     "@github/auto-complete-element" "^3.3.4"
@@ -2190,11 +2190,11 @@
     "@github/clipboard-copy-element" "^1.1.2"
     "@github/details-menu-element" "^1.0.12"
     "@github/image-crop-element" "^5.0.0"
-    "@github/mini-throttle" "^2.1.0"
+    "@github/include-fragment-element" "^6.1.1"
     "@github/relative-time-element" "^4.0.0"
     "@github/tab-container-element" "^3.1.2"
-    "@oddbird/popover-polyfill" "^0.0.10"
-    "@primer/behaviors" "^1.2.0"
+    "@oddbird/popover-polyfill" "^0.2.1"
+    "@primer/behaviors" "^1.3.4"
 
 "@redis/bloom@1.2.0":
   version "1.2.0"
