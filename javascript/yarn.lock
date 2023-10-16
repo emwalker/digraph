@@ -2888,10 +2888,10 @@
   resolved "https://registry.yarnpkg.com/@types/webpack-env/-/webpack-env-1.18.1.tgz#49699bb508961e14a3bfb68c78cd87b296889d1d"
   integrity sha512-D0HJET2/UY6k9L6y3f5BL+IDxZmPkYmPT4+qBrRdmRLYRuV0qNKizMgTvYxXZYn+36zjPeoDZAEYBCM6XB+gww==
 
-"@types/ws@^8.5.1":
-  version "8.5.4"
-  resolved "https://registry.yarnpkg.com/@types/ws/-/ws-8.5.4.tgz#bb10e36116d6e570dd943735f86c933c1587b8a5"
-  integrity sha512-zdQDHKUgcX/zBc4GrwsE/7dVdAD8JR4EuiAXiiUhhfyIJXXb2+PrGshFyeXWQPMmmZ2XxgaqclgpIC7eTXc1mg==
+"@types/ws@^8.5.5":
+  version "8.5.7"
+  resolved "https://registry.yarnpkg.com/@types/ws/-/ws-8.5.7.tgz#1ca585074fe5d2c81dec7a3d451f244a2a6d83cb"
+  integrity sha512-6UrLjiDUvn40CMrAubXuIVtj2PEfKDffJS7ychvnPU44j+KVeXmdHHTgqcM/dxLUTHxlXHiFM8Skmb8ozGdTnQ==
   dependencies:
     "@types/node" "*"
 
@@ -14355,10 +14355,10 @@ webpack-dev-middleware@~6.1.1:
     range-parser "^1.2.1"
     schema-utils "^4.0.0"
 
-webpack-dev-server@^4.15.0:
-  version "4.15.0"
-  resolved "https://registry.yarnpkg.com/webpack-dev-server/-/webpack-dev-server-4.15.0.tgz#87ba9006eca53c551607ea0d663f4ae88be7af21"
-  integrity sha512-HmNB5QeSl1KpulTBQ8UT4FPrByYyaLxpJoQ0+s7EvUrMc16m0ZS1sgb1XGqzmgCPk0c9y+aaXxn11tbLzuM7NQ==
+webpack-dev-server@^4.15.1:
+  version "4.15.1"
+  resolved "https://registry.yarnpkg.com/webpack-dev-server/-/webpack-dev-server-4.15.1.tgz#8944b29c12760b3a45bdaa70799b17cb91b03df7"
+  integrity sha512-5hbAst3h3C3L8w6W4P96L5vaV0PxSmJhxZvWKYIdgxOQm8pNZ5dEOmmSLBVpP85ReeyRt6AS1QJNyo/oFFPeVA==
   dependencies:
     "@types/bonjour" "^3.5.9"
     "@types/connect-history-api-fallback" "^1.3.5"
@@ -14366,7 +14366,7 @@ webpack-dev-server@^4.15.0:
     "@types/serve-index" "^1.9.1"
     "@types/serve-static" "^1.13.10"
     "@types/sockjs" "^0.3.33"
-    "@types/ws" "^8.5.1"
+    "@types/ws" "^8.5.5"
     ansi-html-community "^0.0.8"
     bonjour-service "^1.0.11"
     chokidar "^3.5.3"
