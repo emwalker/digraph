@@ -20,7 +20,7 @@
     "@draft-js-plugins/mention": "^5.2.2",
     "@emotion/serialize": "^1.1.2",
     "@primer/css": "^21.0.1",
-    "@types/react-dom": "^18.2.13",
+    "@types/react-dom": "^18.2.14",
     "array-move": "^3.0.0",
     "chroma-js": "~2.4.2",
     "classnames": "~2.3.1",
