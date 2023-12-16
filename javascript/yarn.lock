@@ -2831,10 +2831,10 @@
   resolved "https://registry.yarnpkg.com/@types/semver/-/semver-7.3.13.tgz#da4bfd73f49bd541d28920ab0e2bf0ee80f71c91"
   integrity sha512-21cFJr9z3g5dW8B0CVI9g2O9beqaThGQ6ZFBqHfwhzLDKUxaqTIy3vnfah/UPkfOiF2pLq+tGz+W8RyCskuslw==
 
-"@types/serialize-javascript@^5.0.3":
-  version "5.0.3"
-  resolved "https://registry.yarnpkg.com/@types/serialize-javascript/-/serialize-javascript-5.0.3.tgz#daee5bc238195d2db6f0bb3a6e99b0ccb2448bfc"
-  integrity sha512-jz2WlMFHH85UD+SH9soACEO7v4I6kThWb7RcbT6aSCJ4hXsxOwZxwFkmXCC2ZpIjzaRKRfxVw+DvRtvqE8Ntig==
+"@types/serialize-javascript@^5.0.4":
+  version "5.0.4"
+  resolved "https://registry.yarnpkg.com/@types/serialize-javascript/-/serialize-javascript-5.0.4.tgz#7a7c32248e207a0d29afed88e5ee3e921999c73d"
+  integrity sha512-Z2R7UKFuNWCP8eoa2o9e5rkD3hmWxx/1L0CYz0k2BZzGh0PhEVMp9kfGiqEml/0IglwNERXZ2hwNzIrSz/KHTA==
 
 "@types/serve-index@^1.9.1":
   version "1.9.1"
