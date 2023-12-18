@@ -4830,10 +4830,10 @@ core-js-compat@^3.31.0:
   dependencies:
     browserslist "^4.21.9"
 
-core-js-pure@^3.33.0:
-  version "3.33.0"
-  resolved "https://registry.yarnpkg.com/core-js-pure/-/core-js-pure-3.33.0.tgz#938a28754b4d82017a7a8cbd2727b1abecc63591"
-  integrity sha512-FKSIDtJnds/YFIEaZ4HszRX7hkxGpNKM7FC9aJ9WLJbSd3lD4vOltFuVIBLR8asSx9frkTSqL0dw90SKQxgKrg==
+core-js-pure@^3.34.0:
+  version "3.34.0"
+  resolved "https://registry.yarnpkg.com/core-js-pure/-/core-js-pure-3.34.0.tgz#981e462500708664c91b827a75b011f04a8134a0"
+  integrity sha512-pmhivkYXkymswFfbXsANmBAewXx86UBfmagP+w0wkK06kLsLlTK5oQmsURPivzMkIBQiYq2cjamcZExIwlFQIg==
 
 core-js@^3.32.1, core-js@^3.6.4:
   version "3.32.1"
