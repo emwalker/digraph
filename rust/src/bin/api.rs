@@ -6,10 +6,9 @@ use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use base64::engine::general_purpose;
 use base64::Engine;
 use digraph::types::Timespec;
+use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
-
-use std::env;
 
 use digraph::config::Config;
 use digraph::db;
