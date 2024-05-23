@@ -56,7 +56,6 @@ impl UserLoader {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader<String> for UserLoader {
     type Value = Row;
     type Error = Error;
@@ -119,10 +118,10 @@ impl<'i> UpsertRegisteredUser<'i> {
             Some(row) => row,
             None => {
                 log::info!("user {} not found, creating", username);
-                let tx = pool.begin().await?;
-                let (tx, user) = self.create_github_user(tx).await?;
-                let tx = CompleteRegistration::new(&user, &self.input.github_username)
-                    .call(tx)
+                let mut tx = pool.begin().await?;
+                let user = self.create_github_user(&mut tx).await?;
+                CompleteRegistration::new(&user, &self.input.github_username)
+                    .call(&mut tx)
                     .await?;
                 tx.commit().await?;
                 user
@@ -132,10 +131,7 @@ impl<'i> UpsertRegisteredUser<'i> {
         Ok(UpsertUserResult { user })
     }
 
-    async fn create_github_user<'t>(
-        &'t self,
-        mut tx: PgTransaction<'t>,
-    ) -> Result<(PgTransaction<'t>, Row)> {
+    async fn create_github_user<'t>(&'t self, tx: &mut PgTransaction<'_>) -> Result<Row> {
         let row = sqlx::query_as::<_, Row>(
             r#"insert into users
                 (name, avatar_url, primary_email, github_username, github_avatar_url)
@@ -153,7 +149,7 @@ impl<'i> UpsertRegisteredUser<'i> {
         .bind(&self.input.primary_email)
         .bind(&self.input.github_username)
         .bind(&self.input.github_avatar_url)
-        .fetch_one(&mut tx)
+        .fetch_one(&mut **tx)
         .await?;
 
         sqlx::query(
@@ -166,10 +162,10 @@ impl<'i> UpsertRegisteredUser<'i> {
         .bind(&self.input.primary_email)
         .bind(row.id)
         .bind(&self.input.github_username)
-        .execute(&mut tx)
+        .execute(&mut **tx)
         .await?;
 
-        Ok((tx, row))
+        Ok(row)
     }
 }
 
@@ -229,7 +225,7 @@ impl DeleteAccount {
 
         sqlx::query("insert into deleted_users (user_id) values ($1::uuid)")
             .bind(&self.user_id)
-            .execute(&mut tx)
+            .execute(&mut *tx)
             .await?;
 
         if let Some(login) = row.login {
@@ -237,13 +233,13 @@ impl DeleteAccount {
             sqlx::query("delete from organizations where login = $1")
                 .bind(&login)
                 .bind(&self.user_id)
-                .execute(&mut tx)
+                .execute(&mut *tx)
                 .await?;
         }
 
         sqlx::query("delete from users where id = $1::uuid")
             .bind(&self.user_id)
-            .execute(&mut tx)
+            .execute(&mut *tx)
             .await?;
 
         tx.commit().await?;

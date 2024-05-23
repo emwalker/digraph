@@ -47,7 +47,6 @@ fn try_convert(rows: Vec<Row>) -> Result<HashMap<String, Organization>> {
     Ok(map)
 }
 
-#[async_trait::async_trait]
 impl Loader<String> for OrganizationLoader {
     type Value = Organization;
     type Error = Error;

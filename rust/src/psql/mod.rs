@@ -1,5 +1,3 @@
-use sqlx::{Postgres, Transaction};
-
 mod organization;
 pub use organization::*;
 mod registration;
@@ -11,4 +9,4 @@ pub use session::*;
 pub mod user;
 pub use user::*;
 
-type PgTransaction<'t> = Transaction<'t, Postgres>;
+type PgTransaction<'t> = sqlx::Transaction<'t, sqlx::Postgres>;

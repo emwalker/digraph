@@ -91,7 +91,6 @@ impl RepositoryLoader {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader<String> for RepositoryLoader {
     type Value = Repository;
     type Error = Error;

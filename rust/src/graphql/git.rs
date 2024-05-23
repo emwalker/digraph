@@ -23,7 +23,6 @@ impl ObjectLoader {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader<Okey> for ObjectLoader {
     type Value = git::Object;
     type Error = Error;

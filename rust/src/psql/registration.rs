@@ -13,7 +13,7 @@ impl<'s> CompleteRegistration<'s> {
         Self { user, login }
     }
 
-    pub async fn call<'t>(&self, mut tx: PgTransaction<'t>) -> Result<PgTransaction<'t>> {
+    pub async fn call<'t>(&self, tx: &mut PgTransaction<'t>) -> Result<()> {
         let (user_id, name) = self.user_info();
         log::info!("completing registration for {}", name);
 
@@ -27,7 +27,7 @@ impl<'s> CompleteRegistration<'s> {
         .bind(self.login)
         .bind(DEFAULT_ORGANIZATION_NAME)
         .bind(user_id)
-        .fetch_one(&mut tx)
+        .fetch_one(&mut **tx)
         .await?;
 
         log::info!(
@@ -54,7 +54,7 @@ impl<'s> CompleteRegistration<'s> {
         .bind(organization_id)
         .bind(DEFAULT_REPOSITORY_NAME)
         .bind(user_id)
-        .fetch_one(&mut tx)
+        .fetch_one(&mut **tx)
         .await?;
 
         // Add permissions for personal repo
@@ -65,7 +65,7 @@ impl<'s> CompleteRegistration<'s> {
         )
         .bind(organization_id)
         .bind(repository_id)
-        .execute(&mut tx)
+        .execute(&mut **tx)
         .await?;
 
         // Add permissions for wiki repo
@@ -79,7 +79,7 @@ impl<'s> CompleteRegistration<'s> {
                 on conflict do nothing",
         )
         .bind(user_id)
-        .execute(&mut tx)
+        .execute(&mut **tx)
         .await?;
 
         log::info!("marking user {} as registered", name);
@@ -92,10 +92,10 @@ impl<'s> CompleteRegistration<'s> {
         )
         .bind(self.login)
         .bind(user_id)
-        .execute(&mut tx)
+        .execute(&mut **tx)
         .await?;
 
-        Ok(tx)
+        Ok(())
     }
 
     fn user_info(&self) -> (&Uuid, &str) {

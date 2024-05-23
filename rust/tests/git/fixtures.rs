@@ -247,7 +247,7 @@ mod tests {
         .call(f.mutation(), &redis::Noop)
         .unwrap();
         let climate_change_weather = repo_topic.unwrap();
-        let parent_topic_ids = vec![
+        let parent_topic_ids = [
             climate_change.topic_id().to_owned(),
             weather.topic_id().to_owned(),
         ];

@@ -224,7 +224,7 @@ impl UpsertLink {
         if let Some(title) = &self.title {
             match &mut link.metadata.details {
                 Some(extra) => {
-                    extra.title = title.trim().to_owned();
+                    title.trim().clone_into(&mut extra.title);
                 }
 
                 None => {
