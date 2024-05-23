@@ -34,7 +34,7 @@ mod delete_account {
         git::DeleteAccount {
             actor: Arc::clone(actor),
             user_id: user_id.to_owned(),
-            personal_repos: RepoIds::try_from(&vec![repo_id]).unwrap(),
+            personal_repos: RepoIds::from(&vec![repo_id]),
         }
         .call(&f.mutation())
     }
@@ -149,7 +149,7 @@ mod ensure_personal_repo {
     #[actix_web::test]
     async fn fetch_stats() {
         let f = Fixtures::copy("simple");
-        let repos = RepoIds::try_from(&vec![RepoId::wiki(), RepoId::other()]).unwrap();
+        let repos = RepoIds::from(&vec![RepoId::wiki(), RepoId::other()]);
         let viewer = viewer(&repos);
 
         let git::FetchStatsResult { stats } = git::FetchStats { viewer }

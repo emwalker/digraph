@@ -20,7 +20,7 @@ fn viewer(repo_ids: &RepoIds) -> Arc<Viewer> {
 }
 
 fn actor() -> Arc<Viewer> {
-    let repos = RepoIds::try_from(&vec![RepoId::wiki(), RepoId::other()]).unwrap();
+    let repos = RepoIds::from(&vec![RepoId::wiki(), RepoId::other()]);
     viewer(&repos)
 }
 

@@ -12,7 +12,7 @@ mod visibility {
     use digraph::{git::Client, types::Timespec};
 
     fn viewer(repo_ids: &Vec<RepoId>) -> Arc<Viewer> {
-        let repo_ids = RepoIds::try_from(repo_ids).unwrap();
+        let repo_ids = RepoIds::from(repo_ids);
         Arc::new(Viewer {
             context_repo_id: RepoId::wiki(),
             read_repo_ids: repo_ids.to_owned(),

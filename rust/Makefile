@@ -15,7 +15,7 @@ export:
 
 format:
 	cargo fmt
-	cargo clippy --fix -- -D warnings
+	cargo clippy --fix --allow-dirty -- -D warnings
 
 migrate:
 	cargo run --bin migrate
