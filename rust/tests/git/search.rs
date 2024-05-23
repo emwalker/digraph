@@ -104,7 +104,7 @@ mod fetch_matches {
             }
 
             let (head, tail) = topic_paths.split_at(1);
-            match head.get(0) {
+            match head.first() {
                 Some(path) => {
                     let mut set = self.downset(path);
                     for other_path in tail {

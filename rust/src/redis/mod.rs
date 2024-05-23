@@ -127,7 +127,7 @@ impl Redis {
         let mut con = self.connection()?;
         let mut keys = vec![];
 
-        match head.get(0) {
+        match head.first() {
             Some(path) => {
                 let key = Key::downset(path);
                 keys.push(key.clone());
