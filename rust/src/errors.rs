@@ -5,10 +5,6 @@ quick_error! {
     pub enum Error {
         Auth(err: String) {}
 
-        Blocking(err: String) {
-            from(err: actix_web::error::BlockingError) -> (format!("{err}"))
-        }
-
         Config(err: envy::Error) {
             from()
         }
@@ -37,10 +33,6 @@ quick_error! {
 
         Git2(err: String) {
             from(err: git2::Error) -> (format!("{err}"))
-        }
-
-        HeaderValue(err: String) {
-            from(err: actix_web::http::header::ToStrError) -> (format!("{err:?}"))
         }
 
         IO(err: String) {
@@ -100,5 +92,3 @@ quick_error! {
         }
     }
 }
-
-impl actix_web::ResponseError for Error {}

@@ -130,7 +130,7 @@ fn parse_args() -> Opts {
     Opts { filename }
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     let opts = parse_args();
     let (root_directory, repo_id, oid) = parse_path(&opts.filename)?;

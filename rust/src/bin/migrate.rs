@@ -215,7 +215,7 @@ fn parse_args() -> Opts {
     }
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> async_graphql::Result<()> {
     let config = Config::load().unwrap();
     env_logger::init();

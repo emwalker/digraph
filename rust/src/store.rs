@@ -45,10 +45,10 @@ impl Store {
             server_secret,
             viewer,
 
-            organization_loader: DataLoader::new(organization_loader, actix_web::rt::spawn),
-            repository_loader: DataLoader::new(repository_loader, actix_web::rt::spawn),
-            object_loader: DataLoader::new(object_loader, actix_web::rt::spawn),
-            user_loader: DataLoader::new(user_loader, actix_web::rt::spawn),
+            organization_loader: DataLoader::new(organization_loader, tokio::spawn),
+            repository_loader: DataLoader::new(repository_loader, tokio::spawn),
+            object_loader: DataLoader::new(object_loader, tokio::spawn),
+            user_loader: DataLoader::new(user_loader, tokio::spawn),
         }
     }
 }

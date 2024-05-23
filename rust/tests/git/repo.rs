@@ -146,7 +146,7 @@ mod ensure_personal_repo {
         assert_eq!(stats.link_count, Some(4));
     }
 
-    #[actix_web::test]
+    #[tokio::test]
     async fn fetch_stats() {
         let f = Fixtures::copy("simple");
         let repos = RepoIds::from(&vec![RepoId::wiki(), RepoId::other()]);

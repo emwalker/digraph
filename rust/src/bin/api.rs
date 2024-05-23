@@ -1,91 +1,108 @@
-use actix_web::{guard, post, web, App, HttpRequest, HttpResponse, HttpServer};
 use async_graphql::extensions;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
-use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
-use base64::engine::general_purpose;
-use base64::Engine;
-use digraph::types::Timespec;
+use async_graphql::Schema;
+use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+use axum::http::StatusCode;
+use axum::response::{Html, IntoResponse};
+use axum::routing::post;
+use axum::Json;
+use axum::{
+    extract::{Extension, State},
+    routing::get,
+    Router,
+};
+use axum_extra::{
+    headers::authorization::{Authorization, Basic},
+    TypedHeader,
+};
+use digraph::{
+    config::Config,
+    db, git,
+    graphql::{MutationRoot, QueryRoot},
+    prelude::*,
+    redis,
+    types::Timespec,
+};
+use serde::Serialize;
 use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::signal;
 
-use digraph::config::Config;
-use digraph::db;
-use digraph::git;
-use digraph::graphql::{MutationRoot, QueryRoot, Schema, State};
-use digraph::prelude::*;
-use digraph::redis;
+pub(crate) type ServiceSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
-struct AuthHeader(String);
-
-impl AuthHeader {
-    fn decode(&self) -> Result<(String, String)> {
-        let encoded = self.0.split(' ').last().unwrap_or_default();
-        let mut buffer = Vec::<u8>::new();
-        general_purpose::STANDARD.decode_vec(encoded, &mut buffer)?;
-        let s = std::str::from_utf8(&buffer)?;
-        let parts: Vec<String> = s.split(':').map(str::to_string).collect();
-
-        if parts.len() != 2 {
-            return Err(Error::Auth(format!("unexpected message: {}", self.0)));
-        }
-
-        Ok((parts[0].clone(), parts[1].clone()))
+async fn viewer_from_header(
+    auth: Option<TypedHeader<Authorization<Basic>>>,
+    state: &digraph::graphql::State,
+) -> Viewer {
+    if let Some(TypedHeader(auth)) = auth {
+        // https://docs.rs/axum-extra/latest/axum_extra/extract/cookie/struct.CookieJar.html
+        let user_id = auth.username().to_owned();
+        let session_id = auth.password().to_owned();
+        state.authenticate((user_id, session_id)).await
+    } else {
+        log::info!("no auth header found, proceeding as guest");
+        Viewer::guest()
     }
 }
 
-fn user_id_from_header(req: HttpRequest) -> Option<(String, String)> {
-    match req.headers().get("authorization") {
-        Some(value) => match value.to_str() {
-            Ok(value) => match AuthHeader(value.into()).decode() {
-                Ok((user_id, session_id)) => {
-                    log::info!("user and session id found in auth header: {}", user_id);
-                    Some((user_id, session_id))
-                }
-                Err(err) => {
-                    log::info!("failed to decode auth header, proceeding as guest: {}", err);
-                    None
-                }
-            },
-            Err(err) => {
-                log::warn!("problem fetching authorization header value: {}", err);
-                None
-            }
-        },
-        None => {
-            log::warn!("no authorization header, proceeding as guest");
-            None
-        }
-    }
+#[derive(Serialize)]
+struct Health {
+    healthy: bool,
 }
 
-#[post("/graphql")]
-async fn index(
-    state: web::Data<State>,
+pub(crate) async fn health() -> impl IntoResponse {
+    let health = Health { healthy: true };
+    (StatusCode::OK, Json(health))
+}
+
+async fn graphql_handler(
+    schema: Extension<ServiceSchema>,
+    auth: Option<TypedHeader<Authorization<Basic>>>,
+    State(state): State<digraph::graphql::State>,
     req: GraphQLRequest,
-    http_req: HttpRequest,
 ) -> GraphQLResponse {
-    let user_info = user_id_from_header(http_req);
-    let viewer = Arc::new(state.authenticate(user_info).await);
-    let store = state.store(viewer, &Timespec);
-
-    state
-        .schema
-        .execute(req.into_inner().data(store))
-        .await
-        .into()
+    let viewer = viewer_from_header(auth, &state).await;
+    let store = state.store(Arc::new(viewer), &Timespec);
+    log::info!("fetching request as viewer: {:?}", store.viewer);
+    let response = async move { schema.execute(req.into_inner().data(store)).await }.await;
+    response.into()
 }
 
-async fn index_playground() -> Result<HttpResponse> {
-    Ok(HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(playground_source(
-            GraphQLPlaygroundConfig::new("/graphql").subscription_endpoint("/graphql"),
-        )))
+async fn graphql_playground() -> impl IntoResponse {
+    Html(playground_source(
+        GraphQLPlaygroundConfig::new("/").subscription_endpoint("/ws"),
+    ))
 }
 
-#[actix_web::main]
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+
+    opentelemetry::global::shutdown_tracer_provider();
+}
+
+#[tokio::main]
 async fn main() -> async_graphql::Result<()> {
     let config = Config::load()?;
     env_logger::init();
@@ -102,50 +119,36 @@ async fn main() -> async_graphql::Result<()> {
     log::info!("loading graphql schema");
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         .extension(extensions::Logger)
-        // .extension(ApolloTracing)
         .finish();
 
     log::info!("loading graphql schema");
     let redis = Arc::new(redis::Redis::new(config.digraph_redis_url.to_owned())?);
 
     log::info!("setting up app state");
-    let state = State::new(pool, root, schema, config.digraph_server_secret, redis);
+    let state = digraph::graphql::State::new(
+        pool,
+        root,
+        schema.clone(),
+        config.digraph_server_secret,
+        redis,
+    );
 
     let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_owned());
-    println!("Playground: http://localhost:8080");
+    let listener = tokio::net::TcpListener::bind(socket).await.unwrap();
 
+    // For metrics, see https://github.com/oliverjumpertz/axum-graphql/blob/main/src/main.rs
     log::info!("starting server");
-    // TODO: Look into switching to https://github.com/poem-web/poem
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(state.clone()))
-            .service(index)
-            .service(
-                web::resource("/graphql")
-                    .guard(guard::Get())
-                    .to(index_playground),
-            )
-            .service(web::resource("/").guard(guard::Get()).to(index_playground))
-    })
-    .bind(socket)?
-    .run()
-    .await?;
+    let app = Router::new()
+        .route("/health", get(health))
+        .route("/", get(graphql_playground))
+        .route("/graphql", post(graphql_handler))
+        .layer(Extension(schema))
+        .with_state(state);
+
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn auth_header_parsing() {
-        let auth = AuthHeader("Bearer NDYxYzg3YzgtZmI4Zi0xMWU4LTljYmMtYWZkZTZjNTRkODgxOmFiM2Q1MTYwYWFlNjMyYTUxNzNjMDVmOGNiMGVmMDg2ODY2ZGFkMTAzNTE3ZGQwMTRmMzhhNWIxY2E2OWI5YWE=".into());
-        let (user_id, session_id) = auth.decode().unwrap();
-        assert_eq!(user_id, "461c87c8-fb8f-11e8-9cbc-afde6c54d881");
-        assert_eq!(
-            session_id,
-            "ab3d5160aae632a5173c05f8cb0ef086866dad103517dd014f38a5b1ca69b9aa"
-        );
-    }
 }

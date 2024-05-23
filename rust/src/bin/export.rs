@@ -562,7 +562,7 @@ async fn export_links(mutation: &mut Mutation, pool: &PgPool) -> Result<()> {
     Ok(())
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     let config = Config::load()?;
     env_logger::init();

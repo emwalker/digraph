@@ -130,40 +130,31 @@ impl State {
         )
     }
 
-    pub async fn authenticate(&self, user_info: Option<(String, String)>) -> Viewer {
-        match user_info {
-            Some((user_id, session_id)) => {
-                let result = sqlx::query_as::<_, SessionRow>(
-                    "select
-                        u.id user_id,
-                        u.selected_repository_id,
-                        $2 session_id,
-                        array_agg(ur.repository_id) write_repo_ids
+    pub async fn authenticate(&self, (user_id, session_id): (String, String)) -> Viewer {
+        let result = sqlx::query_as::<_, SessionRow>(
+            "select
+                u.id user_id,
+                u.selected_repository_id,
+                $2 session_id,
+                array_agg(ur.repository_id) write_repo_ids
 
-                    from sessions s
-                    join users u on s.user_id = u.id
-                    join users_repositories ur on u.id = ur.user_id
-                    where s.user_id = $1::uuid and s.session_id = decode($2, 'hex')
-                        and ur.can_write
-                    group by u.id",
-                )
-                .bind(&user_id)
-                .bind(&session_id)
-                .fetch_optional(&self.pool)
-                .await;
+            from sessions s
+            join users u on s.user_id = u.id
+            join users_repositories ur on u.id = ur.user_id
+            where s.user_id = $1::uuid and s.session_id = decode($2, 'hex')
+                and ur.can_write
+            group by u.id",
+        )
+        .bind(&user_id)
+        .bind(&session_id)
+        .fetch_optional(&self.pool)
+        .await;
 
-                match result {
-                    Ok(row) => (user_id, row).into(),
+        match result {
+            Ok(row) => (user_id, row).into(),
 
-                    Err(err) => {
-                        log::warn!("failed to fetch session info, proceeding as guest: {}", err);
-                        Viewer::guest()
-                    }
-                }
-            }
-
-            None => {
-                log::info!("no session info provided, proceeding as guest");
+            Err(err) => {
+                log::warn!("failed to fetch session info, proceeding as guest: {}", err);
                 Viewer::guest()
             }
         }

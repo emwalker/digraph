@@ -2,7 +2,7 @@ use digraph::config::Config;
 use digraph::db;
 use digraph::prelude::*;
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     let config = Config::load()?;
     env_logger::init();
