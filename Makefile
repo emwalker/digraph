@@ -92,13 +92,13 @@ reset-data-dir:
 save-production:
 	bash ./scripts/save-production-db
 
-start:
+prod:
 	overmind start -f Procfile
 
 start-prod:
 	overmind start -f Procfile.prod
 
-start-dev:
+dev:
 	overmind start -f Procfile.dev
 
 test-backend:

@@ -1,9 +1,0 @@
-{
-  "presets": [
-    ["razzle/babel", { "absoluteRuntime": false }],
-    "@babel/typescript"
-  ],
-  "plugins": [
-    ["relay", { "artifactDirectory": "./src/__generated__" }]
-  ]
-}
