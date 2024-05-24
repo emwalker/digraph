@@ -81,7 +81,7 @@
     ]
   },
   "include": [
-    "src"
+    "./src"
   ],
   "exclude": [
     ".vscode"

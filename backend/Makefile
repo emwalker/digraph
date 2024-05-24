@@ -10,6 +10,9 @@ check-pre-push: check
 clean:
 	cargo clean
 
+dev:
+	RUST_LOG=info,sqlx=warn cargo run --bin api
+
 export:
 	RUST_LOG=warn,export=info target/release/export --data-dir ~/data/digraph-data
 
@@ -23,10 +26,7 @@ migrate:
 full-migration:
 	RUST_LOG=migrate=info cargo run --bin migrate -- --destructive
 
-start:
-	RUST_LOG=info,sqlx=warn cargo run --bin api
-
-start-prod:
+prod:
 	RUST_LOG=warn,digraph=info target/release/api
 
 test:

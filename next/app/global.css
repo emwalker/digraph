@@ -1,0 +1,16 @@
+:root {
+  --left-col-width: rem(200);
+  --middle-col-width: rem(900);
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.mantine-Code-root {
+  text-overflow: ellipsis;
+}

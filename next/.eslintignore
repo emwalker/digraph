@@ -1,0 +1,4 @@
+*.cjs
+*.mjs
+*.js
+/lib/__generated__/*

@@ -14,20 +14,20 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: digraph-frontend
+  name: prod-digraph-client
 spec:
   ports:
-    - name: digraph-frontend-http
+    - name: prod-digraph-client-http
       port: 80
       protocol: TCP
       targetPort: 3000
-    - name: digraph-frontend-https
+    - name: prod-digraph-client-https
       port: 443
       protocol: TCP
       targetPort: 3000
   selector:
     app: digraph
-    tier: frontend
+    tier: prod-client
   type: NodePort
 
 ---
@@ -36,14 +36,14 @@ kind: Deployment
 metadata:
   labels:
     app: digraph
-    tier: frontend
-  name: digraph-frontend
+    tier: prod-client
+  name: prod-digraph-client
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: digraph
-      tier: frontend
+      tier: prod-client
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -53,11 +53,70 @@ spec:
     metadata:
       labels:
         app: digraph
-        tier: frontend
+        tier: prod-client
     spec:
       restartPolicy: Always
       containers:
-        - name: api
+        - name: node
+          envFrom:
+            - secretRef:
+                name: digraph-secrets
+          image: emwalker/digraph-node:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              memory: 150Mi
+            limits:
+              memory: 400Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prod-digraph-api
+spec:
+  ports:
+    - name: prod-digraph-api-http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: digraph
+    tier: prod-api
+  type: NodePort
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: digraph
+    tier: prod-api
+  name: prod-digraph-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: digraph
+      tier: prod-api
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: digraph
+        tier: prod-api
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: prod-api
           envFrom:
             - secretRef:
                 name: digraph-secrets
@@ -75,21 +134,6 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/digraph
               name: digraph-data
-        - name: node
-          envFrom:
-            - secretRef:
-                name: digraph-secrets
-          image: emwalker/digraph-node:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 3000
-              name: http
-              protocol: TCP
-          resources:
-            requests:
-              memory: 150Mi
-            limits:
-              memory: 400Mi
       volumes:
         - name: digraph-data
           persistentVolumeClaim:

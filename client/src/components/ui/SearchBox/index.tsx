@@ -62,15 +62,11 @@ export default function SearchBox({ router, className, showButton, location, ...
     graphql`
       fragment SearchBox_view on View {
         queryInfo {
-          stringTokens
+          phrases
 
           topics {
-            edges {
-              node {
-                displayName
-                id
-              }
-            }
+            displayName
+            id
           }
         }
       }

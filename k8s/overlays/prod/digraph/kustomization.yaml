@@ -4,7 +4,7 @@ bases:
   - ../../../base/digraph
 
 resources:
-  - digraph-frontend.yaml
+  - digraph.yaml
   - digraph-ingress.yaml
 
 secretGenerator:
@@ -16,7 +16,9 @@ secretGenerator:
       - .env.digraph
 
 images:
-  - name: emwalker/digraph-api
+  - name: emwalker/digraph-api:latest
     newTag: v1.1.5
-  - name: emwalker/digraph-node
+  - name: emwalker/digraph-node:latest
     newTag: v1.1.5
+  - name: emwalker/digraph-node:next
+    newTag: v1.2.0

@@ -1,6 +1,7 @@
 version: '3'
 volumes:
-  clientmodules:
+  next-clientmodules:
+  prod-clientmodules:
 services:
   redis:
     image: redis:5-alpine
@@ -17,7 +18,7 @@ services:
     extra_hosts:
     - "database:172.17.0.1"
 
-  api:
+  prod-api:
     build:
       context: .
       dockerfile: k8s/docker/api/Dockerfile
@@ -33,20 +34,36 @@ services:
     depends_on:
       - redis
 
-  client:
+  prod-client:
     image: emwalker/digraph-node:latest
     build:
-      context: .
-      dockerfile: k8s/docker/client/Dockerfile
+      context: client
     ports:
       - "3000:3000"
     env_file:
     - .env.docker.local
     depends_on:
-      - api
+      - prod-api
       - redis
     links:
-      - api
+      - prod-api
       - redis
     volumes:
-      - clientmodules:/app/client_modules
+      - prod-clientmodules:/app/client_modules
+
+  next-client:
+    image: emwalker/digraph-node:next
+    build:
+      context: next
+    ports:
+      - "3000:3000"
+    env_file:
+    - .env.docker.local
+    depends_on:
+      - prod-api
+      - redis
+    links:
+      - prod-api
+      - redis
+    volumes:
+      - next-clientmodules:/app/client_modules

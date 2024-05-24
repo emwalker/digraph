@@ -1,0 +1,96 @@
+.titleDiv {
+  display: flex;
+  flex-direction: row;
+}
+
+.title {
+  flex: 1;
+}
+
+.results {
+  padding-top: rem(10);
+  padding-bottom: rem(10);
+  min-height: 560px;
+}
+
+.card {
+  background-color: transparent;
+  padding-bottom: rem(20);
+  font-size: var(--mantine-font-size-xl);
+}
+
+.parentTopics {
+  opacity: 0.7;
+  padding-top: 0;
+  margin-top: 0;
+
+  a::after { content: "・"; }
+  a:last-child::after { content: ""; }
+}
+
+.parentTopic {
+  padding: 0;
+  color: inherit;
+  text-decoration: none;
+  font-size: var(--mantine-font-size-sm);
+}
+
+.searchResults {
+  display: flex;
+}
+
+.middleCol {
+  flex-basis: var(--middle-col-width);
+  max-width: var(--middle-col-width);
+  overflow-wrap: break-word;
+
+  .card {
+    font-size: var(--mantine-font-size-xl);
+  }
+}
+
+.rightCol {
+  flex: 1;
+  padding-left: var(--mantine-spacing-xl);
+  margin-top: rem(10);
+
+  .card {
+    padding: var(--mantine-spacing-xs);
+    padding-left: 0;
+  }
+}
+
+.searchInput {
+  padding-bottom: rem(30);
+}
+
+.linkResult {
+  font-size: var(--mantine-font-size-xl);
+}
+
+.topicLink {
+  font: inherit;
+  color: inherit;
+  text-decoration: inherit;
+  font-size: var(--mantine-font-size-xl);
+}
+
+.searchTopicSynonyms {
+  li {
+    list-style: none;
+    opacity: 0.8;
+  }
+}
+
+.searchTopicParentTopics {
+  font-size: var(--mantine-font-size-sm);
+  padding-top: var(--mantine-spacing-sm);
+}
+
+.searchTopic {
+  margin-top: rem(20);
+}
+
+.namesAndSynonyms {
+  margin-top: rem(10);
+}

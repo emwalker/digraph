@@ -26,11 +26,11 @@ reinstall-javacript: clean
 	mkdir src/__generated__
 	yarn relay
 
-start:
-	yarn start:prod
-
-start-dev:
+dev:
 	NODE_OPTIONS=--no-experimental-fetch yarn start
+
+prod:
+	yarn start:prod
 
 test:
 	yarn jest

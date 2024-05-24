@@ -245,8 +245,8 @@ type PageInfo {
 }
 
 type QueryInfo {
-  topics: TopicConnection!
-  stringTokens: [String!]!
+  topics: [Topic!]!
+  phrases: [String!]!
 }
 
 type Query {

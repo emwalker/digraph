@@ -13,39 +13,21 @@ TIMESTAMP        = $(shell date -u +%s)
 LINT_DIRECTORIES = $(shell find cmd -type d ! -name "loaders" ! -name "server")
 DBNAME           := $(if $(DBNAME),$(DBNAME),digraph_dev)
 
-build: build-container-api build-container-node
-
-build-client:
-	$(MAKE) -C client build
-
-build-container-api:
-	docker compose build api
-	docker tag emwalker/digraph-api:latest emwalker/digraph-api:$(shell cat k8s/release)
-
-build-container-node: build-client
-	docker compose build client
-	docker tag emwalker/digraph-node:latest emwalker/digraph-node:$(shell cat k8s/release)
-
-clean:
-	$(MAKE) -C client clean
-	$(MAKE) -C backend clean
-
-check-client: check-backend
+prod-check: check-backend
 	$(MAKE) -C client check
+	$(MAKE) -C next check
 
 check-git-clean:
 	test -z "$(shell git diff-index --name-only HEAD --)"
 
 check-pre-push:
 	$(MAKE) -C backend check-pre-push
-	$(MAKE) -C client check-pre-push
+	$(MAKE) -C backend check-pre-push
+	$(MAKE) -C next check-pre-push
 	test -z "$(shell git status --porcelain)"
 
-check-backend:
-	$(MAKE) -C backend check
-
-deploy-k8s:
-	kubectl apply -k k8s/overlays/prod
+dev:
+	overmind start -f Procfile.dev
 
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
@@ -62,20 +44,52 @@ logs-prod:
 migrate:
 	$(MAKE) -C backend full-migration
 
-proxy-next:
-	overmind s -f Procfile.proxies-next
-
-proxy-prod:
-	overmind s -f Procfile.proxies-prod
-
 push-docker:
-	docker push emwalker/digraph-api:$(shell cat k8s/release)
-	docker push emwalker/digraph-node:$(shell cat k8s/release)
+	docker push emwalker/digraph-api:$(shell cat k8s/prod-release)
+	docker push emwalker/digraph-node:$(shell cat k8s/prod-release)
+	docker push emwalker/digraph-node:$(shell cat k8s/next-release)
 
-push-deploy: check-git-clean build push-docker push-git deploy-k8s
+proxy:
+	overmind s -f Procfile.proxies-prod
 
 push-git:
 	git push origin main
+
+next-build-client:
+	$(MAKE) -C next prod-build
+
+next-build-container-client: prod-build-client
+	docker compose build next-client
+	docker tag emwalker/digraph-node:next emwalker/digraph-node:$(shell cat k8s/next-release)
+
+prod:
+	overmind start -f Procfile.prod
+
+prod-build: prod-build-client next-build-client prod-build-api
+
+prod-check-backend:
+	$(MAKE) -C backend check
+
+prod-deploy:
+	kubectl apply -k k8s/overlays/prod
+
+prod-push-deploy: check-git-clean prod-build-containers push-docker push-git prod-deploy
+
+prod-build-api:
+	$(MAKE) -C backend build
+
+prod-build-containers: prod-build-container-api prod-build-container-client next-build-container-client
+
+prod-build-client:
+	$(MAKE) -C client build
+
+prod-build-container-api:
+	docker compose build prod-api
+	docker tag emwalker/digraph-api:latest emwalker/digraph-api:$(shell cat k8s/prod-release)
+
+prod-build-container-client: prod-build-client
+	docker compose build prod-client
+	docker tag emwalker/digraph-node:latest emwalker/digraph-node:$(shell cat k8s/prod-release)
 
 reset-db:
 	bash ./scripts/load-production-db
@@ -92,15 +106,6 @@ reset-data-dir:
 save-production:
 	bash ./scripts/save-production-db
 
-start:
-	overmind start -f Procfile
-
-start-prod:
-	overmind start -f Procfile.prod
-
-start-dev:
-	overmind start -f Procfile.dev
-
 test-backend:
 	$(MAKE) -C backend test
 
@@ -108,3 +113,6 @@ test-js:
 	$(MAKE) -C client test
 
 test: test-js test-backend
+
+watch:
+	$(MAKE) -C client watch

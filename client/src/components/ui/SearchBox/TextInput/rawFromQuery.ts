@@ -11,16 +11,14 @@ type Range = {
 }
 
 const rawFromQuery = (queryInfo: QueryInfo, genKey: Function): RawDraftContentState => {
-  const { topics: queryTopics, stringTokens } = queryInfo
+  const { topics: queryTopics, phrases } = queryInfo
   const entityRanges: Range[] = []
   const entityMap: { [key: number]: any } = {}
   const tokens: string[] = []
-  const topics = queryTopics?.edges || []
   let entityIndex = 0
   let startLast = 0
 
-  topics.forEach((edge) => {
-    const node = edge?.node
+  queryTopics.forEach((node) => {
     if (node != null) {
       const { displayName, id } = node
       entityRanges.push({
@@ -46,7 +44,7 @@ const rawFromQuery = (queryInfo: QueryInfo, genKey: Function): RawDraftContentSt
     }
   })
 
-  const text = [...tokens, ...stringTokens].join(' ')
+  const text = [...tokens, ...phrases].join(' ')
 
   return {
     blocks: [
