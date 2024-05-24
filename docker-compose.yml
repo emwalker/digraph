@@ -36,8 +36,7 @@ services:
   client:
     image: emwalker/digraph-node:latest
     build:
-      context: .
-      dockerfile: k8s/docker/client/Dockerfile
+      context: client
     ports:
       - "3000:3000"
     env_file:
