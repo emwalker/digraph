@@ -8,15 +8,15 @@ if [ -z "${1:-}" ]; then
 fi
 
 env=$1
-rs_commit=$(git rev-parse HEAD:rust)
-js_commit=$(git rev-parse HEAD:javascript)
+rs_commit=$(git rev-parse HEAD:backend)
+js_commit=$(git rev-parse HEAD:frontend)
 
 build-rs-images() {
-  echo "building rust frontend container ..."
+  echo "building api container ..."
   docker compose build api
   docker tag emwalker/digraph-api:latest digraph-api:$rs_commit
 
-  # echo "building rust cron container ..."
+  # echo "backend cron container ..."
   # docker compose build cron
   # docker tag emwalker/digraph-cron:latest digraph-cron:$rs_commit
 }

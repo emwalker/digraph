@@ -16,33 +16,33 @@ DBNAME           := $(if $(DBNAME),$(DBNAME),digraph_dev)
 build: build-container-api build-container-node
 
 build-client:
-	$(MAKE) -C javascript build
+	$(MAKE) -C client build
 
 build-container-api:
 	docker compose build api
 	docker tag emwalker/digraph-api:latest emwalker/digraph-api:$(shell cat k8s/release)
 
 build-container-node: build-client
-	docker compose build node
+	docker compose build client
 	docker tag emwalker/digraph-node:latest emwalker/digraph-node:$(shell cat k8s/release)
 
 clean:
-	$(MAKE) -C javascript clean
-	$(MAKE) -C rust clean
+	$(MAKE) -C client clean
+	$(MAKE) -C backend clean
 
-check-javascript: check-rust
-	$(MAKE) -C javascript check
+check-client: check-backend
+	$(MAKE) -C client check
 
 check-git-clean:
 	test -z "$(shell git diff-index --name-only HEAD --)"
 
 check-pre-push:
-	$(MAKE) -C rust check-pre-push
-	$(MAKE) -C javascript check-pre-push
+	$(MAKE) -C backend check-pre-push
+	$(MAKE) -C client check-pre-push
 	test -z "$(shell git status --porcelain)"
 
-check-rust:
-	$(MAKE) -C rust check
+check-backend:
+	$(MAKE) -C backend check
 
 deploy-k8s:
 	kubectl apply -k k8s/overlays/prod
@@ -60,7 +60,7 @@ logs-prod:
 	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs-prod
 
 migrate:
-	$(MAKE) -C rust full-migration
+	$(MAKE) -C backend full-migration
 
 proxy-next:
 	overmind s -f Procfile.proxies-next
@@ -81,12 +81,12 @@ reset-db:
 	bash ./scripts/load-production-db
 	bash ./scripts/make-fixtures
 	bash ./scripts/promote-fixtures
-	$(MAKE) -C rust migrate
+	$(MAKE) -C backend migrate
 
 reset-data-dir:
 	rm -rf ~/data/digraph-data
 	mkdir -p ~/data/digraph-data
-	$(MAKE) -C rust export
+	$(MAKE) -C backend export
 	ls -l ~/data/digraph-data
 
 save-production:
@@ -101,10 +101,10 @@ start-prod:
 start-dev:
 	overmind start -f Procfile.dev
 
-test-rust:
-	$(MAKE) -C rust test
+test-backend:
+	$(MAKE) -C backend test
 
 test-js:
-	$(MAKE) -C javascript test
+	$(MAKE) -C client test
 
-test: test-js test-rust
+test: test-js test-backend

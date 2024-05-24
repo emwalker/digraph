@@ -1,3 +1,3 @@
-node: make -C javascript start-dev
-api: make -C rust start
+client: make -C client start-dev
+api: make -C backend start
 redis: redis-server

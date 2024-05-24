@@ -1,6 +1,6 @@
 version: '3'
 volumes:
-  nodemodules:
+  clientmodules:
 services:
   redis:
     image: redis:5-alpine
@@ -33,11 +33,11 @@ services:
     depends_on:
       - redis
 
-  node:
+  client:
     image: emwalker/digraph-node:latest
     build:
       context: .
-      dockerfile: k8s/docker/node/Dockerfile
+      dockerfile: k8s/docker/client/Dockerfile
     ports:
       - "3000:3000"
     env_file:
@@ -49,4 +49,4 @@ services:
       - api
       - redis
     volumes:
-      - nodemodules:/app/node_modules
+      - clientmodules:/app/client_modules

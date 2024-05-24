@@ -1,2 +1,2 @@
-node: make -C javascript start
-frontend: make -C rust start-prod
+client: make -C client start
+api: make -C backend start-prod

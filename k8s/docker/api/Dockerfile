@@ -1,6 +1,6 @@
 FROM rust:1.72-buster as builder
 WORKDIR /usr/src/digraph
-COPY ./rust .
+COPY ./backend .
 RUN cargo build --release --bin api
 
 FROM debian:buster-slim
