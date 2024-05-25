@@ -21,3 +21,15 @@
   justify-content: flex-end;
   margin-top: rem(5);
 }
+
+.synonyms {
+  display: flex;
+  align-items: left;
+
+  li:after { content: "・"; }
+  li:last-child:after { content: ""; }
+}
+
+.synonym {
+  flex: 0 1 auto;
+}

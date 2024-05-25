@@ -3,7 +3,7 @@
 import { Loader } from '@mantine/core'
 import TopicPage from '@/components/TopicPage'
 
-// export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic'
 
 type Props = {
   params: {
