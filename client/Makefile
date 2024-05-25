@@ -4,6 +4,9 @@ build:
 	cp -r .next/static .next/standalone/.next
 	cp -r public .next/standalone/.next
 
+compile:
+	yarn run compile
+
 check:
 	yarn jest
 	yarn lint
@@ -14,3 +17,6 @@ dev:
 
 prod:
 	PORT=3000 HOSTNAME="0.0.0.0" node .next/standalone/server.js
+
+watch: compile
+	yarn run compile -w

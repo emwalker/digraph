@@ -108,3 +108,6 @@ test-js:
 	$(MAKE) -C client test
 
 test: test-js test-backend
+
+watch:
+	$(MAKE) -C client watch

@@ -6,11 +6,11 @@ export function Welcome() {
   return (
     <>
       <Title className={classes.title} ta="center" mt={100}>
-        Links
+        Digraph
       </Title>
 
       <Text ta="center" size="lg" maw={580} mx="auto" mt="xl">
-        What would a next iteration on search engines look like?
+        Organize the world
       </Text>
 
       <Space h="xs" />

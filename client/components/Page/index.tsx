@@ -79,7 +79,7 @@ export function Page({ children }: Props) {
           <Group className={classes.header} justify="left">
             <Link className={`${classes.titleLink} ${classes.link}`} href={`/${username}`}>
               <IconBrandCodesandbox className={classes.linkIcon} stroke={1.5} />
-              <span><Title order={3}>Links</Title></span>
+              <span><Title order={3}>Digraph</Title></span>
             </Link>
 
             <Select className={classes.currentWorkspace} data={profiles} value="default" />

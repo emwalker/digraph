@@ -13,7 +13,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel or swc plugin for production.
  */
 const documents = {
-    "query Topics($topicId: ID!) {\n  view(repoIds: [\"\"], searchString: \"\", viewerId: \"1234\") {\n    topic(id: $topicId) {\n      children(searchString: \"\", first: 50) {\n        edges {\n          node {\n            ... on Topic {\n              id\n              displayName\n            }\n          }\n        }\n      }\n    }\n  }\n}": types.TopicsDocument,
+    "query Topics($topicId: ID!) {\n  view(repoIds: [\"\"], searchString: \"\", viewerId: \"1234\") {\n    topic(id: $topicId) {\n      displayName\n\n      children(searchString: \"\", first: 50) {\n        edges {\n          node {\n            ... on Topic {\n              id\n              displayName\n            }\n\n            ... on Link {\n              id\n              displayTitle\n              displayUrl\n            }\n          }\n        }\n      }\n    }\n  }\n}": types.TopicsDocument,
 };
 
 /**
@@ -33,7 +33,7 @@ export function graphql(source: string): unknown;
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "query Topics($topicId: ID!) {\n  view(repoIds: [\"\"], searchString: \"\", viewerId: \"1234\") {\n    topic(id: $topicId) {\n      children(searchString: \"\", first: 50) {\n        edges {\n          node {\n            ... on Topic {\n              id\n              displayName\n            }\n          }\n        }\n      }\n    }\n  }\n}"): (typeof documents)["query Topics($topicId: ID!) {\n  view(repoIds: [\"\"], searchString: \"\", viewerId: \"1234\") {\n    topic(id: $topicId) {\n      children(searchString: \"\", first: 50) {\n        edges {\n          node {\n            ... on Topic {\n              id\n              displayName\n            }\n          }\n        }\n      }\n    }\n  }\n}"];
+export function graphql(source: "query Topics($topicId: ID!) {\n  view(repoIds: [\"\"], searchString: \"\", viewerId: \"1234\") {\n    topic(id: $topicId) {\n      displayName\n\n      children(searchString: \"\", first: 50) {\n        edges {\n          node {\n            ... on Topic {\n              id\n              displayName\n            }\n\n            ... on Link {\n              id\n              displayTitle\n              displayUrl\n            }\n          }\n        }\n      }\n    }\n  }\n}"): (typeof documents)["query Topics($topicId: ID!) {\n  view(repoIds: [\"\"], searchString: \"\", viewerId: \"1234\") {\n    topic(id: $topicId) {\n      displayName\n\n      children(searchString: \"\", first: 50) {\n        edges {\n          node {\n            ... on Topic {\n              id\n              displayName\n            }\n\n            ... on Link {\n              id\n              displayTitle\n              displayUrl\n            }\n          }\n        }\n      }\n    }\n  }\n}"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

@@ -1,3 +1,4 @@
 client: make -C client dev
 api: make -C backend dev
 redis: redis-server
+watch: make watch
