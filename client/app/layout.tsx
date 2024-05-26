@@ -7,7 +7,7 @@ import { cssVariablesResolver, theme } from '@/theme'
 import './global.css'
 
 export const metadata = {
-  title: 'Links',
+  title: 'Digraph',
   description: 'Prototype of a next iteration on search engines',
 }
 

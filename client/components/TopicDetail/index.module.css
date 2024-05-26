@@ -1,4 +1,4 @@
-.top {
+.titleDiv {
   display: flex;
   flex-direction: row;
 }
@@ -32,4 +32,12 @@
 
 .synonym {
   flex: 0 1 auto;
+}
+
+.topicDetail {
+  width: 70%;
+}
+
+.searchInput {
+  padding-bottom: rem(30);
 }

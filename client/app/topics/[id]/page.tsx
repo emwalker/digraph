@@ -1,7 +1,8 @@
 'use client'
 
 import { Loader } from '@mantine/core'
-import TopicPage from '@/components/TopicPage'
+import TopicDetail from '@/components/TopicDetail'
+import { GuestLayout } from '@/components/GuestLayout'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,5 +15,5 @@ type Props = {
 export default function GET({ params }: Props) {
   if (params.id == null) return <Loader color="blue" />
 
-  return <TopicPage topicId={params.id} />
+  return <GuestLayout><TopicDetail topicId={params.id} /></GuestLayout>
 }

@@ -1,12 +1,12 @@
 'use client'
 
 import { useSuspenseQuery } from '@apollo/experimental-nextjs-app-support/ssr'
-import { Anchor, Box, Button, Card, Code, List, Pagination, Title } from '@mantine/core'
+import { Anchor, Box, Card, Code, List, Title } from '@mantine/core'
 import Link from 'next/link'
-import { Page } from '@/components/Page'
 import { graphql } from '@/lib/__generated__/gql'
 import classes from './index.module.css'
 import { TopicsQuery } from '@/lib/__generated__/graphql'
+import SearchBox from '../SearchBox'
 
 const query = graphql(/* GraphQL */ `query Topics($topicId: ID!) {
   view(repoIds: [""], searchString: "", viewerId: "1234") {
@@ -88,24 +88,21 @@ type Props = {
   topicId: string,
 }
 
-export default function Topics({ topicId }: Props) {
+export default function TopicDetail({ topicId }: Props) {
   const { data } = useSuspenseQuery(query, { variables: { topicId } })
   const topic = data.view?.topic
   if (topic == null) return null
   const { children: results, displayName, displaySynonyms } = topic
 
   return (
-    <Page>
-      <div className={classes.top}>
+    <Box className={classes.topicDetail}>
+      <Box className={classes.searchInput}>
+        <SearchBox />
+      </Box>
+
+      <Box className={classes.titleDiv}>
         <Title className={classes.title} order={2}>{displayName}</Title>
-        <Button
-          component="a"
-          href="/topics/new"
-          className={classes.addButton}
-          >
-            Add
-        </Button>
-      </div>
+      </Box>
 
       {displaySynonyms.length > 1 && (
         <Box>
@@ -121,7 +118,7 @@ export default function Topics({ topicId }: Props) {
         </div>
       )}
 
-      <Pagination total={10} value={1} my="sm" />
-    </Page>
+      {/* <Pagination total={10} value={1} my="sm" /> */}
+    </Box>
   )
 }
