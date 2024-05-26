@@ -2,6 +2,7 @@
 
 import { useSuspenseQuery } from '@apollo/experimental-nextjs-app-support/ssr'
 import { Anchor, Box, Button, Card, Code, List, Pagination, Title } from '@mantine/core'
+import Link from 'next/link'
 import { Page } from '@/components/Page'
 import { graphql } from '@/lib/__generated__/gql'
 import classes from './index.module.css'
@@ -50,7 +51,7 @@ function searchResults(conn: Connection) {
       return (
         <Card
           key={id}
-          component="a"
+          component={Link}
           href={`/topics/${id}`}
           padding="sm"
           radius="md"
