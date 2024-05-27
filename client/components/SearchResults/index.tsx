@@ -5,11 +5,13 @@ import { Anchor, Box, Card, Code, List, Title } from '@mantine/core'
 import Link from 'next/link'
 import { graphql } from '@/lib/__generated__/gql'
 import classes from './index.module.css'
-import { TopicsQuery } from '@/lib/__generated__/graphql'
+import { SearchResultsQuery } from '@/lib/__generated__/graphql'
 import SearchBox from '../SearchBox'
 
-const query = graphql(/* GraphQL */ `query Topics($topicId: ID!) {
-  view(repoIds: [""], searchString: "", viewerId: "1234") {
+const query = graphql(/* GraphQL */ ` query SearchResults(
+  $repoIds: [ID!]!, $topicId: ID!, $searchString: String!, $viewerId: ID!
+) {
+  view(repoIds: $repoIds, searchString: $searchString, viewerId: $viewerId) {  
     topic(id: $topicId) {
       displayName
       displaySynonyms {
@@ -36,7 +38,7 @@ const query = graphql(/* GraphQL */ `query Topics($topicId: ID!) {
   }
 }`)
 
-type Connection = NonNullable<TopicsQuery['view']['topic']>['children']
+type Connection = NonNullable<SearchResultsQuery['view']['topic']>['children']
 
 function searchResults(conn: Connection) {
   const edges = conn?.edges || []
@@ -88,16 +90,20 @@ type Props = {
   topicId: string,
 }
 
-export default function TopicDetail({ topicId }: Props) {
-  const { data } = useSuspenseQuery(query, { variables: { topicId } })
-  const topic = data.view?.topic
+export default function SearchResults({ topicId }: Props) {
+  const { data } = useSuspenseQuery(query, {
+    variables: { repoIds: [], topicId, searchString: '', viewerId: '' },
+  })
+  const { view } = data
+  if (view == null) return null
+  const topic = view?.topic
   if (topic == null) return null
   const { children: results, displayName, displaySynonyms } = topic
 
   return (
     <Box className={classes.topicDetail}>
       <Box className={classes.searchInput}>
-        <SearchBox />
+        <SearchBox searchString="" />
       </Box>
 
       <Box className={classes.titleDiv}>

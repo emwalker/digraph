@@ -10,6 +10,13 @@ import {
   NextSSRInMemoryCache,
   SSRMultipartLink,
 } from '@apollo/experimental-nextjs-app-support/ssr'
+import { loadErrorMessages, loadDevMessages } from '@apollo/client/dev'
+
+if (process.env.NODE_ENV !== 'production') {
+  // Adds messages only in a dev environment
+  loadDevMessages()
+  loadErrorMessages()
+}
 
 function makeClient() {
   const httpLink = new HttpLink({
