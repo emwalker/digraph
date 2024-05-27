@@ -24,6 +24,8 @@
 
 .synonyms {
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: left;
 
   li:after { content: "・"; }

@@ -1,8 +1,9 @@
 'use client'
 
 import { useSuspenseQuery } from '@apollo/experimental-nextjs-app-support/ssr'
-import { Anchor, Box, Card, Code, List, Title } from '@mantine/core'
+import { Anchor, Box, Card, Code, List } from '@mantine/core'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { graphql } from '@/lib/__generated__/gql'
 import classes from './index.module.css'
 import { SearchResultsQuery } from '@/lib/__generated__/graphql'
@@ -18,7 +19,7 @@ const query = graphql(/* GraphQL */ ` query SearchResults(
         name
       }
 
-      children(searchString: "", first: 50) {
+      children(searchString: $searchString, first: 50) {
         edges {
           node {
             ... on Topic {
@@ -91,24 +92,26 @@ type Props = {
 }
 
 export default function SearchResults({ topicId }: Props) {
+  const params = useSearchParams()
+  const searchString = params.get('q') || ''
   const { data } = useSuspenseQuery(query, {
-    variables: { repoIds: [], topicId, searchString: '', viewerId: '' },
+    variables: { repoIds: [], topicId, searchString, viewerId: '' },
   })
   const { view } = data
   if (view == null) return null
   const topic = view?.topic
   if (topic == null) return null
-  const { children: results, displayName, displaySynonyms } = topic
+  const { children: results, displaySynonyms } = topic
 
   return (
     <Box className={classes.topicDetail}>
       <Box className={classes.searchInput}>
-        <SearchBox searchString="" />
+        <SearchBox />
       </Box>
 
-      <Box className={classes.titleDiv}>
+      {/* <Box className={classes.titleDiv}>
         <Title className={classes.title} order={2}>{displayName}</Title>
-      </Box>
+      </Box> */}
 
       {displaySynonyms.length > 1 && (
         <Box>

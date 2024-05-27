@@ -13,7 +13,10 @@ TIMESTAMP        = $(shell date -u +%s)
 LINT_DIRECTORIES = $(shell find cmd -type d ! -name "loaders" ! -name "server")
 DBNAME           := $(if $(DBNAME),$(DBNAME),digraph_dev)
 
-build: build-container-api build-container-node
+build-api:
+	$(MAKE) -C backend build
+
+build-containers: build-container-api build-container-node
 
 build-client:
 	$(MAKE) -C client build
@@ -25,6 +28,8 @@ build-container-api:
 build-container-node: build-client
 	docker compose build client
 	docker tag emwalker/digraph-node:latest emwalker/digraph-node:$(shell cat k8s/release)
+
+build-prod: build-client build-api
 
 clean:
 	$(MAKE) -C client clean
@@ -46,6 +51,9 @@ check-backend:
 
 deploy-k8s:
 	kubectl apply -k k8s/overlays/prod
+
+dev:
+	overmind start -f Procfile.dev
 
 dump:
 	pg_dump -d $(DBNAME) > data/digraph.sql
@@ -93,13 +101,7 @@ save-production:
 	bash ./scripts/save-production-db
 
 prod:
-	overmind start -f Procfile
-
-start-prod:
 	overmind start -f Procfile.prod
-
-dev:
-	overmind start -f Procfile.dev
 
 test-backend:
 	$(MAKE) -C backend test

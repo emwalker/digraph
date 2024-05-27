@@ -3,9 +3,9 @@ use std::convert::TryInto;
 use async_graphql::{Context, Object, SimpleObject, ID};
 
 use super::{
-    relay, ActivityLineItem, ActivityLineItemConnection, Link, LiveSearchTopicsPayload, QueryInfo,
-    Topic, User,
+    relay, ActivityLineItem, ActivityLineItemConnection, Link, LiveSearchTopicsPayload, Topic, User,
 };
+use crate::git;
 use crate::prelude::*;
 use crate::store::Store;
 
@@ -20,6 +20,17 @@ pub struct View {
     pub repo_ids: Option<Vec<ID>>,
     pub search_string: Option<String>,
     pub viewer_id: ID,
+}
+#[derive(SimpleObject)]
+struct TopicQueryInfo {
+    display_name: String,
+    id: String,
+}
+
+#[derive(SimpleObject)]
+struct QueryInfoPayload {
+    topics: Vec<TopicQueryInfo>,
+    phrases: Vec<String>,
 }
 
 #[Object]
@@ -69,12 +80,6 @@ impl View {
             .map(Link::from))
     }
 
-    async fn query_info(&self) -> QueryInfo {
-        QueryInfo {
-            string_tokens: vec![],
-        }
-    }
-
     async fn topic(&self, ctx: &Context<'_>, id: String) -> Result<Option<Topic>> {
         Ok(ctx
             .data_unchecked::<Store>()
@@ -98,6 +103,43 @@ impl View {
 
     async fn stats(&self, ctx: &Context<'_>) -> Result<ViewStats> {
         ctx.data_unchecked::<Store>().view_stats().await?.try_into()
+    }
+
+    async fn query_info(&self, ctx: &Context<'_>) -> Result<QueryInfoPayload> {
+        if let Some(search_string) = &self.search_string {
+            let git::Search {
+                topic_specs,
+                tokens: phrases,
+                ..
+            } = git::Search::parse(search_string)?;
+
+            let found = ctx
+                .data_unchecked::<Store>()
+                .fetch_topics(topic_specs.into_iter().map(|spec| spec.id).collect(), 10)
+                .await?;
+
+            let mut topics: Vec<TopicQueryInfo> = vec![];
+
+            for topic in found {
+                topics.push(TopicQueryInfo {
+                    id: topic.key.0.to_string(),
+                    display_name: topic.display_name(Locale::EN),
+                })
+            }
+
+            return Ok(QueryInfoPayload {
+                topics,
+                phrases: phrases
+                    .into_iter()
+                    .map(|phrase| phrase.to_string())
+                    .collect(),
+            });
+        }
+
+        Ok(QueryInfoPayload {
+            topics: vec![],
+            phrases: vec![],
+        })
     }
 
     async fn viewer(&self, ctx: &Context<'_>) -> Result<User> {

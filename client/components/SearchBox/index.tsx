@@ -3,54 +3,93 @@ import { IconSearch } from '@tabler/icons-react'
 import { useCallback, useState } from 'react'
 import { useSuspenseQuery } from '@apollo/client'
 import { useDebounce } from 'use-debounce'
+import { ReadonlyURLSearchParams, useParams, useSearchParams, useRouter } from 'next/navigation'
+import { Params } from 'next/dist/shared/lib/router/utils/route-matcher'
 import { graphql } from '@/lib/__generated__/gql'
+import { SearchBoxQuery } from '@/lib/__generated__/graphql'
+import { ROOT_TOPIC_ID } from '@/lib/constants'
+import { buildPath } from './buildPath'
 
 const icon = <IconSearch />
 
 const query = graphql(/* GraphQL */ ` query SearchBox(
-  $repoIds: [ID!]!, $searchString: String!, $viewerId: ID!
+  $repoIds: [ID!]!, $searchString: String!, $topicSynonymSearchString: String!, $viewerId: ID!
 ) {
   view(repoIds: $repoIds, searchString: $searchString, viewerId: $viewerId) {
-    topicLiveSearch(searchString: $searchString) {
+    topicLiveSearch(searchString: $topicSynonymSearchString) {
       synonyms {
         displayName
         id
       }
     }
+
+    queryInfo {
+      topics {
+        displayName
+        id
+      }
+      phrases
+    }
   }
 }`)
+
+type QueryInfo = SearchBoxQuery['view']['queryInfo']
+
+const termsFromQueryInfo = ({ topics }: QueryInfo): string[] =>
+  topics.map(({ displayName }) => displayName)
+
+const searchStringFromParams = (params: Params, searchParams: ReadonlyURLSearchParams): string => {
+  const parentTopicId = params.id == null ? ROOT_TOPIC_ID : params.id
+  const q = searchParams.get('q')
+  return q == null ? `in:${parentTopicId}` : `in:${parentTopicId} ${q}`
+}
 
 // We don't need to filter the options at this point
 const optionsFilter: OptionsFilter = ({ options }) => options
 
-type Props = {
-  searchString: string,
-}
+export default function SearchBox() {
+  const router = useRouter()
+  const params = useParams()
+  const searchParams = useSearchParams()
+  const searchString = searchStringFromParams(params, searchParams)
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function SearchBox({ searchString }: Props) {
-  const [searchValue, setSearchValue] = useState('')
-  const [debouncedSearchValue] = useDebounce(searchValue, 300)
-  const { data, refetch } = useSuspenseQuery(query, {
-    variables: { repoIds: [], searchString: debouncedSearchValue, viewerId: '' },
+  const [currentTerm, setCurrentTerm] = useState('')
+  const [debouncedSearchValue] = useDebounce(currentTerm, 300)
+  const { data } = useSuspenseQuery(query, {
+    variables: {
+      repoIds: [],
+      searchString,
+      topicSynonymSearchString: debouncedSearchValue,
+      viewerId: '',
+    },
   })
-  const [searchTerms, setSearchTerms] = useState<string[]>([])
-
-  const queryForTopics = useCallback(async (newSearchValue: string) => {
-    setSearchValue(newSearchValue)
-    if (newSearchValue.length > 2) refetch()
-  }, [setSearchValue])
+  const { view: { queryInfo } } = data
+  const [searchTerms, setSearchTerms] = useState<string[]>(termsFromQueryInfo(queryInfo))
 
   const synonyms = data.view?.topicLiveSearch?.synonyms || []
   const options: ComboboxItem[] = []
   const seen = new Set()
+  const newQueryInfo: Map<string, string> = new Map()
 
   synonyms.forEach(({ displayName, id }) => {
     if (!seen.has(id)) {
       seen.add(id)
       options.push({ value: id, label: displayName })
+      newQueryInfo.set(displayName, id)
     }
   })
+
+  const searchTermsUpdated = useCallback(async (newSearchTerms: string[]) => {
+    setSearchTerms(newSearchTerms)
+
+    // Allow the search box to be cleared without having side effects
+    if (newSearchTerms.length > 0) {
+      const path = buildPath(newSearchTerms, queryInfo, newQueryInfo)
+      console.log('updating page url', newSearchTerms, queryInfo, newQueryInfo)
+      console.log('redirecting to:', path)
+      router.push(path)
+    }
+  }, [setSearchTerms, queryInfo, params, searchParams, searchStringFromParams])
 
   return (
     <TagsInput
@@ -59,12 +98,13 @@ export default function SearchBox({ searchString }: Props) {
       data={options}
       disabled={false}
       filter={optionsFilter}
-      onChange={setSearchTerms}
-      onSearchChange={queryForTopics}
+      leftSection={icon}
+      onChange={searchTermsUpdated}
+      onSearchChange={setCurrentTerm}
       placeholder="Search"
       radius="xl"
-      leftSection={icon}
-      searchValue={searchValue}
+      searchValue={currentTerm}
+      size="lg"
       value={searchTerms}
     />
   )

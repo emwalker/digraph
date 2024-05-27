@@ -18,5 +18,8 @@ dev:
 prod:
 	PORT=3000 HOSTNAME="0.0.0.0" node .next/standalone/server.js
 
+test:
+	yarn jest
+
 watch: compile
 	yarn run compile -w

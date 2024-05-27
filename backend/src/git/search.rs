@@ -100,8 +100,10 @@ impl Search {
 
         for part in input.split_whitespace() {
             if SearchTopicSpec::valid_path_spec(part) {
-                topic_specs.insert(SearchTopicSpec::parse(part)?);
-                continue;
+                if let Ok(spec) = SearchTopicSpec::parse(part) {
+                    topic_specs.insert(spec);
+                    continue;
+                }
             }
 
             if RepoUrl::is_valid_url(part) {
@@ -646,5 +648,14 @@ mod tests {
             *s.topic_specs.iter().next().unwrap(),
             SearchTopicSpec::parse("in:e76a690f-2eb2-45a0-9cbc-5e7d76f92851").unwrap()
         );
+    }
+
+    #[test]
+    fn bad_id() {
+        let s = Search::parse("in:so").unwrap();
+        assert_eq!(s.normalized, Phrase::parse("inso"));
+        assert_eq!(s.tokens.len(), 1);
+        assert_eq!(s.tokens.first().unwrap(), &Phrase::parse("in:so"));
+        assert_eq!(s.topic_specs.len(), 0);
     }
 }
