@@ -35,8 +35,8 @@ const query = graphql(/* GraphQL */ ` query SearchBox(
 
 type QueryInfo = SearchBoxQuery['view']['queryInfo']
 
-const termsFromQueryInfo = ({ topics }: QueryInfo): string[] =>
-  topics.map(({ displayName }) => displayName)
+const termsFromQueryInfo = ({ topics, phrases }: QueryInfo): string[] =>
+  topics.map(({ displayName }) => displayName).concat(phrases.length > 0 ? [phrases.join(' ')] : [])
 
 const searchStringFromParams = (params: Params, searchParams: ReadonlyURLSearchParams): string => {
   const parentTopicId = params.id == null ? ROOT_TOPIC_ID : params.id
@@ -85,8 +85,6 @@ export default function SearchBox() {
     // Allow the search box to be cleared without having side effects
     if (newSearchTerms.length > 0) {
       const path = buildPath(newSearchTerms, queryInfo, newQueryInfo)
-      console.log('updating page url', newSearchTerms, queryInfo, newQueryInfo)
-      console.log('redirecting to:', path)
       router.push(path)
     }
   }, [setSearchTerms, queryInfo, params, searchParams, searchStringFromParams])
