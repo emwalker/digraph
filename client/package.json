@@ -11,7 +11,7 @@
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
     "lint": "next lint && npm run lint:stylelint",
-    "lint:stylelint": "stylelint '**/*.css' --cache",
+    "lint:stylelint": "stylelint '**/*.css' --fix --cache",
     "jest": "jest",
     "jest:watch": "jest --watch",
     "prettier:check": "prettier --check \"**/*.{ts,tsx}\"",

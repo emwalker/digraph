@@ -1,12 +1,12 @@
 'use client'
 
 import { useSuspenseQuery } from '@apollo/experimental-nextjs-app-support/ssr'
-import { Anchor, Box, Card, Code, List } from '@mantine/core'
+import { Anchor, Box, Card, Code, List, Title, Text } from '@mantine/core'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { graphql } from '@/lib/__generated__/gql'
 import classes from './index.module.css'
-import { SearchResultsQuery } from '@/lib/__generated__/graphql'
+import { SearchResultsQuery, Topic } from '@/lib/__generated__/graphql'
 import SearchBox from '../SearchBox'
 
 const query = graphql(/* GraphQL */ ` query SearchResults(
@@ -17,6 +17,15 @@ const query = graphql(/* GraphQL */ ` query SearchResults(
       displayName
       displaySynonyms {
         name
+      }
+
+      displayParentTopics(first: 10) {
+        edges {
+          node {
+            id
+            displayName
+          }
+        }
       }
 
       children(searchString: $searchString, first: 50) {
@@ -39,9 +48,21 @@ const query = graphql(/* GraphQL */ ` query SearchResults(
   }
 }`)
 
-type Connection = NonNullable<SearchResultsQuery['view']['topic']>['children']
+type ResultConnection = NonNullable<SearchResultsQuery['view']['topic']>['children']
+type TopicConnection = NonNullable<SearchResultsQuery['view']['topic']>['displayParentTopics']
 
-function searchResults(conn: Connection) {
+const parentTopic = ({ displayName, id }: Topic) => (
+  <Card
+    key={id}
+    component={Link}
+    href={`/topics/${id}`}
+    radius="lg"
+  >
+    <Text opacity={0.9} size="sm">{displayName}</Text>
+  </Card>
+)
+
+const searchResults = (conn: ResultConnection) => {
   const edges = conn?.edges || []
 
   return edges.map((edge) => {
@@ -84,6 +105,13 @@ function searchResults(conn: Connection) {
   })
 }
 
+const parentTopicsFor = (conn: TopicConnection | null) => {
+  if (conn == null) return []
+  const { edges } = conn
+  if (edges == null) return []
+  return edges.map((edge) => edge ? edge.node : null).filter(Boolean) as Topic[]
+}
+
 const synonym = ({ name }: { name: string }) =>
   <List.Item className={classes.synonym} key={name}>{name}</List.Item>
 
@@ -101,33 +129,46 @@ export default function SearchResults({ topicId }: Props) {
   if (view == null) return null
   const topic = view?.topic
   if (topic == null) return null
-  const { children: results, displaySynonyms } = topic
+  const { children: results, displaySynonyms, displayParentTopics } = topic
+  const parentTopics = parentTopicsFor(displayParentTopics)
 
   return (
-    <Box className={classes.topicDetail}>
-      <Box className={classes.searchInput}>
-        <SearchBox />
+    <Box className={classes.searchResults}>
+      <Box className={classes.middle}>
+        <Box className={classes.searchInput}>
+          <SearchBox />
+        </Box>
+
+        {/* <Box className={classes.titleDiv}>
+          <Title className={classes.title} order={2}>{displayName}</Title>
+        </Box> */}
+
+        {displaySynonyms.length > 1 && (
+          <Box>
+            <List listStyleType="none" className={classes.synonyms}>
+              {displaySynonyms.map(synonym)}
+            </List>
+          </Box>
+        )}
+
+        { results && (
+          <div className={classes.results}>
+          { searchResults(results) }
+          </div>
+        )}
+
+        {/* <Pagination total={10} value={1} my="sm" /> */}
       </Box>
 
-      {/* <Box className={classes.titleDiv}>
-        <Title className={classes.title} order={2}>{displayName}</Title>
-      </Box> */}
-
-      {displaySynonyms.length > 1 && (
-        <Box>
-          <List listStyleType="none" className={classes.synonyms}>
-            {displaySynonyms.map(synonym)}
-          </List>
-        </Box>
-      )}
-
-      { results && (
-        <div className={classes.results}>
-        { searchResults(results) }
-        </div>
-      )}
-
-      {/* <Pagination total={10} value={1} my="sm" /> */}
+      <Box className={classes.right}>
+        <Title order={5}>Parent topics</Title>
+        {parentTopics.length > 0 ?
+          parentTopics.map(parentTopic) : (
+            <Card>
+              <Text size="sm" opacity={0.9}>None</Text>
+            </Card>
+          )}
+      </Box>
     </Box>
   )
 }

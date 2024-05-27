@@ -16,7 +16,7 @@ type Props = {
 }
 
 export function GuestLayout({ children }: Props) {
-  const { session: { isLoggedIn, username }, isLoading, logout } = useSession()
+  const { session: { isLoggedIn }, isLoading, logout } = useSession()
   const router = useRouter()
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export function GuestLayout({ children }: Props) {
       <nav className={classes.navbar}>
         <div className={classes.navbarMain}>
           <Group className={classes.header} justify="left">
-            <Link className={`${classes.titleLink} ${classes.link}`} href={`/${username}`}>
+            <Link className={`${classes.titleLink} ${classes.link}`} href="/">
               <IconBrandCodesandbox className={classes.linkIcon} stroke={1.5} />
               <span><Title order={3}>Digraph</Title></span>
             </Link>

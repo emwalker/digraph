@@ -28,16 +28,27 @@
   flex-wrap: wrap;
   align-items: left;
 
-  li:after { content: "・"; }
-  li:last-child:after { content: ""; }
+  li::after { content: "・"; }
+  li:last-child::after { content: ""; }
 }
 
 .synonym {
   flex: 0 1 auto;
 }
 
-.topicDetail {
-  width: 70%;
+.searchResults {
+  display: flex;
+}
+
+.middle {
+  flex: 0;
+  flex-basis: 70%;
+}
+
+.right {
+  flex: auto;
+  margin-left: rem(60);
+  margin-top: rem(90);
 }
 
 .searchInput {

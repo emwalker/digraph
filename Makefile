@@ -80,7 +80,7 @@ push-docker:
 	docker push emwalker/digraph-api:$(shell cat k8s/release)
 	docker push emwalker/digraph-node:$(shell cat k8s/release)
 
-push-deploy: check-git-clean build push-docker push-git deploy-k8s
+push-deploy: check-git-clean build-containers push-docker push-git deploy-k8s
 
 push-git:
 	git push origin main

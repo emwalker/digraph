@@ -10,9 +10,10 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
 
 export const theme = createTheme({
   primaryColor: 'blue',
+  autoContrast: true,
   colors: {
     dark: [
-      '#C9C9C9',
+      '#fafbfc',
       '#B8B8B8',
       '#575E69',
       '#444C58',

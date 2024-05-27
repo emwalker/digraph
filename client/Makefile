@@ -7,10 +7,12 @@ build:
 compile:
 	yarn run compile
 
-check:
+check: check-pre-push
+	yarn build
+
+check-pre-push:
 	yarn jest
 	yarn lint
-	yarn build
 
 dev:
 	yarn dev
