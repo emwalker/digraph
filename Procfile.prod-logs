@@ -1,0 +1,4 @@
+postgres: kubectl logs -f -l app.kubernetes.io/name=postgresql -n digraph-prod
+api: kubectl logs -f deployment/prod-digraph-api -n digraph-prod
+prod-client: kubectl logs -f deployment/prod-digraph-client -n digraph-prod
+next-client: kubectl logs -f deployment/next-digraph-client -n digraph-prod

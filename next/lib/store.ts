@@ -17,7 +17,7 @@ export type FetchUsersResponse = {
 }
 
 export async function fetchUsers(page: number, perPage: number): Promise<FetchUsersResponse> {
-  const url = new URL('http://localhost:3002/api/users')
+  const url = new URL('http://0.0.0.0:3002/api/users')
   url.searchParams.set('page', page.toString())
   url.searchParams.set('per_page', perPage.toString())
   const res = await fetch(url, { cache: 'no-cache' })
@@ -34,7 +34,7 @@ export type FetchUserResponse = {
 }
 
 export async function fetchUser(userId: string): Promise<FetchUserResponse> {
-  const res = await fetch(`http://localhost:3002/api/users/${userId}`, { cache: 'no-cache' })
+  const res = await fetch(`http://0.0.0.0:3002/api/users/${userId}`, { cache: 'no-cache' })
 
   if (!res.ok) {
     console.log('failed to fetch user: ', res)
@@ -80,7 +80,7 @@ export type FetchTopicsResponse = {
 }
 
 export async function fetchTopics(page: number, perPage: number): Promise<FetchTopicsResponse> {
-  const url = new URL('http://localhost:3002/api/topics')
+  const url = new URL('http://0.0.0.0:3002/api/topics')
   url.searchParams.set('page', page.toString())
   url.searchParams.set('per_page', perPage.toString())
   const res = await fetch(url, { cache: 'no-cache' })
@@ -97,7 +97,7 @@ export type FetchTopicResponse = {
 }
 
 export async function fetchTopic(topicId: string): Promise<FetchTopicResponse> {
-  const res = await fetch(`http://localhost:3002/api/topics/${topicId}`, { cache: 'no-cache' })
+  const res = await fetch(`http://0.0.0.0:3002/api/topics/${topicId}`, { cache: 'no-cache' })
 
   if (!res.ok) {
     console.log('failed to fetch topic: ', res)

@@ -1,2 +1,0 @@
-postgres: kubectl logs -f -l app.kubernetes.io/name=postgresql -n digraph-next
-api: kubectl logs -f deployment/digraph-frontend -n digraph-next -c api

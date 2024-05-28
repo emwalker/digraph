@@ -20,7 +20,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 function makeClient() {
   const httpLink = new HttpLink({
-    uri: 'http://localhost:3002/api/graphql',
+    uri: 'http://0.0.0.0:3002/api/graphql',
   })
 
   return new NextSSRApolloClient({

@@ -27,6 +27,8 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
+ENV DIGRAPH_API_BASE_URL http://prod-digraph-api:8080
+
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
   elif [ -f package-lock.json ]; then npm run build; \
@@ -56,8 +58,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 3002
 
-ENV PORT 3000
+ENV PORT 3002
 
 CMD HOSTNAME="0.0.0.0" node server.js

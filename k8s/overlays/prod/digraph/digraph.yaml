@@ -138,3 +138,62 @@ spec:
         - name: digraph-data
           persistentVolumeClaim:
             claimName: digraph-data
+
+# What follows is temporary and will eventually go away
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: next-digraph-client
+spec:
+  ports:
+    - name: next-digraph-client-http
+      port: 80
+      protocol: TCP
+      targetPort: 3002
+    - name: next-digraph-client-https
+      port: 443
+      protocol: TCP
+      targetPort: 3002
+  selector:
+    app: digraph
+    tier: next-client
+  type: NodePort
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: digraph
+    tier: next-client
+  name: next-digraph-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: digraph
+      tier: next-client
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: digraph
+        tier: next-client
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: node
+          envFrom:
+            - secretRef:
+                name: digraph-secrets
+          image: emwalker/digraph-node:next
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3002
+              name: http
+              protocol: TCP

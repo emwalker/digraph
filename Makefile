@@ -35,12 +35,6 @@ dump:
 fixtures: data/fixtures.sql
 	bash ./scripts/make-fixtures
 
-logs-next:
-	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs-next
-
-logs-prod:
-	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.logs-prod
-
 migrate:
 	$(MAKE) -C backend full-migration
 
@@ -73,7 +67,10 @@ prod-check-backend:
 prod-deploy:
 	kubectl apply -k k8s/overlays/prod
 
-prod-push-deploy: check-git-clean prod-build-containers push-docker push-git prod-deploy
+prod-logs:
+	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.prod-logs
+
+prod-push-deploy: check-git-clean check-pre-push prod-build-containers push-docker push-git prod-deploy
 
 prod-build-api:
 	$(MAKE) -C backend build

@@ -1,5 +1,7 @@
 import bundleAnalyzer from '@next/bundle-analyzer';
 
+const apiOrigin = process.env.DIGRAPH_API_BASE_URL || 'http://localhost:8080'
+
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
@@ -16,7 +18,7 @@ export default withBundleAnalyzer({
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8080/:path*',
+        destination: `${apiOrigin}/:path*`,
       },
     ]
   },
