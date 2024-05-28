@@ -49,7 +49,10 @@ check-pre-push:
 check-backend:
 	$(MAKE) -C backend check
 
-deploy-k8s:
+deploy-prod:
+	kubectl apply -k k8s/overlays/prod
+
+deploy-next:
 	kubectl apply -k k8s/overlays/prod
 
 dev:
@@ -80,7 +83,9 @@ push-docker:
 	docker push emwalker/digraph-api:$(shell cat k8s/release)
 	docker push emwalker/digraph-node:$(shell cat k8s/release)
 
-push-deploy: check-git-clean build-containers push-docker push-git deploy-k8s
+push-deploy: check-git-clean build-containers push-docker push-git deploy-prod
+
+push-deploy-next: check-git-clean build-containers push-docker push-git deploy-next
 
 push-git:
 	git push origin main
