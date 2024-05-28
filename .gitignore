@@ -12,7 +12,7 @@ build/
 yarn-error.log
 app.yaml
 tmp/
-# *__generated__*
+*__generated__*
 /scratchpad
 /data
 *.dump.gz

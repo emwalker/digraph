@@ -35,29 +35,17 @@
   font-size: var(--mantine-font-size-sm);
 }
 
-.synonyms {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: left;
-
-  li::after { content: "・"; }
-  li:last-child::after { content: ""; }
-}
-
-.synonym {
-  flex: 0 1 auto;
-}
-
 .searchResults {
   display: flex;
 }
 
 .middleCol {
   flex-basis: var(--middle-col-width);
+  max-width: var(--middle-col-width);
+  overflow-wrap: break-word;
 
   .card {
-    font-size: larger;
+    font-size: var(--mantine-font-size-xl);
   }
 }
 
@@ -78,4 +66,31 @@
 
 .linkResult {
   font-size: var(--mantine-font-size-xl);
+}
+
+.topicLink {
+  font: inherit;
+  color: inherit;
+  text-decoration: inherit;
+  font-size: var(--mantine-font-size-xl);
+}
+
+.searchTopicSynonyms {
+  li {
+    list-style: none;
+    opacity: 0.8;
+  }
+}
+
+.searchTopicParentTopics {
+  font-size: var(--mantine-font-size-sm);
+  padding-top: var(--mantine-spacing-sm);
+}
+
+.searchTopic {
+  margin-top: rem(20);
+}
+
+.namesAndSynonyms {
+  margin-top: rem(10);
 }

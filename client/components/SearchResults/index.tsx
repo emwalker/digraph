@@ -3,31 +3,44 @@
 import { useSuspenseQuery } from '@apollo/experimental-nextjs-app-support/ssr'
 import { Anchor, Box, Card, Code, List, Title, Text } from '@mantine/core'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { graphql } from '@/lib/__generated__/gql'
 import classes from './index.module.css'
-import { SearchResultsQuery, Topic } from '@/lib/__generated__/graphql'
+import { SearchResultsQuery } from '@/lib/__generated__/graphql'
+import { searchStringFromParams } from '@/lib/searchStringFromParams'
 
 const query = graphql(/* GraphQL */ ` query SearchResults(
-  $repoIds: [ID!]!, $topicId: ID!, $searchString: String!, $viewerId: ID!
+  $repoIds: [ID!]!,
+  $topicId: ID!,
+  $searchString: String!,
+  $queryParamSearchString: String!,
+  $viewerId: ID!
 ) {
-  view(repoIds: $repoIds, searchString: $searchString, viewerId: $viewerId) {  
-    topic(id: $topicId) {
-      displayName
-      displaySynonyms {
-        name
-      }
+  view(repoIds: $repoIds, searchString: $searchString, viewerId: $viewerId) {
+    queryInfo {
+      topics {
+        displayName
+        id
 
-      displayParentTopics(first: 10) {
-        edges {
-          node {
-            id
-            displayName
+        displaySynonyms {
+          name
+        }
+
+        displayParentTopics {
+          edges {
+            node {
+              displayName
+              id
+            }
           }
         }
       }
+    }
 
-      children(searchString: $searchString, first: 50) {
+    topic(id: $topicId) {
+      displayName
+
+      children(searchString: $queryParamSearchString, first: 50) {
         edges {
           node {
             ... on Topic {
@@ -64,22 +77,41 @@ const query = graphql(/* GraphQL */ ` query SearchResults(
 }`)
 
 type ResultConnection = NonNullable<SearchResultsQuery['view']['topic']>['children']
-type TopicConnection = NonNullable<SearchResultsQuery['view']['topic']>['displayParentTopics']
+type TopicConnection = NonNullable<NonNullable<
+    NonNullable<
+      NonNullable<SearchResultsQuery['view']['topic']>['children']
+    >['edges']
+  >[0]
+>['node']['displayParentTopics']
 
-const parentTopic = ({ displayName, id }: Topic) => (
-  <Card
-    key={id}
-    component={Link}
-    href={`/topics/${id}`}
-    className={classes.card}
-  >
-    <Text opacity={0.9} size="sm">{displayName}</Text>
-  </Card>
-)
+type Topic = SearchResultsQuery['view']['queryInfo']['topics'][0]
 
-const parentTopicGroup = (displayParentTopics: TopicConnection) => (
+const searchTopic = ({ displayName, id, displaySynonyms, displayParentTopics }: Topic) => {
+  const parentTopics = parentTopicsFor(displayParentTopics)
+
+  return (
+    <Card
+      key={id}
+      className={classes.searchTopic}
+    >
+      <Link className={classes.topicLink} href={`/topics/${id}`}>{displayName}</Link>
+      {parentTopicGroup(parentTopics)}
+
+      {displaySynonyms.length > 1 && (
+        <Box className={classes.namesAndSynonyms}>
+          <Text>Names and synonyms</Text>
+          <List className={classes.searchTopicSynonyms}>
+            {displaySynonyms.map(({ name }) => <List.Item key={name}>{name}</List.Item>)}
+          </List>
+        </Box>
+      )}
+    </Card>
+  )
+}
+
+const parentTopicGroup = (parentTopics: Topic[]) => (
   <Box className={classes.parentTopics}>
-   {parentTopicsFor(displayParentTopics).map(({ id, displayName }) => (
+   {parentTopics.map(({ id, displayName }) => (
      <Link key={id} className={classes.parentTopic} href={`/topics/${id}`}>{displayName}</Link>
    ))}
   </Box>
@@ -98,14 +130,12 @@ const searchResults = (conn: ResultConnection) => {
       return (
         <Card
           key={id}
-          component={Link}
-          href={`/topics/${id}`}
           padding="sm"
           radius="md"
           className={classes.card}
         >
-          {displayName}
-          {parentTopicGroup(displayParentTopics)}
+          <Link className={classes.topicLink} href={`/topics/${id}`}>{displayName}</Link>
+          {parentTopicGroup(parentTopicsFor(displayParentTopics))}
         </Card>
       )
     }
@@ -121,7 +151,7 @@ const searchResults = (conn: ResultConnection) => {
         >
           <Anchor className={classes.linkResult} href={displayUrl}>{displayTitle}</Anchor>
           <Code>{displayUrl}</Code>
-          {parentTopicGroup(displayParentTopics)}
+          {parentTopicGroup(parentTopicsFor(displayParentTopics))}
         </Card>
       )
     }
@@ -137,37 +167,36 @@ const parentTopicsFor = (conn: TopicConnection | null) => {
   return edges.map((edge) => edge ? edge.node : null).filter(Boolean) as Topic[]
 }
 
-const synonym = ({ name }: { name: string }) =>
-  <List.Item className={classes.synonym} key={name}>{name}</List.Item>
-
 type Props = {
   topicId: string,
 }
 
 export default function SearchResults({ topicId }: Props) {
-  const params = useSearchParams()
-  const searchString = params.get('q') || ''
+  const params = useParams()
+  const searchParams = useSearchParams()
+  const searchString = searchStringFromParams(params, searchParams)
+
   const { data } = useSuspenseQuery(query, {
-    variables: { repoIds: [], topicId, searchString, viewerId: '' },
+    variables: {
+      repoIds: [],
+      topicId,
+      searchString,
+      queryParamSearchString: searchParams.get('q') || '',
+      viewerId: '',
+    },
   })
   const { view } = data
   if (view == null) return null
-  const topic = view?.topic
+
+  const { topic, queryInfo } = view
   if (topic == null) return null
-  const { children: results, displaySynonyms, displayParentTopics } = topic
-  const parentTopics = parentTopicsFor(displayParentTopics)
+
+  const { children: results } = topic
+  const searchTopics = queryInfo.topics
 
   return (
     <Box className={classes.searchResults}>
       <Box className={classes.middleCol}>
-        {displaySynonyms.length > 1 && (
-          <Box>
-            <List listStyleType="none" className={classes.synonyms}>
-              {displaySynonyms.map(synonym)}
-            </List>
-          </Box>
-        )}
-
         { results && (
           <div className={classes.results}>
           { searchResults(results) }
@@ -178,9 +207,9 @@ export default function SearchResults({ topicId }: Props) {
       </Box>
 
       <Box className={classes.rightCol}>
-        <Title order={5}>Parent topics</Title>
-        {parentTopics.length > 0 ?
-          parentTopics.map(parentTopic) : (
+        <Title order={3}>Search topics</Title>
+        {searchTopics.length > 0 ?
+          searchTopics.map(searchTopic) : (
             <Card>
               <Text size="sm" opacity={0.9}>None</Text>
             </Card>

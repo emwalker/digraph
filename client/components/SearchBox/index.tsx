@@ -3,12 +3,11 @@ import { IconSearch } from '@tabler/icons-react'
 import { useCallback, useState } from 'react'
 import { useSuspenseQuery } from '@apollo/client'
 import { useDebounce } from 'use-debounce'
-import { ReadonlyURLSearchParams, useParams, useSearchParams, useRouter } from 'next/navigation'
-import { Params } from 'next/dist/shared/lib/router/utils/route-matcher'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { graphql } from '@/lib/__generated__/gql'
 import { SearchBoxQuery } from '@/lib/__generated__/graphql'
-import { ROOT_TOPIC_ID } from '@/lib/constants'
 import { buildPath } from './buildPath'
+import { searchStringFromParams } from '@/lib/searchStringFromParams'
 
 const icon = <IconSearch />
 
@@ -37,12 +36,6 @@ type QueryInfo = SearchBoxQuery['view']['queryInfo']
 
 const termsFromQueryInfo = ({ topics, phrases }: QueryInfo): string[] =>
   topics.map(({ displayName }) => displayName).concat(phrases.length > 0 ? [phrases.join(' ')] : [])
-
-const searchStringFromParams = (params: Params, searchParams: ReadonlyURLSearchParams): string => {
-  const parentTopicId = params.id == null ? ROOT_TOPIC_ID : params.id
-  const q = searchParams.get('q')
-  return q == null ? `in:${parentTopicId}` : `in:${parentTopicId} ${q}`
-}
 
 // We don't need to filter the options at this point
 const optionsFilter: OptionsFilter = ({ options }) => options
