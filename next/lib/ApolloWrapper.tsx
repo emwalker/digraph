@@ -18,9 +18,11 @@ if (process.env.NODE_ENV !== 'production') {
   loadErrorMessages()
 }
 
+const apiOrigin = process.env.DIGRAPH_API_EXTERNAL_URL || 'http://localhost:8080'
+
 function makeClient() {
   const httpLink = new HttpLink({
-    uri: 'http://0.0.0.0:3002/api/graphql',
+    uri: `${apiOrigin}/graphql`,
   })
 
   return new NextSSRApolloClient({

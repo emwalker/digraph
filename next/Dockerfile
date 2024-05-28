@@ -28,6 +28,7 @@ COPY . .
 # ENV NEXT_TELEMETRY_DISABLED 1
 
 ENV DIGRAPH_API_BASE_URL http://prod-digraph-api:8080
+ENV DIGRAPH_API_EXTERNAL_URL https://api.digraph.app
 
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \

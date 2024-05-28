@@ -38,7 +38,7 @@ export default function Page() {
                 },
               })
 
-              router.push('/topics')
+              router.push('/')
             })}
           >
             <TextInput

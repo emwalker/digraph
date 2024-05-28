@@ -29,6 +29,7 @@ use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::signal;
+use tower_http::cors::CorsLayer;
 
 pub(crate) type ServiceSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
@@ -143,6 +144,7 @@ async fn main() -> async_graphql::Result<()> {
         .route("/", get(graphql_playground))
         .route("/graphql", post(graphql_handler))
         .layer(Extension(schema))
+        .layer(CorsLayer::permissive())
         .with_state(state);
 
     axum::serve(listener, app)
