@@ -7,7 +7,6 @@ import { useSearchParams } from 'next/navigation'
 import { graphql } from '@/lib/__generated__/gql'
 import classes from './index.module.css'
 import { SearchResultsQuery, Topic } from '@/lib/__generated__/graphql'
-import SearchBox from '../SearchBox'
 
 const query = graphql(/* GraphQL */ ` query SearchResults(
   $repoIds: [ID!]!, $topicId: ID!, $searchString: String!, $viewerId: ID!
@@ -56,7 +55,7 @@ const parentTopic = ({ displayName, id }: Topic) => (
     key={id}
     component={Link}
     href={`/topics/${id}`}
-    radius="lg"
+    className={classes.card}
   >
     <Text opacity={0.9} size="sm">{displayName}</Text>
   </Card>
@@ -134,15 +133,7 @@ export default function SearchResults({ topicId }: Props) {
 
   return (
     <Box className={classes.searchResults}>
-      <Box className={classes.middle}>
-        <Box className={classes.searchInput}>
-          <SearchBox />
-        </Box>
-
-        {/* <Box className={classes.titleDiv}>
-          <Title className={classes.title} order={2}>{displayName}</Title>
-        </Box> */}
-
+      <Box className={classes.middleCol}>
         {displaySynonyms.length > 1 && (
           <Box>
             <List listStyleType="none" className={classes.synonyms}>
@@ -160,7 +151,7 @@ export default function SearchResults({ topicId }: Props) {
         {/* <Pagination total={10} value={1} my="sm" /> */}
       </Box>
 
-      <Box className={classes.right}>
+      <Box className={classes.rightCol}>
         <Title order={5}>Parent topics</Title>
         {parentTopics.length > 0 ?
           parentTopics.map(parentTopic) : (

@@ -14,12 +14,8 @@
 }
 
 .card {
-  margin-top: rem(5);
-}
-
-.addButton {
-  justify-content: flex-end;
-  margin-top: rem(5);
+  background-color: transparent;
+  padding-bottom: rem(20);
 }
 
 .synonyms {
@@ -40,15 +36,23 @@
   display: flex;
 }
 
-.middle {
-  flex: 0;
-  flex-basis: 70%;
+.middleCol {
+  flex-basis: var(--middle-col-width);
+
+  .card {
+    font-size: larger;
+  }
 }
 
-.right {
-  flex: auto;
-  margin-left: rem(60);
-  margin-top: rem(90);
+.rightCol {
+  flex: 1;
+  padding-left: var(--mantine-spacing-xl);
+  margin-top: rem(10);
+
+  .card {
+    padding: var(--mantine-spacing-xs);
+    padding-left: 0;
+  }
 }
 
 .searchInput {

@@ -1,29 +1,19 @@
-'use client'
-
-import { useEffect } from 'react'
-import { Group, Title, LoadingOverlay } from '@mantine/core'
+import { Group, Title, LoadingOverlay, Box } from '@mantine/core'
 import {
-  IconLogin,
   IconBrandCodesandbox,
 } from '@tabler/icons-react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import classes from './index.module.css'
 import useSession from '@/lib/useSession'
+import SearchBox from '../SearchBox'
 
 type Props = {
-  children: any
+  children: React.ReactNode
 }
 
 export function GuestLayout({ children }: Props) {
-  const { session: { isLoggedIn }, isLoading, logout } = useSession()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!isLoading && !isLoggedIn) {
-      router.replace('/login')
-    }
-  }, [isLoading, isLoggedIn, router])
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { session: { isLoggedIn }, isLoading } = useSession()
 
   if (isLoading) {
     return <LoadingOverlay />
@@ -33,32 +23,28 @@ export function GuestLayout({ children }: Props) {
     <div className={classes.container}>
       <nav className={classes.navbar}>
         <div className={classes.navbarMain}>
-          <Group className={classes.header} justify="left">
-            <Link className={`${classes.titleLink} ${classes.link}`} href="/">
+          <Group className={classes.logo} justify="left">
+            <Link href="/">
               <IconBrandCodesandbox className={classes.linkIcon} stroke={1.5} />
-              <span><Title order={3}>Digraph</Title></span>
+              <Title order={2} className={classes.logoTitle}>Digraph</Title>
             </Link>
           </Group>
-        </div>
 
-        <div className={classes.footer}>
-          <Link
-            href="/login"
-            className={classes.link}
-            onClick={(event) => {
-              event.preventDefault()
-              logout()
-            }}
-          >
-            <IconLogin className={classes.linkIcon} stroke={1.5} />
-            <span>Log in</span>
-          </Link>
+          <div className={classes.searchBox}>
+            <SearchBox />
+          </div>
         </div>
       </nav>
 
-      <div className={classes.content}>
-        {children}
-      </div>
+      <main className={classes.main}>
+        <div className={classes.content}>
+          <div className={classes.leftColumn}></div>
+
+          <Box className={classes.results}>
+            {children}
+          </Box>
+        </div>
+      </main>
     </div>
   )
 }

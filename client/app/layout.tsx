@@ -24,7 +24,6 @@ export default function RootLayout({ children }: { children: any }) {
       <body>
         <ApolloWrapper>
           <MantineProvider
-            defaultColorScheme="dark"
             cssVariablesResolver={cssVariablesResolver}
             theme={theme}
           >

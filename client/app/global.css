@@ -1,3 +1,8 @@
+:root {
+  --left-col-width: rem(200);
+  --middle-col-width: rem(1000);
+}
+
 html {
   height: 100%;
 }
