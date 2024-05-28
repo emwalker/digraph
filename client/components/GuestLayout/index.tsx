@@ -1,4 +1,4 @@
-import { Group, Title, LoadingOverlay, Box } from '@mantine/core'
+import { Group, Title, Box, LoadingOverlay } from '@mantine/core'
 import {
   IconBrandCodesandbox,
 } from '@tabler/icons-react'
@@ -15,9 +15,7 @@ export function GuestLayout({ children }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { session: { isLoggedIn }, isLoading } = useSession()
 
-  if (isLoading) {
-    return <LoadingOverlay />
-  }
+  if (isLoading) return <LoadingOverlay />
 
   return (
     <div className={classes.container}>

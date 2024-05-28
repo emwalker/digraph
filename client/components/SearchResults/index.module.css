@@ -16,6 +16,23 @@
 .card {
   background-color: transparent;
   padding-bottom: rem(20);
+  font-size: var(--mantine-font-size-xl);
+
+  a::after { content: "・"; }
+  a:last-child::after { content: ""; }
+}
+
+.parentTopics {
+  opacity: 0.7;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.parentTopic {
+  padding: 0;
+  color: inherit;
+  text-decoration: none;
+  font-size: var(--mantine-font-size-sm);
 }
 
 .synonyms {
@@ -57,4 +74,8 @@
 
 .searchInput {
   padding-bottom: rem(30);
+}
+
+.linkResult {
+  font-size: var(--mantine-font-size-xl);
 }

@@ -33,12 +33,28 @@ const query = graphql(/* GraphQL */ ` query SearchResults(
             ... on Topic {
               id
               displayName
+              displayParentTopics(first: 10) {
+                edges {
+                  node {
+                    displayName
+                    id
+                  }
+                }
+              }
             }
 
             ... on Link {
               id
               displayTitle
               displayUrl
+              displayParentTopics(first: 10) {
+                edges {
+                  node {
+                    displayName
+                    id
+                  }
+                }
+              }
             }
           }
         }
@@ -61,6 +77,14 @@ const parentTopic = ({ displayName, id }: Topic) => (
   </Card>
 )
 
+const parentTopicGroup = (displayParentTopics: TopicConnection) => (
+  <Box className={classes.parentTopics}>
+   {parentTopicsFor(displayParentTopics).map(({ id, displayName }) => (
+     <Link key={id} className={classes.parentTopic} href={`/topics/${id}`}>{displayName}</Link>
+   ))}
+  </Box>
+)
+
 const searchResults = (conn: ResultConnection) => {
   const edges = conn?.edges || []
 
@@ -70,7 +94,7 @@ const searchResults = (conn: ResultConnection) => {
     if (node == null) return null
 
     if (node.__typename === 'Topic') {
-      const { id, displayName } = node
+      const { id, displayName, displayParentTopics } = node
       return (
         <Card
           key={id}
@@ -81,12 +105,13 @@ const searchResults = (conn: ResultConnection) => {
           className={classes.card}
         >
           {displayName}
+          {parentTopicGroup(displayParentTopics)}
         </Card>
       )
     }
 
     if (node.__typename === 'Link') {
-      const { id, displayTitle, displayUrl } = node
+      const { id, displayTitle, displayUrl, displayParentTopics } = node
       return (
         <Card
           key={id}
@@ -94,8 +119,9 @@ const searchResults = (conn: ResultConnection) => {
           radius="md"
           className={classes.card}
         >
-          <Anchor href={displayUrl}>{displayTitle}</Anchor>
+          <Anchor className={classes.linkResult} href={displayUrl}>{displayTitle}</Anchor>
           <Code>{displayUrl}</Code>
+          {parentTopicGroup(displayParentTopics)}
         </Card>
       )
     }
