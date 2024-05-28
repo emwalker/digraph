@@ -52,7 +52,7 @@ push-git:
 next-build-client:
 	$(MAKE) -C next prod-build
 
-next-build-container-client: prod-build-client
+next-build-container-client:
 	docker compose build next-client
 	docker tag emwalker/digraph-node:next emwalker/digraph-node:$(shell cat k8s/next-release)
 

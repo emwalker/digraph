@@ -12,6 +12,7 @@ spec:
         - digraph.app
         - prod.digraph.app
         - next.digraph.app
+        - api.digraph.app
       secretName: digraph-frontend-tls
   rules:
     - host: prod.digraph.app
@@ -44,3 +45,13 @@ spec:
                 name: next-digraph-client
                 port:
                   number: 3002
+    - host: api.digraph.app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prod-digraph-api
+                port:
+                  number: 8080

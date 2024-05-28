@@ -80,6 +80,10 @@ metadata:
   name: prod-digraph-api
 spec:
   ports:
+    - name: prod-digraph-client-http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
     - name: prod-digraph-api-http
       port: 8080
       protocol: TCP
