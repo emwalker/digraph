@@ -21,15 +21,10 @@ pub struct View {
     pub search_string: Option<String>,
     pub viewer_id: ID,
 }
-#[derive(SimpleObject)]
-struct TopicQueryInfo {
-    display_name: String,
-    id: String,
-}
 
 #[derive(SimpleObject)]
 struct QueryInfoPayload {
-    topics: Vec<TopicQueryInfo>,
+    topics: Vec<Topic>,
     phrases: Vec<String>,
 }
 
@@ -113,19 +108,13 @@ impl View {
                 ..
             } = git::Search::parse(search_string)?;
 
-            let found = ctx
+            let topics = ctx
                 .data_unchecked::<Store>()
                 .fetch_topics(topic_specs.into_iter().map(|spec| spec.id).collect(), 10)
-                .await?;
-
-            let mut topics: Vec<TopicQueryInfo> = vec![];
-
-            for topic in found {
-                topics.push(TopicQueryInfo {
-                    id: topic.key.0.to_string(),
-                    display_name: topic.display_name(Locale::EN),
-                })
-            }
+                .await?
+                .into_iter()
+                .map(|topic| topic.into())
+                .collect();
 
             return Ok(QueryInfoPayload {
                 topics,

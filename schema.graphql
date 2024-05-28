@@ -245,7 +245,7 @@ type PageInfo {
 }
 
 type QueryInfo {
-  topics: [TopicQueryInfo!]!
+  topics: [Topic!]!
   phrases: [String!]!
 }
 
@@ -388,11 +388,6 @@ type Topic {
   newlyAdded: Boolean!
   showRepoOwnership: Boolean!
   viewerCanUpdate: Boolean!
-}
-
-type TopicQueryInfo {
-  displayName: String!,
-  id: ID!,
 }
 
 type Timerange {

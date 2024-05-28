@@ -326,7 +326,7 @@ export type QueryViewArgs = {
 export type QueryInfo = {
   __typename?: 'QueryInfo';
   phrases: Array<Scalars['String']['output']>;
-  topics: Array<TopicQueryInfo>;
+  topics: Array<Topic>;
 };
 
 export type RemoveTopicTimerangeInput = {
@@ -584,12 +584,6 @@ export type TopicEdge = {
   node: Topic;
 };
 
-export type TopicQueryInfo = {
-  __typename?: 'TopicQueryInfo';
-  displayName: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-};
-
 export type UpdateLinkParentTopicsInput = {
   clientMutationId?: InputMaybe<Scalars['String']['input']>;
   linkId: Scalars['String']['input'];
@@ -773,7 +767,7 @@ export type SearchBoxQueryVariables = Exact<{
 }>;
 
 
-export type SearchBoxQuery = { __typename?: 'Query', view: { __typename?: 'View', topicLiveSearch: { __typename?: 'LiveSearchTopicsPayload', synonyms: Array<{ __typename?: 'SynonymEntry', displayName: string, id: string }> }, queryInfo: { __typename?: 'QueryInfo', phrases: Array<string>, topics: Array<{ __typename?: 'TopicQueryInfo', displayName: string, id: string }> } } };
+export type SearchBoxQuery = { __typename?: 'Query', view: { __typename?: 'View', topicLiveSearch: { __typename?: 'LiveSearchTopicsPayload', synonyms: Array<{ __typename?: 'SynonymEntry', displayName: string, id: string }> }, queryInfo: { __typename?: 'QueryInfo', phrases: Array<string>, topics: Array<{ __typename?: 'Topic', displayName: string, id: string }> } } };
 
 export type SearchResultsQueryVariables = Exact<{
   repoIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];

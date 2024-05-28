@@ -17,15 +17,15 @@
   background-color: transparent;
   padding-bottom: rem(20);
   font-size: var(--mantine-font-size-xl);
-
-  a::after { content: "・"; }
-  a:last-child::after { content: ""; }
 }
 
 .parentTopics {
   opacity: 0.7;
   padding-top: 0;
   margin-top: 0;
+
+  a::after { content: "・"; }
+  a:last-child::after { content: ""; }
 }
 
 .parentTopic {
