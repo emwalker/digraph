@@ -51,4 +51,4 @@ EXPOSE 3002
 
 ENV PORT 3002
 
-CMD HOSTNAME="0.0.0.0" node server.js
+CMD DIGRAPH_API_EXTERNAL_URL=https://api.digraph.app HOSTNAME="0.0.0.0" node server.js
