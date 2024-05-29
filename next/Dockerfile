@@ -21,8 +21,7 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
-ENV DIGRAPH_API_BASE_URL http://prod-digraph-api:8080
-ENV DIGRAPH_API_EXTERNAL_URL https://api.digraph.app
+ARG DIGRAPH_API_EXTERNAL_URL=https://api.digraph.app
 
 RUN yarn next build
 

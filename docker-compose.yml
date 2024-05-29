@@ -56,7 +56,7 @@ services:
     build:
       context: next
     ports:
-      - "3000:3000"
+      - "3002:3002"
     env_file:
     - .env.docker.local
     depends_on:
