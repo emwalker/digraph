@@ -1,10 +1,10 @@
 use async_graphql::extensions;
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+// use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
 use async_graphql::Schema;
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
-use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse};
+use axum::http::{header, request, HeaderValue, StatusCode};
+use axum::response::IntoResponse;
 use axum::routing::post;
 use axum::Json;
 use axum::{
@@ -29,7 +29,7 @@ use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::signal;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
 pub(crate) type ServiceSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
@@ -71,11 +71,11 @@ async fn graphql_handler(
     response.into()
 }
 
-async fn graphql_playground() -> impl IntoResponse {
-    Html(playground_source(
-        GraphQLPlaygroundConfig::new("/").subscription_endpoint("/ws"),
-    ))
-}
+// async fn graphql_playground() -> impl IntoResponse {
+//     Html(playground_source(
+//         GraphQLPlaygroundConfig::new("/").subscription_endpoint("/ws"),
+//     ))
+// }
 
 async fn shutdown_signal() {
     let ctrl_c = async {
@@ -137,14 +137,25 @@ async fn main() -> async_graphql::Result<()> {
     let socket = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_owned());
     let listener = tokio::net::TcpListener::bind(socket).await.unwrap();
 
+    let cors = CorsLayer::new()
+        .allow_origin(AllowOrigin::predicate(
+            |origin: &HeaderValue, _request_parts: &request::Parts| {
+                let bytes = origin.as_bytes();
+                bytes == b"http://localhost:3002"
+                    || bytes == b"https://digraph.app"
+                    || bytes.ends_with(b".digraph.app")
+            },
+        ))
+        .allow_headers(vec![header::CONTENT_TYPE]);
+
     // For metrics, see https://github.com/oliverjumpertz/axum-graphql/blob/main/src/main.rs
     log::info!("starting server");
     let app = Router::new()
         .route("/health", get(health))
-        .route("/", get(graphql_playground))
         .route("/graphql", post(graphql_handler))
+        // .route("/", get(graphql_playground))
         .layer(Extension(schema))
-        .layer(CorsLayer::permissive())
+        .layer(cors)
         .with_state(state);
 
     axum::serve(listener, app)
