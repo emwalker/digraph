@@ -21,7 +21,7 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
-ARG DIGRAPH_API_EXTERNAL_URL=https://api.digraph.app
+ARG NEXT_PUBLIC_API_URL=https://api.digraph.app
 
 RUN yarn next build
 
@@ -51,4 +51,4 @@ EXPOSE 3002
 
 ENV PORT 3002
 
-CMD DIGRAPH_API_EXTERNAL_URL=https://api.digraph.app HOSTNAME="0.0.0.0" node server.js
+CMD HOSTNAME="0.0.0.0" node server.js
