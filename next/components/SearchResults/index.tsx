@@ -187,7 +187,7 @@ export default function SearchResults({ data }: { data: SearchResultsQuery | und
       </Box>
 
       <Box className={classes.rightCol}>
-        <Title order={3}>Search topics</Title>
+        <Title order={3}>Showing topics</Title>
         {searchTopics.length > 0 ?
           searchTopics.map(searchTopic) : (
             <Card>

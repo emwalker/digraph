@@ -1,6 +1,6 @@
 'use client'
 
-import { ComboboxItem, OptionsFilter, TagsInput } from '@mantine/core'
+import { ComboboxItem, FocusTrap, OptionsFilter, TagsInput } from '@mantine/core'
 import { IconSearch } from '@tabler/icons-react'
 import { useCallback, useState } from 'react'
 import { useSuspenseQuery } from '@apollo/client'
@@ -84,20 +84,22 @@ export default function SearchBox() {
   }, [setSearchTerms, queryInfo, params, searchStringFromParams])
 
   return (
-    <TagsInput
-      allowDuplicates
-      clearable
-      data={options}
-      disabled={false}
-      filter={optionsFilter}
-      leftSection={icon}
-      onChange={searchTermsUpdated}
-      onSearchChange={setCurrentTerm}
-      placeholder="Search"
-      radius="xl"
-      searchValue={currentTerm}
-      size="lg"
-      value={searchTerms}
-    />
+    <FocusTrap>
+      <TagsInput
+        allowDuplicates
+        clearable
+        data={options}
+        disabled={false}
+        filter={optionsFilter}
+        leftSection={icon}
+        onChange={searchTermsUpdated}
+        onSearchChange={setCurrentTerm}
+        placeholder="Search"
+        radius="xl"
+        searchValue={currentTerm}
+        size="lg"
+        value={searchTerms}
+      />
+    </FocusTrap>
   )
 }
