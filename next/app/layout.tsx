@@ -1,8 +1,7 @@
 import '@mantine/core/styles.css'
 import React from 'react'
-import { MantineProvider } from '@mantine/core'
+import { ColorSchemeScript, MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
-import { ApolloWrapper } from '@/lib/ApolloWrapper'
 import { cssVariablesResolver, theme } from '@/theme'
 import './global.css'
 
@@ -20,18 +19,17 @@ export default function RootLayout({ children }: { children: any }) {
           name="viewport"
           content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
         />
+        <ColorSchemeScript defaultColorScheme="dark" />
       </head>
       <body>
-        <ApolloWrapper>
-          <MantineProvider
-            cssVariablesResolver={cssVariablesResolver}
-            defaultColorScheme="dark"
-            theme={theme}
-          >
-            <Notifications />
-            {children}
-          </MantineProvider>
-        </ApolloWrapper>
+        <MantineProvider
+          cssVariablesResolver={cssVariablesResolver}
+          defaultColorScheme="dark"
+          theme={theme}
+        >
+          <Notifications />
+          {children}
+        </MantineProvider>
       </body>
     </html>
   )

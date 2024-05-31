@@ -1,19 +1,34 @@
-'use client'
-
-import { Loader } from '@mantine/core'
-import SearchResults from '@/components/SearchResults'
 import { GuestLayout } from '@/components/GuestLayout'
+import { searchStringFromParams } from '@/lib/searchStringFromParams'
+import { getClient } from '@/lib/ApolloClient'
+import { ROOT_TOPIC_ID } from '@/lib/constants'
+import SearchResults, { query } from '@/components/SearchResults'
 
 export const dynamic = 'force-dynamic'
 
 type Props = {
-  params: {
-    id: string,
-  },
+  params: { [key: string]: string | undefined };
 }
 
-export default function GET({ params }: Props) {
-  if (params.id == null) return <Loader color="blue" />
+export default async function Page({ params }: Props) {
+  const searchString = searchStringFromParams(params)
+  const queryParamSearchString = params?.q || ''
+  const topicId = params?.id || ROOT_TOPIC_ID
 
-  return <GuestLayout><SearchResults topicId={params.id} /></GuestLayout>
+  const { data } = await getClient().query({
+    query,
+    variables: {
+      repoIds: [],
+      topicId,
+      searchString,
+      queryParamSearchString,
+      viewerId: '',
+    },
+  })
+
+  return (
+    <GuestLayout>
+      <SearchResults data={data} />
+    </GuestLayout>
+  )
 }

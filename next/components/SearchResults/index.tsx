@@ -1,15 +1,10 @@
-'use client'
-
-import { useSuspenseQuery } from '@apollo/experimental-nextjs-app-support/ssr'
-import { Anchor, Box, Card, Code, List, Title, Text } from '@mantine/core'
+import { Anchor, Box, Card, Code, List, ListItem, Title, Text, LoadingOverlay } from '@mantine/core'
 import Link from 'next/link'
-import { useParams, useSearchParams } from 'next/navigation'
 import { graphql } from '@/lib/__generated__/gql'
 import classes from './index.module.css'
 import { SearchResultsQuery } from '@/lib/__generated__/graphql'
-import { searchStringFromParams } from '@/lib/searchStringFromParams'
 
-const query = graphql(/* GraphQL */ ` query SearchResults(
+export const query = graphql(/* GraphQL */ ` query SearchResults(
   $repoIds: [ID!]!,
   $topicId: ID!,
   $searchString: String!,
@@ -101,7 +96,7 @@ const searchTopic = ({ displayName, id, displaySynonyms, displayParentTopics }: 
         <Box className={classes.namesAndSynonyms}>
           <Text>Names and synonyms</Text>
           <List className={classes.searchTopicSynonyms}>
-            {displaySynonyms.map(({ name }) => <List.Item key={name}>{name}</List.Item>)}
+            {displaySynonyms.map(({ name }) => <ListItem key={name}>{name}</ListItem>)}
           </List>
         </Box>
       )}
@@ -167,24 +162,9 @@ const parentTopicsFor = (conn: TopicConnection | null) => {
   return edges.map((edge) => edge ? edge.node : null).filter(Boolean) as Topic[]
 }
 
-type Props = {
-  topicId: string,
-}
+export default function SearchResults({ data }: { data: SearchResultsQuery | undefined }) {
+  if (!data) return <LoadingOverlay />
 
-export default function SearchResults({ topicId }: Props) {
-  const params = useParams()
-  const searchParams = useSearchParams()
-  const searchString = searchStringFromParams(params, searchParams)
-
-  const { data } = useSuspenseQuery(query, {
-    variables: {
-      repoIds: [],
-      topicId,
-      searchString,
-      queryParamSearchString: searchParams.get('q') || '',
-      viewerId: '',
-    },
-  })
   const { view } = data
   if (view == null) return null
 

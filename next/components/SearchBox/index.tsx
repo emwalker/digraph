@@ -1,9 +1,11 @@
+'use client'
+
 import { ComboboxItem, OptionsFilter, TagsInput } from '@mantine/core'
 import { IconSearch } from '@tabler/icons-react'
 import { useCallback, useState } from 'react'
 import { useSuspenseQuery } from '@apollo/client'
 import { useDebounce } from 'use-debounce'
-import { useParams, useSearchParams, useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { graphql } from '@/lib/__generated__/gql'
 import { SearchBoxQuery } from '@/lib/__generated__/graphql'
 import { buildPath } from './buildPath'
@@ -43,8 +45,7 @@ const optionsFilter: OptionsFilter = ({ options }) => options
 export default function SearchBox() {
   const router = useRouter()
   const params = useParams()
-  const searchParams = useSearchParams()
-  const searchString = searchStringFromParams(params, searchParams)
+  const searchString = searchStringFromParams(params)
 
   const [currentTerm, setCurrentTerm] = useState('')
   const [debouncedSearchValue] = useDebounce(currentTerm, 300)
@@ -80,7 +81,7 @@ export default function SearchBox() {
       const path = buildPath(newSearchTerms, queryInfo, newQueryInfo)
       router.push(path)
     }
-  }, [setSearchTerms, queryInfo, params, searchParams, searchStringFromParams])
+  }, [setSearchTerms, queryInfo, params, searchStringFromParams])
 
   return (
     <TagsInput

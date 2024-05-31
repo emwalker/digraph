@@ -1,11 +1,12 @@
-import { ReadonlyURLSearchParams } from 'next/navigation'
-import { Params } from 'next/dist/shared/lib/router/utils/route-matcher'
+import { ParsedUrlQuery } from 'querystring'
 import { ROOT_TOPIC_ID } from './constants'
 
 export const searchStringFromParams = (
-  params: Params, searchParams: ReadonlyURLSearchParams
+  params: ParsedUrlQuery | undefined
 ): string => {
-  const parentTopicId = params.id == null ? ROOT_TOPIC_ID : params.id
-  const q = searchParams.get('q')
+  if (!params) return `in:${ROOT_TOPIC_ID}`
+
+  const { q, id } = params
+  const parentTopicId = id == null ? ROOT_TOPIC_ID : params.id
   return q == null ? `in:${parentTopicId}` : `in:${parentTopicId} ${q}`
 }

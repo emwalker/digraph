@@ -20,7 +20,10 @@ if (process.env.NODE_ENV !== 'production') {
 
 function makeClient() {
   const apiOrigin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-  const httpLink = new HttpLink({ uri: `${apiOrigin}/graphql` })
+  const httpLink = new HttpLink({
+    uri: `${apiOrigin}/graphql`,
+    fetchOptions: { cache: 'no-cache' },
+  })
 
   return new NextSSRApolloClient({
     cache: new NextSSRInMemoryCache(),
