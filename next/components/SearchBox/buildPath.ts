@@ -20,7 +20,7 @@ export function buildPath(
   const q = topicIds.slice(1).map((id) => `in:${id}`).concat(phrases).join(' ')
 
   if (q.length > 0) {
-    return `/topics/${parentTopicId}?q=${q}`
+    return `/topics/${parentTopicId}/q/${q}`
   }
 
   return `/topics/${parentTopicId}`

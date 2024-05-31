@@ -7,6 +7,7 @@ export const searchStringFromParams = (
   if (!params) return `in:${ROOT_TOPIC_ID}`
 
   const { q, id } = params
-  const parentTopicId = id == null ? ROOT_TOPIC_ID : params.id
-  return q == null ? `in:${parentTopicId}` : `in:${parentTopicId} ${q}`
+  const parentTopicId = id || ROOT_TOPIC_ID
+  if (!q) return `in:${parentTopicId}`
+  return `in:${parentTopicId} ${decodeURIComponent(q as string)}`
 }

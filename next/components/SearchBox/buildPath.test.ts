@@ -1,10 +1,11 @@
 import { describe, expect, test } from '@jest/globals'
 import { buildPath } from './buildPath'
 import { ROOT_TOPIC_ID } from '@/lib/constants'
-import { TopicQueryInfo, QueryInfo } from '@/lib/__generated__/graphql'
+import { Topic, QueryInfo } from '@/lib/__generated__/graphql'
 
 const queryInfo =
-  (topics: TopicQueryInfo[], phrases: string[]): QueryInfo => ({ topics, phrases })
+  /* @ts-expect-error */
+  (topics: Partial<Topic>[], phrases: string[]): QueryInfo => ({ topics, phrases })
 
 describe('buildPath', () => {
   test('empty input', () => {
@@ -19,13 +20,13 @@ describe('buildPath', () => {
   test('a search term', () => {
     const info = queryInfo([], [])
     expect(buildPath(['Biology', 'water'], info, new Map([['Biology', '1']])))
-      .toBe('/topics/1?q=water')
+      .toBe('/topics/1/q/water')
   })
 
   test('two new topics', () => {
     const info = queryInfo([], [])
     expect(buildPath(['Biology', 'Water'], info, new Map([['Biology', '1'], ['Water', '2']])))
-      .toBe('/topics/1?q=in:2')
+      .toBe('/topics/1/q/in:2')
   })
 
   test('two existing topics', () => {
@@ -33,7 +34,7 @@ describe('buildPath', () => {
       [{ id: '1', displayName: 'Biology' }, { id: '2', displayName: 'Water' }],
       []
     )
-    expect(buildPath(['Biology', 'Water'], info, new Map())).toBe('/topics/1?q=in:2')
+    expect(buildPath(['Biology', 'Water'], info, new Map())).toBe('/topics/1/q/in:2')
   })
 
   test('three existing topics', () => {
@@ -46,7 +47,7 @@ describe('buildPath', () => {
       []
     )
     expect(buildPath(['Biology', 'Water', 'Chemistry'], info, new Map()))
-      .toBe('/topics/1?q=in:2 in:3')
+      .toBe('/topics/1/q/in:2 in:3')
   })
 
   test('two existing topics and a new topic', () => {
@@ -58,6 +59,6 @@ describe('buildPath', () => {
       []
     )
     expect(buildPath(['Biology', 'Water', 'Chemistry'], info, new Map([['Chemistry', '3']])))
-      .toBe('/topics/1?q=in:2 in:3')
+      .toBe('/topics/1/q/in:2 in:3')
   })
 })

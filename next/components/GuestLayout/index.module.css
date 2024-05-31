@@ -68,6 +68,7 @@
 
 .searchBox {
   flex-basis: var(--middle-col-width);
+  max-width: var(--middle-col-width);
 }
 
 .main {
