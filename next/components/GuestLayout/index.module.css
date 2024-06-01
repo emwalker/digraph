@@ -114,4 +114,5 @@
 .results {
   flex-basis: 100%;
   padding: var(--mantine-spacing-lg);
+  max-width: 100%;
 }
