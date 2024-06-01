@@ -7,7 +7,13 @@
 .navbarMain {
   display: flex;
   flex-direction: row;
+
+  @media (max-width: $mantine-breakpoint-xs) {
+    flex-direction: column;
+    height: rem(90);
+  }
 }
+
 
 .header {
   width: 100%;
@@ -29,8 +35,8 @@
 }
 
 .linkIcon {
-  width: rem(25px);
-  height: rem(25px);
+  width: rem(25);
+  height: rem(25);
 }
 
 .container {
@@ -51,6 +57,11 @@
 .logo {
   flex-basis: var(--left-col-width);
   font-size: 32pt;
+  margin-right: var(--mantine-spacing-md);
+
+  @media (max-width: $mantine-breakpoint-xs) {
+    margin-bottom: var(--mantine-spacing-md);
+  }
 
   a {
     display: flex;
@@ -69,6 +80,12 @@
 .searchBox {
   flex-basis: var(--middle-col-width);
   max-width: var(--middle-col-width);
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    flex-basis: 100%;
+    max-width: none;
+    margin-right: var(--mantine-spacing-lg);
+  }
 }
 
 .main {
@@ -80,10 +97,18 @@
   display: flex;
   padding: var(--mantine-spacing-xl);
   flex-direction: row;
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    padding: var(--mantine-spacing-xs);
+  }
 }
 
 .leftColumn {
   flex-basis: var(--left-col-width);
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    flex-basis: 0;
+  }
 }
 
 .results {

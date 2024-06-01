@@ -37,12 +37,22 @@
 
 .searchResults {
   display: flex;
+  flex-direction: row;
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    flex-direction: column;
+  }
 }
 
 .middleCol {
   flex-basis: var(--middle-col-width);
   max-width: var(--middle-col-width);
   overflow-wrap: break-word;
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    flex-basis: 100%;
+    max-width: none;
+  }
 
   .card {
     font-size: var(--mantine-font-size-xl);
@@ -53,6 +63,10 @@
   flex: 1;
   padding-left: var(--mantine-spacing-xl);
   margin-top: rem(10);
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    padding-left: var(--mantine-spacing-xs);
+  }
 
   .card {
     padding: var(--mantine-spacing-xs);
