@@ -21,4 +21,4 @@ images:
   - name: emwalker/digraph-node:latest
     newTag: v1.1.6
   - name: emwalker/digraph-node:next
-    newTag: v1.2.18
+    newTag: v1.2.19

@@ -173,6 +173,7 @@ export default function SearchResults({ data }: { data: SearchResultsQuery | und
 
   const { children: results } = topic
   const searchTopics = queryInfo.topics
+  const rightTitle = searchTopics.length > 1 ? 'Showing topics' : 'Showing topic'
 
   return (
     <Box className={classes.searchResults}>
@@ -187,7 +188,7 @@ export default function SearchResults({ data }: { data: SearchResultsQuery | und
       </Box>
 
       <Box className={classes.rightCol}>
-        <Title order={3}>Showing topics</Title>
+        <Title order={3}>{rightTitle}</Title>
         {searchTopics.length > 0 ?
           searchTopics.map(searchTopic) : (
             <Card>
