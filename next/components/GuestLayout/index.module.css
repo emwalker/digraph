@@ -10,7 +10,6 @@
 
   @media (max-width: $mantine-breakpoint-xs) {
     flex-direction: column;
-    height: rem(90);
   }
 }
 
@@ -61,6 +60,7 @@
 
   @media (max-width: $mantine-breakpoint-xs) {
     margin-bottom: var(--mantine-spacing-md);
+    flex-basis: auto;
   }
 
   a {
