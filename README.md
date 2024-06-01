@@ -11,7 +11,7 @@ This is a personal project and is a work in progress.
 
 ## Screenshot
 
-![2024-06-01_15-28](https://github.com/emwalker/digraph/assets/760949/ec021b57-7826-4723-98c0-e9a21a0a473f)
+![Landing page](https://github.com/emwalker/digraph/assets/760949/128e3c0f-7ee5-4ea3-a06e-8910007f76b0)
 
 ## Development
 
