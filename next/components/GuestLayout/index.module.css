@@ -36,6 +36,7 @@
 .linkIcon {
   width: rem(25);
   height: rem(25);
+  margin-bottom: 6px;
 }
 
 .container {
