@@ -10,7 +10,7 @@ localbackup=./data/$filename
 
 podname=$(
   kubectl get pods -n digraph-prod -l app=digraph -l \
-    tier=frontend --no-headers -o custom-columns=":metadata.name"
+    tier=prod-api --no-headers -o custom-columns=":metadata.name"
 )
 
 echo "packing repo files ..."
