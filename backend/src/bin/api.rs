@@ -1,5 +1,4 @@
 use async_graphql::extensions;
-// use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::EmptySubscription;
 use async_graphql::Schema;
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
@@ -70,12 +69,6 @@ async fn graphql_handler(
     let response = async move { schema.execute(req.into_inner().data(store)).await }.await;
     response.into()
 }
-
-// async fn graphql_playground() -> impl IntoResponse {
-//     Html(playground_source(
-//         GraphQLPlaygroundConfig::new("/").subscription_endpoint("/ws"),
-//     ))
-// }
 
 async fn shutdown_signal() {
     let ctrl_c = async {
@@ -153,7 +146,6 @@ async fn main() -> async_graphql::Result<()> {
     let app = Router::new()
         .route("/health", get(health))
         .route("/graphql", post(graphql_handler))
-        // .route("/", get(graphql_playground))
         .layer(Extension(schema))
         .layer(cors)
         .with_state(state);
