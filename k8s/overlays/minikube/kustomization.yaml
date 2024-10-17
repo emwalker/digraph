@@ -1,4 +1,4 @@
-bases:
+resources:
   - ./nfs-provisioner
   - ../../base/kube-system
   - ../../base/default

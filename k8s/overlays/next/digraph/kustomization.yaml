@@ -1,9 +1,7 @@
 namespace: digraph-next
 
-bases:
-  - ../../../base/digraph
-
 resources:
+  - ../../../base/digraph
   - digraph-frontend.yaml
   - digraph-ingress.yaml
 

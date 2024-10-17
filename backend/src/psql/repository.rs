@@ -72,7 +72,7 @@ impl FetchWriteableRepositoriesForUser {
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(&self.user_id)
-            .bind(&self.viewer.write_repo_ids.to_vec())
+            .bind(self.viewer.write_repo_ids.to_vec())
             .fetch_all(pool)
             .await?;
 
@@ -110,7 +110,7 @@ impl Loader<String> for RepositoryLoader {
         );
         let rows = sqlx::query_as::<_, Row>(&query)
             .bind(ids)
-            .bind(&self.viewer.read_repo_ids.to_vec())
+            .bind(self.viewer.read_repo_ids.to_vec())
             .fetch_all(&self.pool)
             .await?;
 
@@ -165,7 +165,7 @@ impl SelectRepository {
 
             let row = sqlx::query_as::<_, repository::Row>(&query)
                 .bind(repo_id)
-                .bind(&self.actor.write_repo_ids.to_vec())
+                .bind(self.actor.write_repo_ids.to_vec())
                 .fetch_one(pool)
                 .await?;
 

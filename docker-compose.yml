@@ -1,4 +1,3 @@
-version: '3'
 volumes:
   next-clientmodules:
   prod-clientmodules:

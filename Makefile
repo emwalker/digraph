@@ -26,6 +26,9 @@ check-pre-push:
 	$(MAKE) -C next check-pre-push
 	test -z "$(shell git status --porcelain)"
 
+check-yarn:
+	which yarn
+
 dev:
 	overmind start -f Procfile.dev
 
@@ -70,7 +73,7 @@ prod-deploy:
 prod-logs:
 	OVERMIND_SOCKET=./.overmind-logs.sock overmind start -f Procfile.prod-logs
 
-prod-push-deploy: check-git-clean check-pre-push prod-build-containers push-docker push-git prod-deploy
+prod-push-deploy: check-yarn check-git-clean check-pre-push prod-build-containers push-docker push-git prod-deploy
 
 prod-build-api:
 	$(MAKE) -C backend build
@@ -92,7 +95,6 @@ reset-db:
 	bash ./scripts/load-production-db
 	bash ./scripts/make-fixtures
 	bash ./scripts/promote-fixtures
-	$(MAKE) -C backend migrate
 
 reset-data-dir:
 	rm -rf ~/data/digraph-data

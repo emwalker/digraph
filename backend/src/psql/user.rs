@@ -170,7 +170,6 @@ impl<'i> UpsertRegisteredUser<'i> {
 }
 
 pub struct FetchAccountInfo {
-    pub viewer: Arc<Viewer>,
     pub user_id: String,
 }
 

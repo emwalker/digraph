@@ -1,9 +1,9 @@
-FROM rust:1.72-buster as builder
+FROM rust:1-bookworm as builder
 WORKDIR /usr/src/digraph
 COPY ./backend .
 RUN cargo build --release --bin api
 
-FROM debian:buster-slim
+FROM debian:bookworm-slim
 LABEL Name=api
 RUN apt-get update && apt-get install -y ca-certificates libssl-dev && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/src/digraph/target/release/api /app/api

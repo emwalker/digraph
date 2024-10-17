@@ -8,7 +8,6 @@ use crate::prelude::*;
 
 #[derive(FromRow, Clone, Debug)]
 pub struct DatabaseSession {
-    pub user_id: Uuid,
     pub session_id: String,
 }
 

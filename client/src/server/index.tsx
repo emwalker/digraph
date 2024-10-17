@@ -44,7 +44,7 @@ app
   .disable('x-powered-by')
   .use(compression())
   .use('/static/images', express.static(imagesDir, { maxAge: oneMonth }))
-  .use('/static', express.static(publicDir,  { maxAge: oneMonth }))
+  .use('/static', express.static(publicDir, { maxAge: oneMonth }))
   .use('/robots.txt', (req, res) => {
     res.type('text/plain')
     res.send('User-agent: *\nAllow: /\n')
@@ -55,6 +55,7 @@ app.get('*', async (req, res): Promise<void> => {
 
   try {
     const preloadedState = { viewer: req.user }
+    console.log('preloadedState', preloadedState)
 
     if (req.user) {
       const { id, sessionId } = req.user
@@ -82,7 +83,7 @@ app.get('*', async (req, res): Promise<void> => {
 
     const wrapped = (
       <Provider store={store}>
-        { element }
+        {element}
       </Provider>
     )
 

@@ -4,8 +4,6 @@ import { getClient } from '@/lib/ApolloClient'
 import { ROOT_TOPIC_ID } from '@/lib/constants'
 import SearchResults, { query } from '@/components/SearchResults'
 
-export const dynamic = 'force-dynamic'
-
 type Props = {
   params: { [key: string]: string | undefined };
 }

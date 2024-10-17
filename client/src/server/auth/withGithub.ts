@@ -28,7 +28,6 @@ type Config = Omit<MutationConfig<createGithubSessionMutation>, 'mutation'>
 
 function createSession(environment: Environment, config: Config) {
   return commitMutation<createGithubSessionMutation>(
-    // @ts-expect-error
     environment, { ...config, mutation: createGithubSessionQuery },
   )
 }

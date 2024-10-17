@@ -24,7 +24,6 @@ impl Config {
             dotenv::from_filename(filename).ok();
         }
         dotenv::dotenv().ok();
-
-        envy::from_env::<Self>().map_err(Error::from)
+        Ok(envy::from_env::<Self>()?)
     }
 }

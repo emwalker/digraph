@@ -1,9 +1,7 @@
 namespace: digraph-prod-disabled
 
-bases:
-  - ../../../base/digraph
-
 resources:
+  - ../../../base/digraph
   - digraph-cron.yaml
   - digraph-frontend.yaml
   - digraph-ingress.yaml

@@ -13,7 +13,6 @@ import { FetcherBase } from '../FetcherBase'
 import { commitMutation } from 'react-relay'
 import { Environment, MutationConfig } from 'relay-runtime'
 
-// @ts-expect-error
 const RedisStore = store(session)
 const redisClient = createClient({
   url: process.env.DIGRAPH_NODE_REDIS_URL || 'redis://localhost:6379',
@@ -32,7 +31,6 @@ export default (app: Express, fetcher: FetcherBase): Express => {
   const environment = createEnvironment(fetcher)
 
   app.use(session({
-    // @ts-expect-error
     store: new RedisStore({
       client: redisClient,
       logErrors: true,
@@ -40,9 +38,12 @@ export default (app: Express, fetcher: FetcherBase): Express => {
     secret: process.env.DIGRAPH_COOKIE_SECRET || 'keyboard cat',
     resave: true,
     saveUninitialized: true,
-    secure: process.env.NODE_ENV == 'production',
-    // Expire in one month
-    cookie: { maxAge: 1000 * 3600 * 24 * 30 },
+    cookie: {
+      // Expire in one month
+      maxAge: 1000 * 3600 * 24 * 30,
+      // Only send the cookie over an HTTPS connection
+      secure: process.env.NODE_ENV == 'production',
+    },
   }))
 
   app
@@ -65,7 +66,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
 
     const onCompleted = () => {
       console.log('Deleted session for user', req.user?.id)
-      req.logout()
+      req.logout(() => { })
       res.redirect('/')
     }
 
@@ -73,7 +74,7 @@ export default (app: Express, fetcher: FetcherBase): Express => {
       const userId = req.user?.id
       // eslint-disable-next-line no-console
       console.log(`Failed to delete session for user ${userId}`, error)
-      req.logout()
+      req.logout(() => { })
     }
 
     deleteSession(environment, { variables, onCompleted, onError })

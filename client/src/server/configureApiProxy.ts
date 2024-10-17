@@ -18,30 +18,34 @@ export default (app: Express) => {
   app.post(
     '/graphql',
     createProxyMiddleware({
-      target: graphqlApiBaseUrl,
+      target: `${graphqlApiBaseUrl}/graphql`,
       changeOrigin: true,
+      pathFilter: '/graphql',
       secure: false,
-      onProxyReq(proxyReq, req: IGetUserAuthInfoRequest) {
-        const { user } = req
+      on: {
+        proxyReq(proxyReq, req: IGetUserAuthInfoRequest) {
+          const { user } = req
+          console.log('proxyReq config', user)
 
-        if (user && user.id && user.sessionId) {
-          const { id, sessionId } = user
-          const secret = basicAuthSecret(id, sessionId)
-          proxyReq.setHeader('Authorization', `Basic ${secret}`)
-        } else {
-          console.log('no user found with the request, omitting basic auth header')
-        }
-      },
-      onError(err) {
-        console.log('problem proxying request to api server:', err)
-      },
+          if (user && user.id && user.sessionId) {
+            const { id, sessionId } = user
+            const secret = basicAuthSecret(id, sessionId)
+            proxyReq.setHeader('Authorization', `Basic ${secret}`)
+          } else {
+            console.log('no user found with the request, omitting basic auth header')
+          }
+        },
+        error(err) {
+          console.log('problem proxying request to api server:', err)
+        },
+      }
     }),
   )
 
   app.get(
     '/_ah/health',
     createProxyMiddleware({
-      target: graphqlApiBaseUrl,
+      target: `${graphqlApiBaseUrl}/_ah/health`,
       changeOrigin: true,
       secure: false,
     }),

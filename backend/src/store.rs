@@ -80,7 +80,6 @@ impl Store {
         log::info!("account deletion: fetching account info for {}", user_id);
         let psql::FetchAccountInfoResult { personal_repos } = psql::FetchAccountInfo {
             user_id: user_id.to_owned(),
-            viewer: Arc::clone(&self.viewer),
         }
         .call(&self.db)
         .await?;
