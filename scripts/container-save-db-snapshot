@@ -5,7 +5,7 @@ set -euf -o pipefail
 echo "installing pg_dump ..."
 apt-get update -y
 apt install gnupg gnupg2 gnupg1 wget -y
-sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 apt-get update -y
 apt-get install postgresql-14 -y
