@@ -5,6 +5,11 @@ use url;
 use crate::prelude::*;
 use crate::types::sha256_base64;
 
+// There's an occasional issue in which a site will not respond or will respond in a way that the
+// current Axum connection setup can't handle, causing an Axum thread to be tied up indefinitely.
+// This is a workaround until a proper timeout can be put in place to deal with these cases.
+const AVOID_REQUESTS: &[&str] = &["miamiherald.com"];
+
 // Struct for urls that are saved as links to a repo.  This class is not a general purpose wrapper
 // for urls, as the needs for keeping track of a page on a site differ from one site to another. For
 // example, often you can strip off query parameters for a normalized link, but you must keep the
@@ -14,6 +19,7 @@ use crate::types::sha256_base64;
 // in a repo or in the database, but for now we just hard-code the handling here.
 #[derive(Clone, Debug)]
 pub struct RepoUrl {
+    pub host: String,
     pub input: String,
     pub normalized: String,
     pub path: String,
@@ -54,7 +60,7 @@ impl std::hash::Hash for RepoUrl {
 
 impl RepoUrl {
     pub fn parse(input: &str) -> Result<Self> {
-        let url = parse_url(input)?;
+        let (url, host) = parse_url(input)?;
         let input = input.to_string();
         let normalized = format!("{url}");
         let sha256_base64 = sha256_base64(&normalized);
@@ -62,6 +68,7 @@ impl RepoUrl {
         Ok(Self {
             input,
             normalized,
+            host,
             path: url.path().to_string(),
             sha256: sha256_base64,
         })
@@ -69,6 +76,12 @@ impl RepoUrl {
 
     pub fn is_valid_url(input: &str) -> bool {
         Self::parse(input).is_ok()
+    }
+
+    pub fn avoid_requests(&self) -> bool {
+        AVOID_REQUESTS
+            .iter()
+            .any(|suffix| self.host.ends_with(suffix))
     }
 
     pub fn ends_with(&self, suffix: &str) -> bool {
@@ -86,36 +99,38 @@ impl RepoUrl {
 
 type Pair<'r> = (Cow<'r, str>, Cow<'r, str>);
 
-fn make_filter<'r>(host: Option<&str>) -> impl Fn(&Pair<'r>) -> bool + '_ {
+fn make_filter<'r>(host: &str) -> impl Fn(&Pair<'r>) -> bool + '_ {
     move |p: &Pair<'r>| match host {
-        Some("abcnews.go.com") => p.0 == "id",
-        Some("khpg.org") => p.0 == "id",
-        Some("news.ycombinator.com") => p.0 == "id",
-        Some("newscenter.sdsu.edu") => p.0 == "sid",
-        Some("scholarworks.umass.edu") => p.0 == "article" || p.0 == "context",
-        Some("www.baylor.edu") => p.0 == "action" || p.0 == "story",
-        Some("www.c-span.org") => true,
-        Some("www.dur.ac.uk") => p.0 == "itemno",
-        Some("www.facebook.com") => p.0 == "__xts__[0]" || p.0 == "v",
-        Some("www.greenbeltmd.gov") => p.0 == "id",
-        Some("www.koreaherald.com") => p.0 == "ud",
-        Some("www.lenr-forum.com") => p.0 == "pageNo",
-        Some("www.nzherald.co.nz") => p.0 == "objectid",
-        Some("www.sourcewatch.org") => p.0 == "title",
-        Some("www.urbandictionary.com") => p.0 == "term",
-        Some("www.youtube.com") => p.0 == "v" || p.0 == "t",
+        "abcnews.go.com" => p.0 == "id",
+        "khpg.org" => p.0 == "id",
+        "news.ycombinator.com" => p.0 == "id",
+        "newscenter.sdsu.edu" => p.0 == "sid",
+        "scholarworks.umass.edu" => p.0 == "article" || p.0 == "context",
+        "www.baylor.edu" => p.0 == "action" || p.0 == "story",
+        "www.c-span.org" => true,
+        "www.dur.ac.uk" => p.0 == "itemno",
+        "www.facebook.com" => p.0 == "__xts__[0]" || p.0 == "v",
+        "www.greenbeltmd.gov" => p.0 == "id",
+        "www.koreaherald.com" => p.0 == "ud",
+        "www.lenr-forum.com" => p.0 == "pageNo",
+        "www.nzherald.co.nz" => p.0 == "objectid",
+        "www.sourcewatch.org" => p.0 == "title",
+        "www.urbandictionary.com" => p.0 == "term",
+        "www.youtube.com" => p.0 == "v" || p.0 == "t",
         _ => false,
     }
 }
 
-fn parse_url(input: &str) -> Result<url::Url> {
+fn parse_url(input: &str) -> Result<(url::Url, String)> {
     let url = url::Url::parse(input)?;
 
     if !url.has_host() {
         return Err(Error::UrlParse(format!("invalid url: {input}")));
     }
 
-    let host = url.host_str();
+    let host = url
+        .host_str()
+        .ok_or(Error::UrlParse(format!("no host: {input}")))?;
     let filter = make_filter(host);
     let query: Vec<(_, _)> = url.query_pairs().filter(filter).collect();
 
@@ -128,11 +143,11 @@ fn parse_url(input: &str) -> Result<url::Url> {
     }
 
     match host {
-        Some("mail.google.com") => {}
+        "mail.google.com" => {}
         _ => url2.set_fragment(None),
     }
 
-    Ok(url2)
+    Ok((url2, host.to_owned()))
 }
 
 #[cfg(test)]
@@ -198,6 +213,12 @@ mod tests {
 
         let url = parse("https://www.dni.gov//Prelimary-Assessment-UAP-20210625.html?q=something");
         assert!(!url.is_pdf());
+    }
+
+    #[test]
+    fn avoid_requests() {
+        let url = parse("https://www.miamiherald.com/news/local/environment/climate-change/article303949086.html");
+        assert!(url.avoid_requests());
     }
 
     #[test]

@@ -59,7 +59,7 @@ impl Page {
     }
 
     pub fn should_fetch(&self) -> bool {
-        !self.0.is_pdf()
+        !self.0.is_pdf() && !self.0.avoid_requests()
     }
 }
 
