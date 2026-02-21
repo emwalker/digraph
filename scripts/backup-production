@@ -10,17 +10,23 @@ localbackup=./data/$filename
 
 podname=$(
   kubectl get pods -n digraph-prod -l app=digraph -l \
-    tier=prod-api --no-headers -o custom-columns=":metadata.name"
+    tier=prod-api --no-headers -o custom-columns=":metadata.name" | head -1
 )
 
+echo "copying scripts to pod ..."
+kubectl cp ./scripts/container-pack-data digraph-prod/$podname:/tmp/container-pack-data
+kubectl cp ./scripts/container-save-db-snapshot digraph-prod/$podname:/tmp/container-save-db-snapshot
+kubectl cp ./scripts/pack-data digraph-prod/$podname:/tmp/pack-data
+kubectl -n digraph-prod exec $podname -- chmod +x /tmp/container-pack-data /tmp/container-save-db-snapshot /tmp/pack-data
+
 echo "packing repo files ..."
-kubectl -n digraph-prod exec -it $podname -- /tmp/container-pack-data
+kubectl -n digraph-prod exec --request-timeout=0 $podname -- /tmp/container-pack-data
 
 echo "saving a snapshot of the database ..."
-kubectl -n digraph-prod exec -it $podname -- /tmp/container-save-db-snapshot
+kubectl -n digraph-prod exec --request-timeout=0 $podname -- /tmp/container-save-db-snapshot
 
 echo "creating a tar file of the repos ..."
-kubectl -n digraph-prod exec -it $podname -- tar -zcf $archive -C /var/lib/digraph digraph-data/
+kubectl -n digraph-prod exec --request-timeout=0 $podname -- tar -zcf $archive -C /var/lib/digraph digraph-data/
 
 echo "copying $archive from $podname to $localgeneric ..."
 kubectl cp --retries=-1 -n digraph-prod $podname:$archive $localgeneric
