@@ -65,15 +65,24 @@ export default (app: Express, fetcher: FetcherBase): Express => {
 
     const onCompleted = () => {
       console.log('Deleted session for user', req.user?.id)
-      req.logout()
-      res.redirect('/')
+      req.logout((err) => {
+        if (err) {
+          console.log('Error during logout:', err)
+        }
+        res.redirect('/')
+      })
     }
 
     const onError = (error: Error) => {
       const userId = req.user?.id
       // eslint-disable-next-line no-console
       console.log(`Failed to delete session for user ${userId}`, error)
-      req.logout()
+      req.logout((err) => {
+        if (err) {
+          console.log('Error during logout:', err)
+        }
+        res.redirect('/')
+      })
     }
 
     deleteSession(environment, { variables, onCompleted, onError })
