@@ -205,7 +205,7 @@ impl View {
         })
     }
 
-    pub(crate) fn find_blob_by_filename(&self, filename: &Path) -> Result<Option<git2::Blob>> {
+    pub(crate) fn find_blob_by_filename(&self, filename: &Path) -> Result<Option<git2::Blob<'_>>> {
         let mut path = deque_from_path(filename);
         let tree = self.repo.commit(self.commit)?.tree()?;
 
@@ -217,7 +217,7 @@ impl View {
         Ok(None)
     }
 
-    fn find_blob(&self, id: &ExternalId) -> Result<Option<git2::Blob>> {
+    fn find_blob(&self, id: &ExternalId) -> Result<Option<git2::Blob<'_>>> {
         self.find_blob_by_filename(&id.object_filename()?)
     }
 

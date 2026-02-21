@@ -156,7 +156,7 @@ impl Client {
         Ok(false)
     }
 
-    pub fn downset(&self, topic_path: &TopicPath) -> DownsetIter {
+    pub fn downset(&self, topic_path: &TopicPath) -> DownsetIter<'_> {
         DownsetIter::new(
             self,
             topic_path.repo_id,
@@ -403,7 +403,7 @@ impl Client {
         }
     }
 
-    pub fn topic_downset(&self, topic_path: &TopicPath) -> TopicDownsetIter {
+    pub fn topic_downset(&self, topic_path: &TopicPath) -> TopicDownsetIter<'_> {
         TopicDownsetIter::new(
             self,
             topic_path.repo_id,

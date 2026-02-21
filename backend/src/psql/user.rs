@@ -131,7 +131,7 @@ impl<'i> UpsertRegisteredUser<'i> {
         Ok(UpsertUserResult { user })
     }
 
-    async fn create_github_user<'t>(&'t self, tx: &mut PgTransaction<'_>) -> Result<Row> {
+    async fn create_github_user(&self, tx: &mut PgTransaction<'_>) -> Result<Row> {
         let row = sqlx::query_as::<_, Row>(
             r#"insert into users
                 (name, avatar_url, primary_email, github_username, github_avatar_url)

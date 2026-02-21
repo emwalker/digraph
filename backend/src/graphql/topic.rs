@@ -58,7 +58,7 @@ pub struct RepoTopicDetails<'a>(pub(crate) &'a git::RepoTopicDetails);
 
 #[Object]
 impl<'a> RepoTopicDetails<'a> {
-    async fn synonyms(&self) -> Vec<Synonym> {
+    async fn synonyms(&self) -> Vec<Synonym<'_>> {
         self.0.synonyms.iter().map(Synonym::from).collect_vec()
     }
 
@@ -88,7 +88,7 @@ impl RepoTopic {
         Ok(LiveSearchTopicsPayload(result))
     }
 
-    async fn details(&self) -> Option<RepoTopicDetails> {
+    async fn details(&self) -> Option<RepoTopicDetails<'_>> {
         self.0.details().map(RepoTopicDetails)
     }
 

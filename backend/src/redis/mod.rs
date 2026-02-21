@@ -95,7 +95,7 @@ impl git::CacheStats for Arc<Redis> {
         if let Some(ttl) = ttl {
             command = command.arg("EX").arg(ttl);
         }
-        command.query(&mut con)?;
+        command.query::<()>(&mut con)?;
 
         Ok(())
     }
@@ -181,7 +181,7 @@ impl Redis {
         key: &Key,
         set: &HashSet<ExternalId>,
     ) -> Result<()> {
-        redis_rs::transaction(con, &[key], |con, pipe| {
+        redis_rs::transaction::<_, _, (), _>(con, &[key], |con, pipe| {
             let set = set
                 .iter()
                 .map(ExternalId::to_string)
@@ -222,7 +222,7 @@ impl git::SaveChangesForPrefix for Arc<Redis> {
         let key = Key(format!("activity:{repo_id}"));
         if !args.is_empty() {
             log::info!("saving changes to {:?}", key);
-            con.zadd_multiple(key, &args)?;
+            con.zadd_multiple::<_, _, _, ()>(key, &args)?;
         } else {
             log::info!("no changes to save to {:?} key, skipping", key);
         }

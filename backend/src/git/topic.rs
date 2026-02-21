@@ -209,12 +209,8 @@ impl RemoveTopicTimerange {
 
         let previous_timerange = repo_topic.timerange().to_owned();
 
-        match &mut repo_topic.metadata.details {
-            Some(details) => {
-                details.timerange = None;
-            }
-
-            None => {}
+        if let Some(details) = &mut repo_topic.metadata.details {
+            details.timerange = None;
         }
 
         mutation.save_topic(self.repo_id, &repo_topic)?;
@@ -821,12 +817,8 @@ impl UpsertTopicTimerange {
 
         let previous_timerange = repo_topic.timerange().clone();
 
-        match &mut repo_topic.metadata.details {
-            Some(details) => {
-                details.timerange = Some(self.timerange.clone());
-            }
-
-            None => {}
+        if let Some(details) = &mut repo_topic.metadata.details {
+            details.timerange = Some(self.timerange.clone());
         }
 
         mutation.save_topic(self.repo_id, &repo_topic)?;

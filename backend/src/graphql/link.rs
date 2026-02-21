@@ -47,7 +47,7 @@ impl<'l> RepoLink<'l> {
         Ok(LiveSearchTopicsPayload(result))
     }
 
-    async fn details(&self) -> Option<RepoLinkDetails> {
+    async fn details(&self) -> Option<RepoLinkDetails<'_>> {
         self.0.details().map(RepoLinkDetails)
     }
 
@@ -165,7 +165,7 @@ impl Link {
         false
     }
 
-    async fn repo_link(&self, repo_id: String) -> Result<Option<RepoLink>> {
+    async fn repo_link(&self, repo_id: String) -> Result<Option<RepoLink<'_>>> {
         let repo_id: RepoId = repo_id.try_into()?;
         Ok(self
             .0
@@ -175,7 +175,7 @@ impl Link {
             .map(|repo_link| repo_link.into()))
     }
 
-    async fn repo_links(&self) -> Vec<RepoLink> {
+    async fn repo_links(&self) -> Vec<RepoLink<'_>> {
         self.0.repo_links.iter().map(RepoLink::from).collect_vec()
     }
 
