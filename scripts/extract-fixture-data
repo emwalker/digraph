@@ -1,0 +1,47 @@
+#!/bin/bash
+
+set -euf -o pipefail
+
+database=${1:-digraph_fixtures}
+tarball=data/production.tar.gz
+datadir=~/data/digraph-data
+
+if [ ! -f "$tarball" ]; then
+  echo >&2 "$tarball not found. Run scripts/backup-production first."
+  exit 1
+fi
+
+echo "Querying $database for repos belonging to kept organizations..."
+repos=$(psql "$database" -t -c "
+  SELECT r.id
+  FROM repositories r
+  JOIN organizations o ON r.organization_id = o.id
+  WHERE o.login IN ('wiki', 'emwalker');
+" | tr -d ' ')
+
+if [ -z "$repos" ]; then
+  echo >&2 "No repos found. Make sure $database exists and has data."
+  exit 1
+fi
+
+echo "Found repos:"
+echo "$repos" | while read -r repo; do
+  [ -n "$repo" ] && echo "  - $repo"
+done
+
+echo ""
+echo "Removing existing data directory..."
+rm -rf "$datadir"
+mkdir -p "$datadir"
+
+echo "Extracting repos from $tarball..."
+extract_args=""
+while read -r repo; do
+  [ -n "$repo" ] && extract_args="$extract_args digraph-data/$repo"
+done <<< "$repos"
+
+tar -xzf "$tarball" -C ~/data $extract_args
+
+echo ""
+echo "Extracted to $datadir:"
+ls -la "$datadir"

@@ -1,4 +1,3 @@
-redis: redis-server
 api: make -C backend dev
 prod-client: make -C client dev
 next-client: make -C next dev

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -euf -o pipefail
+
+fixtures_file=data/fixtures.sql
+
+if [ ! -f "$fixtures_file" ]; then
+  echo >&2 "$fixtures_file not found."
+  exit 1
+fi
+
+echo "Dropping and recreating digraph_dev..."
+dropdb digraph_dev 2>/dev/null || true
+createdb digraph_dev
+
+echo "Loading $fixtures_file into digraph_dev..."
+psql digraph_dev < "$fixtures_file"
+
+echo ""
+echo "Done. Database stats:"
+psql digraph_dev -t -c "SELECT 'users: ' || count(*) FROM users;"
+psql digraph_dev -t -c "SELECT 'repositories: ' || count(*) FROM repositories;"
+psql digraph_dev -t -c "SELECT 'organizations: ' || count(*) FROM organizations;"
